@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#672091" />
+  <title>엑서 모임 운영 커뮤니티 — 벙비 정산기</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+
+  <style>
+    /* 단일 가변 폰트 1개만 사용 — 이미지 캡처 시 폰트 임베드 부담을 줄여 깨짐 방지 */
+    @font-face {
+      font-family: "Pretendard";
+      font-weight: 45 920;
+      font-style: normal;
+      font-display: swap;
+      src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
+    }
+
+    :root {
+      --primary: #672091;
+      --deep: #4A1568;
+      --light: #A05FD0;
+      --lavender: #F3EDF9;
+      --offwhite: #FAF8FC;
+      --ink: #1A1423;
+      --gray: #8B8696;
+      --gold: #C9A227;
+      --danger: #A13B32;
+      --line: rgba(103, 32, 145, 0.14);
+      --line-strong: rgba(103, 32, 145, 0.24);
+      --shadow-sm: 0 8px 24px rgba(39, 20, 52, 0.06);
+      --shadow-md: 0 18px 48px rgba(39, 20, 52, 0.09);
+      --sidebar: 280px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(160, 95, 208, 0.12), transparent 30rem),
+        linear-gradient(180deg, #FFFFFF 0%, var(--offwhite) 48%, #F6F0FA 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    button { border: 0; }
+
+    a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(103, 32, 145, 0.22);
+      outline-offset: 3px;
+    }
+
+    /* ── 사이드바 (사이트 공통) ── */
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 80;
+      display: flex; flex-direction: column; width: var(--sidebar);
+      padding: 24px; border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84); backdrop-filter: blur(18px);
+    }
+    .brand { display: flex; gap: 12px; align-items: center; padding: 4px 4px 22px; border-bottom: 1px solid var(--line); }
+    .brand-mark {
+      display: grid; place-items: center; width: 46px; height: 46px; border-radius: 16px;
+      background: var(--primary); color: white; font-weight: 900; letter-spacing: -0.04em;
+      box-shadow: 0 12px 26px rgba(103, 32, 145, 0.22);
+    }
+    .brand-copy strong { display: block; font-size: 16px; letter-spacing: -0.03em; }
+    .brand-copy small { display: block; margin-top: 3px; color: var(--gray); font-size: 12px; font-weight: 700; }
+    .side-nav { display: grid; gap: 8px; padding: 22px 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 10px 12px;
+      border-radius: 16px; color: #4c4358; font-weight: 800;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+    .nav-item:hover { background: rgba(243, 237, 249, 0.8); color: var(--primary); transform: translateY(-1px); }
+    .nav-item.is-active { background: var(--lavender); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(103, 32, 145, 0.12); }
+    .nav-item.is-disabled { opacity: 0.48; cursor: not-allowed; }
+    .nav-item.is-disabled:hover { transform: none; background: transparent; color: #4c4358; }
+    .nav-icon {
+      display: grid; place-items: center; width: 28px; height: 28px; border-radius: 10px;
+      background: rgba(103, 32, 145, 0.08); color: var(--primary); font-size: 13px; font-weight: 900;
+    }
+    .nav-item.is-active .nav-icon { background: var(--primary); color: white; }
+    .nav-text { flex: 1; }
+    .nav-meta { color: var(--gray); font-size: 11px; font-weight: 800; }
+    .sidebar-card {
+      margin-top: auto; padding: 18px; border-radius: 24px; border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(103, 32, 145, 0.08), rgba(255, 255, 255, 0.9)); box-shadow: var(--shadow-sm);
+    }
+    .sidebar-card span {
+      display: inline-flex; margin-bottom: 10px; padding: 6px 10px; border-radius: 999px;
+      background: white; color: var(--primary); font-size: 12px; font-weight: 900;
+    }
+    .sidebar-card strong { display: block; margin-bottom: 6px; font-size: 15px; letter-spacing: -0.03em; }
+    .sidebar-card p { margin: 0; color: #62596d; font-size: 13px; line-height: 1.55; }
+
+    .mobile-topbar, .bottom-tabbar { display: none; }
+
+    .main { min-height: 100dvh; margin-left: var(--sidebar); padding: 28px clamp(24px, 3vw, 48px) 56px; }
+
+    .panel { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow-md); backdrop-filter: blur(12px); }
+
+    /* ── 헤더 ── */
+    .pagehead { padding: clamp(20px, 2.4vw, 30px) clamp(22px, 2.6vw, 34px); border-radius: 28px; margin-bottom: 18px; }
+    .kicker {
+      display: inline-flex; margin-bottom: 12px; padding: 7px 12px; border-radius: 999px;
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 900; letter-spacing: -0.02em;
+    }
+    .pagehead-title { margin: 0; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; letter-spacing: -0.05em; }
+    .pagehead-title span { color: var(--primary); }
+    .pagehead-desc { max-width: 720px; margin: 12px 0 0; color: #5b5264; font-size: 14px; line-height: 1.65; letter-spacing: -0.01em; }
+
+    /* ── 레이아웃 ── */
+    .calculator-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; align-items: start; }
+    .input-stack { display: grid; gap: 16px; min-width: 0; }
+    .result-stack { position: sticky; top: 24px; display: grid; gap: 14px; min-width: 0; }
+
+    .card { padding: 22px; border-radius: 26px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .card-title { margin: 0; font-size: 19px; letter-spacing: -0.03em; }
+    .card-sub { margin: 18px 0 0; }
+
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .field { display: grid; gap: 7px; }
+    .field.is-wide { grid-column: span 2; }
+    .field label { color: #4c4358; font-size: 13px; font-weight: 800; }
+
+    .input, .textarea {
+      width: 100%; border: 1px solid var(--line); outline: none; background: white; color: var(--ink);
+      transition: border 0.18s ease, box-shadow 0.18s ease;
+    }
+    .input { min-height: 46px; padding: 0 14px; border-radius: 14px; font-weight: 700; }
+    .textarea { min-height: 100px; resize: vertical; padding: 13px 14px; border-radius: 16px; line-height: 1.55; font-weight: 650; }
+    .input:focus, .textarea:focus { border-color: rgba(103, 32, 145, 0.42); box-shadow: 0 0 0 4px rgba(103, 32, 145, 0.08); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .chip {
+      display: inline-flex; align-items: center; min-height: 30px; padding: 0 11px; border-radius: 999px;
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+    }
+    .chip.is-host { background: rgba(201, 162, 39, 0.14); color: #7a5f1e; }
+
+    /* ── 차수 ── */
+    .round-list { display: grid; gap: 12px; }
+    .round {
+      display: grid; gap: 10px; padding: 14px; border: 1px solid rgba(103, 32, 145, 0.13);
+      border-radius: 18px; background: #FFFFFF;
+    }
+    .round-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: center; }
+    .round-badge {
+      display: grid; place-items: center; min-width: 42px; height: 34px; padding: 0 10px; border-radius: 11px;
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 900;
+    }
+    .round-members { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mchip {
+      min-height: 30px; padding: 0 11px; border-radius: 999px; font-size: 12px; font-weight: 800; cursor: pointer;
+      transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+    }
+    .mchip.is-on { background: var(--primary); color: white; border: 1px solid var(--primary); }
+    .mchip.is-off { background: white; color: var(--gray); border: 1px solid var(--line-strong); text-decoration: line-through; }
+    .round-empty { color: var(--gray); font-size: 12px; font-weight: 700; }
+
+    .target-help {
+      margin-top: 12px; padding: 13px 15px; border-radius: 16px; background: rgba(243, 237, 249, 0.6);
+      color: #5b5264; font-size: 13px; line-height: 1.6; font-weight: 650;
+    }
+    .target-help b { color: var(--deep); }
+
+    /* ── 안내 문구 체크 ── */
+    .notice-options { display: grid; gap: 8px; }
+    .notice-option {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: center;
+      padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: white; cursor: pointer;
+    }
+    .notice-option input { width: 18px; height: 18px; accent-color: var(--primary); }
+    .notice-option span { color: #4c4358; font-size: 13px; font-weight: 700; line-height: 1.45; }
+
+    /* ── 버튼 ── */
+    .btn, .mini-btn {
+      display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
+      font-weight: 800; letter-spacing: -0.02em; cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+    .btn:hover, .mini-btn:hover { transform: translateY(-1px); }
+    .btn { min-height: 42px; padding: 0 16px; }
+    .mini-btn { min-height: 34px; padding: 0 12px; font-size: 12px; }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 14px 28px rgba(103, 32, 145, 0.18); }
+    .btn-secondary { border: 1px solid var(--line-strong); background: white; color: var(--primary); }
+    .btn-ghost, .mini-btn { background: var(--lavender); color: var(--primary); }
+    .btn-danger { background: rgba(161, 59, 50, 0.08); color: var(--danger); }
+    .helper-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* ── 결과 ── */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .summary-card {
+      padding: 14px; border-radius: 18px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow-sm);
+    }
+    .summary-card span { display: block; margin-bottom: 6px; color: var(--gray); font-size: 12px; font-weight: 800; }
+    .summary-card strong { display: block; color: var(--deep); font-size: 18px; letter-spacing: -0.03em; }
+
+    .receipt { overflow: hidden; border-radius: 26px; }
+    .capture-target {
+      padding: 22px;
+      background: radial-gradient(circle at 100% 0%, rgba(160, 95, 208, 0.13), transparent 18rem), #FFFFFF;
+    }
+    .receipt-head {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--line);
+    }
+    .receipt-head small {
+      display: inline-flex; margin-bottom: 8px; padding: 6px 9px; border-radius: 999px;
+      background: var(--lavender); color: var(--primary); font-size: 11px; font-weight: 900;
+    }
+    .receipt-head h2 { margin: 0; font-size: 23px; line-height: 1.2; letter-spacing: -0.04em; }
+    .receipt-head p { margin: 8px 0 0; color: #655c6f; font-size: 13px; line-height: 1.5; }
+    .receipt-total { text-align: right; white-space: nowrap; }
+    .receipt-total span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 12px; font-weight: 800; }
+    .receipt-total strong { color: var(--primary); font-size: 22px; letter-spacing: -0.04em; }
+
+    .deposit-box {
+      margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: #FAF8FC;
+      border: 1px solid rgba(103, 32, 145, 0.1); color: #51475d; font-size: 13px; line-height: 1.5; font-weight: 700;
+    }
+
+    .receipt-section { margin-top: 16px; }
+    .receipt-section h3 { margin: 0 0 10px; font-size: 14px; letter-spacing: -0.02em; }
+    .pay-list, .detail-list { display: grid; gap: 8px; }
+    .pay-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 14px; background: #FAF8FC; border: 1px solid rgba(103, 32, 145, 0.1);
+    }
+    .pay-row > span { color: #3a3145; font-weight: 800; }
+    .pay-right { display: flex; align-items: center; gap: 10px; }
+    .pay-right strong { color: var(--deep); font-size: 17px; letter-spacing: -0.02em; }
+    .pay-copy {
+      min-height: 30px; padding: 0 11px; border-radius: 999px; background: var(--lavender); color: var(--primary);
+      font-size: 12px; font-weight: 800; cursor: pointer; transition: background 0.16s ease, transform 0.16s ease;
+    }
+    .pay-copy:hover { transform: translateY(-1px); background: #E9DCF4; }
+    .pay-row.is-host { background: rgba(201, 162, 39, 0.09); border-color: rgba(201, 162, 39, 0.2); }
+    .pay-row.is-host strong { color: #7a5f1e; }
+
+    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid rgba(103, 32, 145, 0.1); }
+    .detail-line b { display: block; margin-bottom: 3px; letter-spacing: -0.02em; }
+    .detail-line span { display: block; color: var(--gray); font-size: 12px; line-height: 1.4; }
+    .detail-line strong { white-space: nowrap; color: var(--deep); letter-spacing: -0.02em; }
+
+    .notice-lines { display: grid; gap: 6px; }
+    .notice-line { color: #574d62; font-size: 13px; line-height: 1.5; font-weight: 650; }
+
+    .warning-list { display: grid; gap: 8px; }
+    .warning-item {
+      padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(161, 59, 50, 0.16);
+      background: rgba(161, 59, 50, 0.045); color: var(--danger); font-size: 13px; line-height: 1.5; font-weight: 700;
+    }
+
+    .kakao-tip {
+      padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(201, 162, 39, 0.22);
+      background: rgba(201, 162, 39, 0.08); color: #67522A; font-size: 13px; line-height: 1.6; font-weight: 650;
+    }
+    .kakao-tip b { color: #5a4622; }
+
+    .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .result-actions .btn { width: 100%; }
+    .link-row { display: flex; justify-content: flex-end; }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 28px; z-index: 999; transform: translate(-50%, 20px);
+      opacity: 0; pointer-events: none; padding: 12px 16px; border-radius: 999px;
+      background: var(--primary); color: white; font-weight: 800; box-shadow: 0 18px 42px rgba(39, 20, 52, 0.2);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+    /* ── 태블릿 ── */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      :root { --sidebar: 88px; }
+      .sidebar { width: var(--sidebar); padding: 18px 12px; }
+      .brand { justify-content: center; padding: 2px 0 18px; }
+      .brand-mark { width: 48px; height: 48px; }
+      .brand-copy, .nav-text, .nav-meta, .sidebar-card { display: none; }
+      .nav-item { justify-content: center; padding: 12px; }
+      .main { margin-left: var(--sidebar); padding: 28px 24px 44px; }
+      .calculator-layout { grid-template-columns: 1fr; }
+      .result-stack { position: relative; top: auto; }
+    }
+
+    /* ── 모바일 ── */
+    @media (max-width: 767px) {
+      .sidebar { display: none; }
+      .mobile-topbar {
+        position: fixed; inset: 0 0 auto 0; z-index: 90; display: flex; align-items: center; justify-content: space-between;
+        height: 60px; padding: 0 16px; border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px);
+      }
+      .mobile-brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: -0.03em; }
+      .mobile-brand .brand-mark { width: 34px; height: 34px; border-radius: 11px; font-size: 12px; }
+      .mobile-action { padding: 9px 13px; border-radius: 999px; background: var(--lavender); color: var(--primary); font-size: 13px; font-weight: 900; }
+      .main { margin-left: 0; padding: 76px 16px 100px; }
+      .pagehead { padding: 20px 18px; border-radius: 24px; }
+      .pagehead-title { font-size: 26px; }
+      .calculator-layout { grid-template-columns: 1fr; gap: 16px; }
+      .result-stack { position: relative; top: auto; }
+      .card { padding: 18px; border-radius: 22px; }
+      .field-grid, .result-actions { grid-template-columns: 1fr; }
+      .field.is-wide { grid-column: auto; }
+      .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .summary-card strong { font-size: 16px; }
+      .receipt-head { flex-direction: column; }
+      .receipt-total { text-align: left; }
+      .bottom-tabbar {
+        position: fixed; inset: auto 0 0 0; z-index: 100; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(18px);
+      }
+      .tab-item {
+        display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 54px; padding: 7px 4px;
+        border-radius: 14px; color: #6b6274; font-size: 11px; font-weight: 800;
+      }
+      .tab-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(103, 32, 145, 0.18); }
+      .tab-item.is-active { background: var(--lavender); color: var(--primary); }
+      .tab-item.is-active .tab-dot { background: var(--primary); }
+      .tab-item.is-disabled { opacity: 0.45; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-copy">
+          <strong>운영 커뮤니티 플랫폼</strong>
+        </span>
+      </a>
+
+      <nav class="side-nav" aria-label="데스크톱 내비게이션">
+        <span class="nav-item is-disabled" aria-disabled="true">
+          <span class="nav-icon">H</span><span class="nav-text">홈</span><span class="nav-meta">다음</span>
+        </span>
+        <a class="nav-item" href="index.html">
+          <span class="nav-icon">!</span><span class="nav-text">필독</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item is-active" href="#calcTop">
+          <span class="nav-icon">₩</span><span class="nav-text">정산기</span><span class="nav-meta">현재</span>
+        </a>
+        <span class="nav-item is-disabled" aria-disabled="true">
+          <span class="nav-icon">N</span><span class="nav-text">소식</span><span class="nav-meta">예정</span>
+        </span>
+        <a class="nav-item" href="game.html">
+          <span class="nav-icon">G</span><span class="nav-text">게임</span><span class="nav-meta">이동</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <span>정산 원칙</span>
+        <strong>입력은 적게, 결과는 명확하게</strong>
+        <p>멤버와 차수별 금액만 넣으면 1원 단위까지 자동으로 나눠 정산합니다.</p>
+      </div>
+    </aside>
+
+    <header class="mobile-topbar">
+      <a class="mobile-brand" href="#calcTop" aria-label="상단으로 이동">
+        <span class="brand-mark">EX</span><span>벙비 정산기</span>
+      </a>
+      <a class="mobile-action" href="#resultArea">결과 보기</a>
+    </header>
+
+    <main id="calcTop" class="main">
+      <section class="pagehead panel" aria-labelledby="pageTitle">
+        <span class="kicker">벙비 정산기</span>
+        <h1 id="pageTitle" class="pagehead-title">멤버와 차수만 넣으면 <span>끝</span></h1>
+        <p class="pagehead-desc">
+          1차·2차로 나눠 입력하고, 차수마다 빠진 사람만 칩에서 빼면 됩니다.
+          벙주는 자동으로 포함되고, 1원 단위까지 정확히 나눠 카톡에 바로 붙여넣게 정리됩니다.
+        </p>
+      </section>
+
+      <section class="calculator-layout" aria-label="정산 계산기">
+        <div class="input-stack">
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title">1. 모임 정보 · 멤버</h2></div>
+
+            <div class="field-grid">
+              <div class="field is-wide">
+                <label for="eventTitle">모임명</label>
+                <input id="eventTitle" class="input" type="text" placeholder="예: 강남 저녁 벙" />
+              </div>
+              <div class="field">
+                <label for="eventDate">날짜</label>
+                <input id="eventDate" class="input" type="date" />
+              </div>
+              <div class="field">
+                <label for="hostName">벙주</label>
+                <input id="hostName" class="input" type="text" placeholder="예: 엑서" />
+              </div>
+            </div>
+
+            <div class="field card-sub">
+              <label for="membersText">참여 멤버 (쉼표 또는 줄바꿈 · 벙주는 자동 포함)</label>
+              <textarea id="membersText" class="textarea" placeholder="예:&#10;민지&#10;준호&#10;서아&#10;도윤"></textarea>
+              <div id="memberChips" class="chips"></div>
+            </div>
+          </section>
+
+          <section class="card panel">
+            <div class="card-head">
+              <h2 class="card-title">2. 차수별 비용</h2>
+              <button id="addRoundBtn" class="btn btn-primary" type="button">차수 추가</button>
+            </div>
+
+            <div id="roundsHost" class="round-list"></div>
+
+            <div class="target-help">
+              <b>칩 사용법</b> — 차수마다 참여 멤버가 칩으로 나와요. 그 차수에 <b>빠진 사람만 눌러서 끄면</b>
+              됩니다. 켜진 칩(보라색)만 1/N 대상이에요.
+            </div>
+          </section>
+
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title">3. 입금 정보</h2></div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="payBank">은행</label>
+                <input id="payBank" class="input" type="text" placeholder="예: 카카오뱅크" />
+              </div>
+              <div class="field">
+                <label for="payHolder">예금주</label>
+                <input id="payHolder" class="input" type="text" placeholder="예: 엑서" />
+              </div>
+              <div class="field is-wide">
+                <label for="payAccount">계좌번호</label>
+                <input id="payAccount" class="input" type="text" placeholder="예: 3333-00-000000" />
+              </div>
+            </div>
+            <label class="notice-option" style="margin-top:12px">
+              <input id="payKakao" type="checkbox" />
+              <span>카카오페이 송금도 가능해요</span>
+            </label>
+          </section>
+
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title">4. 안내 문구</h2></div>
+            <div id="noticeOptions" class="notice-options"></div>
+          </section>
+
+          <div class="helper-row">
+            <button id="loadSampleBtn" class="btn btn-secondary" type="button">예시 불러오기</button>
+            <button id="resetBtn" class="btn btn-danger" type="button">초기화</button>
+          </div>
+        </div>
+
+        <aside id="resultArea" class="result-stack" aria-label="정산 결과">
+          <div id="summaryGrid" class="summary-grid"></div>
+
+          <section class="receipt panel" aria-label="공유용 정산 결과">
+            <div id="captureTarget" class="capture-target"></div>
+          </section>
+
+          <div class="kakao-tip">
+            <b>카톡 알림 팁</b> — 붙여넣은 <b>@닉네임</b>은 글자로만 보이고 알림은 가지 않아요.
+            알림이 꼭 필요한 사람은 채팅창에서 <b>@를 직접 입력해 멤버를 선택</b>한 뒤 금액을 붙여주세요.
+            명단의 <b>복사</b> 버튼으로 한 명씩 빠르게 처리할 수 있어요.
+          </div>
+
+          <div class="result-actions">
+            <button id="copyTextBtn" class="btn btn-primary" type="button">전체 복사</button>
+            <button id="saveImageBtn" class="btn btn-secondary" type="button">이미지 저장</button>
+          </div>
+          <div class="link-row">
+            <button id="copyLinkBtn" class="mini-btn" type="button">정산기 주소 복사</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+      <span class="tab-item is-disabled" aria-disabled="true"><span class="tab-dot"></span>홈</span>
+      <a class="tab-item" href="index.html"><span class="tab-dot"></span>필독</a>
+      <a class="tab-item is-active" href="#calcTop"><span class="tab-dot"></span>정산</a>
+      <span class="tab-item is-disabled" aria-disabled="true"><span class="tab-dot"></span>소식</span>
+      <a class="tab-item" href="game.html"><span class="tab-dot"></span>게임</a>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const NOTICES = [
+      { id: "split", text: "금액은 차수별 참여 인원으로 나눠 계산했어요." },
+      { id: "host", text: "정산 기준은 벙주 재량으로 조정될 수 있어요." },
+      { id: "personal", text: "따로 개인적으로 산 항목은 정산에서 빼뒀어요." },
+      { id: "fast", text: "확인하고 가능한 빨리 입금 부탁드려요." }
+    ];
+
+    function uid() { return Math.random().toString(36).slice(2, 9); }
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function createRound(name = "", amount = 0, excluded = []) { return { id: uid(), name, amount, excluded }; }
+
+    const state = {
+      eventTitle: "강남 저녁 벙",
+      eventDate: today(),
+      hostName: "엑서",
+      membersText: "민지\n준호\n서아\n도윤",
+      rounds: [
+        createRound("고기집", 168000, []),
+        createRound("카페", 39000, ["준호", "도윤"])
+      ],
+      pay: { bank: "카카오뱅크", account: "3333-00-000000", holder: "엑서", kakao: true },
+      notices: { split: true, host: false, personal: true, fast: true }
+    };
+
+    const $ = (id) => document.getElementById(id);
+    let toastTimer = null;
+    let cachedFontCSS = null;
+
+    function escapeHTML(value) {
+      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
+    }
+    function parseNames(text) {
+      return [...new Set(String(text || "").split(/[\n,]+/).map((n) => n.replace(/^@/, "").trim()).filter(Boolean))];
+    }
+    function memberPool() {
+      const list = parseNames(state.membersText);
+      const host = state.hostName.trim();
+      if (host && !list.includes(host)) list.unshift(host);
+      return list;
+    }
+    function toAmount(value) { return Number(String(value).replace(/[^\d]/g, "") || 0); }
+    function formatNumber(value) { return Math.round(Number(value) || 0).toLocaleString("ko-KR"); }
+    function formatWon(value) { return `${formatNumber(value)}원`; }
+    function sameName(a, b) { return String(a || "").trim() === String(b || "").trim(); }
+
+    // 잔돈을 대상자에게 1원씩 순서대로 배분 → 합계가 항상 정확히 맞음
+    function distributeExtra(shares, targets, extra) {
+      let remaining = extra, cursor = 0;
+      while (remaining > 0 && targets.length > 0) {
+        const t = targets[cursor % targets.length];
+        shares.set(t, (shares.get(t) || 0) + 1);
+        remaining -= 1; cursor += 1;
+      }
+    }
+
+    function calculate() {
+      const members = memberPool();
+      const host = state.hostName.trim();
+      const totals = new Map(members.map((n) => [n, 0]));
+      let totalAmount = 0;
+      const rounds = [];
+      const warnings = [];
+
+      state.rounds.forEach((r, idx) => {
+        const amount = Math.max(0, Number(r.amount) || 0);
+        const label = (r.name && r.name.trim()) ? `${idx + 1}차 ${r.name.trim()}` : `${idx + 1}차`;
+        const ex = new Set(r.excluded);
+        const active = members.filter((n) => !ex.has(n));
+
+        if (!amount) return;
+        if (!active.length) { warnings.push(`${label}: 참여 멤버가 없어 계산에서 빠졌어요.`); return; }
+
+        totalAmount += amount;
+        const base = Math.floor(amount / active.length);
+        const remainder = amount - base * active.length;
+        const shares = new Map(active.map((n) => [n, base]));
+        const nonHost = active.filter((n) => !sameName(n, host));
+        const targets = nonHost.length ? nonHost : active;
+        distributeExtra(shares, targets, remainder);
+
+        active.forEach((n) => totals.set(n, (totals.get(n) || 0) + shares.get(n)));
+        rounds.push({ label, amount, count: active.length, active });
+      });
+
+      const paymentRows = members
+        .filter((n) => host ? !sameName(n, host) : true)
+        .map((n) => ({ name: n, amount: totals.get(n) || 0 }))
+        .filter((r) => r.amount > 0);
+
+      const totalReceivable = paymentRows.reduce((s, r) => s + r.amount, 0);
+      const hostBurden = Math.max(0, totalAmount - totalReceivable);
+      return { members, host, totals, paymentRows, totalAmount, totalReceivable, hostBurden, rounds, warnings };
+    }
+
+    function payText() {
+      const { bank, account, holder, kakao } = state.pay;
+      let s = [bank.trim(), account.trim()].filter(Boolean).join(" ");
+      if (holder.trim()) s += s ? ` (${holder.trim()})` : holder.trim();
+      if (kakao) s += s ? " · 카카오페이 가능" : "카카오페이 가능";
+      return s.trim();
+    }
+    function checkedNotices() { return NOTICES.filter((n) => state.notices[n.id]); }
+
+    function hydrateInputs() {
+      $("eventTitle").value = state.eventTitle;
+      $("eventDate").value = state.eventDate;
+      $("hostName").value = state.hostName;
+      $("membersText").value = state.membersText;
+      $("payBank").value = state.pay.bank;
+      $("payAccount").value = state.pay.account;
+      $("payHolder").value = state.pay.holder;
+      $("payKakao").checked = state.pay.kakao;
+    }
+
+    function renderMembers() {
+      const members = memberPool();
+      const host = state.hostName.trim();
+      $("memberChips").innerHTML = members.length
+        ? members.map((n) => {
+            const isHost = sameName(n, host);
+            return `<span class="chip${isHost ? " is-host" : ""}">${escapeHTML(n)}${isHost ? " ·벙주" : ""}</span>`;
+          }).join("")
+        : `<span class="chip">멤버 없음</span>`;
+    }
+
+    function renderRounds() {
+      const members = memberPool();
+      const host = state.hostName.trim();
+      $("roundsHost").innerHTML = state.rounds.map((r, idx) => `
+        <div class="round" data-round-id="${escapeHTML(r.id)}">
+          <div class="round-head">
+            <span class="round-badge">${idx + 1}차</span>
+            <input class="input" type="text" placeholder="예: 고기집 (선택)" value="${escapeHTML(r.name)}"
+              data-field="round-name" data-round-id="${escapeHTML(r.id)}" />
+            <button class="mini-btn" type="button" data-action="del-round" data-round-id="${escapeHTML(r.id)}">삭제</button>
+          </div>
+          <input class="input" type="text" inputmode="numeric" placeholder="금액"
+            value="${r.amount ? formatNumber(r.amount) : ""}"
+            data-field="round-amount" data-round-id="${escapeHTML(r.id)}" />
+          <div class="round-members">
+            ${members.length
+              ? members.map((n) => {
+                  const on = !r.excluded.includes(n);
+                  const isHost = sameName(n, host);
+                  return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button"
+                    data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " ·벙주" : ""}</button>`;
+                }).join("")
+              : `<span class="round-empty">참여 멤버를 먼저 입력해주세요</span>`}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderNotices() {
+      $("noticeOptions").innerHTML = NOTICES.map((n) => `
+        <label class="notice-option">
+          <input type="checkbox" data-notice="${escapeHTML(n.id)}" ${state.notices[n.id] ? "checked" : ""} />
+          <span>${escapeHTML(n.text)}</span>
+        </label>
+      `).join("");
+    }
+
+    function renderResults() {
+      const c = calculate();
+
+      $("summaryGrid").innerHTML = `
+        <div class="summary-card"><span>총 결제</span><strong>${formatWon(c.totalAmount)}</strong></div>
+        <div class="summary-card"><span>받을 금액</span><strong>${formatWon(c.totalReceivable)}</strong></div>
+        <div class="summary-card"><span>벙주 부담</span><strong>${formatWon(c.hostBurden)}</strong></div>
+      `;
+
+      const payHTML = c.paymentRows.length
+        ? c.paymentRows.map((row) => `
+          <div class="pay-row">
+            <span>@${escapeHTML(row.name)}</span>
+            <div class="pay-right">
+              <strong>${formatWon(row.amount)}</strong>
+              <button class="pay-copy no-capture" type="button" data-copy="@${escapeHTML(row.name)} ${formatWon(row.amount)}">복사</button>
+            </div>
+          </div>`).join("")
+        : `<div class="pay-row"><span>입금 대상</span><div class="pay-right"><strong>없음</strong></div></div>`;
+
+      const detailHTML = c.rounds.length
+        ? c.rounds.map((r) => `
+          <div class="detail-line">
+            <div><b>${escapeHTML(r.label)}</b><span>${r.count}명 · ${escapeHTML(r.active.join(", "))}</span></div>
+            <strong>${formatWon(r.amount)}</strong>
+          </div>`).join("")
+        : `<div class="detail-line"><div><b>입력된 차수가 없어요</b><span>차수와 금액을 입력해주세요.</span></div><strong>${formatWon(0)}</strong></div>`;
+
+      const pt = payText();
+      const notices = checkedNotices();
+
+      $("captureTarget").innerHTML = `
+        <div class="receipt-head">
+          <div>
+            <small>정산 안내</small>
+            <h2>${escapeHTML(state.eventTitle || "모임 정산")}</h2>
+            <p>${state.eventDate ? `${escapeHTML(state.eventDate)} · ` : ""}벙주 ${escapeHTML(c.host || "-")}</p>
+          </div>
+          <div class="receipt-total"><span>총 결제</span><strong>${formatWon(c.totalAmount)}</strong></div>
+        </div>
+
+        ${pt ? `<div class="deposit-box">입금 정보<br />${escapeHTML(pt)}</div>` : ""}
+
+        <div class="receipt-section">
+          <h3>입금 명단</h3>
+          <div class="pay-list">
+            ${payHTML}
+            <div class="pay-row is-host"><span>벙주 부담</span><strong>${formatWon(c.hostBurden)}</strong></div>
+          </div>
+        </div>
+
+        <div class="receipt-section">
+          <h3>차수별 내역</h3>
+          <div class="detail-list">${detailHTML}</div>
+        </div>
+
+        ${notices.length ? `
+          <div class="receipt-section">
+            <h3>안내</h3>
+            <div class="notice-lines">${notices.map((n) => `<div class="notice-line">· ${escapeHTML(n.text)}</div>`).join("")}</div>
+          </div>` : ""}
+
+        ${c.warnings.length ? `
+          <div class="receipt-section">
+            <h3>확인 필요</h3>
+            <div class="warning-list">${c.warnings.map((w) => `<div class="warning-item">${escapeHTML(w)}</div>`).join("")}</div>
+          </div>` : ""}
+      `;
+    }
+
+    function buildCopyText() {
+      const c = calculate();
+      const L = [];
+      L.push(`[${state.eventTitle || "모임 정산"}] 정산`);
+      const sub = [];
+      if (state.eventDate) sub.push(state.eventDate);
+      sub.push(`벙주 ${c.host || "-"}`);
+      L.push(sub.join(" · "));
+      L.push("");
+      if (c.paymentRows.length) c.paymentRows.forEach((r) => L.push(`@${r.name} ${formatWon(r.amount)}`));
+      else L.push("입금 대상 없음");
+      L.push("");
+      L.push(`총 ${formatWon(c.totalAmount)} · 벙주부담 ${formatWon(c.hostBurden)}`);
+      const pt = payText();
+      if (pt) { L.push(""); L.push(`입금: ${pt}`); }
+      const notices = checkedNotices();
+      if (notices.length) { L.push(""); notices.forEach((n) => L.push(`· ${n.text}`)); }
+      return L.join("\n");
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.left = "-9999px";
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand("copy"); ta.remove();
+        }
+        return true;
+      } catch (e) { console.error(e); return false; }
+    }
+
+    async function copyResultText() {
+      const ok = await copyToClipboard(buildCopyText());
+      showToast(ok ? "정산 결과를 복사했어요." : "복사에 실패했어요.");
+    }
+
+    async function saveResultImage() {
+      const target = $("captureTarget");
+      const button = $("saveImageBtn");
+      if (!window.htmlToImage) { showToast("이미지 저장 라이브러리를 불러오지 못했어요."); return; }
+
+      try {
+        button.disabled = true; button.textContent = "저장 중...";
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+        if (cachedFontCSS === null && typeof window.htmlToImage.getFontEmbedCSS === "function") {
+          try { cachedFontCSS = await window.htmlToImage.getFontEmbedCSS(target); }
+          catch (e) { cachedFontCSS = ""; }
+        }
+
+        const options = {
+          pixelRatio: 2, backgroundColor: "#FFFFFF", cacheBust: true,
+          filter: (node) => !(node.classList && node.classList.contains("no-capture"))
+        };
+        if (cachedFontCSS) options.fontEmbedCSS = cachedFontCSS;
+
+        // 1차 렌더로 폰트/리소스 임베드(폐기), 2차 렌더 저장 → 글자 깨짐 방지
+        await window.htmlToImage.toPng(target, options);
+        const dataUrl = await window.htmlToImage.toPng(target, options);
+
+        const link = document.createElement("a");
+        const safeTitle = (state.eventTitle || "정산결과").replace(/[\\/:*?"<>|]/g, "_");
+        link.download = `${safeTitle}_${state.eventDate || today()}.png`;
+        link.href = dataUrl; link.click();
+        showToast("정산 이미지를 저장했어요.");
+      } catch (e) {
+        console.error(e); showToast("이미지 저장에 실패했어요.");
+      } finally {
+        button.disabled = false; button.textContent = "이미지 저장";
+      }
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message; toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2200);
+    }
+
+    function renderAll() { renderMembers(); renderRounds(); renderNotices(); renderResults(); }
+
+    function loadSample() {
+      state.eventTitle = "강남 저녁 벙";
+      state.eventDate = today();
+      state.hostName = "엑서";
+      state.membersText = "민지\n준호\n서아\n도윤";
+      state.rounds = [
+        createRound("고기집", 168000, []),
+        createRound("주류 추가", 42000, ["민지", "서아"]),
+        createRound("카페", 39500, ["준호", "도윤"])
+      ];
+      state.pay = { bank: "카카오뱅크", account: "3333-00-000000", holder: "엑서", kakao: true };
+      state.notices = { split: true, host: false, personal: true, fast: true };
+      hydrateInputs(); renderAll(); showToast("예시 데이터를 불러왔어요.");
+    }
+
+    function resetAll() {
+      state.eventTitle = "";
+      state.eventDate = today();
+      state.hostName = "";
+      state.membersText = "";
+      state.rounds = [createRound("", 0, [])];
+      state.pay = { bank: "", account: "", holder: "", kakao: false };
+      state.notices = { split: true, host: false, personal: false, fast: true };
+      hydrateInputs(); renderAll(); showToast("초기화했어요.");
+    }
+
+    function findRound(id) { return state.rounds.find((r) => r.id === id); }
+
+    function bindEvents() {
+      $("eventTitle").addEventListener("input", (e) => { state.eventTitle = e.target.value; renderResults(); });
+      $("eventDate").addEventListener("input", (e) => { state.eventDate = e.target.value; renderResults(); });
+      $("hostName").addEventListener("input", (e) => { state.hostName = e.target.value; renderMembers(); renderRounds(); renderResults(); });
+      $("membersText").addEventListener("input", (e) => { state.membersText = e.target.value; renderMembers(); renderRounds(); renderResults(); });
+
+      $("payBank").addEventListener("input", (e) => { state.pay.bank = e.target.value; renderResults(); });
+      $("payAccount").addEventListener("input", (e) => { state.pay.account = e.target.value; renderResults(); });
+      $("payHolder").addEventListener("input", (e) => { state.pay.holder = e.target.value; renderResults(); });
+      $("payKakao").addEventListener("change", (e) => { state.pay.kakao = e.target.checked; renderResults(); });
+
+      $("noticeOptions").addEventListener("change", (e) => {
+        const id = e.target.dataset.notice;
+        if (!id) return;
+        state.notices[id] = e.target.checked;
+        renderResults();
+      });
+
+      $("addRoundBtn").addEventListener("click", () => {
+        state.rounds.push(createRound("", 0, []));
+        renderRounds(); renderResults();
+      });
+
+      $("roundsHost").addEventListener("input", (e) => {
+        const t = e.target, field = t.dataset.field, id = t.dataset.roundId;
+        if (!field || !id) return;
+        const round = findRound(id);
+        if (!round) return;
+        if (field === "round-name") round.name = t.value;
+        if (field === "round-amount") round.amount = toAmount(t.value);
+        renderResults();
+      });
+
+      $("roundsHost").addEventListener("focusout", (e) => {
+        if (e.target.dataset.field !== "round-amount") return;
+        const amount = toAmount(e.target.value);
+        e.target.value = amount ? formatNumber(amount) : "";
+      });
+
+      $("roundsHost").addEventListener("click", (e) => {
+        const chip = e.target.closest(".mchip");
+        if (chip) {
+          const round = findRound(chip.dataset.roundId);
+          if (!round) return;
+          const name = chip.dataset.name;
+          const ex = new Set(round.excluded);
+          if (ex.has(name)) { ex.delete(name); chip.classList.remove("is-off"); chip.classList.add("is-on"); }
+          else { ex.add(name); chip.classList.add("is-off"); chip.classList.remove("is-on"); }
+          round.excluded = [...ex];
+          renderResults();
+          return;
+        }
+        const del = e.target.closest("[data-action='del-round']");
+        if (del) {
+          state.rounds = state.rounds.filter((r) => r.id !== del.dataset.roundId);
+          if (state.rounds.length === 0) state.rounds.push(createRound("", 0, []));
+          renderRounds(); renderResults();
+        }
+      });
+
+      $("captureTarget").addEventListener("click", async (e) => {
+        const button = e.target.closest(".pay-copy");
+        if (!button) return;
+        const ok = await copyToClipboard(button.dataset.copy);
+        showToast(ok ? "복사했어요. 채팅창에 붙여넣어 주세요." : "복사에 실패했어요.");
+      });
+
+      $("copyTextBtn").addEventListener("click", copyResultText);
+      $("saveImageBtn").addEventListener("click", saveResultImage);
+      $("copyLinkBtn").addEventListener("click", async () => {
+        const ok = await copyToClipboard(window.location.href);
+        showToast(ok ? "정산기 주소를 복사했어요." : "복사에 실패했어요.");
+      });
+      $("loadSampleBtn").addEventListener("click", loadSample);
+      $("resetBtn").addEventListener("click", resetAll);
+    }
+
+    hydrateInputs();
+    renderAll();
+    bindEvents();
+  </script>
+</body>
+</html>
