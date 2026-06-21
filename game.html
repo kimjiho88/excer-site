@@ -284,13 +284,13 @@ const STAGE_KILLS=8; // 스테이지당 처치 수
 /* ---------- 상태 ---------- */
 let S=load();
 function fresh(){return{ver:2,lv:1,exp:0,gold:60,stones:0,gems:30,energy:MAXE,lastEnergyAt:Date.now(),lastSeen:Date.now(),
- region:1,stage:1,bestRegion:1,bestStage:1,kills:0,keCtr:0,pity:0,skillPts:0,arenaPts:1000,arenaCdUntil:0,rebirth:0,
+ region:1,stage:1,stageKC:0,bestRegion:1,bestStage:1,kills:0,keCtr:0,pity:0,skillPts:0,arenaPts:1000,arenaCdUntil:0,rebirth:0,
  equip:{weapon:null,top:null,head:null,legs:null,cape:null},inv:[],dex:{},
  skills:{atk:0,luck:0,wealth:0,haste:0,collect:0},
  daily:{date:today(),pulls:0,kills:0,enh:0,won:0,claimed:{}},
  attend:{last:"",streak:0,claimed:false},chestAt:0,autoSalvage:0};}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.ver===2)return s;}catch(e){}return fresh();}
-function save(){S.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){S.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof NET!=="undefined"&&NET.ready&&typeof netSubmit==="function")netSubmit(false);}
 function today(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
 
 /* ===================================================================
@@ -316,9 +316,16 @@ async function netInit(){
  }catch(e){NET.err=e;NET.ready=false;setBanner(false);}
 }
 async function netRefresh(){if(!NET.ready)return;
- try{const r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op,rebirth,banned").order("power",{ascending:false}).limit(200);
-  if(!r.error&&r.data){NET.roster=r.data;const mine=r.data.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);if(TAB==="rank")renderRank();}
- }catch(e){}}
+ try{
+  let r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op,rebirth,banned").order("power",{ascending:false}).limit(200);
+  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op,rebirth").order("power",{ascending:false}).limit(200);
+  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op").order("power",{ascending:false}).limit(200);
+  if(!r.error&&r.data){
+    NET.roster=r.data.map(x=>({rebirth:0,banned:false,...x}));
+    const mine=NET.roster.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);
+    if(TAB==="rank")renderRank();
+  }else NET.err=r.error;
+ }catch(e){NET.err=e;}}
 async function netSubmit(force){if(!NET.ready||!NET.nick)return;
  const now=Date.now();if(!force&&now-NET.lastSubmit<8000)return;NET.lastSubmit=now;
  try{await NET.sb.from("game_players").upsert({uid:NET.uid,nick:NET.nick,lv:S.lv,gear_power:gearPow(),rebirth:S.rebirth,
@@ -327,7 +334,7 @@ async function netSubmit(force){if(!NET.ready||!NET.nick)return;
 function liveBoard(metric){
  const col={pow:"power",lv:"lv",bestStage:"best_stage",dex:"dex_count",arena:"arena_pts",rebirth:"rebirth"}[metric];
  const M=me();
- const list=NET.roster.filter(r=>!r.banned).map(r=>{
+ const list=NET.roster.filter(r=>!r.banned&&(!r.is_op||r.uid===NET.uid)).map(r=>{
    if(r.uid===NET.uid)return {...M,val:M[metric]};            // 내 행은 항상 현재 상태로 표시(#3)
    return {handle:(r.nick||"익명").split("/")[0],name:r.nick||"익명",pow:r.power,lv:r.lv,bestStage:r.best_stage,dex:r.dex_count,arena:r.arena_pts,rebirth:r.rebirth||0,op:r.is_op,me:false,val:r[col]};
  });
@@ -461,7 +468,7 @@ function rebirth(){if(!canRebirth()){toast("레벨 "+(30+S.rebirth*10)+" 이상�
  const keepDex=S.dex,keepReb=S.rebirth+1,keepGems=S.gems;
  const n=fresh();n.dex=keepDex;n.rebirth=keepReb;n.gems=keepGems+30;
  n.skillPts=keepReb;n.gold=800*keepReb;n.stones=50*keepReb;   // 환생 메리트: 보너스 특성P + 시작 자원
- S=n;save();updateTop();renderTab();toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");}
+ S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");}
 
 /* ===================================================================
    랭킹 / 봇 / 아레나
@@ -498,7 +505,7 @@ function bots(){
 function me(){return{me:true,name:"나",handle:"나",pow:power(),lv:S.lv,bestStage:(S.bestRegion-1)*10+S.bestStage,dex:dexCount(),arena:S.arenaPts,rebirth:S.rebirth,op:false};}
 function board(metric){
  if(NET.ready&&NET.roster&&NET.roster.length)return liveBoard(metric);
- const list=bots().map(b=>({...b,val:b[metric]})).concat([{...me(),val:me()[metric]}]);
+ const list=bots().map(b=>({...b,val:b[metric]})).concat([{...me(),val:me()[metric]}]).filter(e=>e.me||!e.op);
  list.sort((a,b)=>b.val-a.val||b.pow-a.pow);
  return list;}
 function myRank(metric){const l=board(metric);return l.findIndex(x=>x.me)+1;}
@@ -597,7 +604,7 @@ function kill(z){zombies=zombies.filter(x=>x!==z);
  if(Math.random()<drop){const it=makeItem();const r=gainItem(it,true);
    if(!r.salvaged)toast("전리품 · "+RAR[it.rarity].k+" "+NAMES[it.type]);}
  // 스테이지 진행
- if(z.boss){S.region++;S.stage=1;zombies=[];spawnT=300;toast("🏆 보스 처치! "+regionName()+" 진입");}
+ if(z.boss){S.region++;S.stage=1;zombies=[];spawnT=300;toast("🏆 보스 처치! "+regionLabel()+" 진입");}
  else{S.stageKC=(S.stageKC||0)+1;if(S.stageKC>=STAGE_KILLS){S.stageKC=0;S.stage=Math.min(10,S.stage+1);}}
  const cr=(S.region-1)*10+S.stage;const br=(S.bestRegion-1)*10+S.bestStage;
  if(cr>br){S.bestRegion=S.region;S.bestStage=S.stage;}
