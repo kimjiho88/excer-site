@@ -298,7 +298,7 @@ function today(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+
    아래 두 값만 채우면 실시간 랭킹이 켜집니다. 비우면 봇 랭킹으로 동작.
    =================================================================== */
 const SUPA={url:"https://drggzlnzwvkhtalvkqyo.supabase.co",anon:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"};   // ← Supabase 프로젝트 URL / anon key 붙여넣기
-const NET={ready:false,sb:null,uid:null,nick:null,roster:null,lastSubmit:0,err:null};
+const NET={ready:false,sb:null,uid:null,nick:null,roster:null,lastSubmit:0,submitting:false,err:null};
 async function netInit(){
  try{
   if(!SUPA.url||!SUPA.anon||typeof window==="undefined"||typeof window.supabase==="undefined")return;
@@ -333,21 +333,28 @@ async function netInit(){
 }
 async function netRefresh(){if(!NET.ready)return;
  try{
-  const cols="uid,nick,lv,gear_power,best_stage,atk_lv,collect_lv,dex_count,arena_pts,is_op,rebirth,banned";
-  let r=await NET.sb.from("game_players").select(cols).order("gear_power",{ascending:false}).limit(300);
-  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,lv,gear_power,best_stage,atk_lv,collect_lv,dex_count,arena_pts,is_op,rebirth").order("gear_power",{ascending:false}).limit(300);
-  if(r.error)r=await NET.sb.from("game_players").select("*").limit(300);
-  if(!r.error&&r.data){
-    NET.roster=r.data.map(x=>({rebirth:0,banned:false,gear_power:0,atk_lv:0,collect_lv:0,dex_count:0,best_stage:1,...x}));
-    const mine=NET.roster.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);
-    if(TAB==="rank")renderRank();
-  }else NET.err=r.error;
- }catch(e){NET.err=e;}}
+  let r=await NET.sb.from("game_players").select("*").order("power",{ascending:false}).limit(1000);
+  if(r.error)r=await NET.sb.from("game_players").select("*").order("gear_power",{ascending:false}).limit(1000);
+  if(r.error)r=await NET.sb.from("game_players").select("*").limit(1000);
+  if(r.error)throw r.error;
+  NET.roster=(r.data||[]).map(x=>({rebirth:0,banned:false,gear_power:0,atk_lv:0,collect_lv:0,dex_count:0,best_stage:1,...x}));
+  const mine=NET.roster.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);
+  NET.err=null;setBanner(true);
+  if(TAB==="rank")renderRank();
+ }catch(e){NET.err=e;setBanner(false);if(typeof console!=="undefined"&&console.error)console.error("[랭킹 새로고침 실패]",e);if(TAB==="rank")toast("랭킹 불러오기 실패: "+(e&&e.message||e));}}
+function mergeRoster(row){if(!row)return;if(!NET.roster)NET.roster=[];NET.roster=[row,...NET.roster.filter(x=>x.uid!==row.uid)];}
 async function netSubmit(force){if(!NET.ready||!NET.nick)return;
- const now=Date.now();if(!force&&now-NET.lastSubmit<8000)return;NET.lastSubmit=now;
- try{await NET.sb.from("game_players").upsert({uid:NET.uid,nick:NET.nick,lv:S.lv,gear_power:gearPow(),rebirth:S.rebirth,
-   atk_lv:S.skills.atk,collect_lv:S.skills.collect,dex_count:dexCount(),best_stage:(S.bestRegion-1)*10+S.bestStage,arena_pts:S.arenaPts},{onConflict:"uid"});
- }catch(e){}}
+ const now=Date.now();if(!force&&now-NET.lastSubmit<8000)return;if(NET.submitting)return;NET.submitting=true;
+ try{
+  const payload={uid:NET.uid,nick:NET.nick,lv:S.lv,gear_power:gearPow(),rebirth:S.rebirth,
+   atk_lv:S.skills.atk,collect_lv:S.skills.collect,dex_count:dexCount(),best_stage:(S.bestRegion-1)*10+S.bestStage,arena_pts:S.arenaPts};
+  const r=await NET.sb.from("game_players").upsert(payload,{onConflict:"uid"}).select("*").single();
+  if(r.error)throw r.error;
+  mergeRoster(r.data);                                  // 서버가 계산한 내 power를 로스터에 즉시 반영
+  NET.err=null;NET.lastSubmit=Date.now();setBanner(true);
+  if(TAB==="rank")renderRank();
+ }catch(e){NET.err=e;setBanner(false);if(typeof console!=="undefined"&&console.error)console.error("[랭킹 저장 실패]",e);if(force)toast("랭킹 저장 실패: "+(e&&e.message||e));}
+ finally{NET.submitting=false;}}
 function liveBoard(metric){
  const M=me();
  const list=NET.roster.filter(r=>!r.banned&&(!r.is_op||r.uid===NET.uid)).map(r=>{
@@ -380,13 +387,15 @@ function itemPow(it){return Math.round(it.power*(1+it.plus*0.13));}
 function gearPow(){let p=0;for(const s in S.equip){const it=S.equip[s];if(it)p+=itemPow(it);}return p;}
 function bestStageEff(){const raw=(S.bestRegion-1)*10+S.bestStage;return Math.min(raw,100+S.lv*14+S.rebirth*100);}
 // 다른 사람의 전투력도 '그 사람의 구성요소'로 동일 공식 계산 → DB 계산식과 무관, 항상 일치
+function nnum(v,d){const n=Number(v);return Number.isFinite(n)?n:(d||0);}
 function calcPow(r){
- const lv=r.lv||1,reb=r.rebirth||0;
- const bs=Math.min(r.best_stage||1,100+lv*14+reb*100);
- const base=12+lv*6+bs*2+(r.gear_power||0);
- const atk=1+(r.atk_lv||0)*0.06;
- const dex=1+((r.dex_count||0)*1.2*(1+(r.collect_lv||0)*0.25))/100;
- return Math.floor(base*atk*dex*(1+reb*0.25));
+ const sp=nnum(r.power,-1);
+ if(sp>=0)return Math.floor(sp);                 // 서버가 계산한 power가 있으면 그 값을 신뢰(버전 차이에도 모두 동일)
+ const lv=nnum(r.lv,1),reb=nnum(r.rebirth,0);    // 구버전/오프라인 fallback
+ const bs=Math.min(nnum(r.best_stage,1),100+lv*14+reb*100);
+ const atk=1+nnum(r.atk_lv,0)*0.06;
+ const dex=1+(nnum(r.dex_count,0)*1.2*(1+nnum(r.collect_lv,0)*0.25))/100;
+ return Math.floor((12+lv*6+bs*2+nnum(r.gear_power,0))*atk*dex*(1+reb*0.25));
 }
 function power(){
  const base=12+S.lv*6+bestStageEff()*2;   // 진행도(최고 스테이지)도 전투력에 반영
@@ -685,10 +694,12 @@ function renderTab(){updateTop();
  else if(TAB==="grow")renderGrow();
  else if(TAB==="rank")renderRank();
 }
+async function syncRankNow(){if(!NET.ready||!NET.nick)return;await netSubmit(true);await netRefresh();if(TAB==="rank")renderRank();}
 function go(tab){TAB=tab;sceneActive=(tab==="hunt");
  $$(".pane").forEach(p=>p.style.display="none");const pane=$("#p-"+tab);if(pane)pane.style.display="block";
  $$(".tabbtn").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
- renderTab();}
+ renderTab();
+ if(tab==="rank"&&NET.ready&&NET.nick)syncRankNow();}
 
 function renderHunt(){
  rollDaily();
