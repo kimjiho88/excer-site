@@ -468,6 +468,7 @@ function rebirth(){if(!canRebirth()){toast("레벨 "+(30+S.rebirth*10)+" 이상�
  const keepDex=S.dex,keepReb=S.rebirth+1,keepGems=S.gems;
  const n=fresh();n.dex=keepDex;n.rebirth=keepReb;n.gems=keepGems+30;
  n.skillPts=keepReb;n.gold=800*keepReb;n.stones=50*keepReb;   // 환생 메리트: 보너스 특성P + 시작 자원
+ n.bestRegion=S.bestRegion;n.bestStage=S.bestStage;           // 최고기록은 보존
  S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");}
 
 /* ===================================================================
@@ -502,7 +503,7 @@ function bots(){
  }
  return _bots;
 }
-function me(){return{me:true,name:"나",handle:"나",pow:power(),lv:S.lv,bestStage:(S.bestRegion-1)*10+S.bestStage,dex:dexCount(),arena:S.arenaPts,rebirth:S.rebirth,op:false};}
+function me(){const nk=(typeof NET!=="undefined"&&NET.nick)?NET.nick:null;return{me:true,name:nk||"나",handle:nk?nk.split("/")[0]:"나",pow:power(),lv:S.lv,bestStage:(S.bestRegion-1)*10+S.bestStage,dex:dexCount(),arena:S.arenaPts,rebirth:S.rebirth,op:false};}
 function board(metric){
  if(NET.ready&&NET.roster&&NET.roster.length)return liveBoard(metric);
  const list=bots().map(b=>({...b,val:b[metric]})).concat([{...me(),val:me()[metric]}]).filter(e=>e.me||!e.op);
@@ -798,7 +799,7 @@ function renderRank(){
  list.slice(0,30).forEach((e,i)=>{
   s+='<div class="rrow'+(e.me?' meRow':'')+(e.rebirth>0?' hasReb':'')+'"><div class="rno">'+(i+1)+'</div><div class="rnm">'+e.handle+(e.op?' <span class="op">👑</span>':'')+rebTag(e.rebirth)+'<span class="rmeta"> Lv.'+e.lv+'</span></div><div class="rval">'+valLab(e.val)+'</div></div>';});
  s+='</div>';
- if(myr>30){s+='<div class="rrow meRow"><div class="rno">'+myr+'</div><div class="rnm">나</div><div class="rval">'+valLab(me0.val)+'</div></div>';}
+ if(myr>30){s+='<div class="rrow meRow'+(me0.rebirth>0?' hasReb':'')+'"><div class="rno">'+myr+'</div><div class="rnm">'+me0.handle+' (나)'+rebTag(me0.rebirth)+'<span class="rmeta"> Lv.'+me0.lv+'</span></div><div class="rval">'+valLab(me0.val)+'</div></div>';}
  s+='<p class="muted small" style="text-align:center;margin-top:8px">👑 운영진은 경쟁 집계에서 제외돼요</p>';
  s+='</div>';
  // 아레나
