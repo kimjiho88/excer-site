@@ -308,6 +308,22 @@ async function netInit(){
   NET.uid=ses&&ses.user&&ses.user.id;if(!NET.uid)return;
   try{NET.nick=localStorage.getItem("nh_nick");}catch(e){}
   NET.ready=true;
+  // 클라우드 백업 복구: 저장소 초기화/기기 변경으로 진행도(환생 등)가 사라졌으면
+  // 서버에 저장된 더 높은 값으로 복구하고, 낮은 값이 서버를 덮어쓰지 못하게 막는다.
+  try{
+    const own=await NET.sb.from("game_players").select("rebirth,best_stage,lv,atk_lv,collect_lv,arena_pts").eq("uid",NET.uid).maybeSingle();
+    if(own&&own.data){
+      const d=own.data;let ch=false;
+      if((d.rebirth||0)>S.rebirth){S.rebirth=d.rebirth;ch=true;}
+      const dbBs=d.best_stage||1,locBs=(S.bestRegion-1)*10+S.bestStage;
+      if(dbBs>locBs){S.bestRegion=Math.floor((dbBs-1)/10)+1;S.bestStage=((dbBs-1)%10)+1;ch=true;}
+      if((d.lv||1)>S.lv){S.lv=d.lv;ch=true;}
+      if((d.atk_lv||0)>S.skills.atk){S.skills.atk=d.atk_lv;ch=true;}
+      if((d.collect_lv||0)>S.skills.collect){S.skills.collect=d.collect_lv;ch=true;}
+      if((d.arena_pts||0)>S.arenaPts){S.arenaPts=d.arena_pts;ch=true;}
+      if(ch){save();updateTop();renderTab();toast("클라우드에서 진행도를 복구했어요");}
+    }
+  }catch(e){}
   if(!NET.nick){promptNick();}else{await netSubmit(true);}
   await netRefresh();
   setInterval(netRefresh,20000);
