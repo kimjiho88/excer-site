@@ -317,11 +317,12 @@ async function netInit(){
 }
 async function netRefresh(){if(!NET.ready)return;
  try{
-  let r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op,rebirth,banned").order("power",{ascending:false}).limit(200);
-  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op,rebirth").order("power",{ascending:false}).limit(200);
-  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,power,lv,best_stage,dex_count,arena_pts,is_op").order("power",{ascending:false}).limit(200);
+  const cols="uid,nick,lv,gear_power,best_stage,atk_lv,collect_lv,dex_count,arena_pts,is_op,rebirth,banned";
+  let r=await NET.sb.from("game_players").select(cols).order("gear_power",{ascending:false}).limit(300);
+  if(r.error)r=await NET.sb.from("game_players").select("uid,nick,lv,gear_power,best_stage,atk_lv,collect_lv,dex_count,arena_pts,is_op,rebirth").order("gear_power",{ascending:false}).limit(300);
+  if(r.error)r=await NET.sb.from("game_players").select("*").limit(300);
   if(!r.error&&r.data){
-    NET.roster=r.data.map(x=>({rebirth:0,banned:false,...x}));
+    NET.roster=r.data.map(x=>({rebirth:0,banned:false,gear_power:0,atk_lv:0,collect_lv:0,dex_count:0,best_stage:1,...x}));
     const mine=NET.roster.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);
     if(TAB==="rank")renderRank();
   }else NET.err=r.error;
@@ -332,11 +333,13 @@ async function netSubmit(force){if(!NET.ready||!NET.nick)return;
    atk_lv:S.skills.atk,collect_lv:S.skills.collect,dex_count:dexCount(),best_stage:(S.bestRegion-1)*10+S.bestStage,arena_pts:S.arenaPts},{onConflict:"uid"});
  }catch(e){}}
 function liveBoard(metric){
- const col={pow:"power",lv:"lv",bestStage:"best_stage",dex:"dex_count",arena:"arena_pts",rebirth:"rebirth"}[metric];
  const M=me();
  const list=NET.roster.filter(r=>!r.banned&&(!r.is_op||r.uid===NET.uid)).map(r=>{
-   if(r.uid===NET.uid)return {...M,val:M[metric]};            // 내 행은 항상 현재 상태로 표시(#3)
-   return {handle:(r.nick||"익명").split("/")[0],name:r.nick||"익명",pow:r.power,lv:r.lv,bestStage:r.best_stage,dex:r.dex_count,arena:r.arena_pts,rebirth:r.rebirth||0,op:r.is_op,me:false,val:r[col]};
+   if(r.uid===NET.uid)return {...M,val:M[metric]};            // 내 행은 항상 현재 상태로 표시
+   const pw=calcPow(r);                                       // 남의 전투력도 동일 공식으로 계산 → 항상 일치
+   const e={handle:(r.nick||"익명").split("/")[0],name:r.nick||"익명",pow:pw,lv:r.lv,bestStage:r.best_stage,dex:r.dex_count,arena:r.arena_pts,rebirth:r.rebirth||0,op:r.is_op,me:false};
+   e.val=metric==="pow"?pw:metric==="lv"?r.lv:metric==="bestStage"?r.best_stage:metric==="dex"?r.dex_count:metric==="arena"?r.arena_pts:metric==="rebirth"?(r.rebirth||0):pw;
+   return e;
  });
  if(!list.some(x=>x.me))list.push({...M,val:M[metric]});
  list.sort((a,b)=>b.val-a.val||b.pow-a.pow);return list;}
@@ -359,11 +362,21 @@ function dexBonusPct(){ // 도감 수집 + 수집가 스킬
  const base=dexCount()*1.2; const mul=1+S.skills.collect*0.25; return base*mul; }
 function itemPow(it){return Math.round(it.power*(1+it.plus*0.13));}
 function gearPow(){let p=0;for(const s in S.equip){const it=S.equip[s];if(it)p+=itemPow(it);}return p;}
+function bestStageEff(){const raw=(S.bestRegion-1)*10+S.bestStage;return Math.min(raw,100+S.lv*14+S.rebirth*100);}
+// 다른 사람의 전투력도 '그 사람의 구성요소'로 동일 공식 계산 → DB 계산식과 무관, 항상 일치
+function calcPow(r){
+ const lv=r.lv||1,reb=r.rebirth||0;
+ const bs=Math.min(r.best_stage||1,100+lv*14+reb*100);
+ const base=12+lv*6+bs*2+(r.gear_power||0);
+ const atk=1+(r.atk_lv||0)*0.06;
+ const dex=1+((r.dex_count||0)*1.2*(1+(r.collect_lv||0)*0.25))/100;
+ return Math.floor(base*atk*dex*(1+reb*0.25));
+}
 function power(){
- const base=12+S.lv*6;
+ const base=12+S.lv*6+bestStageEff()*2;   // 진행도(최고 스테이지)도 전투력에 반영
  const atk=1+S.skills.atk*0.06;
  const dex=1+dexBonusPct()/100;
- return Math.round((base+gearPow())*atk*dex*rebirthMul());
+ return Math.floor((base+gearPow())*atk*dex*rebirthMul());
 }
 function atkInterval(){return clamp(950-power()*0.6-S.skills.haste*40,260,950);}
 function critChance(){return clamp(0.05+S.skills.luck*0.0,0,0.6);}
@@ -885,7 +898,7 @@ function boot(){loadImages(start);}
 /* 노출(테스트/디버그) */
 window.GAME={boot,pull,pull10,equip,enhance,salvage,salvageAll,learn,rebirth,arenaFight,arenaOpponents,board,renderRank,renderEquip,renderGrow,renderGacha,renderHunt,renderHuntExtra,claimAttend,claimChest,idleReward,go,bots,power,
  tick:n=>{for(let i=0;i<(n||1);i++)update(16);},draw:()=>drawScene(),openMissions,
- liveBoard,_net:NET,_setRoster:(arr,uid)=>{NET.ready=true;NET.roster=arr;NET.uid=uid||"me";},get S(){return S;},set S(v){S=v;}};
+ liveBoard,calcPow,_net:NET,_setRoster:(arr,uid)=>{NET.ready=true;NET.roster=arr;NET.uid=uid||"me";},get S(){return S;},set S(v){S=v;}};
 
 if(typeof document!=="undefined"&&document.addEventListener)document.addEventListener("DOMContentLoaded",boot);
 })();
