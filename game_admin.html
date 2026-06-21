@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>좀비 헌팅 — 운영자 콘솔</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+<style>
+:root{--bg:#0e0a16;--card:#171022;--line:#2a2038;--txt:#ece7f4;--mut:#8d83a3;--gold:#e6c964;--red:#e0566b;--grn:#46c46e;--pur:#a05fd0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 Pretendard,-apple-system,system-ui,sans-serif}
+header{position:sticky;top:0;background:rgba(14,10,22,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;z-index:5}
+header h1{font-size:16px;margin:0;font-weight:900}
+.tag{font-size:11px;font-weight:800;color:#1a1228;background:var(--gold);border-radius:6px;padding:2px 7px}
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input,button{font:inherit}
+input[type=text],input[type=password]{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:9px;color:#fff;padding:10px 12px;outline:none}
+input[type=text]{min-width:240px;flex:1}
+button{cursor:pointer;border:none;border-radius:9px;padding:9px 14px;font-weight:800;background:#2a2038;color:#fff}
+button.p{background:linear-gradient(180deg,#b277ec,#8a4fd0)}
+button.g{background:#2a2038;color:#cdbce6}
+button.r{background:linear-gradient(180deg,#e0566b,#b8344c)}
+button.gold{background:linear-gradient(180deg,#ffe08a,#e6b94d);color:#1a1228}
+button.sm{padding:6px 9px;font-size:12px;border-radius:7px}
+button:disabled{opacity:.4;cursor:default}
+.muted{color:var(--mut)}.small{font-size:12px}
+.stat{display:flex;gap:18px;flex-wrap:wrap}
+.stat>div b{display:block;font-size:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:700;position:sticky;top:64px;background:var(--card)}
+td.nm{font-weight:800;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+tr.ban{background:rgba(224,86,107,.1)}
+tr.flag{background:rgba(230,201,100,.08)}
+tr.op td.nm::after{content:" 👑"}
+.badge{font-size:10px;font-weight:900;border-radius:6px;padding:1px 6px;margin-left:4px}
+.b-sus{background:#5a2030;color:#ffb3c0}
+.b-op{background:#3a2a52;color:#d6b8ff}
+.b-ban{background:#5a2030;color:#ff9fb0}
+.acts{display:flex;gap:5px;flex-wrap:wrap}
+.gate{text-align:center;padding:30px}
+.uid{font-family:ui-monospace,monospace;background:rgba(0,0,0,.35);padding:8px 10px;border-radius:8px;display:inline-block;margin-top:10px;user-select:all}
+.note{color:var(--mut);font-size:12px}
+#msg{font-size:12px;font-weight:700}
+.scroll{overflow:auto;max-height:64vh;border:1px solid var(--line);border-radius:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧟 운영자 콘솔</h1><span class="tag">ADMIN</span>
+  <span id="who" class="muted small"></span>
+  <span style="flex:1"></span>
+  <span id="msg" class="muted"></span>
+  <button class="g sm" id="reload" style="display:none">새로고침</button>
+</header>
+<div class="wrap">
+
+  <!-- 연결 -->
+  <div class="card" id="connCard">
+    <div class="row">
+      <input type="text" id="url" placeholder="Supabase Project URL (https://xxx.supabase.co)"/>
+      <input type="password" id="anon" placeholder="anon public key"/>
+      <button class="p" id="connect">연결</button>
+    </div>
+    <p class="note" style="margin:10px 0 0">게임과 동일한 Supabase 프로젝트의 URL / anon key 를 입력하세요. 입력값은 이 브라우저에만 저장됩니다.</p>
+  </div>
+
+  <!-- 권한 게이트 -->
+  <div class="card gate" id="gate" style="display:none">
+    <div style="font-size:32px">🔒</div>
+    <h2>운영자 권한이 없는 계정입니다</h2>
+    <p class="muted">아래 uid 를 Supabase SQL Editor 에서 <code>game_ops</code> 에 등록하면 운영자가 됩니다.<br>
+    <code>insert into public.game_ops(uid) values ('아래uid') on conflict do nothing;</code></p>
+    <div class="uid" id="myuid"></div>
+  </div>
+
+  <!-- 콘솔 -->
+  <div id="console" style="display:none">
+    <div class="card">
+      <div class="stat" id="stats"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <input type="text" id="q" placeholder="닉네임 검색…"/>
+        <button class="g sm" id="fSus">의심계정만</button>
+        <button class="g sm" id="fBan">제재계정만</button>
+        <button class="g sm" id="fAll">전체</button>
+        <span style="flex:1"></span>
+        <span class="muted small" id="cnt"></span>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>닉네임</th><th>전투력</th><th>Lv</th><th>환생</th><th>스테이지</th><th>도감</th><th>아레나</th><th>상태</th><th>관리</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="note" style="margin:12px 0 0">⚠ 의심계정 = 레벨 대비 전투력/스테이지/장비가 비정상적으로 높은 계정(자동 표시). 제재 시 랭킹 집계에서 즉시 제외됩니다.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const $=s=>document.querySelector(s);
+let sb=null,uid=null,rows=[],filter="all";
+function msg(t,c){const e=$("#msg");e.textContent=t;e.style.color=c||"var(--mut)";}
+function fmt(n){return (n||0).toLocaleString();}
+
+// 저장된 접속정보
+try{$("#url").value=localStorage.getItem("nh_adm_url")||"";$("#anon").value=localStorage.getItem("nh_adm_anon")||"";}catch(e){}
+
+$("#connect").onclick=connect;
+$("#reload").onclick=load;
+$("#q").oninput=render;
+$("#fSus").onclick=()=>{filter="sus";render();};
+$("#fBan").onclick=()=>{filter="ban";render();};
+$("#fAll").onclick=()=>{filter="all";render();};
+
+async function connect(){
+  const url=$("#url").value.trim(),anon=$("#anon").value.trim();
+  if(!url||!anon){msg("URL과 anon key를 입력하세요","var(--red)");return;}
+  try{localStorage.setItem("nh_adm_url",url);localStorage.setItem("nh_adm_anon",anon);}catch(e){}
+  msg("연결 중…");
+  try{
+    sb=window.supabase.createClient(url,anon);
+    let ses=(await sb.auth.getSession()).data.session;
+    if(!ses)ses=(await sb.auth.signInAnonymously()).data.session;
+    uid=ses&&ses.user&&ses.user.id;
+    if(!uid){msg("익명 로그인 실패 — Anonymous sign-ins 설정을 확인하세요","var(--red)");return;}
+    $("#who").textContent="uid "+uid.slice(0,8)+"…";
+    // 운영자 여부 확인
+    const me=await sb.from("game_players").select("is_op").eq("uid",uid).maybeSingle();
+    const isOp=me.data&&me.data.is_op;
+    $("#connCard").style.display="none";
+    if(!isOp){$("#gate").style.display="block";$("#myuid").textContent=uid;msg("권한 없음","var(--red)");return;}
+    $("#console").style.display="block";$("#reload").style.display="inline-block";
+    await load();
+  }catch(e){msg("연결 오류: "+(e.message||e),"var(--red)");}
+}
+
+async function load(){
+  msg("불러오는 중…");
+  try{
+    const r=await sb.from("game_players").select("*").order("power",{ascending:false}).limit(500);
+    if(r.error)throw r.error;
+    rows=r.data||[];
+    msg("불러옴 "+rows.length+"명","var(--grn)");
+    stats();render();
+  }catch(e){msg("조회 오류: "+(e.message||e),"var(--red)");}
+}
+
+function suspicious(p){
+  return p.gear_power > 1200+p.lv*500
+    || p.best_stage > 40+p.lv*6
+    || (p.power>6000 && p.lv<12)
+    || p.arena_pts > 50000;
+}
+function stats(){
+  const n=rows.length,ban=rows.filter(x=>x.banned).length,op=rows.filter(x=>x.is_op).length,sus=rows.filter(suspicious).length,reb=rows.filter(x=>x.rebirth>0).length;
+  $("#stats").innerHTML=
+    '<div><span class="muted small">전체</span><b>'+n+'</b></div>'+
+    '<div><span class="muted small">운영진</span><b>'+op+'</b></div>'+
+    '<div><span class="muted small">제재</span><b style="color:var(--red)">'+ban+'</b></div>'+
+    '<div><span class="muted small">의심</span><b style="color:#ffb3c0">'+sus+'</b></div>'+
+    '<div><span class="muted small">환생자</span><b style="color:var(--gold)">'+reb+'</b></div>';
+}
+function render(){
+  const q=$("#q").value.trim().toLowerCase();
+  let list=rows.slice();
+  if(filter==="sus")list=list.filter(suspicious);
+  if(filter==="ban")list=list.filter(x=>x.banned);
+  if(q)list=list.filter(x=>(x.nick||"").toLowerCase().includes(q));
+  $("#cnt").textContent=list.length+"명";
+  $("#rows").innerHTML=list.map((p,i)=>{
+    const sus=suspicious(p);
+    const cls=[p.banned?"ban":"",p.flagged?"flag":"",p.is_op?"op":""].join(" ");
+    let st="";
+    if(p.banned)st+='<span class="badge b-ban">제재</span>';
+    if(p.is_op)st+='<span class="badge b-op">운영진</span>';
+    if(sus)st+='<span class="badge b-sus">의심</span>';
+    if(p.rebirth>0)st+='<span class="badge" style="background:#3a3220;color:#ffe08a">✦'+p.rebirth+'</span>';
+    return '<tr class="'+cls+'">'+
+      '<td>'+(i+1)+'</td>'+
+      '<td class="nm" title="'+(p.nick||"")+'">'+(p.nick||"익명")+'</td>'+
+      '<td><b>'+fmt(p.power)+'</b></td>'+
+      '<td>'+p.lv+'</td><td>'+p.rebirth+'</td><td>'+fmt(p.best_stage)+'</td><td>'+p.dex_count+'</td><td>'+fmt(p.arena_pts)+'</td>'+
+      '<td>'+(st||'<span class="muted">-</span>')+'</td>'+
+      '<td class="acts">'+
+        '<button class="sm '+(p.banned?'g':'r')+'" data-act="ban" data-uid="'+p.uid+'">'+(p.banned?'해제':'제재')+'</button>'+
+        '<button class="sm g" data-act="op" data-uid="'+p.uid+'">'+(p.is_op?'운영진해제':'운영진')+'</button>'+
+        '<button class="sm g" data-act="flag" data-uid="'+p.uid+'">'+(p.flagged?'관찰해제':'관찰')+'</button>'+
+        '<button class="sm g" data-act="reset" data-uid="'+p.uid+'">초기화</button>'+
+        '<button class="sm r" data-act="del" data-uid="'+p.uid+'">삭제</button>'+
+      '</td></tr>';
+  }).join("");
+  document.querySelectorAll('#rows [data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset.uid));
+}
+
+function find(u){return rows.find(x=>x.uid===u);}
+async function act(a,u){
+  const p=find(u);if(!p)return;
+  try{
+    if(a==="ban"){
+      if(!p.banned){const reason=prompt("제재 사유(선택):","어뷰징");if(reason===null)return;
+        await up(u,{banned:true,ban_reason:reason||""});}
+      else await up(u,{banned:false,ban_reason:null});
+    }else if(a==="flag"){
+      if(!p.flagged){const note=prompt("관찰 메모(선택):","");if(note===null)return;await up(u,{flagged:true,note:note||""});}
+      else await up(u,{flagged:false});
+    }else if(a==="op"){
+      if(!confirm((p.is_op?'운영진 해제':'운영진으로 지정')+'할까요?\n'+(p.nick||u)))return;
+      if(p.is_op){const d=await sb.from("game_ops").delete().eq("uid",u);if(d.error)throw d.error;}
+      else{const ins=await sb.from("game_ops").insert({uid:u});if(ins.error)throw ins.error;}
+      // 트리거가 is_op 재계산하도록 행 갱신
+      await sb.from("game_players").update({arena_pts:p.arena_pts}).eq("uid",u);
+    }else if(a==="reset"){
+      if(!confirm('이 계정을 초기화할까요? (레벨/장비/스테이지/아레나/환생 리셋)\n'+(p.nick||u)))return;
+      await up(u,{lv:1,gear_power:0,best_stage:1,arena_pts:1000,rebirth:0,atk_lv:0,collect_lv:0,dex_count:0});
+    }else if(a==="del"){
+      if(!confirm('이 계정 기록을 완전히 삭제할까요? 되돌릴 수 없습니다.\n'+(p.nick||u)))return;
+      const d=await sb.from("game_players").delete().eq("uid",u);if(d.error)throw d.error;
+    }
+    msg("처리 완료","var(--grn)");
+    await load();
+  }catch(e){msg("실패: "+(e.message||e),"var(--red)");}
+}
+async function up(u,patch){const r=await sb.from("game_players").update(patch).eq("uid",u);if(r.error)throw r.error;}
+</script>
+</body>
+</html>
