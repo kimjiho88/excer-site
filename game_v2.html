@@ -899,6 +899,45 @@ let shake=0,hitStop=0,parts=[],flashFx=0; // 게임 필: 화면흔들림/히트�
 function addShake(m){shake=Math.min(14,Math.max(shake,m));}
 function spawnParts(x,y,col,n,spd){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=spd*(0.4+Math.random()*0.8);
   parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-v*0.4,life:1,col,r:1.5+Math.random()*2.5});}}
+/* ---------- 배경 / 분위기 (그래픽 상향) ---------- */
+let bgScroll=0,atmos=[];
+// 사냥터별 분위기: 0=잿불 1=안개 2=네온비 3=눈 4=독안개 — 14지역 순환 매핑
+const ATMOS=[0,1,0,1,3,2,0,2,2,2,3,2,1,0];
+function atmosOf(){return ATMOS[(S.region-1)%ATMOS.length]||0;}
+function seedAtmos(){atmos=[];const t=atmosOf();const n=t===2?34:t===3?40:t===1?22:t===4?26:18;
+ for(let i=0;i<n;i++)atmos.push({x:Math.random()*460,y:Math.random()*180,
+   vx:t===2?-1.4-Math.random():t===3?-.3:(t===0?Math.random()*.3-.15:-.25),
+   vy:t===2?3.2+Math.random()*1.5:t===3?.5+Math.random()*.5:t===0?-.5-Math.random()*.6:.1,
+   r:t===0?1+Math.random()*1.6:t===2?1:t===3?1.4+Math.random():18+Math.random()*22,
+   a:.2+Math.random()*.5});}
+function updateAtmos(dt){const t=atmosOf();const f=dt*0.06;
+ atmos.forEach(p=>{p.x+=p.vx*f;p.y+=p.vy*f;
+   if(p.y>184){p.y=-4;p.x=Math.random()*460;}if(p.y<-24){p.y=184;p.x=Math.random()*460;}
+   if(p.x<-24){p.x=464;}if(p.x>464){p.x=-24;}});}
+// 절차적 패럴랙스 스카이라인
+function drawBackground(th){
+ // 원경 건물(느린 스크롤)
+ const far=(bgScroll*0.12)%80;ctx.save();ctx.globalAlpha=.16;ctx.fillStyle="#000";
+ for(let i=-1;i<7;i++){const bx=i*80-far,bw=54,bh=46+((i*37)%30);ctx.fillRect(bx,BASE-bh,bw,bh);}
+ ctx.restore();
+ // 근경 건물(빠른 스크롤) + 창문 불빛
+ const near=(bgScroll*0.32)%70;ctx.save();ctx.globalAlpha=.28;
+ for(let i=-1;i<8;i++){const bx=i*70-near,bw=46,bh=60+((i*53)%44);ctx.fillStyle="#05030a";ctx.fillRect(bx,BASE-bh,bw,bh);
+   ctx.fillStyle="rgba(240,200,120,.5)";for(let wy=BASE-bh+6;wy<BASE-8;wy+=12)for(let wx=bx+5;wx<bx+bw-5;wx+=12){if(((wx*7+wy*3+i)%5)<2)ctx.fillRect(wx,wy,4,5);}}
+ ctx.restore();}
+function drawAtmos(){const t=atmosOf();ctx.save();
+ atmos.forEach(p=>{ctx.globalAlpha=p.a*(t===1||t===4?.5:1);
+   if(t===2){ctx.strokeStyle="rgba(150,200,255,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-2,p.y+7);ctx.stroke();}
+   else if(t===0){ctx.fillStyle="rgba(255,150,70,.8)";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill();}
+   else if(t===3){ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill();}
+   else{ctx.fillStyle=t===4?"rgba(120,200,120,.10)":"rgba(180,180,200,.09)";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill();}});
+ ctx.restore();}
+function drawVignette(){const t=atmosOf();ctx.save();
+ const rg=ctx.createRadialGradient(W/2,BASE-50,40,W/2,BASE-50,W*0.75);
+ rg.addColorStop(0,"rgba(0,0,0,0)");rg.addColorStop(1,"rgba(0,0,0,.45)");
+ ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
+ if(S.stage>=10){ctx.globalAlpha=.10+.06*Math.sin(Date.now()/300);ctx.fillStyle="#ff2d44";ctx.fillRect(0,0,W,H);}
+ ctx.restore();}
 function playerOrder(){const e=S.equip,o=[];
  if(e.cape)o.push("cape_"+e.cape.type+"_bg");
  if(e.weapon)o.push(e.weapon.type+"_bg");
@@ -923,11 +962,21 @@ function enemyType(){
  const art=[pick(pool)];const big=BIGENEMY.includes(art[0]);
  return{art,boss:false,sc:big?ZSCALE*1.3:(art[0]==="goblin"?ZSCALE*0.82:ZSCALE)};}
 function enemyHP(boss){return Math.round((18+S.region*22+S.stage*6)*(boss?6:1)*(1+S.bestRegion*0.05));}
+const ELITE_TINT=["hue-rotate(140deg) saturate(1.4)","hue-rotate(280deg) saturate(1.3)","hue-rotate(40deg) saturate(1.5) brightness(1.1)"];
 function spawn(){if(S.stage>=10&&zombies.some(z=>z.boss))return;
- const e=enemyType();const hp=enemyHP(e.boss);
- zombies.push({x:W+20+Math.random()*30,art:e.art,boss:e.boss,sc:e.sc,hp,maxhp:hp,f:1,ft:0,flash:0});}
+ const e=enemyType();let hp=enemyHP(e.boss);
+ // 엘리트 변종: 비보스 한정, 환생할수록 출현↑. 색 틴팅 + 오라 + 체력/보상↑ (시각·재미 다양화)
+ const eliteChance=e.boss?0:(0.06+S.rebirth*0.015);
+ const elite=!e.boss&&Math.random()<eliteChance;
+ if(elite)hp=Math.round(hp*2.4);
+ zombies.push({x:W+20+Math.random()*30,art:e.art,boss:e.boss,sc:e.sc*(elite?1.18:1),hp,maxhp:hp,f:1,ft:0,flash:0,
+   elite:elite,tint:elite?pick(ELITE_TINT):null,auraT:Math.random()*6.28});}
+let _atmosRegion=-1;
 function update(dt){
  regen();rollDaily();
+ bgScroll+=dt*0.04*(1+S.region*0.02); // 전진감(지역 깊을수록 빠르게)
+ if(_atmosRegion!==S.region||!atmos.length){_atmosRegion=S.region;seedAtmos();}
+ updateAtmos(dt);
  spawnT-=dt;const maxZ=S.stage>=10?1:4;
  if(spawnT<=0&&zombies.length<maxZ){spawn();spawnT=S.stage>=10?9999:Math.max(500,1500-S.region*40);}
  zombies.sort((a,b)=>a.x-b.x);
@@ -960,17 +1009,20 @@ function kill(z){zombies=zombies.filter(x=>x!==z);
  spawnParts(z.x,BASE-40,"#ffd96b",z.boss?10:5,2.2);
  addShake(z.boss?12:3);if(z.boss){hitStop=Math.max(hitStop,120);flashFx=200;}
  SFX.kill();if(z.boss)setTimeout(()=>SFX.level(),60);
- const m=z.boss?8:1,wm=wealthMul(),cm=1+Math.min(combo,25)*0.04;
+ const em=z.elite?2.6:1; // 엘리트 보상 가중
+ const m=(z.boss?8:1)*em,wm=wealthMul(),cm=1+Math.min(combo,25)*0.04;
  const gold=Math.round((5+S.region*4+S.stage)*(0.85+Math.random()*0.3)*m*wm*cm);
  const exp=Math.round((4+S.region*2.2+S.stage*0.6)*(0.85+Math.random()*0.3)*m);
- const stone=z.boss?Math.round((6+S.region*2)*wm):(Math.random()<0.25?Math.round(1+S.region*0.5):0);
+ const stone=z.boss?Math.round((6+S.region*2)*wm):(z.elite||Math.random()<0.25?Math.round((1+S.region*0.5)*(z.elite?3:1)):0);
+ if(z.elite){addShake(6);spawnParts(z.x,BASE-50,"#5fe0ff",16,3.4);}
  const lvBefore=S.lv;
  S.gold+=gold;S.exp+=exp;S.stones+=stone;S.kills++;S.daily.kills++;S.keCtr++;
  pops.push({x:z.x,y:BASE-94,txt:"+"+fmt(gold)+"G",t:0,c:"#ffd96b",vy:-0.9});
  if(S.keCtr>=5){S.keCtr=0;if(S.energy<MAXE){if(S.energy>=MAXE-1)S.lastEnergyAt=Date.now();S.energy=Math.min(MAXE,S.energy+1);}}
  // 3환생+: 엘리트 효과 — 일반 몬스터도 드랍률 상승, 가끔 2개 동시 드랍
  const eliteBonus=S.rebirth>=3?0.20:0;
- const drop=z.boss?0.9:0.13+S.skills.luck*0.01+eliteBonus;
+ const drop=z.boss?0.9:(z.elite?0.6:0.13)+S.skills.luck*0.01+eliteBonus;
+ if(z.elite)toast("⭐ 엘리트 처치! 보상 대폭 증가");
  if(Math.random()<drop){const it=makeItem();const r=gainItem(it,true);
    if(!r.salvaged)toast("전리품 · "+RAR[it.rarity].k+" "+NAMES[it.type]);}
  // 3환생+ 보너스 드랍 (15% 추가)
@@ -992,25 +1044,39 @@ function drawScene(){if(!ctx)return;
  if(shake>0.3){ctx.translate((Math.random()*2-1)*shake,(Math.random()*2-1)*shake);}
  const th=rtheme();const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,th[0]);g.addColorStop(1,th[1]);
  ctx.fillStyle=g;ctx.fillRect(-16,-16,W+32,H+32);
+ drawBackground(th); // 절차적 패럴랙스 스카이라인
  ctx.strokeStyle="rgba(160,95,208,.16)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-16,BASE+2);ctx.lineTo(W+16,BASE+2);ctx.stroke();
  [...zombies].sort((a,b)=>b.x-a.x).forEach(z=>{const dx=z.x-32*z.sc,dy=BASE-64*z.sc;
    // 그림자
    ctx.save();ctx.globalAlpha=.28;ctx.fillStyle="#000";ctx.beginPath();ctx.ellipse(z.x,BASE+1,18*z.sc/2.1,5,0,0,6.283);ctx.fill();ctx.restore();
-   // 보스 오라
+   // 보스/엘리트 오라
    if(z.boss){ctx.save();ctx.globalAlpha=.25+0.12*Math.sin(Date.now()/200);ctx.fillStyle="#e6c964";
      ctx.beginPath();ctx.ellipse(z.x,BASE-30*z.sc/2.1,34*z.sc/2.1,46*z.sc/2.1,0,0,6.283);ctx.fill();ctx.restore();}
+   else if(z.elite){ctx.save();z.auraT+=0.05;ctx.globalAlpha=.3+0.15*Math.sin(z.auraT);ctx.fillStyle="#5fe0ff";
+     ctx.beginPath();ctx.ellipse(z.x,BASE-28*z.sc/2.1,26*z.sc/2.1,38*z.sc/2.1,0,0,6.283);ctx.fill();ctx.restore();}
+   // 엘리트는 색 틴팅(ctx.filter 지원 시)
+   const useFilter=z.tint&&("filter" in ctx);
+   if(useFilter){ctx.save();ctx.filter=z.tint;}
    z.art.forEach(k=>drawL(k,z.f,0,dx,dy,z.sc));
+   if(useFilter)ctx.restore();
    // 피격 플래시(흰색 오버레이)
    if(z.flash>0){ctx.save();ctx.globalAlpha=Math.min(.6,z.flash/120*.6);ctx.globalCompositeOperation="lighter";ctx.fillStyle="#ff8a96";
      ctx.fillRect(dx,dy,64*z.sc,64*z.sc);ctx.restore();}
    if(z.hp<z.maxhp){const bw=30*z.sc/2.1;ctx.fillStyle="rgba(0,0,0,.5)";ctx.fillRect(z.x-bw/2,dy-6,bw,4);
-     ctx.fillStyle=z.boss?"#e6c964":"#ff5d6c";ctx.fillRect(z.x-bw/2,dy-6,bw*Math.max(0,z.hp/z.maxhp),4);}});
+     ctx.fillStyle=z.boss?"#e6c964":z.elite?"#5fe0ff":"#ff5d6c";ctx.fillRect(z.x-bw/2,dy-6,bw*Math.max(0,z.hp/z.maxhp),4);}});
  const lx=playerX+(lunge>0?9:0),dx=lx-32*PSCALE,dy=BASE-64*PSCALE;
  ctx.save();ctx.globalAlpha=.28;ctx.fillStyle="#000";ctx.beginPath();ctx.ellipse(lx+30,BASE+1,22,5,0,0,6.283);ctx.fill();ctx.restore();
+ // 장비 강화 글로우: 최고 강화수치에 따라 발광
+ let maxPlus=0;for(const sl in S.equip){const it=S.equip[sl];if(it&&it.plus>maxPlus)maxPlus=it.plus;}
+ if(maxPlus>=7){ctx.save();const gc=maxPlus>=13?"#ff7a59":maxPlus>=10?"#e6c964":"#9b6fce";
+   ctx.globalAlpha=(.18+Math.min(.3,(maxPlus-7)*0.04))*(0.7+0.3*Math.sin(Date.now()/280));ctx.fillStyle=gc;
+   ctx.beginPath();ctx.ellipse(lx+30,BASE-46,28,52,0,0,6.283);ctx.fill();ctx.restore();}
  playerOrder().forEach(k=>drawL(k,1+(pf%8),64,dx,dy,PSCALE));
  if(slashFx>0){ctx.save();ctx.globalAlpha=slashFx/140;ctx.strokeStyle="#fff";ctx.lineWidth=3;
    ctx.beginPath();ctx.arc(lx+42,BASE-56,30,-0.85,0.85);ctx.stroke();
    ctx.strokeStyle="rgba(214,166,240,.8)";ctx.lineWidth=6;ctx.beginPath();ctx.arc(lx+42,BASE-56,30,-0.55,0.55);ctx.stroke();ctx.restore();}
+ // 분위기 입자(비/안개/잿불/눈)
+ drawAtmos();
  // 파티클
  parts.forEach(p=>{ctx.save();ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.col;
    ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,6.283);ctx.fill();ctx.restore();});
@@ -1024,7 +1090,9 @@ function drawScene(){if(!ctx)return;
    ctx.fillStyle=p.col;ctx.lineWidth=3;ctx.strokeStyle="rgba(0,0,0,.55)";
    const yy=p.y+(p.vy||-1)*p.t*0.05-k*k*8;ctx.strokeText(p.txt,p.x,yy);ctx.fillText(p.txt,p.x,yy);ctx.restore();});
  ctx.restore();
- // 임팩트 플래시(보스/레벨업) — 흔들림 영향 안 받게 transform 밖
+ // 비네팅 조명(흔들림 영향 없게 transform 밖)
+ drawVignette();
+ // 임팩트 플래시(보스/레벨업)
  if(flashFx>0){ctx.save();ctx.globalAlpha=Math.min(.5,flashFx/200*.5);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.restore();}}
 let last=0;
 function loop(t){let dt=Math.min(60,t-last||16);last=t;
