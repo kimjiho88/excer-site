@@ -82,6 +82,7 @@ body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var
 .bigbtn.alt{background:rgba(255,255,255,.06);color:var(--mut);box-shadow:none;border:1px solid var(--line)}
 .bigbtn .cost{font-size:12px;opacity:.8;margin-left:6px}
 .bigbtn .badge{background:var(--red);color:#fff;font-size:10.5px;padding:2px 7px;border-radius:999px;margin-left:6px}
+.badge{display:inline-block;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:4px;vertical-align:middle}
 .mini{border:none;font-family:inherit;font-weight:800;font-size:11px;color:#fff;
   background:rgba(155,77,204,.25);border:1px solid rgba(155,77,204,.4);
   padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s}
@@ -446,7 +447,7 @@ const $$=s=>[...document.querySelectorAll(s)];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // 큰 수 축약(K/M/B/T...) — 1만 미만은 콤마 표기, 이상은 단위 축약
 const _UNIT=["","K","M","B","T","Qa","Qi","Sx","Sp"];
-const fmt=n=>{n=Math.round(n);const neg=n<0;n=Math.abs(n);
+const fmt=n=>{if(!isFinite(n))return "0";n=Math.round(n);const neg=n<0;n=Math.abs(n);
  if(n<10000)return (neg?"-":"")+n.toLocaleString("ko-KR");
  let i=0,v=n;while(v>=1000&&i<_UNIT.length-1){v/=1000;i++;}
  const s=v>=100?Math.round(v):v.toFixed(v>=10?1:2);
@@ -552,7 +553,10 @@ function fresh(){return{ver:2,lv:1,exp:0,gold:60,stones:0,gems:30,energy:MAXE,la
 function migrate(s){if(!s)return s;
  if(s.totalKills==null)s.totalKills=s.kills||0;
  if(s.totalPulls==null)s.totalPulls=0;
- if(s.maxPlus==null)s.maxPlus=0;
+ if(s.maxPlus==null){let mp=0;
+   if(s.equip)for(const k in s.equip){const it=s.equip[k];if(it&&it.plus>mp)mp=it.plus;}
+   if(Array.isArray(s.inv))s.inv.forEach(it=>{if(it&&it.plus>mp)mp=it.plus;});
+   s.maxPlus=mp;}
  if(!s.ach)s.ach={};if(!s.dexRw)s.dexRw={};
  if(s.tutDone==null)s.tutDone=true; // 기존 유저는 튜토리얼 스킵
  if(s.evClaim==null)s.evClaim="";
@@ -1443,8 +1447,8 @@ let tT;function toast(m){const t=$("#toast");if(!t)return;t.textContent=m;t.clas
 function idleReward(){const away=Date.now()-(S.lastSeen||Date.now());if(away<60000)return;
  const eff=Math.min(away,idleCapH()*3600000);const per=Math.max(600,2400-power()*1.2);const k=Math.floor(eff/per);if(k<=0)return;
  const wm=wealthMul();const rb=1+S.rebirth*0.1;
- const gold=Math.round(k*(5+S.region*4)*wm),exp=Math.round(k*(4+S.region*2)*rb),stone=Math.round(k*0.4*wm);
- S.gold+=gold;S.exp+=exp;S.stones+=stone;S.kills+=k;checkLevel();
+ const gold=Math.round(k*(5+S.region*4)*wm*evGoldMul()),exp=Math.round(k*(4+S.region*2)*rb*evExpMul()),stone=Math.round(k*0.4*wm);
+ S.gold+=gold;S.exp+=exp;S.stones+=stone;S.kills+=k;S.totalKills=(S.totalKills||0)+k;checkLevel();save();
  const ov=$("#ov-modal");if(!ov)return;
  ov.innerHTML='<div class="mcard wc"><div class="tt">🧟 사냥 보고</div><p class="muted">자리를 비운 동안 생존자가 자동으로 사냥했어요</p>'+
   '<div class="wrow"><div>처치<b>'+fmt(k)+'</b></div><div>골드<b>'+fmt(gold)+'</b></div><div>경험치<b>'+fmt(exp)+'</b></div><div>강화석<b>'+fmt(stone)+'</b></div></div>'+
