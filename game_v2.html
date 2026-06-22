@@ -621,7 +621,7 @@ async function netInit(){
   // 클라우드 백업 복구: 저장소 초기화/기기 변경으로 진행도(환생 등)가 사라졌으면
   // 서버에 저장된 더 높은 값으로 복구하고, 낮은 값이 서버를 덮어쓰지 못하게 막는다.
   try{
-    const own=await NET.sb.from("game_players").select("rebirth,best_stage,lv,atk_lv,collect_lv,arena_pts").eq("uid",NET.uid).maybeSingle();
+    const own=await NET.sb.from("game_players_v2").select("rebirth,best_stage,lv,atk_lv,collect_lv,arena_pts").eq("uid",NET.uid).maybeSingle();
     if(own&&own.data){
       const d=own.data;let ch=false;
       if((d.rebirth||0)>S.rebirth){S.rebirth=d.rebirth;ch=true;}
@@ -643,9 +643,9 @@ async function netInit(){
 }
 async function netRefresh(){if(!NET.ready)return;
  try{
-  let r=await NET.sb.from("game_players").select("*").order("power",{ascending:false}).limit(1000);
-  if(r.error)r=await NET.sb.from("game_players").select("*").order("gear_power",{ascending:false}).limit(1000);
-  if(r.error)r=await NET.sb.from("game_players").select("*").limit(1000);
+  let r=await NET.sb.from("game_players_v2").select("*").order("power",{ascending:false}).limit(1000);
+  if(r.error)r=await NET.sb.from("game_players_v2").select("*").order("gear_power",{ascending:false}).limit(1000);
+  if(r.error)r=await NET.sb.from("game_players_v2").select("*").limit(1000);
   if(r.error)throw r.error;
   NET.roster=(r.data||[]).map(x=>({rebirth:0,banned:false,gear_power:0,atk_lv:0,collect_lv:0,dex_count:0,best_stage:1,...x}));
   const mine=NET.roster.find(x=>x.uid===NET.uid);NET.banned=!!(mine&&mine.banned);
@@ -658,7 +658,7 @@ async function netSubmit(force){if(!NET.ready||!NET.nick)return;
  try{
   const payload={uid:NET.uid,nick:NET.nick,lv:S.lv,gear_power:gearPow(),rebirth:S.rebirth,
    atk_lv:S.skills.atk,collect_lv:S.skills.collect,dex_count:dexCount(),best_stage:(S.bestRegion-1)*10+S.bestStage,arena_pts:S.arenaPts};
-  const r=await NET.sb.from("game_players").upsert(payload,{onConflict:"uid"}).select("*").single();
+  const r=await NET.sb.from("game_players_v2").upsert(payload,{onConflict:"uid"}).select("*").single();
   if(r.error)throw r.error;
   mergeRoster(r.data);                                  // 서버가 계산한 내 power를 로스터에 즉시 반영
   NET.err=null;NET.lastSubmit=Date.now();setBanner(true);
