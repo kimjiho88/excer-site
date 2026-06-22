@@ -6,7 +6,7 @@
 
 -- 1) v2 랭킹 투영 테이블. (유저당 1행)
 --    power 는 서버가 계산하는 STORED 생성 컬럼 → 클라가 가짜 전투력을 주입할 수 없음.
---    공식은 game_v2.html 의 calcPow() fallback 과 동일.
+--    공식은 game_v2.html 의 power()/calcPow() 와 동일(스킬·도감 상한 포함).
 create table if not exists public.game_players_v2 (
   uid         uuid primary key references auth.users(id) on delete cascade,
   nick        text,
@@ -22,12 +22,12 @@ create table if not exists public.game_players_v2 (
   is_op       boolean not null default false,
   power bigint generated always as (
     floor(
-      ( 12 + lv*6
-        + least(best_stage, 100 + lv*14 + rebirth*100) * 2
+      ( 12 + lv*4
+        + least(best_stage, 60 + lv*8 + rebirth*90) * 3
         + gear_power )
       * (1 + atk_lv*0.06)
-      * (1 + (dex_count*1.2*(1 + collect_lv*0.25))/100.0)
-      * (1 + rebirth*0.25)
+      * (1 + least(dex_count*1.2*(1 + collect_lv*0.25), 300)/100.0)
+      * (1 + 1.6*(1 - power(0.86, rebirth)))
     )
   ) stored,
   updated_at  timestamptz not null default now(),
