@@ -4,6 +4,7 @@
 <title>좀비 헌팅 RPG · 논현 모임 v2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="stage2/cloudsave.js"></script>
 <script src="sprites.js"></script>
 <style>
 /* ===== 리셋 & 변수 ===== */
@@ -568,7 +569,8 @@ function save(){S.lastSeen=Date.now();
  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){
   // 저장 실패(용량 초과) 시 인벤토리를 50개로 긴급 압축 후 재시도
   try{S.inv=S.inv.slice().sort((a,b)=>b.rarity-a.rarity||itemPow(b)-itemPow(a)).slice(0,50);localStorage.setItem(KEY,JSON.stringify(S));}catch(e2){}}
- if(typeof NET!=="undefined"&&NET.ready&&typeof netSubmit==="function")netSubmit(false);}
+ if(typeof NET!=="undefined"&&NET.ready&&typeof netSubmit==="function")netSubmit(false);
+ if(typeof netCloudSave==="function")netCloudSave();}
 // 날짜 문자열: 항상 두 자리 패딩 → 다국어/장치 간 불일치 방지 (ex "2026-06-01" not "2026-6-1")
 function today(){const d=new Date();const m=String(d.getMonth()+1).padStart(2,"0");const dd=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+dd;}
 function yesterday(){const d=new Date();d.setDate(d.getDate()-1);const m=String(d.getMonth()+1).padStart(2,"0");const dd=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+dd;}
@@ -578,14 +580,42 @@ function yesterday(){const d=new Date();d.setDate(d.getDate()-1);const m=String(
    아래 두 값만 채우면 실시간 랭킹이 켜집니다. 비우면 봇 랭킹으로 동작.
    =================================================================== */
 const SUPA={url:"https://drggzlnzwvkhtalvkqyo.supabase.co",anon:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"};   // ← Supabase 프로젝트 URL / anon key 붙여넣기
-const NET={ready:false,sb:null,uid:null,nick:null,roster:null,lastSubmit:0,submitting:false,err:null};
+const NET={ready:false,sb:null,uid:null,nick:null,roster:null,lastSubmit:0,submitting:false,err:null,cloud:null,cloudReady:false};
+let _cloudSaveTimer=null;
+// 디바운스 전체 클라우드 세이브(game_saves). 잦은 save() 호출 폭주 방지.
+function netCloudSave(){
+ if(!NET.cloudReady||typeof CloudSave==="undefined")return;
+ clearTimeout(_cloudSaveTimer);
+ _cloudSaveTimer=setTimeout(()=>{CloudSave.saveCloud(S).catch(()=>{});},6000);
+}
 async function netInit(){
  try{
   if(!SUPA.url||!SUPA.anon||typeof window==="undefined"||typeof window.supabase==="undefined")return;
-  NET.sb=window.supabase.createClient(SUPA.url,SUPA.anon);
-  let ses=(await NET.sb.auth.getSession()).data.session;
-  if(!ses){ses=(await NET.sb.auth.signInAnonymously()).data.session;}
-  NET.uid=ses&&ses.user&&ses.user.id;if(!NET.uid)return;
+  if(typeof CloudSave!=="undefined"){
+   // 2단계: 전체 상태 클라우드 세이브(game_saves) + 카카오 로그인/익명→카카오 이전
+   await CloudSave.init(SUPA);
+   let redir=null;try{redir=await CloudSave.handleRedirectResult();}catch(e){} // OAuth 복귀(연결/이전) 마무리
+   await CloudSave.ensureAnon();
+   NET.sb=CloudSave.sb;
+   const u=CloudSave.user();NET.uid=u&&u.uid;NET.cloud=u;NET.cloudReady=true;
+   // 로컬 vs 클라우드 전체 세이브: 진행도 높은 쪽 채택(복제/덮어쓰기 방지)
+   try{
+    const cs=(redir&&redir.save)?redir.save:await CloudSave.loadCloud();
+    const cloudState=cs&&cs.state;
+    const res=CloudSave.resolve(S,cloudState);
+    if((res.source==="cloud"||res.source==="cloudOnly")&&res.chosen){
+     S=migrate(res.chosen);save();updateTop();renderTab();
+     toast((redir&&redir.migrated)?"카카오 계정으로 진행도를 이전했어요":"클라우드에서 진행도를 불러왔어요");
+    }else if(cloudState==null){CloudSave.saveCloud(S).catch(()=>{});} // 클라우드 최초 업로드
+   }catch(e){}
+  }else{
+   // 폴백: cloudsave.js 미로드 시 기존 익명 경로
+   NET.sb=window.supabase.createClient(SUPA.url,SUPA.anon);
+   let ses=(await NET.sb.auth.getSession()).data.session;
+   if(!ses){ses=(await NET.sb.auth.signInAnonymously()).data.session;}
+   NET.uid=ses&&ses.user&&ses.user.id;
+  }
+  if(!NET.uid)return;
   try{NET.nick=localStorage.getItem("nh_nick");}catch(e){}
   NET.ready=true;
   // 클라우드 백업 복구: 저장소 초기화/기기 변경으로 진행도(환생 등)가 사라졌으면
@@ -654,6 +684,23 @@ function promptNick(){const ov=$("#ov-modal");if(!ov)return;
  ov.classList.add("show");
  const ok=$("#nkOk");if(ok)ok.onclick=async()=>{const el=$("#nkIn");let v=(el&&el.value||"").trim();if(!v)v="헌터"+(1000+Math.random()*8999|0);
   NET.nick=v;try{localStorage.setItem("nh_nick",v);}catch(e){}ov.classList.remove("show");await netSubmit(true);await netRefresh();toast("랭킹 참가 완료!");};
+}
+// 카카오 로그인/연결: 진행도를 카카오 신원에 영구 보관(기기 변경에도 복원).
+async function kakaoLogin(){
+ if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다");return;}
+ try{
+  try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
+  const r=await CloudSave.linkKakao();          // 익명 uid 유지하며 카카오 연결(성공 시 리다이렉트)
+  if(r&&r.conflict){                            // 카카오가 이미 타 계정 → 전환 로그인 후 서버 병합
+   toast("기존 카카오 계정으로 로그인합니다…");
+   await CloudSave.signInWithKakao();
+  }
+ }catch(e){toast("카카오 로그인 실패: "+((e&&e.message)||e));}
+}
+async function kakaoLogout(){
+ if(typeof CloudSave==="undefined")return;
+ try{await CloudSave.signOut();}catch(e){}
+ toast("로그아웃 되었습니다");setTimeout(()=>location.reload(),600);
 }
 
 /* ---------- 파생 수치 ---------- */
@@ -1379,7 +1426,11 @@ function renderRank(){
  let s='<div class="card"><div class="ttl2">랭킹</div>'+
   '<div class="seg">'+boards.map(b=>'<button class="'+(b[0]===metric?'on':'')+'" data-b="'+b[0]+'">'+b[1]+'</button>').join("")+'</div>';
  if(NET.ready){if(!NET.nick)s+='<button class="bigbtn" id="joinRank" style="margin-bottom:12px">🏆 랭킹 참가하기 (닉네임 설정)</button>';
-  else s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700">랭킹 닉 <b style="color:#fff">'+NET.nick+'</b><button class="mini gray" id="chgNick" style="margin-left:auto">변경</button></div>';}
+  else s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700">랭킹 닉 <b style="color:#fff">'+NET.nick+'</b><button class="mini gray" id="chgNick" style="margin-left:auto">변경</button></div>';
+  // 카카오 로그인: 진행도 영구 보관(기기 변경 복원)
+  if(NET.cloudReady){const cu=NET.cloud;
+   if(cu&&cu.hasKakao)s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700;color:#bff0d6">✅ 카카오 연결됨'+(cu.nick?' · '+cu.nick:'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
+   else s+='<button class="bigbtn" id="kakaoLogin" style="background:#FEE500;color:#191600;margin-bottom:12px">💬 카카오로 로그인 · 진행도 영구 보관</button>';}}
  if(NET.banned)s+='<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.16);border-radius:9px;padding:10px 12px;margin-bottom:12px">⚠ 운영진에 의해 랭킹 집계에서 제외된 계정입니다.</div>';
  // 내 순위 강조
  const me0=list[myr-1];
@@ -1413,6 +1464,8 @@ function renderRank(){
  $$('#p-rank [data-ar]').forEach(b=>b.onclick=()=>{const o=ops.find(x=>x.name===b.dataset.ar);if(o)arenaFight(o);});
  const jr=$("#joinRank");if(jr)jr.onclick=promptNick;
  const cn=$("#chgNick");if(cn)cn.onclick=promptNick;
+ const kl=$("#kakaoLogin");if(kl)kl.onclick=kakaoLogin;
+ const co=$("#csOut");if(co)co.onclick=kakaoLogout;
 }
 
 /* ---------- 오버레이 ---------- */
