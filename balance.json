@@ -7,18 +7,19 @@
 
   "energy": { "max": 30, "regenMs": 80000, "hastePerLv": 0.05, "killPerEnergy": 5 },
 
-  "level": { "expNeed": "round(80 * lv^1.55)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
-  "_level_note": "expNeed 지수 1.35→1.55: 고레벨 경험치 요구량 급증 → 환생 메리트 강화",
+  "level": { "expNeed": "round(80 * lv^1.5)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "_level_note": "expNeed 지수 1.35→1.5: 고레벨 경험치 요구량 점진 증가 → 환생 유도(과하지 않게)",
 
   "power": {
     "formula": "floor((12 + lv*4 + bestStageEff*3 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * rebirthMul)",
     "_note": "lv 기여 줄임(6→4), stageEff 기여 높임(2→3): 레벨만으로 강해지는 구조 완화",
-    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 60 + lv*8 + rebirth*150)",
-    "_bestStageEff_note": "환생할수록 더 많은 스테이지가 전투력에 기여 가능",
+    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 60 + lv*8 + rebirth*90)",
+    "_bestStageEff_note": "캡은 환생으로 완화되지만 환생 기여 축소(150→90)로 격차 통제. 실제 스테이지 도달 필요.",
     "gearPow": "sum(itemPow)",
     "itemPow": "round(item.power * (1 + plus*0.13))",
     "dexBonusPct": "dexCount * 1.2 * (1 + collect_lv*0.25)",
-    "rebirthMul": "1 + rebirth*0.30 + rebirth^1.6 * 0.02"
+    "rebirthMul": "1 + 1.6*(1 - 0.86^rebirth)",
+    "_rebirthMul_note": "점근 곡선(감소수익, ~2.6x 상한). reb1:1.22 reb5:1.85 reb20:2.52. 레퍼런스: 쿠키클리커/NGU Idle 프레스티지. 환생은 필수지만 고/저환생 격차 압축."
   },
 
   "combat": {
@@ -85,8 +86,8 @@
 
   "skills": [
     { "id": "atk",     "name": "전투 숙련", "icon": "⚔️", "desc": "전투력 +6%/Lv", "effect": "powerMul *= 1 + atk_lv*0.06" },
-    { "id": "luck",    "name": "행운",      "icon": "🍀", "desc": "전리품 등급↑/Lv", "effect": "rareWeight *=(1+0.04/Lv); epicWeight *=(1+0.03/Lv)", "issue": "현재 크리티컬에는 미반영(버그)" },
-    { "id": "wealth",  "name": "수색",      "icon": "💰", "desc": "골드·강화석 +8%/Lv", "effect": "wealthMul = (1+wealth_lv*0.08)*(1+rebirth*0.18)" },
+    { "id": "luck",    "name": "행운",      "icon": "🍀", "desc": "전리품 등급↑ · 치명타 +0.5%/Lv", "effect": "rareWeight *=(1+0.04/Lv); critChance = 0.05 + luck_lv*0.005 (cap 0.25)", "fixed": "v2: 죽은 코드(*0.0) 수정 → 행운이 치명타에도 소폭 기여" },
+    { "id": "wealth",  "name": "수색",      "icon": "💰", "desc": "골드·강화석 +8%/Lv", "effect": "wealthMul = (1+wealth_lv*0.08)*(1+rebGoldFrac); rebGoldFrac=0.7*(1-0.88^rebirth)" },
     { "id": "haste",   "name": "신속",      "icon": "🌀", "desc": "행동력 회복·공속↑/Lv", "effect": "regenInterval *= (1 - haste_lv*0.05)" },
     { "id": "collect", "name": "수집가",    "icon": "📖", "desc": "도감 보너스 +25%/Lv", "effect": "dexBonus *= (1 + collect_lv*0.25)" }
   ],
@@ -95,16 +96,18 @@
   "rebirth": {
     "requireLv": "30 + rebirth*10",
     "keep": ["dex", "rebirth", "bestRegion", "bestStage"],
-    "grant": { "gems": 50, "skillPt": "rebirth*2", "gold": "round(800*rebirth*1.4^(rebirth-1))", "stones": "80*rebirth" },
-    "_grant_note": "스킬P 2배, 골드 기하급수(환생할수록 압도적 보너스), 강화석 대폭↑",
-    "permanent": { "powerMul": "1 + rebirth*0.30 + rebirth^1.6*0.02", "goldMul": "1+rebirth*0.18", "idleCapHours": "8+rebirth" },
+    "grant": { "gems": 40, "skillPt": "rebirth+2", "gold": "round(1000 + 400*rebirth)", "stones": "round(40 + 25*rebirth)" },
+    "_grant_note": "선형 보상으로 변경(기하급수 폐기): 환생수 누적돼도 보상이 폭주하지 않음. reb1골드1400 reb5골드3000.",
+    "permanent": { "powerMul": "1 + 1.6*(1 - 0.86^rebirth)", "goldMul": "1 + 0.7*(1 - 0.88^rebirth)", "idleCapHours": "min(24, 8+rebirth)" },
+    "_permanent_note": "전투력·골드 모두 점근형(감소수익). 첫 환생 체감 크고(+22%) 후반 완만 → 격차 압축. 방치 24h 상한.",
     "unlocks": [
-      { "reb": 1, "title": "각성", "desc": "전투력 +30% · 방치 9시간 · 특성P ×2 · 시작 골드 대폭 증가" },
-      { "reb": 2, "title": "강인", "desc": "골드 +36% · 방치 10시간 · 강화석 대량 지급" },
+      { "reb": 1, "title": "각성", "desc": "전투력 +22% · 방치 9시간 · 시작 자원 보너스" },
+      { "reb": 2, "title": "강인", "desc": "골드 +16% · 방치 10시간" },
       { "reb": 3, "title": "정예", "desc": "엘리트 드랍(+20%) · 2중 드랍 15% · 천장 65회로 단축" },
-      { "reb": 4, "title": "전설", "desc": "신화 확률 ×10(0.001%) · 방치 12시간" },
+      { "reb": 4, "title": "전설", "desc": "신화 확률 ×10(0.00001%→0.0001%) · 방치 12시간" },
       { "reb": 5, "title": "불사", "desc": "최강화 장비 이전 가능 (매 환생 1개 보존)" }
-    ]
+    ],
+    "_design": "환생 필요성=경험치벽(lv^1.5)+스테이지캡+회차잠금콘텐츠. 보상격차는 감소수익으로 통제. 레퍼런스: 쿠키클리커/NGU/Realm Grinder."
   },
 
   "regions": [
@@ -160,16 +163,16 @@
   },
 
   "balanceChangelog": [
-    "v2: expNeed 지수 1.35→1.55 (고레벨 성장 둔화, 환생 유도)",
-    "v2: 전투력 공식 - lv 기여 6→4, stageEff 기여 2→3 (진행/환생 중요도↑)",
-    "v2: 아이템 공식 - lv 가중 0.07→0.03, region 가중 0.25→0.45",
-    "v2: 강화 실패 도입 - +6부터 확률 하락, +11부터 강등 위험",
-    "v2: 환생 보상 대폭 강화 - 스킬P 2배, 골드 기하급수, 강화석↑",
-    "v2: 환생 잠금해제 콘텐츠 - 3환생 엘리트드랍, 4환생 신화×10, 5환생 장비이전",
-    "v2: 환생 배율 비선형화 1+reb*0.25→1+reb*0.30+reb^1.6*0.02"
+    "v2.0: expNeed 1.35→1.55, 전투력 lv기여6→4·stage기여2→3, 아이템 lv가중0.07→0.03·region0.25→0.45",
+    "v2.0: 강화 실패 도입(+6부터 확률↓, +11부터 강등), 환생 잠금해제 콘텐츠 추가",
+    "v2.1(하향평준화): expNeed 1.55→1.5 (경험치벽 과도 완화)",
+    "v2.1: 환생 전투력배율 점근형 1+1.6*(1-0.86^reb) — 기존 reb^1.6 폭발 폐기, 격차 압축",
+    "v2.1: 환생 골드보너스 점근형 0.7*(1-0.88^reb) — 기존 reb*0.18 선형 무한증가 폐기",
+    "v2.1: 환생 보상 선형화 - 골드 1000+400*reb, 강화석 40+25*reb, 스킬P reb+2 (기하급수 폐기)",
+    "v2.1: bestStageEff 환생기여 150→90, 방치 상한 24h 추가",
+    "v2.1(버그픽스): critChance 죽은코드(*0.0) 수정 → 행운 +0.5%/Lv 치명타(cap 25%)"
   ],
   "knownIssues": [
-    "critChance = 0.05 + luck*0.0 → 행운이 크리에 미반영(버그)",
     "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요(4단계)",
     "봇 랭킹과 실서버 랭킹 혼재 → 실데이터 단일 경로로 단순화",
     "익명+localStorage 신원 → 카카오 로그인+클라우드 세이브로 전환(2단계 완료, 5단계 통합 예정)"
