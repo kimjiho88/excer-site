@@ -562,8 +562,16 @@ function migrate(s){if(!s)return s;
  if(s.evClaim==null)s.evClaim="";
  return s;}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.ver===2)return migrate(s);}catch(e){}return fresh();}
-function save(){S.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof NET!=="undefined"&&NET.ready&&typeof netSubmit==="function")netSubmit(false);}
-function today(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function save(){S.lastSeen=Date.now();
+ // 인벤토리 상한(200개) 초과 시 하위 등급부터 자동 정리 → localStorage 용량 초과 방지
+ if(S.inv.length>200)S.inv=S.inv.slice().sort((a,b)=>b.rarity-a.rarity||itemPow(b)-itemPow(a)).slice(0,200);
+ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){
+  // 저장 실패(용량 초과) 시 인벤토리를 50개로 긴급 압축 후 재시도
+  try{S.inv=S.inv.slice().sort((a,b)=>b.rarity-a.rarity||itemPow(b)-itemPow(a)).slice(0,50);localStorage.setItem(KEY,JSON.stringify(S));}catch(e2){}}
+ if(typeof NET!=="undefined"&&NET.ready&&typeof netSubmit==="function")netSubmit(false);}
+// 날짜 문자열: 항상 두 자리 패딩 → 다국어/장치 간 불일치 방지 (ex "2026-06-01" not "2026-6-1")
+function today(){const d=new Date();const m=String(d.getMonth()+1).padStart(2,"0");const dd=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+dd;}
+function yesterday(){const d=new Date();d.setDate(d.getDate()-1);const m=String(d.getMonth()+1).padStart(2,"0");const dd=String(d.getDate()).padStart(2,"0");return d.getFullYear()+"-"+m+"-"+dd;}
 
 /* ===================================================================
    Supabase 연동 (실제 구성원 랭킹 + 어뷰징 방지)
@@ -847,8 +855,6 @@ function claimEventBonus(){if(S.evClaim===weekKey()){toast("이번 주 이벤트
  S.evClaim=weekKey();S.gems+=30;SFX.coin();save();updateTop();renderTab();toast("🎉 주간 이벤트 참여 보상 · 💎30");}
 
 /* ---------- 출석 / 보급상자 (접속 보상) ---------- */
-function ymd(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
-function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return ymd(d);}
 function applyReward(r){if(r.gold)S.gold+=r.gold;if(r.stones)S.stones+=r.stones;if(r.gems)S.gems+=r.gems;}
 const ATTEND_RW=[{gold:400},{stones:25},{gems:10},{gold:1200},{stones:50},{gems:15},{gems:50}];
 function rollAttend(){if(!S.attend)S.attend={last:"",streak:0,claimed:false};const t=today();
@@ -1076,10 +1082,10 @@ function update(dt){
  if(slashFx>0)slashFx-=dt;if(lunge>0)lunge-=dt;
  if(shake>0)shake=Math.max(0,shake-dt*0.05);
  if(flashFx>0)flashFx-=dt;
- pops.forEach(p=>{p.t+=dt;});pops=pops.filter(p=>p.t<820);
+ pops.forEach(p=>{p.t+=dt;});pops=pops.filter(p=>p.t<820);if(pops.length>80)pops=pops.slice(-80);
  // 파티클 업데이트(중력)
  parts.forEach(p=>{p.x+=p.vx*dt*0.06;p.y+=p.vy*dt*0.06;p.vy+=dt*0.012;p.life-=dt*0.0016;});
- parts=parts.filter(p=>p.life>0);
+ parts=parts.filter(p=>p.life>0);if(parts.length>200)parts=parts.slice(-200);
  pt+=dt;if(pt>150){pt=0;pf=(pf+1)%8;}
  if(comboT>0){comboT-=dt;if(comboT<=0)combo=0;}}
 function kill(z){zombies=zombies.filter(x=>x!==z);
