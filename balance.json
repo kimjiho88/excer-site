@@ -7,8 +7,8 @@
 
   "energy": { "max": 30, "regenMs": 80000, "hastePerLv": 0.05, "killPerEnergy": 5 },
 
-  "level": { "expNeed": "round(80 * lv^1.5)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
-  "_level_note": "expNeed 지수 1.35→1.5: 고레벨 경험치 요구량 점진 증가 → 환생 유도(과하지 않게)",
+  "level": { "expNeed": "round(80 * lv^1.55)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "_level_note": "v3.0: expNeed 지수 1.5→1.55. 첫 환생이 Lv100으로 상향됨에 따라 후반 곡선을 완만하게 강화 → Lv100 누적경험치 약 3.9M, '한 시즌 목표'화.",
 
   "power": {
     "formula": "floor((12 + lv*4 + bestStageEff*3 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * rebirthMul)",
@@ -27,7 +27,7 @@
     "critChance": 0.05,
     "critMult": 1.8,
     "enemyHp": "round((18 + region*22 + stage*6) * (boss?6:1) * (1 + bestRegion*0.05))",
-    "stageKills": 8,
+    "stageKills": 10,
     "stagesPerRegion": 10,
     "combo": { "windowMs": 2800, "goldMultPerCombo": 0.04, "comboCap": 25 }
   },
@@ -40,19 +40,19 @@
     "stoneNormalChance": 0.25,
     "stoneNormal": "round(1 + region*0.5)",
     "dropChanceBoss": 0.9,
-    "dropChanceNormal": "0.13 + luck_lv*0.01"
+    "dropChanceNormal": "0.10 + luck_lv*0.01"
   },
 
   "rarity": [
-    { "key": "일반", "w": 62,       "mul": 1.0,  "color": "#9aa0aa" },
-    { "key": "고급", "w": 27,       "mul": 1.7,  "color": "#46c46e" },
-    { "key": "희귀", "w": 9,        "mul": 3.0,  "color": "#3d8bf0" },
-    { "key": "영웅", "w": 1.7,      "mul": 5.5,  "color": "#b06ff0" },
-    { "key": "전설", "w": 0.12,     "mul": 13.0, "color": "#e6c964" },
+    { "key": "일반", "w": 67,       "mul": 1.0,  "color": "#9aa0aa" },
+    { "key": "고급", "w": 24,       "mul": 1.7,  "color": "#46c46e" },
+    { "key": "희귀", "w": 7.5,      "mul": 3.0,  "color": "#3d8bf0" },
+    { "key": "영웅", "w": 1.3,      "mul": 5.5,  "color": "#b06ff0" },
+    { "key": "전설", "w": 0.08,     "mul": 13.0, "color": "#e6c964" },
     { "key": "신화", "w": 0.00001,  "mul": 25.0, "color": "#ff7a59" }
   ],
   "gacha": {
-    "pity": 70,
+    "pity": 80,
     "pityResultIndex": 3,
     "pityResetOnRarityGte": 3,
     "luck": { "rareWeightMul": "1 + luck_lv*0.04", "epicWeightMul": "1 + luck_lv*0.03" },
@@ -91,19 +91,20 @@
     { "id": "haste",   "name": "신속",      "icon": "🌀", "desc": "행동력 회복·공속↑/Lv", "effect": "regenInterval *= (1 - haste_lv*0.05)" },
     { "id": "collect", "name": "수집가",    "icon": "📖", "desc": "도감 보너스 +25%/Lv", "effect": "dexBonus *= (1 + collect_lv*0.25)" }
   ],
-  "skillCost": { "pt": 1, "gold": "round(120 * 1.4^currentLv)" },
+  "skillCost": { "pt": 1, "gold": "round(140 * 1.42^currentLv)" },
 
   "rebirth": {
-    "requireLv": "30 + rebirth*10",
+    "requireLv": "100 + rebirth*25",
+    "_requireLv_note": "v3.0: 30+reb*10 → 100+reb*25. 첫 환생 Lv100, 이후 회차당 +25 (reb1:100 reb2:125 reb3:150…). 환생이 '큰 결단'이 되도록 상향.",
     "keep": ["dex", "rebirth", "bestRegion", "bestStage"],
-    "grant": { "gems": 40, "skillPt": "rebirth+2", "gold": "round(1000 + 400*rebirth)", "stones": "round(40 + 25*rebirth)" },
-    "_grant_note": "선형 보상으로 변경(기하급수 폐기): 환생수 누적돼도 보상이 폭주하지 않음. reb1골드1400 reb5골드3000.",
+    "grant": { "gems": 40, "skillPt": "rebirth+2", "gold": "round(1500 + 600*rebirth)", "stones": "round(60 + 35*rebirth)" },
+    "_grant_note": "v3.0: 환생 간격이 길어진 만큼 재시작 부스트 상향. 골드 1500+600*reb(reb1:2100 reb5:4500), 강화석 60+35*reb.",
     "permanent": { "powerMul": "1 + 1.6*(1 - 0.86^rebirth)", "goldMul": "1 + 0.7*(1 - 0.88^rebirth)", "idleCapHours": "min(24, 8+rebirth)" },
     "_permanent_note": "전투력·골드 모두 점근형(감소수익). 첫 환생 체감 크고(+22%) 후반 완만 → 격차 압축. 방치 24h 상한.",
     "unlocks": [
       { "reb": 1, "title": "각성", "desc": "전투력 +22% · 방치 9시간 · 시작 자원 보너스" },
       { "reb": 2, "title": "강인", "desc": "골드 +16% · 방치 10시간" },
-      { "reb": 3, "title": "정예", "desc": "엘리트 드랍(+20%) · 2중 드랍 15% · 천장 65회로 단축" },
+      { "reb": 3, "title": "정예", "desc": "엘리트 드랍(+20%) · 2중 드랍 15% · 천장 70회로 단축" },
       { "reb": 4, "title": "전설", "desc": "신화 확률 ×10(0.00001%→0.0001%) · 방치 12시간" },
       { "reb": 5, "title": "불사", "desc": "최강화 장비 이전 가능 (매 환생 1개 보존)" }
     ],
@@ -149,6 +150,20 @@
     { "id": "enh",   "name": "장비 5회 강화",     "goal": 5,  "reward": { "gold": 500 } },
     { "id": "arena", "name": "아레나 1회 승리",    "goal": 1,  "reward": { "gems": 20 } }
   ],
+  "achievements": [
+    { "id": "k200",   "name": "좀비 헌터",   "goal": 200,   "metric": "totalKills",      "reward": { "gems": 20 } },
+    { "id": "k3000",  "name": "학살자",      "goal": 3000,  "metric": "totalKills",      "reward": { "gems": 40 } },
+    { "id": "k30000", "name": "종말의 사신", "goal": 30000, "metric": "totalKills",      "reward": { "gems": 120 } },
+    { "id": "p200",   "name": "수집의 시작", "goal": 200,   "metric": "totalPulls",      "reward": { "gems": 20 } },
+    { "id": "p2000",  "name": "가챠 중독",   "goal": 2000,  "metric": "totalPulls",      "reward": { "gems": 60 } },
+    { "id": "e10",    "name": "강화 입문",   "goal": 10,    "metric": "maxPlus",         "reward": { "gems": 30 } },
+    { "id": "e15",    "name": "강화의 達人", "goal": 15,    "metric": "maxPlus",         "reward": { "gems": 120 } },
+    { "id": "s80",    "name": "개척자",      "goal": 80,    "metric": "integratedStage", "reward": { "gems": 40 } },
+    { "id": "s250",   "name": "심연의 끝",   "goal": 250,   "metric": "integratedStage", "reward": { "gems": 120 } },
+    { "id": "r1",     "name": "새로운 시작", "goal": 1,     "metric": "rebirth",         "reward": { "gems": 50 } },
+    { "id": "r5",     "name": "윤회의 화신", "goal": 5,     "metric": "rebirth",         "reward": { "gems": 200 } }
+  ],
+  "_achievements_note": "v3.0: 달성 목표 전반 상향(킬 100/1k/10k→200/3k/30k, 뽑기 100/1k→200/2k, 단계 50/150→80/250). 장기 운영 목표화.",
   "arena": {
     "cooldownMs": 10800000,
     "rollRange": [0.85, 1.25],
@@ -170,7 +185,13 @@
     "v2.1: 환생 골드보너스 점근형 0.7*(1-0.88^reb) — 기존 reb*0.18 선형 무한증가 폐기",
     "v2.1: 환생 보상 선형화 - 골드 1000+400*reb, 강화석 40+25*reb, 스킬P reb+2 (기하급수 폐기)",
     "v2.1: bestStageEff 환생기여 150→90, 방치 상한 24h 추가",
-    "v2.1(버그픽스): critChance 죽은코드(*0.0) 수정 → 행운 +0.5%/Lv 치명타(cap 25%)"
+    "v2.1(버그픽스): critChance 죽은코드(*0.0) 수정 → 행운 +0.5%/Lv 치명타(cap 25%)",
+    "v3.0(장기운영 감속): 환생 요구레벨 30+reb*10 → 100+reb*25 (첫 환생 Lv100). 환생을 큰 결단으로.",
+    "v3.0: expNeed 1.5→1.55 (Lv100 누적 약 3.9M으로 한 시즌 목표화)",
+    "v3.0(가챠 하향): 일반62→67·고급27→24·희귀9→7.5·영웅1.7→1.3·전설0.12→0.08, 천장 70→80",
+    "v3.0(드랍 하향): 일반몹 드랍 0.13→0.10, 스테이지당 처치 8→10",
+    "v3.0(달성 상향): 업적 목표 전반 상향(킬·뽑기·단계), 스킬비용 120*1.4^→140*1.42^",
+    "v3.0: 환생 보상 상향(간격 보정) 골드 1000+400→1500+600, 강화석 40+25→60+35 *reb"
   ],
   "knownIssues": [
     "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요(4단계)",
