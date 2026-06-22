@@ -7,15 +7,19 @@
 
   "energy": { "max": 30, "regenMs": 80000, "hastePerLv": 0.05, "killPerEnergy": 5 },
 
-  "level": { "expNeed": "round(80 * lv^1.35)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "level": { "expNeed": "round(80 * lv^1.55)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "_level_note": "v3.0: expNeed 지수 1.5→1.55. 첫 환생이 Lv100으로 상향됨에 따라 후반 곡선을 완만하게 강화 → Lv100 누적경험치 약 3.9M, '한 시즌 목표'화.",
 
   "power": {
-    "formula": "floor((12 + lv*6 + bestStageEff*2 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * (1+rebirth*0.25))",
-    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 100 + lv*14 + rebirth*100)",
+    "formula": "floor((12 + lv*4 + bestStageEff*3 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * rebirthMul)",
+    "_note": "lv 기여 줄임(6→4), stageEff 기여 높임(2→3): 레벨만으로 강해지는 구조 완화",
+    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 60 + lv*8 + rebirth*90)",
+    "_bestStageEff_note": "캡은 환생으로 완화되지만 환생 기여 축소(150→90)로 격차 통제. 실제 스테이지 도달 필요.",
     "gearPow": "sum(itemPow)",
     "itemPow": "round(item.power * (1 + plus*0.13))",
     "dexBonusPct": "dexCount * 1.2 * (1 + collect_lv*0.25)",
-    "rebirthMul": "1 + rebirth*0.25"
+    "rebirthMul": "1 + 1.6*(1 - 0.86^rebirth)",
+    "_rebirthMul_note": "점근 곡선(감소수익, ~2.6x 상한). reb1:1.22 reb5:1.85 reb20:2.52. 레퍼런스: 쿠키클리커/NGU Idle 프레스티지. 환생은 필수지만 고/저환생 격차 압축."
   },
 
   "combat": {
@@ -23,7 +27,7 @@
     "critChance": 0.05,
     "critMult": 1.8,
     "enemyHp": "round((18 + region*22 + stage*6) * (boss?6:1) * (1 + bestRegion*0.05))",
-    "stageKills": 8,
+    "stageKills": 10,
     "stagesPerRegion": 10,
     "combo": { "windowMs": 2800, "goldMultPerCombo": 0.04, "comboCap": 25 }
   },
@@ -36,19 +40,20 @@
     "stoneNormalChance": 0.25,
     "stoneNormal": "round(1 + region*0.5)",
     "dropChanceBoss": 0.9,
-    "dropChanceNormal": "0.13 + luck_lv*0.01"
+    "dropChanceNormal": "0.10 + luck_lv*0.01"
   },
 
   "rarity": [
-    { "key": "일반", "w": 62,       "mul": 1.0,  "color": "#9aa0aa" },
-    { "key": "고급", "w": 27,       "mul": 1.7,  "color": "#46c46e" },
-    { "key": "희귀", "w": 9,        "mul": 3.0,  "color": "#3d8bf0" },
-    { "key": "영웅", "w": 1.7,      "mul": 5.5,  "color": "#b06ff0" },
-    { "key": "전설", "w": 0.12,     "mul": 13.0, "color": "#e6c964" },
+    { "key": "일반", "w": 67.05,    "mul": 1.0,  "color": "#9aa0aa" },
+    { "key": "고급", "w": 24,       "mul": 1.7,  "color": "#46c46e" },
+    { "key": "희귀", "w": 7.5,      "mul": 3.0,  "color": "#3d8bf0" },
+    { "key": "영웅", "w": 1.3,      "mul": 5.5,  "color": "#b06ff0" },
+    { "key": "전설", "w": 0.03,     "mul": 13.0, "color": "#e6c964" },
     { "key": "신화", "w": 0.00001,  "mul": 25.0, "color": "#ff7a59" }
   ],
+  "_rarity_note": "v3.1: 전설 0.08→0.03(줄인 만큼 일반 67→67.05로 전환). 전설은 희소 가치 유지.",
   "gacha": {
-    "pity": 70,
+    "pity": 80,
     "pityResultIndex": 3,
     "pityResetOnRarityGte": 3,
     "luck": { "rareWeightMul": "1 + luck_lv*0.04", "epicWeightMul": "1 + luck_lv*0.03" },
@@ -58,30 +63,50 @@
   "item": {
     "slotWeights": { "weapon": 40, "top": 20, "head": 16, "legs": 9, "cape": 15 },
     "basePower":   { "weapon": 12, "top": 7,  "head": 6,  "legs": 7, "cape": 5 },
-    "powerFormula": "max(1, round(PBASE[slot] * RAR[rarity].mul * rand(0.9,1.2) * (1 + lv*0.07 + region*0.25)))"
+    "powerFormula": "max(1, round(PBASE[slot] * RAR[rarity].mul * rand(0.9,1.2) * (1 + lv*0.03 + region*0.45)))",
+    "_note": "레벨 가중 0.07→0.03, 지역(진행도) 가중 0.25→0.45: 진행도 없이 레벨만 높아도 장비가 강해지는 문제 해결"
   },
 
   "enhance": {
     "max": 15,
     "powerPerPlus": 0.13,
-    "cost": { "gold": "round(40 * 1.5^plus * (rarity+1))", "stone": "round(2 + plus*1.5 + rarity)" }
+    "cost": { "gold": "round(40 * base^plus * (rarity+1))", "stone": "round((2+plus*1.5+rarity) * (plus>=6 ? 1+plus*0.1 : 1))",
+              "base": "plus<6 ? 1.5 : 1.5+plus*0.12" },
+    "successChanceTable": [1,1,1,1,1,1,0.80,0.62,0.42,0.30,0.20,0.13,0.08,0.045,0.025],
+    "_successChance_note": "v3.1: 선형 폐기. index=현재 강화수치→+1 시도 확률. +0~5:100%, +6:80% +7:62%, +8부터 가속 하락(42/30/20), +11~14 극악(13/8/4.5/2.5%).",
+    "failEffect": {
+      "+1~+10": "재화만 소모, 강화 수치 유지",
+      "+11~+15": "실패 시 -1 강등 (강화 수치 1 감소)"
+    },
+    "_note": "강화 리스크: +6부터 실패 가능, +8부터 극악, +11부터 강등 위험 → 고강화는 도박"
   },
   "salvage": { "value": "round((rarity+1) * (2+plus) * 1.5 * (1 + wealth_lv*0.08))" },
 
   "skills": [
     { "id": "atk",     "name": "전투 숙련", "icon": "⚔️", "desc": "전투력 +6%/Lv", "effect": "powerMul *= 1 + atk_lv*0.06" },
-    { "id": "luck",    "name": "행운",      "icon": "🍀", "desc": "전리품 등급↑/Lv", "effect": "rareWeight *=(1+0.04/Lv); epicWeight *=(1+0.03/Lv)", "issue": "현재 크리티컬에는 미반영(버그)" },
-    { "id": "wealth",  "name": "수색",      "icon": "💰", "desc": "골드·강화석 +8%/Lv", "effect": "wealthMul = (1+wealth_lv*0.08)*(1+rebirth*0.18)" },
+    { "id": "luck",    "name": "행운",      "icon": "🍀", "desc": "전리품 등급↑ · 치명타 +0.5%/Lv", "effect": "rareWeight *=(1+0.04/Lv); critChance = 0.05 + luck_lv*0.005 (cap 0.25)", "fixed": "v2: 죽은 코드(*0.0) 수정 → 행운이 치명타에도 소폭 기여" },
+    { "id": "wealth",  "name": "수색",      "icon": "💰", "desc": "골드·강화석 +8%/Lv", "effect": "wealthMul = (1+wealth_lv*0.08)*(1+rebGoldFrac); rebGoldFrac=0.7*(1-0.88^rebirth)" },
     { "id": "haste",   "name": "신속",      "icon": "🌀", "desc": "행동력 회복·공속↑/Lv", "effect": "regenInterval *= (1 - haste_lv*0.05)" },
     { "id": "collect", "name": "수집가",    "icon": "📖", "desc": "도감 보너스 +25%/Lv", "effect": "dexBonus *= (1 + collect_lv*0.25)" }
   ],
-  "skillCost": { "pt": 1, "gold": "round(120 * 1.4^currentLv)" },
+  "skillCost": { "pt": 1, "gold": "round(140 * 1.42^currentLv)" },
 
   "rebirth": {
-    "requireLv": "30 + rebirth*10",
+    "requireLv": "100 + rebirth*25",
+    "_requireLv_note": "v3.0: 30+reb*10 → 100+reb*25. 첫 환생 Lv100, 이후 회차당 +25 (reb1:100 reb2:125 reb3:150…). 환생이 '큰 결단'이 되도록 상향.",
     "keep": ["dex", "rebirth", "bestRegion", "bestStage"],
-    "grant": { "gems": 30, "skillPt": "rebirth", "gold": "800*rebirth", "stones": "50*rebirth" },
-    "permanent": { "powerMul": "1+rebirth*0.25", "goldMul": "1+rebirth*0.18", "idleCapHours": "8+rebirth" }
+    "grant": { "gems": 40, "skillPt": "rebirth+2", "gold": "round(1500 + 600*rebirth)", "stones": "round(60 + 35*rebirth)" },
+    "_grant_note": "v3.0: 환생 간격이 길어진 만큼 재시작 부스트 상향. 골드 1500+600*reb(reb1:2100 reb5:4500), 강화석 60+35*reb.",
+    "permanent": { "powerMul": "1 + 1.6*(1 - 0.86^rebirth)", "goldMul": "1 + 0.7*(1 - 0.88^rebirth)", "idleCapHours": "min(24, 8+rebirth)" },
+    "_permanent_note": "전투력·골드 모두 점근형(감소수익). 첫 환생 체감 크고(+22%) 후반 완만 → 격차 압축. 방치 24h 상한.",
+    "unlocks": [
+      { "reb": 1, "title": "각성", "desc": "전투력 +22% · 방치 9시간 · 시작 자원 보너스" },
+      { "reb": 2, "title": "강인", "desc": "골드 +16% · 방치 10시간" },
+      { "reb": 3, "title": "정예", "desc": "엘리트 드랍(+20%) · 2중 드랍 15% · 천장 70회로 단축" },
+      { "reb": 4, "title": "전설", "desc": "신화 확률 ×10(0.00001%→0.0001%) · 방치 12시간" },
+      { "reb": 5, "title": "불사", "desc": "최강화 장비 이전 가능 (매 환생 1개 보존)" }
+    ],
+    "_design": "환생 필요성=경험치벽(lv^1.5)+스테이지캡+회차잠금콘텐츠. 보상격차는 감소수익으로 통제. 레퍼런스: 쿠키클리커/NGU/Realm Grinder."
   },
 
   "regions": [
@@ -123,6 +148,20 @@
     { "id": "enh",   "name": "장비 5회 강화",     "goal": 5,  "reward": { "gold": 500 } },
     { "id": "arena", "name": "아레나 1회 승리",    "goal": 1,  "reward": { "gems": 20 } }
   ],
+  "achievements": [
+    { "id": "k200",   "name": "좀비 헌터",   "goal": 200,   "metric": "totalKills",      "reward": { "gems": 20 } },
+    { "id": "k3000",  "name": "학살자",      "goal": 3000,  "metric": "totalKills",      "reward": { "gems": 40 } },
+    { "id": "k30000", "name": "종말의 사신", "goal": 30000, "metric": "totalKills",      "reward": { "gems": 120 } },
+    { "id": "p200",   "name": "수집의 시작", "goal": 200,   "metric": "totalPulls",      "reward": { "gems": 20 } },
+    { "id": "p2000",  "name": "가챠 중독",   "goal": 2000,  "metric": "totalPulls",      "reward": { "gems": 60 } },
+    { "id": "e10",    "name": "강화 입문",   "goal": 10,    "metric": "maxPlus",         "reward": { "gems": 30 } },
+    { "id": "e15",    "name": "강화의 達人", "goal": 15,    "metric": "maxPlus",         "reward": { "gems": 120 } },
+    { "id": "s80",    "name": "개척자",      "goal": 80,    "metric": "integratedStage", "reward": { "gems": 40 } },
+    { "id": "s250",   "name": "심연의 끝",   "goal": 250,   "metric": "integratedStage", "reward": { "gems": 120 } },
+    { "id": "r1",     "name": "새로운 시작", "goal": 1,     "metric": "rebirth",         "reward": { "gems": 50 } },
+    { "id": "r5",     "name": "윤회의 화신", "goal": 5,     "metric": "rebirth",         "reward": { "gems": 200 } }
+  ],
+  "_achievements_note": "v3.0: 달성 목표 전반 상향(킬 100/1k/10k→200/3k/30k, 뽑기 100/1k→200/2k, 단계 50/150→80/250). 장기 운영 목표화.",
   "arena": {
     "cooldownMs": 10800000,
     "rollRange": [0.85, 1.25],
@@ -136,12 +175,27 @@
     "excludeOpsFromCompetition": true
   },
 
+  "balanceChangelog": [
+    "v2.0: expNeed 1.35→1.55, 전투력 lv기여6→4·stage기여2→3, 아이템 lv가중0.07→0.03·region0.25→0.45",
+    "v2.0: 강화 실패 도입(+6부터 확률↓, +11부터 강등), 환생 잠금해제 콘텐츠 추가",
+    "v2.1(하향평준화): expNeed 1.55→1.5 (경험치벽 과도 완화)",
+    "v2.1: 환생 전투력배율 점근형 1+1.6*(1-0.86^reb) — 기존 reb^1.6 폭발 폐기, 격차 압축",
+    "v2.1: 환생 골드보너스 점근형 0.7*(1-0.88^reb) — 기존 reb*0.18 선형 무한증가 폐기",
+    "v2.1: 환생 보상 선형화 - 골드 1000+400*reb, 강화석 40+25*reb, 스킬P reb+2 (기하급수 폐기)",
+    "v2.1: bestStageEff 환생기여 150→90, 방치 상한 24h 추가",
+    "v2.1(버그픽스): critChance 죽은코드(*0.0) 수정 → 행운 +0.5%/Lv 치명타(cap 25%)",
+    "v3.0(장기운영 감속): 환생 요구레벨 30+reb*10 → 100+reb*25 (첫 환생 Lv100). 환생을 큰 결단으로.",
+    "v3.0: expNeed 1.5→1.55 (Lv100 누적 약 3.9M으로 한 시즌 목표화)",
+    "v3.0(가챠 하향): 일반62→67·고급27→24·희귀9→7.5·영웅1.7→1.3·전설0.12→0.08, 천장 70→80",
+    "v3.0(드랍 하향): 일반몹 드랍 0.13→0.10, 스테이지당 처치 8→10",
+    "v3.0(달성 상향): 업적 목표 전반 상향(킬·뽑기·단계), 스킬비용 120*1.4^→140*1.42^",
+    "v3.0: 환생 보상 상향(간격 보정) 골드 1000+400→1500+600, 강화석 40+25→60+35 *reb",
+    "v3.1(희소성): 전설 드랍 0.08→0.03(일반으로 전환). 전설은 진짜 귀한 템으로.",
+    "v3.1(강화 극악화): 성공률 선형 폐기→명시 테이블. +8부터 가속 하락, +11~14 극악(13/8/4.5/2.5%)"
+  ],
   "knownIssues": [
-    "critChance = 0.05 + luck*0.0 → 행운이 크리에 미반영(버그)",
-    "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요",
-    "신화 ~1/1000만 → 사실상 획득 불가(의도 확인 필요)",
-    "전투력에 진행도(bestStage*2) 비중 재튜닝 필요",
+    "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요(4단계)",
     "봇 랭킹과 실서버 랭킹 혼재 → 실데이터 단일 경로로 단순화",
-    "익명+localStorage 신원 → 카카오 로그인+클라우드 세이브로 전환(결정됨)"
+    "익명+localStorage 신원 → 카카오 로그인+클라우드 세이브로 전환(2단계 완료, 5단계 통합 예정)"
   ]
 }

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>2단계 · 카카오 로그인 / 클라우드 세이브 테스트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:#ece4f5;min-height:100vh;padding:18px;
+ background:radial-gradient(130% 75% at 50% -8%,#341a52 0%,#211036 46%,#150a22 82%,#0c0418 100%)}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:18px;font-weight:800}
+.sub{font-size:12.5px;color:#a394bd;margin-top:3px;line-height:1.6}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(160,95,208,.2);border-radius:16px;padding:15px}
+.card h2{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:9px}
+.kv{font-size:12.5px;line-height:1.95}
+.kv b{color:#fff}.kv .mut{color:#a394bd}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;margin-left:4px}
+.pill.anon{background:rgba(255,255,255,.1);color:#cbb8e6}
+.pill.kakao{background:#fee500;color:#3c1e1e}
+.pill.off{background:rgba(255,93,108,.18);color:#ff9bab}
+.pill.on{background:rgba(70,196,110,.18);color:#8fe0a8}
+button{font-family:inherit;font-weight:800;font-size:13.5px;color:#fff;border:none;cursor:pointer;
+ padding:11px 14px;border-radius:11px;background:linear-gradient(135deg,#8a35c0,#5a1f86);box-shadow:0 6px 18px rgba(138,53,192,.35)}
+button:active{transform:scale(.98)}
+button.k{background:#fee500;color:#3c1e1e;box-shadow:0 6px 18px rgba(254,229,0,.28)}
+button.g{background:rgba(255,255,255,.07);color:#d9cdec;box-shadow:none}
+button:disabled{opacity:.4;cursor:not-allowed}
+pre{background:rgba(0,0,0,.32);border:1px solid rgba(160,95,208,.18);border-radius:10px;padding:11px;font-size:11px;
+ line-height:1.55;color:#cdbce6;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+.log .t{color:#8fe0a8}.log .e{color:#ff9bab}.log .i{color:#a394bd}
+</style></head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>2단계 테스트 · 카카오 로그인 + 클라우드 세이브</h1>
+    <div class="sub">기존 game.html 은 건드리지 않는 독립 검증 페이지입니다.<br/>
+      흐름: <b>익명으로 시작</b> → 진행도 만들기 → <b>클라우드 저장</b> → <b>카카오 로그인</b>(연결/이전) → 진행도 보존 확인.</div>
+  </div>
+
+  <div class="card">
+    <h2>① 신원 <span id="netPill" class="pill off">연결 안 됨</span></h2>
+    <div id="who" class="kv mut">초기화 중…</div>
+    <div class="row" style="margin-top:12px">
+      <button id="bAnon" class="g">익명으로 시작</button>
+      <button id="bKakao" class="k">카카오 로그인 / 연결</button>
+      <button id="bOut" class="g">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 진행도(샘플 상태 S)</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button id="bLvUp" class="g">레벨업 +5</button>
+      <button id="bStage" class="g">스테이지 +3</button>
+      <button id="bReb" class="g">환생 +1</button>
+      <button id="bDex" class="g">도감 +4</button>
+      <button id="bReset" class="g">샘플 초기화</button>
+    </div>
+    <div id="score" class="kv mut" style="margin-bottom:8px"></div>
+    <pre id="stateView"></pre>
+  </div>
+
+  <div class="card">
+    <h2>③ 클라우드 세이브</h2>
+    <div class="row" style="margin-bottom:10px">
+      <button id="bSave">클라우드에 저장</button>
+      <button id="bLoad" class="g">클라우드에서 불러오기</button>
+      <button id="bResolve" class="g">로컬 vs 클라우드 비교</button>
+    </div>
+    <div id="cloudView" class="kv mut">아직 불러오지 않음</div>
+  </div>
+
+  <div class="card">
+    <h2>④ 로그</h2>
+    <pre id="log" class="log"></pre>
+  </div>
+</div>
+
+<script src="./cloudsave.js"></script>
+<script>
+// game.html 과 동일한 공개 Supabase 프로젝트 (anon key 는 공개용, RLS 로 보호)
+var SUPA = { url:"https://drggzlnzwvkhtalvkqyo.supabase.co",
+  anon:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E" };
+
+var TEST_KEY = "nh_cs_teststate"; // game.html 의 nh_zh_v2 와 충돌하지 않는 별도 테스트 상태
+var S = loadS();
+
+function $(id){ return document.getElementById(id); }
+function log(msg, cls){ var p=$("log"); var t=new Date().toLocaleTimeString();
+  p.innerHTML += '<div class="'+(cls||"i")+'">['+t+'] '+msg+'</div>'; p.scrollTop=p.scrollHeight; }
+function freshS(){ return { ver:2, lv:1, rebirth:0, bestRegion:1, bestStage:1, dex:{}, lastSeen:Date.now() }; }
+function loadS(){ try{ var s=JSON.parse(localStorage.getItem(TEST_KEY)); if(s&&s.ver===2) return s; }catch(e){} return freshS(); }
+function saveS(){ S.lastSeen=Date.now(); try{ localStorage.setItem(TEST_KEY, JSON.stringify(S)); }catch(e){} renderState(); }
+
+function renderState(){
+  $("stateView").textContent = JSON.stringify(S, null, 2);
+  var sc = CloudSave.progressScore(S);
+  $("score").innerHTML = '진행도 점수 <b>'+sc.toLocaleString()+'</b> · '
+    + 'lv '+S.lv+' / 환생 '+S.rebirth+' / 최고스테이지 '+((S.bestRegion-1)*10+S.bestStage)+' / 도감 '+Object.keys(S.dex).length;
+}
+
+function renderWho(){
+  var u = CloudSave.user();
+  if(!u){ $("who").innerHTML = '<span class="mut">로그인 안 됨</span>'; return; }
+  $("who").innerHTML =
+    '<div>uid <b>'+u.uid+'</b></div>'+
+    '<div>유형 '+(u.isAnonymous?'<span class="pill anon">익명</span>':'')+(u.hasKakao?'<span class="pill kakao">카카오</span>':'')+'</div>'+
+    '<div class="mut">공급자: '+(u.providers.join(", ")||'-')+(u.nick?(' · 닉 '+u.nick):'')+'</div>';
+}
+
+function setNet(on){ var p=$("netPill"); p.className='pill '+(on?'on':'off'); p.textContent=on?'연결됨':'연결 안 됨'; }
+
+async function refreshAll(){ await CloudSave.refresh(); renderWho(); }
+
+/* ---------- 버튼 ---------- */
+$("bAnon").onclick = async function(){
+  try{ log("익명 로그인 시도…"); await CloudSave.ensureAnon(); renderWho(); log("익명 로그인 완료: "+CloudSave.user().uid,"t"); }
+  catch(e){ log("익명 로그인 실패: "+(e.message||e),"e"); }
+};
+$("bKakao").onclick = async function(){
+  try{
+    await CloudSave.refresh();
+    var u = CloudSave.user();
+    if(u && u.isAnonymous){
+      log("익명 uid "+u.uid+" 에 카카오 연결 시도(linkIdentity)…");
+      var r = await CloudSave.linkKakao();
+      if(r && r.conflict){
+        log("이미 다른 계정에 연결된 카카오 → 카카오로 로그인 전환(병합 경로)","i");
+        await CloudSave.signInWithKakao();
+      }
+    } else if(!u){
+      log("카카오로 로그인(signInWithOAuth)…");
+      await CloudSave.signInWithKakao();
+    } else {
+      log("이미 카카오 계정으로 로그인됨","i");
+    }
+  } catch(e){ log("카카오 로그인 실패: "+(e.message||e),"e"); }
+};
+$("bOut").onclick = async function(){ await CloudSave.signOut(); renderWho(); log("로그아웃"); };
+
+$("bLvUp").onclick = function(){ S.lv += 5; saveS(); };
+$("bStage").onclick = function(){ S.bestStage += 3; if(S.bestStage>10){ S.bestRegion += Math.floor((S.bestStage-1)/10); S.bestStage=((S.bestStage-1)%10)+1; } saveS(); };
+$("bReb").onclick = function(){ S.rebirth += 1; saveS(); };
+$("bDex").onclick = function(){ for(var i=0;i<4;i++) S.dex["weapon:sword"+Date.now()+i]=1; saveS(); };
+$("bReset").onclick = function(){ S=freshS(); saveS(); log("샘플 상태 초기화"); };
+
+$("bSave").onclick = async function(){
+  try{ var r = await CloudSave.saveCloud(S); log("클라우드 저장 완료 · 서버점수 "+Number(r.score).toLocaleString(),"t"); renderCloud(r); }
+  catch(e){ log("저장 실패: "+(e.message||e),"e"); }
+};
+$("bLoad").onclick = async function(){
+  try{ var r = await CloudSave.loadCloud(); if(!r){ log("클라우드 세이브 없음","i"); $("cloudView").textContent="(없음)"; return; }
+    log("클라우드 불러옴 · 서버점수 "+Number(r.score).toLocaleString(),"t"); renderCloud(r); }
+  catch(e){ log("불러오기 실패: "+(e.message||e),"e"); }
+};
+$("bResolve").onclick = async function(){
+  try{ var r = await CloudSave.loadCloud(); var res = CloudSave.resolve(S, r&&r.state);
+    log("비교 → 채택: "+res.source+" (로컬 "+res.localScore.toLocaleString()+" vs 클라우드 "+res.cloudScore.toLocaleString()+")","t");
+    if(res.chosen){ S = res.chosen; saveS(); } }
+  catch(e){ log("비교 실패: "+(e.message||e),"e"); }
+};
+
+function renderCloud(r){
+  $("cloudView").innerHTML = '<div>서버점수 <b>'+Number(r.score).toLocaleString()+'</b></div>'+
+    '<div class="mut">갱신 '+new Date(r.updatedAt).toLocaleString()+' · ver '+r.ver+'</div>'+
+    '<pre style="margin-top:8px">'+JSON.stringify(r.state,null,2)+'</pre>';
+}
+
+/* ---------- 부트 ---------- */
+(async function(){
+  renderState();
+  try{
+    await CloudSave.init(SUPA);
+    setNet(true);
+    log("Supabase 연결됨","t");
+    // OAuth 복귀 처리(연결/병합 마무리)
+    var rr = await CloudSave.handleRedirectResult();
+    if(rr){
+      if(rr.migrated){ log("익명 → 카카오 이전 완료: "+rr.fromUid+" → "+rr.toUid,"t");
+        if(rr.save && rr.save.state){ S = rr.save.state; saveS(); renderCloud(rr.save); } }
+      else if(rr.save){ log("카카오 로그인 복귀(같은 uid, 데이터 이동 없음)","t"); renderCloud(rr.save); }
+    }
+    renderWho();
+  } catch(e){ setNet(false); log("초기화 실패: "+(e.message||e),"e"); }
+})();
+</script>
+</body></html>
