@@ -504,11 +504,11 @@ const SFX=(function(){
 
 /* ---------- 데이터 ---------- */
 const RAR=[
- {k:"일반",c:"#9aa0aa",w:67,mul:1},
+ {k:"일반",c:"#9aa0aa",w:67.05,mul:1},
  {k:"고급",c:"#46c46e",w:24,mul:1.7},
  {k:"희귀",c:"#3d8bf0",w:7.5,mul:3.0},
  {k:"영웅",c:"#b06ff0",w:1.3,mul:5.5},
- {k:"전설",c:"#e6c964",w:0.08,mul:13},
+ {k:"전설",c:"#e6c964",w:0.03,mul:13},
  {k:"신화",c:"#ff7a59",w:0.00001,mul:25},
 ];
 const POOL={
@@ -746,12 +746,13 @@ function enhCost(it){
  const base=it.plus<6?1.5:1.5+it.plus*0.12;
  return{gold:Math.round(40*Math.pow(base,it.plus)*(it.rarity+1)),
         stone:Math.round((2+it.plus*1.5+it.rarity)*(it.plus>=6?1+it.plus*0.1:1))};}
-// 강화 성공확률: +0~5: 100%, +6~10: 80%→40%, +11~15: 35%→15%
+// 강화 성공확률(현재 강화수치 → +1 시도). 선형 아님: +8부터 가속 하락, 상단은 극악.
+//  +0~5:100% / +6:80% +7:62% / +8:42% +9:30% +10:20% / +11:13% +12:8% +13:4.5% +14:2.5%
 // 실패: +6~10 단순 실패(재화만 소모), +11~15 실패 시 -1 강등
+const ENH_CHANCE=[1,1,1,1,1,1,0.80,0.62,0.42,0.30,0.20,0.13,0.08,0.045,0.025];
 function enhSuccessChance(plus){
- if(plus<=5)return 1;
- if(plus<=10)return clamp(0.80-(plus-5)*0.08,0.40,0.80);
- return clamp(0.35-(plus-10)*0.04,0.15,0.35);}
+ if(plus>=ENH_CHANCE.length)return 0.025;
+ return ENH_CHANCE[plus];}
 function enhance(id,fromEquip){
  const it=fromEquip?S.equip[id]:S.inv.find(x=>x.id===id);if(!it)return;
  if(it.plus>=ENH_MAX){toast("이미 최대 강화 +"+ENH_MAX);return;}
@@ -1278,7 +1279,7 @@ function renderGacha(){
   '<div class="rates">'+rates+'</div>'+
   '<div class="gbtns"><button class="bigbtn" id="g1">단일 뽑기 <span class="cost">⚡'+PULL1+'</span></button>'+
   '<button class="bigbtn gold" id="g10">10연차 <span class="cost">⚡'+PULL10+'</span></button></div>'+
-  '<div class="muted small" style="margin-top:10px">전설 0.08% · 신화 '+mythRate+'%'+(S.rebirth>=4?' (✦4환생: ×10 부스트 적용)':' — 4환생 달성 시 신화 확률 10배')+'<br/>10연차는 행동력 또는 💎젬 20으로 가능</div></div>');
+  '<div class="muted small" style="margin-top:10px">전설 0.03% · 신화 '+mythRate+'%'+(S.rebirth>=4?' (✦4환생: ×10 부스트 적용)':' — 4환생 달성 시 신화 확률 10배')+'<br/>10연차는 행동력 또는 💎젬 20으로 가능</div></div>');
  const g1=$("#g1");if(g1)g1.onclick=()=>{const it=pull();if(it)reveal([it]);};
  const g10=$("#g10");if(g10)g10.onclick=()=>{const out=pull10();if(out)reveal(out);};
 }
