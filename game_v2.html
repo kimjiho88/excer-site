@@ -537,7 +537,7 @@ const SKILLS=[
  {id:"haste",n:"신속",d:"행동력 회복·공속↑/Lv",ic:"🌀"},
  {id:"collect",n:"수집가",d:"도감 보너스 +25%/Lv",ic:"📖"},
 ];
-const MAXE=30,PULL1=3,PULL10=27,REGEN_MS=80000,PITY=80,ENH_MAX=15,KEY="nh_zh_v4";
+const MAXE=30,PULL1=3,PULL10=27,REGEN_MS=80000,PITY=80,ENH_MAX=15,SKILL_MAX=30,KEY="nh_zh_v4";
 const STAGE_KILLS=10; // 스테이지당 처치 수
 
 /* ---------- 상태 ---------- */
@@ -713,8 +713,8 @@ function expNeed(){return Math.round(80*Math.pow(S.lv,1.55));}
 function rebirthMul(){return 1+1.6*(1-Math.pow(0.86,S.rebirth));}
 function dexCount(){return Object.keys(S.dex).length;}
 function dexTotal(){let t=0;for(const s in POOL)t+=POOL[s].length;return t;}
-function dexBonusPct(){ // 도감 수집 + 수집가 스킬
- const base=dexCount()*1.2; const mul=1+S.skills.collect*0.25; return base*mul; }
+function dexBonusPct(){ // 도감 수집 + 수집가 스킬 (상한 300% — 곱연산 폭주 방지)
+ const base=dexCount()*1.2; const mul=1+S.skills.collect*0.25; return Math.min(base*mul,300); }
 function itemPow(it){return Math.round(it.power*(1+it.plus*0.13));}
 function gearPow(){let p=0;for(const s in S.equip){const it=S.equip[s];if(it)p+=itemPow(it);}return p;}
 // bestStage 기여: 캡은 레벨/환생으로 완화하되 환생 기여 축소(150→90)로 격차 통제.
@@ -725,11 +725,12 @@ function nnum(v,d){const n=Number(v);return Number.isFinite(n)?n:(d||0);}
 function calcPow(r){
  const sp=nnum(r.power,-1);
  if(sp>=0)return Math.floor(sp);                 // 서버가 계산한 power가 있으면 그 값을 신뢰(버전 차이에도 모두 동일)
- const lv=nnum(r.lv,1),reb=nnum(r.rebirth,0);    // 구버전/오프라인 fallback
- const bs=Math.min(nnum(r.best_stage,1),100+lv*14+reb*100);
+ const lv=nnum(r.lv,1),reb=nnum(r.rebirth,0);    // 구버전/오프라인 fallback — power()와 동일 공식
+ const bs=Math.min(nnum(r.best_stage,1),60+lv*8+reb*90);
  const atk=1+nnum(r.atk_lv,0)*0.06;
- const dex=1+(nnum(r.dex_count,0)*1.2*(1+nnum(r.collect_lv,0)*0.25))/100;
- return Math.floor((12+lv*6+bs*2+nnum(r.gear_power,0))*atk*dex*(1+reb*0.25));
+ const dex=1+Math.min(nnum(r.dex_count,0)*1.2*(1+nnum(r.collect_lv,0)*0.25),300)/100;
+ const rebMul=1+1.6*(1-Math.pow(0.86,reb));
+ return Math.floor((12+lv*4+bs*3+nnum(r.gear_power,0))*atk*dex*rebMul);
 }
 function power(){
  // 레벨 기여 줄임(lv*6→lv*4), 스테이지 기여 높임(stageEff*2→*3)
@@ -833,7 +834,9 @@ function salvageAll(maxR){let n=0,g=0;S.inv=S.inv.filter(it=>{if(it.rarity<=maxR
 
 /* ---------- 스킬 ---------- */
 function skillCost(lv){return{pt:1,gold:Math.round(140*Math.pow(1.42,lv))};}
-function learn(id){const lv=S.skills[id];const c=skillCost(lv);
+function learn(id){const lv=S.skills[id];
+ if(lv>=SKILL_MAX){toast("이미 최대 Lv."+SKILL_MAX);return;}
+ const c=skillCost(lv);
  if(S.skillPts<c.pt){toast("스킬 포인트가 부족해요");return;}
  if(S.gold<c.gold){toast("골드가 부족해요");return;}
  S.skillPts-=c.pt;S.gold-=c.gold;S.skills[id]++;save();updateTop();renderTab();toast(SKILLS.find(s=>s.id===id).n+" Lv."+S.skills[id]);}
@@ -1392,9 +1395,9 @@ function renderGrow(){
  s+='</div>';
  // 스킬
  s+='<div class="card"><div class="ttl2">특성 <span class="muted">SP '+S.skillPts+'</span></div>';
- SKILLS.forEach(sk=>{const lv=S.skills[sk.id];const c=skillCost(lv);
-  s+='<div class="skill"><div class="ski">'+sk.ic+'</div><div class="sk-b"><div class="sn">'+sk.n+' <b>Lv.'+lv+'</b></div><div class="muted small">'+sk.d+'</div></div>'+
-  '<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP·'+fmt(c.gold)+'G)</button></div>';});
+ SKILLS.forEach(sk=>{const lv=S.skills[sk.id];const c=skillCost(lv);const max=lv>=SKILL_MAX;
+  s+='<div class="skill"><div class="ski">'+sk.ic+'</div><div class="sk-b"><div class="sn">'+sk.n+' <b>Lv.'+lv+(max?'/'+SKILL_MAX+' MAX':'')+'</b></div><div class="muted small">'+sk.d+'</div></div>'+
+  (max?'<button class="mini gray" disabled>최대</button>':'<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP·'+fmt(c.gold)+'G)</button>')+'</div>';});
  s+='</div>';
  // 환생
  const nextRebPerk=rebirthPerkOf(S.rebirth+1);
