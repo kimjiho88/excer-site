@@ -687,15 +687,28 @@ function promptNick(){const ov=$("#ov-modal");if(!ov)return;
 }
 // 카카오 로그인/연결: 진행도를 카카오 신원에 영구 보관(기기 변경에도 복원).
 async function kakaoLogin(){
- if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다");return;}
+ if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다. 잠시 후 다시 시도해 주세요.");return;}
+ toast("카카오 로그인 중…");
  try{
   try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
   const r=await CloudSave.linkKakao();          // 익명 uid 유지하며 카카오 연결(성공 시 리다이렉트)
   if(r&&r.conflict){                            // 카카오가 이미 타 계정 → 전환 로그인 후 서버 병합
-   toast("기존 카카오 계정으로 로그인합니다…");
+   toast("기존 카카오 계정으로 이동합니다…");
    await CloudSave.signInWithKakao();
+  }else if(r&&r.linked){
+   // linkIdentity 가 리다이렉트 없이 완료된 경우(환경에 따라 발생)
+   await CloudSave.refresh();
+   const u=CloudSave.user();NET.cloud=u;
+   toast(u&&u.hasKakao?"✅ 카카오 연결 완료":"연결 완료. 페이지를 새로고침 해주세요.");
+   if(u&&u.hasKakao)renderTab();
   }
- }catch(e){toast("카카오 로그인 실패: "+((e&&e.message)||e));}
+ }catch(e){
+  const msg=(e&&e.message)||String(e)||"알 수 없는 오류";
+  console.error("[카카오 로그인 오류]",e);
+  if(/redirect/i.test(msg))toast("리다이렉트 URL 설정을 확인해 주세요 (Supabase 대시보드)");
+  else if(/provider/i.test(msg))toast("Supabase에 카카오 공급자가 활성화되지 않았어요");
+  else toast("카카오 로그인 실패: "+msg.slice(0,60));
+ }
 }
 async function kakaoLogout(){
  if(typeof CloudSave==="undefined")return;
@@ -746,7 +759,7 @@ function critChance(){return clamp(0.05+S.skills.luck*0.005,0,0.25);}
 
 /* ---------- 행동력 ---------- */
 function regen(){const now=Date.now();if(S.energy>=MAXE){S.lastEnergyAt=now;return;}
- const step=Math.round(REGEN_MS*(1-S.skills.haste*0.05));
+ const step=Math.round(REGEN_MS*Math.max(0.1,1-S.skills.haste*0.05)); // 최대 90% 단축(step 최소 REGEN_MS*10%)
  const g=Math.floor((now-S.lastEnergyAt)/step);if(g>0){S.energy=Math.min(MAXE,S.energy+g);S.lastEnergyAt+=g*step;}}
 function spend(n){regen();if(S.energy>=MAXE)S.lastEnergyAt=Date.now();S.energy=Math.max(0,S.energy-n);}
 
@@ -1512,7 +1525,7 @@ let tT;function toast(m){const t=$("#toast");if(!t)return;t.textContent=m;t.clas
 
 /* ---------- 방치 보상 ---------- */
 function idleReward(){const away=Date.now()-(S.lastSeen||Date.now());if(away<60000)return;
- const eff=Math.min(away,idleCapH()*3600000);const per=Math.max(600,2400-power()*1.2);const k=Math.floor(eff/per);if(k<=0)return;
+ const eff=Math.min(away,idleCapH()*3600000);const per=Math.max(5000,12000-power()*0.8);const k=Math.floor(eff/per);if(k<=0)return;
  const wm=wealthMul();const rb=1+S.rebirth*0.1;
  const gold=Math.round(k*(5+S.region*4)*wm*evGoldMul()),exp=Math.round(k*(4+S.region*2)*rb*evExpMul()),stone=Math.round(k*0.4*wm);
  S.gold+=gold;S.exp+=exp;S.stones+=stone;S.kills+=k;S.totalKills=(S.totalKills||0)+k;checkLevel();save();
