@@ -197,6 +197,16 @@ body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var
 .rebperk > div{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;
   padding:9px;font-size:12px;font-weight:700}
 .rebperk > div b{color:var(--gold2)}
+/* 환생 잠금해제 카드 */
+.rebunlock{font-size:11.5px;font-weight:700;padding:8px 11px;border-radius:10px;margin:5px 0}
+.rebunlock span{font-size:10px;font-weight:900;padding:2px 7px;border-radius:999px;margin-right:7px;display:inline-block}
+.rebunlock.active{background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.25);color:#8fe0a8}
+.rebunlock.active span{background:rgba(62,207,142,.2);color:#3ecf8e}
+.rebunlock.next{background:rgba(155,77,204,.08);border:1px solid rgba(155,77,204,.25);color:#cbb8e6}
+.rebunlock.next span{background:rgba(155,77,204,.2);color:#b06ff0}
+/* 강화 경고 버튼 */
+button.mini.warn{background:rgba(240,192,64,.15);color:#f0c040;border:1px solid rgba(240,192,64,.3)}
+button.mini.risk{background:rgba(255,93,108,.15);color:#ff9bab;border:1px solid rgba(255,93,108,.3)}
 
 /* ===== 랭킹 ===== */
 .seg{display:flex;gap:4px;background:rgba(0,0,0,.35);border-radius:12px;padding:4px;margin-bottom:14px;
@@ -544,15 +554,18 @@ function promptNick(){const ov=$("#ov-modal");if(!ov)return;
 }
 
 /* ---------- 파생 수치 ---------- */
-function expNeed(){return Math.round(80*Math.pow(S.lv,1.35));}
-function rebirthMul(){return 1+S.rebirth*0.25;}
+// 경험치 필요량: 고레벨에서 더 급격히 증가(환생 메리트 ↑)
+function expNeed(){return Math.round(80*Math.pow(S.lv,1.55));}
+// 환생 배율: 비선형 — 초반은 완만, 후반 강화
+function rebirthMul(){return 1+S.rebirth*0.30+Math.pow(S.rebirth,1.6)*0.02;}
 function dexCount(){return Object.keys(S.dex).length;}
 function dexTotal(){let t=0;for(const s in POOL)t+=POOL[s].length;return t;}
 function dexBonusPct(){ // 도감 수집 + 수집가 스킬
  const base=dexCount()*1.2; const mul=1+S.skills.collect*0.25; return base*mul; }
 function itemPow(it){return Math.round(it.power*(1+it.plus*0.13));}
 function gearPow(){let p=0;for(const s in S.equip){const it=S.equip[s];if(it)p+=itemPow(it);}return p;}
-function bestStageEff(){const raw=(S.bestRegion-1)*10+S.bestStage;return Math.min(raw,100+S.lv*14+S.rebirth*100);}
+// bestStage 기여: 레벨 한계 완화(환생할수록 더 많은 스테이지 기여 가능)
+function bestStageEff(){const raw=(S.bestRegion-1)*10+S.bestStage;return Math.min(raw,60+S.lv*8+S.rebirth*150);}
 // 다른 사람의 전투력도 '그 사람의 구성요소'로 동일 공식 계산 → DB 계산식과 무관, 항상 일치
 function nnum(v,d){const n=Number(v);return Number.isFinite(n)?n:(d||0);}
 function calcPow(r){
@@ -565,7 +578,9 @@ function calcPow(r){
  return Math.floor((12+lv*6+bs*2+nnum(r.gear_power,0))*atk*dex*(1+reb*0.25));
 }
 function power(){
- const base=12+S.lv*6+bestStageEff()*2;   // 진행도(최고 스테이지)도 전투력에 반영
+ // 레벨 기여 줄임(lv*6→lv*4), 스테이지 기여 높임(stageEff*2→*3)
+ // → 레벨만 올리면 안 되고 진행/환생이 필요
+ const base=12+S.lv*4+bestStageEff()*3;
  const atk=1+S.skills.atk*0.06;
  const dex=1+dexBonusPct()/100;
  return Math.floor((base+gearPow())*atk*dex*rebirthMul());
@@ -581,14 +596,21 @@ function spend(n){regen();if(S.energy>=MAXE)S.lastEnergyAt=Date.now();S.energy=M
 
 /* ---------- 전리품 ---------- */
 function rollRarity(){
- if(S.pity>=PITY)return 3; // 천장: 영웅 확정. 전설·신화는 천장으로도 안 나옴(극악 유지)
+ const pityNow=rebirthPity(); // 3환생+: 65회 단축
+ if(S.pity>=pityNow)return 3; // 천장: 영웅 확정
  const lk=S.skills.luck;
- const w=RAR.map((r,i)=>i===2?r.w*(1+lk*0.04):i===3?r.w*(1+lk*0.03):r.w); // 행운은 희귀/영웅만 소폭
+ const mythBoost=mythicMul(); // 4환생+: 신화 10배
+ const w=RAR.map((r,i)=>{
+   if(i===5)return r.w*mythBoost;       // 신화 부스트
+   if(i===2)return r.w*(1+lk*0.04);    // 희귀 행운
+   if(i===3)return r.w*(1+lk*0.03);    // 영웅 행운
+   return r.w;});
  let t=w.reduce((a,b)=>a+b,0),x=Math.random()*t;
  for(let i=0;i<w.length;i++){if((x-=w[i])<=0)return i;}return 0;}
 function rollSlot(){const ks=Object.keys(SLOTW);let t=0;ks.forEach(k=>t+=SLOTW[k]);let x=Math.random()*t;for(const k of ks){if((x-=SLOTW[k])<=0)return k;}return"weapon";}
 function makeItem(slot){slot=slot||rollSlot();const type=pick(POOL[slot]);const r=rollRarity();
- const pw=Math.max(1,Math.round(PBASE[slot]*RAR[r].mul*(0.9+Math.random()*0.3)*(1+S.lv*0.07+S.region*0.25)));
+ // 레벨 가중 ↓(0.07→0.03), 진행지역 가중 ↑(0.25→0.45): 진행도 없이 레벨만 높아도 좋은 장비 안 나옴
+ const pw=Math.max(1,Math.round(PBASE[slot]*RAR[r].mul*(0.9+Math.random()*0.3)*(1+S.lv*0.03+S.region*0.45)));
  if(r>=3)S.pity=0;else S.pity++;
  return{id:Date.now().toString(36)+(Math.random()*1e6|0).toString(36),slot,type,rarity:r,power:pw,plus:0};}
 function addDex(it){const k=it.slot+":"+it.type;S.dex[k]=Math.max(S.dex[k]==null?-1:S.dex[k],it.rarity);}
@@ -611,13 +633,38 @@ function pull10(){if(pulling){toast("뽑기 중입니다");return null;}pulling=
 function equip(id){const i=S.inv.findIndex(x=>x.id===id);if(i<0)return;const it=S.inv[i];
  const cur=S.equip[it.slot];S.equip[it.slot]=it;S.inv.splice(i,1);if(cur)S.inv.unshift(cur);
  save();updateTop();renderTab();toast(NAMES[it.type]+" 장착!");}
-function enhCost(it){return{gold:Math.round(40*Math.pow(1.5,it.plus)*(it.rarity+1)),stone:Math.round(2+it.plus*1.5+it.rarity)};}
+function enhCost(it){
+ // 비용: +6부터 급격히 상승
+ const base=it.plus<6?1.5:1.5+it.plus*0.12;
+ return{gold:Math.round(40*Math.pow(base,it.plus)*(it.rarity+1)),
+        stone:Math.round((2+it.plus*1.5+it.rarity)*(it.plus>=6?1+it.plus*0.1:1))};}
+// 강화 성공확률: +0~5: 100%, +6~10: 80%→40%, +11~15: 35%→15%
+// 실패: +6~10 단순 실패(재화만 소모), +11~15 실패 시 -1 강등
+function enhSuccessChance(plus){
+ if(plus<=5)return 1;
+ if(plus<=10)return clamp(0.80-(plus-5)*0.08,0.40,0.80);
+ return clamp(0.35-(plus-10)*0.04,0.15,0.35);}
 function enhance(id,fromEquip){
  const it=fromEquip?S.equip[id]:S.inv.find(x=>x.id===id);if(!it)return;
- if(it.plus>=ENH_MAX){toast("이미 최대 강화");return;}
+ if(it.plus>=ENH_MAX){toast("이미 최대 강화 +"+ENH_MAX);return;}
  const c=enhCost(it);if(S.gold<c.gold||S.stones<c.stone){toast("재화가 부족해요 (골드/강화석)");return;}
- S.gold-=c.gold;S.stones-=c.stone;it.plus++;S.daily.enh++;
- save();updateTop();renderTab();toast(NAMES[it.type]+" +"+it.plus+" 강화 성공!");}
+ S.gold-=c.gold;S.stones-=c.stone;S.daily.enh++;
+ const chance=enhSuccessChance(it.plus);
+ const success=Math.random()<chance;
+ if(success){
+   it.plus++;
+   save();updateTop();renderTab();
+   toast(NAMES[it.type]+" +"+(it.plus)+" 강화 성공! ✨");
+ }else if(it.plus>=11&&it.plus>0){
+   // +11 이상 실패 → 강등
+   it.plus=Math.max(0,it.plus-1);
+   save();updateTop();renderTab();
+   toast("💔 강화 실패… "+NAMES[it.type]+" +"+(it.plus)+"으로 강등됐어요");
+ }else{
+   save();updateTop();renderTab();
+   toast("💔 강화 실패… "+NAMES[it.type]+" +"+it.plus+" 유지 (재화 소모)");
+ }
+}
 function salvageValue(it){return Math.round((it.rarity+1)*(2+it.plus)*1.5*(1+S.skills.wealth*0.08));}
 function doSalvage(it){S.stones+=salvageValue(it);}
 function salvage(id){const i=S.inv.findIndex(x=>x.id===id);if(i<0)return;const it=S.inv[i];doSalvage(it);S.inv.splice(i,1);save();updateTop();renderTab();}
@@ -670,14 +717,44 @@ function claimChest(){if(!chestReady()){toast("보급 상자 충전 중 · "+che
  toast("보급 상자 · "+(r.gems?"젬 "+r.gems:r.stones?"강화석 "+r.stones:"골드 "+fmt(r.gold)));}
 
 /* ---------- 환생 ---------- */
+// 환생 회차별 잠금 해제 콘텐츠
+const REBIRTH_PERKS=[
+ {reb:1,title:"각성",desc:"전투력 +25% · 방치 9시간 · 특성P +1 · 금고 시작(🪙800)"},
+ {reb:2,title:"강인",desc:"도전 사냥터 해금(지역 20+) · 골드 +36% · 방치 10시간 · 강화석 대량 지급"},
+ {reb:3,title:"정예",desc:"엘리트 몬스터 출현(드랍률↑↑) · 천장 65회로 단축 · 방치 11시간"},
+ {reb:4,title:"전설",desc:"신화 확률 10배(0.001%) · 아레나 추가 도전권 · 방치 12시간"},
+ {reb:5,title:"불사",desc:"최강화 장비 이전 가능(매 환생 1개 보존) · 방치 13시간"},
+];
+function rebirthPerkOf(n){return REBIRTH_PERKS.find(p=>p.reb===n)||null;}
+// 환생 회차별 특수 효과 계산
+function rebirthPity(){return S.rebirth>=3?65:PITY;}  // 3환생+: 천장 65회
+function mythicMul(){return S.rebirth>=4?10:1;}        // 4환생+: 신화확률 10배
 function canRebirth(){return S.lv>=30+S.rebirth*10;}
 function rebirth(){if(!canRebirth()){toast("레벨 "+(30+S.rebirth*10)+" 이상에서 환생 가능");return;}
- if(!confirm("환생하면 레벨·장비가 초기화됩니다. 도감·환생횟수·최고기록은 유지됩니다. 환생하시겠습니까?"))return;
- const keepDex=S.dex,keepReb=S.rebirth+1,keepGems=S.gems;
- const n=fresh();n.dex=keepDex;n.rebirth=keepReb;n.gems=keepGems+30;
- n.skillPts=keepReb;n.gold=800*keepReb;n.stones=50*keepReb;   // 환생 메리트: 보너스 특성P + 시작 자원
- n.bestRegion=S.bestRegion;n.bestStage=S.bestStage;           // 최고기록은 보존
- S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");}
+ const nextReb=S.rebirth+1;
+ const perk=rebirthPerkOf(nextReb);
+ const msg="환생하면 레벨·장비·강화석이 초기화됩니다.\n"
+  +(perk?"\n["+nextReb+"환생 잠금해제]\n"+perk.desc+"\n\n":"\n")
+  +"도감·환생횟수·최고기록은 영구 유지됩니다.\n환생하시겠습니까?";
+ if(!confirm(msg))return;
+ // 5환생+: 최강화 장비 1개 이전
+ let savedItem=null;
+ if(S.rebirth>=4){
+   const allItems=[...Object.values(S.equip).filter(Boolean),...S.inv];
+   allItems.sort((a,b)=>itemPow(b)-itemPow(a));
+   if(allItems[0])savedItem=JSON.parse(JSON.stringify(allItems[0]));
+ }
+ const keepDex=S.dex,keepReb=nextReb,keepGems=S.gems;
+ const n=fresh();n.dex=keepDex;n.rebirth=keepReb;n.gems=keepGems+50; // 젬 보상 50으로↑
+ n.skillPts=keepReb*2; // 스킬포인트 2배 지급
+ n.gold=Math.round(800*keepReb*Math.pow(1.4,keepReb-1)); // 기하급수적 골드 보상
+ n.stones=Math.round(80*keepReb);    // 강화석도 대폭↑
+ n.bestRegion=S.bestRegion;n.bestStage=S.bestStage;
+ if(savedItem){n.equip[savedItem.slot]=savedItem;} // 5환생+: 최강 장비 이전
+ S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);
+ const msg2=perk?("환생 "+keepReb+"회 ["+perk.title+"] 달성!\n"+perk.desc):"환생 "+keepReb+"회!";
+ toast(msg2+" ✦ 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");
+}
 
 /* ===================================================================
    랭킹 / 봇 / 아레나
@@ -803,9 +880,13 @@ function kill(z){zombies=zombies.filter(x=>x!==z);
  S.gold+=gold;S.exp+=exp;S.stones+=stone;S.kills++;S.daily.kills++;S.keCtr++;
  pops.push({x:z.x,y:BASE-94,txt:"+"+fmt(gold)+"G",t:0,c:"#ffd96b"});
  if(S.keCtr>=5){S.keCtr=0;if(S.energy<MAXE){if(S.energy>=MAXE-1)S.lastEnergyAt=Date.now();S.energy=Math.min(MAXE,S.energy+1);}}
- const drop=z.boss?0.9:0.13+S.skills.luck*0.01;
+ // 3환생+: 엘리트 효과 — 일반 몬스터도 드랍률 상승, 가끔 2개 동시 드랍
+ const eliteBonus=S.rebirth>=3?0.20:0;
+ const drop=z.boss?0.9:0.13+S.skills.luck*0.01+eliteBonus;
  if(Math.random()<drop){const it=makeItem();const r=gainItem(it,true);
    if(!r.salvaged)toast("전리품 · "+RAR[it.rarity].k+" "+NAMES[it.type]);}
+ // 3환생+ 보너스 드랍 (15% 추가)
+ if(S.rebirth>=3&&Math.random()<0.15){const it2=makeItem();gainItem(it2,true);}
  // 스테이지 진행
  if(z.boss){S.region++;S.stage=1;zombies=[];spawnT=300;toast("🏆 보스 처치! "+regionLabel()+" 진입");}
  else{S.stageKC=(S.stageKC||0)+1;if(S.stageKC>=STAGE_KILLS){S.stageKC=0;S.stage=Math.min(10,S.stage+1);}}
@@ -905,15 +986,18 @@ function renderHuntExtra(){
  const gr=$("#goRank");if(gr)gr.onclick=()=>go("rank");
 }
 function renderGacha(){
+ const pityNow=rebirthPity();
+ const mythRate=(0.00001*mythicMul()).toFixed(5);
  let rates=RAR.map(r=>'<span style="color:'+r.c+'">'+r.k+' '+r.w+'%</span>').join(" · ");
+ const pityInfo=S.rebirth>=3?'<span style="color:#ffd96b"> (✦3환생: 65회)</span>':'';
  setHTML("#p-gacha",
   '<div class="card"><div class="ttl">전리품 뽑기</div>'+
   '<p class="muted small">좀비를 사냥할수록 행동력이 모이고, 뽑기로 장비를 얻습니다.</p>'+
-  '<div class="pity">천장까지 '+Math.max(0,PITY-S.pity)+'회 · '+PITY+'회 누적 시 영웅 이상 확정</div>'+
+  '<div class="pity">천장까지 '+Math.max(0,pityNow-S.pity)+'회 · '+pityNow+'회 누적 시 영웅 이상 확정'+pityInfo+'</div>'+
   '<div class="rates">'+rates+'</div>'+
   '<div class="gbtns"><button class="bigbtn" id="g1">단일 뽑기 <span class="cost">⚡'+PULL1+'</span></button>'+
   '<button class="bigbtn gold" id="g10">10연차 <span class="cost">⚡'+PULL10+'</span></button></div>'+
-  '<div class="muted small" style="margin-top:10px">⚠ 전설 0.12% · 신화 0.00001% (약 1천만 분의 1)의 극악 확률 — 신화는 사실상 전설의 영역입니다. 10연은 행동력 또는 젬 20으로 가능</div></div>');
+  '<div class="muted small" style="margin-top:10px">전설 0.12% · 신화 '+mythRate+'%'+(S.rebirth>=4?' (✦4환생: ×10 부스트 적용)':' — 4환생 달성 시 신화 확률 10배')+'<br/>10연차는 행동력 또는 💎젬 20으로 가능</div></div>');
  const g1=$("#g1");if(g1)g1.onclick=()=>{const it=pull();if(it)reveal([it]);};
  const g10=$("#g10");if(g10)g10.onclick=()=>{const out=pull10();if(out)reveal(out);};
 }
@@ -925,7 +1009,7 @@ function renderEquip(){
  slots.forEach(sl=>{const it=S.equip[sl];const c=it?RAR[it.rarity].c:"#4a4258";
   s+='<div class="slot"><div class="si">'+ICO[sl]+'</div><div class="sl-b"><div class="sn">'+(it?NAMES[it.type]+(it.plus?' <b style="color:#ffd96b">+'+it.plus+'</b>':''):'<span class="muted">'+SLOTNAME[sl]+' 없음</span>')+'</div>'+
   (it?'<div class="ss" style="color:'+c+'">'+RAR[it.rarity].k+' · 전투력 '+itemPow(it)+'</div>':'')+'</div>'+
-  (it&&it.plus<ENH_MAX?'<button class="mini" data-enh="'+sl+'">강화</button>':'')+'</div>';});
+  (it&&it.plus<ENH_MAX?(()=>{const ch=enhSuccessChance(it.plus);const warn=it.plus>=11?' risk':it.plus>=6?' warn':'';return'<button class="mini'+warn+'" data-enh="'+sl+'" title="성공률 '+Math.round(ch*100)+'%">'+(it.plus>=6?'⚠ ':'')+'강화 '+Math.round(ch*100)+'%</button>';})():'')+'</div>';});
  s+='</div></div></div>';
  // 보관함
  s+='<div class="card"><div class="ttl2">보관함 <span class="muted">'+S.inv.length+'개</span>'+
@@ -965,10 +1049,17 @@ function renderGrow(){
   '<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP·'+fmt(c.gold)+'G)</button></div>';});
  s+='</div>';
  // 환생
- s+='<div class="card"><div class="ttl2">환생 <span class="muted">'+S.rebirth+'회</span><span class="pow2">✦'+S.rebirth+'환생 칭호</span></div>'+
+ const nextRebPerk=rebirthPerkOf(S.rebirth+1);
+ s+='<div class="card"><div class="ttl2">환생 <span class="muted">'+S.rebirth+'회</span>'+(S.rebirth>0?'<span class="pow2">✦'+S.rebirth+'환생</span>':'')+'</div>'+
   '<div class="rebperk"><div>⚔️ 영구 전투력 <b>+'+Math.round((rebirthMul()-1)*100)+'%</b></div><div>🪙 골드 획득 <b>+'+rebGoldPct()+'%</b></div>'+
-  '<div>🧟 방치 사냥 <b>'+idleCapH()+'시간</b></div><div>✨ 보너스 특성P <b>+'+S.rebirth+'</b></div></div>'+
-  '<p class="muted small">레벨·장비·강화는 초기화되지만 <b>도감·환생 보너스·칭호는 영구 유지</b>됩니다. 환생할수록 골드·방치 효율이 올라 방치형에서도 성장 속도가 빨라지고, 랭킹에 ✦환생 칭호가 표시됩니다.</p>'+
+  '<div>🧟 방치 사냥 <b>'+idleCapH()+'시간</b></div><div>✨ 보너스 특성P <b>×'+S.rebirth*2+'</b></div></div>';
+ // 현재 환생 달성 효과들
+ if(S.rebirth>=3)s+='<div class="rebunlock active"><span>✅ 3환생</span> 엘리트 드랍(+20%)·천장 65회</div>';
+ if(S.rebirth>=4)s+='<div class="rebunlock active"><span>✅ 4환생</span> 신화 확률 10배(0.001%)·아레나 보너스</div>';
+ if(S.rebirth>=5)s+='<div class="rebunlock active"><span>✅ 5환생</span> 최강화 장비 이전 가능</div>';
+ // 다음 환생에서 얻을 것
+ if(nextRebPerk)s+='<div class="rebunlock next"><span>🔒 '+S.rebirth+'→'+(S.rebirth+1)+'환생</span> '+nextRebPerk.desc+'</div>';
+ s+='<p class="muted small" style="margin-top:10px">레벨·장비·강화는 초기화되지만 <b>도감·환생 보너스·칭호는 영구 유지</b>됩니다. 환생할수록 스킬P 2배·골드 기하급수 보상·방치효율이 오릅니다.</p>'+
   '<button class="bigbtn '+(canRebirth()?'gold':'')+'" id="rb" '+(canRebirth()?'':'disabled')+'>환생하기 (Lv.'+(30+S.rebirth*10)+' 필요 · 현재 Lv.'+S.lv+')</button></div>';
  setHTML("#p-grow",s);
  $$('#p-grow [data-sk]').forEach(b=>b.onclick=()=>learn(b.dataset.sk));

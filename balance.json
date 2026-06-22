@@ -7,15 +7,18 @@
 
   "energy": { "max": 30, "regenMs": 80000, "hastePerLv": 0.05, "killPerEnergy": 5 },
 
-  "level": { "expNeed": "round(80 * lv^1.35)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "level": { "expNeed": "round(80 * lv^1.55)", "onLevelUp": { "skillPt": 1, "gems": 2 } },
+  "_level_note": "expNeed 지수 1.35→1.55: 고레벨 경험치 요구량 급증 → 환생 메리트 강화",
 
   "power": {
-    "formula": "floor((12 + lv*6 + bestStageEff*2 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * (1+rebirth*0.25))",
-    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 100 + lv*14 + rebirth*100)",
+    "formula": "floor((12 + lv*4 + bestStageEff*3 + gearPow) * (1+atk_lv*0.06) * (1+dexBonusPct/100) * rebirthMul)",
+    "_note": "lv 기여 줄임(6→4), stageEff 기여 높임(2→3): 레벨만으로 강해지는 구조 완화",
+    "bestStageEff": "min((bestRegion-1)*10 + bestStage, 60 + lv*8 + rebirth*150)",
+    "_bestStageEff_note": "환생할수록 더 많은 스테이지가 전투력에 기여 가능",
     "gearPow": "sum(itemPow)",
     "itemPow": "round(item.power * (1 + plus*0.13))",
     "dexBonusPct": "dexCount * 1.2 * (1 + collect_lv*0.25)",
-    "rebirthMul": "1 + rebirth*0.25"
+    "rebirthMul": "1 + rebirth*0.30 + rebirth^1.6 * 0.02"
   },
 
   "combat": {
@@ -58,13 +61,25 @@
   "item": {
     "slotWeights": { "weapon": 40, "top": 20, "head": 16, "legs": 9, "cape": 15 },
     "basePower":   { "weapon": 12, "top": 7,  "head": 6,  "legs": 7, "cape": 5 },
-    "powerFormula": "max(1, round(PBASE[slot] * RAR[rarity].mul * rand(0.9,1.2) * (1 + lv*0.07 + region*0.25)))"
+    "powerFormula": "max(1, round(PBASE[slot] * RAR[rarity].mul * rand(0.9,1.2) * (1 + lv*0.03 + region*0.45)))",
+    "_note": "레벨 가중 0.07→0.03, 지역(진행도) 가중 0.25→0.45: 진행도 없이 레벨만 높아도 장비가 강해지는 문제 해결"
   },
 
   "enhance": {
     "max": 15,
     "powerPerPlus": 0.13,
-    "cost": { "gold": "round(40 * 1.5^plus * (rarity+1))", "stone": "round(2 + plus*1.5 + rarity)" }
+    "cost": { "gold": "round(40 * base^plus * (rarity+1))", "stone": "round((2+plus*1.5+rarity) * (plus>=6 ? 1+plus*0.1 : 1))",
+              "base": "plus<6 ? 1.5 : 1.5+plus*0.12" },
+    "successChance": {
+      "+0~+5": 1.0,
+      "+6~+10": "0.80 - (plus-5)*0.08  (min 0.40)",
+      "+11~+15": "0.35 - (plus-10)*0.04 (min 0.15)"
+    },
+    "failEffect": {
+      "+1~+10": "재화만 소모, 강화 수치 유지",
+      "+11~+15": "실패 시 -1 강등 (강화 수치 1 감소)"
+    },
+    "_note": "강화 리스크 도입: +6부터 실패 가능, +11부터 강등 위험 → 재화 소모 전략 필요"
   },
   "salvage": { "value": "round((rarity+1) * (2+plus) * 1.5 * (1 + wealth_lv*0.08))" },
 
@@ -80,8 +95,16 @@
   "rebirth": {
     "requireLv": "30 + rebirth*10",
     "keep": ["dex", "rebirth", "bestRegion", "bestStage"],
-    "grant": { "gems": 30, "skillPt": "rebirth", "gold": "800*rebirth", "stones": "50*rebirth" },
-    "permanent": { "powerMul": "1+rebirth*0.25", "goldMul": "1+rebirth*0.18", "idleCapHours": "8+rebirth" }
+    "grant": { "gems": 50, "skillPt": "rebirth*2", "gold": "round(800*rebirth*1.4^(rebirth-1))", "stones": "80*rebirth" },
+    "_grant_note": "스킬P 2배, 골드 기하급수(환생할수록 압도적 보너스), 강화석 대폭↑",
+    "permanent": { "powerMul": "1 + rebirth*0.30 + rebirth^1.6*0.02", "goldMul": "1+rebirth*0.18", "idleCapHours": "8+rebirth" },
+    "unlocks": [
+      { "reb": 1, "title": "각성", "desc": "전투력 +30% · 방치 9시간 · 특성P ×2 · 시작 골드 대폭 증가" },
+      { "reb": 2, "title": "강인", "desc": "골드 +36% · 방치 10시간 · 강화석 대량 지급" },
+      { "reb": 3, "title": "정예", "desc": "엘리트 드랍(+20%) · 2중 드랍 15% · 천장 65회로 단축" },
+      { "reb": 4, "title": "전설", "desc": "신화 확률 ×10(0.001%) · 방치 12시간" },
+      { "reb": 5, "title": "불사", "desc": "최강화 장비 이전 가능 (매 환생 1개 보존)" }
+    ]
   },
 
   "regions": [
@@ -136,12 +159,19 @@
     "excludeOpsFromCompetition": true
   },
 
+  "balanceChangelog": [
+    "v2: expNeed 지수 1.35→1.55 (고레벨 성장 둔화, 환생 유도)",
+    "v2: 전투력 공식 - lv 기여 6→4, stageEff 기여 2→3 (진행/환생 중요도↑)",
+    "v2: 아이템 공식 - lv 가중 0.07→0.03, region 가중 0.25→0.45",
+    "v2: 강화 실패 도입 - +6부터 확률 하락, +11부터 강등 위험",
+    "v2: 환생 보상 대폭 강화 - 스킬P 2배, 골드 기하급수, 강화석↑",
+    "v2: 환생 잠금해제 콘텐츠 - 3환생 엘리트드랍, 4환생 신화×10, 5환생 장비이전",
+    "v2: 환생 배율 비선형화 1+reb*0.25→1+reb*0.30+reb^1.6*0.02"
+  ],
   "knownIssues": [
     "critChance = 0.05 + luck*0.0 → 행운이 크리에 미반영(버그)",
-    "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요",
-    "신화 ~1/1000만 → 사실상 획득 불가(의도 확인 필요)",
-    "전투력에 진행도(bestStage*2) 비중 재튜닝 필요",
+    "가챠/강화/구매 차감이 클라에만 존재 → 서버 RPC 검증 필요(4단계)",
     "봇 랭킹과 실서버 랭킹 혼재 → 실데이터 단일 경로로 단순화",
-    "익명+localStorage 신원 → 카카오 로그인+클라우드 세이브로 전환(결정됨)"
+    "익명+localStorage 신원 → 카카오 로그인+클라우드 세이브로 전환(2단계 완료, 5단계 통합 예정)"
   ]
 }
