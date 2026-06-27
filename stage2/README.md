@@ -97,3 +97,31 @@ CloudSave.user();                      // {uid,isAnonymous,providers,hasKakao,em
 5. 기존 `netSubmit()`(랭킹 투영, `game_players`)은 그대로 둔다 — 클라우드 세이브와 병행.
 
 > 전투력·가챠·구매의 서버 권위화(RPC)는 **4단계**에서 진행한다(`GAME_DESIGN.md §14`).
+
+## 카카오 로그인이 안 될 때 (트러블슈팅)
+
+증상: "카카오로 로그인"을 눌러 카카오 동의까지 갔다가 **돌아오면 로그인이 안 되어 있음**(조용한 실패).
+거의 대부분 **코드 문제가 아니라 대시보드 설정(특히 Redirect URL 허용목록)** 이 원인이다.
+이제 복귀 시 에러가 화면(`alert`)과 콘솔에 표시되므로, 아래를 그 메시지와 대조해 확인한다.
+
+현재 배포 기준 URL (Vercel):
+
+| 항목 | 값 |
+|---|---|
+| 게임 페이지(복귀 주소) | `https://excer-site.vercel.app/game_v2.html` |
+| 필독/Site URL 후보 | `https://excer-site.vercel.app/` |
+| Supabase 콜백 | `https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback` |
+
+체크리스트:
+
+1. **Supabase → Authentication → URL Configuration → Redirect URLs** 에 게임 페이지 주소를 등록.
+   경로가 바뀌어도 되도록 와일드카드 권장: `https://excer-site.vercel.app/**`
+   (게임 화면의 *"로그인이 안 되나요?"* 를 펼치면 등록해야 할 정확한 주소가 나오고, 눌러서 복사할 수 있다.)
+2. **Supabase → Authentication → Providers → Kakao** 활성화 + `Client ID`(카카오 REST API 키) / `Client Secret` 입력.
+3. **Kakao Developers → 카카오 로그인 → Redirect URI** 에 `https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback` 등록.
+4. **Kakao Developers → 플랫폼 → Web 사이트 도메인** 에 `https://excer-site.vercel.app` 등록.
+5. **Supabase → Authentication → Providers → Anonymous** 활성화(익명 시작에 필요).
+6. (선택) **Site URL** 을 `https://excer-site.vercel.app/game_v2.html` 로 두면 redirect 미스 시에도 게임 페이지로 떨어져 에러가 바로 보인다.
+
+> 로컬 `file://` 나 미등록 도메인에서는 OAuth 복귀가 차단된다. 반드시 **등록된 배포 도메인**에서 테스트한다.
+> 코드 측 진단: 복귀 에러는 `game_v2.html`/`index.html` 의 가드가 파싱해 `alert`로 표시하고, 클릭 시점의 `redirectTo` 는 콘솔(`[카카오] redirectTo = …`)에 남는다.
