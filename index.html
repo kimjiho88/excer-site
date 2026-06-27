@@ -2,1273 +2,336 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#672091" />
   <title>모임운영 커뮤니티 — 필독</title>
+  <meta name="description" content="모임을 즐겁고 안전하게 즐기기 위한 필독 가이드. 참여 절차, 정산, 신입 규칙, 매너까지 한눈에." />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
 
   <style>
-    :root {
-      --primary: #672091;
-      --deep: #4A1568;
-      --light: #A05FD0;
-      --lavender: #F3EDF9;
-      --white: #FFFFFF;
-      --offwhite: #FAF8FC;
-      --ink: #1A1423;
-      --gray: #8B8696;
-      --gold: #C9A227;
-      --danger: #A13B32;
-
-      --line: rgba(103, 32, 145, 0.14);
-      --line-strong: rgba(103, 32, 145, 0.24);
-
-      --shadow-sm: 0 8px 24px rgba(39, 20, 52, 0.06);
-      --shadow-md: 0 18px 48px rgba(39, 20, 52, 0.09);
-
-      --r-lg: 28px;
-      --r-xl: 36px;
-      --sidebar: 280px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 8% 8%, rgba(160, 95, 208, 0.14), transparent 30rem),
-        radial-gradient(circle at 88% 12%, rgba(201, 162, 39, 0.08), transparent 28rem),
-        linear-gradient(180deg, #FFFFFF 0%, var(--offwhite) 44%, #F6F0FA 100%);
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button,
-    input {
-      font: inherit;
-    }
-
-    a:focus-visible,
-    input:focus-visible {
-      outline: 3px solid rgba(103, 32, 145, 0.22);
-      outline-offset: 3px;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .skip-link {
-      position: fixed;
-      top: -80px;
-      left: 16px;
-      z-index: 999;
-      padding: 12px 16px;
-      border-radius: 999px;
-      background: var(--primary);
-      color: white;
-      font-weight: 800;
-      transition: top 0.2s ease;
-    }
-
-    .skip-link:focus {
-      top: 16px;
-    }
-
-    .app-shell {
-      min-height: 100dvh;
-    }
-
-    .sidebar {
-      position: fixed;
-      inset: 0 auto 0 0;
-      z-index: 80;
-      display: flex;
-      flex-direction: column;
-      width: var(--sidebar);
-      padding: 24px;
-      border-right: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.84);
-      backdrop-filter: blur(18px);
-    }
-
-    .brand {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      padding: 4px 4px 22px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .brand-mark {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      border-radius: 16px;
-      background: var(--primary);
-      color: white;
-      font-weight: 950;
-      letter-spacing: -0.04em;
-      box-shadow: 0 12px 26px rgba(103, 32, 145, 0.22);
-    }
-
-    .brand-copy strong {
-      display: block;
-      font-size: 16px;
-      letter-spacing: -0.03em;
-    }
-
-    .brand-copy small {
-      display: block;
-      margin-top: 3px;
-      color: var(--gray);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .side-nav {
-      display: grid;
-      gap: 8px;
-      padding: 22px 0;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-height: 48px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      color: #4c4358;
-      font-weight: 800;
-      cursor: pointer;
-      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
-    }
-
-    .nav-item:hover {
-      background: rgba(243, 237, 249, 0.8);
-      color: var(--primary);
-      transform: translateY(-1px);
-    }
-
-    .nav-item.is-active {
-      background: var(--lavender);
-      color: var(--primary);
-      box-shadow: inset 0 0 0 1px rgba(103, 32, 145, 0.12);
-    }
-
-    .nav-item.is-disabled {
-      opacity: 0.48;
-      cursor: not-allowed;
-    }
-
-    .nav-item.is-disabled:hover {
-      transform: none;
-      background: transparent;
-      color: #4c4358;
-    }
-
-    .nav-icon {
-      display: grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      background: rgba(103, 32, 145, 0.08);
-      color: var(--primary);
-      font-size: 13px;
-      font-weight: 950;
-    }
-
-    .nav-item.is-active .nav-icon {
-      background: var(--primary);
-      color: white;
-    }
-
-    .nav-text {
-      flex: 1;
-    }
-
-    .nav-meta {
-      color: var(--gray);
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .sidebar-card {
-      margin-top: auto;
-      padding: 18px;
-      border-radius: 24px;
-      border: 1px solid var(--line);
-      background: linear-gradient(145deg, rgba(103, 32, 145, 0.08), rgba(255, 255, 255, 0.9));
-      box-shadow: var(--shadow-sm);
-    }
-
-    .sidebar-card span {
-      display: inline-flex;
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: white;
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    .sidebar-card strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 15px;
-      letter-spacing: -0.03em;
-    }
-
-    .sidebar-card p {
-      margin: 0;
-      color: #62596d;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .mobile-topbar,
-    .bottom-tabbar {
-      display: none;
-    }
-
-    .main {
-      min-height: 100dvh;
-      margin-left: var(--sidebar);
-      padding: 32px clamp(24px, 3vw, 52px) 56px;
-    }
-
+    /* ============================================================
+       필독 전용 스타일
+       ============================================================ */
     .reading-progress {
-      position: sticky;
-      top: 0;
-      z-index: 60;
-      height: 3px;
-      margin: -32px -6px 29px;
-      overflow: hidden;
-      background: transparent;
+      position: sticky; top: 0; z-index: 60; height: 4px;
+      margin: -30px -6px 26px; overflow: hidden; background: transparent;
     }
-
     .reading-progress span {
-      display: block;
-      width: 0%;
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--primary), var(--light));
+      display: block; width: 0%; height: 100%; border-radius: 999px;
+      background: var(--grad-brand);
     }
 
-    .panel {
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.88);
-      box-shadow: var(--shadow-md);
-      backdrop-filter: blur(12px);
-    }
-
+    /* ── 히어로 ── */
     .guide-hero {
-      position: relative;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
-      gap: 28px;
-      padding: clamp(28px, 3.2vw, 46px);
-      border-radius: var(--r-xl);
+      position: relative; overflow: hidden;
+      display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.82fr); gap: 28px;
+      padding: clamp(28px, 3.4vw, 48px); border-radius: var(--r-xl);
     }
-
+    .guide-hero::before {
+      content: ""; position: absolute; right: -140px; top: -160px;
+      width: 380px; height: 380px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(160, 95, 208, 0.26), transparent 68%); pointer-events: none;
+    }
     .guide-hero::after {
-      content: "";
-      position: absolute;
-      right: -120px;
-      top: -150px;
-      width: 340px;
-      height: 340px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(160, 95, 208, 0.24), transparent 68%);
-      pointer-events: none;
+      content: ""; position: absolute; left: -100px; bottom: -160px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232, 196, 92, 0.16), transparent 70%); pointer-events: none;
     }
-
-    .hero-copy,
-    .hero-side {
-      position: relative;
-      z-index: 1;
-    }
-
-    .kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 18px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: var(--lavender);
-      color: var(--primary);
-      font-size: 13px;
-      font-weight: 950;
-      letter-spacing: -0.02em;
-    }
-
+    .hero-copy, .hero-side { position: relative; z-index: 1; }
     .hero-title {
-      margin: 0;
-      max-width: 960px;
-      font-size: clamp(34px, 4.4vw, 60px);
-      line-height: 1.05;
-      letter-spacing: -0.06em;
+      margin: 16px 0 0; font-size: clamp(34px, 4.6vw, 58px);
+      line-height: 1.04; letter-spacing: -0.055em; font-weight: 850;
     }
-
     .hero-title span {
-      color: var(--primary);
+      background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent;
     }
-
     .hero-description {
-      max-width: 860px;
-      margin: 20px 0 0;
-      color: #5b5264;
-      font-size: clamp(16px, 1.3vw, 19px);
-      line-height: 1.75;
-      letter-spacing: -0.02em;
+      max-width: 600px; margin: 18px 0 0; color: var(--ink-2);
+      font-size: clamp(15px, 1.3vw, 18px); line-height: 1.75; letter-spacing: -0.02em;
     }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
 
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 28px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 18px;
-      border: 1px solid transparent;
-      border-radius: 999px;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 14px 28px rgba(103, 32, 145, 0.22);
-    }
-
-    .btn-secondary {
-      background: white;
-      color: var(--primary);
-      border-color: var(--line-strong);
-    }
-
-    .hero-side {
-      display: grid;
-      gap: 14px;
-      align-content: start;
-    }
-
+    .hero-side { display: grid; gap: 12px; align-content: start; }
     .assurance-card {
-      display: block;
-      padding: 20px;
-      border-radius: 24px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.82);
-      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start;
+      padding: 18px 20px; border-radius: 22px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      transition: transform 0.18s var(--ease), border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
-
-    .assurance-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--line-strong);
-      box-shadow: var(--shadow-sm);
+    .assurance-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
+    .assurance-ic {
+      display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px;
+      background: var(--grad-brand-soft); color: var(--primary); font-size: 20px;
     }
+    .assurance-card small { display: block; margin-bottom: 4px; color: var(--gray); font-size: 12px; font-weight: 800; }
+    .assurance-card strong { display: block; font-size: 17px; letter-spacing: -0.03em; }
+    .assurance-card p { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.55; }
 
-    .assurance-card small {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--gray);
-      font-weight: 800;
-    }
-
-    .assurance-card strong {
-      display: block;
-      font-size: 22px;
-      letter-spacing: -0.04em;
-    }
-
-    .assurance-card p {
-      margin: 8px 0 0;
-      color: #62596d;
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
+    /* ── 한눈에 보기 ── */
     .dashboard-strip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      margin: 24px 0;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 22px 0;
     }
-
     .stat-card {
-      display: block;
-      padding: 20px;
-      border-radius: 24px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.82);
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      position: relative; display: block; padding: 20px; border-radius: 22px; overflow: hidden;
+      border: 1px solid var(--line); background: rgba(255, 255, 255, 0.82); box-shadow: var(--shadow-xs);
+      transition: transform 0.18s var(--ease), border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
-
-    .stat-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--line-strong);
-      box-shadow: var(--shadow-md);
+    .stat-card::before {
+      content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--grad-brand);
+      opacity: 0.85;
     }
-
-    .stat-card span {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--gray);
-      font-size: 12px;
-      font-weight: 900;
+    .stat-card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--shadow-md); }
+    .stat-card .stat-tag {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px;
+      color: var(--primary); font-size: 11px; font-weight: 900; letter-spacing: 0.02em;
     }
+    .stat-card .stat-tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+    .stat-card strong { display: block; color: var(--primary-700); font-size: 20px; line-height: 1.22; letter-spacing: -0.04em; }
+    .stat-card p { margin: 8px 0 0; color: var(--gray); font-size: 12.5px; line-height: 1.5; }
 
-    .stat-card strong {
-      display: block;
-      color: var(--deep);
-      font-size: 24px;
-      line-height: 1.2;
-      letter-spacing: -0.04em;
-    }
+    /* ── 컨텐츠 프레임 ── */
+    .content-frame { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+    .guide-article { display: grid; gap: 16px; min-width: 0; }
 
-    .stat-card p {
-      margin: 8px 0 0;
-      color: #6b6274;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .content-frame {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 24px;
-      align-items: start;
-    }
-
-    .guide-article {
-      display: grid;
-      gap: 18px;
-      min-width: 0;
-    }
-
-    .guide-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 18px;
-      padding: 18px 20px;
-      border-radius: 24px;
-    }
-
-    .guide-toolbar strong {
-      display: block;
-      margin-bottom: 4px;
-      letter-spacing: -0.03em;
-    }
-
-    .guide-toolbar p {
-      margin: 0;
-      color: var(--gray);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .search-box {
-      position: relative;
-      width: min(520px, 100%);
-    }
-
-    .search-box::before {
-      content: "⌕";
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--primary);
-      font-weight: 950;
-    }
-
+    .guide-toolbar { padding: 18px 20px; border-radius: 24px; }
+    .toolbar-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .toolbar-top strong { display: block; margin-bottom: 3px; letter-spacing: -0.03em; }
+    .toolbar-top p { margin: 0; color: var(--gray); font-size: 13px; font-weight: 700; }
+    .search-box { position: relative; width: min(420px, 100%); }
+    .search-box svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--primary); }
     .search-box input {
-      width: 100%;
-      min-height: 46px;
-      padding: 0 16px 0 42px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      outline: none;
-      background: #FFFFFF;
-      color: var(--ink);
-      font-weight: 750;
-      transition: border 0.18s ease, box-shadow 0.18s ease;
+      width: 100%; min-height: 46px; padding: 0 16px 0 44px; border: 1px solid var(--line);
+      border-radius: var(--r-pill); outline: none; background: #fff; color: var(--ink); font-weight: 700;
+      transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
+    .search-box input:focus { border-color: rgba(103, 32, 145, 0.42); box-shadow: 0 0 0 4px rgba(103, 32, 145, 0.08); }
 
-    .search-box input:focus {
-      border-color: rgba(103, 32, 145, 0.42);
-      box-shadow: 0 0 0 4px rgba(103, 32, 145, 0.08);
+    .filter-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+    .filter-chip {
+      padding: 8px 14px; border-radius: var(--r-pill); border: 1px solid var(--line);
+      background: #fff; color: var(--ink-2); font-size: 12.5px; font-weight: 800; cursor: pointer;
+      transition: all 0.16s var(--ease);
     }
+    .filter-chip:hover { border-color: var(--line-strong); color: var(--primary); }
+    .filter-chip.is-active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--shadow-brand); }
 
-    .sections-host {
-      display: grid;
-      gap: 18px;
-    }
+    .sections-host { display: grid; gap: 16px; }
 
+    /* ── 섹션 ── */
     .guide-section {
-      scroll-margin-top: 28px;
-      display: grid;
-      grid-template-columns: 250px minmax(0, 1fr);
-      gap: 30px;
-      padding: 30px;
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: var(--shadow-sm);
+      scroll-margin-top: 28px; position: relative;
+      display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 26px;
+      padding: 28px; border: 1px solid var(--line); border-radius: var(--r-lg);
+      background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow-xs);
     }
-
-    .guide-section[hidden] {
-      display: none;
-    }
-
-    .section-heading {
-      min-width: 0;
-    }
-
+    .guide-section[hidden] { display: none; }
+    .section-heading { min-width: 0; }
     .section-index {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      margin-bottom: 16px;
-      border-radius: 16px;
-      background: var(--lavender);
-      color: var(--primary);
-      font-size: 14px;
-      font-weight: 950;
+      display: inline-grid; place-items: center; min-width: 48px; height: 48px; padding: 0 12px;
+      margin-bottom: 14px; border-radius: 15px; font-size: 15px; font-weight: 900; letter-spacing: -0.02em;
     }
+    /* 레벨 색상 */
+    .lv-must .section-index { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-brand); }
+    .lv-info .section-index { background: rgba(74, 158, 226, 0.14); color: #2f6fb0; }
+    .lv-ban .section-index  { background: rgba(192, 57, 43, 0.12); color: var(--danger); }
 
-    .section-heading small {
-      display: block;
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 950;
-      letter-spacing: -0.01em;
+    .level-badge {
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px;
+      padding: 5px 11px; border-radius: var(--r-pill); font-size: 11.5px; font-weight: 900; letter-spacing: -0.01em;
     }
+    .lv-must .level-badge { background: var(--lavender); color: var(--primary); }
+    .lv-info .level-badge { background: rgba(74, 158, 226, 0.12); color: #2f6fb0; }
+    .lv-ban .level-badge  { background: rgba(192, 57, 43, 0.10); color: var(--danger); }
 
-    .section-heading h2 {
-      margin: 6px 0 10px;
-      font-size: clamp(22px, 2vw, 30px);
-      line-height: 1.18;
-      letter-spacing: -0.05em;
-    }
-
-    .section-summary {
-      margin: 0;
-      color: #655c6f;
-      font-size: 14px;
-      line-height: 1.65;
-      letter-spacing: -0.02em;
-    }
-
-    .section-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 16px;
-    }
-
+    .section-heading small { display: block; color: var(--gold); font-size: 12px; font-weight: 900; }
+    .section-heading h2 { margin: 6px 0 10px; font-size: clamp(21px, 2vw, 28px); line-height: 1.18; letter-spacing: -0.05em; }
+    .section-summary { margin: 0; color: var(--gray); font-size: 13.5px; line-height: 1.62; letter-spacing: -0.02em; }
+    .section-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
     .section-tags span {
-      padding: 6px 9px;
-      border-radius: 999px;
-      background: rgba(103, 32, 145, 0.07);
-      color: var(--primary);
-      font-size: 11px;
-      font-weight: 900;
+      padding: 5px 10px; border-radius: var(--r-pill); background: rgba(103, 32, 145, 0.06);
+      color: var(--primary); font-size: 11px; font-weight: 800;
     }
+    .section-body { display: grid; gap: 14px; min-width: 0; }
+    .section-lead { margin: 0; color: var(--ink); font-size: 15.5px; line-height: 1.78; letter-spacing: -0.02em; font-weight: 600; }
 
-    .section-body {
-      display: grid;
-      gap: 14px;
-      min-width: 0;
+    /* ── 콜아웃 ── */
+    .callout { padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .callout-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+    .callout-ic { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px; flex: none; }
+    .callout-ic svg { width: 16px; height: 16px; }
+    .callout strong { font-size: 14.5px; letter-spacing: -0.03em; }
+    .callout ul { margin: 0; padding-left: 4px; list-style: none; display: grid; gap: 7px; }
+    .callout li { position: relative; padding-left: 20px; color: var(--ink-2); font-size: 13.5px; line-height: 1.62; }
+    .callout li::before {
+      content: ""; position: absolute; left: 4px; top: 8px; width: 6px; height: 6px; border-radius: 2px;
     }
+    .callout.note { background: linear-gradient(180deg, #fff, rgba(243, 237, 249, 0.6)); border-left: 4px solid var(--primary); }
+    .callout.note .callout-ic { background: var(--lavender); color: var(--primary); }
+    .callout.note li::before { background: var(--primary-300); }
+    .callout.warning { background: linear-gradient(180deg, #fff, rgba(232, 196, 92, 0.12)); border-left: 4px solid var(--gold); }
+    .callout.warning .callout-ic { background: rgba(232, 196, 92, 0.22); color: #97781a; }
+    .callout.warning li::before { background: var(--gold); }
 
-    .section-lead {
-      margin: 0;
-      color: #30243d;
-      font-size: 16px;
-      line-height: 1.8;
-      letter-spacing: -0.02em;
+    /* ── 핵심 수치(metric) ── */
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .metric-card {
+      padding: 16px; border-radius: 18px; border: 1px solid var(--line);
+      background: var(--grad-brand-soft); text-align: center;
     }
+    .metric-card b { display: block; font-size: 26px; font-weight: 900; letter-spacing: -0.04em; color: var(--primary); }
+    .metric-card span { display: block; margin-top: 4px; color: var(--ink-2); font-size: 12.5px; font-weight: 700; }
 
-    .callout,
-    .rule-card {
-      border-radius: 20px;
-      border: 1px solid var(--line);
-      background: #FFFFFF;
-    }
+    /* ── 규칙 카드 리스트 ── */
+    .rule-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    .rule-list .rule-card:only-child { grid-column: 1 / -1; }
+    .rule-card { padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .rule-card strong { display: block; margin-bottom: 8px; color: var(--primary-700); letter-spacing: -0.03em; }
+    .rule-card ul { margin: 0; padding-left: 18px; color: var(--ink-2); line-height: 1.7; font-size: 13.5px; }
 
-    .callout {
-      padding: 18px;
-    }
-
-    .callout.note {
-      background: linear-gradient(180deg, #FFFFFF, rgba(243, 237, 249, 0.72));
-      border-left: 4px solid var(--primary);
-    }
-
-    .callout.warning {
-      background: linear-gradient(180deg, #FFFFFF, rgba(201, 162, 39, 0.10));
-      border-left: 4px solid var(--gold);
-    }
-
-    .callout strong {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 15px;
-      letter-spacing: -0.03em;
-    }
-
-    .callout ul,
-    .rule-card ul {
-      margin: 0;
-      padding-left: 18px;
-      color: #574d62;
-      line-height: 1.75;
-    }
-
-    .rule-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .rule-list .rule-card:only-child {
-      grid-column: 1 / -1;
-    }
-
-    .rule-card {
-      padding: 18px;
-    }
-
-    .rule-card strong {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--deep);
-      letter-spacing: -0.03em;
-    }
-
-    .steps {
-      display: grid;
-      gap: 12px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
+    /* ── 단계(steps) ── */
+    .steps { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
     .steps li {
-      display: grid;
-      grid-template-columns: 38px minmax(0, 1fr);
-      gap: 12px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: #FFFFFF;
+      display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: start;
+      padding: 15px 16px; border: 1px solid var(--line); border-radius: 18px; background: #fff;
     }
-
     .step-num {
-      display: grid;
-      place-items: center;
-      width: 38px;
-      height: 38px;
-      border-radius: 14px;
-      background: var(--primary);
-      color: white;
-      font-size: 13px;
-      font-weight: 950;
+      display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px;
+      background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 900;
+    }
+    .steps strong { display: block; margin-bottom: 4px; letter-spacing: -0.03em; }
+    .steps p, .example-card p { margin: 0; color: var(--gray); line-height: 1.6; font-size: 13.5px; }
+
+    /* ── 제재 사다리(ladder) ── */
+    .ladder { display: grid; gap: 0; }
+    .ladder-step {
+      position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center;
+      padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: #fff; margin-bottom: 22px;
+    }
+    .ladder-step:last-child { margin-bottom: 0; }
+    .ladder-step:not(:last-child)::after {
+      content: "↓"; position: absolute; left: 28px; bottom: -22px; height: 22px;
+      display: grid; place-items: center; color: var(--gray-2); font-weight: 900; font-size: 15px;
+    }
+    .ladder-tag {
+      display: grid; place-items: center; min-width: 52px; height: 36px; padding: 0 10px; border-radius: 11px;
+      font-size: 13px; font-weight: 900;
+    }
+    .ladder-step .ladder-tag { background: rgba(232, 196, 92, 0.18); color: #97781a; }
+    .ladder-step.sev-2 { border-color: rgba(192, 57, 43, 0.2); }
+    .ladder-step.sev-2 .ladder-tag { background: rgba(232, 140, 60, 0.18); color: #b25e16; }
+    .ladder-step.sev-final { border-color: rgba(192, 57, 43, 0.32); background: rgba(192, 57, 43, 0.04); }
+    .ladder-step.sev-final .ladder-tag { background: var(--danger); color: #fff; }
+    .ladder-text b { display: block; letter-spacing: -0.02em; }
+    .ladder-text span { color: var(--gray); font-size: 12.5px; }
+
+    /* ── 닉네임 양식(format) ── */
+    .format-card { padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .format-card > b { display: block; margin-bottom: 12px; color: var(--primary-700); letter-spacing: -0.03em; }
+    .format-flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+    .format-part { display: grid; gap: 4px; flex: 1 1 84px; }
+    .format-part .fp-label { font-size: 11px; font-weight: 800; color: var(--gray); text-align: center; }
+    .format-part .fp-ex {
+      display: grid; place-items: center; min-height: 42px; border-radius: 12px; padding: 0 8px;
+      background: var(--lavender); color: var(--primary); font-weight: 900; font-size: 15px; letter-spacing: -0.02em;
+    }
+    .format-sep { display: grid; place-items: center; color: var(--gray-2); font-weight: 900; align-self: end; padding-bottom: 8px; }
+
+    /* ── 금지 그리드(forbidden) ── */
+    .forbid-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(172px, 1fr)); gap: 9px; }
+    .forbid-item {
+      display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start;
+      padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(192, 57, 43, 0.16);
+      background: rgba(192, 57, 43, 0.04); color: #7e2a22; font-size: 13px; line-height: 1.5; font-weight: 650;
+    }
+    .forbid-item .fx {
+      display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
+      background: rgba(192, 57, 43, 0.14); color: var(--danger); font-weight: 900; font-size: 13px;
     }
 
-    .steps strong {
-      display: block;
-      margin-bottom: 5px;
-      letter-spacing: -0.03em;
-    }
-
-    .steps p,
-    .timeline p,
-    .example-card p {
-      margin: 0;
-      color: #62596d;
-      line-height: 1.65;
-    }
-
-    .timeline {
-      display: grid;
-      gap: 10px;
-      padding: 4px 0;
-    }
-
-    .timeline-item {
-      position: relative;
-      display: grid;
-      grid-template-columns: 26px minmax(0, 1fr);
-      gap: 12px;
-    }
-
-    .timeline-item:not(:last-child)::after {
-      content: "";
-      position: absolute;
-      left: 12px;
-      top: 30px;
-      bottom: -10px;
-      width: 2px;
-      background: rgba(103, 32, 145, 0.16);
-    }
-
-    .timeline-dot {
-      position: relative;
-      z-index: 1;
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: var(--lavender);
-      border: 6px solid #FFFFFF;
-      box-shadow: 0 0 0 1px var(--line);
-    }
-
-    .timeline-content {
-      padding: 2px 0 14px;
-    }
-
-    .timeline-content strong {
-      display: block;
-      margin-bottom: 4px;
-      color: var(--deep);
-      letter-spacing: -0.03em;
-    }
-
-    .example-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .example-card {
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid var(--line);
-      background: white;
-    }
-
-    .example-card.good {
-      border-color: rgba(103, 32, 145, 0.22);
-      background: rgba(243, 237, 249, 0.44);
-    }
-
-    .example-card.bad {
-      border-color: rgba(161, 59, 50, 0.20);
-      background: rgba(161, 59, 50, 0.045);
-    }
-
+    /* ── 예시 비교(examples) ── */
+    .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .example-card { padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .example-card.good { border-color: rgba(47, 182, 138, 0.28); background: rgba(47, 182, 138, 0.05); }
+    .example-card.bad { border-color: rgba(192, 57, 43, 0.2); background: rgba(192, 57, 43, 0.04); }
     .example-card span {
-      display: inline-flex;
-      margin-bottom: 10px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: white;
-      color: var(--primary);
-      font-size: 11px;
-      font-weight: 950;
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 9px; padding: 5px 10px; border-radius: var(--r-pill);
+      background: #fff; font-size: 11px; font-weight: 900;
     }
+    .example-card.good span { color: var(--mint); }
+    .example-card.bad span { color: var(--danger); }
+    .example-card strong { display: block; margin-bottom: 6px; letter-spacing: -0.03em; }
 
-    .example-card.bad span {
-      color: var(--danger);
-    }
-
-    .example-card strong {
-      display: block;
-      margin-bottom: 7px;
-      letter-spacing: -0.03em;
-    }
-
-    .toc-panel {
-      position: sticky;
-      top: 24px;
-      max-height: calc(100dvh - 48px);
-      overflow: auto;
-      padding: 20px;
-      border-radius: 26px;
-    }
-
-    .toc-head span {
-      display: inline-flex;
-      margin-bottom: 8px;
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 950;
-    }
-
-    .toc-head h2 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: -0.04em;
-    }
-
-    .toc-list {
-      display: grid;
-      gap: 6px;
-      margin: 16px 0;
-    }
-
+    /* ── TOC ── */
+    .toc-panel { position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow: auto; padding: 20px; border-radius: 26px; }
+    .toc-head span { display: inline-flex; margin-bottom: 6px; color: var(--primary); font-size: 11.5px; font-weight: 900; }
+    .toc-head h2 { margin: 0; font-size: 19px; letter-spacing: -0.04em; }
+    .toc-list { display: grid; gap: 5px; margin: 16px 0; }
     .toc-link {
-      display: grid;
-      grid-template-columns: 34px minmax(0, 1fr);
-      align-items: center;
-      gap: 8px;
-      min-height: 42px;
-      padding: 8px;
-      border-radius: 14px;
-      color: #655c6f;
-      font-size: 13px;
-      font-weight: 850;
-      transition: background 0.18s ease, color 0.18s ease;
+      display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 9px;
+      min-height: 42px; padding: 8px; border-radius: 13px; color: var(--ink-2); font-size: 13px; font-weight: 750;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease);
     }
+    .toc-link:hover, .toc-link.is-active { background: var(--lavender); color: var(--primary); }
+    .toc-index { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: rgba(103, 32, 145, 0.07); font-size: 11px; font-weight: 900; }
+    .toc-link.is-active .toc-index { background: var(--grad-brand); color: #fff; }
+    .toc-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .toc-dot.lv-must { background: var(--primary); }
+    .toc-dot.lv-info { background: #4a9ee2; }
+    .toc-dot.lv-ban { background: var(--danger); }
+    .toc-foot { padding-top: 14px; border-top: 1px solid var(--line); color: var(--gray); font-size: 12px; line-height: 1.55; font-weight: 700; }
+    .toc-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .toc-legend span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; color: var(--gray); }
+    .toc-legend i { width: 8px; height: 8px; border-radius: 50%; }
 
-    .toc-link:hover,
-    .toc-link.is-active {
-      background: var(--lavender);
-      color: var(--primary);
-    }
+    .empty-state { display: none; place-items: center; min-height: 200px; padding: 28px; border-radius: var(--r-lg); text-align: center; }
+    .empty-state.is-visible { display: grid; }
+    .empty-state strong { display: block; margin-bottom: 8px; font-size: 19px; letter-spacing: -0.04em; }
+    .empty-state p { margin: 0; color: var(--gray); line-height: 1.6; }
 
-    .toc-index {
-      display: grid;
-      place-items: center;
-      width: 30px;
-      height: 30px;
-      border-radius: 10px;
-      background: rgba(103, 32, 145, 0.08);
-      font-size: 11px;
-      font-weight: 950;
-    }
-
-    .toc-foot {
-      padding-top: 14px;
-      border-top: 1px solid var(--line);
-      color: var(--gray);
-      font-size: 12px;
-      line-height: 1.55;
-      font-weight: 700;
-    }
-
-    .empty-state {
-      display: none;
-      place-items: center;
-      min-height: 220px;
-      padding: 28px;
-      border-radius: var(--r-lg);
-      text-align: center;
-    }
-
-    .empty-state.is-visible {
-      display: grid;
-    }
-
-    .empty-state strong {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 20px;
-      letter-spacing: -0.04em;
-    }
-
-    .empty-state p {
-      margin: 0;
-      color: var(--gray);
-      line-height: 1.6;
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(14px);
-      transition: opacity 0.45s ease, transform 0.45s ease;
-    }
-
-    .reveal.is-visible {
-      opacity: 1;
-      transform: translateY(0);
+    /* ── 반응형 ── */
+    @media (min-width: 1024px) and (max-width: 1279px) {
+      .content-frame { display: flex; flex-direction: column; }
+      .toc-panel { order: -1; position: relative; top: auto; width: 100%; max-height: none; }
+      .toc-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toc-legend { margin-top: -4px; }
     }
 
     @media (min-width: 768px) and (max-width: 1023px) {
-      :root {
-        --sidebar: 88px;
-      }
-
-      .sidebar {
-        width: var(--sidebar);
-        padding: 18px 12px;
-      }
-
-      .brand {
-        justify-content: center;
-        padding: 2px 0 18px;
-      }
-
-      .brand-mark {
-        width: 48px;
-        height: 48px;
-      }
-
-      .brand-copy,
-      .nav-text,
-      .nav-meta,
-      .sidebar-card {
-        display: none;
-      }
-
-      .nav-item {
-        justify-content: center;
-        padding: 12px;
-      }
-
-      .main {
-        margin-left: var(--sidebar);
-        padding: 28px 24px 44px;
-      }
-
-      .reading-progress {
-        margin-top: -28px;
-      }
-
-      .guide-hero {
-        grid-template-columns: 1fr;
-        padding: 34px;
-      }
-
-      .dashboard-strip {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .content-frame {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .toc-panel {
-        order: -1;
-        position: relative;
-        top: auto;
-        width: 100%;
-        max-height: none;
-      }
-
-      .toc-list {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .guide-section {
-        grid-template-columns: 210px minmax(0, 1fr);
-        padding: 26px;
-      }
-
-      .rule-list {
-        grid-template-columns: 1fr;
-      }
+      .reading-progress { margin-top: -28px; }
+      .guide-hero { grid-template-columns: 1fr; padding: 34px; }
+      .dashboard-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .content-frame { display: flex; flex-direction: column; }
+      .toc-panel { order: -1; position: relative; top: auto; width: 100%; max-height: none; }
+      .toc-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .guide-section { grid-template-columns: 210px minmax(0, 1fr); padding: 24px; }
+      .rule-list { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 767px) {
-      .sidebar {
-        display: none;
-      }
-
-      .mobile-topbar {
-        position: fixed;
-        inset: 0 0 auto 0;
-        z-index: 90;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 64px;
-        padding: 0 16px;
-        border-bottom: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(16px);
-      }
-
-      .mobile-brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 950;
-        letter-spacing: -0.03em;
-      }
-
-      .mobile-brand .brand-mark {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        font-size: 12px;
-      }
-
-      .mobile-action {
-        padding: 9px 12px;
-        border-radius: 999px;
-        background: var(--lavender);
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 950;
-      }
-
-      .main {
-        margin-left: 0;
-        padding: 80px 16px 104px;
-      }
-
-      .reading-progress {
-        position: fixed;
-        inset: 64px 0 auto 0;
-        z-index: 95;
-        height: 3px;
-        margin: 0;
-      }
-
-      .guide-hero {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 24px 20px;
-        border-radius: 28px;
-      }
-
-      .hero-title {
-        font-size: 34px;
-      }
-
-      .hero-description {
-        font-size: 15px;
-        line-height: 1.7;
-      }
-
-      .hero-actions .btn {
-        width: 100%;
-      }
-
-      .dashboard-strip {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        margin: 16px 0;
-      }
-
-      .content-frame {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .toc-panel {
-        order: -1;
-        position: sticky;
-        top: 74px;
-        z-index: 50;
-        width: calc(100vw - 32px);
-        max-height: none;
-        padding: 14px;
-        border-radius: 22px;
-      }
-
-      .toc-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .toc-head span {
-        margin: 0;
-      }
-
-      .toc-head h2 {
-        font-size: 16px;
-      }
-
-      .toc-list {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        margin: 12px 0 0;
-        padding-bottom: 3px;
-        scroll-snap-type: x proximity;
-      }
-
-      .toc-link {
-        display: flex;
-        grid-template-columns: none;
-        flex: 0 0 auto;
-        min-height: 38px;
-        padding: 7px 10px;
-        scroll-snap-align: start;
-      }
-
-      .toc-index {
-        width: 26px;
-        height: 26px;
-      }
-
-      .toc-foot {
-        display: none;
-      }
-
-      .guide-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 16px;
-      }
-
-      .guide-section {
-        scroll-margin-top: 152px;
-        grid-template-columns: 1fr;
-        gap: 16px;
-        padding: 22px 18px;
-        border-radius: 24px;
-      }
-
-      .section-heading {
-        display: grid;
-        grid-template-columns: 46px minmax(0, 1fr);
-        column-gap: 12px;
-      }
-
-      .section-index {
-        margin-bottom: 0;
-      }
-
-      .section-heading small,
-      .section-heading h2,
-      .section-summary {
-        grid-column: 2;
-      }
-
-      .section-heading h2 {
-        margin-top: 3px;
-        font-size: 23px;
-      }
-
-      .section-summary {
-        margin-top: 2px;
-      }
-
-      .section-tags {
-        grid-column: 1 / -1;
-        margin-top: 12px;
-      }
-
-      .rule-list,
-      .example-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .steps li {
-        grid-template-columns: 34px minmax(0, 1fr);
-        padding: 14px;
-      }
-
-      .step-num {
-        width: 34px;
-        height: 34px;
-      }
-
-      .bottom-tabbar {
-        position: fixed;
-        inset: auto 0 0 0;
-        z-index: 100;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 4px;
-        padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-        border-top: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.94);
-        backdrop-filter: blur(18px);
-      }
-
-      .tab-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        min-height: 56px;
-        padding: 7px 4px;
-        border-radius: 16px;
-        color: #6b6274;
-        font-size: 11px;
-        font-weight: 900;
-      }
-
-      .tab-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: rgba(103, 32, 145, 0.18);
-      }
-
-      .tab-item.is-active {
-        background: var(--lavender);
-        color: var(--primary);
-      }
-
-      .tab-item.is-active .tab-dot {
-        background: var(--primary);
-      }
-
-      .tab-item.is-disabled {
-        opacity: 0.45;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      html {
-        scroll-behavior: auto;
-      }
-
-      *,
-      *::before,
-      *::after {
-        transition: none !important;
-        animation: none !important;
-      }
-
-      .reveal {
-        opacity: 1;
-        transform: none;
-      }
+      .reading-progress { position: fixed; inset: 62px 0 auto 0; z-index: 95; height: 3px; margin: 0; }
+      .guide-hero { grid-template-columns: 1fr; gap: 18px; padding: 24px 20px; border-radius: 28px; }
+      .hero-title { font-size: 33px; }
+      .hero-actions .btn { width: 100%; }
+      .dashboard-strip { grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+      .content-frame { display: flex; flex-direction: column; gap: 14px; }
+      .toc-panel { order: -1; position: sticky; top: 72px; z-index: 50; width: 100%; max-height: none; padding: 14px; border-radius: 22px; }
+      .toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .toc-head span { margin: 0; }
+      .toc-head h2 { font-size: 16px; }
+      .toc-legend { display: none; }
+      .toc-list { display: flex; gap: 8px; overflow-x: auto; margin: 12px 0 0; padding-bottom: 3px; scroll-snap-type: x proximity; }
+      .toc-link { display: flex; flex: 0 0 auto; min-height: 38px; padding: 7px 11px; scroll-snap-align: start; }
+      .toc-link .toc-title { white-space: nowrap; }
+      .toc-foot { display: none; }
+      .guide-section { scroll-margin-top: 150px; grid-template-columns: 1fr; gap: 16px; padding: 22px 18px; border-radius: 24px; }
+      .section-heading { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; align-items: start; }
+      .section-index { margin-bottom: 0; }
+      .level-badge, .section-heading small, .section-heading h2, .section-summary { grid-column: 2; }
+      .section-heading h2 { margin-top: 4px; font-size: 22px; }
+      .section-tags { grid-column: 1 / -1; margin-top: 12px; }
+      .rule-list, .example-grid, .forbid-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1279,120 +342,135 @@
   <div class="app-shell">
     <aside class="sidebar" aria-label="주요 메뉴">
       <a class="brand" href="#guideTop" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-mark">EX</span>
         <span class="brand-copy">
-          <strong>운영 커뮤니티 플랫폼</strong>
+          <strong>운영 커뮤니티</strong>
+          <small>강남·논현 모임 플랫폼</small>
         </span>
       </a>
 
       <nav class="side-nav" aria-label="데스크톱 내비게이션">
         <span class="nav-item is-disabled" aria-disabled="true">
-          <span class="nav-icon">H</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
           <span class="nav-text">홈</span>
-          <span class="nav-meta">다음</span>
+          <span class="nav-meta">예정</span>
         </span>
 
         <a class="nav-item is-active" href="#guideTop">
-          <span class="nav-icon">!</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
           <span class="nav-text">필독</span>
           <span class="nav-meta">현재</span>
         </a>
 
         <a class="nav-item" href="calculator.html">
-          <span class="nav-icon">₩</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
           <span class="nav-text">정산기</span>
           <span class="nav-meta">이동</span>
         </a>
 
         <span class="nav-item is-disabled" aria-disabled="true">
-          <span class="nav-icon">N</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
           <span class="nav-text">소식</span>
           <span class="nav-meta">예정</span>
         </span>
 
         <a class="nav-item" href="game_v2.html">
-          <span class="nav-icon">G</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
           <span class="nav-text">게임</span>
           <span class="nav-meta">이동</span>
         </a>
       </nav>
+
+      <div class="sidebar-card">
+        <span>3분이면 충분</span>
+        <strong>처음이라면 여기부터</strong>
+        <p>신입은 입장 후 1개월 내 첫 벙 참여가 필수예요. 핵심만 빠르게 확인하세요.</p>
+      </div>
     </aside>
 
     <header class="mobile-topbar">
       <a class="mobile-brand" href="#guideTop" aria-label="상단으로 이동">
         <span class="brand-mark">EX</span>
-        <span>운영 커뮤니티</span>
+        <span>필독 가이드</span>
       </a>
       <a class="mobile-action" href="#toc">목차</a>
     </header>
 
     <main id="main" class="main">
-      <div class="reading-progress" aria-hidden="true">
-        <span id="progressBar"></span>
-      </div>
+      <div class="reading-progress" aria-hidden="true"><span id="progressBar"></span></div>
 
       <section id="guideTop" class="guide-hero panel reveal" aria-labelledby="pageTitle">
         <div class="hero-copy">
-          <h1 id="pageTitle" class="hero-title">모임 운영 가이드</h1>
-
+          <span class="kicker">📌 모임 필독 가이드</span>
+          <h1 id="pageTitle" class="hero-title">즐겁게, 그리고<br /><span>안전하게 함께</span></h1>
+          <p class="hero-description">
+            참여 절차부터 정산·신입 규칙·매너까지, 우리 모임이 오래 즐겁게 이어지기 위한 약속을 한곳에 모았어요.
+            핵심만 빠르게 보고, 필요할 때 검색으로 찾아보세요.
+          </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#guide-operating">필독 시작하기</a>
+            <a class="btn btn-primary" href="#guide-join">필독 시작하기</a>
             <a class="btn btn-secondary" href="#toc">목차 먼저 보기</a>
           </div>
         </div>
 
         <div class="hero-side">
           <a class="assurance-card" href="#guide-newcomer">
-            <small>처음 오셨다면</small>
-            <strong>1개월 내 첫 벙 참여</strong>
-            <p>신입은 입장 후 1개월 내 벙 1회 참여가 필수입니다. 첫 벙은 음주 상태로 참여할 수 없습니다.</p>
+            <span class="assurance-ic">🌱</span>
+            <div>
+              <small>처음 오셨다면</small>
+              <strong>1개월 내 첫 벙</strong>
+              <p>입장 후 1개월 내 벙 1회 참여가 필수. 첫 벙은 음주 상태로 참여할 수 없어요.</p>
+            </div>
           </a>
-
           <a class="assurance-card" href="#guide-join">
-            <small>벙 참여 전 체크</small>
-            <strong>참석 버튼 + 사전 연락</strong>
-            <p>참여 확정 시 참석 버튼을 누르고, 중간 합류는 반드시 벙주에게 먼저 연락해주세요.</p>
+            <span class="assurance-ic">✅</span>
+            <div>
+              <small>벙 참여 전 체크</small>
+              <strong>참석 버튼 + 사전 연락</strong>
+              <p>참여 확정 시 참석 버튼을 누르고, 중간 합류는 벙주에게 먼저 연락하세요.</p>
+            </div>
           </a>
         </div>
       </section>
 
       <section class="dashboard-strip" aria-label="필독 핵심 요약">
         <a class="stat-card" href="#guide-newcomer">
-          <span>NEW MEMBER</span>
-          <strong>신입 1개월 내 1회</strong>
-          <p>입장 후 1개월 내 벙 참여가 필요하며, 참여 후 신입 표시가 제거됩니다.</p>
+          <span class="stat-tag"><i></i>신입</span>
+          <strong>1개월 내 1회</strong>
+          <p>입장 후 1개월 내 벙 참여 시 신입 표시가 제거돼요.</p>
         </a>
-
         <a class="stat-card" href="#guide-join">
-          <span>JOIN</span>
+          <span class="stat-tag"><i></i>참여</span>
           <strong>참석 버튼 필수</strong>
-          <p>참여 확정 시 참석 버튼을 누르고, 중간 참여는 벙주에게 사전 연락합니다.</p>
+          <p>참여 확정 시 참석 버튼, 중간 참여는 벙주에게 사전 연락.</p>
         </a>
-
         <a class="stat-card" href="#guide-settlement">
-          <span>PAYMENT</span>
-          <strong>정산 댓글 확인</strong>
-          <p>영수증 또는 결제 내역을 첨부하고, 정산 내용은 벙 공지 댓글에 남깁니다.</p>
+          <span class="stat-tag"><i></i>정산</span>
+          <strong>영수증 + 댓글</strong>
+          <p>증빙을 첨부하고 정산 내용은 벙 공지 댓글에 남겨요.</p>
         </a>
-
         <a class="stat-card" href="#guide-banned">
-          <span>MANNER</span>
-          <strong>문제는 운영진 1:1로</strong>
-          <p>부당한 일이 있으면 공개 채팅방이 아닌 운영진에게 1:1로 전달해주세요.</p>
+          <span class="stat-tag"><i></i>매너</span>
+          <strong>문제는 1:1로</strong>
+          <p>부당한 일은 공개방이 아닌 운영진에게 1:1로 전달.</p>
         </a>
       </section>
 
       <div class="content-frame">
         <article class="guide-article" aria-label="필독 운영 가이드">
           <div class="guide-toolbar panel reveal">
-            <div>
-              <strong>빠른 찾기</strong>
-              <p id="searchCount" aria-live="polite">전체 9개 섹션</p>
+            <div class="toolbar-top">
+              <div>
+                <strong>빠른 찾기</strong>
+                <p id="searchCount" aria-live="polite">전체 9개 섹션</p>
+              </div>
+              <label class="search-box">
+                <span class="sr-only">필독 내용 검색</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+                <input id="guideSearch" type="search" placeholder="예: 정산, 닉네임, 노쇼, 재입장" autocomplete="off" />
+              </label>
             </div>
-
-            <label class="search-box">
-              <span class="sr-only">필독 내용 검색</span>
-              <input id="guideSearch" type="search" placeholder="예: 정산, 닉네임, 노쇼, 재입장" autocomplete="off" />
-            </label>
+            <div id="filterRow" class="filter-row" role="tablist" aria-label="카테고리 필터"></div>
           </div>
 
           <div id="sectionsHost" class="sections-host"></div>
@@ -1410,9 +488,14 @@
             <span>TABLE OF CONTENTS</span>
             <h2>필독 목차</h2>
           </div>
+          <div class="toc-legend">
+            <span><i style="background:var(--primary)"></i>필수</span>
+            <span><i style="background:#4a9ee2"></i>안내</span>
+            <span><i style="background:var(--danger)"></i>금지</span>
+          </div>
           <nav id="tocList" class="toc-list"></nav>
           <div class="toc-foot">
-            목차를 누르면 해당 섹션으로 이동합니다. PC에서는 목차가 고정되고, 모바일에서는 상단에 붙어 빠르게 넘길 수 있습니다.
+            목차를 누르면 해당 섹션으로 이동해요. 색 점은 항목의 중요도(필수·안내·금지)를 뜻합니다.
           </div>
         </aside>
       </div>
@@ -1420,536 +503,359 @@
 
     <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
       <span class="tab-item is-disabled" aria-disabled="true">
-        <span class="tab-dot"></span>
-        홈
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈
       </span>
       <a class="tab-item is-active" href="#guideTop">
-        <span class="tab-dot"></span>
-        필독
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독
       </a>
       <a class="tab-item" href="calculator.html">
-        <span class="tab-dot"></span>
-        정산
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산
       </a>
       <span class="tab-item is-disabled" aria-disabled="true">
-        <span class="tab-dot"></span>
-        소식
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식
       </span>
       <a class="tab-item" href="game_v2.html">
-        <span class="tab-dot"></span>
-        게임
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임
       </a>
     </nav>
   </div>
 
   <script>
+    const ICONS = {
+      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
+      warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 9v5M12 17h.01"/></svg>'
+    };
+
+    const LEVELS = { must: "필수", info: "안내", ban: "금지" };
+
     const GUIDE_SECTIONS = [
       {
-        id: "guide-operating",
-        no: "01",
-        kicker: "운영 기준",
-        title: "모임 운영 안내",
+        id: "guide-operating", no: "01", level: "info", category: "운영",
+        kicker: "운영 기준", title: "모임 운영 안내",
         summary: "모임이 즐겁고 안정적으로 유지되기 위한 기본 운영 원칙입니다.",
         tags: ["운영 원칙", "예외 처리", "배려"],
         blocks: [
-          {
-            type: "lead",
-            text: "우리 모임은 정해진 운영 룰을 바탕으로, 모두가 즐겁게 참여할 수 있도록 함께 만들어가는 커뮤니티입니다."
-          },
-          {
-            type: "note",
-            title: "기본 원칙",
-            items: [
-              "운영 룰은 모든 구성원이 같은 기준으로 참여하기 위한 공통 약속입니다.",
-              "항상 서로를 배려하는 마음으로 대화하고 참여합니다.",
-              "운영진 안내와 공지는 모임 운영의 기준으로 우선 확인합니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "룰에 없는 상황이 발생할 경우",
-            items: [
-              "모든 상황을 미리 규정하기는 어렵기 때문에, 명시되지 않은 상황이나 엣지케이스는 운영진 논의를 통해 판단합니다.",
-              "운영진 판단 후 필요한 안내, 조정, 제재가 진행될 수 있습니다.",
-              "즐거운 모임이 이어질 수 있도록 구성원의 이해와 협조를 부탁드립니다."
-            ]
-          }
+          { type: "lead", text: "우리 모임은 정해진 운영 룰을 바탕으로, 모두가 즐겁게 참여할 수 있도록 함께 만들어가는 커뮤니티입니다." },
+          { type: "note", title: "기본 원칙", items: [
+            "운영 룰은 모든 구성원이 같은 기준으로 참여하기 위한 공통 약속입니다.",
+            "항상 서로를 배려하는 마음으로 대화하고 참여합니다.",
+            "운영진 안내와 공지는 모임 운영의 기준으로 우선 확인합니다."
+          ] },
+          { type: "warning", title: "룰에 없는 상황이 발생할 경우", items: [
+            "모든 상황을 미리 규정하기는 어렵기 때문에, 명시되지 않은 상황이나 엣지케이스는 운영진 논의를 통해 판단합니다.",
+            "운영진 판단 후 필요한 안내, 조정, 제재가 진행될 수 있습니다.",
+            "즐거운 모임이 이어질 수 있도록 구성원의 이해와 협조를 부탁드립니다."
+          ] }
         ]
       },
       {
-        id: "guide-join",
-        no: "02",
-        kicker: "참여 절차",
-        title: "벙 참여 절차 및 수칙",
+        id: "guide-join", no: "02", level: "must", category: "참여",
+        kicker: "참여 절차", title: "벙 참여 절차 및 수칙",
         summary: "참석 버튼, 중간 참여 연락, 임의 참여 금지 기준을 안내합니다.",
         tags: ["참석 버튼", "사전 연락", "정산 혼선 방지"],
         blocks: [
-          {
-            type: "lead",
-            text: "모임의 원활한 진행을 위해 벙 참여 절차와 수칙을 반드시 확인해주세요. 작은 확인 절차가 좌석 배정과 정산 혼선을 크게 줄여줍니다."
-          },
-          {
-            type: "steps",
-            steps: [
-              {
-                title: "참여 확정",
-                text: "참여가 확정되면 공지의 '참석' 버튼을 반드시 눌러주세요."
-              },
-              {
-                title: "중간 참여",
-                text: "모임 중간부터 참여하고 싶다면 벙주, 즉 주최자에게 먼저 연락한 뒤 참여해주세요."
-              },
-              {
-                title: "현장 참여",
-                text: "좌석, 인원, 정산에 혼선이 없도록 벙주가 안내한 시간과 방식에 맞춰 참여합니다."
-              }
-            ]
-          },
-          {
-            type: "warning",
-            title: "임의 참여는 금지됩니다",
-            items: [
-              "위 절차를 거치지 않은 임의 참여는 좌석 배정과 정산 과정에 혼선을 만들 수 있습니다.",
-              "참여 여부가 바뀌거나 늦게 합류하게 되는 경우, 반드시 벙주에게 먼저 알려주세요."
-            ]
-          }
+          { type: "lead", text: "모임의 원활한 진행을 위해 벙 참여 절차와 수칙을 반드시 확인해주세요. 작은 확인 절차가 좌석 배정과 정산 혼선을 크게 줄여줍니다." },
+          { type: "steps", steps: [
+            { title: "참여 확정", text: "참여가 확정되면 공지의 '참석' 버튼을 반드시 눌러주세요." },
+            { title: "중간 참여", text: "모임 중간부터 참여하고 싶다면 벙주, 즉 주최자에게 먼저 연락한 뒤 참여해주세요." },
+            { title: "현장 참여", text: "좌석, 인원, 정산에 혼선이 없도록 벙주가 안내한 시간과 방식에 맞춰 참여합니다." }
+          ] },
+          { type: "warning", title: "임의 참여는 금지됩니다", items: [
+            "위 절차를 거치지 않은 임의 참여는 좌석 배정과 정산 과정에 혼선을 만들 수 있습니다.",
+            "참여 여부가 바뀌거나 늦게 합류하게 되는 경우, 반드시 벙주에게 먼저 알려주세요."
+          ] }
         ]
       },
       {
-        id: "guide-hosting",
-        no: "03",
-        kicker: "벙 운영",
-        title: "벙 생성 및 참여 규칙",
+        id: "guide-hosting", no: "03", level: "info", category: "운영",
+        kicker: "벙 운영", title: "벙 생성 및 참여 규칙",
         summary: "벙 개설 방법, 중복 벙 제한, 공식 벙과 비벙 기준을 정리합니다.",
         tags: ["벙 만들기", "중복 벙 제한", "비벙 금지"],
         blocks: [
-          {
-            type: "lead",
-            text: "모든 오프라인 모임은 가능한 한 공식 벙으로 일정을 공유하는 것이 원칙입니다. 참여자가 일정, 장소, 인원, 정산 기준을 명확히 확인할 수 있어야 합니다."
-          },
-          {
-            type: "steps",
-            steps: [
-              {
-                title: "캘린더 열기",
-                text: "채팅 우측 상단의 ≡ 메뉴를 누른 뒤 캘린더로 이동합니다."
-              },
-              {
-                title: "벙 작성",
-                text: "연필 아이콘을 클릭하고 제목, 날짜, 시간, 위치, 참석 여부를 입력합니다."
-              },
-              {
-                title: "완료 및 공유",
-                text: "내용을 확인한 뒤 완료합니다. 참여자가 헷갈리지 않도록 필요한 안내를 함께 남겨주세요."
-              },
-              {
-                title: "시간 엄수",
-                text: "공지에서 안내된 시간은 반드시 지켜주세요. 지각이나 변경이 생기면 벙주에게 바로 공유합니다."
-              }
-            ]
-          },
-          {
-            type: "warning",
-            title: "중복 벙 개설 제한",
-            items: [
-              "동 시간대에 이미 벙이 존재할 경우, 원칙적으로 중복 개설은 금지됩니다.",
-              "중복 벙 제한의 목적은 인원 분산을 막고, 각 벙이 안정적으로 진행되도록 돕는 것입니다."
-            ]
-          },
-          {
-            type: "note",
-            title: "새로운 벙 개설이 가능한 예외",
-            items: [
-              "기존 벙의 정원이 이미 마감된 경우",
-              "기존 벙의 설정 마감 시간이 지난 경우",
-              "기존 벙주가 사전에 동의한 경우"
-            ]
-          },
-          {
-            type: "note",
-            title: "공식 벙 기준 및 예외",
-            items: [
-              "모든 오프라인 모임은 공식 벙으로 일정 공유하는 것이 원칙입니다.",
-              "가족, 친척과의 만남은 예외로 인정됩니다.",
-              "오픈채팅방 외 인연, 예를 들어 직장, 학연, 오래된 친구와의 사적 모임은 예외로 인정됩니다.",
-              "오픈채팅방 내 공식 커플의 만남은 예외로 인정됩니다.",
-              "오픈채팅방 내 지인 두 명 이상이 함께 만나면 벙 기준을 적용합니다. 판단 기준은 현재 방 안에 있는 사람들입니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "비공식 모임, 즉 비벙 관련 주의",
-            items: [
-              "비공식 모임은 지양합니다.",
-              "비벙과 관련된 채팅방 내 언급, 사진 공유, 후일담 공유는 하지 않습니다.",
-              "비벙 관련 사진 공유나 언급이 발생하면 아래 절차에 따라 조치합니다."
-            ]
-          },
-          {
-            type: "timeline",
-            steps: [
-              {
-                title: "1차",
-                text: "구두 경고"
-              },
-              {
-                title: "2차",
-                text: "운영진 면담"
-              },
-              {
-                title: "3차",
-                text: "강제퇴장"
-              }
-            ]
-          }
+          { type: "lead", text: "모든 오프라인 모임은 가능한 한 공식 벙으로 일정을 공유하는 것이 원칙입니다. 참여자가 일정, 장소, 인원, 정산 기준을 명확히 확인할 수 있어야 합니다." },
+          { type: "steps", steps: [
+            { title: "캘린더 열기", text: "채팅 우측 상단의 ≡ 메뉴를 누른 뒤 캘린더로 이동합니다." },
+            { title: "벙 작성", text: "연필 아이콘을 클릭하고 제목, 날짜, 시간, 위치, 참석 여부를 입력합니다." },
+            { title: "완료 및 공유", text: "내용을 확인한 뒤 완료합니다. 참여자가 헷갈리지 않도록 필요한 안내를 함께 남겨주세요." },
+            { title: "시간 엄수", text: "공지에서 안내된 시간은 반드시 지켜주세요. 지각이나 변경이 생기면 벙주에게 바로 공유합니다." }
+          ] },
+          { type: "warning", title: "중복 벙 개설 제한", items: [
+            "동 시간대에 이미 벙이 존재할 경우, 원칙적으로 중복 개설은 금지됩니다.",
+            "중복 벙 제한의 목적은 인원 분산을 막고, 각 벙이 안정적으로 진행되도록 돕는 것입니다."
+          ] },
+          { type: "note", title: "새로운 벙 개설이 가능한 예외", items: [
+            "기존 벙의 정원이 이미 마감된 경우",
+            "기존 벙의 설정 마감 시간이 지난 경우",
+            "기존 벙주가 사전에 동의한 경우"
+          ] },
+          { type: "note", title: "공식 벙 기준 및 예외", items: [
+            "모든 오프라인 모임은 공식 벙으로 일정 공유하는 것이 원칙입니다.",
+            "가족, 친척과의 만남은 예외로 인정됩니다.",
+            "오픈채팅방 외 인연, 예를 들어 직장, 학연, 오래된 친구와의 사적 모임은 예외로 인정됩니다.",
+            "오픈채팅방 내 공식 커플의 만남은 예외로 인정됩니다.",
+            "오픈채팅방 내 지인 두 명 이상이 함께 만나면 벙 기준을 적용합니다. 판단 기준은 현재 방 안에 있는 사람들입니다."
+          ] },
+          { type: "warning", title: "비공식 모임, 즉 비벙 관련 주의", items: [
+            "비공식 모임은 지양합니다.",
+            "비벙과 관련된 채팅방 내 언급, 사진 공유, 후일담 공유는 하지 않습니다.",
+            "비벙 관련 사진 공유나 언급이 발생하면 아래 절차에 따라 조치합니다."
+          ] },
+          { type: "ladder", title: "비벙 관련 조치 단계", steps: [
+            { tag: "1차", text: "구두 경고", sub: "주의 안내" },
+            { tag: "2차", text: "운영진 면담", sub: "사유 확인" },
+            { tag: "3차", text: "강제퇴장", sub: "최종 조치", final: true }
+          ] }
         ]
       },
       {
-        id: "guide-settlement",
-        no: "04",
-        kicker: "돈 문제",
-        title: "정산 원칙",
+        id: "guide-settlement", no: "04", level: "must", category: "정산",
+        kicker: "돈 문제", title: "정산 원칙",
         summary: "정산 기준, 증빙, 공유 방식, 입금 확인 기준을 안내합니다.",
         tags: ["1/N", "영수증", "정산 댓글"],
         blocks: [
-          {
-            type: "lead",
-            text: "정산은 모임 신뢰와 직결되는 부분입니다. 비용 기준과 참여자를 명확히 공유하고, 모두가 확인할 수 있는 방식으로 진행합니다."
-          },
-          {
-            type: "list",
-            title: "정산 기본 원칙",
-            items: [
-              "정산은 1/N을 원칙으로 합니다.",
-              "다만 상황에 따라 벙주 판단으로 예외 적용이 가능합니다.",
-              "영수증 또는 결제 내역 첨부는 필수입니다.",
-              "정산 시 날짜, 참여자, 금액, 계좌, 참석자 태그 등을 명확히 공유합니다.",
-              "벙주는 정산 내용을 벙 공지 댓글에 기재합니다.",
-              "구성원은 정산 내용을 확인한 뒤 신속히 입금합니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "정산 공유 시 주의사항",
-            items: [
-              "불명확한 금액이나 누락된 참여자가 있으면 입금 전 벙주에게 먼저 확인해주세요.",
-              "정산 오류가 발견되면 공개적으로 감정적인 문제 제기를 하기보다, 먼저 벙주 또는 운영진에게 조용히 확인합니다."
-            ]
-          }
+          { type: "lead", text: "정산은 모임 신뢰와 직결되는 부분입니다. 비용 기준과 참여자를 명확히 공유하고, 모두가 확인할 수 있는 방식으로 진행합니다." },
+          { type: "list", title: "정산 기본 원칙", items: [
+            "정산은 1/N을 원칙으로 합니다.",
+            "다만 상황에 따라 벙주 판단으로 예외 적용이 가능합니다.",
+            "영수증 또는 결제 내역 첨부는 필수입니다.",
+            "정산 시 날짜, 참여자, 금액, 계좌, 참석자 태그 등을 명확히 공유합니다.",
+            "벙주는 정산 내용을 벙 공지 댓글에 기재합니다.",
+            "구성원은 정산 내용을 확인한 뒤 신속히 입금합니다."
+          ] },
+          { type: "warning", title: "정산 공유 시 주의사항", items: [
+            "불명확한 금액이나 누락된 참여자가 있으면 입금 전 벙주에게 먼저 확인해주세요.",
+            "정산 오류가 발견되면 공개적으로 감정적인 문제 제기를 하기보다, 먼저 벙주 또는 운영진에게 조용히 확인합니다."
+          ] },
+          { type: "cta", text: "차수별 1/N은 정산기로 1초 만에", sub: "멤버와 금액만 넣으면 카톡에 바로 붙여넣게 정리돼요.", href: "calculator.html", label: "정산기 열기" }
         ]
       },
       {
-        id: "guide-newcomer",
-        no: "05",
-        kicker: "온보딩",
-        title: "신입 규칙",
+        id: "guide-newcomer", no: "05", level: "must", category: "신입",
+        kicker: "온보딩", title: "신입 규칙",
         summary: "신입 구성원이 모임에 자연스럽게 적응하기 위한 필수 기준입니다.",
         tags: ["신입", "1개월 내 참여", "첫 벙"],
         blocks: [
-          {
-            type: "lead",
-            text: "신입 구성원은 입장 후 모임 분위기와 운영 룰을 빠르게 이해할 수 있도록, 정해진 기간 내에 최소 1회 벙에 참여해야 합니다."
-          },
-          {
-            type: "steps",
-            steps: [
-              {
-                title: "입장 후 1개월 내 참여",
-                text: "입장 후 1개월 내 벙 1회 참여가 필수입니다."
-              },
-              {
-                title: "신입 표시 제거",
-                text: "벙에 1회 참여한 뒤 신입 표시가 제거됩니다."
-              },
-              {
-                title: "벙 생성 및 게스트 초대",
-                text: "1회 이상 벙에 참여한 뒤부터 벙 생성과 게스트 초대가 가능합니다."
-              }
-            ]
-          },
-          {
-            type: "warning",
-            title: "신입 첫 벙 참여 시 주의",
-            items: [
-              "신입의 첫 벙 참여는 음주 상태로 참여할 수 없습니다.",
-              "첫 참여에서는 모임 분위기 파악과 기본 매너 준수를 우선해주세요."
-            ]
-          }
+          { type: "lead", text: "신입 구성원은 입장 후 모임 분위기와 운영 룰을 빠르게 이해할 수 있도록, 정해진 기간 내에 최소 1회 벙에 참여해야 합니다." },
+          { type: "metric", items: [
+            { big: "1개월", label: "첫 벙 참여 기한" },
+            { big: "1회", label: "최소 참여 횟수" },
+            { big: "0잔", label: "첫 벙 음주" }
+          ] },
+          { type: "steps", steps: [
+            { title: "입장 후 1개월 내 참여", text: "입장 후 1개월 내 벙 1회 참여가 필수입니다." },
+            { title: "신입 표시 제거", text: "벙에 1회 참여한 뒤 신입 표시가 제거됩니다." },
+            { title: "벙 생성 및 게스트 초대", text: "1회 이상 벙에 참여한 뒤부터 벙 생성과 게스트 초대가 가능합니다." }
+          ] },
+          { type: "warning", title: "신입 첫 벙 참여 시 주의", items: [
+            "신입의 첫 벙 참여는 음주 상태로 참여할 수 없습니다.",
+            "첫 참여에서는 모임 분위기 파악과 기본 매너 준수를 우선해주세요."
+          ] }
         ]
       },
       {
-        id: "guide-regular",
-        no: "06",
-        kicker: "활동 기준",
-        title: "기존 구성원 정기 참여 의무",
+        id: "guide-regular", no: "06", level: "must", category: "참여",
+        kicker: "활동 기준", title: "기존 구성원 정기 참여 의무",
         summary: "유령회원 방지와 활발한 모임 유지를 위한 정기 참여 기준입니다.",
         tags: ["정기 참여", "2개월 1회", "활동 유지"],
         blocks: [
-          {
-            type: "lead",
-            text: "전체 구성원은 2개월 내 1회 이상 벙에 필수로 참여해야 합니다."
-          },
-          {
-            type: "note",
-            title: "정기 참여 기준의 목적",
-            items: [
-              "유령회원을 방지하고 실제로 활동하는 구성원 중심의 모임을 유지하기 위한 기준입니다.",
-              "모임의 분위기와 신뢰도는 구성원의 꾸준한 참여로 만들어집니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "참여 기준을 꼭 확인해주세요",
-            items: [
-              "장기간 활동이 어렵거나 특별한 사정이 있는 경우, 운영진에게 미리 공유해주세요.",
-              "정기 참여 기준은 모임 활성도를 유지하기 위한 최소 기준입니다."
-            ]
-          }
+          { type: "lead", text: "전체 구성원은 2개월 내 1회 이상 벙에 필수로 참여해야 합니다." },
+          { type: "metric", items: [
+            { big: "2개월", label: "참여 주기" },
+            { big: "1회+", label: "최소 참여" }
+          ] },
+          { type: "note", title: "정기 참여 기준의 목적", items: [
+            "유령회원을 방지하고 실제로 활동하는 구성원 중심의 모임을 유지하기 위한 기준입니다.",
+            "모임의 분위기와 신뢰도는 구성원의 꾸준한 참여로 만들어집니다."
+          ] },
+          { type: "warning", title: "참여 기준을 꼭 확인해주세요", items: [
+            "장기간 활동이 어렵거나 특별한 사정이 있는 경우, 운영진에게 미리 공유해주세요.",
+            "정기 참여 기준은 모임 활성도를 유지하기 위한 최소 기준입니다."
+          ] }
         ]
       },
       {
-        id: "guide-nickname",
-        no: "07",
-        kicker: "식별 기준",
-        title: "닉네임 설정 및 변경",
+        id: "guide-nickname", no: "07", level: "info", category: "계정",
+        kicker: "식별 기준", title: "닉네임 설정 및 변경",
         summary: "구성원 식별과 운영 편의를 위한 닉네임 양식과 변경 규칙입니다.",
         tags: ["닉네임", "양식", "변경 1회"],
         blocks: [
-          {
-            type: "lead",
-            text: "닉네임은 구성원을 식별하고 참여 이력을 확인하는 기준입니다. 정해진 양식을 지켜주세요."
-          },
-          {
-            type: "note",
-            title: "닉네임 양식",
-            items: [
-              "양식: 닉네임 / 지역 / 성별 / 출생년도 / 입장일",
-              "예시: 엑서 논현 남 88 0125"
-            ]
-          },
-          {
-            type: "examples",
-            items: [
-              {
-                tone: "good",
-                label: "좋은 예시",
-                title: "엑서 논현 남 88 0125",
-                text: "필요한 정보가 순서대로 들어가 있어 운영진과 구성원이 빠르게 확인할 수 있습니다."
-              },
-              {
-                tone: "bad",
-                label: "나쁜 예시",
-                title: "엑서 / 이모지만 사용 / 항목 누락",
-                text: "지역, 성별, 출생년도, 입장일 등 필요한 정보가 빠지면 구성원 확인이 어렵습니다."
-              }
-            ]
-          },
-          {
-            type: "warning",
-            title: "닉네임 변경 규칙",
-            items: [
-              "아이디 변경은 입장 후 1회만 가능합니다.",
-              "변경 시 운영진 3명을 모두 태그한 뒤 진행해주세요.",
-              "운영진이 식별하기 어려울 정도의 잦은 변경은 지양합니다."
-            ]
-          }
+          { type: "lead", text: "닉네임은 구성원을 식별하고 참여 이력을 확인하는 기준입니다. 정해진 양식을 지켜주세요." },
+          { type: "format", title: "닉네임 양식", parts: [
+            { label: "닉네임", ex: "엑서" },
+            { label: "지역", ex: "논현" },
+            { label: "성별", ex: "남" },
+            { label: "출생년도", ex: "88" },
+            { label: "입장일", ex: "0125" }
+          ] },
+          { type: "examples", items: [
+            { tone: "good", label: "좋은 예시", title: "엑서 논현 남 88 0125", text: "필요한 정보가 순서대로 들어가 있어 운영진과 구성원이 빠르게 확인할 수 있습니다." },
+            { tone: "bad", label: "나쁜 예시", title: "엑서 / 이모지만 사용 / 항목 누락", text: "지역, 성별, 출생년도, 입장일 등 필요한 정보가 빠지면 구성원 확인이 어렵습니다." }
+          ] },
+          { type: "warning", title: "닉네임 변경 규칙", items: [
+            "아이디 변경은 입장 후 1회만 가능합니다.",
+            "변경 시 운영진 3명을 모두 태그한 뒤 진행해주세요.",
+            "운영진이 식별하기 어려울 정도의 잦은 변경은 지양합니다."
+          ] }
         ]
       },
       {
-        id: "guide-banned",
-        no: "08",
-        kicker: "금지 기준",
-        title: "금지사항",
+        id: "guide-banned", no: "08", level: "ban", category: "매너",
+        kicker: "금지 기준", title: "금지사항",
         summary: "모임 안전과 분위기를 해치는 행동은 명확히 금지됩니다.",
         tags: ["금지사항", "신고", "강제퇴장"],
         blocks: [
-          {
-            type: "lead",
-            text: "아래 금지사항은 모임의 안전, 신뢰, 분위기를 지키기 위한 최소 기준입니다. 술 여부와 관계없이 동일하게 적용됩니다."
-          },
-          {
-            type: "warning",
-            title: "감정싸움 및 비생산적 논쟁 금지",
-            items: [
-              "공개 채팅방에서 감정적 언쟁, 비생산적 논쟁, 분위기를 해치는 말싸움을 금지합니다.",
-              "술을 마신 상태였는지 여부와 관계없이 동일하게 적용됩니다."
-            ]
-          },
-          {
-            type: "timeline",
-            steps: [
-              {
-                title: "1차",
-                text: "구두 경고"
-              },
-              {
-                title: "2차 적발",
-                text: "강제퇴장 조치"
-              }
-            ]
-          },
-          {
-            type: "note",
-            title: "문제 제기 및 이의 제기 방식",
-            items: [
-              "부당한 일이 있을 경우 공개 채팅방이 아닌 운영진에게 1:1로 전달해주세요.",
-              "필요한 경우 운영진이 중재하거나 공지로 정리합니다.",
-              "공개 저격이나 감정적인 확산은 문제 해결에 도움이 되지 않습니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "반드시 금지되는 행동",
-            items: [
-              "무단 노쇼 및 불참 금지. 참석 버튼을 누른 뒤 참여하지 않는 경우도 포함됩니다.",
-              "과도한 플러팅 금지",
-              "무단 연락처 요구 및 교환 금지",
-              "다른 방 홍보 및 초대 금지",
-              "타인 동의 없는 사진 또는 개인정보 유포 금지",
-              "사전 합의 없는 언행, 예를 들어 반말 등과 사생활 침해 금지",
-              "비매너, 폭언, 성희롱 금지",
-              "타인 비방, 분열 조장, 뒷담화 금지",
-              "기혼자 출입 금지"
-            ]
-          }
+          { type: "lead", text: "아래 금지사항은 모임의 안전, 신뢰, 분위기를 지키기 위한 최소 기준입니다. 술 여부와 관계없이 동일하게 적용됩니다." },
+          { type: "warning", title: "감정싸움 및 비생산적 논쟁 금지", items: [
+            "공개 채팅방에서 감정적 언쟁, 비생산적 논쟁, 분위기를 해치는 말싸움을 금지합니다.",
+            "술을 마신 상태였는지 여부와 관계없이 동일하게 적용됩니다."
+          ] },
+          { type: "ladder", title: "위반 시 조치 단계", steps: [
+            { tag: "1차", text: "구두 경고", sub: "주의 안내" },
+            { tag: "2차", text: "강제퇴장", sub: "재적발 시", final: true }
+          ] },
+          { type: "note", title: "문제 제기 및 이의 제기 방식", items: [
+            "부당한 일이 있을 경우 공개 채팅방이 아닌 운영진에게 1:1로 전달해주세요.",
+            "필요한 경우 운영진이 중재하거나 공지로 정리합니다.",
+            "공개 저격이나 감정적인 확산은 문제 해결에 도움이 되지 않습니다."
+          ] },
+          { type: "forbidden", title: "반드시 금지되는 행동", items: [
+            "무단 노쇼 및 불참 금지 (참석 버튼 후 불참 포함)",
+            "과도한 플러팅 금지",
+            "무단 연락처 요구 및 교환 금지",
+            "다른 방 홍보 및 초대 금지",
+            "타인 동의 없는 사진·개인정보 유포 금지",
+            "사전 합의 없는 반말 등 사생활 침해 금지",
+            "비매너, 폭언, 성희롱 금지",
+            "타인 비방, 분열 조장, 뒷담화 금지",
+            "기혼자 출입 금지"
+          ] }
         ]
       },
       {
-        id: "guide-reentry",
-        no: "09",
-        kicker: "운영 절차",
-        title: "재입장·메시지삭제",
+        id: "guide-reentry", no: "09", level: "info", category: "계정",
+        kicker: "운영 절차", title: "재입장·메시지삭제",
         summary: "재입장 제한 기준과 메시지 삭제 관련 주의사항입니다.",
         tags: ["재입장", "메시지 삭제", "가리기 요청"],
         blocks: [
-          {
-            type: "lead",
-            text: "재입장과 메시지 삭제는 모임 운영 기록과 대화 흐름에 영향을 줄 수 있으므로, 아래 기준에 따라 관리합니다."
-          },
-          {
-            type: "note",
-            title: "재입장 제한 기준",
-            items: [
-              "1981년생 및 이전 출생 구성원은 최대 1회 재입장이 가능합니다.",
-              "1982년생 및 이후 출생 구성원은 최대 3회 재입장이 가능합니다.",
-              "기기 교체 등 불가피한 사유가 있는 경우, 사전에 공유하면 예외 적용이 가능합니다."
-            ]
-          },
-          {
-            type: "warning",
-            title: "메시지 삭제는 지양해주세요",
-            items: [
-              "과도한 메시지 삭제는 대화 흐름을 끊고 모임 분위기를 해칠 수 있습니다.",
-              "새로 들어온 사람이 대화 흐름을 파악하기 어려워져 유입과 정착에도 부정적인 영향을 줄 수 있습니다.",
-              "불가피하게 삭제가 필요한 경우, 직접 삭제하기보다 운영진에게 가리기 요청을 해주세요."
-            ]
-          }
+          { type: "lead", text: "재입장과 메시지 삭제는 모임 운영 기록과 대화 흐름에 영향을 줄 수 있으므로, 아래 기준에 따라 관리합니다." },
+          { type: "rulepair", items: [
+            { strong: "1981년생 및 이전", big: "최대 1회", text: "재입장 가능" },
+            { strong: "1982년생 및 이후", big: "최대 3회", text: "재입장 가능" }
+          ] },
+          { type: "note", title: "재입장 제한 안내", items: [
+            "기기 교체 등 불가피한 사유가 있는 경우, 사전에 공유하면 예외 적용이 가능합니다."
+          ] },
+          { type: "warning", title: "메시지 삭제는 지양해주세요", items: [
+            "과도한 메시지 삭제는 대화 흐름을 끊고 모임 분위기를 해칠 수 있습니다.",
+            "새로 들어온 사람이 대화 흐름을 파악하기 어려워져 유입과 정착에도 부정적인 영향을 줄 수 있습니다.",
+            "불가피하게 삭제가 필요한 경우, 직접 삭제하기보다 운영진에게 가리기 요청을 해주세요."
+          ] }
         ]
       }
     ];
 
     const sectionsHost = document.getElementById("sectionsHost");
     const tocList = document.getElementById("tocList");
+    const filterRow = document.getElementById("filterRow");
     const searchInput = document.getElementById("guideSearch");
     const searchCount = document.getElementById("searchCount");
     const progressBar = document.getElementById("progressBar");
     const noResults = document.getElementById("noResults");
 
-    function escapeHTML(value) {
-      const entities = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      };
+    let activeFilter = "전체";
 
+    function escapeHTML(value) {
+      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
       return String(value).replace(/[&<>"']/g, (char) => entities[char]);
     }
 
     function flattenSection(section) {
-      return [
-        section.title,
-        section.kicker,
-        section.summary,
-        section.tags.join(" "),
-        JSON.stringify(section.blocks)
-      ].join(" ").toLowerCase();
+      return [section.title, section.kicker, section.summary, section.category, section.tags.join(" "), JSON.stringify(section.blocks)]
+        .join(" ").toLowerCase();
     }
 
     function renderBlock(block) {
-      if (block.type === "lead") {
-        return `<p class="section-lead">${escapeHTML(block.text)}</p>`;
-      }
+      if (block.type === "lead") return `<p class="section-lead">${escapeHTML(block.text)}</p>`;
 
       if (block.type === "note" || block.type === "warning") {
+        const ic = block.type === "warning" ? ICONS.warn : ICONS.info;
         return `
           <div class="callout ${escapeHTML(block.type)}">
-            <strong>${escapeHTML(block.title)}</strong>
-            <ul>
-              ${block.items.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}
-            </ul>
-          </div>
-        `;
+            <div class="callout-head"><span class="callout-ic">${ic}</span><strong>${escapeHTML(block.title)}</strong></div>
+            <ul>${block.items.map((i) => `<li>${escapeHTML(i)}</li>`).join("")}</ul>
+          </div>`;
       }
 
       if (block.type === "list") {
         return `
-          <div class="rule-list">
-            <div class="rule-card">
-              <strong>${escapeHTML(block.title)}</strong>
-              <ul>
-                ${block.items.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}
-              </ul>
-            </div>
-          </div>
-        `;
+          <div class="rule-list"><div class="rule-card">
+            <strong>${escapeHTML(block.title)}</strong>
+            <ul>${block.items.map((i) => `<li>${escapeHTML(i)}</li>`).join("")}</ul>
+          </div></div>`;
       }
 
       if (block.type === "steps") {
-        return `
-          <ol class="steps">
-            ${block.steps.map((step, index) => `
-              <li>
-                <span class="step-num">${String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <strong>${escapeHTML(step.title)}</strong>
-                  <p>${escapeHTML(step.text)}</p>
-                </div>
-              </li>
-            `).join("")}
-          </ol>
-        `;
+        return `<ol class="steps">${block.steps.map((s, i) => `
+          <li><span class="step-num">${String(i + 1).padStart(2, "0")}</span>
+            <div><strong>${escapeHTML(s.title)}</strong><p>${escapeHTML(s.text)}</p></div></li>`).join("")}</ol>`;
       }
 
-      if (block.type === "timeline") {
+      if (block.type === "ladder") {
         return `
-          <div class="timeline">
-            ${block.steps.map((step) => `
-              <div class="timeline-item">
-                <span class="timeline-dot"></span>
-                <div class="timeline-content">
-                  <strong>${escapeHTML(step.title)}</strong>
-                  <p>${escapeHTML(step.text)}</p>
-                </div>
-              </div>
-            `).join("")}
-          </div>
-        `;
+          <div class="callout warning" style="padding-bottom:18px">
+            <div class="callout-head"><span class="callout-ic">${ICONS.warn}</span><strong>${escapeHTML(block.title)}</strong></div>
+            <div class="ladder">${block.steps.map((s) => {
+              const cls = s.final ? "sev-final" : "";
+              return `<div class="ladder-step ${cls}">
+                <span class="ladder-tag">${escapeHTML(s.tag)}</span>
+                <div class="ladder-text"><b>${escapeHTML(s.text)}</b>${s.sub ? `<span>${escapeHTML(s.sub)}</span>` : ""}</div>
+              </div>`;
+            }).join("")}</div>
+          </div>`;
+      }
+
+      if (block.type === "metric") {
+        return `<div class="metric-grid">${block.items.map((m) =>
+          `<div class="metric-card"><b>${escapeHTML(m.big)}</b><span>${escapeHTML(m.label)}</span></div>`).join("")}</div>`;
+      }
+
+      if (block.type === "rulepair") {
+        return `<div class="metric-grid">${block.items.map((m) =>
+          `<div class="metric-card" style="text-align:left">
+            <span style="color:var(--gray);font-weight:800">${escapeHTML(m.strong)}</span>
+            <b style="margin-top:6px">${escapeHTML(m.big)}</b>
+            <span>${escapeHTML(m.text)}</span></div>`).join("")}</div>`;
+      }
+
+      if (block.type === "format") {
+        const parts = block.parts.map((p) =>
+          `<div class="format-part"><span class="fp-label">${escapeHTML(p.label)}</span><span class="fp-ex">${escapeHTML(p.ex)}</span></div>`
+        ).join('<span class="format-sep">/</span>');
+        return `<div class="format-card"><b>${escapeHTML(block.title)}</b><div class="format-flow">${parts}</div></div>`;
+      }
+
+      if (block.type === "forbidden") {
+        return `
+          <div class="callout" style="border-left:4px solid var(--danger)">
+            <div class="callout-head"><span class="callout-ic" style="background:rgba(192,57,43,.12);color:var(--danger)">${ICONS.warn}</span><strong>${escapeHTML(block.title)}</strong></div>
+            <div class="forbid-grid">${block.items.map((i) =>
+              `<div class="forbid-item"><span class="fx">✕</span><span>${escapeHTML(i)}</span></div>`).join("")}</div>
+          </div>`;
       }
 
       if (block.type === "examples") {
+        return `<div class="example-grid">${block.items.map((it) =>
+          `<div class="example-card ${escapeHTML(it.tone)}">
+            <span>${it.tone === "good" ? "○" : "✕"} ${escapeHTML(it.label)}</span>
+            <strong>${escapeHTML(it.title)}</strong><p>${escapeHTML(it.text)}</p></div>`).join("")}</div>`;
+      }
+
+      if (block.type === "cta") {
         return `
-          <div class="example-grid">
-            ${block.items.map((item) => `
-              <div class="example-card ${escapeHTML(item.tone)}">
-                <span>${escapeHTML(item.label)}</span>
-                <strong>${escapeHTML(item.title)}</strong>
-                <p>${escapeHTML(item.text)}</p>
-              </div>
-            `).join("")}
-          </div>
-        `;
+          <a class="format-card" href="${escapeHTML(block.href)}" style="display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--grad-brand-soft);text-decoration:none">
+            <div><b style="margin-bottom:4px">${escapeHTML(block.text)}</b><span style="color:var(--gray);font-size:13px;font-weight:650">${escapeHTML(block.sub)}</span></div>
+            <span class="btn btn-primary" style="pointer-events:none;flex:none">${escapeHTML(block.label)}</span>
+          </a>`;
       }
 
       return "";
@@ -1957,129 +863,97 @@
 
     function renderSections() {
       sectionsHost.innerHTML = GUIDE_SECTIONS.map((section) => `
-        <section
-          id="${escapeHTML(section.id)}"
-          class="guide-section reveal"
+        <section id="${escapeHTML(section.id)}" class="guide-section reveal lv-${escapeHTML(section.level)}"
           aria-labelledby="${escapeHTML(section.id)}-title"
-          data-search="${escapeHTML(flattenSection(section))}"
-        >
+          data-search="${escapeHTML(flattenSection(section))}" data-category="${escapeHTML(section.category)}">
           <div class="section-heading">
             <span class="section-index">${escapeHTML(section.no)}</span>
+            <span class="level-badge">${escapeHTML(LEVELS[section.level])}</span>
             <small>${escapeHTML(section.kicker)}</small>
             <h2 id="${escapeHTML(section.id)}-title">${escapeHTML(section.title)}</h2>
             <p class="section-summary">${escapeHTML(section.summary)}</p>
-            <div class="section-tags">
-              ${section.tags.map((tag) => `<span>${escapeHTML(tag)}</span>`).join("")}
-            </div>
+            <div class="section-tags">${section.tags.map((t) => `<span>${escapeHTML(t)}</span>`).join("")}</div>
           </div>
-
-          <div class="section-body">
-            ${section.blocks.map(renderBlock).join("")}
-          </div>
-        </section>
-      `).join("");
+          <div class="section-body">${section.blocks.map(renderBlock).join("")}</div>
+        </section>`).join("");
 
       tocList.innerHTML = GUIDE_SECTIONS.map((section) => `
         <a class="toc-link" href="#${escapeHTML(section.id)}" data-target="${escapeHTML(section.id)}">
           <span class="toc-index">${escapeHTML(section.no)}</span>
           <span class="toc-title">${escapeHTML(section.title)}</span>
-        </a>
-      `).join("");
+          <span class="toc-dot lv-${escapeHTML(section.level)}"></span>
+        </a>`).join("");
+
+      const cats = ["전체", ...new Set(GUIDE_SECTIONS.map((s) => s.category))];
+      filterRow.innerHTML = cats.map((c) =>
+        `<button class="filter-chip${c === "전체" ? " is-active" : ""}" data-filter="${escapeHTML(c)}" role="tab">${escapeHTML(c)}</button>`).join("");
     }
 
-    function bindSearch() {
-      searchInput.addEventListener("input", (event) => {
-        const keyword = event.target.value.trim().toLowerCase();
-        let visibleCount = 0;
+    function applyFilters() {
+      const keyword = searchInput.value.trim().toLowerCase();
+      let visible = 0;
+      document.querySelectorAll(".guide-section").forEach((section) => {
+        const matchKeyword = !keyword || section.dataset.search.includes(keyword);
+        const matchCat = activeFilter === "전체" || section.dataset.category === activeFilter;
+        const show = matchKeyword && matchCat;
+        section.hidden = !show;
+        if (show) visible += 1;
+      });
+      const label = activeFilter === "전체" ? "" : `${activeFilter} · `;
+      searchCount.textContent = (keyword || activeFilter !== "전체")
+        ? `${label}${visible}개 섹션`
+        : `전체 ${GUIDE_SECTIONS.length}개 섹션`;
+      noResults.hidden = visible !== 0;
+      noResults.classList.toggle("is-visible", visible === 0);
+    }
 
-        document.querySelectorAll(".guide-section").forEach((section) => {
-          const matched = !keyword || section.dataset.search.includes(keyword);
-          section.hidden = !matched;
-
-          if (matched) {
-            visibleCount += 1;
-          }
-        });
-
-        searchCount.textContent = keyword
-          ? `${visibleCount}개 섹션 발견`
-          : `전체 ${GUIDE_SECTIONS.length}개 섹션`;
-
-        noResults.hidden = visibleCount !== 0;
-        noResults.classList.toggle("is-visible", visibleCount === 0);
+    function bindControls() {
+      searchInput.addEventListener("input", applyFilters);
+      filterRow.addEventListener("click", (e) => {
+        const chip = e.target.closest(".filter-chip");
+        if (!chip) return;
+        activeFilter = chip.dataset.filter;
+        filterRow.querySelectorAll(".filter-chip").forEach((c) => c.classList.toggle("is-active", c === chip));
+        applyFilters();
       });
     }
 
     function bindActiveToc() {
       const links = Array.from(document.querySelectorAll("[data-target]"));
-
-      function setActive(id) {
-        links.forEach((link) => {
-          link.classList.toggle("is-active", link.dataset.target === id);
-        });
-      }
-
+      const setActive = (id) => links.forEach((l) => l.classList.toggle("is-active", l.dataset.target === id));
       setActive(GUIDE_SECTIONS[0].id);
-
-      if (!("IntersectionObserver" in window)) {
-        return;
-      }
-
+      if (!("IntersectionObserver" in window)) return;
       const observer = new IntersectionObserver((entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-        if (visible[0]) {
-          setActive(visible[0].target.id);
-        }
-      }, {
-        rootMargin: "-18% 0px -66% 0px",
-        threshold: 0.01
-      });
-
-      document.querySelectorAll(".guide-section").forEach((section) => {
-        observer.observe(section);
-      });
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      }, { rootMargin: "-18% 0px -66% 0px", threshold: 0.01 });
+      document.querySelectorAll(".guide-section").forEach((s) => observer.observe(s));
     }
 
     function bindRevealMotion() {
       const items = document.querySelectorAll(".reveal");
-
-      if (!("IntersectionObserver" in window)) {
-        items.forEach((item) => item.classList.add("is-visible"));
-        return;
-      }
-
+      if (!("IntersectionObserver" in window)) { items.forEach((i) => i.classList.add("is-visible")); return; }
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          }
+          if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
         });
-      }, {
-        threshold: 0.08
-      });
-
-      items.forEach((item) => observer.observe(item));
+      }, { threshold: 0.08 });
+      items.forEach((i) => observer.observe(i));
     }
 
     function bindProgress() {
-      function update() {
+      const update = () => {
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = scrollable > 0 ? Math.min((scrollTop / scrollable) * 100, 100) : 0;
-        progressBar.style.width = `${progress}%`;
-      }
-
+        progressBar.style.width = `${scrollable > 0 ? Math.min((scrollTop / scrollable) * 100, 100) : 0}%`;
+      };
       window.addEventListener("scroll", update, { passive: true });
       window.addEventListener("resize", update);
       update();
     }
 
     renderSections();
-    bindSearch();
+    bindControls();
     bindActiveToc();
     bindRevealMotion();
     bindProgress();
