@@ -125,3 +125,20 @@ CloudSave.user();                      // {uid,isAnonymous,providers,hasKakao,em
 
 > 로컬 `file://` 나 미등록 도메인에서는 OAuth 복귀가 차단된다. 반드시 **등록된 배포 도메인**에서 테스트한다.
 > 코드 측 진단: 복귀 에러는 `game_v2.html`/`index.html` 의 가드가 파싱해 `alert`로 표시하고, 클릭 시점의 `redirectTo` 는 콘솔(`[카카오] redirectTo = …`)에 남는다.
+
+## 4단계 — 서버 권위화(가챠/재화 어뷰징 차단) · `schema_v4_authority.sql`
+
+가챠·구매·재화 차감이 **클라이언트에만** 있어 localStorage 조작·연타로 무한 뽑기/무한 재화가 가능하다.
+`schema_v4_authority.sql` 은 이를 막는 토대다:
+
+| 구성 | 역할 |
+|---|---|
+| `game_wallet` | 재화(골드/강화석/젬/에너지/천장)의 **서버 원본**. 직접 쓰기 불가(RLS), RPC로만 변경 |
+| `wallet_get()` | 내 지갑 조회 + 서버측 에너지 회복 반영 |
+| `wallet_spend(gold,stones,gems)` | **원자적 차감**(음수 방지 제약 + 조건부 UPDATE)으로 무한 재화·연타 차단 |
+| `gacha_pull(count,lv,region)` | **서버가** 에너지/젬 검증·차감하고 등급·슬롯·파워·천장을 추첨 → 무한 뽑기·가짜 전리품 차단 |
+
+> ⚠️ **현재 라이브 미적용.** 이 파일은 배포 준비용이며, `game_v2.html` 클라이언트는 아직 이 RPC에 의존하지 않는다.
+> 적용하려면 SQL을 Supabase에 실행한 뒤, 게임의 **소비/뽑기 지점만** 점진적으로 RPC 호출로 교체한다(파일 하단 "연결 가이드" 참고).
+> 공식·가중치(RAR/SLOTW/PBASE/makeItem)는 `game_v2.html` 과 **반드시 일치**시킨다(단일 원본 원칙).
+> 전투력 랭킹은 이미 `game_players_v2.power`(STORED 생성컬럼)로 서버 권위다. 이 단계는 재화/가챠에 한정하며, 보상·세이브 권위화는 다음 단계다.
