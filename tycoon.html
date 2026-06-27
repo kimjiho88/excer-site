@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#7a4a2b" />
+<title>엑서 카페 타이쿤 · 디저트 키우기</title>
+<meta name="description" content="아메리카노부터 가나슈까지, 메뉴를 키우고 매니저를 고용해 강남 제일의 디저트 카페로! 방치형 카페 타이쿤." />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+:root{
+  --bg0:#1c1208;--bg1:#2a1c0f;
+  --cream:#fff7ec;--cream2:#fbeed8;
+  --espresso:#3a2418;--mocha:#6b4426;--caramel:#c98a4b;--caramel2:#e0a866;
+  --latte:#d9b083;--milk:#fffaf2;
+  --berry:#e36d8a;--berry2:#f2a3b8;--mint:#4bbf8f;--gold:#e6b34a;
+  --ink:#2e1d10;--ink2:#5e4632;--mut:#9a7f64;--line:rgba(120,80,40,.16);--line2:rgba(120,80,40,.28);
+  --r:18px;--rs:13px;--ease:cubic-bezier(.16,1,.3,1);
+  --shadow:0 14px 34px rgba(74,42,16,.14);--shadow-s:0 6px 16px rgba(74,42,16,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var(--ink);min-height:100dvh;
+  background:
+    radial-gradient(circle at 12% 6%,rgba(224,168,102,.30),transparent 30rem),
+    radial-gradient(circle at 88% 0%,rgba(227,109,138,.16),transparent 26rem),
+    linear-gradient(180deg,#fff8ee 0%,#fbeed8 48%,#f3dcbf 100%);
+  background-attachment:fixed;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none}
+button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+  padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+
+/* ===== 상단바 ===== */
+.top{position:sticky;top:0;z-index:30;padding:10px 14px 12px;
+  background:linear-gradient(180deg,rgba(255,248,238,.97),rgba(255,248,238,.82));
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;gap:10px}
+.shop{display:flex;align-items:center;gap:9px;min-width:0}
+.shop-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;font-size:20px;flex:none;
+  background:linear-gradient(135deg,var(--caramel),var(--mocha));box-shadow:0 8px 18px rgba(150,90,40,.32)}
+.shop b{display:block;font-size:15px;font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.shop small{display:block;font-size:10.5px;font-weight:700;color:var(--mut)}
+.back{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;color:var(--mocha);
+  padding:7px 11px;border-radius:999px;background:rgba(201,138,75,.14)}
+.wallet{display:flex;gap:8px;margin-top:11px}
+.coin{flex:1;background:var(--milk);border:1px solid var(--line);border-radius:14px;padding:9px 12px;box-shadow:var(--shadow-s)}
+.coin .lab{font-size:10.5px;font-weight:800;color:var(--mut);display:flex;align-items:center;gap:4px}
+.coin .val{font-size:18px;font-weight:900;letter-spacing:-.04em;color:var(--espresso);margin-top:1px}
+.coin.rev .val{color:var(--mocha);font-size:15px}
+.coin.fame .val{color:var(--berry)}
+
+/* ===== 본문 ===== */
+.content{flex:1;padding:14px 13px 6px}
+.pane{display:none}.pane.on{display:block}
+
+/* 구매 단위 토글 */
+.buyamt{display:flex;gap:6px;margin-bottom:12px}
+.buyamt button{flex:1;padding:9px 0;border-radius:11px;font-size:13px;font-weight:900;
+  background:var(--milk);border:1px solid var(--line);color:var(--ink2);transition:all .15s var(--ease)}
+.buyamt button.on{background:linear-gradient(135deg,var(--caramel),var(--mocha));color:#fff;border-color:transparent;box-shadow:var(--shadow-s)}
+
+/* 메뉴(생산기) 카드 */
+.item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:11px;align-items:center;
+  background:var(--milk);border:1px solid var(--line);border-radius:var(--r);padding:11px;margin-bottom:10px;
+  box-shadow:var(--shadow-s);overflow:hidden;transition:transform .12s var(--ease),box-shadow .15s var(--ease)}
+.item.locked{opacity:.62;filter:saturate(.5)}
+.item .icon{position:relative;width:58px;height:58px;border-radius:14px;display:grid;place-items:center;font-size:28px;
+  background:linear-gradient(135deg,var(--cream2),#fff);border:1px solid var(--line);cursor:pointer;transition:transform .1s var(--ease)}
+.item .icon:active{transform:scale(.92)}
+.item .icon .ring{position:absolute;inset:-1px;border-radius:14px;pointer-events:none}
+.item .icon .own{position:absolute;left:-6px;top:-6px;min-width:22px;height:22px;border-radius:999px;display:grid;place-items:center;
+  font-size:11px;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--mocha),var(--espresso));padding:0 5px;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.item .icon .mgr{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:999px;display:grid;place-items:center;
+  font-size:11px;background:var(--mint);box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.item .body{min-width:0}
+.item .nm{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:900;letter-spacing:-.02em}
+.item .nm .ml{font-size:10px;font-weight:900;color:var(--caramel);background:rgba(201,138,75,.14);padding:2px 6px;border-radius:999px}
+.item .rev{font-size:11.5px;font-weight:700;color:var(--mut);margin-top:1px}
+.item .rev b{color:var(--mocha)}
+.prog{height:8px;border-radius:6px;background:rgba(120,80,40,.12);overflow:hidden;margin-top:8px;border:1px solid rgba(120,80,40,.06)}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--caramel),var(--caramel2));border-radius:6px}
+.prog i.full{background:linear-gradient(90deg,var(--mint),#7fe0b4)}
+.item .acts{display:flex;gap:7px;margin-top:9px}
+.buybtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 6px;border-radius:11px;
+  background:linear-gradient(135deg,var(--caramel),var(--mocha));color:#fff;font-weight:900;box-shadow:var(--shadow-s);transition:transform .12s var(--ease)}
+.buybtn:active{transform:scale(.97)}
+.buybtn:disabled{background:#e7d8c4;color:#b09a82;box-shadow:none}
+.buybtn .qt{font-size:13px}.buybtn .ct{font-size:11px;opacity:.92;font-weight:800}
+.mgrbtn{flex:none;padding:8px 12px;border-radius:11px;background:rgba(75,191,143,.16);color:#23734f;font-weight:900;font-size:12px;border:1px solid rgba(75,191,143,.3)}
+.mgrbtn:disabled{opacity:.5}
+.mgrbtn.hired{background:rgba(75,191,143,.22);color:#1c6043}
+.milestone{font-size:10.5px;font-weight:700;color:var(--mut);margin-top:7px}
+.milestone b{color:var(--caramel)}
+
+/* 업그레이드 */
+.up{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:11px;align-items:center;
+  background:var(--milk);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:9px;box-shadow:var(--shadow-s)}
+.up.bought{opacity:.6}
+.up .uic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--cream2);border:1px solid var(--line)}
+.up .un{font-size:13.5px;font-weight:900;letter-spacing:-.02em}
+.up .ud{font-size:11.5px;font-weight:650;color:var(--mut);margin-top:2px;line-height:1.4}
+.up .ub{padding:9px 13px;border-radius:11px;background:linear-gradient(135deg,var(--berry),#d4566f);color:#fff;font-weight:900;font-size:12.5px;white-space:nowrap}
+.up .ub:disabled{background:#e7d8c4;color:#b09a82}
+.up .ub.done{background:rgba(75,191,143,.2);color:#1c6043}
+.sec-title{font-size:13px;font-weight:900;color:var(--ink2);margin:6px 2px 10px;letter-spacing:-.02em;display:flex;align-items:center;gap:7px}
+.sec-title::before{content:"";width:14px;height:3px;border-radius:3px;background:var(--caramel)}
+
+/* 명성 */
+.fame-hero{background:linear-gradient(135deg,#fff,var(--cream2));border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:var(--shadow-s);text-align:center}
+.fame-hero .big{font-size:34px;font-weight:900;color:var(--berry);letter-spacing:-.04em}
+.fame-hero .sub{font-size:12.5px;font-weight:700;color:var(--mut);margin-top:4px;line-height:1.6}
+.fame-hero .gain{margin-top:13px;display:inline-flex;flex-direction:column;gap:1px;background:rgba(227,109,138,.1);border-radius:12px;padding:10px 18px}
+.fame-hero .gain b{font-size:22px;font-weight:900;color:var(--berry)}
+.fame-hero .gain span{font-size:11px;font-weight:800;color:var(--mut)}
+.renew{width:100%;margin-top:14px;padding:14px;border-radius:14px;font-weight:900;font-size:15px;color:#fff;
+  background:linear-gradient(135deg,var(--berry),#cc4f6c);box-shadow:0 10px 24px rgba(227,109,138,.36);transition:transform .12s var(--ease)}
+.renew:active{transform:scale(.98)}
+.renew:disabled{background:#e7d8c4;color:#b09a82;box-shadow:none}
+.fame-info{background:var(--milk);border:1px solid var(--line);border-radius:var(--r);padding:15px;box-shadow:var(--shadow-s);font-size:12.5px;line-height:1.7;color:var(--ink2)}
+.fame-info b{color:var(--berry)}
+
+/* ===== 하단 탭 ===== */
+.tabbar{position:fixed;inset:auto 0 0 0;z-index:40;max-width:480px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+  background:rgba(255,248,238,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:14px;
+  color:var(--mut);font-size:11px;font-weight:800}
+.tab .ti{font-size:20px;line-height:1}
+.tab.on{background:rgba(201,138,75,.16);color:var(--mocha)}
+.tab .dot{position:absolute;width:7px;height:7px;border-radius:999px;background:var(--berry);transform:translate(12px,-6px)}
+
+/* ===== 토스트 / 모달 ===== */
+.toast{position:fixed;left:50%;bottom:96px;z-index:60;transform:translate(-50%,16px);opacity:0;pointer-events:none;
+  padding:11px 16px;border-radius:999px;background:rgba(46,29,16,.94);color:#fff;font-weight:800;font-size:13px;
+  box-shadow:var(--shadow);transition:opacity .2s var(--ease),transform .2s var(--ease);max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.float{position:fixed;z-index:55;font-weight:900;color:var(--mocha);font-size:15px;pointer-events:none;
+  animation:floatUp 1s var(--ease) forwards;text-shadow:0 2px 6px rgba(255,255,255,.7)}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.8)}15%{opacity:1}100%{opacity:0;transform:translateY(-46px) scale(1.05)}}
+.modal{position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:24px;background:rgba(46,29,16,.5);backdrop-filter:blur(4px)}
+.modal.on{display:grid}
+.mcard{background:var(--milk);border-radius:24px;padding:24px 22px;max-width:360px;width:100%;box-shadow:var(--shadow);text-align:center}
+.mcard .mi{font-size:46px}
+.mcard h3{font-size:20px;font-weight:900;letter-spacing:-.03em;margin:8px 0 6px}
+.mcard p{font-size:13.5px;font-weight:650;color:var(--ink2);line-height:1.65}
+.mcard .amt{font-size:26px;font-weight:900;color:var(--mocha);margin:10px 0;letter-spacing:-.03em}
+.mcard button{width:100%;margin-top:16px;padding:13px;border-radius:14px;font-weight:900;font-size:15px;color:#fff;
+  background:linear-gradient(135deg,var(--caramel),var(--mocha));box-shadow:var(--shadow-s)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="top-row">
+      <div class="shop">
+        <span class="shop-mark">☕</span>
+        <span><b id="shopName">엑서 카페</b><small>강남 디저트 타이쿤</small></span>
+      </div>
+      <a class="back" href="games.html">← 게임</a>
+    </div>
+    <div class="wallet">
+      <div class="coin"><span class="lab">💰 보유 매출</span><span class="val" id="gold">0</span></div>
+      <div class="coin rev"><span class="lab">📈 초당 수익</span><span class="val" id="rps">0/초</span></div>
+      <div class="coin fame"><span class="lab">⭐ 명성</span><span class="val" id="fame">0</span></div>
+    </div>
+  </header>
+
+  <main class="content">
+    <section id="pane-menu" class="pane on">
+      <div class="buyamt" id="buyAmt">
+        <button data-amt="1" class="on">×1</button>
+        <button data-amt="10">×10</button>
+        <button data-amt="100">×100</button>
+        <button data-amt="max">최대</button>
+      </div>
+      <div id="itemList"></div>
+    </section>
+
+    <section id="pane-up" class="pane">
+      <div class="sec-title">매장 업그레이드</div>
+      <div id="upList"></div>
+    </section>
+
+    <section id="pane-fame" class="pane">
+      <div class="fame-hero">
+        <div class="big" id="fameBig">⭐ 0</div>
+        <div class="sub">명성은 단골이 늘수록 쌓여요.<br>1개당 전체 수익 <b>+2%</b> 영구 보너스.</div>
+        <div class="gain"><b id="fameGain">+0</b><span>리뉴얼 오픈 시 획득</span></div>
+        <button class="renew" id="renewBtn">🎀 리뉴얼 오픈 (전체 초기화)</button>
+      </div>
+      <div class="fame-info">
+        <b>리뉴얼 오픈</b>이란? 가게를 처음부터 다시 열어요. 보유 매출·메뉴·업그레이드는 초기화되지만,
+        지금까지의 누적 매출에 따라 <b>명성 ⭐</b>을 얻고 그만큼 다음 장사가 훨씬 빨라집니다.
+        충분히 키운 뒤 리뉴얼할수록 더 많은 명성을 얻어요.
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-tab="menu"><span class="ti">🧁</span>메뉴</button>
+    <button class="tab" data-tab="up"><span class="ti">⭐</span>업그레이드</button>
+    <button class="tab" data-tab="fame"><span class="ti">🎀</span>명성</button>
+  </nav>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="modal" class="modal"><div class="mcard">
+  <div class="mi" id="mIcon">☕</div><h3 id="mTitle"></h3>
+  <div class="amt" id="mAmt"></div><p id="mBody"></p>
+  <button id="mOk">받기</button>
+</div></div>
+
+<script>
+"use strict";
+/* ===================================================================
+   엑서 카페 타이쿤 — 자체 완결형 방치 타이쿤 (서버/계정 불필요, 로컬 저장)
+   =================================================================== */
+const KEY="excer_tycoon_v1";
+const CAP_OFFLINE=4*3600;          // 오프라인 보상 한도(초)
+const FAME_DIV=1e7;                // 명성 환산 기준
+const $=s=>document.querySelector(s);
+
+// 메뉴(생산기) 정의: cost=최초가, r=가격증가율, rev=1개 1사이클 수익, t=사이클(초), cat=분류
+const ITEMS=[
+  {id:"americano",nm:"아메리카노",ic:"☕",cat:"coffee",cost:10,r:1.07,rev:1,t:1.0},
+  {id:"latte",    nm:"카페라떼",  ic:"🥛",cat:"coffee",cost:90,r:1.15,rev:9,t:2.4},
+  {id:"matcha",   nm:"말차라떼",  ic:"🍵",cat:"coffee",cost:1100,r:1.14,rev:75,t:4},
+  {id:"cupcake",  nm:"컵케이크",  ic:"🧁",cat:"dessert",cost:12000,r:1.13,rev:520,t:8},
+  {id:"cake",     nm:"조각케이크",ic:"🍰",cat:"dessert",cost:130000,r:1.12,rev:2900,t:14},
+  {id:"croissant",nm:"크루아상",  ic:"🥐",cat:"dessert",cost:1.4e6,r:1.11,rev:14500,t:22},
+  {id:"pudding",  nm:"커스터드 푸딩",ic:"🍮",cat:"dessert",cost:2e7,r:1.10,rev:95000,t:34},
+  {id:"macaron",  nm:"딸기 마카롱",ic:"🌸",cat:"dessert",cost:3.3e8,r:1.10,rev:780000,t:48},
+  {id:"waffle",   nm:"크림 와플",  ic:"🧇",cat:"dessert",cost:5.1e9,r:1.09,rev:6.4e6,t:62},
+  {id:"ganache",  nm:"가나슈 쇼콜라",ic:"🍫",cat:"dessert",cost:7.5e10,r:1.08,rev:5.5e7,t:80}
+];
+const PROFIT_TH=[25,50,100,150,200,300,400,500,750,1000];   // 수익 ×2 지점
+const SPEED_TH=[25,100,200,400,700,1000];                   // 속도 ×2 지점
+
+// 업그레이드: target='all'|'coffee'|'dessert'|item.id, mult=배수
+const UPS=[
+  {id:"u_grind",  nm:"프리미엄 원두",  ic:"🫘",desc:"커피류 수익 ×2",      cost:5000,   target:"coffee", mult:2},
+  {id:"u_insta",  nm:"인스타 입소문",  ic:"📸",desc:"전체 수익 ×2",        cost:80000,  target:"all",    mult:2},
+  {id:"u_oven",   nm:"프랑스식 오븐",  ic:"🔥",desc:"디저트류 수익 ×2",    cost:6e5,    target:"dessert",mult:2},
+  {id:"u_card",   nm:"단골 적립카드",  ic:"💳",desc:"전체 수익 ×2",        cost:9e6,    target:"all",    mult:2},
+  {id:"u_barista",nm:"바리스타 챔피언",ic:"🏆",desc:"커피류 수익 ×3",      cost:1.1e8,  target:"coffee", mult:3},
+  {id:"u_signature",nm:"시그니처 메뉴",ic:"✨",desc:"디저트류 수익 ×3",    cost:1.5e9,  target:"dessert",mult:3},
+  {id:"u_franchise",nm:"2호점 오픈",   ic:"🏬",desc:"전체 수익 ×3",        cost:2.2e10, target:"all",    mult:3},
+  {id:"u_michelin", nm:"미슐랭 디저트", ic:"🌟",desc:"전체 수익 ×5",        cost:4e11,   target:"all",    mult:5}
+];
+
+/* ---------- 상태 ---------- */
+function fresh(){
+  return {
+    gold:50, fame:0, lifetime:0,
+    owned:{}, mgr:{}, prog:{}, ups:{},
+    buyAmt:1, lastSeen:Date.now()
+  };
+}
+let S=load();
+
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));
+    if(s&&s.owned){ // 누락 필드 보강
+      s.gold=+s.gold||0; s.fame=+s.fame||0; s.lifetime=+s.lifetime||0;
+      s.owned=s.owned||{}; s.mgr=s.mgr||{}; s.prog=s.prog||{}; s.ups=s.ups||{};
+      s.buyAmt=s.buyAmt||1; s.lastSeen=+s.lastSeen||Date.now();
+      return s;}
+  }catch(e){}
+  return fresh();
+}
+let _saveT=null;
+function save(){clearTimeout(_saveT);_saveT=setTimeout(()=>{
+  S.lastSeen=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+},400);}
+
+/* ---------- 수치 ---------- */
+const U=["","만","억","조","경","해","자","양","구","간"];
+function fmt(n){
+  n=Math.floor(n);
+  if(n<10000)return n.toLocaleString("en-US");
+  let u=0,v=n;
+  while(v>=10000&&u<U.length-1){v/=10000;u++;}
+  let s=v>=100?String(Math.floor(v)):(Math.floor(v*100)/100).toString();
+  return s+U[u];
+}
+const won=n=>"₩"+fmt(n);
+
+function owned(id){return S.owned[id]||0;}
+function countTh(th,o){let c=0;for(const t of th){if(o>=t)c++;else break;}return c;}
+function profitMult(o){return Math.pow(2,countTh(PROFIT_TH,o));}
+function speedMult(o){return Math.pow(2,countTh(SPEED_TH,o));}
+function cycleTime(it){return Math.max(0.1, it.t/speedMult(owned(it.id)));}
+
+// 업그레이드 누적 배수 (특정 아이템에 적용되는 모든 업글 곱)
+function upMult(it){
+  let m=1;
+  for(const u of UPS){if(!S.ups[u.id])continue;
+    if(u.target==="all"||u.target===it.cat||u.target===it.id)m*=u.mult;}
+  return m;
+}
+function fameMult(){return 1+S.fame*0.02;}
+
+// 1개 1사이클 수익(현재 보유/배수 반영) — owned 1개 기준
+function unitRevenue(it){return it.rev*profitMult(owned(it.id))*upMult(it)*fameMult();}
+// 한 사이클 총수익 = 보유수 × unit
+function cycleRevenue(it){return unitRevenue(it)*owned(it.id);}
+// 초당 수익(매니저 고용된 자동 메뉴만)
+function revPerSec(){let r=0;for(const it of ITEMS){if(owned(it.id)>0&&S.mgr[it.id])r+=cycleRevenue(it)/cycleTime(it);}return r;}
+
+// k개 구매 비용(등비수열 합)
+function buyCost(it,k){const o=owned(it.id);return it.cost*Math.pow(it.r,o)*(Math.pow(it.r,k)-1)/(it.r-1);}
+// 살 수 있는 최대 개수
+function maxBuy(it){const o=owned(it.id);const g=S.gold;
+  const inside=g*(it.r-1)/(it.cost*Math.pow(it.r,o))+1;
+  if(inside<=1)return 0;
+  return Math.max(0,Math.floor(Math.log(inside)/Math.log(it.r)));}
+function wantAmt(it){return S.buyAmt==="max"?Math.max(1,maxBuy(it)):S.buyAmt;}
+function mgrCost(it){return it.cost*12;}
+
+// 명성 환산: 누적매출 → 보유 가능 총 명성
+function fameFor(life){return Math.floor(Math.sqrt(Math.max(0,life)/FAME_DIV));}
+function fameGain(){return Math.max(0, fameFor(S.lifetime)-S.fame);}
+
+/* ---------- 진행/수익 적립 ---------- */
+function addGold(n){S.gold+=n;S.lifetime+=n;}
+let els={}; // id -> {fill,own,nm,rev,buy,mgr,ms,card,icon}
+
+function startCycle(id){
+  const it=ITEMS.find(x=>x.id===id);if(!it)return;
+  if(owned(id)<=0)return;
+  if((S.prog[id]||0)>0)return;          // 이미 진행 중
+  S.prog[id]=1e-6;                       // 0 초과로 표시 → 진행 시작
+}
+function tick(dt){
+  for(const it of ITEMS){const id=it.id;
+    if(owned(id)<=0)continue;
+    let p=S.prog[id]||0;
+    if(p>0||S.mgr[id]){
+      if(p<=0)p=1e-6;
+      p+=dt/cycleTime(it);
+      while(p>=1){
+        addGold(cycleRevenue(it));
+        if(S.mgr[id]){p-=1;}else{p=0;break;}
+      }
+      S.prog[id]=p;
+    }
+  }
+}
+
+/* ---------- 렌더 ---------- */
+let unlocked=0;
+function highestOwnedIdx(){let h=-1;ITEMS.forEach((it,i)=>{if(owned(it.id)>0)h=i;});return h;}
+function isUnlocked(i){return i<=Math.min(ITEMS.length-1, Math.max(unlocked, highestOwnedIdx()+1));}
+
+function renderMenu(){
+  unlocked=Math.max(unlocked, highestOwnedIdx()+1);
+  const host=$("#itemList");let html="";
+  ITEMS.forEach((it,i)=>{
+    if(!isUnlocked(i)){
+      html+=`<div class="item locked" data-id="${it.id}"><div class="icon">🔒</div>
+        <div class="body"><div class="nm">??? 메뉴</div>
+        <div class="rev">앞 메뉴를 구매하면 해금돼요</div></div></div>`;
+      return;
+    }
+    html+=`<div class="item" data-id="${it.id}">
+      <div class="icon" data-tap="${it.id}">${it.ic}
+        <span class="own" data-own="${it.id}">${owned(it.id)}</span>
+        ${S.mgr[it.id]?'<span class="mgr">🤖</span>':''}
+        <div class="prog" style="position:absolute;left:6px;right:6px;bottom:5px;margin:0;height:5px"><i data-fill="${it.id}"></i></div>
+      </div>
+      <div class="body">
+        <div class="nm">${it.nm}<span class="ml" data-ml="${it.id}"></span></div>
+        <div class="rev" data-rev="${it.id}"></div>
+        <div class="acts">
+          <button class="buybtn" data-buy="${it.id}"><span class="qt"></span><span class="ct"></span></button>
+          <button class="mgrbtn" data-mgr="${it.id}"></button>
+        </div>
+        <div class="milestone" data-ms="${it.id}"></div>
+      </div>
+    </div>`;
+  });
+  host.innerHTML=html;
+  // refs
+  els={};
+  ITEMS.forEach(it=>{
+    els[it.id]={
+      fill:host.querySelector(`[data-fill="${it.id}"]`),
+      own:host.querySelector(`[data-own="${it.id}"]`),
+      rev:host.querySelector(`[data-rev="${it.id}"]`),
+      buy:host.querySelector(`[data-buy="${it.id}"]`),
+      mgr:host.querySelector(`[data-mgr="${it.id}"]`),
+      ml:host.querySelector(`[data-ml="${it.id}"]`),
+      ms:host.querySelector(`[data-ms="${it.id}"]`)
+    };
+  });
+  refreshMenu();
+}
+
+function refreshMenu(){
+  ITEMS.forEach((it,i)=>{
+    if(!isUnlocked(i)||!els[it.id])return;
+    const e=els[it.id],o=owned(it.id);
+    const k=wantAmt(it),cost=buyCost(it,Math.max(1,k));
+    if(e.buy){
+      e.buy.querySelector(".qt").textContent="구매 ×"+(S.buyAmt==="max"?(k||1):S.buyAmt);
+      e.buy.querySelector(".ct").textContent=won(cost);
+      e.buy.disabled=S.gold<cost||(S.buyAmt==="max"&&k<1);
+    }
+    if(e.mgr){
+      if(S.mgr[it.id]){e.mgr.textContent="자동";e.mgr.disabled=true;e.mgr.classList.add("hired");}
+      else{e.mgr.textContent="매니저 "+won(mgrCost(it));e.mgr.disabled=S.gold<mgrCost(it)||o<=0;}
+    }
+    if(e.rev)e.rev.innerHTML=o>0?`사이클 <b>${won(cycleRevenue(it))}</b> · ${cycleTime(it).toFixed(1)}초`:`먼저 구매해 영업을 시작하세요`;
+    if(e.ml){const pm=countTh(PROFIT_TH,o);e.ml.textContent=pm>0?"×"+fmt(profitMult(o)):"";e.ml.style.display=pm>0?"":"none";}
+    if(e.ms){const nxt=PROFIT_TH.find(t=>t>o);e.ms.innerHTML=nxt?`다음 보너스까지 <b>${nxt-o}</b>개 (×2 수익)`:`최대 보너스 달성 🎉`;}
+    if(e.own)e.own.textContent=o;
+  });
+}
+function tickMenu(){
+  for(const it of ITEMS){const e=els[it.id];if(!e||!e.fill)continue;
+    const p=Math.min(1,S.prog[it.id]||0);
+    e.fill.style.width=(p*100)+"%";
+    e.fill.classList.toggle("full",p>=1);
+  }
+}
+
+function renderUps(){
+  const host=$("#upList");let html="";
+  UPS.forEach(u=>{
+    const bought=!!S.ups[u.id];
+    html+=`<div class="up${bought?' bought':''}">
+      <div class="uic">${u.ic}</div>
+      <div><div class="un">${u.nm}</div><div class="ud">${u.desc}</div></div>
+      <button class="ub${bought?' done':''}" data-up="${u.id}" ${bought?'disabled':''}>${bought?'완료':won(u.cost)}</button>
+    </div>`;
+  });
+  if(UPS.every(u=>S.ups[u.id]))html+=`<p style="text-align:center;color:var(--mut);font-size:12.5px;font-weight:700;margin-top:8px">모든 업그레이드를 구매했어요 ☕</p>`;
+  host.innerHTML=html;
+  refreshUps();
+}
+function refreshUps(){
+  $("#upList").querySelectorAll("[data-up]").forEach(b=>{
+    const u=UPS.find(x=>x.id===b.dataset.up);if(!u||S.ups[u.id])return;
+    b.disabled=S.gold<u.cost;
+  });
+}
+
+function renderFame(){
+  $("#fameBig").textContent="⭐ "+S.fame;
+  const g=fameGain();
+  $("#fameGain").textContent="+"+g;
+  const btn=$("#renewBtn");
+  btn.disabled=g<=0;
+  btn.textContent=g>0?`🎀 리뉴얼 오픈 · 명성 +${g}`:"🎀 더 키운 뒤 리뉴얼하세요";
+}
+
+function updateTop(){
+  $("#gold").textContent=fmt(S.gold);
+  $("#rps").textContent=fmt(revPerSec())+"/초";
+  $("#fame").textContent=S.fame;
+}
+
+/* ---------- 액션 ---------- */
+function doBuy(id){
+  const it=ITEMS.find(x=>x.id===id);if(!it)return;
+  let k=wantAmt(it);if(k<1)return;
+  const cost=buyCost(it,k);if(S.gold<cost)return;
+  S.gold-=cost;S.owned[id]=owned(id)+k;
+  unlocked=Math.max(unlocked, ITEMS.findIndex(x=>x.id===id)+1);
+  // 새 메뉴 첫 구매면 목록 재구성(해금), 아니면 가벼운 갱신
+  renderMenu();renderUps();updateTop();save();
+}
+function doMgr(id){
+  const it=ITEMS.find(x=>x.id===id);if(!it||S.mgr[id]||owned(id)<=0)return;
+  const c=mgrCost(it);if(S.gold<c)return;
+  S.gold-=c;S.mgr[id]=true;S.prog[id]=S.prog[id]||1e-6;
+  toast("🤖 "+it.nm+" 매니저 고용! 이제 자동으로 팔려요");
+  renderMenu();updateTop();save();
+}
+function doUp(id){
+  const u=UPS.find(x=>x.id===id);if(!u||S.ups[id])return;
+  if(S.gold<u.cost)return;
+  S.gold-=u.cost;S.ups[id]=true;
+  toast("✨ "+u.nm+" 적용!");
+  renderUps();refreshMenu();updateTop();save();
+}
+function doRenew(){
+  const g=fameGain();if(g<=0)return;
+  const keepFame=S.fame+g;
+  if(!confirm(`리뉴얼 오픈하면 명성 ⭐${keepFame} 이 되고, 다음 장사 전체 수익이 +${keepFame*2}% 가 됩니다.\n보유 매출·메뉴·업그레이드는 초기화돼요. 진행할까요?`))return;
+  const life=S.lifetime;
+  S=fresh();S.fame=keepFame;S.lifetime=life; // 누적매출은 유지(명성 누적 기준)
+  unlocked=0;
+  modal("🎀","리뉴얼 오픈!",`명성 ⭐${keepFame}`,`단골들이 소문을 냈어요. 전체 수익 <b>+${keepFame*2}%</b>로 다시 시작합니다.`);
+  switchTab("menu");
+  renderMenu();renderUps();renderFame();updateTop();save();
+}
+
+/* ---------- 부유 텍스트(수동 수확 피드백) ---------- */
+function floatText(x,y,txt){
+  const el=document.createElement("div");el.className="float";el.textContent=txt;
+  el.style.left=x+"px";el.style.top=y+"px";document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+/* ---------- 토스트 / 모달 ---------- */
+let _toastT=null;
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove("on"),2200);}
+function modal(icon,title,amt,body){
+  $("#mIcon").textContent=icon;$("#mTitle").textContent=title;$("#mAmt").innerHTML=amt||"";$("#mBody").innerHTML=body||"";
+  $("#modal").classList.add("on");
+}
+
+/* ---------- 탭 ---------- */
+let TAB="menu";
+function switchTab(t){
+  TAB=t;
+  document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
+  $("#pane-"+t).classList.add("on");
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  if(t==="up")renderUps();
+  if(t==="fame")renderFame();
+}
+
+/* ---------- 오프라인 보상 ---------- */
+function offlineEarnings(){
+  const away=Math.min(CAP_OFFLINE,(Date.now()-S.lastSeen)/1000);
+  if(away<10)return;
+  let earn=0;
+  for(const it of ITEMS){if(owned(it.id)>0&&S.mgr[it.id]){
+    const cycles=Math.floor(away/cycleTime(it));earn+=cycles*cycleRevenue(it);}}
+  if(earn<1)return;
+  addGold(earn);
+  const mins=Math.floor(away/60);
+  modal("🛎️","다녀오셨네요!",won(earn),`자리를 비운 <b>${mins>0?mins+"분":"잠깐"}</b> 동안 매니저들이 열심히 팔았어요.`);
+}
+
+/* ---------- 이벤트 바인딩 ---------- */
+function bind(){
+  $("#buyAmt").addEventListener("click",e=>{const b=e.target.closest("[data-amt]");if(!b)return;
+    S.buyAmt=b.dataset.amt==="max"?"max":+b.dataset.amt;
+    document.querySelectorAll("#buyAmt button").forEach(x=>x.classList.toggle("on",x===b));
+    refreshMenu();save();});
+  $("#tabbar").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)switchTab(b.dataset.tab);});
+  $("#itemList").addEventListener("click",e=>{
+    const tap=e.target.closest("[data-tap]");
+    if(tap){const id=tap.dataset.tap;
+      if(owned(id)>0&&!S.mgr[id]&&(S.prog[id]||0)<=0){startCycle(id);
+        const r=tap.getBoundingClientRect();floatText(r.left+r.width/2-10,r.top+8,"+영업!");}
+      return;}
+    const buy=e.target.closest("[data-buy]");if(buy){doBuy(buy.dataset.buy);return;}
+    const mgr=e.target.closest("[data-mgr]");if(mgr){doMgr(mgr.dataset.mgr);return;}
+  });
+  $("#upList").addEventListener("click",e=>{const b=e.target.closest("[data-up]");if(b)doUp(b.dataset.up);});
+  $("#renewBtn").addEventListener("click",doRenew);
+  $("#mOk").addEventListener("click",()=>$("#modal").classList.remove("on"));
+  // 구매 단위 초기 표시
+  document.querySelectorAll("#buyAmt button").forEach(x=>x.classList.toggle("on",
+    (S.buyAmt==="max"&&x.dataset.amt==="max")||(+x.dataset.amt===S.buyAmt)));
+}
+
+/* ---------- 메인 루프 ---------- */
+let last=performance.now(),acc=0,uiAcc=0;
+function loop(now){
+  const dt=Math.min(0.25,(now-last)/1000);last=now;
+  tick(dt);
+  tickMenu();
+  uiAcc+=dt;
+  if(uiAcc>=0.2){uiAcc=0;updateTop();if(TAB==="menu")refreshMenu();if(TAB==="up")refreshUps();}
+  acc+=dt;if(acc>=5){acc=0;save();}
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 부트 ---------- */
+function boot(){
+  unlocked=Math.max(0, highestOwnedIdx()+1);
+  // 첫 진입 안내
+  if(S.lifetime===0&&owned("americano")===0){toast("☕ 아메리카노 메뉴를 구매하고 탭해서 영업을 시작하세요!");}
+  bind();
+  renderMenu();renderUps();renderFame();updateTop();
+  offlineEarnings();
+  requestAnimationFrame(loop);
+  window.addEventListener("beforeunload",()=>{S.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}});
+  document.addEventListener("visibilitychange",()=>{if(document.hidden){S.lastSeen=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}});
+}
+boot();
+</script>
+</body>
+</html>

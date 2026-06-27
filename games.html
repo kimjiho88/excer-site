@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#672091" />
+  <title>모임운영 커뮤니티 — 게임</title>
+  <meta name="description" content="구성원과 함께 즐기는 미니 게임 모음. 좀비 헌팅 RPG와 카페 타이쿤을 플레이하고 랭킹에서 경쟁하세요." />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+
+  <style>
+    .games-hero {
+      position: relative; overflow: hidden; padding: clamp(26px, 3vw, 42px);
+      border-radius: var(--r-xl); margin-bottom: 20px;
+    }
+    .games-hero::after {
+      content: ""; position: absolute; right: -120px; top: -130px; width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(160, 95, 208, 0.24), transparent 68%); pointer-events: none;
+    }
+    .games-hero .inner { position: relative; z-index: 1; }
+    .games-hero h1 { margin: 14px 0 0; font-size: clamp(28px, 3.6vw, 46px); line-height: 1.05; letter-spacing: -0.05em; font-weight: 850; }
+    .games-hero h1 span { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .games-hero p { max-width: 620px; margin: 14px 0 0; color: var(--ink-2); font-size: clamp(14px, 1.2vw, 17px); line-height: 1.7; }
+
+    .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .game-card {
+      position: relative; overflow: hidden; display: flex; flex-direction: column;
+      border: 1px solid var(--line); border-radius: var(--r-lg); background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow-sm); transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), border-color 0.18s var(--ease);
+    }
+    .game-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--line-strong); }
+    .game-card.soon { opacity: 0.72; }
+    .game-art {
+      position: relative; height: 132px; display: grid; place-items: center; font-size: 56px;
+      border-bottom: 1px solid var(--line);
+    }
+    .game-art.zombie { background: radial-gradient(circle at 30% 20%, rgba(123,43,176,.4), transparent 60%), linear-gradient(135deg, #2a1140, #160a24); }
+    .game-art.cafe { background: radial-gradient(circle at 30% 20%, rgba(224,168,102,.5), transparent 60%), linear-gradient(135deg, #c98a4b, #6b4426); }
+    .game-art.soon { background: linear-gradient(135deg, var(--lavender), #fff); font-size: 40px; }
+    .game-badge {
+      position: absolute; left: 14px; top: 14px; padding: 6px 11px; border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 900; background: rgba(255, 255, 255, 0.92); color: var(--primary); backdrop-filter: blur(6px);
+    }
+    .game-badge.live { color: #1c6043; background: rgba(62, 207, 142, 0.92); }
+    .game-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .game-body h2 { margin: 0; font-size: 20px; letter-spacing: -0.04em; }
+    .game-body p { margin: 0; color: var(--gray); font-size: 13.5px; line-height: 1.6; flex: 1; }
+    .game-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .game-tags span { padding: 5px 10px; border-radius: var(--r-pill); background: rgba(103, 32, 145, 0.06); color: var(--primary); font-size: 11px; font-weight: 800; }
+    .game-cta { margin-top: 6px; }
+    .game-cta .btn { width: 100%; }
+
+    @media (max-width: 767px) {
+      .games-hero { padding: 24px 20px; border-radius: 26px; }
+      .game-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-mark">EX</span>
+        <span class="brand-copy"><strong>운영 커뮤니티</strong><small>강남·논현 모임 플랫폼</small></span>
+      </a>
+      <nav class="side-nav" aria-label="데스크톱 내비게이션">
+        <span class="nav-item is-disabled" aria-disabled="true">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
+          <span class="nav-text">홈</span><span class="nav-meta">예정</span>
+        </span>
+        <a class="nav-item" href="index.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
+          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="calculator.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
+          <span class="nav-text">정산기</span><span class="nav-meta">이동</span>
+        </a>
+        <span class="nav-item is-disabled" aria-disabled="true">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="nav-text">소식</span><span class="nav-meta">예정</span>
+        </span>
+        <a class="nav-item is-active" href="games.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
+          <span class="nav-text">게임</span><span class="nav-meta">현재</span>
+        </a>
+      </nav>
+      <div class="sidebar-card">
+        <span>함께 즐기기</span>
+        <strong>구성원과 랭킹 경쟁</strong>
+        <p>틈틈이 즐기는 미니 게임. 단톡 멤버끼리 전투력·매출로 경쟁해요.</p>
+      </div>
+    </aside>
+
+    <header class="mobile-topbar">
+      <a class="mobile-brand" href="index.html" aria-label="필독으로 이동">
+        <span class="brand-mark">EX</span><span>게임</span>
+      </a>
+      <a class="mobile-action" href="index.html">필독</a>
+    </header>
+
+    <main id="main" class="main">
+      <section class="games-hero panel" aria-labelledby="pageTitle">
+        <div class="inner">
+          <span class="kicker">🎮 미니 게임</span>
+          <h1 id="pageTitle">틈틈이 즐기는 <span>우리들의 게임</span></h1>
+          <p>모임 사이사이, 가볍게 즐기고 단톡 멤버끼리 경쟁해요. 진행도는 자동 저장돼서 언제든 이어서 플레이할 수 있어요.</p>
+        </div>
+      </section>
+
+      <section class="game-grid" aria-label="게임 목록">
+        <article class="game-card">
+          <div class="game-art zombie"><span class="game-badge live">● 실시간 랭킹</span>🧟</div>
+          <div class="game-body">
+            <h2>좀비 헌팅 RPG</h2>
+            <p>좀비가 점령한 강남 밤거리를 자동으로 사냥하며 성장·수집·환생하는 방치형 RPG. 카카오 로그인으로 진행도를 영구 보관하고 구성원과 전투력으로 경쟁하세요.</p>
+            <div class="game-tags"><span>방치형</span><span>수집·환생</span><span>PvP 랭킹</span></div>
+            <div class="game-cta"><a class="btn btn-primary" href="game_v2.html">플레이</a></div>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <div class="game-art cafe"><span class="game-badge">NEW</span>☕</div>
+          <div class="game-body">
+            <h2>엑서 카페 타이쿤</h2>
+            <p>아메리카노부터 가나슈까지, 메뉴를 키우고 매니저를 고용해 강남 제일의 디저트 카페로! 자리를 비운 사이에도 매출이 쌓이는 방치형 카페 경영 게임.</p>
+            <div class="game-tags"><span>방치형</span><span>경영·타이쿤</span><span>오프라인 수익</span></div>
+            <div class="game-cta"><a class="btn btn-primary" href="tycoon.html">플레이</a></div>
+          </div>
+        </article>
+
+        <article class="game-card soon">
+          <div class="game-art soon">🗳️</div>
+          <div class="game-body">
+            <h2>다음 게임 준비 중</h2>
+            <p>구성원이 함께 즐길 새로운 미니 게임을 준비하고 있어요. 해보고 싶은 게임이 있다면 운영진에게 제안해주세요!</p>
+            <div class="game-tags"><span>예정</span></div>
+            <div class="game-cta"><span class="btn btn-secondary" aria-disabled="true" style="opacity:.7;pointer-events:none">곧 공개</span></div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+      <span class="tab-item is-disabled" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈</span>
+      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+      <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
+      <span class="tab-item is-disabled" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</span>
+      <a class="tab-item is-active" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+    </nav>
+  </div>
+</body>
+</html>
