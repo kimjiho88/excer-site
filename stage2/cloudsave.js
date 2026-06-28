@@ -56,6 +56,7 @@
         isAnonymous: !!u.is_anonymous,
         providers: ids,
         hasKakao: ids.indexOf("kakao") >= 0,
+        hasGoogle: ids.indexOf("google") >= 0,
         email: u.email || null,
         nick: (u.user_metadata && (u.user_metadata.nickname || u.user_metadata.name)) || null
       };
@@ -119,6 +120,20 @@
       return res; // 리다이렉트됨
     },
 
+    // 구글 로그인/전환(카카오 동의항목·비즈앱 제약이 없어 바로 동작). 진행도는 복귀 후 migrate 로 이전.
+    async signInWithGoogle(redirectTo) {
+      await this.refresh();
+      var anonUid = this._user && this._user.uid;
+      if (anonUid) { try { global.localStorage.setItem(LS_PENDING, anonUid); } catch (e) {} }
+      try { global.localStorage.setItem(LS_LINKMODE, "switch"); } catch (e) {}
+      var res = await this.sb.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: this._redirect(redirectTo) }
+      });
+      if (res.error) throw res.error;
+      return res;
+    },
+
     async signOut() {
       await this.sb.auth.signOut();
       this._user = null;
@@ -137,7 +152,7 @@
       var out = { migrated: false, fromUid: pendingAnon || null, toUid: this._user && this._user.uid, mode: mode || null, save: null };
 
       // 카카오 로그인이 실제로 끝났을 때만 정리/이전 수행.
-      if (this._user && this._user.hasKakao) {
+      if (this._user && (this._user.hasKakao || this._user.hasGoogle)) {
         if (pendingAnon && pendingAnon !== this._user.uid) {
           // 전환 경로: 익명 uid 와 다른 카카오 uid → 서버 병합 RPC.
           out.save = await this.migrateAnonToMe(pendingAnon);
