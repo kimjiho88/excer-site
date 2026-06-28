@@ -106,6 +106,10 @@
 
     // 카카오로 '로그인/전환'(다른 uid 가 될 수 있음). linkKakao 가 conflict 일 때 사용.
     async signInWithKakao(redirectTo) {
+      await this.refresh();
+      var anonUid = this._user && this._user.uid;
+      // 익명 uid 보관 → 복귀 후 handleRedirectResult 가 migrate_anon_to_me 로 진행도 이전.
+      if (anonUid) { try { global.localStorage.setItem(LS_PENDING, anonUid); } catch (e) {} }
       try { global.localStorage.setItem(LS_LINKMODE, "switch"); } catch (e) {}
       var res = await this.sb.auth.signInWithOAuth({
         provider: "kakao",

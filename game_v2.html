@@ -4,7 +4,7 @@
 <title>좀비 헌팅 RPG · 논현 모임 v2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="stage2/cloudsave.js?v=2"></script>
+<script src="stage2/cloudsave.js?v=3"></script>
 <script src="sprites.js"></script>
 <style>
 /* ===== 리셋 & 변수 ===== */
@@ -715,17 +715,9 @@ async function kakaoLogin(){
  if(typeof console!=="undefined")console.info("[카카오] redirectTo =",location.href.split("#")[0].split("?")[0]," · 이 주소가 Supabase Redirect URLs에 등록돼 있어야 합니다.");
  try{
   try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
-  const r=await CloudSave.linkKakao();          // 익명 uid 유지하며 카카오 연결(성공 시 리다이렉트)
-  if(r&&r.conflict){                            // 카카오가 이미 타 계정 → 전환 로그인 후 서버 병합
-   toast("기존 카카오 계정으로 이동합니다…");
-   await CloudSave.signInWithKakao();
-  }else if(r&&r.linked){
-   // linkIdentity 가 리다이렉트 없이 완료된 경우(환경에 따라 발생)
-   await CloudSave.refresh();
-   const u=CloudSave.user();NET.cloud=u;
-   toast(u&&u.hasKakao?"✅ 카카오 연결 완료":"연결 완료. 페이지를 새로고침 해주세요.");
-   if(u&&u.hasKakao)renderTab();
-  }
+  // signInWithOAuth 경로는 scopes(profile_nickname)를 확실히 따름 → 카카오에 닉네임만 요청
+  // (이메일 동의항목/비즈앱 불필요). 익명 진행도는 복귀 후 migrate_anon_to_me 로 이전.
+  await CloudSave.signInWithKakao();            // 카카오 동의 화면으로 리다이렉트
  }catch(e){
   const msg=(e&&e.message)||String(e)||"알 수 없는 오류";
   console.error("[카카오 로그인 오류]",e);
