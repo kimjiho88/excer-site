@@ -4,7 +4,7 @@
 <title>좀비 헌팅 RPG · 논현 모임 v2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="stage2/cloudsave.js?v=3"></script>
+<script src="stage2/cloudsave.js?v=4"></script>
 <script src="sprites.js"></script>
 <style>
 /* ===== 리셋 & 변수 ===== */
@@ -628,7 +628,7 @@ async function netInit(){
     const res=CloudSave.resolve(S,cloudState);
     if((res.source==="cloud"||res.source==="cloudOnly")&&res.chosen){
      S=migrate(res.chosen);save();updateTop();renderTab();
-     toast((redir&&redir.migrated)?"카카오 계정으로 진행도를 이전했어요":"클라우드에서 진행도를 불러왔어요");
+     toast((redir&&redir.migrated)?"계정으로 진행도를 이전했어요":"클라우드에서 진행도를 불러왔어요");
     }else if(cloudState==null){CloudSave.saveCloud(S).catch(()=>{});} // 클라우드 최초 업로드
    }catch(e){}
   }else{
@@ -730,6 +730,21 @@ async function kakaoLogout(){
  if(typeof CloudSave==="undefined")return;
  try{await CloudSave.signOut();}catch(e){}
  toast("로그아웃 되었습니다");setTimeout(()=>location.reload(),600);
+}
+// 구글 로그인: 카카오 동의항목/비즈앱 제약이 없어 바로 동작. 진행도는 복귀 후 자동 이전.
+async function googleLogin(){
+ if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다. 잠시 후 다시 시도해 주세요.");return;}
+ toast("구글 로그인 중…");
+ try{
+  try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
+  await CloudSave.signInWithGoogle();           // 구글 동의 화면으로 리다이렉트
+ }catch(e){
+  const msg=(e&&e.message)||String(e)||"알 수 없는 오류";
+  console.error("[구글 로그인 오류]",e);
+  if(/redirect/i.test(msg))toast("리다이렉트 URL 설정을 확인해 주세요 (Supabase)");
+  else if(/provider/i.test(msg))toast("Supabase에 구글 공급자가 활성화되지 않았어요");
+  else toast("구글 로그인 실패: "+msg.slice(0,60));
+ }
 }
 
 /* ---------- 파생 수치 ---------- */
@@ -1461,13 +1476,13 @@ function renderRank(){
   else s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700">랭킹 닉 <b style="color:#fff">'+NET.nick+'</b><button class="mini gray" id="chgNick" style="margin-left:auto">변경</button></div>';
   // 카카오 로그인: 진행도 영구 보관(기기 변경 복원)
   if(NET.cloudReady){const cu=NET.cloud;
-   if(cu&&cu.hasKakao)s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700;color:#bff0d6">✅ 카카오 연결됨'+(cu.nick?' · '+cu.nick:'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
-   else s+='<button class="bigbtn" id="kakaoLogin" style="background:#FEE500;color:#191600;margin-bottom:6px">💬 카카오로 로그인 · 진행도 영구 보관</button>'+
+   if(cu&&(cu.hasGoogle||cu.hasKakao))s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700;color:#bff0d6">✅ '+(cu.hasGoogle?'구글':'카카오')+' 연결됨'+(cu.nick?' · '+cu.nick:'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
+   else s+='<button class="bigbtn" id="googleLogin" style="background:#fff;color:#1f1f1f;border:1px solid #dadce0;margin-bottom:7px">🔵 구글로 로그인 · 진행도 영구 보관</button>'+
+    '<button class="bigbtn alt" id="kakaoLogin" style="margin-bottom:6px;padding:11px;font-size:13px">💬 카카오로 로그인 <span style="opacity:.65;font-size:11px">(비즈 인증 후 사용)</span></button>'+
     '<details style="margin:0 0 12px;font-size:11.5px"><summary class="muted" style="cursor:pointer;list-style:none">로그인이 안 되나요?</summary>'+
     '<div class="muted" style="margin-top:7px;line-height:1.7;background:rgba(255,255,255,.04);border-radius:9px;padding:9px 11px">'+
-    '아래 주소를 Supabase의 <b>Redirect URLs</b>(Authentication → URL Configuration)에 등록해야 카카오 복귀가 허용됩니다.'+
+    'Supabase <b>Redirect URLs</b>에 아래 주소가, 그리고 <b>구글/카카오 공급자가 활성화</b>돼 있어야 해요.'+
     '<br><code id="redirUrl" style="word-break:break-all;color:#c9a8f0;cursor:pointer" title="눌러서 복사">'+(location.href.split("#")[0].split("?")[0])+'</code>'+
-    '<br><span style="opacity:.8">그리고 카카오 개발자 콘솔의 Redirect URI에 <code style="color:#c9a8f0">'+SUPA.url+'/auth/v1/callback</code> 도 등록되어 있어야 해요.</span>'+
     '</div></details>';}}
  if(NET.banned)s+='<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.16);border-radius:9px;padding:10px 12px;margin-bottom:12px">⚠ 운영진에 의해 랭킹 집계에서 제외된 계정입니다.</div>';
  // 내 순위 강조
@@ -1503,6 +1518,7 @@ function renderRank(){
  const jr=$("#joinRank");if(jr)jr.onclick=promptNick;
  const cn=$("#chgNick");if(cn)cn.onclick=promptNick;
  const kl=$("#kakaoLogin");if(kl)kl.onclick=kakaoLogin;
+ const gl=$("#googleLogin");if(gl)gl.onclick=googleLogin;
  const ru=$("#redirUrl");if(ru)ru.onclick=()=>{try{navigator.clipboard.writeText(ru.textContent);toast("주소를 복사했어요");}catch(e){}};
  const co=$("#csOut");if(co)co.onclick=kakaoLogout;
 }
