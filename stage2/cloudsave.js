@@ -92,7 +92,7 @@
       try { global.localStorage.setItem(LS_LINKMODE, "link"); } catch (e) {}
       var res = await this.sb.auth.linkIdentity({
         provider: "kakao",
-        options: { redirectTo: this._redirect(redirectTo) }
+        options: { redirectTo: this._redirect(redirectTo), scopes: "profile_nickname" }
       });
       if (res.error) {
         var msg = (res.error.message || "") + " " + (res.error.code || "");
@@ -109,7 +109,7 @@
       try { global.localStorage.setItem(LS_LINKMODE, "switch"); } catch (e) {}
       var res = await this.sb.auth.signInWithOAuth({
         provider: "kakao",
-        options: { redirectTo: this._redirect(redirectTo) }
+        options: { redirectTo: this._redirect(redirectTo), scopes: "profile_nickname" }
       });
       if (res.error) throw res.error;
       return res; // 리다이렉트됨
