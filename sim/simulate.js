@@ -192,10 +192,14 @@ for (let d = 0; d < DAYS; d++) {
       state.queues.oven.push({ r: "morning_roll", remain: data.balance.ftue.tutorialCraftSec });
       const sum = Core.advance(data, state, 30, "online", null);
       const scripted = Core.sellUnits(data, state, "morning_roll", 4, true, null);
-      Core.addXp(data, state, data.balance.ftue.firstSaleBonusXp);
+      // 첫 판매 보너스: FTUE가 Lv.2 달성을 보장 (bakery.html과 동일 규칙)
+      let bonus = data.balance.ftue.firstSaleBonusXp;
+      if (state.level === 1) bonus = Math.max(bonus, Core.xpNeed(data, 1) - state.xp);
+      const bonusUps = Core.addXp(data, state, bonus);
       if (firstSaleSec === null && scripted) firstSaleSec = t + 30;
       noteSummary(sum, t + 30);
-      if (scripted) for (const lv of scripted.levelUps) if (!(lv in lvAt)) { lvAt[lv] = t + 30; if (lv === 2) lv2Sec = t + 30; }
+      const scriptUps = (scripted ? scripted.levelUps : []).concat(bonusUps);
+      for (const lv of scriptUps) if (!(lv in lvAt)) { lvAt[lv] = t + 30; if (lv === 2) lv2Sec = t + 30; }
       const sum2 = Core.advance(data, state, 30, "online", null);
       noteSummary(sum2, t + 60);
       t += 60;
