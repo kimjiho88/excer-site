@@ -1,0 +1,170 @@
+{
+  "_readme": "엑서 빵집 타이쿤 — 모든 수치의 단일 원본(Single Source of Truth). 코드 하드코딩 금지: 클라이언트(bakery.html)·엔진(assets/bakery-core.js)·시뮬레이터(sim/simulate.js)가 전부 이 파일을 로드한다. 수치 변경 후에는 반드시 `node sim/simulate.js` 로 §2.5 페이싱 목표 통과를 재확인한다.",
+  "schemaVersion": 1,
+  "xpCurve": {
+    "_readme": "XP_need(n) = round(A * n^B) — 레벨 n에서 n+1로 가는 데 필요한 경험치. sim/simulate.js 로 A·B 확정.",
+    "A": 24,
+    "B": 1.85,
+    "maxLevel": 50
+  },
+  "economy": {
+    "startCoins": 40,
+    "paybackTargetHoursMin": 2,
+    "paybackTargetHoursMax": 4
+  },
+  "customers": {
+    "_readme": "온라인 판매 모델: 메뉴별 demandPerMin(recipes.json) × 계산대 배수 × 간판 배수 로 재고가 소진된다. 손님 스프라이트는 이 판매 이벤트에 동기화된 연출. visitIntervalSec은 씬 연출용 손님 등장 주기.",
+    "visitIntervalSecBase": 14,
+    "visitIntervalSecMin": 5,
+    "memberShare": 0.3,
+    "patienceDefaultSec": 60
+  },
+  "offline": {
+    "_readme": "오프라인 = 진열 재고가 팔리는 시뮬레이션(별도 적립 아님). unitsPerHourBase × 간판 배수 만큼(개/시간) 재고가 demand 가중치 비율로 팔린다. 재고 소진 시 판매 정지. 큐에 걸린 생산은 오프라인 중에도 완료되어 자동 진열된다. 상한 = 진열대 재고 상한. 목표: 초기(진열대 Lv.1, 간판 Lv.1) 재고 만재 기준 약 4시간 분량 → 만렙 진열대+간판 기준 약 12시간 분량.",
+    "unitsPerHourBase": 15,
+    "minAwaySec": 120,
+    "xpMult": 1.0,
+    "tipToJar": true
+  },
+  "tips": {
+    "_readme": "판매 1건당 chance 확률로 price*pctOfPrice(최소 min) 팁이 팁 항아리에 쌓인다. 탭 수금. 항아리 상한 도달 시 더 안 쌓임(회수 유도).",
+    "chance": 0.14,
+    "pctOfPrice": 0.25,
+    "min": 1,
+    "jarCap": 120
+  },
+  "reputation": {
+    "_readme": "MVP: 평판은 누적 표시 재화(소모 없음). 판매 perSales개당 +1, 퀘스트 보상으로도 획득. 등급 게이트는 v2부터(§5.2).",
+    "perSales": 10
+  },
+  "stations": {
+    "oven": {
+      "name": "오븐",
+      "emoji": "🔥",
+      "unlockLevel": 1
+    },
+    "coffee": {
+      "name": "커피바",
+      "emoji": "🫖",
+      "unlockLevel": 3,
+      "machineUnlockLevel": 7,
+      "machineTimeMult": 0.6,
+      "_readme": "Lv.3 핸드드립으로 시작(제작 느림). Lv.7 커피머신 설치 시 커피 제작 시간 ×0.6 + 라떼 계열 해금 전제."
+    }
+  },
+  "queue": {
+    "slotsPerStation": 3,
+    "_readme": "설비당 대기열 3칸. 한 번에 1배치씩 순차 제작, 완성품은 진열대에 공간이 생기는 대로 자동 진열."
+  },
+  "grades": {
+    "_readme": "MVP: 등급은 레벨 마일스톤으로만 상승(§5.2 보강). v2부터 레벨+평판 복합 조건. themeClass는 씬 배경 테마(§11).",
+    "list": [
+      {
+        "minLevel": 1,
+        "name": "작은 동네 빵집",
+        "emoji": "🏠",
+        "themeClass": "grade-1"
+      },
+      {
+        "minLevel": 10,
+        "name": "인기 베이커리",
+        "emoji": "🏪",
+        "themeClass": "grade-2"
+      },
+      {
+        "minLevel": 20,
+        "name": "감성 카페 베이커리",
+        "emoji": "☕",
+        "themeClass": "grade-3"
+      },
+      {
+        "minLevel": 30,
+        "name": "디저트 전문점",
+        "emoji": "🍰",
+        "themeClass": "grade-4"
+      },
+      {
+        "minLevel": 40,
+        "name": "프리미엄 파티세리",
+        "emoji": "✨",
+        "themeClass": "grade-5"
+      },
+      {
+        "minLevel": 50,
+        "name": "엑서타운 대표 빵집",
+        "emoji": "👑",
+        "themeClass": "grade-6"
+      }
+    ]
+  },
+  "quests": {
+    "_readme": "일일퀘스트 3종. 매일 서버 날짜(KST) 기준 리셋. menuTarget은 해금 메뉴 중 요일 순환 선택.",
+    "daily": [
+      {
+        "id": "q_sales",
+        "name": "오늘 {n}개 판매",
+        "type": "sell_any",
+        "target": 30,
+        "rewardCoins": 60,
+        "rewardXp": 30,
+        "rewardRep": 2
+      },
+      {
+        "id": "q_menu",
+        "name": "{menu} {n}개 판매",
+        "type": "sell_menu",
+        "target": 8,
+        "rewardCoins": 50,
+        "rewardXp": 25,
+        "rewardRep": 2
+      },
+      {
+        "id": "q_upgrade",
+        "name": "업그레이드 1회",
+        "type": "upgrade",
+        "target": 1,
+        "rewardCoins": 80,
+        "rewardXp": 40,
+        "rewardRep": 3
+      }
+    ]
+  },
+  "ftue": {
+    "_readme": "첫 3분 스크립트(§9). 튜토리얼 한정 첫 베이킹 타이머 5초 단축. 첫 손님은 members.json의 unlockLevel 1 + role host 멤버 고정.",
+    "tutorialCraftSec": 5,
+    "firstSaleBonusXp": 10
+  },
+  "regulars": {
+    "_readme": "Lv.9 멤버 단골 시스템: 같은 멤버 방문 visitsToRegular회 누적 시 단골 승격 → customers.json의 regular 파라미터(팁) 적용 + 도감 표시(P1).",
+    "unlockLevel": 9,
+    "visitsToRegular": 5
+  },
+  "debug": {
+    "_readme": "P0 필수(§10). URL 파라미터 ?debug=<pin> 으로 진입. 시간 가속은 가상 시계 오프셋 방식.",
+    "pin": "excer",
+    "timeWarpOptions": [
+      10,
+      60
+    ],
+    "grantCoins": 1000
+  },
+  "save": {
+    "localKey": "excer_bakery_v1",
+    "cloudTable": "bakery_saves",
+    "autosaveSec": 20,
+    "cloudSyncSec": 45
+  },
+  "pacingTargets": {
+    "_readme": "§2.5 — sim/simulate.js 가 검증하는 목표. 참고용 사본(원본은 기획서).",
+    "firstSaleWithinMin": 3,
+    "level2WithinMin": 3,
+    "d1Level": 5,
+    "d3LevelMin": 7,
+    "d3LevelMax": 8,
+    "d7Level": 10,
+    "returnGapHoursMin": 2,
+    "returnGapHoursMax": 4,
+    "offlineCapHoursEarly": 4,
+    "offlineCapHoursLate": 12
+  }
+}

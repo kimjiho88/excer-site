@@ -1,0 +1,137 @@
+{
+  "_readme": "엑서 빵집 타이쿤 — 장비 단일 원본. MVP 4종, 장비당 주효과 1개(복합 효과 금지). costs[i] = Lv.(i+2) 업그레이드 비용 (Lv.1은 기본 보유). 효과 공식은 effectFormula 참고 — 코드(assets/bakery-core.js)와 1:1 일치해야 한다.",
+  "equipment": [
+    {
+      "id": "oven",
+      "name": "오븐",
+      "emoji": "🔥",
+      "effect": "craft_time",
+      "effectFormula": "ovenTimeMult(lv) = timeMultPerLevel^(lv-1)  → 오븐 제작 시간 배수",
+      "effectPerLevelLabel": "베이킹 시간 -12%/Lv",
+      "params": {
+        "timeMultPerLevel": 0.88
+      },
+      "maxLevel": 10,
+      "unlockLevel": 1,
+      "costs": [
+        25,
+        45,
+        65,
+        110,
+        190,
+        330,
+        560,
+        950,
+        1600
+      ]
+    },
+    {
+      "id": "display",
+      "name": "진열대",
+      "emoji": "🧺",
+      "effect": "stock_cap",
+      "effectFormula": "stockCap(lv) = capBase + capPerLevel*(lv-1)  → 진열 재고 상한(개) = 오프라인 판매 상한",
+      "effectPerLevelLabel": "진열 상한 +40/Lv",
+      "params": {
+        "capBase": 60,
+        "capPerLevel": 40
+      },
+      "maxLevel": 10,
+      "unlockLevel": 1,
+      "costs": [
+        20,
+        45,
+        90,
+        180,
+        360,
+        720,
+        1450,
+        2900,
+        5800
+      ]
+    },
+    {
+      "id": "counter",
+      "name": "계산대",
+      "emoji": "🧾",
+      "effect": "sell_speed",
+      "effectFormula": "counterMult(lv) = 1 + sellMultPerLevel*(lv-1)  → 온라인 판매 속도 배수",
+      "effectPerLevelLabel": "판매 처리 +15%/Lv",
+      "params": {
+        "sellMultPerLevel": 0.15
+      },
+      "maxLevel": 10,
+      "unlockLevel": 1,
+      "costs": [
+        15,
+        30,
+        60,
+        115,
+        220,
+        420,
+        800,
+        1520,
+        2900
+      ]
+    },
+    {
+      "id": "sign",
+      "name": "간판",
+      "emoji": "🪧",
+      "effect": "visit_speed",
+      "effectFormula": "signMult(lv) = 1 + visitMultPerLevel*(lv-1)  → 손님 방문 속도 배수 (온라인+오프라인 공통)",
+      "effectPerLevelLabel": "손님 방문 +15%/Lv",
+      "params": {
+        "visitMultPerLevel": 0.15
+      },
+      "maxLevel": 10,
+      "unlockLevel": 5,
+      "costs": [
+        20,
+        45,
+        95,
+        190,
+        380,
+        760,
+        1520,
+        3040,
+        6080
+      ],
+      "note": "Lv.5 '간판 업그레이드' 마일스톤에서 해금 — 첫 외형 변화와 함께 등장."
+    }
+  ],
+  "roadmap": [
+    {
+      "id": "kneader",
+      "name": "반죽대",
+      "emoji": "🥣",
+      "effect": "batch_size",
+      "unlockLevel": 14,
+      "note": "동시 제작 수(배치 크기) 증가. v2"
+    },
+    {
+      "id": "showcase",
+      "name": "케이크 쇼케이스",
+      "emoji": "🍰",
+      "effect": "cake_price",
+      "unlockLevel": 20,
+      "note": "케이크 카테고리 판매가 증가. v2"
+    },
+    {
+      "id": "packing",
+      "name": "포장대",
+      "emoji": "🎀",
+      "effect": "stock_cap_extra",
+      "unlockLevel": 24,
+      "note": "재고 상한 추가 확장(방치 상한 강화). v2"
+    },
+    {
+      "id": "table_deco",
+      "name": "테이블",
+      "emoji": "🪑",
+      "effect": "patience",
+      "unlockLevel": 16,
+      "note": "손님 인내(대기 허용 시간) 증가. v2"
+    }
+  ]
+}
