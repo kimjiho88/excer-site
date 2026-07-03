@@ -4,7 +4,7 @@
 <title>좀비 헌팅 RPG · 논현 모임 v2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="stage2/cloudsave.js?v=4"></script>
+<script src="stage2/cloudsave.js?v=5"></script>
 <script src="sprites.js"></script>
 <style>
 /* ===== 리셋 & 변수 ===== */
@@ -732,8 +732,20 @@ async function kakaoLogout(){
  toast("로그아웃 되었습니다");setTimeout(()=>location.reload(),600);
 }
 // 구글 로그인: 카카오 동의항목/비즈앱 제약이 없어 바로 동작. 진행도는 복귀 후 자동 이전.
+// 인앱 브라우저(카카오톡 등) 감지 — 구글 OAuth는 인앱 웹뷰에서 차단(403 disallowed_useragent).
+function isInAppBrowser(){const ua=(navigator.userAgent||"").toLowerCase();return /kakaotalk|instagram|fbav|fban|line\/|naver|daumapps|wv\)/.test(ua);}
+function openInExternalBrowser(){const here=location.href.split("#")[0];const ua=(navigator.userAgent||"").toLowerCase();
+ if(ua.indexOf("kakaotalk")>=0){location.href="kakaotalk://web/openExternal?url="+encodeURIComponent(here);return true;}
+ if(ua.indexOf("line")>=0){location.href=here+(here.indexOf("?")>=0?"&":"?")+"openExternalBrowser=1";return true;}
+ return false;}
 async function googleLogin(){
  if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다. 잠시 후 다시 시도해 주세요.");return;}
+ // 인앱 브라우저면 구글 OAuth가 막히므로 외부 브라우저로 유도
+ if(isInAppBrowser()){
+  toast("구글 로그인은 Chrome/Safari에서만 돼요. 외부 브라우저로 엽니다…");
+  if(!openInExternalBrowser())alert("카카오톡 등 인앱 브라우저에서는 구글 로그인이 차단됩니다.\n\n오른쪽 아래 ⋮ 메뉴 → '다른 브라우저로 열기'(Chrome/Safari)로 연 뒤 다시 시도해 주세요.");
+  return;
+ }
  toast("구글 로그인 중…");
  try{
   try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
@@ -1478,6 +1490,7 @@ function renderRank(){
   if(NET.cloudReady){const cu=NET.cloud;
    if(cu&&(cu.hasGoogle||cu.hasKakao))s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;font-weight:700;color:#bff0d6">✅ '+(cu.hasGoogle?'구글':'카카오')+' 연결됨'+(cu.nick?' · '+cu.nick:'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
    else s+='<button class="bigbtn" id="googleLogin" style="background:#fff;color:#1f1f1f;border:1px solid #dadce0;margin-bottom:7px">🔵 구글로 로그인 · 진행도 영구 보관</button>'+
+    (isInAppBrowser()?'<div class="muted" style="font-size:11px;margin:-3px 0 8px;color:#f0c96b;line-height:1.5">⚠ 카카오톡 안에서 열었어요. 구글 로그인은 Chrome/Safari에서만 돼요 — 버튼을 누르면 외부 브라우저로 열려요.</div>':'')+
     '<button class="bigbtn alt" id="kakaoLogin" style="margin-bottom:6px;padding:11px;font-size:13px">💬 카카오로 로그인 <span style="opacity:.65;font-size:11px">(비즈 인증 후 사용)</span></button>'+
     '<details style="margin:0 0 12px;font-size:11.5px"><summary class="muted" style="cursor:pointer;list-style:none">로그인이 안 되나요?</summary>'+
     '<div class="muted" style="margin-top:7px;line-height:1.7;background:rgba(255,255,255,.04);border-radius:9px;padding:9px 11px">'+
