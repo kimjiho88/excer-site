@@ -22,8 +22,8 @@ let bad = [];
 for (const lv of levels.levels) {
   if (lv.level === 1) continue; // 시작 레벨은 레벨업이 아님
   const u = lv.unlocks || {};
-  const visible = (u.menus || []).length + (u.slots || []).length + (u.customers || []).length +
-    ((u.features || []).length ? 1 : 0) + (lv.appearance ? 1 : 0);
+  const visible = (u.menus || []).length + (u.slots || []).length + (u.furniture || []).length +
+    (u.customers || []).length + ((u.features || []).length ? 1 : 0) + (lv.appearance ? 1 : 0);
   if (visible === 0) bad.push(lv.level);
 }
 if (bad.length) {

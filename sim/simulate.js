@@ -24,7 +24,8 @@ const data = {
   equipment: loadJson("equipment.json"),
   levels: loadJson("levels.json"),
   customers: loadJson("customers.json"),
-  members: loadJson("members.json")
+  members: loadJson("members.json"),
+  furniture: loadJson("furniture.json")
 };
 
 const argv = process.argv.slice(2);
