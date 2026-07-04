@@ -129,6 +129,29 @@
     return Math.max(t.min, Math.round(price * t.pctOfPrice));
   }
 
+  /* ---------- 인테리어(가구 배치) — 분위기 점수 → 팁 확률 보너스 ---------- */
+  function furnitureById(data, id) {
+    if (!data.furniture) return null;
+    var fs = data.furniture.items;
+    for (var i = 0; i < fs.length; i++) if (fs[i].id === id) return fs[i];
+    return null;
+  }
+  function moodScore(data, state) {
+    if (!state.layout || !data.furniture) return 0;
+    var m = 0;
+    for (var i = 0; i < state.layout.length; i++) {
+      var f = furnitureById(data, state.layout[i].id);
+      if (f) m += f.mood || 0;
+    }
+    return m;
+  }
+  function tipChanceOf(data, state) {
+    var base = data.balance.tips.chance;
+    var it = data.balance.interior;
+    if (!it) return base;
+    return base + Math.min(it.tipChanceMax, moodScore(data, state) * it.tipChancePerMood);
+  }
+
   /* ---------- 판매 속도 모델 ----------
      온라인: 메뉴별 demandPerMin/60 × 계산대 × 간판  (개/초)
      오프라인: unitsPerHourBase/3600 × 간판 을 재고 메뉴의 demand 가중치로 배분 */
@@ -212,15 +235,16 @@
 
         // 팁: rng 있으면 개당 판정, 없으면 기대값 누적 (둘 다 항아리 상한 적용)
         var tipEach = tipAmount(data, price);
+        var tipCh = tipChanceOf(data, state);
         if (rng) {
           for (var u = 0; u < can; u++) {
-            if (rng() < bal.tips.chance) {
+            if (rng() < tipCh) {
               var room = bal.tips.jarCap - state.tipsJar;
               if (room > 0) { var add = Math.min(room, tipEach); state.tipsJar += add; sum.tips += add; }
             }
           }
         } else {
-          state.tipAcc = (state.tipAcc || 0) + can * bal.tips.chance * tipEach;
+          state.tipAcc = (state.tipAcc || 0) + can * tipCh * tipEach;
           var whole = Math.floor(state.tipAcc);
           if (whole > 0) {
             state.tipAcc -= whole;
@@ -324,6 +348,7 @@
       sold: {}, totalSold: 0,
       daily: { date: "", sold: 0, soldBy: {}, upgrades: 0, claimed: {} },
       regulars: {}, seenMembers: {},
+      layout: [], owned: {}, granted: {},
       ftue: { done: false, step: 0 },
       lastSeenAt: nowSec || 0,
       createdAt: nowSec || 0
@@ -332,7 +357,8 @@
 
   /* ---------- 마이그레이션 (schema_version) ---------- */
   var MIGRATIONS = {
-    // 1: 최초 버전 — 마이그레이션 없음. 다음 버전 예: 2: function(s){ ... return s; }
+    // v2: 아이러브커피식 개편 — 가구 배치(layout)/보유(owned)/지급 이력(granted) 필드 추가
+    2: function (s) { s.layout = s.layout || []; s.owned = s.owned || {}; s.granted = s.granted || {}; s.v = 2; return s; }
   };
   function migrate(data, state) {
     if (!state || typeof state !== "object") return null;
@@ -369,6 +395,7 @@
     recipeUnlocked: recipeUnlocked, unlockedRecipes: unlockedRecipes,
     enqueue: enqueue, masteryBonusPct: masteryBonusPct, unitPrice: unitPrice,
     tipAmount: tipAmount, saleRatePerSec: saleRatePerSec,
+    furnitureById: furnitureById, moodScore: moodScore, tipChanceOf: tipChanceOf,
     advance: advance, totalStock: totalStock, sellUnits: sellUnits, offlineSettle: offlineSettle,
     newState: newState, migrate: migrate, nextUnlock: nextUnlock, resetDaily: resetDaily,
     recipeById: recipeById, equipById: equipById
