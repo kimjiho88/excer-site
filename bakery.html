@@ -21,6 +21,7 @@ body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var
   min-height:100dvh;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;overflow:hidden}
 button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;position:relative}
+@media (min-width:900px){.app{max-width:640px;border-left:1px solid var(--line);border-right:1px solid var(--line)}}
 
 /* ===== 헤더 ===== */
 .top{z-index:30;padding:8px 12px 8px;border-bottom:1px solid var(--line);
@@ -111,7 +112,9 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .fab{position:relative;width:52px;height:52px;border-radius:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
   background:var(--milk);border:1px solid var(--line);box-shadow:var(--shadow);font-size:20px}
 .fab small{font-size:8.5px;font-weight:900;color:var(--ink2)}
-.fab:active{transform:scale(.94)}
+.fab:active{transform:scale(.92)}
+@media (hover:hover){.fab:hover{transform:translateY(-3px)}}
+.fab{transition:transform .16s var(--ease)}
 .fab .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:99px;background:var(--red)}
 .fab.editing{background:linear-gradient(135deg,#8fd6ac,#4cae7d);color:#fff}
 .fab.editing small{color:#eafff3}
@@ -149,7 +152,8 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .rowitem .re .elv{position:absolute;right:-5px;bottom:-5px;font-size:8.5px;font-weight:900;color:#fff;background:var(--brown);border-radius:999px;padding:1px 5px}
 .rowitem .rn{font-size:13px;font-weight:900}
 .rowitem .rd{font-size:10.5px;font-weight:700;color:var(--ink2);margin-top:2px;line-height:1.45}
-.rowitem .rb{padding:9px 12px;border-radius:11px;background:linear-gradient(135deg,var(--brown2),var(--brown));color:#fff;font-weight:900;font-size:12px;white-space:nowrap;box-shadow:var(--shadow-s)}
+.rowitem .rb{padding:10px 13px;min-height:40px;border-radius:11px;background:linear-gradient(135deg,var(--brown2),var(--brown));color:#fff;font-weight:900;font-size:12px;white-space:nowrap;box-shadow:var(--shadow-s);transition:transform .12s var(--ease)}
+.rowitem .rb:active:not(:disabled){transform:scale(.94)}
 .rowitem .rb:disabled{background:#e3d5c0;color:#af9878;box-shadow:none}
 .rowitem .rb.max{background:rgba(76,174,125,.18);color:#28734f}
 .rowitem .rb.green{background:linear-gradient(135deg,#69b98a,var(--green))}
@@ -236,6 +240,29 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .fireflick{animation:flick .45s infinite alternate;transform-box:view-box;transform-origin:center}
 @keyframes flick{from{opacity:.8}to{opacity:1}}
 .jarshine{animation:bob2 1.3s infinite;transform-box:view-box}
+/* ── 마이크로 애니메이션 v3 (transform/opacity 전용) ── */
+.chibi .breath{transform-box:view-box;transform-origin:32px 66px;animation:breath 3.4s ease-in-out infinite}
+.chibi .breath2{transform-box:view-box;transform-origin:32px 42px;animation:breath2 3.4s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.025)}}
+@keyframes breath2{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-.7px) rotate(.5deg)}}
+.walk .chibi .breath,.walk .chibi .breath2{animation:none}
+.shimmer{transform-box:view-box;animation:shimmer 5.5s ease-in-out infinite}
+@keyframes shimmer{0%,72%{transform:translateX(-10px);opacity:0}80%{opacity:1}92%,100%{transform:translateX(30px);opacity:0}}
+.ovenglow{animation:ovenpulse 1.6s ease-in-out infinite}
+@keyframes ovenpulse{0%,100%{opacity:.85}50%{opacity:1}}
+.sweatdrop{transform-box:view-box;animation:sweat 1.5s ease-in-out infinite}
+@keyframes sweat{0%{transform:translateY(0);opacity:0}25%{opacity:1}100%{transform:translateY(7px);opacity:0}}
+.posflash{animation:posflash .5s ease-in-out 3}
+@keyframes posflash{0%,100%{opacity:1}50%{opacity:.45}}
+.warnpulse{animation:warnpulse 1.1s ease-in-out infinite;transform-box:view-box;transform-origin:center}
+@keyframes warnpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.7}}
+.on.warn{background:rgba(224,109,109,.92)!important;animation:warnpulse 1.2s infinite}
+.lampglow{animation:lampglow 3.2s ease-in-out infinite}
+@keyframes lampglow{0%,100%{opacity:.9}50%{opacity:.65}}
+.opensign{animation:signflicker 9s infinite}
+@keyframes signflicker{0%,93%,100%{opacity:1}94%{opacity:.6}95%{opacity:1}97%{opacity:.75}98%{opacity:1}}
+.fab.canup::after{content:"";position:absolute;inset:-3px;border-radius:20px;pointer-events:none;
+  border:2.5px solid rgba(232,182,76,.85);animation:warnpulse 1.6s infinite}
 .deco{font-size:30px;line-height:1;filter:drop-shadow(0 5px 4px rgba(60,30,5,.3))}
 .obj svg{display:block}
 .obj .on{margin-top:-4px}
@@ -344,7 +371,7 @@ async function loadSprites(){
     const m=await (await fetch("assets/sprites/manifest.json?v=1")).json();
     await Promise.all(Object.entries(m.sprites||{}).map(([k,v])=>new Promise(res=>{
       const img=new Image();
-      img.onload=()=>{SPRITES[k]={src:"assets/sprites/"+v.file,w:v.w||64};res();};
+      img.onload=()=>{SPRITES[k]={src:"assets/sprites/"+v.file,w:v.w||64,dy:v.dy||0};res();};
       img.onerror=()=>res();
       img.src="assets/sprites/"+v.file;
     })));
@@ -353,7 +380,7 @@ async function loadSprites(){
 function spriteOr(keys,svg){
   for(const k of (Array.isArray(keys)?keys:[keys])){
     const s=SPRITES[k];
-    if(s)return '<img class="spriteimg" src="'+s.src+'" style="width:'+s.w+'px" alt=""/>';
+    if(s)return '<img class="spriteimg" src="'+s.src+'" style="width:'+s.w+'px'+(s.dy?';margin-top:'+s.dy+'px':'')+'" alt="" onerror="this.style.display=\'none\'"/>';
   }
   return svg;
 }
@@ -514,9 +541,10 @@ function renderRoom(){
 }
 
 function objArt(id,x,y,inner,label,extra,tappable){
+  const lab=label?(label.startsWith("<span")?label:`<span class="on">${label}</span>`):"";
   return `<div class="obj${tappable?" tappable":""}" data-obj="${id}"
     style="left:${isoX(x,y)}px;top:${isoY(x,y)+TH*0.35}px;z-index:${Math.round((x+y)*10+5)}">
-    ${extra||""}${inner}${label?`<span class="on">${label}</span>`:""}</div>`;
+    ${extra||""}${inner}${lab}</div>`;
 }
 const DECO_EMOJI={plant:"🪴",flower:"🌷",poster:"🖼️",clock:"🕰️",radio:"📻",bear:"🧸",bookshelf:"📚",piano:"🎹"};
 function furnitureArt(id){
@@ -557,18 +585,22 @@ function renderObjects(){
   }else
     html+=objArt("st-coffee-locked",fx.coffeebar.x,fx.coffeebar.y,
       `<span style="display:block;filter:grayscale(1) opacity(.4)">${Art.coffeeSVG(false,false)}</span>`,"Lv.3 해금","",false);
-  // 진열 쇼케이스 — 실제 재고가 보임
+  // 진열 쇼케이스 — 실제 재고 + 재고 상태(ok/low/empty)별 스프라이트 키
   const stocked=Core.unlockedRecipes(DATA,S).map(r=>({emoji:r.emoji,n:S.stock[r.id]||0})).filter(x=>x.n>0);
+  const stockRatio=Core.totalStock(S)/Core.stockCap(DATA,S);
+  const stockState=!stocked.length?"empty":(stockRatio<0.25?"low":"ok");
   html+=objArt("st-display",fx.display.x,fx.display.y,
-    spriteOr("display",Art.displaySVG(stocked,Core.totalStock(S)/Core.stockCap(DATA,S))),
-    "진열 "+Core.totalStock(S)+"/"+Core.stockCap(DATA,S),
+    spriteOr(["display_"+stockState,"display"],Art.displaySVG(stocked,stockRatio)),
+    `<span class="on${stockState==="empty"?" warn":""}">진열 ${Core.totalStock(S)}/${Core.stockCap(DATA,S)}</span>`,
     (S.buffer.oven||S.buffer.coffee)?`<span class="badge">가득!</span>`:"",true);
-  // 카운터(팁 항아리 포함) + 캐셔
+  // 카운터(팁 항아리) + 판매 발생 시 POS 플래시 + 바리스타
+  const saleActive=performance.now()<saleFlashUntil;
   html+=objArt("st-counter",fx.counter.x,fx.counter.y,
-    spriteOr("counter",Art.counterSVG(S.tipsJar)),"카운터",
+    spriteOr([saleActive?"counter_active":"counter","counter"],Art.counterSVG(S.tipsJar,saleActive)),"카운터",
     (S.tipsJar>0?`<span class="tipband">💰 팁 ${S.tipsJar}</span>`:""),true);
+  const coffeeBusy=stBusy("coffee");
   html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,
-    spriteOr("staff_cashier",Art.cashierSVG()),"",false);
+    spriteOr([coffeeBusy?"staff_barista_busy":"staff_barista","staff_barista","staff_cashier"],Art.baristaSVG(coffeeBusy)),"",false);
   // 제빵사 — 오븐 옆에서 반죽
   html+=objArt("staff-baker",2.25,1.2,
     spriteOr([ovenBusy?"staff_baker_busy":"staff_baker","staff_baker"],Art.bakerSVG(ovenBusy)),"",false);
@@ -841,7 +873,7 @@ function checkDailyReset(){
 /* ===================================================================
    손님 액터 (아이러브커피식 동선: 문 → 줄 → 주문 → 착석/포장 → 퇴장)
    =================================================================== */
-let actors=[],pendingSales=[],spawnAcc=0;
+let actors=[],pendingSales=[],spawnAcc=0,saleFlashUntil=0;
 const SPEED=52; // px/s (씬 좌표계)
 function pickCustomer(){
   const bal=DATA.balance.customers;
@@ -989,6 +1021,11 @@ function stepActors(dt){
       actorSay(a,who,line);
       setMood(a,"open"); // 주문하는 입모양
       setTimeout(()=>{if(a.el.isConnected)setMood(a,"happy");},900);
+      // 만족 스파클 (멤버는 하트)
+      if(Math.random()<0.5){
+        const r=a.el.getBoundingClientRect();
+        coinPop(r.left+r.width/2-8,r.top-6,a.c.type==="member"?"💛":"✨");
+      }
       a.food=rec?rec.emoji:"🥯";
       // 착석 or 포장
       const seat=freeSeat();
@@ -1159,10 +1196,12 @@ function renderHeader(){
   const bonus=Math.min(DATA.balance.interior.tipChanceMax,mood*DATA.balance.interior.tipChancePerMood);
   $("#hMood").textContent="✨ "+mood+" (팁+"+Math.round(bonus*100)+"%)";
   $("#dotQuest").style.display=DATA.balance.quests.daily.some(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];})?"":"none";
-  $("#dotUp").style.display=DATA.equipment.equipment.some(e=>{
+  const canUp=DATA.equipment.equipment.some(e=>{
     if(S.level<e.unlockLevel)return false;
     const c=Core.upgradeCost(DATA,e.id,Core.equipLevel(S,e.id));return c!=null&&S.coins>=c;
-  })?"":"none";
+  });
+  $("#dotUp").style.display=canUp?"":"none";
+  $("#fabUp").classList.toggle("canup",canUp);
 }
 function renderAll(){renderHeader();renderRoom();if(EDIT)renderTray();if(SHEET)renderSheet();}
 
@@ -1176,6 +1215,7 @@ function loop(now){
   if(S&&ftueStep!==0){
     const sum=Core.advance(DATA,S,dt,"online",Math.random);
     if(sum.sold>0){
+      saleFlashUntil=performance.now()+1600; // POS 판매 피드백
       for(const id in sum.soldBy)for(let i=0;i<sum.soldBy[id];i++)pendingSales.push({recipeId:id});
       if(pendingSales.length>10)pendingSales.length=10;
     }
