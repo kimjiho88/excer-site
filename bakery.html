@@ -240,6 +240,15 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .obj svg{display:block}
 .obj .on{margin-top:-4px}
 .walldeco{position:absolute;pointer-events:none}
+/* 스프라이트 이미지 에셋 (assets/sprites/) — SVG 대체 */
+.spriteimg{display:block;filter:drop-shadow(0 6px 5px rgba(60,30,5,.25))}
+/* 씬 라이팅 */
+.viewport::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:20;
+  background:radial-gradient(ellipse at 50% 42%,transparent 55%,rgba(80,45,15,.16) 100%)}
+.lightcone{position:absolute;width:130px;height:160px;pointer-events:none;z-index:3;
+  background:radial-gradient(ellipse at 50% 0%,rgba(255,225,150,.30),transparent 68%)}
+.sunshaft{position:absolute;width:80px;height:230px;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(255,236,185,.20),transparent 80%);transform:skewX(-20deg)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -324,6 +333,29 @@ async function syncServerTime(){
   try{ const res=await fetch(SUPA.url+"/rest/v1/",{method:"HEAD",headers:{apikey:SUPA.anon}});
     const d=res.headers.get("date"); if(d){serverOffsetMs=new Date(d).getTime()-Date.now();return;} }catch(e){}
   serverOffsetMs=0;
+}
+
+/* ---------- 스프라이트 에셋 (AI 생성 PNG — docs/ART_GUIDE.md) ----------
+   assets/sprites/manifest.json 에 등록된 이미지가 로드되면 해당 SVG 대신 사용.
+   에셋이 없으면 코드 생성 SVG로 폴백 — 게임은 항상 동작한다. */
+let SPRITES={};
+async function loadSprites(){
+  try{
+    const m=await (await fetch("assets/sprites/manifest.json?v=1")).json();
+    await Promise.all(Object.entries(m.sprites||{}).map(([k,v])=>new Promise(res=>{
+      const img=new Image();
+      img.onload=()=>{SPRITES[k]={src:"assets/sprites/"+v.file,w:v.w||64};res();};
+      img.onerror=()=>res();
+      img.src="assets/sprites/"+v.file;
+    })));
+  }catch(e){}
+}
+function spriteOr(keys,svg){
+  for(const k of (Array.isArray(keys)?keys:[keys])){
+    const s=SPRITES[k];
+    if(s)return '<img class="spriteimg" src="'+s.src+'" style="width:'+s.w+'px" alt=""/>';
+  }
+  return svg;
 }
 
 /* ---------- 데이터 ---------- */
@@ -464,14 +496,18 @@ function renderRoom(){
   }
   // 문 — 좌측 벽면 하단(스큐 동일), 창문 — 양쪽 벽, 펜던트 조명
   const doorD=(ROOM.h-1.4)*TW/2; // topX에서 왼쪽으로의 거리
-  html+=`<div class="walldeco" style="left:${topX-doorD-23}px;top:${doorD*0.5-8}px;transform:skewY(-${slope}deg);z-index:2">${Art.doorSVG()}</div>`;
+  html+=`<div class="walldeco" style="left:${topX-doorD-23}px;top:${doorD*0.5-8}px;transform:skewY(-${slope}deg);z-index:2">${spriteOr("door",Art.doorSVG())}</div>`;
   const winD1=ROOM.h*TW*0.14;
-  html+=`<div class="walldeco" style="left:${topX-winD1-52}px;top:${winD1*0.5+6}px;transform:skewY(-${slope}deg);z-index:2">${Art.windowSVG()}</div>`;
+  html+=`<div class="walldeco" style="left:${topX-winD1-52}px;top:${winD1*0.5+6}px;transform:skewY(-${slope}deg);z-index:2">${spriteOr("window",Art.windowSVG())}</div>`;
   const winD2=ROOM.w*TW*0.16, winD3=ROOM.w*TW*0.34;
-  html+=`<div class="walldeco" style="left:${topX+winD2}px;top:${winD2*0.5+6}px;transform:skewY(${slope}deg);z-index:2">${Art.windowSVG()}</div>`;
-  html+=`<div class="walldeco" style="left:${topX+winD3}px;top:${winD3*0.5+6}px;transform:skewY(${slope}deg);z-index:2">${Art.windowSVG()}</div>`;
-  html+=`<div class="walldeco" style="left:${topX-46}px;top:-14px;z-index:3">${Art.lampSVG()}</div>`;
-  html+=`<div class="walldeco" style="left:${topX+34}px;top:-14px;z-index:3">${Art.lampSVG()}</div>`;
+  html+=`<div class="walldeco" style="left:${topX+winD2}px;top:${winD2*0.5+6}px;transform:skewY(${slope}deg);z-index:2">${spriteOr("window",Art.windowSVG())}</div>`;
+  html+=`<div class="walldeco" style="left:${topX+winD3}px;top:${winD3*0.5+6}px;transform:skewY(${slope}deg);z-index:2">${spriteOr("window",Art.windowSVG())}</div>`;
+  html+=`<div class="walldeco" style="left:${topX-46}px;top:-14px;z-index:3">${spriteOr("lamp",Art.lampSVG())}</div>`;
+  html+=`<div class="walldeco" style="left:${topX+34}px;top:-14px;z-index:3">${spriteOr("lamp",Art.lampSVG())}</div>`;
+  // 조명 광원뿔 + 창문 햇살
+  html+=`<div class="lightcone" style="left:${topX-95}px;top:24px"></div>`;
+  html+=`<div class="lightcone" style="left:${topX-15}px;top:24px"></div>`;
+  html+=`<div class="sunshaft" style="left:${topX+winD2+30}px;top:${winD2*0.5+30}px"></div>`;
   room.innerHTML=html;
   renderObjects();
   for(const a of actors)room.appendChild(a.el); // innerHTML 재생성 시 손님 액터 복원
@@ -484,11 +520,13 @@ function objArt(id,x,y,inner,label,extra,tappable){
 }
 const DECO_EMOJI={plant:"🪴",flower:"🌷",poster:"🖼️",clock:"🕰️",radio:"📻",bear:"🧸",bookshelf:"📚",piano:"🎹"};
 function furnitureArt(id){
-  if(id==="table_wood")return Art.tableSVG();
-  if(id==="table_couple")return Art.tableCoupleSVG();
-  if(id==="sofa")return Art.sofaSVG();
-  if(id==="terrace_table")return Art.parasolSVG();
-  return '<span class="deco">'+(DECO_EMOJI[id]||"🪴")+'</span>';
+  let svg;
+  if(id==="table_wood")svg=Art.tableSVG();
+  else if(id==="table_couple")svg=Art.tableCoupleSVG();
+  else if(id==="sofa")svg=Art.sofaSVG();
+  else if(id==="terrace_table")svg=Art.parasolSVG();
+  else svg='<span class="deco">'+(DECO_EMOJI[id]||"🪴")+'</span>';
+  return spriteOr("fur_"+id,svg);
 }
 function renderObjects(){
   const room=$("#room"),fx=fixtures();
@@ -503,27 +541,37 @@ function renderObjects(){
     return `<span class="prog"><i style="width:${Math.min(100,(1-rem/total)*100)}%"></i></span>`;
   };
   // 오븐
-  html+=objArt("st-oven",fx.oven.x,fx.oven.y,Art.ovenSVG(stBusy("oven")),"오븐 Lv."+Core.equipLevel(S,"oven"),
-    prog("oven")+(stBusy("oven")?"":`<span class="zz">💤</span>`),true);
+  const ovenBusy=stBusy("oven");
+  html+=objArt("st-oven",fx.oven.x,fx.oven.y,
+    spriteOr([ovenBusy?"oven_busy":"oven","oven"],Art.ovenSVG(ovenBusy)),
+    "오븐 Lv."+Core.equipLevel(S,"oven"),
+    prog("oven")+(ovenBusy?"":`<span class="zz">💤</span>`),true);
   // 커피바 (해금 전엔 실루엣)
-  if(S.level>=DATA.balance.stations.coffee.unlockLevel)
-    html+=objArt("st-coffee",fx.coffeebar.x,fx.coffeebar.y,Art.coffeeSVG(Core.hasCoffeeMachine(DATA,S),stBusy("coffee")),
-      Core.hasCoffeeMachine(DATA,S)?"커피머신":"핸드드립",
-      prog("coffee")+(stBusy("coffee")?"":`<span class="zz">💤</span>`),true);
-  else
+  if(S.level>=DATA.balance.stations.coffee.unlockLevel){
+    const mac=Core.hasCoffeeMachine(DATA,S),cBusy=stBusy("coffee");
+    const cKey=mac?"coffee_machine":"coffee_drip";
+    html+=objArt("st-coffee",fx.coffeebar.x,fx.coffeebar.y,
+      spriteOr([cBusy?cKey+"_busy":cKey,cKey],Art.coffeeSVG(mac,cBusy)),
+      mac?"커피머신":"핸드드립",
+      prog("coffee")+(cBusy?"":`<span class="zz">💤</span>`),true);
+  }else
     html+=objArt("st-coffee-locked",fx.coffeebar.x,fx.coffeebar.y,
       `<span style="display:block;filter:grayscale(1) opacity(.4)">${Art.coffeeSVG(false,false)}</span>`,"Lv.3 해금","",false);
   // 진열 쇼케이스 — 실제 재고가 보임
   const stocked=Core.unlockedRecipes(DATA,S).map(r=>({emoji:r.emoji,n:S.stock[r.id]||0})).filter(x=>x.n>0);
-  html+=objArt("st-display",fx.display.x,fx.display.y,Art.displaySVG(stocked,Core.totalStock(S)/Core.stockCap(DATA,S)),
+  html+=objArt("st-display",fx.display.x,fx.display.y,
+    spriteOr("display",Art.displaySVG(stocked,Core.totalStock(S)/Core.stockCap(DATA,S))),
     "진열 "+Core.totalStock(S)+"/"+Core.stockCap(DATA,S),
     (S.buffer.oven||S.buffer.coffee)?`<span class="badge">가득!</span>`:"",true);
   // 카운터(팁 항아리 포함) + 캐셔
-  html+=objArt("st-counter",fx.counter.x,fx.counter.y,Art.counterSVG(S.tipsJar),"카운터",
+  html+=objArt("st-counter",fx.counter.x,fx.counter.y,
+    spriteOr("counter",Art.counterSVG(S.tipsJar)),"카운터",
     (S.tipsJar>0?`<span class="tipband">💰 팁 ${S.tipsJar}</span>`:""),true);
-  html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,Art.cashierSVG(),"",false);
+  html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,
+    spriteOr("staff_cashier",Art.cashierSVG()),"",false);
   // 제빵사 — 오븐 옆에서 반죽
-  html+=objArt("staff-baker",2.25,1.2,Art.bakerSVG(stBusy("oven")),"",false);
+  html+=objArt("staff-baker",2.25,1.2,
+    spriteOr([ovenBusy?"staff_baker_busy":"staff_baker","staff_baker"],Art.bakerSVG(ovenBusy)),"",false);
   // 배치 가구
   S.layout.forEach((it,i)=>{
     const f=Core.furnitureById(DATA,it.id);if(!f)return;
@@ -835,7 +883,10 @@ function mkActor(opts){
   }else{
     look=Art.randomLook();
   }
-  el.innerHTML=extra+'<span class="charwrap">'+Art.charSVG(look,{mood:"happy"})+"</span>"+label;
+  const charHtml=c.type==="member"
+    ? spriteOr("member_"+c.m.id,Art.charSVG(look,{mood:"happy"}))
+    : Art.charSVG(look,{mood:"happy"});
+  el.innerHTML=extra+'<span class="charwrap">'+charHtml+"</span>"+label;
   $("#room").appendChild(el);
   const a={el,c,look,x:fx.spawn.x,y:fx.spawn.y,state:"toqueue",wp:[fx.corridor],t:0,seatKey:null,scripted:opts&&opts.scripted};
   positionActor(a);
@@ -843,6 +894,7 @@ function mkActor(opts){
   return a;
 }
 function setMood(a,mood){
+  if(a.c.type==="member"&&SPRITES["member_"+a.c.m.id])return; // 이미지 에셋 멤버는 표정 교체 생략
   const w=a.el.querySelector(".charwrap");
   if(w)w.innerHTML=Art.charSVG(a.look,{mood});
 }
@@ -1189,7 +1241,7 @@ function initDebug(){
 (async function boot(){
   try{DATA=await loadData();}
   catch(e){document.body.innerHTML="<p style='padding:40px;text-align:center;font-weight:800'>데이터 로드 실패 😢<br>새로고침해 주세요.</p>";return;}
-  await cloudInit();
+  await Promise.all([cloudInit(),loadSprites()]);
   await syncServerTime();
 
   let local=null;

@@ -225,9 +225,11 @@
 /docs/GAME_DESIGN.md   ← 이 문서          /data/balance.json    ← 수치 단일 원본
 /docs/BENCHMARK.md                        /data/levels.json     ← xpTable은 sync-levels.js가 생성
 /docs/TICKETS.md                          /data/recipes.json /equipment.json
-/assets/bakery-core.js ← 공용 순수 엔진    /data/customers.json /members.json
-/bakery.html           ← 게임 클라이언트   /data/furniture.json  ← 가구(꾸미기) 원본
-/stage2/schema_bakery.sql                 /sim/simulate.js  /sim/sync-levels.js
+/docs/ART_GUIDE.md     ← AI 에셋 가이드   /data/customers.json /members.json
+/assets/bakery-core.js ← 공용 순수 엔진    /data/furniture.json  ← 가구(꾸미기) 원본
+/assets/bakery-art.js  ← 벡터 아트 팩토리  /assets/sprites/      ← AI 생성 PNG + manifest.json
+/bakery.html           ← 게임 클라이언트   /sim/simulate.js  /sim/sync-levels.js
+/stage2/schema_bakery.sql
 ```
 
 규칙: 문서 표 ↔ data/*.json 1:1, 불일치 시 json이 원본. 엔진에 밸런스 매직넘버 금지.
@@ -240,6 +242,7 @@
 4. **D7 페이싱**: Lv.10을 D4에 조기 달성(목표 D7). MVP 콘텐츠 끝(Lv.10)에 빨리 닿는 것은 커뮤니티 초기 화제성에 유리하다고 판단해 허용 밴드(D7에 Lv.10~11)로 확정. Lv.11+ 콘텐츠(P1) 출시 전까지 자연 감속 구간이 완충 역할
 5. **온라인 수요 < 생산 능력** 원칙 신설(§2.6): 방치 기둥 성립의 전제 조건으로 시뮬이 입증
 7. **그래픽 고도화 (운영자 지시)**: 이모지 스프라이트로는 커뮤니티 호감 형성이 어렵다는 피드백 → 코드 생성 SVG 캐릭터/설비 시스템(§11)으로 상향. §0.5 "이모지+CSS+간단 SVG" 전제의 SVG 수준을 페이퍼돌 조합 시스템으로 확장(여전히 외부 에셋·아티스트 없음)
+8. **이미지 에셋 파이프라인 (운영자 지시 — §0.5 전제 공식 확장)**: "전문 일러스트 수준" 요구에 따라 (a) 벡터 아트 v2 — 웜톤 아웃라인+그라데이션 셀 셰이딩+홍채/하이라이트 눈+유리 반사+씬 라이팅(광원뿔·비네트)으로 즉시 상향, (b) **AI 생성 PNG 에셋 파이프라인 내장** — `assets/sprites/manifest.json`에 등록하면 코드 수정 없이 해당 SVG를 이미지로 교체(미등록/로드 실패 시 SVG 폴백 = 점진 교체 가능). 에셋별 생성 프롬프트·규격·우선순위는 [ART_GUIDE.md](ART_GUIDE.md). 이미지 생성 자체는 개발 환경에 이미지 생성 도구가 없어 운영자가 외부 AI 도구로 수행
 6. **아이러브커피식 전면 개편 (운영자 지시, schema v2)**: 카드형 탭 UI를 폐기하고 쿼터뷰 매장 씬(§11)으로 전면 교체 — 걸어 들어오는 손님 동선, 씬 내 설비 직접 조작, 가구 상점·배치 모드(인테리어 P1→MVP 승격), 직원 연출 추가. **경제·생산·정산 엔진은 시뮬 검증본을 그대로 유지**(아이러브커피의 '머신 예약 생산+재고 판매' 구조와 동일 모델이라 재검증 불필요, 인테리어 팁 보너스만 추가 후 시뮬 재통과 확인). 기존 세이브는 MIGRATIONS[2]로 자동 이전. 가구 상점은 §3.5에서 지적된 후반 코인 잉여의 신규 싱크 역할
 
 ## 15. 최종 검수 체크리스트 (§15 원문 대응)

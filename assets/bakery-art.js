@@ -1,19 +1,24 @@
 /* ===================================================================
-   엑서 빵집 타이쿤 — 아트 팩토리 (window.BakeryArt)
+   엑서 빵집 타이쿤 — 아트 팩토리 v2 (window.BakeryArt)
    -------------------------------------------------------------------
-   외부 에셋 없이 코드 생성 SVG만으로 캐릭터·설비를 그린다.
-   - 캐릭터: 치비 페이퍼돌(피부/헤어/의상/소품 레이어 조합) + 걷기/표정
-   - 멤버: id 시드 → 항상 같은 외모 (커뮤니티 정체성)
-   - 설비: 오븐/쇼케이스/커피/카운터/가구 — 유사 아이소 SVG
+   일러스트 스타일 벡터 아트: 웜톤 아웃라인 + 그라데이션 셰이딩 +
+   하이라이트/반사. 외부 에셋 없이 코드 생성 SVG.
+   assets/sprites/manifest.json 에 PNG 에셋을 등록하면 클라이언트가
+   해당 SVG 대신 이미지를 사용한다(docs/ART_GUIDE.md 참고).
    =================================================================== */
 (function (global) {
   "use strict";
 
+  var OUT = "#4a3020";           // 공통 아웃라인(웜 다크브라운)
+  var uidc = 0;
+  function uid() { return "bk" + (uidc++); }
+
   /* ---------- 팔레트 ---------- */
   var SKINS = ["#ffe3c6", "#f7d1ab", "#eabc8d", "#cf9663", "#a97a44"];
-  var HAIRC = ["#2d2320", "#4a3421", "#6b4426", "#8a5a33", "#b5793d", "#d94f4f", "#e2b04a", "#8d8d95"];
+  var HAIRC = ["#2d2320", "#4a3421", "#6b4426", "#8a5a33", "#b5793d", "#c94f4f", "#e2b04a", "#8d8d95"];
+  var IRIS = ["#5a3a24", "#3f6a48", "#4a6aa8", "#6b4a86", "#7a5535"];
   var CLOTH = ["#e06d6d", "#5f8fd9", "#4cae7d", "#e8b64c", "#9a6bc9", "#e77fb3", "#5bbcc4", "#96a24f"];
-  var PANTS = ["#4a4a58", "#6b4426", "#39506e", "#7a5d8a", "#555"];
+  var PANTS = ["#4a4a58", "#6b4426", "#39506e", "#7a5d8a", "#8b5f52"];
 
   function hash(s) {
     var h = 5381;
@@ -21,13 +26,35 @@
     return h;
   }
   function pick(arr, n) { return arr[n % arr.length]; }
+  function darken(hex, f) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, ((n >> 16) & 255) * f) | 0, g = Math.min(255, ((n >> 8) & 255) * f) | 0, b = Math.min(255, (n & 255) * f) | 0;
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+  function lighten(hex, amt) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, ((n >> 16) & 255) + amt), g = Math.min(255, ((n >> 8) & 255) + amt), b = Math.min(255, (n & 255) + amt);
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+  function lgrad(id, c1, c2, vertical) {
+    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (vertical ? "0" : "1") + '" y2="' + (vertical ? "1" : "0.35") + '">' +
+      '<stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient>';
+  }
+  function rgrad(id, c1, c2) {
+    return '<radialGradient id="' + id + '" cx="0.35" cy="0.3" r="0.9">' +
+      '<stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></radialGradient>';
+  }
+  function contactShadow(cx, cy, rx) {
+    var g = uid();
+    return '<radialGradient id="' + g + '"><stop offset="0" stop-color="rgba(60,28,5,.32)"/><stop offset="1" stop-color="rgba(60,28,5,0)"/></radialGradient>' +
+      '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + (rx * 0.32) + '" fill="url(#' + g + ')"/>';
+  }
 
-  /* ---------- 외모 정의 ---------- */
-  // seed 문자열(멤버 id) → 항상 같은 외모
+  /* ---------- 외모 ---------- */
   function lookFromSeed(seed) {
     var h = hash(String(seed));
     return {
-      skin: pick(SKINS, h), hair: (h >> 3) % 7, hairC: pick(HAIRC, h >> 6),
+      skin: pick(SKINS, h), hair: (h >> 3) % 7, hairC: pick(HAIRC, h >> 6), iris: pick(IRIS, h >> 8),
       top: (h >> 9) % 4, topC: pick(CLOTH, h >> 12), pantsC: pick(PANTS, h >> 15),
       glasses: ((h >> 18) % 10) < 3, hat: ((h >> 21) % 10) < 2, bag: ((h >> 24) % 10) < 3,
       hatC: pick(CLOTH, h >> 26)
@@ -37,115 +64,160 @@
     rng = rng || Math.random;
     return {
       skin: SKINS[(rng() * SKINS.length) | 0], hair: (rng() * 7) | 0, hairC: HAIRC[(rng() * HAIRC.length) | 0],
+      iris: IRIS[(rng() * IRIS.length) | 0],
       top: (rng() * 4) | 0, topC: CLOTH[(rng() * CLOTH.length) | 0], pantsC: PANTS[(rng() * PANTS.length) | 0],
       glasses: rng() < 0.25, hat: rng() < 0.18, bag: rng() < 0.25,
       hatC: CLOTH[(rng() * CLOTH.length) | 0]
     };
   }
 
-  /* ---------- 캐릭터 SVG ----------
-     viewBox 0 0 64 88, 치비 비율(머리 큼). mood: happy|neutral|sad
-     .walk 상태에서 팔다리 스윙(CSS keyframes는 클라이언트에서 주입) */
-  function darken(hex, f) {
-    var n = parseInt(hex.slice(1), 16);
-    var r = Math.max(0, ((n >> 16) & 255) * f) | 0, g = Math.max(0, ((n >> 8) & 255) * f) | 0, b = Math.max(0, (n & 255) * f) | 0;
-    return "rgb(" + r + "," + g + "," + b + ")";
-  }
-
+  /* ---------- 헤어 ---------- */
   function hairSVG(look) {
-    var c = look.hairC, d = darken(c, 0.8);
+    var c = look.hairC, d = darken(c, 0.72), shine = '<path d="M22 12 Q28 9 36 10" stroke="rgba(255,255,255,.4)" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+    var o = ' stroke="' + OUT + '" stroke-width="1.8" stroke-linejoin="round"';
     var back = "", front = "";
     switch (look.hair) {
       case 0: // 숏컷
-        front = '<path d="M15 24 Q15 7 32 7 Q49 7 49 24 Q49 16 44 15 Q40 8 30 10 Q20 11 19 17 Q15 18 15 24Z" fill="' + c + '"/>';
+        front = '<path d="M15 25 Q14 6 32 6 Q50 6 49 25 Q49 15 43 15 Q40 8 30 10 Q19 12 18 18 Q15 19 15 25Z" fill="' + c + '"' + o + '/>' + shine;
         break;
-      case 1: // 단발(보브)
-        back = '<path d="M14 22 Q13 42 18 44 L22 30 L42 30 L46 44 Q51 42 50 22 Q49 6 32 6 Q15 6 14 22Z" fill="' + d + '"/>';
-        front = '<path d="M15 24 Q15 7 32 7 Q49 7 49 24 Q46 14 38 14 Q34 9 26 12 Q18 14 15 24Z" fill="' + c + '"/>';
+      case 1: // 보브
+        back = '<path d="M14 22 Q12 44 19 46 L23 30 L41 30 L45 46 Q52 44 50 22 Q49 5 32 5 Q15 5 14 22Z" fill="' + d + '"' + o + '/>';
+        front = '<path d="M15 25 Q15 6 32 6 Q49 6 49 25 Q46 13 38 14 Q34 8 25 12 Q17 14 15 25Z" fill="' + c + '"' + o + '/>' + shine;
         break;
       case 2: // 긴 생머리
-        back = '<path d="M14 22 Q12 52 20 56 L26 34 L38 34 L44 56 Q52 52 50 22 Q49 6 32 6 Q15 6 14 22Z" fill="' + d + '"/>';
-        front = '<path d="M15 25 Q15 7 32 7 Q49 7 49 25 Q45 13 36 13 Q30 9 24 13 Q17 15 15 25Z" fill="' + c + '"/>';
+        back = '<path d="M14 22 Q11 54 21 58 L26 34 L38 34 L43 58 Q53 54 50 22 Q49 5 32 5 Q15 5 14 22Z" fill="' + d + '"' + o + '/>';
+        front = '<path d="M15 26 Q15 6 32 6 Q49 6 49 26 Q45 12 36 13 Q30 8 24 13 Q17 15 15 26Z" fill="' + c + '"' + o + '/>' + shine;
         break;
       case 3: // 포니테일
-        back = '<path d="M46 16 Q58 22 54 44 Q52 52 48 50 Q52 34 44 24Z" fill="' + d + '"/>';
-        front = '<path d="M15 24 Q15 7 32 7 Q49 7 49 24 Q47 13 38 13 Q32 8 24 12 Q17 14 15 24Z" fill="' + c + '"/>';
+        back = '<path d="M46 15 Q60 21 55 45 Q53 54 48 51 Q53 34 44 23Z" fill="' + d + '"' + o + '/>';
+        front = '<path d="M15 25 Q15 6 32 6 Q49 6 49 25 Q47 12 38 13 Q32 7 24 12 Q17 14 15 25Z" fill="' + c + '"' + o + '/>' +
+          '<circle cx="46" cy="17" r="2.6" fill="' + darken(c, 0.6) + '"/>' + shine;
         break;
       case 4: // 곱슬
-        front = '<circle cx="20" cy="16" r="7" fill="' + c + '"/><circle cx="30" cy="11" r="8" fill="' + c + '"/><circle cx="42" cy="14" r="7" fill="' + c + '"/><circle cx="47" cy="22" r="5" fill="' + c + '"/><circle cx="16" cy="23" r="5" fill="' + c + '"/>';
+        front = '<g' + o + ' fill="' + c + '"><circle cx="20" cy="16" r="7.5"/><circle cx="31" cy="10" r="8.5"/><circle cx="43" cy="14" r="7.5"/><circle cx="48" cy="23" r="5.5"/><circle cx="16" cy="24" r="5.5"/></g>' + shine;
         break;
-      case 5: // 가르마 앞머리
-        front = '<path d="M15 26 Q14 6 32 6 Q50 6 49 26 Q48 14 40 16 Q42 10 33 9 Q26 9 26 15 Q18 14 15 26Z" fill="' + c + '"/>';
+      case 5: // 가르마
+        front = '<path d="M15 27 Q13 5 32 5 Q51 5 49 27 Q48 13 40 16 Q43 9 33 8 Q25 8 26 15 Q17 14 15 27Z" fill="' + c + '"' + o + '/>' + shine;
         break;
-      default: // 삭발/스포츠
-        front = '<path d="M17 20 Q19 9 32 9 Q45 9 47 20 Q40 13 32 13 Q24 13 17 20Z" fill="' + c + '"/>';
+      default: // 스포츠
+        front = '<path d="M16 20 Q18 8 32 8 Q46 8 48 20 Q40 12 32 12 Q24 12 16 20Z" fill="' + c + '"' + o + '/>';
     }
     return { back: back, front: front };
   }
 
+  /* ---------- 얼굴 ---------- */
   function faceSVG(look, mood) {
-    var mouth;
-    if (mood === "sad") mouth = '<path d="M27 33 Q32 29 37 33" stroke="#7a4a35" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
-    else if (mood === "open") mouth = '<ellipse cx="32" cy="32.5" rx="3.4" ry="2.6" fill="#8a4a3a"/>';
-    else mouth = '<path d="M27 31 Q32 36 37 31" stroke="#7a4a35" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
-    var eyes = mood === "sad"
-      ? '<path d="M22 24 Q25 22 28 24" stroke="#33220f" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M36 24 Q39 22 42 24" stroke="#33220f" stroke-width="1.8" fill="none" stroke-linecap="round"/>'
-      : '<circle cx="25" cy="24.5" r="2.3" fill="#33220f"/><circle cx="39" cy="24.5" r="2.3" fill="#33220f"/><circle cx="25.8" cy="23.7" r=".8" fill="#fff"/><circle cx="39.8" cy="23.7" r=".8" fill="#fff"/>';
-    var blush = '<ellipse cx="21" cy="29" rx="2.6" ry="1.5" fill="#f4a3a3" opacity=".55"/><ellipse cx="43" cy="29" rx="2.6" ry="1.5" fill="#f4a3a3" opacity=".55"/>';
+    var iris = (look && look.iris) || IRIS[0];
+    var browC = look ? darken(look.hairC, 0.75) : OUT;
+    var eyes, brows, mouth;
+    if (mood === "sad") {
+      brows = '<path d="M21 19 L28 21.6" stroke="' + browC + '" stroke-width="1.8" stroke-linecap="round"/><path d="M43 19 L36 21.6" stroke="' + browC + '" stroke-width="1.8" stroke-linecap="round"/>';
+      eyes = '<path d="M22 26 Q25 23.4 28 26" stroke="' + OUT + '" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M36 26 Q39 23.4 42 26" stroke="' + OUT + '" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      mouth = '<path d="M27.5 34.5 Q32 30.5 36.5 34.5" stroke="#8a4a3a" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+    } else {
+      brows = '<path d="M21 18.6 Q24.5 17 28 18.4" stroke="' + browC + '" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M36 18.4 Q39.5 17 43 18.6" stroke="' + browC + '" stroke-width="1.7" fill="none" stroke-linecap="round"/>';
+      eyes =
+        '<ellipse cx="25" cy="25" rx="3.9" ry="4.6" fill="#fff" stroke="' + OUT + '" stroke-width="1.1"/>' +
+        '<ellipse cx="39" cy="25" rx="3.9" ry="4.6" fill="#fff" stroke="' + OUT + '" stroke-width="1.1"/>' +
+        '<circle cx="25.5" cy="25.6" r="2.5" fill="' + iris + '"/><circle cx="39.5" cy="25.6" r="2.5" fill="' + iris + '"/>' +
+        '<circle cx="25.5" cy="25.6" r="1.2" fill="#1d130c"/><circle cx="39.5" cy="25.6" r="1.2" fill="#1d130c"/>' +
+        '<circle cx="26.4" cy="24.4" r=".9" fill="#fff"/><circle cx="40.4" cy="24.4" r=".9" fill="#fff"/>' +
+        '<circle cx="24.6" cy="26.8" r=".45" fill="#fff" opacity=".8"/><circle cx="38.6" cy="26.8" r=".45" fill="#fff" opacity=".8"/>';
+      mouth = mood === "open"
+        ? '<path d="M28 31.5 Q32 31 36 31.5 Q35.4 36.8 32 36.8 Q28.6 36.8 28 31.5Z" fill="#8a4a3a"/><path d="M29.6 35.4 Q32 36.6 34.4 35.4 L34 36.2 Q32 37.4 30 36.2Z" fill="#e88a8a"/>'
+        : '<path d="M27.5 31.5 Q32 36.5 36.5 31.5" stroke="#8a4a3a" stroke-width="1.9" fill="none" stroke-linecap="round"/>';
+    }
+    var nose = '<path d="M31.4 28.6 Q32.6 29.4 31.8 30.2" stroke="rgba(120,70,40,.5)" stroke-width="1.2" fill="none" stroke-linecap="round"/>';
+    var blushId = uid();
+    var blush = '<radialGradient id="' + blushId + '"><stop offset="0" stop-color="rgba(244,140,140,.6)"/><stop offset="1" stop-color="rgba(244,140,140,0)"/></radialGradient>' +
+      '<ellipse cx="20.5" cy="30" rx="3.4" ry="2.1" fill="url(#' + blushId + ')"/><ellipse cx="43.5" cy="30" rx="3.4" ry="2.1" fill="url(#' + blushId + ')"/>';
     var glasses = look && look.glasses
-      ? '<circle cx="25" cy="24.5" r="5" fill="none" stroke="#4a3a30" stroke-width="1.4"/><circle cx="39" cy="24.5" r="5" fill="none" stroke="#4a3a30" stroke-width="1.4"/><path d="M30 24.5 L34 24.5" stroke="#4a3a30" stroke-width="1.4"/>'
+      ? '<g stroke="#3c2e24" stroke-width="1.6" fill="rgba(210,235,250,.28)"><rect x="19.5" y="20.5" width="11" height="9" rx="4"/><rect x="33.5" y="20.5" width="11" height="9" rx="4"/><path d="M30.5 24.5 L33.5 24.5" fill="none"/></g>'
       : "";
-    return eyes + mouth + blush + glasses;
+    return brows + eyes + nose + mouth + blush + glasses;
   }
 
+  /* ---------- 의상 ---------- */
   function outfitSVG(look) {
-    var c = look.topC, d = darken(c, 0.82);
+    var c = look.topC, d = darken(c, 0.78), g = uid();
+    var o = ' stroke="' + OUT + '" stroke-width="1.8" stroke-linejoin="round"';
+    var defs = lgrad(g, lighten(c, 18), d, true);
     switch (look.top) {
       case 1: // 원피스
-        return '<path d="M24 44 L40 44 L45 66 L19 66 Z" fill="' + c + '"/><path d="M24 44 L40 44 L41 50 L23 50Z" fill="' + d + '"/>';
+        return defs + '<path d="M24 45 L40 45 L46 68 L18 68 Z" fill="url(#' + g + ')"' + o + '/>' +
+          '<path d="M24 45 L40 45 L41 51 L23 51Z" fill="' + d + '" opacity=".5"/>' +
+          '<path d="M27 55 L26 66 M32 54 L32 67 M37 55 L38 66" stroke="rgba(60,30,10,.18)" stroke-width="1.4"/>';
       case 2: // 후드
-        return '<rect x="22" y="43" width="20" height="21" rx="6" fill="' + c + '"/><path d="M24 44 Q32 52 40 44 L40 48 Q32 55 24 48Z" fill="' + d + '"/><circle cx="32" cy="56" r="1.2" fill="' + d + '"/><circle cx="32" cy="60" r="1.2" fill="' + d + '"/>';
+        return defs + '<rect x="21.5" y="44" width="21" height="22" rx="6.5" fill="url(#' + g + ')"' + o + '/>' +
+          '<path d="M24 45 Q32 53 40 45 L40 49 Q32 56 24 49Z" fill="' + d + '"/>' +
+          '<path d="M32 55 L32 64" stroke="' + d + '" stroke-width="1.6"/><circle cx="29" cy="52" r="1.1" fill="' + d + '"/><circle cx="35" cy="52" r="1.1" fill="' + d + '"/>';
       case 3: // 셔츠+조끼
-        return '<rect x="22" y="43" width="20" height="21" rx="5" fill="' + c + '"/><path d="M29 43 L32 49 L35 43 Z" fill="#fff"/><path d="M22 43 L28 43 L26 62 L22 60Z" fill="' + d + '"/><path d="M42 43 L36 43 L38 62 L42 60Z" fill="' + d + '"/>';
+        return defs + '<rect x="21.5" y="44" width="21" height="22" rx="5.5" fill="url(#' + g + ')"' + o + '/>' +
+          '<path d="M29 44 L32 51 L35 44 Z" fill="#fff7ea" stroke="' + OUT + '" stroke-width="1.2"/>' +
+          '<path d="M21.5 45 L27.5 45 L26 65 L21.5 62Z" fill="' + d + '"/><path d="M42.5 45 L36.5 45 L38 65 L42.5 62Z" fill="' + d + '"/>' +
+          '<circle cx="32" cy="55" r="1" fill="' + d + '"/><circle cx="32" cy="60" r="1" fill="' + d + '"/>';
       default: // 티셔츠
-        return '<rect x="22" y="43" width="20" height="21" rx="6" fill="' + c + '"/><path d="M22 47 L18 52 L21 54 L23 51Z" fill="' + c + '"/><path d="M42 47 L46 52 L43 54 L41 51Z" fill="' + c + '"/>';
+        return defs + '<rect x="21.5" y="44" width="21" height="22" rx="6.5" fill="url(#' + g + ')"' + o + '/>' +
+          '<path d="M25 50 Q27 53 26 57 M39 50 Q37 53 38 57" stroke="rgba(60,30,10,.16)" stroke-width="1.4" fill="none"/>' +
+          '<path d="M26 46 Q32 50 38 46" stroke="' + d + '" stroke-width="1.6" fill="none"/>';
     }
   }
 
-  // opts: {mood, apron, chefHat, capHat, scale, id}
+  /* ---------- 캐릭터 ---------- */
   function charSVG(look, opts) {
     opts = opts || {};
     var mood = opts.mood || "happy";
     var hair = hairSVG(look);
-    var skin = look.skin, skinD = darken(skin, 0.88);
+    var skin = look.skin;
+    var skinG = uid();
     var isDress = look.top === 1 && !opts.apron;
-    var legY = 64, legLen = isDress ? 9 : 13;
+    var legY = 65, legLen = isDress ? 9 : 13;
+    var o = ' stroke="' + OUT + '" stroke-width="1.6" stroke-linejoin="round"';
+
     var apron = opts.apron
-      ? '<path d="M24 46 L40 46 L42 63 L22 63 Z" fill="#fff8ec"/><path d="M27 46 L27 43 L37 43 L37 46" stroke="#fff8ec" stroke-width="2.4" fill="none"/><path d="M26 52 L38 52" stroke="#e8d9c0" stroke-width="1.2"/>'
+      ? '<path d="M24 47 L40 47 L42.5 65 L21.5 65 Z" fill="#fff8ec"' + o + '/>' +
+        '<path d="M27 47 L27 44 L37 44 L37 47" stroke="#fff8ec" stroke-width="2.6" fill="none"/>' +
+        '<path d="M25.5 54 L38.5 54" stroke="#e2d2b8" stroke-width="1.3"/>' +
+        '<path d="M29 58 Q32 60 35 58" stroke="#e2d2b8" stroke-width="1.2" fill="none"/>'
       : "";
     var chefHat = opts.chefHat
-      ? '<path d="M20 12 Q18 2 27 4 Q29 -2 36 1 Q44 -1 44 7 Q50 8 46 14 L44 18 L20 18 Z" fill="#fff"/><rect x="20" y="14" width="25" height="5" rx="2" fill="#f0e8da"/>'
+      ? '<path d="M19 13 Q16 2 26 4 Q28 -3 36 0 Q45 -2 45 7 Q52 8 47 15 L45 19 L20 19 Z" fill="#fff"' + o + '/>' +
+        '<rect x="19.5" y="14.5" width="26" height="5.5" rx="2.5" fill="#f0e8da" stroke="' + OUT + '" stroke-width="1.4"/>'
       : "";
     var capHat = (look.hat && !opts.chefHat)
-      ? '<path d="M15 17 Q15 6 32 6 Q49 6 49 17 L52 19 Q53 21 49 21 L15 20 Z" fill="' + look.hatC + '"/>'
+      ? '<path d="M15 17 Q15 5 32 5 Q49 5 49 17 L53.5 19.5 Q54.5 22 50 21.8 L15 20.5 Z" fill="' + look.hatC + '"' + o + '/>' +
+        '<path d="M20 9 Q26 6 33 6.5" stroke="rgba(255,255,255,.35)" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
       : "";
     var bag = look.bag
-      ? '<path d="M40 44 L26 62" stroke="' + darken(look.pantsC, 0.9) + '" stroke-width="2.4"/><rect x="21" y="58" width="11" height="9" rx="3" fill="' + darken(look.topC, 0.7) + '"/>'
+      ? '<path d="M40 45 L25 63" stroke="' + darken(look.pantsC, 0.85) + '" stroke-width="2.6"/>' +
+        '<rect x="19.5" y="58" width="12.5" height="10" rx="3.4" fill="' + darken(look.topC, 0.62) + '"' + o + '/>' +
+        '<path d="M19.5 62 L32 62" stroke="rgba(0,0,0,.2)" stroke-width="1.4"/><circle cx="26" cy="63.6" r="1.1" fill="#e8b64c"/>'
       : "";
+    var armC = opts.apron ? "#fff8ec" : look.topC;
     var arms =
-      '<g class="arm armL" style="transform-origin:23px 46px"><path d="M23 45 Q19 52 21 58" stroke="' + (opts.apron ? "#fff8ec" : look.topC) + '" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="21" cy="59" r="2.6" fill="' + skin + '"/></g>' +
-      '<g class="arm armR" style="transform-origin:41px 46px"><path d="M41 45 Q45 52 43 58" stroke="' + (opts.apron ? "#fff8ec" : look.topC) + '" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="43" cy="59" r="2.6" fill="' + skin + '"/></g>';
+      '<g class="arm armL" style="transform-origin:23px 47px">' +
+      '<path d="M23 46 Q18.4 53 20.6 59.6" stroke="' + OUT + '" stroke-width="7.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M23 46 Q19 53 21 59" stroke="' + armC + '" stroke-width="4.8" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="21" cy="60.5" r="3" fill="' + skin + '"' + o + '/></g>' +
+      '<g class="arm armR" style="transform-origin:41px 47px">' +
+      '<path d="M41 46 Q45.6 53 43.4 59.6" stroke="' + OUT + '" stroke-width="7.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M41 46 Q45 53 43 59" stroke="' + armC + '" stroke-width="4.8" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="43" cy="60.5" r="3" fill="' + skin + '"' + o + '/></g>';
+    var shoeG = uid();
     var legs =
-      '<g class="leg legL" style="transform-origin:28px ' + legY + 'px"><rect x="25.4" y="' + legY + '" width="5.4" height="' + legLen + '" rx="2.6" fill="' + look.pantsC + '"/><ellipse cx="28" cy="' + (legY + legLen + 1.5) + '" rx="4.4" ry="2.6" fill="#3a2c22"/></g>' +
-      '<g class="leg legR" style="transform-origin:36px ' + legY + 'px"><rect x="33.2" y="' + legY + '" width="5.4" height="' + legLen + '" rx="2.6" fill="' + darken(look.pantsC, 0.85) + '"/><ellipse cx="36" cy="' + (legY + legLen + 1.5) + '" rx="4.4" ry="2.6" fill="#3a2c22"/></g>';
+      lgrad(shoeG, "#5a4436", "#33241a", true) +
+      '<g class="leg legL" style="transform-origin:28px ' + legY + 'px"><rect x="25" y="' + legY + '" width="6" height="' + legLen + '" rx="2.8" fill="' + look.pantsC + '"' + o + '/>' +
+      '<ellipse cx="28" cy="' + (legY + legLen + 1.6) + '" rx="4.8" ry="2.9" fill="url(#' + shoeG + ')"' + o + '/></g>' +
+      '<g class="leg legR" style="transform-origin:36px ' + legY + 'px"><rect x="33" y="' + legY + '" width="6" height="' + legLen + '" rx="2.8" fill="' + darken(look.pantsC, 0.82) + '"' + o + '/>' +
+      '<ellipse cx="36" cy="' + (legY + legLen + 1.6) + '" rx="4.8" ry="2.9" fill="url(#' + shoeG + ')"' + o + '/></g>';
     var s = opts.scale || 1;
-    return '<svg class="chibi" width="' + (52 * s) + '" height="' + (72 * s) + '" viewBox="0 0 64 88" style="overflow:visible">' +
-      '<ellipse cx="32" cy="83" rx="15" ry="4.2" fill="rgba(60,30,5,.22)"/>' +
-      hair.back + bag +
-      legs +
+    return '<svg class="chibi" width="' + (54 * s) + '" height="' + (76 * s) + '" viewBox="0 0 64 92" style="overflow:visible">' +
+      '<defs>' + rgrad(skinG, lighten(skin, 14), darken(skin, 0.9)) + '</defs>' +
+      contactShadow(32, 84, 16) +
+      hair.back + bag + legs +
       '<g class="torso">' + outfitSVG(look) + apron + arms + '</g>' +
-      '<circle cx="32" cy="25" r="16.5" fill="' + skin + '"/>' +
-      '<path d="M18 30 Q22 38 32 38 Q42 38 46 30 Q44 41 32 41 Q20 41 18 30Z" fill="' + skinD + '" opacity=".35"/>' +
+      '<circle cx="32" cy="26" r="17" fill="url(#' + skinG + ')" stroke="' + OUT + '" stroke-width="2"/>' +
+      '<path d="M17.5 31 Q22 39.5 32 39.5 Q42 39.5 46.5 31 Q44 42 32 42 Q20 42 17.5 31Z" fill="' + darken(skin, 0.86) + '" opacity=".4"/>' +
       hair.front + capHat + chefHat +
       '<g class="face">' + faceSVG(look, mood) + '</g>' +
       '</svg>';
@@ -153,147 +225,217 @@
 
   /* ---------- 직원 ---------- */
   function bakerSVG(busy) {
-    var look = { skin: SKINS[1], hair: 0, hairC: HAIRC[2], top: 0, topC: "#f0f0f0", pantsC: "#4a4a58", glasses: false, hat: false, bag: false, hatC: "#fff" };
-    return '<span class="staffwrap' + (busy ? " working" : "") + '">' + charSVG(look, { apron: true, chefHat: true, mood: busy ? "open" : "happy", scale: 0.92 }) + "</span>";
+    var look = { skin: SKINS[1], hair: 0, hairC: HAIRC[2], iris: IRIS[0], top: 0, topC: "#f2ede4", pantsC: "#4a4a58", glasses: false, hat: false, bag: false, hatC: "#fff" };
+    return '<span class="staffwrap' + (busy ? " working" : "") + '">' + charSVG(look, { apron: true, chefHat: true, mood: busy ? "open" : "happy", scale: 0.95 }) + "</span>";
   }
   function cashierSVG() {
-    var look = { skin: SKINS[0], hair: 3, hairC: HAIRC[5], top: 0, topC: "#e8b64c", pantsC: "#39506e", glasses: false, hat: false, bag: false, hatC: "#fff" };
-    return '<span class="staffwrap idlebob">' + charSVG(look, { apron: true, mood: "happy", scale: 0.9 }) + "</span>";
+    var look = { skin: SKINS[0], hair: 3, hairC: HAIRC[5], iris: IRIS[2], top: 0, topC: "#e8b64c", pantsC: "#39506e", glasses: false, hat: false, bag: false, hatC: "#fff" };
+    return '<span class="staffwrap idlebob">' + charSVG(look, { apron: true, mood: "happy", scale: 0.92 }) + "</span>";
   }
 
-  /* ---------- 설비 (유사 아이소) ---------- */
-  function shadow(w) { return '<ellipse cx="' + (w / 2) + '" cy="96%" rx="' + (w * 0.42) + '" ry="7" fill="rgba(60,30,5,.20)"/>'; }
+  /* ===================================================================
+     설비 — 유사 아이소, 그라데이션+아웃라인+하이라이트
+     =================================================================== */
+  var FO = ' stroke="' + OUT + '" stroke-width="2" stroke-linejoin="round"';
 
-  // 벽돌 오븐: busy 시 불꽃+연기
+  // 벽돌 오븐 (가동: 화구 발광 + 연기, 상단 빵 트레이)
   function ovenSVG(busy) {
+    var top = uid(), fL = uid(), fR = uid(), glow = uid();
     var fire = busy
-      ? '<g class="fireflick"><path d="M44 54 Q40 46 44 40 Q46 45 49 42 Q52 47 49 53 Q47 57 44 54Z" fill="#ff9d3b"/><path d="M45 52 Q43 47 45.5 44 Q47 47 48.5 45.5 Q50 49 48 52 Q46.5 54 45 52Z" fill="#ffd23b"/></g>'
-      : '<circle cx="46" cy="49" r="4" fill="#3a2318"/>';
+      ? '<radialGradient id="' + glow + '"><stop offset="0" stop-color="#ffd875"/><stop offset=".55" stop-color="#ff9d3b"/><stop offset="1" stop-color="#b0421f"/></radialGradient>' +
+        '<path d="M58 62 Q57 43 69 46 Q80 49 78 66 L60 70 Z" fill="url(#' + glow + ')"/>' +
+        '<g class="fireflick"><path d="M64 60 Q61 52 64.5 47 Q66 51 68.6 48.6 Q71 53 68.6 58 Q66.6 61 64 60Z" fill="#ffd23b"/><path d="M66 58 Q64.8 54.4 66.4 52.4 Q67.6 54.6 68.6 53.6 Q69.6 56.4 68 58.4 Q67 59.6 66 58Z" fill="#fff3b0"/></g>'
+      : '<path d="M58 62 Q57 43 69 46 Q80 49 78 66 L60 70 Z" fill="#2a180e"/><path d="M60 60 Q60 48 69 50" stroke="rgba(255,255,255,.08)" stroke-width="2" fill="none"/>';
     var smoke = busy
-      ? '<g class="smoke"><circle cx="78" cy="14" r="5" fill="#dcd2c4" opacity=".8"/><circle cx="82" cy="6" r="6.5" fill="#e7dfd4" opacity=".6"/></g>'
-      : "";
-    return '<svg width="96" height="86" viewBox="0 0 96 86" style="overflow:visible">' +
-      shadow(96) +
-      '<rect x="70" y="10" width="12" height="18" rx="2" fill="#6e4a35"/>' + smoke +
-      '<path d="M10 30 L48 18 L86 30 L48 42 Z" fill="#b98a63"/>' +
-      '<path d="M10 30 L10 70 L48 82 L48 42 Z" fill="#9c6f4c"/>' +
-      '<path d="M86 30 L86 70 L48 82 L48 42 Z" fill="#8a5f40"/>' +
-      // 벽돌 라인
-      '<path d="M14 42 L44 52 M14 54 L44 64 M60 52 L82 44 M60 64 L82 56" stroke="rgba(60,30,10,.25)" stroke-width="2"/>' +
-      // 아치 화구
-      '<path d="M56 60 Q56 40 68 44 Q78 47 76 64 L58 68 Z" fill="#2c1a10"/>' +
-      '<g transform="translate(14,-6)">' + fire + '</g>' +
+      ? '<g class="smoke"><circle cx="84" cy="12" r="5" fill="#e3d9cb" opacity=".8"/><circle cx="88" cy="4" r="7" fill="#ece4d8" opacity=".55"/></g>' : "";
+    return '<svg width="104" height="94" viewBox="0 0 104 94" style="overflow:visible"><defs>' +
+      lgrad(top, "#cfa172", "#b4835a") + lgrad(fL, "#a87a52", "#8f6440", true) + lgrad(fR, "#96693f", "#7c5330", true) +
+      '</defs>' + contactShadow(52, 88, 40) +
+      '<rect x="74" y="6" width="13" height="20" rx="2.5" fill="#6e4a35"' + FO + '/><rect x="72.5" y="4" width="16" height="4.5" rx="2" fill="#7d5741"' + FO + '/>' + smoke +
+      '<path d="M10 32 L52 19 L94 32 L52 45 Z" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M10 32 L10 74 L52 87 L52 45 Z" fill="url(#' + fL + ')"' + FO + '/>' +
+      '<path d="M94 32 L94 74 L52 87 L52 45 Z" fill="url(#' + fR + ')"' + FO + '/>' +
+      '<path d="M14 44 L48 55 M14 56 L48 67 M14 68 L48 78 M31 38 L31 82" stroke="rgba(50,25,8,.22)" stroke-width="2"/>' +
+      '<path d="M62 56 L90 48 M62 72 L90 64" stroke="rgba(50,25,8,.2)" stroke-width="2"/>' +
+      fire +
+      '<path d="M56 68 Q56 74 62 73 L76 70 Q80 69 79 64" stroke="#5d4028" stroke-width="3.4" fill="none"/>' +
+      '<path d="M14 30 L50 19.4" stroke="rgba(255,240,210,.5)" stroke-width="2.4" stroke-linecap="round"/>' +
+      // 상단 빵 트레이
+      '<ellipse cx="30" cy="30" rx="12" ry="5" fill="#8a5f40"/><ellipse cx="30" cy="28.6" rx="12" ry="5" fill="#a0714c"' + FO + '/>' +
+      '<ellipse cx="25" cy="27" rx="4.6" ry="3" fill="#e2a95e"/><path d="M22 26 Q25 24 28 26" stroke="#c98b45" stroke-width="1.2" fill="none"/>' +
+      '<ellipse cx="34" cy="28" rx="4.6" ry="3" fill="#d99a4e"/><path d="M31 27 Q34 25 37 27" stroke="#b87d3d" stroke-width="1.2" fill="none"/>' +
       '</svg>';
   }
 
-  // 유리 쇼케이스: items=[{emoji,n}] 실제 재고 노출, ratio 채움 정도
+  // 유리 쇼케이스 — 전면 유리(아이소 면에 맞춘 평행사변형) + 실제 재고 노출
   function displaySVG(items, ratio) {
+    var top = uid(), fR = uid(), gl = uid(), wood = uid();
+    // 진열 상품: 전면 유리 안쪽 2단 선반 위에 (평행사변형 기울기 y = 26 + (x-8)*11/40 를 따라 배치)
     var rows = "";
-    var maxShow = 4;
-    for (var i = 0; i < Math.min(items.length, maxShow); i++) {
+    for (var i = 0; i < Math.min(items.length, 4); i++) {
       var it = items[i];
-      var y = 34 + (i % 2) * 17, x = 22 + Math.floor(i / 2) * 30;
-      var cnt = Math.max(1, Math.min(3, Math.ceil(it.n / 8)));
+      var col = i % 2, row = Math.floor(i / 2);          // 2열 × 2단
+      var bx = 14 + col * 17, by = 38 + col * 4.6 + row * 15;
+      var cnt = Math.max(1, Math.min(2, Math.ceil(it.n / 12)));
       for (var k = 0; k < cnt; k++)
-        rows += '<text x="' + (x + k * 11) + '" y="' + y + '" font-size="13">' + it.emoji + "</text>";
+        rows += '<text x="' + (bx + k * 8) + '" y="' + (by + k * 2.2) + '" font-size="11.5">' + it.emoji + "</text>";
     }
-    var emptyTag = (!items.length) ? '<text x="30" y="42" font-size="10" fill="#a1876a" font-weight="800">텅 비었어요</text>' : "";
-    return '<svg width="92" height="78" viewBox="0 0 92 78" style="overflow:visible">' +
-      shadow(92) +
-      '<path d="M8 24 L46 14 L84 24 L46 34 Z" fill="#c9a06e"/>' +
-      '<path d="M8 24 L8 62 L46 72 L46 34 Z" fill="#a87c50"/>' +
-      '<path d="M84 24 L84 62 L46 72 L46 34 Z" fill="#96693f"/>' +
-      '<rect x="14" y="20" width="64" height="40" rx="4" fill="rgba(210,235,250,.55)" stroke="#fff" stroke-width="2"/>' +
-      '<path d="M16 40 L76 40" stroke="rgba(255,255,255,.8)" stroke-width="2"/>' +
+    var emptyTag = (!items.length) ? '<text x="13" y="52" font-size="8.5" fill="#8a6a48" font-weight="800" transform="rotate(15 13 52)">SOLD OUT</text>' : "";
+    return '<svg width="96" height="82" viewBox="0 0 96 82" style="overflow:visible"><defs>' +
+      lgrad(top, "#d8b285", "#c09468") + lgrad(fR, "#9c7047", "#845a35", true) + lgrad(wood, "#b08356", "#96693f", true) +
+      '<linearGradient id="' + gl + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(235,248,255,.5)"/><stop offset=".4" stop-color="rgba(225,242,252,.22)"/><stop offset="1" stop-color="rgba(205,232,246,.34)"/></linearGradient>' +
+      '</defs>' + contactShadow(48, 77, 38) +
+      // 몸체
+      '<path d="M8 26 L48 15 L88 26 L48 37 Z" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M8 26 L8 64 L48 75 L48 37 Z" fill="url(#' + wood + ')"' + FO + '/>' +
+      '<path d="M88 26 L88 64 L48 75 L48 37 Z" fill="url(#' + fR + ')"' + FO + '/>' +
+      // 전면 좌측 = 유리 진열창 (면 실루엣에 정확히 맞춤, 안쪽 여백 3px)
+      '<path d="M11 29.5 L11 61 L45 71.5 L45 39.5 Z" fill="rgba(40,22,8,.35)"/>' +
       rows + emptyTag +
-      '<rect x="14" y="20" width="64" height="40" rx="4" fill="url(#none)" stroke="rgba(255,255,255,.9)" stroke-width="1"/>' +
+      '<path d="M11 45 L45 55.5" stroke="rgba(255,255,255,.7)" stroke-width="1.8"/>' + // 선반
+      '<path d="M11 29.5 L11 61 L45 71.5 L45 39.5 Z" fill="url(#' + gl + ')" stroke="#fff" stroke-width="2"/>' +
+      '<path d="M15 32 L26 66 M21 32.5 L32 67" stroke="rgba(255,255,255,.35)" stroke-width="4"/>' + // 반사
+      '<path d="M12 25 L46 15.6" stroke="rgba(255,240,210,.5)" stroke-width="2" stroke-linecap="round"/>' +
+      // 상단 케이크 돔
+      '<ellipse cx="66" cy="26" rx="9" ry="4" fill="#f2ede4"' + FO + '/>' +
+      '<path d="M58 25 Q58 17 66 17 Q74 17 74 25" fill="rgba(225,242,252,.55)" stroke="#fff" stroke-width="1.6"/>' +
+      '<circle cx="66" cy="16" r="1.6" fill="#e8b64c"/>' +
       '</svg>';
   }
 
   // 커피: 핸드드립 → 에스프레소 머신
   function coffeeSVG(machine, busy) {
-    var steam = busy ? '<g class="smoke"><circle cx="46" cy="12" r="4" fill="#e7dfd4" opacity=".7"/><circle cx="50" cy="5" r="5" fill="#efe8de" opacity=".5"/></g>' : "";
+    var top = uid(), fL = uid(), fR = uid();
+    var steam = busy ? '<g class="smoke"><circle cx="46" cy="10" r="4" fill="#eee6da" opacity=".75"/><circle cx="51" cy="3" r="5.5" fill="#f4ede2" opacity=".5"/></g>' : "";
+    var base = '<defs>' + lgrad(top, "#d8b285", "#c09468") + lgrad(fL, "#b08356", "#96693f", true) + lgrad(fR, "#9c7047", "#845a35", true) + '</defs>';
     if (!machine) {
-      return '<svg width="78" height="72" viewBox="0 0 78 72" style="overflow:visible">' +
-        shadow(78) +
-        '<path d="M8 34 L39 26 L70 34 L39 42 Z" fill="#c9a06e"/><path d="M8 34 L8 58 L39 66 L39 42Z" fill="#a87c50"/><path d="M70 34 L70 58 L39 66 L39 42Z" fill="#96693f"/>' +
-        '<path d="M30 20 L48 20 L45 32 L33 32 Z" fill="rgba(230,240,248,.8)" stroke="#fff" stroke-width="1.5"/>' +
-        '<rect x="33" y="32" width="12" height="3" fill="#8a5a33"/>' +
-        '<path d="M18 18 Q18 10 26 10 L30 10 L30 22 L22 24 Q18 24 18 18Z" fill="#5b6470"/><path d="M30 12 Q38 12 36 18" stroke="#5b6470" stroke-width="3" fill="none"/>' +
+      return '<svg width="82" height="76" viewBox="0 0 82 76" style="overflow:visible">' + base + contactShadow(41, 71, 30) +
+        '<path d="M8 38 L41 29 L74 38 L41 47 Z" fill="url(#' + top + ')"' + FO + '/>' +
+        '<path d="M8 38 L8 60 L41 69 L41 47Z" fill="url(#' + fL + ')"' + FO + '/><path d="M74 38 L74 60 L41 69 L41 47Z" fill="url(#' + fR + ')"' + FO + '/>' +
+        '<path d="M30 20 L50 20 L46.6 33 L33.4 33 Z" fill="rgba(232,242,248,.85)" stroke="#fff" stroke-width="1.6"/>' +
+        '<path d="M33 22 L39 31" stroke="rgba(255,255,255,.7)" stroke-width="2.6"/>' +
+        '<path d="M36 26 L44 26 L43 31 L37 31Z" fill="#6b4426"/>' +
+        '<rect x="33.5" y="33" width="13" height="3.4" rx="1.4" fill="#8a5a33"' + FO + '/>' +
+        '<path d="M16 16 Q16 8 24 8 L29 8 L29 21 L21 23 Q16 23 16 16Z" fill="#5b6470"' + FO + '/><path d="M29 10.5 Q38 10.5 36 17.5" stroke="#5b6470" stroke-width="3.4" fill="none"/>' +
+        '<path d="M18 11 Q21 9 25 9.6" stroke="rgba(255,255,255,.5)" stroke-width="1.8" fill="none"/>' +
         steam + '</svg>';
     }
-    return '<svg width="84" height="76" viewBox="0 0 84 76" style="overflow:visible">' +
-      shadow(84) +
-      '<path d="M8 38 L42 30 L76 38 L42 46 Z" fill="#c9a06e"/><path d="M8 38 L8 62 L42 70 L42 46Z" fill="#a87c50"/><path d="M76 38 L76 62 L42 70 L42 46Z" fill="#96693f"/>' +
-      '<rect x="20" y="8" width="44" height="26" rx="5" fill="#b8412f"/>' +
-      '<rect x="20" y="8" width="44" height="8" rx="4" fill="#d4553f"/>' +
-      '<rect x="30" y="34" width="7" height="8" fill="#6e6e78"/><rect x="46" y="34" width="7" height="8" fill="#6e6e78"/>' +
-      '<rect x="26" y="42" width="14" height="4" rx="2" fill="#e8e2d8"/>' +
-      '<circle cx="58" cy="21" r="3.4" fill="#ffd23b"/><circle cx="26" cy="21" r="2.4" fill="#fff" opacity=".7"/>' +
+    var body = uid(), chrome = uid();
+    return '<svg width="88" height="80" viewBox="0 0 88 80" style="overflow:visible">' + base +
+      '<defs>' + lgrad(body, "#d4553f", "#9c3423", true) + lgrad(chrome, "#e8e8ee", "#9a9aa8", true) + '</defs>' + contactShadow(44, 75, 32) +
+      '<path d="M8 42 L44 33 L80 42 L44 51 Z" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M8 42 L8 64 L44 73 L44 51Z" fill="url(#' + fL + ')"' + FO + '/><path d="M80 42 L80 64 L44 73 L44 51Z" fill="url(#' + fR + ')"' + FO + '/>' +
+      '<rect x="18" y="6" width="50" height="30" rx="6" fill="url(#' + body + ')"' + FO + '/>' +
+      '<rect x="18" y="6" width="50" height="9" rx="4.5" fill="rgba(255,255,255,.28)"/>' +
+      '<rect x="26" y="36" width="8" height="8" fill="url(#' + chrome + ')"' + FO + '/><rect x="48" y="36" width="8" height="8" fill="url(#' + chrome + ')"' + FO + '/>' +
+      (busy ? '<path d="M30 44 L30 48 M52 44 L52 48" stroke="#6b4426" stroke-width="2.2" stroke-linecap="round"/>' : "") +
+      '<rect x="24" y="44" width="16" height="4.5" rx="2" fill="#f2ede4"' + FO + '/><rect x="46" y="44" width="16" height="4.5" rx="2" fill="#f2ede4"' + FO + '/>' +
+      '<circle cx="61" cy="21" r="3.8" fill="#ffd23b" stroke="' + OUT + '" stroke-width="1.4"/><circle cx="25" cy="21" r="2.6" fill="#fff" opacity=".8"/>' +
+      '<ellipse cx="34" cy="8" rx="6" ry="2.4" fill="#f2ede4"' + FO + '/><ellipse cx="48" cy="8" rx="6" ry="2.4" fill="#f2ede4"' + FO + '/>' +
       steam + '</svg>';
   }
 
-  // 카운터: POS + 팁 항아리
+  // 카운터: POS + 팁 항아리 + 우드 그레인
   function counterSVG(tips) {
+    var top = uid(), fL = uid(), fR = uid(), scr = uid();
     var jar = '<g' + (tips > 0 ? ' class="jarshine"' : "") + '>' +
-      '<path d="M60 24 Q57 24 57 28 L57 34 Q57 37 61 37 L69 37 Q73 37 73 34 L73 28 Q73 24 70 24 Z" fill="rgba(215,235,248,.75)" stroke="#fff" stroke-width="1.4"/>' +
-      (tips > 0 ? '<circle cx="62" cy="33" r="2.4" fill="#e8b64c"/><circle cx="67" cy="34" r="2.4" fill="#e8b64c"/><circle cx="65" cy="30" r="2.4" fill="#f4d27e"/>' : "") + "</g>";
-    return '<svg width="96" height="78" viewBox="0 0 96 78" style="overflow:visible">' +
-      shadow(96) +
-      '<path d="M6 36 L48 24 L90 36 L48 48 Z" fill="#d8b285"/>' +
-      '<path d="M6 36 L6 60 L48 72 L48 48 Z" fill="#b08356"/>' +
-      '<path d="M90 36 L90 60 L48 72 L48 48 Z" fill="#9c7047"/>' +
-      '<path d="M10 44 L44 54 M10 52 L44 62" stroke="rgba(70,40,15,.18)" stroke-width="2"/>' +
-      '<rect x="22" y="14" width="18" height="14" rx="2.5" fill="#4a5058"/><rect x="24" y="16" width="14" height="7" rx="1.5" fill="#9fe8b8"/><rect x="27" y="29" width="8" height="4" fill="#3c4148"/>' +
+      '<path d="M62 22 Q58.5 22 58.5 26.5 L58.5 34 Q58.5 37.5 63 37.5 L71 37.5 Q75.5 37.5 75.5 34 L75.5 26.5 Q75.5 22 72 22 Z" fill="rgba(220,238,250,.72)" stroke="#fff" stroke-width="1.8"/>' +
+      '<path d="M60.5 24 L61.5 35" stroke="rgba(255,255,255,.75)" stroke-width="2"/>' +
+      (tips > 0 ? '<circle cx="63.5" cy="33.5" r="2.6" fill="#e8b64c" stroke="#c9922e" stroke-width=".8"/><circle cx="69" cy="34.5" r="2.6" fill="#e8b64c" stroke="#c9922e" stroke-width=".8"/><circle cx="66.5" cy="30" r="2.6" fill="#f4d27e" stroke="#c9922e" stroke-width=".8"/>' : "") +
+      '</g>';
+    return '<svg width="100" height="82" viewBox="0 0 100 82" style="overflow:visible"><defs>' +
+      lgrad(top, "#e2bd8f", "#c99e6d") + lgrad(fL, "#b08356", "#96693f", true) + lgrad(fR, "#9c7047", "#845a35", true) +
+      lgrad(scr, "#b8f2cf", "#7fd6a4", true) +
+      '</defs>' + contactShadow(50, 77, 40) +
+      '<path d="M6 38 L50 25 L94 38 L50 51 Z" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M6 38 L6 62 L50 75 L50 51 Z" fill="url(#' + fL + ')"' + FO + '/>' +
+      '<path d="M94 38 L94 62 L50 75 L50 51 Z" fill="url(#' + fR + ')"' + FO + '/>' +
+      '<path d="M10 46 L46 57 M10 54 L46 65 M28 42 L28 70" stroke="rgba(70,40,15,.2)" stroke-width="2"/>' +
+      '<path d="M58 56 L88 47 M58 66 L88 57" stroke="rgba(70,40,15,.18)" stroke-width="2"/>' +
+      '<path d="M10 37 L48 25.8" stroke="rgba(255,240,210,.55)" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<rect x="22" y="12" width="20" height="15" rx="2.6" fill="#4a5058"' + FO + '/><rect x="24" y="14" width="16" height="8" rx="1.6" fill="url(#' + scr + ')"/>' +
+      '<rect x="27" y="27" width="9" height="4.4" fill="#3c4148"/><rect x="24" y="30.6" width="15" height="3" rx="1.4" fill="#5b6470"/>' +
       jar + '</svg>';
   }
 
   /* ---------- 가구 ---------- */
   function tableSVG() {
-    return '<svg width="70" height="62" viewBox="0 0 70 62" style="overflow:visible">' + shadow(70) +
-      '<ellipse cx="35" cy="24" rx="26" ry="12" fill="#c9a06e"/><ellipse cx="35" cy="21" rx="26" ry="12" fill="#e0bd8c"/>' +
-      '<path d="M33 32 L33 50 L37 50 L37 32Z" fill="#96693f"/><ellipse cx="35" cy="51" rx="9" ry="3.4" fill="#96693f"/>' +
-      '<ellipse cx="35" cy="19" rx="9" ry="4" fill="#fff" opacity=".5"/></svg>';
+    var top = uid();
+    return '<svg width="74" height="66" viewBox="0 0 74 66" style="overflow:visible"><defs>' + rgrad(top, "#ecc898", "#c99e6d") + '</defs>' +
+      contactShadow(37, 60, 26) +
+      '<ellipse cx="37" cy="27" rx="27" ry="12.5" fill="#a87c50"/><ellipse cx="37" cy="23.5" rx="27" ry="12.5" fill="url(#' + top + ')"' + FO + '/>' +
+      '<ellipse cx="37" cy="23.5" rx="19" ry="8.4" fill="none" stroke="rgba(140,90,45,.35)" stroke-width="1.4"/>' +
+      '<ellipse cx="37" cy="23.5" rx="11" ry="4.6" fill="none" stroke="rgba(140,90,45,.28)" stroke-width="1.2"/>' +
+      '<path d="M34.6 34 L34.6 52 L39.4 52 L39.4 34Z" fill="#8a5f3d"' + FO + '/>' +
+      '<ellipse cx="37" cy="53.5" rx="10" ry="3.8" fill="#8a5f3d"' + FO + '/>' +
+      '<ellipse cx="30" cy="20" rx="8" ry="3.2" fill="rgba(255,255,255,.45)"/></svg>';
   }
   function tableCoupleSVG() {
-    return '<svg width="86" height="66" viewBox="0 0 86 66" style="overflow:visible">' + shadow(86) +
-      '<path d="M9 24 L43 14 L77 24 L43 34Z" fill="#e0bd8c"/><path d="M9 24 L9 30 L43 40 L43 34Z" fill="#c9a06e"/><path d="M77 24 L77 30 L43 40 L43 34Z" fill="#b08356"/>' +
-      '<path d="M14 30 L14 48 M72 30 L72 48 M43 40 L43 56" stroke="#96693f" stroke-width="4"/>' +
-      '<text x="26" y="26" font-size="12">🌼</text></svg>';
+    var top = uid();
+    return '<svg width="92" height="70" viewBox="0 0 92 70" style="overflow:visible"><defs>' + lgrad(top, "#ecc898", "#cfa473") + '</defs>' +
+      contactShadow(46, 64, 34) +
+      '<path d="M8 26 L46 15 L84 26 L46 37Z" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M8 26 L8 32 L46 43 L46 37Z" fill="#b08356"' + FO + '/><path d="M84 26 L84 32 L46 43 L46 37Z" fill="#9c7047"' + FO + '/>' +
+      '<path d="M14 32 L14 52 M78 32 L78 52 M46 43 L46 60" stroke="#8a5f3d" stroke-width="4.4" stroke-linecap="round"/>' +
+      '<ellipse cx="34" cy="23" rx="5" ry="2.6" fill="#fff" opacity=".85"/><path d="M32 21 Q34 18.6 36 21" stroke="#e06d6d" stroke-width="2" fill="none"/>' +
+      '<path d="M12 25.5 L44 16.2" stroke="rgba(255,240,210,.5)" stroke-width="1.8" stroke-linecap="round"/></svg>';
   }
   function sofaSVG() {
-    return '<svg width="84" height="64" viewBox="0 0 84 64" style="overflow:visible">' + shadow(84) +
-      '<path d="M12 18 Q10 8 20 8 L64 8 Q74 8 72 18 L72 34 L12 34 Z" fill="#c96a5a"/>' +
-      '<path d="M10 30 Q4 30 6 40 L10 52 L74 52 L78 40 Q80 30 74 30 L74 42 L10 42 Z" fill="#b8523f"/>' +
-      '<rect x="12" y="30" width="60" height="13" rx="6" fill="#d97f6c"/>' +
-      '<rect x="16" y="14" width="24" height="14" rx="6" fill="#d97f6c" opacity=".7"/><rect x="44" y="14" width="24" height="14" rx="6" fill="#d97f6c" opacity=".7"/></svg>';
+    var body = uid();
+    return '<svg width="88" height="66" viewBox="0 0 88 66" style="overflow:visible"><defs>' + lgrad(body, "#d97f6c", "#b04a37", true) + '</defs>' +
+      contactShadow(44, 61, 34) +
+      '<path d="M13 18 Q11 7 21 7 L67 7 Q77 7 75 18 L75 34 L13 34 Z" fill="url(#' + body + ')"' + FO + '/>' +
+      '<path d="M10 29 Q3 29 5.5 40 L10 53 L78 53 L82.5 40 Q85 29 78 29 L78 42 L10 42 Z" fill="#c25a45"' + FO + '/>' +
+      '<rect x="12" y="30" width="64" height="14" rx="7" fill="#e08d78"' + FO + '/>' +
+      '<path d="M44 32 L44 43" stroke="rgba(120,40,25,.4)" stroke-width="1.8"/>' +
+      '<path d="M18 13 Q28 10 39 12 M49 12 Q60 10 70 13" stroke="rgba(255,255,255,.35)" stroke-width="2.4" fill="none"/>' +
+      '<path d="M16 53 L16 59 M72 53 L72 59" stroke="#6b4426" stroke-width="4" stroke-linecap="round"/></svg>';
   }
   function parasolSVG() {
-    return '<svg width="86" height="96" viewBox="0 0 86 96" style="overflow:visible">' + shadow(86) +
-      '<path d="M43 6 Q73 10 76 34 L10 34 Q13 10 43 6Z" fill="#e06d6d"/>' +
-      '<path d="M25 9 Q34 6 43 6 Q52 6 61 9 L58 34 L28 34Z" fill="#fff3ea"/>' +
-      '<path d="M42 34 L42 62 L44 62 L44 34Z" fill="#96693f"/>' +
-      '<ellipse cx="43" cy="62" rx="22" ry="9" fill="#e0bd8c"/><ellipse cx="43" cy="59" rx="22" ry="9" fill="#f0d3a4"/>' +
-      '<path d="M42 68 L42 82 L44 82 L44 68Z" fill="#96693f"/><ellipse cx="43" cy="84" rx="8" ry="3" fill="#96693f"/></svg>';
+    var top = uid();
+    return '<svg width="92" height="102" viewBox="0 0 92 102" style="overflow:visible"><defs>' + rgrad(top, "#ecc898", "#c99e6d") + '</defs>' +
+      contactShadow(46, 96, 34) +
+      '<path d="M46 5 Q79 9 82 36 L10 36 Q13 9 46 5Z" fill="#e06d6d"' + FO + '/>' +
+      '<path d="M27 8 Q36 5 46 5 Q56 5 65 8 L61 36 L31 36Z" fill="#fff3ea"' + FO + '/>' +
+      '<path d="M46 5 L46 36 M27 8.5 L31 36 M65 8.5 L61 36" stroke="rgba(120,50,35,.3)" stroke-width="1.4"/>' +
+      '<circle cx="46" cy="4" r="2.6" fill="#e8b64c"' + FO + '/>' +
+      '<path d="M44.8 36 L44.8 64 L47.2 64 L47.2 36Z" fill="#8a5f3d"/>' +
+      '<ellipse cx="46" cy="66" rx="23" ry="9.5" fill="#a87c50"/><ellipse cx="46" cy="62.5" rx="23" ry="9.5" fill="url(#' + top + ')"' + FO + '/>' +
+      '<path d="M44.8 72 L44.8 86 L47.2 86 L47.2 72Z" fill="#8a5f3d"/><ellipse cx="46" cy="88" rx="9" ry="3.4" fill="#8a5f3d"' + FO + '/></svg>';
   }
   function doorSVG() {
-    return '<svg width="46" height="74" viewBox="0 0 46 74" style="overflow:visible">' +
-      '<rect x="2" y="2" width="42" height="70" rx="4" fill="#8a5a33"/>' +
-      '<rect x="6" y="6" width="34" height="62" rx="3" fill="#a06b3d"/>' +
-      '<rect x="10" y="10" width="26" height="22" rx="3" fill="rgba(220,240,250,.75)" stroke="#fff" stroke-width="1.5"/>' +
-      '<circle cx="36" cy="44" r="2.6" fill="#e8b64c"/>' +
-      '<rect x="8" y="36" width="30" height="1.6" fill="rgba(60,30,10,.3)"/></svg>';
+    var body = uid();
+    return '<svg width="48" height="78" viewBox="0 0 48 78" style="overflow:visible"><defs>' + lgrad(body, "#a97a4a", "#7d5230", true) + '</defs>' +
+      '<rect x="1.5" y="1.5" width="45" height="75" rx="4" fill="#6b4426"' + FO + '/>' +
+      '<rect x="5" y="5" width="38" height="68" rx="3" fill="url(#' + body + ')"/>' +
+      '<rect x="9" y="9" width="30" height="24" rx="3" fill="rgba(212,238,250,.8)" stroke="#fff" stroke-width="1.8"/>' +
+      '<path d="M12 12 L20 30" stroke="rgba(255,255,255,.65)" stroke-width="3"/>' +
+      '<rect x="9" y="39" width="30" height="13" rx="2.5" fill="rgba(0,0,0,.12)"/><rect x="9" y="56" width="30" height="13" rx="2.5" fill="rgba(0,0,0,.12)"/>' +
+      '<circle cx="38" cy="46" r="2.8" fill="#e8b64c" stroke="#a5762a" stroke-width="1"/>' +
+      '<rect x="14" y="33.5" width="20" height="7" rx="2" fill="#fff3e0" stroke="' + OUT + '" stroke-width="1.2"/>' +
+      '<text x="17.5" y="39" font-size="5.4" font-weight="900" fill="#8a5a33">OPEN</text></svg>';
   }
   function windowSVG() {
-    return '<svg width="52" height="42" viewBox="0 0 52 42">' +
-      '<rect x="1" y="1" width="50" height="40" rx="4" fill="#8a6a48"/>' +
-      '<rect x="4" y="4" width="44" height="34" rx="3" fill="#cde8f2"/>' +
-      '<path d="M26 4 L26 38 M4 21 L48 21" stroke="#8a6a48" stroke-width="2.5"/>' +
-      '<path d="M8 30 Q16 22 24 30" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/></svg>';
+    var sky = uid();
+    return '<svg width="54" height="44" viewBox="0 0 54 44"><defs>' +
+      '<linearGradient id="' + sky + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f2"/><stop offset="1" stop-color="#e8f4f8"/></linearGradient></defs>' +
+      '<rect x="1.5" y="1.5" width="51" height="41" rx="4" fill="#8a6a48" stroke="' + OUT + '" stroke-width="1.8"/>' +
+      '<rect x="5" y="5" width="44" height="34" rx="3" fill="url(#' + sky + ')"/>' +
+      '<ellipse cx="16" cy="14" rx="6" ry="2.6" fill="#fff" opacity=".9"/><ellipse cx="34" cy="10" rx="4.4" ry="2" fill="#fff" opacity=".7"/>' +
+      '<path d="M27 5 L27 39 M5 22 L49 22" stroke="#8a6a48" stroke-width="2.6"/>' +
+      '<path d="M8 34 L18 8" stroke="rgba(255,255,255,.55)" stroke-width="3"/>' +
+      '<rect x="3" y="40" width="48" height="3" rx="1.5" fill="#75573a"/></svg>';
   }
   function lampSVG() {
-    return '<svg width="30" height="46" viewBox="0 0 30 46"><path d="M15 0 L15 16" stroke="#6a4e30" stroke-width="2"/>' +
-      '<path d="M5 28 Q5 16 15 16 Q25 16 25 28 Z" fill="#e8b64c"/><circle cx="15" cy="31" r="4" fill="#ffe9a8"><animate attributeName="opacity" values="1;.75;1" dur="2.4s" repeatCount="indefinite"/></circle></svg>';
+    var shade = uid(), halo = uid();
+    return '<svg width="34" height="52" viewBox="0 0 34 52" style="overflow:visible"><defs>' +
+      lgrad(shade, "#f2c765", "#cf9a35", true) +
+      '<radialGradient id="' + halo + '"><stop offset="0" stop-color="rgba(255,235,170,.85)"/><stop offset="1" stop-color="rgba(255,235,170,0)"/></radialGradient></defs>' +
+      '<path d="M17 0 L17 15" stroke="#5d4530" stroke-width="2.4"/>' +
+      '<path d="M6 29 Q6 16 17 16 Q28 16 28 29 Z" fill="url(#' + shade + ')" stroke="' + OUT + '" stroke-width="1.8"/>' +
+      '<path d="M9 24 Q10 18.5 15 17.6" stroke="rgba(255,255,255,.55)" stroke-width="2" fill="none"/>' +
+      '<circle cx="17" cy="34" r="11" fill="url(#' + halo + ')"/>' +
+      '<circle cx="17" cy="31.5" r="4" fill="#ffefb2"><animate attributeName="opacity" values="1;.8;1" dur="2.6s" repeatCount="indefinite"/></circle></svg>';
   }
 
   global.BakeryArt = {
