@@ -420,20 +420,48 @@
         '<path d="M18 11 Q21 9 25 9.6" stroke="rgba(255,255,255,.5)" stroke-width="1.8" fill="none"/>' +
         steam + '</svg>';
     }
-    var body = uid(), chrome = uid();
-    return '<svg width="88" height="80" viewBox="0 0 88 80" style="overflow:visible">' + base +
-      '<defs>' + lgrad(body, "#faf1e0", "#e2cba6", true) + lgrad(chrome, "#eef0f4", "#9a9aa8", true) + '</defs>' + contactShadow(44, 75, 32) +
-      '<path d="M8 42 L44 33 L80 42 L44 51 Z" fill="url(#' + top + ')"' + FO + '/>' +
-      '<path d="M8 42 L8 64 L44 73 L44 51Z" fill="url(#' + fL + ')"' + FO + '/><path d="M80 42 L80 64 L44 73 L44 51Z" fill="url(#' + fR + ')"' + FO + '/>' +
-      '<rect x="18" y="6" width="50" height="30" rx="6" fill="url(#' + body + ')"' + FO + '/>' +
-      '<rect x="18" y="6" width="50" height="8" rx="4" fill="rgba(255,255,255,.55)"/>' +
-      '<rect x="18" y="28" width="50" height="8" rx="4" fill="url(#' + chrome + ')" stroke="' + T.out + '" stroke-width="1.4"/>' +
-      '<rect x="26" y="36" width="8" height="8" fill="url(#' + chrome + ')"' + FO + '/><rect x="48" y="36" width="8" height="8" fill="url(#' + chrome + ')"' + FO + '/>' +
-      (busy ? '<path d="M30 44 L30 48 M52 44 L52 48" stroke="#6b4426" stroke-width="2.2" stroke-linecap="round"/>' : "") +
-      '<rect x="24" y="44" width="16" height="4.5" rx="2" fill="' + T.paper + '"' + FO + '/><rect x="46" y="44" width="16" height="4.5" rx="2" fill="' + T.paper + '"' + FO + '/>' +
-      '<circle cx="61" cy="20" r="4.2" fill="#fff" stroke="' + T.out + '" stroke-width="1.4"/><path d="M61 20 L63.4 17.8" stroke="' + T.coral + '" stroke-width="1.4" stroke-linecap="round"/>' +
-      '<circle cx="27" cy="20" r="2.8" fill="' + T.coral + '" stroke="' + T.out + '" stroke-width="1.2"/>' +
-      '<ellipse cx="38" cy="8" rx="6" ry="2.4" fill="' + T.paper + '"' + FO + '/><ellipse cx="52" cy="8" rx="6" ry="2.4" fill="' + T.paper + '"' + FO + '/>' +
+    // 에스프레소 머신 v4 — 레퍼런스 재현: 크림 바디 + 골드 게이지/버튼 + 은색 그룹헤드 2개
+    // + 상단 컵 2개·밀크저그 + 하단 트레이 컵 2개(커피 추출) + 원목 베이스
+    var body = uid(), head = uid(), chrome = uid(), gold = uid(), woodB = uid();
+    var extract = busy
+      ? '<path d="M30 55 L30 60 M52 55 L52 60" stroke="#7a4a2a" stroke-width="1.8" stroke-linecap="round"/>'
+      : "";
+    var espG = busy ? '#c9803e' : '#dda15e';
+    return '<svg width="96" height="88" viewBox="0 0 96 88" style="overflow:visible">' + base +
+      '<defs>' + lgrad(body, "#faf2df", "#e6d4b2", true) + lgrad(head, "#f2ecdf", "#d8c8ac", true) +
+      lgrad(chrome, "#f0f2f6", "#a6a8b4", true) + lgrad(gold, "#f2d488", "#c99a3e", true) + lgrad(woodB, T.wood, T.woodDk, true) + '</defs>' +
+      contactShadow(48, 83, 40) +
+      // 원목 베이스
+      '<path d="M14 74 L82 74 L79 84 L17 84 Z" fill="url(#' + woodB + ')"' + FO + '/>' +
+      // 하단 드립 트레이 (은색 그릴)
+      '<path d="M12 62 L84 62 L82 76 L14 76 Z" fill="url(#' + chrome + ')"' + FO + '/>' +
+      '<path d="M20 66 L76 66 M20 69 L75 69 M21 72 L74 72" stroke="#b6b8c2" stroke-width="1.4"/>' +
+      // 몸통 하부(그룹헤드 영역)
+      '<rect x="16" y="40" width="64" height="24" rx="4" fill="url(#' + body + ')"' + FO + '/>' +
+      // 상부 헤드 박스
+      '<rect x="14" y="14" width="68" height="28" rx="7" fill="url(#' + head + ')"' + FO + '/>' +
+      '<rect x="14" y="14" width="68" height="8" rx="6" fill="rgba(255,255,255,.5)"/>' +
+      '<rect x="16" y="16" width="64" height="24" rx="5" fill="none" stroke="' + T.caramel + '" stroke-width="1.2" opacity=".6"/>' +
+      // 압력 게이지(골드) + 버튼 4개(골드)
+      '<circle cx="40" cy="30" r="7.5" fill="url(#' + gold + ')"' + FO + '/><circle cx="40" cy="30" r="5.2" fill="#fbf3df"/>' +
+      '<path d="M40 30 L43.5 27.5" stroke="' + T.coral + '" stroke-width="1.4" stroke-linecap="round"/><circle cx="40" cy="30" r="1" fill="' + T.out + '"/>' +
+      '<circle cx="26" cy="28" r="2.4" fill="url(#' + gold + ')"' + FO + '/><circle cx="26" cy="34" r="2.4" fill="url(#' + gold + ')"' + FO + '/>' +
+      '<circle cx="54" cy="28" r="2.4" fill="url(#' + gold + ')"' + FO + '/><circle cx="54" cy="34" r="2.4" fill="url(#' + gold + ')"' + FO + '/>' +
+      // 우측 스팀 노브(은색)
+      '<circle cx="72" cy="31" r="4.4" fill="url(#' + chrome + ')"' + FO + '/><circle cx="72" cy="31" r="1.6" fill="#8a8c98"/>' +
+      // 그룹헤드 2개(은색 포터필터 + 우드 핸들) + 추출
+      '<rect x="27" y="42" width="9" height="8" rx="1.6" fill="url(#' + chrome + ')"' + FO + '/><rect x="24" y="50" width="15" height="4" rx="2" fill="url(#' + chrome + ')"' + FO + '/>' +
+      '<rect x="12" y="49" width="16" height="4.4" rx="2.2" fill="' + T.wood + '"' + FO + '/><circle cx="12" cy="51.2" r="3" fill="' + T.caramel + '"' + FO + '/>' +
+      '<rect x="49" y="42" width="9" height="8" rx="1.6" fill="url(#' + chrome + ')"' + FO + '/><rect x="46" y="50" width="15" height="4" rx="2" fill="url(#' + chrome + ')"' + FO + '/>' +
+      '<rect x="58" y="49" width="16" height="4.4" rx="2.2" fill="' + T.wood + '"' + FO + '/><circle cx="74" cy="51.2" r="3" fill="' + T.caramel + '"' + FO + '/>' +
+      extract +
+      // 하단 트레이 컵 2개(커피)
+      '<path d="M25 56 L37 56 L35.5 63 Q35 65 31 65 Q27 65 26.5 63 Z" fill="#fdf6ea"' + FO + '/><ellipse cx="31" cy="56" rx="6" ry="1.8" fill="' + espG + '"/><path d="M37 57 Q40 57 39 60" stroke="' + T.out + '" stroke-width="1.4" fill="none"/>' +
+      '<path d="M47 56 L59 56 L57.5 63 Q57 65 53 65 Q49 65 48.5 63 Z" fill="#fdf6ea"' + FO + '/><ellipse cx="53" cy="56" rx="6" ry="1.8" fill="' + espG + '"/><path d="M59 57 Q62 57 61 60" stroke="' + T.out + '" stroke-width="1.4" fill="none"/>' +
+      // 상단: 컵 2개 + 밀크저그
+      '<path d="M40 8 L50 8 L49 14 Q49 15 44.5 15 Q40 15 40 14 Z" fill="#fdf6ea"' + FO + '/><path d="M50 9 Q53 9 52 12" stroke="' + T.out + '" stroke-width="1.3" fill="none"/>' +
+      '<path d="M54 8 L64 8 L63 14 Q63 15 58.5 15 Q54 15 54 14 Z" fill="#fdf6ea"' + FO + '/><path d="M64 9 Q67 9 66 12" stroke="' + T.out + '" stroke-width="1.3" fill="none"/>' +
+      '<path d="M26 6 Q26 3 30 3 L34 3 Q35 3 35 6 L35 13 Q35 15 30.5 15 Q26 15 26 13 Z" fill="#f2ede0"' + FO + '/><path d="M35 8 L38 6 L38 9 L35 10Z" fill="#f2ede0"' + FO + '/><circle cx="30.5" cy="2" r="1.6" fill="' + T.caramel + '"' + FO + '/>' +
       steam + '</svg>';
   }
 
