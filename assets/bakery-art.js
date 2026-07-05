@@ -20,6 +20,7 @@
     butter: "#f6d98a", caramel: "#e8b64c",
     wood: "#c99e6d", woodHi: "#e2bd8f", woodDk: "#96693f", woodDk2: "#845a35",
     brick: "#c96a4a", brickHi: "#d98a66", brickDk: "#a34e33",
+    stone: "#e6cf9f", stoneHi: "#f4e6c2", stoneDk: "#d1b681", stoneDk2: "#bfa06a", mortar: "rgba(120,90,45,.28)",
     coral: "#e98f7f", mint: "#9fd8c3", mintDk: "#6db9a0",
     glow: "#ff9d3b", glowHi: "#ffd875",
     apricot: "#f7c896", warmGray: "#b0a494"
@@ -286,43 +287,64 @@
      설비 v3
      =================================================================== */
 
-  // 벽돌 오븐: 입체 벽돌 + 아치 림 + 발광(pulse) + 빵 삽 + 트레이 + 밀가루
+  // 벽돌 오븐 v4 — 크림 사암 화덕(레퍼런스 재현): 아치 화구+장작불, 상단 빵 트레이·
+  // 항아리·뚜껑 냄비, 좌측 빵 삽, 우측 장작 바구니, 하단 아궁이. busy 시 발광 pulse+연기.
   function ovenSVG(busy) {
-    var glow = uid();
-    var box = isoBox(10, 19, 42, 42, T.brickHi, T.brick, T.brickDk);
-    // 개별 벽돌(전면 좌측) — 윗변 하이라이트로 입체감
-    var bricks = "";
-    var bw = 16, bh = 10;
-    for (var r = 0; r < 3; r++) for (var c = 0; c < 2; c++) {
-      var bx = 13 + c * (bw + 2) + (r % 2) * 7, by = 46 + r * (bh + 2) + (13 + c * (bw + 2)) * 0;
-      var yShift = (bx - 10) * 0.3;
-      bricks += '<rect x="' + bx + '" y="' + (by + yShift) + '" width="' + bw + '" height="' + bh + '" rx="2" fill="rgba(255,255,255,.07)" stroke="rgba(60,25,10,.28)" stroke-width="1.4" transform="skewY(16)" transform-origin="' + bx + ' ' + by + '"/>';
-    }
+    var glow = uid(), bodyG = uid(), riserG = uid(), potG = uid();
+    var defs = lgrad(bodyG, T.stoneHi, T.stoneDk, true) + lgrad(riserG, T.stone, T.stoneDk2, true) +
+      lgrad(potG, "#d99a55", "#a86a2f", true) +
+      '<radialGradient id="' + glow + '"><stop offset="0" stop-color="#fff0b0"/><stop offset=".5" stop-color="' + T.glow + '"/><stop offset="1" stop-color="rgba(176,66,31,0)"/></radialGradient>';
+    // 화구 내부(장작+불)
+    var mouthDark = '<path d="M30 80 Q30 52 46 52 Q62 52 62 80 Z" fill="#25150c"/>';
+    var logs = '<ellipse cx="41" cy="76" rx="7" ry="2.6" fill="#7a4a2a" stroke="#5d3720" stroke-width="1"/><ellipse cx="51" cy="77" rx="6" ry="2.4" fill="#8a5730" stroke="#5d3720" stroke-width="1"/><circle cx="35" cy="75.5" r="2" fill="#6b4426"/><circle cx="57" cy="76" r="2" fill="#6b4426"/>';
     var fire = busy
-      ? '<radialGradient id="' + glow + '"><stop offset="0" stop-color="' + T.glowHi + '"/><stop offset=".55" stop-color="' + T.glow + '"/><stop offset="1" stop-color="#b0421f"/></radialGradient>' +
-        '<g class="ovenglow"><path d="M58 62 Q57 43 69 46 Q80 49 78 66 L60 70 Z" fill="url(#' + glow + ')"/></g>' +
-        '<g class="fireflick"><path d="M64 60 Q61 52 64.5 47 Q66 51 68.6 48.6 Q71 53 68.6 58 Q66.6 61 64 60Z" fill="#ffd23b"/><path d="M66 58 Q64.8 54.4 66.4 52.4 Q67.6 54.6 68.6 53.6 Q69.6 56.4 68 58.4 Q67 59.6 66 58Z" fill="#fff3b0"/></g>'
-      : '<path d="M58 62 Q57 43 69 46 Q80 49 78 66 L60 70 Z" fill="#2a180e"/><path d="M60 60 Q60 48 69 50" stroke="rgba(255,200,120,.14)" stroke-width="2" fill="none"/>';
+      ? '<g class="ovenglow"><ellipse cx="46" cy="70" rx="17" ry="16" fill="url(#' + glow + ')"/></g>' + logs +
+        '<g class="fireflick"><path d="M39 75 Q34 62 40 53 Q43 60 47 55 Q52 62 47 71 Q45 76 39 75Z" fill="#ff9d3b"/>' +
+        '<path d="M46 74 Q42 64 46 57 Q49 63 52 58 Q55 65 51 72 Q49 76 46 74Z" fill="#ffce54"/>' +
+        '<path d="M43 72 Q41 66 43.6 62 Q45 65 46.6 63 Q48.4 67 46 71 Q45 73 43 72Z" fill="#fff3b0"/></g>'
+      : logs + '<path d="M34 74 Q46 70 58 74" stroke="rgba(255,180,90,.18)" stroke-width="2.5" fill="none"/>';
     var smoke = busy
-      ? '<g class="smoke"><circle cx="84" cy="12" r="5" fill="#e3d9cb" opacity=".8"/><circle cx="88" cy="4" r="7" fill="#ece4d8" opacity=".55"/></g>' : "";
-    return '<svg width="104" height="94" viewBox="0 0 104 94" style="overflow:visible"><defs>' + box.defs + '</defs>' +
-      contactShadow(52, 88, 40) +
-      '<rect x="74" y="6" width="13" height="20" rx="2.5" fill="#6e4a35"' + FO + '/><rect x="72.5" y="4" width="16" height="4.5" rx="2" fill="#7d5741"' + FO + '/>' + smoke +
-      box.html +
-      '<path d="M14 44 L48 55 M14 56 L48 67 M14 68 L48 78 M31 38 L31 82" stroke="rgba(50,25,8,.22)" stroke-width="2"/>' +
-      '<path d="M62 56 L90 48 M62 72 L90 64" stroke="rgba(50,25,8,.2)" stroke-width="2"/>' +
-      // 아치 림 + 화구
-      '<path d="M55.5 60 Q54.5 40 69 43.4 Q82.5 46.6 80.5 67 L77 68 Q79 49 68.6 46.6 Q58.6 44.4 59 61 Z" fill="#8a4a30"' + FO + '/>' +
-      fire +
-      // 빵 삽(peel)
-      '<path d="M56 68 Q56 74 62 73 L76 70 Q80 69 79 64" stroke="#5d4028" stroke-width="3.4" fill="none"/>' +
-      '<path d="M8 66 L20 84" stroke="#8a5f3d" stroke-width="3" stroke-linecap="round"/><ellipse cx="7" cy="63" rx="6" ry="4" fill="#c99e6d"' + FO + ' transform="rotate(30 7 63)"/>' +
-      // 밀가루 가루
-      '<circle cx="16" cy="84" r="1.4" fill="#fff" opacity=".85"/><circle cx="22" cy="87" r="1" fill="#fff" opacity=".7"/><circle cx="12" cy="88" r=".8" fill="#fff" opacity=".75"/>' +
-      // 상단 빵 트레이
-      '<ellipse cx="30" cy="30" rx="12" ry="5" fill="#8a5f40"/><ellipse cx="30" cy="28.6" rx="12" ry="5" fill="#a0714c"' + FO + '/>' +
-      '<ellipse cx="25" cy="27" rx="4.6" ry="3" fill="#e2a95e"/><path d="M22 26 Q25 24 28 26" stroke="#c98b45" stroke-width="1.2" fill="none"/>' +
-      '<ellipse cx="34" cy="28" rx="4.6" ry="3" fill="#d99a4e"/><path d="M31 27 Q34 25 37 27" stroke="#b87d3d" stroke-width="1.2" fill="none"/>' +
+      ? '<g class="smoke"><circle cx="52" cy="46" r="3.6" fill="#e3d9cb" opacity=".7"/><circle cx="55" cy="39" r="4.6" fill="#ece4d8" opacity=".5"/></g>' : "";
+    return '<svg width="116" height="108" viewBox="0 0 116 108" style="overflow:visible"><defs>' + defs + '</defs>' +
+      contactShadow(58, 102, 50) +
+      // 뒤쪽 냄비 받침(작은 벽돌 단)
+      '<path d="M70 24 L98 24 L100 44 L68 44 Z" fill="url(#' + riserG + ')"' + FO + '/>' +
+      '<path d="M70 30 L98 30 M70 37 L99 37" stroke="' + T.mortar + '" stroke-width="1.4"/>' +
+      // 뚜껑 냄비(구리 돔)
+      '<ellipse cx="84" cy="24" rx="15" ry="5.5" fill="' + T.stone + '"' + FO + '/>' +
+      '<path d="M71 23 Q71 10 84 10 Q97 10 97 23 Z" fill="url(#' + potG + ')"' + FO + '/>' +
+      '<path d="M74 15 Q79 11 85 11.5" stroke="rgba(255,255,255,.45)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="84" cy="8" r="2.6" fill="#c98b45"' + FO + '/><path d="M84 5.5 L84 3" stroke="' + T.out + '" stroke-width="1.6"/>' + smoke +
+      // 본체(크림 사암)
+      '<path d="M12 52 Q12 44 20 43 L94 43 Q102 44 102 52 L102 96 Q102 102 96 102 L18 102 Q12 102 12 96 Z" fill="url(#' + bodyG + ')"' + FO + '/>' +
+      // 상단 면(밝은 슬래브)
+      '<ellipse cx="57" cy="45" rx="46" ry="10.5" fill="' + T.stoneHi + '"' + FO + '/>' +
+      // 벽돌 이음선
+      '<path d="M14 60 L100 60 M14 72 L28 72 M64 72 L100 72 M14 84 L100 84 M14 96 L100 96 M40 60 L40 43 M74 60 L74 43 M22 84 L22 96 M50 84 L50 96 M78 84 L78 96 M90 72 L90 84" stroke="' + T.mortar + '" stroke-width="1.5"/>' +
+      // 좌상단 하이라이트
+      '<path d="M18 47 Q34 40 54 40" stroke="' + T.hi + '" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+      // 아치 화구: voussoir 링
+      '<path d="M22 82 Q22 44 46 44 Q70 44 70 82 L62 82 Q62 52 46 52 Q30 52 30 82 Z" fill="' + T.stoneDk + '" stroke="' + T.out + '" stroke-width="2"/>' +
+      '<path d="M26 70 L34 66 M28 58 L36 57 M46 46.5 L46 54 M64 58 L57 57 M66 70 L58 66" stroke="' + T.mortar + '" stroke-width="1.4"/>' +
+      mouthDark + fire +
+      // 하단 아궁이 + 장작
+      '<path d="M34 101 Q34 88 46 88 Q58 88 58 101 Z" fill="#3a2418"' + FO + '/>' +
+      '<ellipse cx="42" cy="98" rx="5" ry="2" fill="#c99e6d"/><ellipse cx="50" cy="99" rx="4.4" ry="1.8" fill="#b98a58"/><circle cx="42" cy="98" r="1.2" fill="#e2bd8f"/><circle cx="50" cy="99" r="1" fill="#d1b681"/>' +
+      // 좌측 빵 삽(peel)
+      '<g transform="rotate(-12 12 70)"><rect x="8" y="60" width="7" height="42" rx="3" fill="' + T.woodHi + '"' + FO + '/><ellipse cx="11.5" cy="58" rx="9" ry="7" fill="' + T.wood + '"' + FO + '/><ellipse cx="11.5" cy="56.5" rx="5.5" ry="4" fill="' + T.woodHi + '"/></g>' +
+      // 우측 장작 바구니
+      '<path d="M92 78 L112 78 L110 100 L94 100 Z" fill="' + T.wood + '"' + FO + '/>' +
+      '<path d="M94 82 L110 82 M94 88 L110 88 M94 94 L110 94 M98 78 L97 100 M102 78 L102 100 M106 78 L107 100" stroke="' + T.woodDk + '" stroke-width="1.2"/>' +
+      '<ellipse cx="97" cy="77" rx="3.4" ry="2.4" fill="#e2c39a" stroke="#b98a58" stroke-width="1"/><ellipse cx="104" cy="76" rx="3.4" ry="2.4" fill="#d9b487" stroke="#b98a58" stroke-width="1"/><circle cx="97" cy="77" r="1.1" fill="#c9a06e"/><circle cx="104" cy="76" r="1" fill="#c9a06e"/>' +
+      // 상단 빵 트레이(갓 구운 롤)
+      '<ellipse cx="42" cy="40" rx="15" ry="5.5" fill="' + T.woodDk + '"/><ellipse cx="42" cy="38.4" rx="15" ry="5.5" fill="' + T.wood + '"' + FO + '/><ellipse cx="42" cy="37.6" rx="12.5" ry="4" fill="' + T.woodHi + '"/>' +
+      '<ellipse cx="35" cy="36.5" rx="4.4" ry="2.8" fill="#e8b062"/><path d="M32 35.6 Q35 33.6 38 35.6" stroke="#c9803e" stroke-width="1.2" fill="none"/>' +
+      '<ellipse cx="43" cy="37.5" rx="4.4" ry="2.8" fill="#e2a95e"/><path d="M40 36.6 Q43 34.6 46 36.6" stroke="#c1852f" stroke-width="1.2" fill="none"/>' +
+      '<ellipse cx="49" cy="36" rx="4" ry="2.6" fill="#e8b062"/><path d="M46 35.2 Q49 33.4 52 35.2" stroke="#c9803e" stroke-width="1.1" fill="none"/>' +
+      // 항아리 + 초록잎
+      '<path d="M60 40 Q58 42 58.6 45 Q59 48 62 48 L68 48 Q71 48 71.4 45 Q72 42 70 40 Z" fill="#f2e8d4"' + FO + '/>' +
+      '<path d="M61 39.5 L69 39.5 L68.6 41 L61.4 41 Z" fill="#d9c4a0"' + FO + '/><path d="M62 43 Q65 44.5 68 43" stroke="#c9a06e" stroke-width="1.1" fill="none"/>' +
+      '<path d="M58 41 Q54 39 55 35 Q57 38 59 37" stroke="#7aab5a" stroke-width="1.6" fill="#8fc06a"/><circle cx="55" cy="35.5" r="1.6" fill="#f2a3b8"/>' +
       '</svg>';
   }
 
