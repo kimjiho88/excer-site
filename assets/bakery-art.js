@@ -437,33 +437,63 @@
       steam + '</svg>';
   }
 
-  // 카운터: 우드그레인 + POS(활성 플래시) + 영수증 + 동전 + 메뉴 카드 + 팁 항아리
+  // 카운터 v4 — 레퍼런스 재현: 원목 수납장(판넬 도어+아치 통풍구) + 크림 대리석 상판
+  // + POS 계산기(초록 화면·컬러 키패드·영수증·서랍) + 유리 팁 항아리(금화) + 동전 + 브레드스틱 컵 + 메뉴 카드
   function counterSVG(tips, active) {
-    var top = uid(), fL = uid(), fR = uid(), scr = uid();
+    var woodF = uid(), woodR = uid(), topG = uid(), posG = uid(), scr = uid();
+    // 팁 항아리(코르크 뚜껑 + 금화 + 초록잎)
     var jar = '<g' + (tips > 0 ? ' class="jarshine"' : "") + '>' +
-      '<path d="M62 22 Q58.5 22 58.5 26.5 L58.5 34 Q58.5 37.5 63 37.5 L71 37.5 Q75.5 37.5 75.5 34 L75.5 26.5 Q75.5 22 72 22 Z" fill="rgba(220,238,250,.72)" stroke="#fff" stroke-width="1.8"/>' +
-      '<path d="M60.5 24 L61.5 35" stroke="rgba(255,255,255,.75)" stroke-width="2"/>' +
-      (tips > 0 ? '<circle cx="63.5" cy="33.5" r="2.6" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".8"/><circle cx="69" cy="34.5" r="2.6" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".8"/><circle cx="66.5" cy="30" r="2.6" fill="#f4d27e" stroke="#c9922e" stroke-width=".8"/>' : "") +
+      '<path d="M54 34 Q51 34 51 39 L51 50 Q51 55 57 55 L67 55 Q73 55 73 50 L73 39 Q73 34 70 34 Z" fill="rgba(224,240,250,.66)" stroke="#fff" stroke-width="1.8"/>' +
+      '<ellipse cx="62" cy="34" rx="9" ry="2.6" fill="#d9a55e"/><ellipse cx="62" cy="32.5" rx="9" ry="2.6" fill="#e8b96e"' + FO + '/><circle cx="62" cy="30" r="2.4" fill="#c98b45"' + FO + '/>' +
+      (tips > 0
+        ? '<ellipse cx="58" cy="50" rx="3.4" ry="1.8" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".7"/><ellipse cx="65" cy="51" rx="3.4" ry="1.8" fill="#f4d27e" stroke="#c9922e" stroke-width=".7"/><ellipse cx="61" cy="47" rx="3.4" ry="1.8" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".7"/><path d="M56 44 Q59 42 61 44" stroke="#7aab5a" stroke-width="2" fill="#8fc06a"/>'
+        : "") +
+      '<path d="M55 37 L56 52" stroke="rgba(255,255,255,.6)" stroke-width="1.8"/>' +
+      (tips > 0 ? '<path class="shimmer" d="M74 30 l2 -3 l1 3 l3 1 l-3 1 l-1 3 l-2 -3 l-3 -1 Z" fill="#fff3b0"/>' : "") +
       "</g>";
-    return '<svg width="100" height="82" viewBox="0 0 100 82" style="overflow:visible"><defs>' +
-      lgrad(top, "#f0d5ae", "#d3ab7c") + lgrad(fL, "#b08356", T.woodDk, true) + lgrad(fR, T.woodDk2, "#74502f", true) +
-      lgrad(scr, "#c8f4da", "#7fd6a4", true) +
-      '</defs>' + contactShadow(50, 77, 40) +
-      '<path d="M6 38 L50 25 L94 38 L50 51 Z" fill="url(#' + top + ')"' + FO + '/>' +
-      '<path d="M6 38 L6 62 L50 75 L50 51 Z" fill="url(#' + fL + ')"' + FO + '/>' +
-      '<path d="M94 38 L94 62 L50 75 L50 51 Z" fill="url(#' + fR + ')"' + FO + '/>' +
-      '<path d="M10 46 L46 57 M10 54 L46 65 M28 42 L28 70" stroke="rgba(70,40,15,.2)" stroke-width="2"/>' +
-      '<path d="M58 56 L88 47 M58 66 L88 57" stroke="rgba(70,40,15,.18)" stroke-width="2"/>' +
-      '<path d="M10 37 L48 25.8" stroke="' + T.hi + '" stroke-width="2.2" stroke-linecap="round"/>' +
-      // POS + 영수증
-      '<rect x="22" y="12" width="20" height="15" rx="2.6" fill="#4a5058"' + FO + '/>' +
-      '<rect x="24" y="14" width="16" height="8" rx="1.6" fill="url(#' + scr + ')"' + (active ? ' class="posflash"' : "") + '/>' +
-      '<rect x="27" y="27" width="9" height="4.4" fill="#3c4148"/><rect x="24" y="30.6" width="15" height="3" rx="1.4" fill="#5b6470"/>' +
-      '<path d="M42 15 L47 14 L47.6 24 L42.6 25 Z" fill="#fffdf6" stroke="#e2d2b8" stroke-width="1"/><path d="M43.4 17 L46 16.6 M43.6 19.4 L46.2 19 M43.8 21.8 L46.4 21.4" stroke="#cbb892" stroke-width=".9"/>' +
-      // 메뉴 카드 + 동전
-      '<path d="M14 34 L24 31.4 L25 38 L15 40.6 Z" fill="' + T.paper + '"' + FO + '/><path d="M16.4 34.6 L22 33.2 M16.8 36.4 L22.4 35" stroke="#c9a06e" stroke-width="1.1"/>' +
-      '<ellipse cx="50" cy="30" rx="3" ry="1.6" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".8"/><ellipse cx="50" cy="28.4" rx="3" ry="1.6" fill="#f4d27e" stroke="#c9922e" stroke-width=".8"/>' +
-      jar + '</svg>';
+    return '<svg width="108" height="94" viewBox="0 0 108 94" style="overflow:visible"><defs>' +
+      lgrad(woodF, T.woodHi, T.woodDk, true) + lgrad(woodR, T.woodDk, "#6f4a29", true) +
+      lgrad(topG, "#f6eed8", "#e2d2b0", true) + lgrad(posG, "#f4ede0", "#ddd0bb", true) +
+      lgrad(scr, "#bfe3a8", "#8cc072", true) +
+      '</defs>' + contactShadow(54, 90, 48) +
+      // 원목 수납장 (전면 + 우측면)
+      '<path d="M14 52 L84 52 L84 88 L14 88 Z" fill="url(#' + woodF + ')"' + FO + '/>' +
+      '<path d="M84 52 L96 47 L96 83 L84 88 Z" fill="url(#' + woodR + ')"' + FO + '/>' +
+      '<path d="M11 86 L87 86 L87 92 L11 92 Z" fill="' + T.woodDk + '"' + FO + '/><path d="M87 86 L98 81 L98 87 L87 92 Z" fill="#6f4a29"' + FO + '/>' +
+      // 판넬 도어 2개 + 손잡이 + 아치 통풍구
+      '<rect x="20" y="58" width="28" height="24" rx="3" fill="none" stroke="' + T.woodDk + '" stroke-width="1.6"/>' +
+      '<rect x="50" y="58" width="28" height="24" rx="3" fill="none" stroke="' + T.woodDk + '" stroke-width="1.6"/>' +
+      '<path d="M50 78 Q64 73 78 78" stroke="' + T.woodDk + '" stroke-width="1.3" fill="none"/><path d="M56 79 L56 76 M60 78.4 L60 75.4 M64 78 L64 75 M68 78.4 L68 75.4 M72 79 L72 76" stroke="' + T.woodDk + '" stroke-width="1" stroke-linecap="round"/>' +
+      '<path d="M45 66 Q47 68 45 71" stroke="' + T.caramel + '" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M53 66 Q51 68 53 71" stroke="' + T.caramel + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      // 크림 대리석 상판 (전면 립 + 상단면 + 우측면)
+      '<path d="M6 44 L86 44 L98 39 L18 39 Z" fill="' + T.cream + '"' + FO + '/>' +
+      '<path d="M6 44 Q6 41 9 41 L86 41 Q90 41 90 45 L90 52 Q90 54 87 54 L9 54 Q6 54 6 51 Z" fill="url(#' + topG + ')"' + FO + '/>' +
+      '<path d="M90 45 L98 40 L98 48 L90 52 Z" fill="#e2d2b0"' + FO + '/>' +
+      '<path d="M14 47 Q30 45 46 47 M52 48 Q66 46 80 48" stroke="rgba(180,150,100,.3)" stroke-width="1.3" fill="none"/>' +
+      '<path d="M10 43 L84 43" stroke="' + T.hi + '" stroke-width="2" stroke-linecap="round"/>' +
+      // 우측: 메뉴 카드 스탠드
+      '<path d="M92 30 L100 30 L99 41 L91 41 Z" fill="#fdf6ea"' + FO + '/><path d="M100 30 L102 34 L101 43 L99 41 Z" fill="#ece0c8"' + FO + '/>' +
+      '<path d="M93.5 33 L98 33 M93.5 35.5 L98 35.5 M93.5 38 L97 38" stroke="#d9b487" stroke-width="1"/><circle cx="95.5" cy="31.5" r="1.4" fill="' + T.caramel + '"/>' +
+      // 우측: 브레드스틱 컵
+      '<path d="M78 36 L88 36 L87 44 L79 44 Z" fill="' + T.wood + '"' + FO + '/>' +
+      '<path d="M80 36 L80 29 M82.5 36 L82.5 28 M85 36 L85 29 M87 36 L86.6 30" stroke="#e2b06a" stroke-width="1.5" stroke-linecap="round"/>' +
+      // 바닥 동전 무더기
+      '<ellipse cx="76" cy="50" rx="3.6" ry="1.9" fill="' + T.caramel + '" stroke="#c9922e" stroke-width=".7"/><ellipse cx="76" cy="48.2" rx="3.6" ry="1.9" fill="#f4d27e" stroke="#c9922e" stroke-width=".7"/>' +
+      jar +
+      // POS 계산기 (몸통 + 초록 디스플레이 라이저 + 키패드 + 영수증 + 서랍)
+      '<rect x="16" y="30" width="34" height="18" rx="3.5" fill="url(#' + posG + ')"' + FO + '/>' +
+      '<rect x="18" y="43" width="30" height="6" rx="2" fill="#e2d2b8" stroke="' + T.out + '" stroke-width="1"/><rect x="28" y="45" width="10" height="2" rx="1" fill="#b89c78"/>' +   // 서랍
+      '<rect x="19" y="33" width="13" height="8" rx="1.6" fill="url(#' + scr + ')"' + (active ? ' class="posflash"' : "") + '/>' +   // 키패드 화면
+      '<g>' +
+        '<rect x="34" y="33" width="4" height="3.4" rx="1" fill="#f2e8d0"/><rect x="39" y="33" width="4" height="3.4" rx="1" fill="#f2c060"/><rect x="44" y="33" width="4" height="3.4" rx="1" fill="#e88a5a"/>' +
+        '<rect x="34" y="37" width="4" height="3.4" rx="1" fill="#f2e8d0"/><rect x="39" y="37" width="4" height="3.4" rx="1" fill="#a8d49a"/><rect x="44" y="37" width="4" height="3.4" rx="1" fill="#f2c060"/>' +
+      '</g>' +
+      '<path d="M22 30 L22 16 Q22 12 26 12 L40 12 Q44 12 44 16 L44 24 L22 24" fill="url(#' + posG + ')"' + FO + '/>' +  // 디스플레이 넥
+      '<rect x="24" y="15" width="18" height="7" rx="2" fill="url(#' + scr + ')"' + (active ? ' class="posflash"' : "") + '/>' +
+      '<path d="M24 17 L40 17" stroke="rgba(255,255,255,.5)" stroke-width="1"/>' +
+      // 영수증
+      '<path d="M45 26 Q52 25 51 33 L48 33 Q49 27 45 28 Z" fill="#fffdf6" stroke="#e2d2b8" stroke-width="1"/><path d="M46.4 29 L50 28.6 M46.6 31 L50.2 30.6" stroke="#cbb892" stroke-width=".8"/>' +
+      '</svg>';
   }
 
   /* ---------- 가구 ---------- */
