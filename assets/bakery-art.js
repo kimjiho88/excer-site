@@ -508,8 +508,61 @@
       '<circle cx="17" cy="31.5" r="4" fill="#ffefb2"/></svg>';
   }
 
+  /* ---------- 앰비언트 데코 (목업 밀도 재현: 식물·입간판·선반·고양이) ---------- */
+  function bushSVG(size, flowers) {
+    var s = size || 56, g = uid();
+    return '<svg width="' + s + '" height="' + (s * 0.8) + '" viewBox="0 0 70 56" style="overflow:visible"><defs>' + rgrad(g, "#9fc86a", "#6a9a44") + '</defs>' +
+      contactShadow(35, 52, 26) +
+      '<circle cx="20" cy="36" r="15" fill="url(#' + g + ')"' + FO + '/><circle cx="40" cy="28" r="18" fill="url(#' + g + ')"' + FO + '/><circle cx="55" cy="38" r="13" fill="url(#' + g + ')"' + FO + '/>' +
+      '<path d="M14 30 Q20 24 27 27 M33 20 Q40 15 48 19" stroke="rgba(255,255,255,.35)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      (flowers ? '<circle cx="24" cy="30" r="3" fill="#f2a3b8"/><circle cx="24" cy="30" r="1.2" fill="#fff3b0"/><circle cx="46" cy="24" r="3" fill="#fff"/><circle cx="46" cy="24" r="1.2" fill="#f6d98a"/><circle cx="55" cy="33" r="2.6" fill="#f2a3b8"/><circle cx="55" cy="33" r="1" fill="#fff3b0"/>' : "") +
+      '</svg>';
+  }
+  function aboardSVG() {
+    return '<svg width="52" height="62" viewBox="0 0 52 62" style="overflow:visible">' +
+      contactShadow(26, 58, 20) +
+      '<path d="M10 8 L42 8 L46 52 L38 52 L35 16 L17 16 L14 52 L6 52 Z" fill="#8a5f3d"' + FO + '/>' +
+      '<rect x="12" y="6" width="28" height="40" rx="3" fill="#6b4426"' + FO + '/>' +
+      '<rect x="15" y="9" width="22" height="34" rx="2" fill="#3d4a3e"/>' +
+      '<text x="17.5" y="21" font-size="7" font-weight="900" fill="#fff3e0" font-style="italic">Welcome</text>' +
+      '<path d="M20 28 Q22 25 24 28 Q26 31 28 28" stroke="#f2a3b8" stroke-width="1.4" fill="none"/>' +
+      '<ellipse cx="26" cy="35" rx="5" ry="3" fill="none" stroke="#e8d9c0" stroke-width="1.3"/><path d="M31 34 Q34 34 33 37" stroke="#e8d9c0" stroke-width="1.3" fill="none"/>' +
+      '<path d="M23 32 Q24 30 25 32 M27 31.4 Q28 29.4 29 31.4" stroke="#e8d9c0" stroke-width="1" fill="none"/>' +
+      '</svg>';
+  }
+  function catSVG() {
+    var g = uid();
+    return '<svg width="46" height="42" viewBox="0 0 56 50" style="overflow:visible"><defs>' + rgrad(g, "#ffe9cf", "#f2c896") + '</defs>' +
+      contactShadow(28, 46, 17) +
+      '<g class="cattail" style="transform-origin:44px 36px"><path d="M44 36 Q56 32 52 20" stroke="#e8b06a" stroke-width="5.5" fill="none" stroke-linecap="round"/><path d="M52 24 Q53 20 51.5 18" stroke="#c98b45" stroke-width="5.5" stroke-linecap="round"/></g>' +
+      '<ellipse cx="30" cy="34" rx="16" ry="12" fill="url(#' + g + ')"' + FO + '/>' +
+      '<path d="M14 15 L11 4 L21 9 Z" fill="#f2c896"' + FO + '/><path d="M30 15 L35 5 L24 9 Z" fill="#f2c896"' + FO + '/>' +
+      '<path d="M13.6 12.6 L12.4 7.6 L17 10 Z" fill="#f2a3b8"/><path d="M29 12.6 L31.6 7.8 L26 10 Z" fill="#f2a3b8"/>' +
+      '<circle cx="22" cy="19" r="12.5" fill="url(#' + g + ')"' + FO + '/>' +
+      '<path d="M28 10 Q34 12 33 18 Q29 15 28 10Z" fill="#e8a45e"/>' +
+      '<g class="catface"><path d="M16 18.6 Q17.6 17 19.2 18.6" stroke="' + T.out + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<path d="M24.6 18.6 Q26.2 17 27.8 18.6" stroke="' + T.out + '" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>' +
+      '<path d="M21 21.6 L22.8 21.6 L21.9 23 Z" fill="#e88a8a"/>' +
+      '<path d="M21.9 23 Q21.9 25 19.9 25.2 M21.9 23 Q21.9 25 23.9 25.2" stroke="' + T.out + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M12 21 L7 20 M12 23 L7.6 23.6 M32 21 L37 20 M32 23 L36.4 23.6" stroke="rgba(91,58,38,.6)" stroke-width="1" stroke-linecap="round"/>' +
+      '<path d="M15 27.5 Q22 30 29 27.5" stroke="#e06d6d" stroke-width="3.4" fill="none" stroke-linecap="round"/><circle cx="22" cy="29.4" r="1.8" fill="#f6d98a" stroke="#c9922e" stroke-width=".8"/>' +
+      '</svg>';
+  }
+  function shelfSVG() {
+    var g = uid();
+    return '<svg width="64" height="40" viewBox="0 0 64 40"><defs>' + lgrad(g, "#c99e6d", "#a87c50", true) + '</defs>' +
+      '<rect x="2" y="26" width="60" height="6" rx="2.5" fill="url(#' + g + ')" stroke="' + T.out + '" stroke-width="1.6"/>' +
+      '<path d="M8 32 L8 38 M56 32 L56 38" stroke="#8a5f3d" stroke-width="3"/>' +
+      '<path d="M8 8 Q8 4 12 4 L16 4 Q20 4 20 8 L20 26 L8 26 Z" fill="rgba(228,196,150,.9)" stroke="' + T.out + '" stroke-width="1.5"/><rect x="9.5" y="12" width="9" height="8" rx="1" fill="#c9803e"/>' +
+      '<path d="M26 10 Q26 6 30 6 L34 6 Q38 6 38 10 L38 26 L26 26 Z" fill="rgba(214,232,220,.9)" stroke="' + T.out + '" stroke-width="1.5"/><rect x="27.5" y="13" width="9" height="7" rx="1" fill="#7aab6a"/>' +
+      '<path d="M44 12 Q44 8 48 8 L50 8 Q54 8 54 12 L54 26 L44 26 Z" fill="rgba(246,220,190,.9)" stroke="' + T.out + '" stroke-width="1.5"/><rect x="45.5" y="15" width="7" height="6" rx="1" fill="#e08d5a"/>' +
+      '<rect x="10" y="6" width="8" height="2.4" rx="1.2" fill="#8a5f3d"/><rect x="28" y="8" width="8" height="2.4" rx="1.2" fill="#8a5f3d"/><rect x="45.5" y="10" width="7" height="2.4" rx="1.2" fill="#8a5f3d"/>' +
+      '</svg>';
+  }
+
   global.BakeryArt = {
     TOKENS: T,
+    bushSVG: bushSVG, aboardSVG: aboardSVG, catSVG: catSVG, shelfSVG: shelfSVG,
     lookFromSeed: lookFromSeed, randomLook: randomLook, charSVG: charSVG,
     bakerSVG: bakerSVG, baristaSVG: baristaSVG, cashierSVG: cashierSVG,
     ovenSVG: ovenSVG, displaySVG: displaySVG, coffeeSVG: coffeeSVG, counterSVG: counterSVG,

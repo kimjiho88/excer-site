@@ -263,6 +263,22 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 @keyframes signflicker{0%,93%,100%{opacity:1}94%{opacity:.6}95%{opacity:1}97%{opacity:.75}98%{opacity:1}}
 .fab.canup::after{content:"";position:absolute;inset:-3px;border-radius:20px;pointer-events:none;
   border:2.5px solid rgba(232,182,76,.85);animation:warnpulse 1.6s infinite}
+.cattail{animation:tailwag 2.6s ease-in-out infinite}
+@keyframes tailwag{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
+.catface{animation:catblink 5s infinite}
+@keyframes catblink{0%,92%,100%{opacity:1}95%{opacity:.2}}
+/* 컬러 헤더 밴드(목업 패널 스타일) */
+.sheet{border:2px solid rgba(139,90,45,.28)}
+.sheet h4{color:#fff;border-radius:13px;padding:9px 13px;box-shadow:var(--shadow-s);
+  background:linear-gradient(135deg,var(--brown2),var(--brown))}
+.sheet h4 .x{color:rgba(255,255,255,.9)}
+.sheet h4 span{color:rgba(255,248,236,.92)!important}
+.sheet h4.hd-kitchen{background:linear-gradient(135deg,#c98a4b,#a56a33)}
+.sheet h4.hd-stock{background:linear-gradient(135deg,#e8b64c,#c9922e)}
+.sheet h4.hd-upgrade{background:linear-gradient(135deg,#7fa3e0,#5f8fd9)}
+.sheet h4.hd-quest{background:linear-gradient(135deg,#8fd0b4,#5aab88)}
+.sheet h4.hd-shop{background:linear-gradient(135deg,#c99ae0,#9a6bc9)}
+.mbtn .stars{font-size:8.5px;letter-spacing:1px;color:#e8b64c}
 .deco{font-size:30px;line-height:1;filter:drop-shadow(0 5px 4px rgba(60,30,5,.3))}
 .obj svg{display:block}
 .obj .on{margin-top:-4px}
@@ -531,10 +547,28 @@ function renderRoom(){
   html+=`<div class="walldeco" style="left:${topX+winD3}px;top:${winD3*0.5+6}px;transform:skewY(${slope}deg);z-index:2">${spriteOr("window",Art.windowSVG())}</div>`;
   html+=`<div class="walldeco" style="left:${topX-46}px;top:-14px;z-index:3">${spriteOr("lamp",Art.lampSVG())}</div>`;
   html+=`<div class="walldeco" style="left:${topX+34}px;top:-14px;z-index:3">${spriteOr("lamp",Art.lampSVG())}</div>`;
+  // 벽 선반(잼 병) — 우측 벽 창문 사이
+  const shelfD=ROOM.w*TW*0.26;
+  html+=`<div class="walldeco" style="left:${topX+shelfD}px;top:${shelfD*0.5-30}px;transform:skewY(${slope}deg);z-index:2">${spriteOr("deco_shelf",Art.shelfSVG())}</div>`;
   // 조명 광원뿔 + 창문 햇살
   html+=`<div class="lightcone" style="left:${topX-95}px;top:24px"></div>`;
   html+=`<div class="lightcone" style="left:${topX-15}px;top:24px"></div>`;
   html+=`<div class="sunshaft" style="left:${topX+winD2+30}px;top:${winD2*0.5+30}px"></div>`;
+  // 앰비언트 데코: 입구 Welcome 입간판 + 바닥 모서리 꽃수풀 + 고양이 마스코트
+  const abX=isoX(1.1,ROOM.h-1.05),abY=isoY(1.1,ROOM.h-1.05);
+  html+=`<div class="walldeco" style="left:${abX-24}px;top:${abY-52}px;z-index:${Math.round((1.1+ROOM.h-1.05)*10+6)}">${spriteOr("deco_aboard",Art.aboardSVG())}</div>`;
+  // 수풀 — 바닥의 열린 모서리(하단 좌/우) 바깥을 따라 프레이밍
+  const bushSpots=[
+    {x:0.7,y:ROOM.h-0.32,s:50},
+    {x:ROOM.w-1.6,y:ROOM.h-0.3,s:62},
+    {x:ROOM.w-0.42,y:ROOM.h-2.7,s:54}
+  ];
+  for(const b of bushSpots){
+    const bx=isoX(b.x,b.y),by=isoY(b.x,b.y);
+    html+=`<div class="walldeco" style="left:${bx-b.s/2}px;top:${by-b.s*0.62}px;z-index:${Math.round((b.x+b.y)*10+8)}">${spriteOr("deco_bush",Art.bushSVG(b.s,true))}</div>`;
+  }
+  const catX=isoX(2.1,ROOM.h-1.5),catY=isoY(2.1,ROOM.h-1.5);
+  html+=`<div class="walldeco catwrap" style="left:${catX-22}px;top:${catY-36}px;z-index:${Math.round((2.1+ROOM.h-1.5)*10+6)}">${spriteOr("deco_cat",Art.catSVG())}</div>`;
   room.innerHTML=html;
   renderObjects();
   for(const a of actors)room.appendChild(a.el); // innerHTML 재생성 시 손님 액터 복원
@@ -698,7 +732,7 @@ function openShop(){
       ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel}</button>`
         :`<button class="rb" data-buy="${f.id}" ${S.coins<f.price?"disabled":""}>🪙 ${fmt(f.price)}</button>`}</div>`;
   }).join("");
-  openSheet(`<h4>🛒 가구 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>${html}`);
+  openSheet(`<h4 class="hd-shop">🛒 가구 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>${html}`);
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-buy]");if(!b||!S)return;
@@ -767,19 +801,22 @@ function renderSheet(){
     }
     const menus=Core.unlockedRecipes(DATA,S).filter(r=>r.station===st);
     const full=q.length>=DATA.balance.queue.slotsPerStation;
-    openSheet(`<h4>${emoji} ${stDef.name}${st==="coffee"&&Core.hasCoffeeMachine(DATA,S)?" <span style='font-size:10px;color:var(--green)'>머신 설치됨</span>":""}
+    openSheet(`<h4 class="hd-kitchen">${emoji} ${stDef.name}${st==="coffee"&&Core.hasCoffeeMachine(DATA,S)?" <span style='font-size:10px;color:var(--green)'>머신 설치됨</span>":""}
       <button class="x" data-close>닫기 ✕</button></h4>
       <div class="qrow">${slots}</div>
       ${buf?`<div class="blocked" style="margin-bottom:9px">📦 ${Core.recipeById(DATA,buf.r).emoji} ${buf.n}개가 진열 공간 대기 중 — 진열대를 업그레이드하세요!</div>`:""}
       <div class="menu-btns">${menus.map(r=>{
         const t=Core.craftSeconds(DATA,S,r);
+        const pct=Core.masteryBonusPct(DATA,S,r.id);
+        const tier=pct>=15?3:pct>=10?2:pct>=5?1:0;
+        const stars="★".repeat(1+tier)+"☆".repeat(3-tier);
         return `<button class="mbtn" data-bake="${r.id}" ${full?"disabled":""} id="bake-${r.id}">
-          <span class="me">${r.emoji}</span><span class="mn">${r.name}</span><span class="mi">${r.batch}개 · ${fmtDur(t)}</span></button>`;
+          <span class="me">${r.emoji}</span><span class="mn">${r.name}</span><span class="stars">${stars}</span><span class="mi">${r.batch}개 · ${fmtDur(t)}</span></button>`;
       }).join("")}</div>`);
   }
   else if(SHEET.type==="stock"){
     const un=Core.unlockedRecipes(DATA,S);
-    openSheet(`<h4>🧺 진열대 <span style="font-size:10.5px;color:var(--mut)">${Core.totalStock(S)}/${Core.stockCap(DATA,S)}개 · 오프라인 판매 상한</span>
+    openSheet(`<h4 class="hd-stock">🧺 진열대 <span style="font-size:10.5px;color:var(--mut)">${Core.totalStock(S)}/${Core.stockCap(DATA,S)}개 · 오프라인 판매 상한</span>
       <button class="x" data-close>닫기 ✕</button></h4>
       ${un.map(r=>`<div class="rowitem"><div class="re">${r.emoji}</div>
         <div><div class="rn">${r.name}</div><div class="rd">개당 🪙${Core.unitPrice(DATA,S,r)} · 누적 판매 ${S.sold[r.id]||0}개</div></div>
@@ -799,7 +836,7 @@ function renderSheet(){
     }).join("");
     const gsteps=DATA.balance.grades.list.map(x=>
       `<div class="gstep${x.minLevel<=S.level?" onx":""}"><span class="gdot"></span>${x.emoji} ${x.name}<span style="margin-left:auto;font-size:10px">Lv.${x.minLevel}</span></div>`).join("");
-    openSheet(`<h4>🛠 장비 업그레이드 <button class="x" data-close>닫기 ✕</button></h4>${rows}
+    openSheet(`<h4 class="hd-upgrade">🛠 장비 업그레이드 <button class="x" data-close>닫기 ✕</button></h4>${rows}
       <div class="subhead">🏆 빵집 등급</div>${gsteps}`);
   }
   else if(SHEET.type==="quest"){
@@ -812,7 +849,7 @@ function renderSheet(){
         <div class="qbar"><i style="width:${Math.min(100,st.cur/st.tgt*100)}%"></i></div></div>
         <button class="rb ${claimed?"claimed":"green"}" data-claim="${q.id}" ${(!done||claimed)?"disabled":""}>${claimed?"완료":"받기"}</button></div>`;
     }).join("");
-    openSheet(`<h4>📋 일일퀘스트 <span style="font-size:10px;color:var(--mut)">매일 자정(KST) 리셋</span><button class="x" data-close>닫기 ✕</button></h4>${rows}`);
+    openSheet(`<h4 class="hd-quest">📋 일일퀘스트 <span style="font-size:10px;color:var(--mut)">매일 자정(KST) 리셋</span><button class="x" data-close>닫기 ✕</button></h4>${rows}`);
   }
 }
 /* 시트 액션: 굽기 / 업그레이드 / 퀘스트 수령 */
