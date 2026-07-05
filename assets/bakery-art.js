@@ -332,11 +332,79 @@
       sweat +
       '</svg></span>';
   }
-  // 바리스타: 민트 앞치마 + 코랄 셔츠 + 수건
+  // 바리스타 v4 — 레퍼런스 전용 치비: 셰프 모자 + 긴 웨이브 머리 + 코랄 셔츠 +
+  // 민트 앞치마+리본 + 어깨 수건 + 커피컵. 한 손 허리.
   function baristaSVG(busy) {
-    var look = { skin: SKINS[0], hair: 3, hairC: HAIRC[5], iris: IRIS[2], top: 0, topC: "#e98f7f", pantsC: "#39506e", glasses: false, hat: false, bag: false, hatC: "#fff" };
+    var co = ' stroke="' + T.out + '" stroke-width="1.7" stroke-linejoin="round"';
+    var skin = "#ffe1c4", skinD = "#eec09a", hair = "#8a5730", hairHi = "#a97244", hairD = "#6e4526";
+    var apG = uid(), pantG = uid(), shirtC = "#ec8a72", shirtD = "#d16f57", mint = "#a9dcb8", mintD = "#7fbf93";
+    var defs = '<defs>' + lgrad(apG, mint, mintD, true) + lgrad(pantG, "#d9bd8e", "#b6975f", true) + '</defs>';
+    var sweat = busy ? '<g class="sweatdrop"><path d="M52 42 Q55 46.5 52 48.5 Q49 46.5 52 42Z" fill="#9fd4f2" stroke="#6aa8cc" stroke-width="1"/></g>' : "";
     return '<span class="staffwrap' + (busy ? " working" : " idlebob") + '">' +
-      charSVG(look, { apron: true, apronC: "#9fd8c3", towel: true, sweat: !!busy, mood: "happy", scale: 0.92 }) + "</span>";
+      '<svg class="baker" width="54" height="86" viewBox="0 0 66 104" style="overflow:visible">' + defs +
+      contactShadow(33, 100, 16) +
+      // 뒤로 흐르는 긴 웨이브 머리 (머리 뒤 레이어)
+      '<path d="M17 44 Q10 60 15 78 Q17 86 22 84 Q17 70 22 56 Z" fill="' + hairD + '"' + co + '/>' +
+      '<path d="M49 44 Q57 58 53 80 Q51 88 45 85 Q51 70 46 54 Z" fill="' + hairD + '"' + co + '/>' +
+      '<path d="M20 58 Q18 70 22 80 M46 58 Q49 70 45 80" stroke="' + hair + '" stroke-width="2" fill="none" opacity=".6"/>' +
+      // 다리(베이지 롤업 팬츠) + 흰 스니커즈
+      '<rect x="26" y="86" width="6.6" height="13" rx="2.6" fill="url(#' + pantG + ')"' + co + '/>' +
+      '<rect x="33.4" y="86" width="6.6" height="13" rx="2.6" fill="url(#' + pantG + ')"' + co + '/>' +
+      '<rect x="25.6" y="95" width="7.4" height="3.6" rx="1.6" fill="#e8cca0"/>' +
+      '<rect x="33" y="95" width="7.4" height="3.6" rx="1.6" fill="#e8cca0"/>' +
+      '<ellipse cx="28.6" cy="100.5" rx="5.4" ry="3.2" fill="#fdf8ee"' + co + '/><ellipse cx="37.4" cy="100.5" rx="5.4" ry="3.2" fill="#fdf8ee"' + co + '/>' +
+      '<path d="M25 100 Q28.6 98.4 32 100" stroke="#d9cbb2" stroke-width="1" fill="none"/><path d="M34 100 Q37.4 98.4 41 100" stroke="#d9cbb2" stroke-width="1" fill="none"/>' +
+      // 코랄 셔츠 몸통
+      '<path d="M23 66 Q22 63 26 63 L40 63 Q44 63 43 66 L45 88 L21 88 Z" fill="' + shirtC + '"' + co + '/>' +
+      '<path d="M33 64 L33 84" stroke="' + shirtD + '" stroke-width="1.2"/><circle cx="33" cy="70" r=".9" fill="#fff"/><circle cx="33" cy="76" r=".9" fill="#fff"/>' +
+      // 오른팔(허리에 손) — 코랄 롤업 소매 + 손
+      '<path d="M42 68 Q49 71 47 80" stroke="' + T.out + '" stroke-width="7.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M42 68 Q48.4 71 46.6 79.4" stroke="' + shirtC + '" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+      '<rect x="43.5" y="76" width="7" height="4" rx="2" fill="#f6d9cf"' + co + '/><circle cx="46" cy="81.5" r="3.2" fill="' + skin + '"' + co + '/>' +
+      // 민트 앞치마 + 어깨끈 + 주머니 + 리본
+      '<path d="M27 66 L33 74 L39 66" stroke="url(#' + apG + ')" stroke-width="3.4" fill="none"/>' +
+      '<path d="M25 72 Q24 70 27 69 L39 69 Q42 70 41 72 L44 90 Q44 92 41 92 L25 92 Q22 92 22 90 Z" fill="url(#' + apG + ')"' + co + '/>' +
+      '<rect x="34" y="80" width="8" height="8" rx="1.4" fill="none" stroke="' + mintD + '" stroke-width="1.2"/>' +
+      '<path d="M33 84 L25 80 L28 88 Z" fill="' + mint + '"' + co + '/><path d="M33 84 L41 80 L38 88 Z" fill="' + mint + '"' + co + '/><circle cx="33" cy="84" r="2.6" fill="' + mintD + '"' + co + '/>' +
+      // 어깨 수건(오른 어깨)
+      '<path d="M41 64 L48 66 L46 80 L42 79 Z" fill="#fdf6ea"' + co + '/><path d="M42 72 L47 73 M42 75 L47 76" stroke="' + shirtC + '" stroke-width="1.2"/>' +
+      // 왼팔 — 커피컵 들기 (소매 + 손 + 테이크아웃 컵)
+      '<g class="baristahold" style="transform-origin:24px 68px">' +
+      '<path d="M24 68 Q17 62 18 53" stroke="' + T.out + '" stroke-width="7.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M24 68 Q17.6 62 18.6 53.6" stroke="' + shirtC + '" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+      '<rect x="15" y="50" width="7" height="4.4" rx="2" fill="#f6d9cf"' + co + '/>' +
+      '<circle cx="18" cy="48" r="3.4" fill="' + skin + '"' + co + '/>' +
+      // 테이크아웃 컵
+      '<path d="M12 40 L24 40 L22.5 51 Q22 53 17.6 53 Q13 53 12.6 51 Z" fill="#fdf6ea"' + co + '/>' +
+      '<rect x="11.4" y="43.5" width="13.2" height="4.4" rx="1.4" fill="#c99a5e"' + co + '/>' +
+      '<path d="M13 40 L23 40 L23 38.5 Q23 37 21 37 L15 37 Q13 37 13 38.5 Z" fill="#8a5a33"' + co + '/>' +
+      '<path d="M25 38 Q28 35 26 32" stroke="#e8e0d2" stroke-width="1.6" fill="none" stroke-linecap="round" class="smoke"/>' +
+      '</g>' +
+      // 머리(앞) + 얼굴
+      '<circle cx="33" cy="50" r="15.5" fill="' + skin + '"' + co + '/>' +
+      '<path d="M20 55 Q25 62 33 62 Q41 62 46 55 Q43 64 33 64 Q23 64 20 55Z" fill="' + skinD + '" opacity=".35"/>' +
+      '<ellipse cx="18.5" cy="51" rx="2.4" ry="3.2" fill="' + skin + '"' + co + '/><ellipse cx="47.5" cy="51" rx="2.4" ry="3.2" fill="' + skin + '"' + co + '/>' +
+      // 옆으로 흐르는 앞머리 웨이브(얼굴 프레임)
+      '<path d="M18 48 Q15 34 28 33 Q31 28 35 33 Q42 30 47 36 Q51 40 48 50 Q47 41 41 41 Q35 33 30 37 Q23 37 22 46 Q19 45 18 48Z" fill="' + hair + '"' + co + '/>' +
+      '<path d="M18 49 Q13 58 16 66 Q19 60 21 52 Z" fill="' + hair + '"' + co + '/><path d="M48 49 Q53 58 50 68 Q47 60 45 52 Z" fill="' + hair + '"' + co + '/>' +
+      '<path d="M26 38 Q32 34 39 37" stroke="' + hairHi + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      // 눈썹 + 큰 눈(속눈썹) + 볼터치 + 코 + 활짝 웃는 입
+      '<path d="M22 44 Q26 42 30 44" stroke="' + hairD + '" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M36 44 Q40 42 44 44" stroke="' + hairD + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="27" cy="52" rx="4.3" ry="5.6" fill="#fff" stroke="' + T.out + '" stroke-width="1.1"/><ellipse cx="39" cy="52" rx="4.3" ry="5.6" fill="#fff" stroke="' + T.out + '" stroke-width="1.1"/>' +
+      '<circle cx="27.4" cy="52.6" r="3.1" fill="#6a4a2a"/><circle cx="39.4" cy="52.6" r="3.1" fill="#6a4a2a"/>' +
+      '<circle cx="27.4" cy="52.8" r="1.5" fill="#2a1a0e"/><circle cx="39.4" cy="52.8" r="1.5" fill="#2a1a0e"/>' +
+      '<circle cx="28.6" cy="51" r="1.3" fill="#fff"/><circle cx="40.6" cy="51" r="1.3" fill="#fff"/><circle cx="26" cy="54" r=".6" fill="#fff" opacity=".8"/><circle cx="38" cy="54" r=".6" fill="#fff" opacity=".8"/>' +
+      '<path d="M22.6 47.6 L24.4 46.4 M43.4 47.6 L41.6 46.4" stroke="' + T.out + '" stroke-width="1.2" stroke-linecap="round"/>' +
+      '<ellipse cx="21.5" cy="57" rx="2.8" ry="1.7" fill="#f4a3a3" opacity=".6"/><ellipse cx="44.5" cy="57" rx="2.8" ry="1.7" fill="#f4a3a3" opacity=".6"/>' +
+      '<path d="M32.4 55.5 Q33 56.4 32.2 57" stroke="rgba(120,70,40,.5)" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+      '<path d="M28 59 Q33 65 38 59 Q37 62 33 62 Q29 62 28 59Z" fill="#8a4a3a"/><path d="M30 60.6 Q33 62.2 36 60.6 L35.4 61.6 Q33 62.8 30.6 61.6Z" fill="#e88a8a"/>' +
+      // 셰프 모자
+      '<path d="M14 33 Q7 20 20 16 Q22 5 33 8 Q44 4 50 14 Q63 15 56 30 Q60 34 51 34 L16 34 Q12 34 14 33Z" fill="#fdfaf3"' + co + '/>' +
+      '<path d="M25 12 Q24 24 25.5 33 M40 11 Q41.5 24 40 33 M20 19 Q22 28 21 33 M49 17 Q48 27 49.5 33" stroke="rgba(200,188,170,.55)" stroke-width="1.4" fill="none"/>' +
+      '<path d="M20 12 Q26 8 33 10" stroke="rgba(255,255,255,.7)" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
+      '<path d="M16 32 Q15 30 18 30 L48 30 Q51 30 50 32 L50 37 Q50 39 47 39 L19 39 Q16 39 16 37 Z" fill="#f4eee2"' + co + '/>' +
+      sweat +
+      '</svg></span>';
   }
   function cashierSVG() { return baristaSVG(false); } // 하위 호환
 
