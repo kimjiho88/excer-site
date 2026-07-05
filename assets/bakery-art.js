@@ -348,39 +348,58 @@
       '</svg>';
   }
 
-  // 유리 쇼케이스: 재고 상태(ok/low/empty) + shimmer + 케이크 돔
+  // 유리 쇼케이스 v4 — 레퍼런스 재현: 곡면 유리 진열장 + 2단 선반(실제 재고) +
+  // 상단 케이크돔·빵트레이·브레드스틱 컵 + 원목 수납장 베이스. 상태(ok/low/empty).
   function displaySVG(items, ratio) {
-    var top = uid(), fR = uid(), gl = uid(), wood = uid();
+    var frameG = uid(), baseG = uid(), gl = uid(), domeG = uid();
     var state = (!items.length) ? "empty" : (ratio < 0.25 ? "low" : "ok");
-    var rows = "";
-    for (var i = 0; i < Math.min(items.length, 4); i++) {
-      var it = items[i];
-      var col = i % 2, row = Math.floor(i / 2);
-      var bx = 14 + col * 17, by = 38 + col * 4.6 + row * 15;
-      var cnt = Math.max(1, Math.min(2, Math.ceil(it.n / 12)));
-      for (var k = 0; k < cnt; k++)
-        rows += '<text x="' + (bx + k * 8) + '" y="' + (by + k * 2.2) + '" font-size="11.5">' + it.emoji + "</text>";
+    // 재고 진열: 위/아래 2단, 단당 3칸 (실제 재고 이모지)
+    var goods = "", tags = "";
+    for (var i = 0; i < Math.min(items.length, 6); i++) {
+      var shelf = i < 3 ? 0 : 1;
+      var slot = i % 3;
+      var gx = 20 + slot * 20, gy = shelf === 0 ? 47 : 63;
+      goods += '<text x="' + (gx - 6) + '" y="' + gy + '" font-size="12.5">' + items[i].emoji + '</text>';
+      tags += '<rect x="' + (gx - 8) + '" y="' + (gy + 2.5) + '" width="11" height="4.5" rx="1.5" fill="#fdf6ea" stroke="#e2cba6" stroke-width=".8"/>';
     }
     var stateTag = state === "empty"
-      ? '<text x="13" y="52" font-size="8.5" fill="#8a6a48" font-weight="800" transform="rotate(15 13 52)">SOLD OUT</text>'
-      : (state === "low" ? '<circle cx="42" cy="34" r="3" fill="' + T.coral + '" stroke="#fff" stroke-width="1.2" class="warnpulse"/>' : "");
-    var innerTint = state === "empty" ? "rgba(60,30,12,.5)" : "rgba(40,22,8,.35)";
-    return '<svg width="96" height="82" viewBox="0 0 96 82" style="overflow:visible"><defs>' +
-      lgrad(top, T.woodHi, "#c09468") + lgrad(fR, T.woodDk2, "#74502f", true) + lgrad(wood, "#b08356", T.woodDk, true) +
-      '<linearGradient id="' + gl + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(235,248,255,.5)"/><stop offset=".4" stop-color="rgba(225,242,252,.22)"/><stop offset="1" stop-color="rgba(205,232,246,.34)"/></linearGradient>' +
-      '</defs>' + contactShadow(48, 77, 38) +
-      '<path d="M8 26 L48 15 L88 26 L48 37 Z" fill="url(#' + top + ')"' + FO + '/>' +
-      '<path d="M8 26 L8 64 L48 75 L48 37 Z" fill="url(#' + wood + ')"' + FO + '/>' +
-      '<path d="M88 26 L88 64 L48 75 L48 37 Z" fill="url(#' + fR + ')"' + FO + '/>' +
-      '<path d="M11 29.5 L11 61 L45 71.5 L45 39.5 Z" fill="' + innerTint + '"/>' +
-      rows + stateTag +
-      '<path d="M11 45 L45 55.5" stroke="rgba(255,255,255,.7)" stroke-width="1.8"/>' +
-      '<path d="M11 29.5 L11 61 L45 71.5 L45 39.5 Z" fill="url(#' + gl + ')" stroke="#fff" stroke-width="2"/>' +
-      '<g class="shimmer"><path d="M15 32 L26 66 M21 32.5 L32 67" stroke="rgba(255,255,255,.4)" stroke-width="4"/></g>' +
-      '<path d="M12 25 L46 15.6" stroke="' + T.hi + '" stroke-width="2" stroke-linecap="round"/>' +
-      '<ellipse cx="66" cy="26" rx="9" ry="4" fill="' + T.paper + '"' + FO + '/>' +
-      '<path d="M58 25 Q58 17 66 17 Q74 17 74 25" fill="rgba(225,242,252,.55)" stroke="#fff" stroke-width="1.6"/>' +
-      '<circle cx="66" cy="16" r="1.6" fill="' + T.caramel + '"/>' +
+      ? '<text x="26" y="56" font-size="9" fill="#a5895e" font-weight="800" transform="rotate(-4 26 56)">SOLD OUT</text>'
+      : (state === "low" ? '<circle cx="70" cy="40" r="3.2" fill="' + T.coral + '" stroke="#fff" stroke-width="1.2" class="warnpulse"/>' : "");
+    return '<svg width="100" height="98" viewBox="0 0 100 98" style="overflow:visible"><defs>' +
+      lgrad(frameG, T.woodHi, T.woodDk, true) + lgrad(baseG, "#b5824f", "#7d5330", true) + lgrad(domeG, "#e8c98a", "#cf9a4f", true) +
+      '<linearGradient id="' + gl + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(240,250,255,.55)"/><stop offset=".45" stop-color="rgba(228,244,252,.16)"/><stop offset="1" stop-color="rgba(208,234,248,.32)"/></linearGradient>' +
+      '</defs>' + contactShadow(50, 93, 44) +
+      // 원목 수납장 베이스 (판넬 도어 2개 + 아치 컷 + 손잡이)
+      '<path d="M12 66 L88 66 L84 92 L16 92 Z" fill="url(#' + baseG + ')"' + FO + '/>' +
+      '<path d="M10 62 L90 62 L88 68 L12 68 Z" fill="' + T.cream + '"' + FO + '/>' +
+      '<rect x="20" y="70" width="26" height="18" rx="2.5" fill="none" stroke="' + T.woodDk + '" stroke-width="1.6"/>' +
+      '<rect x="52" y="70" width="26" height="18" rx="2.5" fill="none" stroke="' + T.woodDk + '" stroke-width="1.6"/>' +
+      '<path d="M30 86 Q41 82 50 86" stroke="' + T.woodDk + '" stroke-width="1.4" fill="none"/>' +
+      '<circle cx="44" cy="79" r="1.6" fill="' + T.caramel + '"/><circle cx="54" cy="79" r="1.6" fill="' + T.caramel + '"/>' +
+      // 유리 케이스 몸통 (곡면 상단 우측)
+      '<path d="M14 34 Q14 24 26 24 L74 24 Q86 24 86 40 L86 62 L14 62 Z" fill="' + T.cream + '"' + FO + '/>' +
+      // 내부 어둑 + 선반
+      '<rect x="17" y="30" width="66" height="30" rx="3" fill="' + (state === "empty" ? "rgba(90,60,30,.14)" : "rgba(120,90,50,.10)") + '"/>' +
+      '<path d="M17 50 L83 50" stroke="' + T.wood + '" stroke-width="2.4"/>' +
+      goods + tags + stateTag +
+      // 유리 전면(반사 + shimmer) — 우측 곡면 프레임
+      '<path d="M14 34 Q14 24 26 24 L74 24 Q86 24 86 40 L86 62 L14 62 Z" fill="url(#' + gl + ')"/>' +
+      '<path d="M14 34 Q14 24 26 24 L74 24 Q86 24 86 40 L86 62" fill="none" stroke="' + T.wood + '" stroke-width="3.4"/>' +
+      '<path d="M78 26 Q85 30 85 42 L85 60" fill="none" stroke="' + T.woodHi + '" stroke-width="2.6"/>' +
+      '<g class="shimmer"><path d="M24 27 L20 59 M30 27 L27 59" stroke="rgba(255,255,255,.4)" stroke-width="3.5"/></g>' +
+      '<path d="M20 28 L74 26" stroke="' + T.hi + '" stroke-width="2" stroke-linecap="round"/>' +
+      // 상단 좌: 딸기 케이크 유리돔
+      '<ellipse cx="30" cy="24" rx="12" ry="4" fill="' + T.woodHi + '"' + FO + '/>' +
+      '<path d="M20 22 Q20 8 30 8 Q40 8 40 22 Z" fill="rgba(226,244,252,.5)" stroke="#fff" stroke-width="1.6"/>' +
+      '<path d="M26 20 L26 15 L34 15 L34 20Z" fill="#fff3e8"/><path d="M26 17.5 L34 17.5" stroke="#f2c0a0" stroke-width="1"/><circle cx="30" cy="13.5" r="2" fill="#e0555f"/>' +
+      '<circle cx="30" cy="6.5" r="1.8" fill="' + T.caramel + '"' + FO + '/>' +
+      // 상단 우: 빵 트레이(크루아상)
+      '<path d="M46 24 L74 20 L78 22 L50 26 Z" fill="' + T.woodDk + '"/><path d="M46 22 L74 18 L78 20 L50 24 Z" fill="' + T.wood + '"' + FO + '/>' +
+      '<path d="M52 20.5 Q56 17.5 60 20 Q57 21.5 53 21.5 Z" fill="#e2a95e" stroke="#c1852f" stroke-width=".8"/>' +
+      '<path d="M62 19.5 Q66 16.5 70 19 Q67 20.5 63 20.5 Z" fill="#e8b062" stroke="#c9803e" stroke-width=".8"/>' +
+      // 우측: 브레드스틱 컵
+      '<path d="M80 22 L90 22 L89 30 L81 30 Z" fill="' + T.woodHi + '"' + FO + '/>' +
+      '<path d="M82 22 L82 15 M84.5 22 L84.5 14 M87 22 L87 15 M89 22 L88.6 16" stroke="#e2b06a" stroke-width="1.5" stroke-linecap="round"/>' +
       '</svg>';
   }
 
