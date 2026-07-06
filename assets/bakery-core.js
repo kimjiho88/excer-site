@@ -28,11 +28,14 @@
   }
 
   /* ---------- 경험치 / 레벨 ---------- */
-  // XP_need(n) = round(A * n^B) — 레벨 n → n+1 필요 경험치
+  // XP_need(n): n < lateStart 는 A·n^B (초반 검증 곡선),
+  // n ≥ lateStart 는 lateA·(n/lateStart)^lateB — 후반 XP/일이 거의 일정한
+  // 경제 특성에 맞춰 필요치를 별도 스케일로 잡아 주차 마일스톤(§2.5)을 달성한다.
   function xpNeed(data, level) {
     var c = data.balance.xpCurve;
     if (level >= c.maxLevel) return Infinity;
-    return Math.round(c.A * Math.pow(level, c.B));
+    if (!c.lateStart || level < c.lateStart) return Math.round(c.A * Math.pow(level, c.B));
+    return Math.round(c.lateA * Math.pow(level / c.lateStart, c.lateB));
   }
   // xp 추가 → 레벨업 목록 반환(연쇄 레벨업 포함)
   function addXp(data, state, amount) {
@@ -102,12 +105,19 @@
     return data.recipes.recipes.filter(function (r) { return recipeUnlocked(data, state, r); });
   }
 
+  // 설비당 대기열 칸 수: 기본 + 레벨 마일스톤 보너스(성장 보람 — 큐 확장)
+  function queueSlots(data, state) {
+    var q = data.balance.queue, n = q.slotsPerStation;
+    if (q.slotBonusLevels) for (var i = 0; i < q.slotBonusLevels.length; i++)
+      if (state.level >= q.slotBonusLevels[i]) n += 1;
+    return n;
+  }
   // 대기열에 배치 1개 추가. 성공 시 true.
   function enqueue(data, state, recipeId) {
     var r = recipeById(data, recipeId);
     if (!r || !recipeUnlocked(data, state, r)) return false;
     var q = state.queues[r.station];
-    if (!q || q.length >= data.balance.queue.slotsPerStation) return false;
+    if (!q || q.length >= queueSlots(data, state)) return false;
     // remain 은 잡이 헤드가 될 때 확정(장비 업그레이드 반영). 대기 중엔 null.
     q.push({ r: recipeId, remain: q.length === 0 && !state.buffer[r.station] ? craftSeconds(data, state, r) : null });
     return true;
@@ -148,8 +158,53 @@
   function tipChanceOf(data, state) {
     var base = data.balance.tips.chance;
     var it = data.balance.interior;
-    if (!it) return base;
-    return base + Math.min(it.tipChanceMax, moodScore(data, state) * it.tipChancePerMood);
+    if (it) base += Math.min(it.tipChanceMax, moodScore(data, state) * it.tipChancePerMood);
+    return base;
+  }
+
+  /* ---------- 일일 루프: 오늘의 메뉴 / 출석 / 팁 수금 ---------- */
+  // 판매 1건에 적용되는 오늘의 메뉴 버프 (XP 배수·팁 확률 가산)
+  function specialFor(state, recipeId) {
+    return !!(state.daily && state.daily.special && state.daily.special === recipeId);
+  }
+  // dateStr(YYYY-MM-DD) 시드로 해금 메뉴 중 1개 선정 — 같은 날은 모두 같은 메뉴
+  function pickDailySpecial(data, state, dateStr) {
+    var un = unlockedRecipes(data, state);
+    if (!un.length) return null;
+    var h = 5381;
+    for (var i = 0; i < dateStr.length; i++) h = ((h << 5) + h + dateStr.charCodeAt(i)) >>> 0;
+    return un[h % un.length].id;
+  }
+  function prevDateStr(dateStr) {
+    var t = Date.parse(dateStr + "T00:00:00Z");
+    if (isNaN(t)) return null;
+    return new Date(t - 86400000).toISOString().slice(0, 10);
+  }
+  // 하루 첫 접속 출석 처리. 이미 받았으면 null, 아니면 보상 적용 후 보고서 반환.
+  // 스탬프는 7칸 순환(끊겨도 유지 — 소프트), 연속 streakBonusFrom일 이상이면 보상 ×streakMult.
+  function claimAttendance(data, state, dateStr) {
+    var cfg = data.balance.attendance;
+    if (!cfg) return null;
+    state.att = state.att || { last: "", streak: 0, stamp: 0 };
+    if (state.att.last === dateStr) return null;
+    var consecutive = state.att.last && state.att.last === prevDateStr(dateStr);
+    state.att.streak = consecutive ? state.att.streak + 1 : 1;
+    state.att.stamp = (state.att.stamp % cfg.rewards.length) + 1;
+    state.att.last = dateStr;
+    var r = cfg.rewards[state.att.stamp - 1];
+    var mult = state.att.streak >= cfg.streakBonusFrom ? cfg.streakMult : 1;
+    var coins = Math.round((r.coins || 0) * mult), xp = Math.round((r.xp || 0) * mult), rep = r.rep || 0;
+    state.coins += coins; state.rep += rep;
+    var ups = addXp(data, state, xp);
+    return { stamp: state.att.stamp, streak: state.att.streak, bonus: mult > 1, coins: coins, xp: xp, rep: rep, levelUps: ups };
+  }
+  // 팁 항아리 수금(수금 횟수는 일일퀘스트 진행에 사용)
+  function collectTipsJar(state) {
+    var amt = state.tipsJar;
+    if (amt <= 0) return 0;
+    state.coins += amt; state.tipsJar = 0;
+    state.daily.tipCollects = (state.daily.tipCollects || 0) + 1;
+    return amt;
   }
 
   /* ---------- 판매 속도 모델 ----------
@@ -222,10 +277,12 @@
         if (can <= 0) continue;
 
         var price = unitPrice(data, state, r2);
+        var isSpec = specialFor(state, r2.id);
+        var xpEach = isSpec ? Math.round(r2.xp * (bal.dailySpecial ? bal.dailySpecial.xpMult : 1)) : r2.xp;
         state.stock[r2.id] -= can;
         sum.coins += price * can;
         state.coins += price * can;
-        sum.xp += r2.xp * can;
+        sum.xp += xpEach * can;
         sum.sold += can;
         sum.soldBy[r2.id] = (sum.soldBy[r2.id] || 0) + can;
         state.sold[r2.id] = (state.sold[r2.id] || 0) + can;
@@ -236,6 +293,7 @@
         // 팁: rng 있으면 개당 판정, 없으면 기대값 누적 (둘 다 항아리 상한 적용)
         var tipEach = tipAmount(data, price);
         var tipCh = tipChanceOf(data, state);
+        if (isSpec && bal.dailySpecial) tipCh += bal.dailySpecial.tipChanceAdd;
         if (rng) {
           for (var u = 0; u < can; u++) {
             if (rng() < tipCh) {
@@ -283,6 +341,7 @@
     var mv = Math.min(space, buf.n);
     state.stock[buf.r] = (state.stock[buf.r] || 0) + mv;
     if (sum) sum.produced[buf.r] = (sum.produced[buf.r] || 0) + mv;
+    state.daily.baked = (state.daily.baked || 0) + mv; // 일일퀘스트: 오늘 제작량
     buf.n -= mv;
     if (buf.n <= 0) state.buffer[st] = null;
   }
@@ -314,8 +373,10 @@
       state.repProgress -= data.balance.reputation.perSales;
       state.rep += 1; rep += 1;
     }
-    var ups = addXp(data, state, r.xp * can);
-    return { sold: can, coins: price * can, xp: r.xp * can, tip: tip, repGained: rep, levelUps: ups };
+    var xpEach = specialFor(state, recipeId) && data.balance.dailySpecial
+      ? Math.round(r.xp * data.balance.dailySpecial.xpMult) : r.xp;
+    var ups = addXp(data, state, xpEach * can);
+    return { sold: can, coins: price * can, xp: xpEach * can, tip: tip, repGained: rep, levelUps: ups };
   }
 
   /* ---------- 오프라인 정산 ---------- */
@@ -346,7 +407,8 @@
       buffer: { oven: null, coffee: null },
       equip: { oven: 1, display: 1, counter: 1, sign: 1 },
       sold: {}, totalSold: 0,
-      daily: { date: "", sold: 0, soldBy: {}, upgrades: 0, claimed: {} },
+      daily: { date: "", sold: 0, soldBy: {}, upgrades: 0, claimed: {}, tipCollects: 0, baked: 0, special: null },
+      att: { last: "", streak: 0, stamp: 0 },
       regulars: {}, seenMembers: {},
       layout: [], owned: {}, granted: {},
       ftue: { done: false, step: 0 },
@@ -358,7 +420,17 @@
   /* ---------- 마이그레이션 (schema_version) ---------- */
   var MIGRATIONS = {
     // v2: 아이러브커피식 개편 — 가구 배치(layout)/보유(owned)/지급 이력(granted) 필드 추가
-    2: function (s) { s.layout = s.layout || []; s.owned = s.owned || {}; s.granted = s.granted || {}; s.v = 2; return s; }
+    2: function (s) { s.layout = s.layout || []; s.owned = s.owned || {}; s.granted = s.granted || {}; s.v = 2; return s; },
+    // v3: 리텐션 개편 — 출석(att)·일일 루프 확장 필드(tipCollects/baked/special)
+    3: function (s) {
+      s.att = s.att || { last: "", streak: 0, stamp: 0 };
+      if (s.daily) {
+        s.daily.tipCollects = s.daily.tipCollects || 0;
+        s.daily.baked = s.daily.baked || 0;
+        if (!("special" in s.daily)) s.daily.special = null;
+      }
+      s.v = 3; return s;
+    }
   };
   function migrate(data, state) {
     if (!state || typeof state !== "object") return null;
@@ -382,8 +454,13 @@
   }
 
   /* ---------- 일일 리셋 ---------- */
-  function resetDaily(state, dateStr) {
-    state.daily = { date: dateStr, sold: 0, soldBy: {}, upgrades: 0, claimed: {} };
+  // data 를 주면 오늘의 메뉴(special)도 함께 선정한다 (하위호환: 생략 가능)
+  function resetDaily(state, dateStr, data) {
+    state.daily = {
+      date: dateStr, sold: 0, soldBy: {}, upgrades: 0, claimed: {},
+      tipCollects: 0, baked: 0,
+      special: data ? pickDailySpecial(data, state, dateStr) : null
+    };
   }
 
   var Core = {
@@ -391,10 +468,12 @@
     gradeForLevel: gradeForLevel,
     equipLevel: equipLevel, ovenTimeMult: ovenTimeMult, stockCap: stockCap,
     counterMult: counterMult, signMult: signMult, upgradeCost: upgradeCost,
-    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds,
+    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds, queueSlots: queueSlots,
     recipeUnlocked: recipeUnlocked, unlockedRecipes: unlockedRecipes,
     enqueue: enqueue, masteryBonusPct: masteryBonusPct, unitPrice: unitPrice,
     tipAmount: tipAmount, saleRatePerSec: saleRatePerSec,
+    specialFor: specialFor, pickDailySpecial: pickDailySpecial,
+    claimAttendance: claimAttendance, collectTipsJar: collectTipsJar,
     furnitureById: furnitureById, moodScore: moodScore, tipChanceOf: tipChanceOf,
     advance: advance, totalStock: totalStock, sellUnits: sellUnits, offlineSettle: offlineSettle,
     newState: newState, migrate: migrate, nextUnlock: nextUnlock, resetDaily: resetDaily,

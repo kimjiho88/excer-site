@@ -64,7 +64,9 @@ function pendingUnits(state, recipeId) {
     if (state.buffer[st] && state.buffer[st].r === recipeId) n += state.buffer[st].n;
   return n;
 }
-function collectTips(state) { state.coins += state.tipsJar; state.tipsJar = 0; }
+function collectTips(state) { Core.collectTipsJar(state); }
+// 시뮬 날짜 문자열: day d(0-base) → ISO (출석 연속 판정에 실제 날짜 형식 필요)
+function simDate(d) { return new Date(Date.parse("2026-01-05T00:00:00Z") + d * 86400000).toISOString().slice(0, 10); }
 
 const purchases = [];
 // 구매 정책: 감당 가능한 후보 전부의 페이백을 추정해 가장 좋은 것을 산다.
@@ -138,31 +140,37 @@ function fillQueuesFor(c) {
   }
 }
 
-/* ---------- 일일퀘스트 ---------- */
+/* ---------- 일일퀘스트 (5종 + 올클리어) ---------- */
+function questDone(state, q) {
+  if (q.type === "sell_any") return state.daily.sold >= q.target;
+  if (q.type === "sell_special") return !!state.daily.special && (state.daily.soldBy[state.daily.special] || 0) >= q.target;
+  if (q.type === "bake") return (state.daily.baked || 0) >= q.target;
+  if (q.type === "collect_tips") return (state.daily.tipCollects || 0) >= q.target;
+  if (q.type === "upgrade") return state.daily.upgrades >= q.target;
+  return false;
+}
 function claimQuests(state) {
   const qs = data.balance.quests.daily;
-  const unlocked = Core.unlockedRecipes(data, state);
   for (const q of qs) {
-    if (state.daily.claimed[q.id]) continue;
-    let done = false;
-    if (q.type === "sell_any") done = state.daily.sold >= q.target;
-    else if (q.type === "sell_menu") {
-      const menu = unlocked[0]; // 사이클 단순화: 첫 해금 메뉴
-      done = menu && (state.daily.soldBy[menu.id] || 0) >= q.target;
-    } else if (q.type === "upgrade") done = state.daily.upgrades >= q.target;
-    if (done) {
-      state.daily.claimed[q.id] = true;
-      state.coins += q.rewardCoins;
-      state.rep += q.rewardRep;
-      Core.addXp(data, state, q.rewardXp);
-    }
+    if (state.daily.claimed[q.id] || !questDone(state, q)) continue;
+    state.daily.claimed[q.id] = true;
+    state.coins += q.rewardCoins;
+    state.rep += q.rewardRep;
+    Core.addXp(data, state, q.rewardXp);
+  }
+  const ac = data.balance.quests.allClear;
+  if (ac && !state.daily.claimed.allclear && qs.every(q => state.daily.claimed[q.id])) {
+    state.daily.claimed.allclear = true;
+    state.coins += ac.rewardCoins;
+    state.rep += ac.rewardRep;
+    Core.addXp(data, state, ac.rewardXp);
   }
 }
 
 /* ---------- 시뮬레이션 본체 ---------- */
 const state = Core.newState(data, 0);
 state.name = "시뮬 빵집";
-Core.resetDaily(state, "day1");
+Core.resetDaily(state, simDate(0), data);
 
 let firstSaleSec = null, lv2Sec = null;
 const lvAt = {};   // 레벨 → 도달 시각(초)
@@ -175,9 +183,13 @@ function noteSummary(sum, t) {
 
 let t = 0; // 전역 시각(초). day d 의 0시 = d*86400
 for (let d = 0; d < DAYS; d++) {
-  Core.resetDaily(state, "day" + (d + 1));
+  Core.resetDaily(state, simDate(d), data);
   for (let si = 0; si < SESSIONS.length; si++) {
     const s = SESSIONS[si];
+    if (si === 0) { // 하루 첫 세션: 출석 수령
+      const att = Core.claimAttendance(data, state, simDate(d));
+      if (att) for (const lv of att.levelUps) if (!(lv in lvAt)) lvAt[lv] = d * 86400 + s.at;
+    }
     const sessionStart = d * 86400 + s.at;
     // 오프라인 구간 정산
     if (sessionStart > t) {
@@ -289,6 +301,15 @@ check("초기 오프라인 상한 ≈ " + T.offlineCapHoursEarly + "h (±25%)",
   Math.abs(selloutHours(1) - T.offlineCapHoursEarly) <= T.offlineCapHoursEarly * 0.25, selloutHours(1).toFixed(1) + "h");
 check("후반 오프라인 상한 ≈ " + T.offlineCapHoursLate + "h (±25%)",
   Math.abs(selloutHours(10) - T.offlineCapHoursLate) <= T.offlineCapHoursLate * 0.25, selloutHours(10).toFixed(1) + "h");
+// 주차 마일스톤(리텐션 개편): D14/D28/D56 레벨 + Lv.50 도달 하한 (시뮬 일수가 덮는 범위만 검증)
+const d14 = dayEnd[13], d28 = dayEnd[27], d56 = dayEnd[55];
+if (d14 && T.d14Level) check("D14 Lv." + T.d14Level + " (±2)", Math.abs(d14.level - T.d14Level) <= 2, "Lv." + d14.level);
+if (d28 && T.d28LevelMin) check("D28 Lv." + T.d28LevelMin + "~" + T.d28LevelMax, d28.level >= T.d28LevelMin && d28.level <= T.d28LevelMax, "Lv." + d28.level);
+if (d56 && T.d56LevelMin) check("D56 Lv." + T.d56LevelMin + "~" + T.d56LevelMax, d56.level >= T.d56LevelMin && d56.level <= T.d56LevelMax, "Lv." + d56.level);
+if (DAYS >= 60 && T.lv50DaysMin) {
+  const lv50 = lvAt[50] ? Math.floor(lvAt[50] / 86400) + 1 : null;
+  check("Lv.50 도달 ≥ D" + T.lv50DaysMin + " (조기 소모 방지)", lv50 === null || lv50 >= T.lv50DaysMin, lv50 === null ? "미도달(OK)" : "D" + lv50);
+}
 // 페이백 규칙(§3.2): 초반(첫 8회 구매) 페이백 중앙값 2~4h(허용 1~6h — 즉각 보상감),
 // 후반은 길어져도 되나 전 구매가 유한해야 함(회수 불가능한 업그레이드 금지).
 const earlyPbs = purchases.slice(0, 8).map(p => p.paybackH).filter(x => isFinite(x)).sort((a, b) => a - b);

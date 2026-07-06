@@ -1,11 +1,14 @@
 {
   "_readme": "엑서 빵집 타이쿤 — 모든 수치의 단일 원본(Single Source of Truth). 코드 하드코딩 금지: 클라이언트(bakery.html)·엔진(assets/bakery-core.js)·시뮬레이터(sim/simulate.js)가 전부 이 파일을 로드한다. 수치 변경 후에는 반드시 `node sim/simulate.js` 로 §2.5 페이싱 목표 통과를 재확인한다.",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "xpCurve": {
-    "_readme": "XP_need(n) = round(A * n^B) — 레벨 n에서 n+1로 가는 데 필요한 경험치. sim/simulate.js 로 A·B 확정.",
-    "A": 24,
+    "_readme": "XP_need(n): n<lateStart 는 A·n^B(초반 검증 곡선), n>=lateStart 는 연속 전환된 완만한 지수 lateB — 후반 XP/일이 대체로 일정한 경제에 맞춰 주차 마일스톤 달성. sim/simulate.js --days 70 으로 확정.",
+    "A": 30,
     "B": 1.85,
-    "maxLevel": 50
+    "lateStart": 13,
+    "lateB": 0.78,
+    "maxLevel": 50,
+    "lateA": 1250
   },
   "economy": {
     "startCoins": 40,
@@ -54,7 +57,11 @@
   },
   "queue": {
     "slotsPerStation": 3,
-    "_readme": "설비당 대기열 3칸. 한 번에 1배치씩 순차 제작, 완성품은 진열대에 공간이 생기는 대로 자동 진열."
+    "slotBonusLevels": [
+      18,
+      30
+    ],
+    "_readme": "설비당 대기열 기본 3칸 + Lv.18/Lv.32 마일스톤에서 각 +1칸(성장 보람·후반 생산량 상향). 완성품은 진열대 공간이 생기는 대로 자동 진열."
   },
   "grades": {
     "_readme": "MVP: 등급은 레벨 마일스톤으로만 상승(§5.2 보강). v2부터 레벨+평판 복합 조건. themeClass는 씬 배경 테마(§11).",
@@ -98,7 +105,7 @@
     ]
   },
   "quests": {
-    "_readme": "일일퀘스트 3종. 매일 서버 날짜(KST) 기준 리셋. menuTarget은 해금 메뉴 중 요일 순환 선택.",
+    "_readme": "일일퀘스트 5종 + 올클리어 보너스. 매일 KST 리셋. sell_special 은 오늘의 메뉴 판매, collect_tips 는 팁 수금 횟수, bake 는 제작(진열) 수량.",
     "daily": [
       {
         "id": "q_sales",
@@ -110,13 +117,31 @@
         "rewardRep": 2
       },
       {
-        "id": "q_menu",
-        "name": "{menu} {n}개 판매",
-        "type": "sell_menu",
+        "id": "q_special",
+        "name": "오늘의 메뉴 {n}개 판매",
+        "type": "sell_special",
         "target": 8,
+        "rewardCoins": 70,
+        "rewardXp": 35,
+        "rewardRep": 2
+      },
+      {
+        "id": "q_bake",
+        "name": "오늘 {n}개 제작",
+        "type": "bake",
+        "target": 20,
         "rewardCoins": 50,
         "rewardXp": 25,
-        "rewardRep": 2
+        "rewardRep": 1
+      },
+      {
+        "id": "q_tips",
+        "name": "팁 {n}회 수금",
+        "type": "collect_tips",
+        "target": 3,
+        "rewardCoins": 40,
+        "rewardXp": 20,
+        "rewardRep": 1
       },
       {
         "id": "q_upgrade",
@@ -127,7 +152,13 @@
         "rewardXp": 40,
         "rewardRep": 3
       }
-    ]
+    ],
+    "allClear": {
+      "_readme": "5종 모두 완료 시 보너스 상자(자동 수령 아님 — 탭 수령).",
+      "rewardCoins": 150,
+      "rewardXp": 80,
+      "rewardRep": 3
+    }
   },
   "ftue": {
     "_readme": "첫 3분 스크립트(§9). 튜토리얼 한정 첫 베이킹 타이머 5초 단축. 첫 손님은 members.json의 unlockLevel 1 + role host 멤버 고정.",
@@ -155,7 +186,7 @@
     "cloudSyncSec": 45
   },
   "pacingTargets": {
-    "_readme": "§2.5 — sim/simulate.js 가 검증하는 목표. 참고용 사본(원본은 기획서).",
+    "_readme": "§2.5 확장 — 주차 마일스톤(하루 3세션 기준). sim/simulate.js --days 70 이 검증.",
     "firstSaleWithinMin": 3,
     "level2WithinMin": 3,
     "d1Level": 5,
@@ -165,11 +196,60 @@
     "returnGapHoursMin": 2,
     "returnGapHoursMax": 4,
     "offlineCapHoursEarly": 4,
-    "offlineCapHoursLate": 12
+    "offlineCapHoursLate": 12,
+    "d14Level": 15,
+    "d28LevelMin": 23,
+    "d28LevelMax": 29,
+    "d56LevelMin": 40,
+    "d56LevelMax": 46,
+    "lv50DaysMin": 60
   },
   "interior": {
     "_readme": "인테리어(가구 배치) 효과 — §5.7 규칙대로 효과 1개로 제한: 분위기 점수 → 팁 확률 보너스. tipChanceBonus = min(tipChanceMax, moodScore * tipChancePerMood). 가구 목록은 furniture.json, 배치 상태는 state.layout.",
     "tipChancePerMood": 0.005,
     "tipChanceMax": 0.1
+  },
+  "attendance": {
+    "_readme": "출석부: 하루 첫 접속 시 스탬프 1개(7칸 순환, 7일차 보상 큼). 연속 streakBonusFrom일 이상이면 보상 ×streakMult. 하루 걸러도 스탬프는 유지(소프트 — 벌 없음), 연속만 1로 리셋.",
+    "rewards": [
+      {
+        "coins": 40,
+        "xp": 20
+      },
+      {
+        "coins": 60,
+        "xp": 30
+      },
+      {
+        "coins": 80,
+        "xp": 40,
+        "rep": 1
+      },
+      {
+        "coins": 100,
+        "xp": 50
+      },
+      {
+        "coins": 130,
+        "xp": 60,
+        "rep": 1
+      },
+      {
+        "coins": 160,
+        "xp": 80
+      },
+      {
+        "coins": 260,
+        "xp": 120,
+        "rep": 3
+      }
+    ],
+    "streakBonusFrom": 3,
+    "streakMult": 1.5
+  },
+  "dailySpecial": {
+    "_readme": "오늘의 메뉴: KST 날짜 시드로 해금 메뉴 중 1개(모든 플레이어 동일). 해당 메뉴 판매 XP ×xpMult, 팁 확률 +tipChanceAdd. HUD 상시 노출 — '오늘 뭐 굽지'의 답.",
+    "xpMult": 1.5,
+    "tipChanceAdd": 0.06
   }
 }
