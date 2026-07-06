@@ -439,6 +439,14 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   border-bottom:2.5px solid #b5453c;border-radius:3px 3px 0 0;
   box-shadow:0 3px 5px rgba(120,50,30,.25)}
 .tile.terrace{background:rgba(140,190,110,.22);border-radius:4px}
+.titlechip{text-align:center;font-size:13.5px;font-weight:900;color:#7a4a10;background:linear-gradient(180deg,#fff3d1,#ffe4a3);
+  border:1.5px solid #ecc169;border-radius:12px;padding:8px;margin-bottom:8px}
+.titlechip small{display:block;font-size:10px;font-weight:700;color:var(--mut);margin-top:2px}
+.histwrap{display:flex;gap:5px;align-items:flex-end;height:74px;background:#fbf3e2;border:1.5px solid var(--line2);
+  border-radius:12px;padding:8px 10px 4px;margin-bottom:8px}
+.hbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.hbar i{display:block;width:100%;max-width:26px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#ffd873,#f2ab2e)}
+.hbar small{font-size:8px;color:var(--mut);margin-top:2px}
 .roofdeco{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;line-height:1;
   filter:drop-shadow(0 3px 3px rgba(60,40,10,.3))}
 .dockbtn.on{color:var(--brown)}
@@ -1191,7 +1199,15 @@ function openRank(){
   const days=Math.max(1,Math.floor((nowSec()-(S.createdAt||nowSec()))/86400)+1);
   const wkSold=(S.week?S.week.sold:0)+(d.sold||0);
   const row=(e,n,v)=>`<div class="rowitem"><div class="re">${e}</div><div><div class="rn">${n}</div></div><b style="font-size:14px;color:var(--brown)">${v}</b></div>`;
+  // 최근 7일 매출 막대그래프 (오늘 포함)
+  const hist=[...(S.hist||[]),{d:"오늘",sold:d.sold||0}].slice(-7);
+  const hmax=Math.max(1,...hist.map(h=>h.sold));
+  const bars=hist.map(h=>`<div class="hbar" title="${h.d}"><i style="height:${Math.max(6,h.sold/hmax*100)}%"></i><small>${h.d==="오늘"?"오늘":h.d.slice(8)}</small></div>`).join("");
+  const graph=`<div class="histwrap">${bars}</div>`;
+  const title=repTitle();
   openSheet(`<h4 class="hd-quest">🏆 랭킹 · 기록 <span style="font-size:10px;color:var(--mut)">개업 D+${days}</span><button class="x" data-close>닫기 ✕</button></h4>
+    <div class="titlechip">👑 ${title} <small>⭐${fmt(S.rep)} — 다음 칭호까지 ${(()=>{const ts=DATA.balance.reputation.titles||[];const nx=ts.find(t=>S.rep<t.rep);return nx?("⭐"+fmt(nx.rep-S.rep)):"최고 칭호!";})()}</small></div>
+    <div class="subhead">📈 최근 7일 판매</div>${graph}
     <div class="subhead">📊 오늘</div>
     ${row("🧾","판매",fmt(d.sold||0)+"개")}${row("🪙","수익",fmt(d.coinsEarned||0))}${row("💰","팁 수금",(d.tipCollects||0)+"회")}
     <div class="subhead">📅 이번 주 (월~일)</div>
@@ -1210,9 +1226,11 @@ async function loadWeeklyBoard(){
   try{
     if(!sb)throw new Error("no-sb");
     ensureRecords();
-    const wkSold=(S.week?S.week.sold:0)+(S.daily.sold||0);
-    if(sbUser){ // 내 점수 업서트(실패해도 보드는 시도)
-      try{await sb.from("bakery_weekly").upsert({uid:sbUser.id,week_key:S.week.key,shop_name:S.name||"엑서 빵집",level:S.level,sold:wkSold,coins_earned:(S.week?S.week.coins:0)+(S.daily.coinsEarned||0)});}catch(e){}
+    // 개연성 클램프: 이론상 최대치(수요 상한 기반)를 넘는 값은 잘라서 전송
+    const wkSold=Math.min(100000,(S.week?S.week.sold:0)+(S.daily.sold||0));
+    const eligible=!(S.flags&&S.flags.debug); // 디버그 사용 세이브는 랭킹 업서트 제외
+    if(sbUser&&eligible){
+      try{await sb.from("bakery_weekly").upsert({uid:sbUser.id,week_key:S.week.key,shop_name:S.name||"엑서 빵집",level:Math.min(S.level,DATA.balance.xpCurve.maxLevel),sold:wkSold,coins_earned:Math.min(10000000,(S.week?S.week.coins:0)+(S.daily.coinsEarned||0))});}catch(e){}
     }
     const {data:rows,error}=await sb.from("bakery_weekly").select("shop_name,level,sold").eq("week_key",S.week.key).order("sold",{ascending:false}).limit(10);
     if(error)throw error;
@@ -1322,7 +1340,29 @@ function renderSheet(){
       <div><div class="rn">올클리어 보너스 상자</div>
       <div class="rd">5개 퀘스트 모두 완료 시 — 🪙${ac.rewardCoins} · XP ${ac.rewardXp} · ⭐${ac.rewardRep}</div></div>
       <button class="rb ${acClaimed?"claimed":"green"}" data-claim="__allclear" ${(!acDone||acClaimed)?"disabled":""}>${acClaimed?"완료":"받기"}</button></div>`:"";
-    openSheet(`<h4 class="hd-quest">📋 일일퀘스트 <span style="font-size:10px;color:var(--mut)">매일 자정(KST) 리셋</span><button class="x" data-close>닫기 ✕</button></h4>${rows}${acRow}`);
+    // 📦 단체 주문 보드 (Lv.6+) — 재고로 납품하면 프리미엄 보상
+    let orderRows="";
+    const nSlots=Core.orderSlots(DATA,S);
+    if(nSlots>0){
+      const today=kstDateStr(nowSec());
+      orderRows=`<div class="subhead">📦 단체 주문 <span style="font-weight:400">— 재고로 납품하면 정가보다 후한 값 (매일 새 주문)</span></div>`;
+      for(let i=0;i<nSlots;i++){
+        const od=Core.genOrder(DATA,S,today,i);
+        if(!od)continue;
+        const done=S.daily.orders&&S.daily.orders[i];
+        const can=Core.canFulfill(S,od);
+        const lines=od.lines.map(L=>{
+          const r=Core.recipeById(DATA,L.id);
+          const have=S.stock[L.id]||0;
+          return `${r.emoji} ${r.name} <b style="color:${have>=L.qty?"var(--green)":"var(--red)"}">${Math.min(have,L.qty)}/${L.qty}</b>`;
+        }).join(" · ");
+        orderRows+=`<div class="rowitem${done?" dim":""}"><div class="re">${["🚚","🛵","🚛"][i]||"📦"}</div>
+          <div><div class="rn">${lines}</div>
+          <div class="rd">보상 🪙${fmt(od.rewardCoins)} · XP ${od.rewardXp} · ⭐${od.rewardRep}</div></div>
+          <button class="rb ${done?"claimed":"green"}" data-order="${i}" ${(done||!can)?"disabled":""}>${done?"납품 완료":"납품"}</button></div>`;
+      }
+    }
+    openSheet(`<h4 class="hd-quest">📋 미션 <span style="font-size:10px;color:var(--mut)">매일 자정(KST) 리셋</span><button class="x" data-close>닫기 ✕</button></h4>${rows}${acRow}${orderRows}`);
   }
 }
 /* 시트 액션: 굽기 / 업그레이드 / 퀘스트 수령 */
@@ -1347,6 +1387,16 @@ document.addEventListener("click",e=>{
   S.coins-=cost;S.equip[id]=lv+1;S.daily.upgrades+=1;
   const eq=Core.equipById(DATA,id);
   toast("✨ "+eq.name+" Lv."+S.equip[id]+" — "+eq.effectPerLevelLabel);
+  renderSheet();renderHeader();renderObjects();saveLocal();
+});
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-order]");if(!b||!S)return;
+  const rep=Core.fulfillOrder(DATA,S,kstDateStr(nowSec()),+b.dataset.order);
+  if(!rep)return;
+  const r=b.getBoundingClientRect();
+  coinPop(r.left+r.width/2-14,r.top,"+"+fmt(rep.order.rewardCoins)+" 🪙");
+  toast("📦 납품 완료! 🪙"+fmt(rep.order.rewardCoins)+" +⭐"+rep.order.rewardRep);
+  queueLevelUps(rep.levelUps);
   renderSheet();renderHeader();renderObjects();saveLocal();
 });
 document.addEventListener("click",e=>{
@@ -1396,13 +1446,25 @@ function ensureRecords(){
   const wk=weekKeyOf(kstDateStr(nowSec()));
   if(!S.week||S.week.key!==wk)S.week={key:wk,sold:0,coins:0};
 }
-function rollRecords(){ // 하루가 넘어갈 때: 어제 성적을 기록/주간에 반영
+function rollRecords(){ // 하루가 넘어갈 때: 어제 성적을 기록/주간/히스토리에 반영
   ensureRecords();
   const r=S.records;
   r.bestSoldDay=Math.max(r.bestSoldDay,S.daily.sold||0);
   r.bestCoinsDay=Math.max(r.bestCoinsDay,S.daily.coinsEarned||0);
   const wk=weekKeyOf(S.daily.date||kstDateStr(nowSec()));
   if(S.week&&S.week.key===wk){S.week.sold+=S.daily.sold||0;S.week.coins+=S.daily.coinsEarned||0;}
+  // 최근 7일 매출 히스토리 (매장 현황 그래프)
+  if(S.daily.date){
+    S.hist=(S.hist||[]).filter(h=>h.d!==S.daily.date);
+    S.hist.push({d:S.daily.date,sold:S.daily.sold||0,coins:S.daily.coinsEarned||0});
+    if(S.hist.length>7)S.hist=S.hist.slice(-7);
+  }
+}
+function repTitle(){
+  const ts=(DATA.balance.reputation.titles||[]);
+  let t=ts[0]||{name:""};
+  for(const x of ts)if(S.rep>=x.rep)t=x;
+  return t.name;
 }
 function checkDailyReset(){
   const today=kstDateStr(nowSec());
@@ -1813,7 +1875,10 @@ function renderHeader(){
   const bonus=Math.min(DATA.balance.interior.tipChanceMax,mood*DATA.balance.interior.tipChancePerMood);
   $("#hMood").textContent="✨ "+mood+" (팁+"+Math.round(bonus*100)+"%)";
   renderTicker();
-  $("#dotQuest").style.display=DATA.balance.quests.daily.some(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];})?"":"none";
+  const qReady=DATA.balance.quests.daily.some(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];});
+  const oReady=(()=>{const n=Core.orderSlots(DATA,S);const today=kstDateStr(nowSec());
+    for(let i=0;i<n;i++){if(!(S.daily.orders&&S.daily.orders[i])&&Core.canFulfill(S,Core.genOrder(DATA,S,today,i)))return true;}return false;})();
+  $("#dotQuest").style.display=(qReady||oReady)?"":"none";
   const canUp=DATA.equipment.equipment.some(e=>{
     if(S.level<e.unlockLevel)return false;
     const c=Core.upgradeCost(DATA,e.id,Core.equipLevel(S,e.id));return c!=null&&S.coins>=c;
@@ -1865,7 +1930,10 @@ function loop(now){
 document.addEventListener("visibilitychange",()=>{
   if(!S)return;
   if(document.hidden){saveLocalNow();cloudSave();}
-  else{offlineSettleAndShow();lastT=performance.now();}
+  else{
+    // 복귀 시 서버 시간 재동기화 후 정산 — 기기 시계 점프로 인한 부당 정산 방지
+    syncServerTime().finally(()=>{offlineSettleAndShow();lastT=performance.now();});
+  }
 });
 window.addEventListener("beforeunload",()=>{if(S)saveLocalNow();});
 window.addEventListener("resize",()=>{if(S){CAM.z=clampZoom(CAM.z);applyCamera();}});
@@ -1888,6 +1956,7 @@ function initDebug(){
   d.addEventListener("click",e=>{
     const b=e.target.closest("[data-dbg]");if(!b)return;
     const k=b.dataset.dbg;
+    S.flags=S.flags||{};S.flags.debug=true; // 디버그 사용 세이브 → 주간 랭킹 제외(공정성)
     if(k==="w1")WARP=1;if(k==="w10")WARP=10;if(k==="w60")WARP=60;
     if(k==="coin")S.coins+=DATA.balance.debug.grantCoins;
     if(k==="lv"){const v=+prompt("레벨(1~50)",S.level+1);if(v>=1&&v<=50){S.level=v;S.xp=0;ensureGrants();}}

@@ -230,6 +230,8 @@ for (let d = 0; d < DAYS; d++) {
     }
     collectTips(state);
     claimQuests(state);
+    // 단체 주문 납품(가능한 슬롯 전부)
+    for(let oi=0;oi<Core.orderSlots(data,state);oi++)Core.fulfillOrder(data,state,simDate(d),oi);
     // 이탈 전 큐 리필(방치 생산)
     fillQueues(state);
   }

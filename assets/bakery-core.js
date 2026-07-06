@@ -199,6 +199,77 @@
     var ups = addXp(data, state, xp);
     return { stamp: state.att.stamp, streak: state.att.streak, bonus: mult > 1, coins: coins, xp: xp, rep: rep, levelUps: ups };
   }
+  /* ---------- 단체 주문 보드 (타운쉽 오더보드 벤치마킹) ----------
+     매일 슬롯별 결정적 생성(날짜+슬롯 시드) → 재고로 납품 → 프리미엄 보상.
+     보상 = 정가 합 × rewardMult + 평판 + 보너스 XP. 이행 여부는 daily.orders에 기록. */
+  function orderSlots(data, state) {
+    var o = data.balance.orders;
+    if (!o || state.level < o.unlockLevel) return 0;
+    return o.baseSlots + (o.bonusSlotLevel && state.level >= o.bonusSlotLevel ? 1 : 0);
+  }
+  function hashStr(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  // 슬롯 i의 오늘 주문 생성 (결정적 — 같은 날 같은 주문)
+  function genOrder(data, state, dateStr, i) {
+    var o = data.balance.orders;
+    var un = unlockedRecipes(data, state);
+    if (!o || !un.length) return null;
+    var h = hashStr(dateStr + "#order" + i);
+    var nLines = un.length >= 3 && (h % 10) < 4 ? 2 : 1; // 40% 확률 2메뉴 주문
+    var lines = [], used = {};
+    for (var li = 0; li < nLines; li++) {
+      var r = un[(h >>> (3 + li * 7)) % un.length];
+      if (used[r.id]) continue;
+      used[r.id] = 1;
+      // 수량 ≈ 해당 메뉴 수요 minutesLow~High 분치 (최소 3개)
+      var mins = o.minutesLow + ((h >>> (11 + li * 5)) % (o.minutesHigh - o.minutesLow + 1));
+      var qty = Math.max(3, Math.round(r.demandPerMin * mins));
+      lines.push({ id: r.id, qty: qty });
+    }
+    var coins = 0, xp = 0;
+    for (var k = 0; k < lines.length; k++) {
+      var rec = recipeById(data, lines[k].id);
+      coins += unitPrice(data, state, rec) * lines[k].qty;
+      xp += rec.xp * lines[k].qty;
+    }
+    return {
+      i: i, lines: lines,
+      rewardCoins: Math.ceil(coins * o.rewardMult),
+      rewardXp: Math.round(xp * o.xpBonusPct),
+      rewardRep: o.rewardRep + (nLines - 1)
+    };
+  }
+  function canFulfill(state, order) {
+    if (!order) return false;
+    for (var i = 0; i < order.lines.length; i++)
+      if ((state.stock[order.lines[i].id] || 0) < order.lines[i].qty) return false;
+    return true;
+  }
+  // 납품: 재고 차감 + 보상. 성공 시 보고서, 불가 시 null.
+  function fulfillOrder(data, state, dateStr, i) {
+    state.daily.orders = state.daily.orders || {};
+    if (state.daily.orders[i]) return null;
+    var order = genOrder(data, state, dateStr, i);
+    if (!canFulfill(state, order)) return null;
+    for (var k = 0; k < order.lines.length; k++) {
+      var L = order.lines[k];
+      state.stock[L.id] -= L.qty;
+      state.sold[L.id] = (state.sold[L.id] || 0) + L.qty;
+      state.totalSold += L.qty;
+      state.daily.sold += L.qty;
+      state.daily.soldBy[L.id] = (state.daily.soldBy[L.id] || 0) + L.qty;
+    }
+    state.daily.orders[i] = true;
+    state.coins += order.rewardCoins;
+    state.daily.coinsEarned = (state.daily.coinsEarned || 0) + order.rewardCoins;
+    state.rep += order.rewardRep;
+    var ups = addXp(data, state, order.rewardXp);
+    return { order: order, levelUps: ups };
+  }
+
   // 팁 항아리 수금(수금 횟수는 일일퀘스트 진행에 사용)
   function collectTipsJar(state) {
     var amt = state.tipsJar;
@@ -477,6 +548,7 @@
     tipAmount: tipAmount, saleRatePerSec: saleRatePerSec,
     specialFor: specialFor, pickDailySpecial: pickDailySpecial,
     claimAttendance: claimAttendance, collectTipsJar: collectTipsJar,
+    orderSlots: orderSlots, genOrder: genOrder, canFulfill: canFulfill, fulfillOrder: fulfillOrder,
     furnitureById: furnitureById, moodScore: moodScore, tipChanceOf: tipChanceOf,
     advance: advance, totalStock: totalStock, sellUnits: sellUnits, offlineSettle: offlineSettle,
     newState: newState, migrate: migrate, nextUnlock: nextUnlock, resetDaily: resetDaily,
