@@ -438,6 +438,9 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   background:repeating-linear-gradient(90deg,#e2574c 0 16px,#fdf6ec 16px 32px);
   border-bottom:2.5px solid #b5453c;border-radius:3px 3px 0 0;
   box-shadow:0 3px 5px rgba(120,50,30,.25)}
+.tile.terrace{background:rgba(140,190,110,.22);border-radius:4px}
+.roofdeco{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;line-height:1;
+  filter:drop-shadow(0 3px 3px rgba(60,40,10,.3))}
 .dockbtn.on{color:var(--brown)}
 .dockbtn.on .di{filter:drop-shadow(0 0 6px rgba(232,182,76,.8))}
 
@@ -789,6 +792,18 @@ function fixtures(){
   fx.corridor={x:1,y:h-2};
   return fx;
 }
+/* ----- 테라스(정원) 배치 존: Lv.10 '테라스 오픈' 이후 실내 밖 앞마당에 배치 가능 ----- */
+const TERRACE_UNLOCK=10;
+function terraceOpen(){return S.level>=TERRACE_UNLOCK;}
+function inTerrace(x,y){return y>=ROOM.h&&y<=ROOM.h+2&&x>=-2&&x<=ROOM.w+1;}
+function inIndoor(x,y){return x>=0&&x<ROOM.w&&y>=1&&y<ROOM.h;}
+function zoneOf(f){return f.zone||"indoor";}
+function tileAllowed(f,x,y){
+  const z=zoneOf(f);
+  if(z==="garden")return inTerrace(x,y);
+  if(z==="any")return inIndoor(x,y)||inTerrace(x,y);
+  return inIndoor(x,y);
+}
 function blockedTiles(){
   const fx=fixtures(),set=new Set();
   const put=t=>set.add(t.x+","+t.y);
@@ -829,12 +844,25 @@ function renderRoom(){
   // 줄무늬 차양(어닝) — 벽 상단을 베이커리답게
   html+=`<div class="awn" style="left:${topX-lw}px;top:-12px;width:${lw}px;transform:skewY(-${slope}deg);transform-origin:top right"></div>`;
   html+=`<div class="awn" style="left:${topX}px;top:-12px;width:${rw}px;transform:skewY(${slope}deg);transform-origin:top left"></div>`;
+  // 루프탑 카페 (Lv.45+) — 벽 위 파라솔·화분 연출
+  if(S.level>=45){
+    const rt=(px,py,e,fs)=>`<span class="roofdeco" style="left:${px}px;top:${py}px;font-size:${fs}px">${e}</span>`;
+    html+=rt(topX-lw*0.62,lw*0.62*(TH/TW)-34,"⛱️",26)+rt(topX-lw*0.3,lw*0.3*(TH/TW)-30,"🪴",17);
+    html+=rt(topX+rw*0.32,rw*0.32*(TH/TW)-34,"⛱️",26)+rt(topX+rw*0.66,rw*0.66*(TH/TW)-30,"🪴",17);
+    html+=rt(topX,-38,"🕊️",14);
+  }
   // 간판 (Lv.5+, 벽 위)
   if(S.level>=Core.equipById(DATA,"sign").unlockLevel)
     html+=`<div class="signboard" data-obj="sign" style="left:${topX+rw*0.45}px;top:${2}px;transform:translateX(-50%)">🪧 ${S.name||"엑서 빵집"} <small>간판 Lv.${Core.equipLevel(S,"sign")}</small></div>`;
   // 바닥 타일
   for(let y=0;y<ROOM.h;y++)for(let x=0;x<ROOM.w;x++){
     html+=`<div class="tile${(x+y)%2?" alt":""}" data-tile="${x},${y}" style="left:${isoX(x,y)-TW/2}px;top:${isoY(x,y)-TH/2}px;width:${TW}px;height:${TH}px"></div>`;
+  }
+  // 테라스(정원) 배치 타일 — 꾸미기 모드에서만 표시 (Lv.10 테라스 오픈 후)
+  if(EDIT&&terraceOpen()){
+    for(let y=ROOM.h;y<=ROOM.h+2;y++)for(let x=-2;x<=ROOM.w+1;x++){
+      html+=`<div class="tile terrace" data-tile="${x},${y}" style="left:${isoX(x,y)-TW/2}px;top:${isoY(x,y)-TH/2}px;width:${TW}px;height:${TH}px"></div>`;
+    }
   }
   // 문 — 좌측 벽면 하단(스큐 동일), 창문 — 양쪽 벽, 펜던트 조명
   const doorD=(ROOM.h-1.4)*TW/2; // topX에서 왼쪽으로의 거리
@@ -945,10 +973,12 @@ function renderObjects(){
   room.insertAdjacentHTML("beforeend",html);
   // 배치 모드 타일 하이라이트
   const blocked=blockedTiles();
+  const selF=SELECTED?Core.furnitureById(DATA,SELECTED):null;
   room.querySelectorAll("[data-tile]").forEach(t=>{
     t.classList.remove("editok","editno");
-    if(EDIT&&SELECTED){
-      const bad=blocked.has(t.dataset.tile)||t.dataset.tile.split(",")[1]==="0";
+    if(EDIT&&selF){
+      const [tx,ty]=t.dataset.tile.split(",").map(Number);
+      const bad=blocked.has(t.dataset.tile)||!tileAllowed(selF,tx,ty);
       t.classList.add(bad?"editno":"editok");
     }
   });
@@ -982,11 +1012,19 @@ $("#room").addEventListener("click",e=>{
       S.layout.splice(idx,1);
       renderObjects();renderTray();renderHeader();saveLocal();return;
     }
-    // 배치
+    // 배치 (실내/정원 존 검증)
     const tile=e.target.closest("[data-tile]");
     if(tile&&SELECTED){
       const [x,y]=tile.dataset.tile.split(",").map(Number);
-      if(y===0||blockedTiles().has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
+      const f=Core.furnitureById(DATA,SELECTED);
+      if(!f)return;
+      if(blockedTiles().has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
+      if(!tileAllowed(f,x,y)){
+        toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
+          :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요"
+          :"여기엔 놓을 수 없어요");
+        return;
+      }
       if(unplacedCount(SELECTED)<=0){toast("보유한 가구가 없어요");return;}
       S.layout.push({id:SELECTED,x,y});
       if(unplacedCount(SELECTED)<=0)SELECTED=null;
@@ -1039,16 +1077,18 @@ $("#trayRow").addEventListener("click",e=>{
 });
 function openShop(){
   const it=DATA.balance.interior;
+  const zoneTag=f=>zoneOf(f)==="garden"?'<b style="color:#5c9a44">🌳 정원</b>':zoneOf(f)==="any"?'<b style="color:#8a6a3a">🏠/🌳</b>':"🏠 실내";
   const html=DATA.furniture.items.map(f=>{
     const locked=S.level<f.unlockLevel;
     return `<div class="rowitem${locked?" dim":""}">
       <div class="re">${f.emoji}</div>
-      <div><div class="rn">${f.name}</div>
+      <div><div class="rn">${locked?"???":f.name} <span style="font-size:9.5px">${zoneTag(f)}</span></div>
         <div class="rd">✨분위기 +${f.mood}${f.seats?` · 🪑좌석 ${f.seats}`:""} · 보유 ${S.owned[f.id]||0}</div></div>
-      ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel}</button>`
+      ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel} 해금</button>`
         :`<button class="rb" data-buy="${f.id}" ${S.coins<f.price?"disabled":""}>🪙 ${fmt(f.price)}</button>`}</div>`;
   }).join("");
-  openSheet(`<h4 class="hd-shop">🛒 가구 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>${html}`);
+  openSheet(`<h4 class="hd-shop">🛒 가구 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>
+    <div class="subhead" style="margin-top:0">🌳 정원 가구는 꾸미기 모드에서 앞마당(초록 존)에 배치해요 (Lv.${TERRACE_UNLOCK} 테라스 오픈)</div>${html}`);
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-buy]");if(!b||!S)return;
@@ -1560,7 +1600,9 @@ function stepActors(dt){
       const seat=freeSeat();
       if(seat){
         a.seatKey=seat.key;a.state="toseat";
-        a.wp=[{x:seat.x,y:Math.min(ROOM.h-1,seat.y+0)}];
+        a.wp=seat.y>=ROOM.h
+          ?[{x:Math.max(0,Math.min(ROOM.w-1,seat.x)),y:ROOM.h-1},{x:seat.x,y:seat.y}] // 테라스 좌석: 실내를 지나 정원으로
+          :[{x:seat.x,y:seat.y}];
       }else{
         a.state="leave";
         const bag=document.createElement("span");bag.className="want";bag.textContent="🛍";a.el.appendChild(bag);
