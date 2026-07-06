@@ -480,6 +480,14 @@ body.editing .actor.pet{pointer-events:none}
 .actor.pet .digspark{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:14px;animation:gsparkle .9s ease-in-out infinite}
 .staffsway{display:inline-block;animation:staffsway 3s ease-in-out infinite;transform-origin:50% 95%}
 @keyframes staffsway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.2deg)}}
+/* ⚡ 부스트 버블 */
+.boostbub{position:absolute;transform:translate(-50%,-50%);z-index:60;width:40px;height:40px;border-radius:50%;
+  display:grid;place-items:center;font-size:21px;cursor:pointer;pointer-events:auto;
+  background:radial-gradient(circle at 35% 30%,#fff4c9,#ffd34d 60%,#f0a52e);border:2.5px solid #fffdf4;
+  box-shadow:0 0 14px rgba(255,190,40,.85),0 4px 8px rgba(150,90,10,.4);
+  animation:boostpulse .7s ease-in-out infinite alternate}
+@keyframes boostpulse{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.14)}}
+.qslot.lane{outline:2px solid rgba(232,182,76,.65);outline-offset:-2px}
 /* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
 .flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
@@ -1109,6 +1117,12 @@ function objArt(id,x,y,inner,label,extra,tappable){
 }
 const DECO_EMOJI={plant:"🪴",flower:"🌷",poster:"🖼️",clock:"🕰️",radio:"📻",bear:"🧸",bookshelf:"📚",piano:"🎹"};
 function furnitureArt(id){
+  const fdef=Core.furnitureById(DATA,id);
+  if(fdef&&fdef.machine){
+    const st=fdef.machine;
+    const inner=st==="oven"?Art.ovenSVG(false):st==="coffee"?Art.coffeeSVG(true,false):Art.stationSVG(st,false);
+    return `<span style="display:inline-block;transform:scale(.68);transform-origin:50% 100%">${inner}</span>`;
+  }
   let svg;
   if(id==="table_wood")svg=Art.tableSVG();
   else if(id==="table_couple")svg=Art.tableCoupleSVG();
@@ -1244,6 +1258,8 @@ $("#room").addEventListener("click",e=>{
     }
     return;
   }
+  const bEl=e.target.closest(".boostbub");
+  if(bEl&&!EDIT){tapBoost(bEl);return;}
   const petEl=e.target.closest(".actor.pet");
   if(petEl&&!EDIT){tapPet(petEl);return;}
   const obj=e.target.closest("[data-obj]");
@@ -1376,20 +1392,26 @@ function openShop(){
     const locked=S.level<f.unlockLevel;
     return `<div class="rowitem${locked?" dim":""}">
       <div class="re">${f.emoji}</div>
-      <div><div class="rn">${locked?"???":f.name} <span style="font-size:9.5px">${zoneTag(f)}</span></div>
-        <div class="rd">✨분위기 +${f.mood}${f.seats?` · 🪑좌석 ${f.seats}`:""} · 보유 ${S.owned[f.id]||0}</div></div>
+      <div><div class="rn">${locked?"???":f.name} <span style="font-size:9.5px">${f.machine?'<b style="color:#b4650a">⚙️ 생산 레인 +1</b>':zoneTag(f)}</span></div>
+        <div class="rd">${f.machine?`${DATA.balance.stations[f.machine]?DATA.balance.stations[f.machine].name:f.machine} 동시 제작 +1`:`✨분위기 +${f.mood}${f.seats?` · 🪑좌석 ${f.seats}`:""}`} · 보유 ${S.owned[f.id]||0}${f.maxOwn?`/${f.maxOwn}`:""}</div></div>
       ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel} 해금</button>`
+        :(f.maxOwn&&(S.owned[f.id]||0)>=f.maxOwn)?`<button class="rb claimed" disabled>보유 완료</button>`
         :`<button class="rb" data-buy="${f.id}" ${S.coins<f.price?"disabled":""}>🪙 ${fmt(f.price)}</button>`}</div>`;
   }).join("");
   // 🐾 펫 분양
   const petRows=(DATA.balance.pets.types||[]).map(t=>{
     const locked=S.level<t.unlockLevel;
     const owned=(S.pets||[]).filter(x=>x.type===t.id).length;
+    const total=(S.pets||[]).length;
+    const capT=DATA.balance.pets.maxPerType||1,capA=DATA.balance.pets.maxTotal||4;
+    const full=owned>=capT||total>=capA;
     return `<div class="rowitem${locked?" dim":""}">
       <div class="re">${{"cat_cream":"🐱","cat_black":"🐈‍⬛","dog_shiba":"🐕","dog_white":"🐩","rabbit":"🐰"}[t.id]||"🐾"}</div>
       <div><div class="rn">${locked?"???":t.name}</div>
-      <div class="rd">✨분위기 +${DATA.balance.pets.moodPerPet} · 가끔 동전 발굴 · 보유 ${owned}</div></div>
+      <div class="rd">✨분위기 +${DATA.balance.pets.moodPerPet} · 가끔 동전 발굴 · ${owned?"함께 사는 중":"종류당 1마리"}</div></div>
       ${locked?`<button class="rb" disabled>Lv.${t.unlockLevel} 해금</button>`
+        :owned>=capT?`<button class="rb claimed" disabled>함께 살아요</button>`
+        :total>=capA?`<button class="rb" disabled>정원 가득 (${capA})</button>`
         :`<button class="rb" data-adopt="${t.id}" ${S.coins<t.price?"disabled":""}>🪙 ${fmt(t.price)}</button>`}</div>`;
   }).join("");
   openSheet(`<h4 class="hd-shop">🛒 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>
@@ -1400,6 +1422,9 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-adopt]");if(!b||!S)return;
   const t=petDef(b.dataset.adopt);
   if(!t||S.coins<t.price||S.level<t.unlockLevel)return;
+  const capT=DATA.balance.pets.maxPerType||1,capA=DATA.balance.pets.maxTotal||4;
+  if((S.pets||[]).filter(x=>x.type===t.id).length>=capT){toast("이미 함께 살고 있어요");return;}
+  if((S.pets||[]).length>=capA){toast("펫 정원이 가득해요 (최대 "+capA+"마리)");return;}
   S.coins-=t.price;
   S.pets=S.pets||[];S.pets.push({type:t.id});
   Snd.play("done");toast("🐾 "+t.name+"을(를) 입양했어요! 매장을 돌아다녀요");
@@ -1409,6 +1434,7 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-buy]");if(!b||!S)return;
   const f=Core.furnitureById(DATA,b.dataset.buy);
   if(!f||S.coins<f.price||S.level<f.unlockLevel)return;
+  if(f.maxOwn&&(S.owned[f.id]||0)>=f.maxOwn){toast("최대 보유 수에 도달했어요");return;}
   S.coins-=f.price;S.owned[f.id]=(S.owned[f.id]||0)+1;
   toast("🛋️ "+f.name+" 구매! 꾸미기 모드에서 배치하세요");
   openShop();renderTray();renderHeader();saveLocal();
@@ -1421,8 +1447,8 @@ let SHEET=null; // {type, station, sig}
 function openSheet(html){$("#sheet").innerHTML=html;$("#sheetwrap").classList.add("on");Snd.play("pop");}
 // 주방 시트: 구성 시그니처가 바뀔 때만 전체 재렌더 (버튼 안정성), 진행바는 제자리 갱신
 function kitchenSig(st){
-  const q=S.queues[st],buf=S.buffer[st];
-  return q.map(j=>j.r).join(",")+"|"+(buf?buf.r+":"+buf.n:"")+"|"+(q.length>=DATA.balance.queue.slotsPerStation);
+  const q=S.queues[st],buf=S.buffer[st]||[];
+  return q.map(j=>j.r).join(",")+"|"+buf.map(b=>b.r+":"+b.n).join(";")+"|"+(q.length>=Core.queueSlots(DATA,S));
 }
 function tickKitchenSheet(){
   if(!SHEET||SHEET.type!=="kitchen")return;
@@ -1431,6 +1457,15 @@ function tickKitchenSheet(){
   if(sig!==SHEET.sig){SHEET.sig=sig;renderSheet();return;}
   const q=S.queues[st];
   if(!q.length)return;
+  const P=Core.parallelSlots(DATA,S,st);
+  for(let li=1;li<Math.min(P,q.length);li++){
+    const j2=q[li];if(!j2||j2.remain==null)continue;
+    const slot2=$("#sheet").querySelectorAll(".qslot")[li];
+    if(slot2){const r2=Core.recipeById(DATA,j2.r),t2=Core.craftSeconds(DATA,S,r2);
+      const qt2=slot2.querySelector(".qt"),qi2=slot2.querySelector(".qp i");
+      if(qt2)qt2.textContent=fmtDur(Math.max(0,j2.remain));
+      if(qi2)qi2.style.width=Math.min(100,(1-Math.max(0,j2.remain)/t2)*100)+"%";}
+  }
   const job=q[0],rec=Core.recipeById(DATA,job.r);
   const total=Core.craftSeconds(DATA,S,rec);
   const rem=job.remain==null?total:Math.max(0,job.remain);
@@ -1598,8 +1633,9 @@ function renderSheet(){
     const st=SHEET.station,stDef=DATA.balance.stations[st];
     SHEET.sig=kitchenSig(st);
     const emoji=st==="coffee"?(Core.hasCoffeeMachine(DATA,S)?"☕":"🫖"):stDef.emoji;
-    const q=S.queues[st],buf=S.buffer[st];
+    const q=S.queues[st],buf=S.buffer[st]||[];
     const nSlots=Core.queueSlots(DATA,S);
+    const P=Core.parallelSlots(DATA,S,st);
     let slots="";
     for(let i=0;i<nSlots;i++){
       const job=q[i];
@@ -1607,8 +1643,9 @@ function renderSheet(){
         const rec=Core.recipeById(DATA,job.r);
         const total=Core.craftSeconds(DATA,S,rec);
         const rem=job.remain==null?total:Math.max(0,job.remain);
-        const pct=i===0?Math.min(100,(1-rem/total)*100):0;
-        slots+=`<div class="qslot busy"><span class="qe">${rec.emoji}</span><span class="qt">${i===0?fmtDur(rem):"대기"}</span><span class="qp"><i style="width:${pct}%"></i></span></div>`;
+        const active=i<P;
+        const pct=active?Math.min(100,(1-rem/total)*100):0;
+        slots+=`<div class="qslot busy${active?" lane":""}"><span class="qe">${rec.emoji}</span><span class="qt">${active?fmtDur(rem):"대기"}</span><span class="qp"><i style="width:${pct}%"></i></span></div>`;
       }else slots+=`<div class="qslot"><span class="plus">＋</span></div>`;
     }
     const menus=Core.unlockedRecipes(DATA,S).filter(r=>r.station===st);
@@ -1619,7 +1656,8 @@ function renderSheet(){
     openSheet(`${Object.keys(DATA.balance.stations).filter(k=>S.level>=DATA.balance.stations[k].unlockLevel).length>1?`<div class="stabs">${tabs}</div>`:""}<h4 class="hd-kitchen">${emoji} ${stDef.name}${st==="coffee"&&Core.hasCoffeeMachine(DATA,S)?" <span style='font-size:10px;color:var(--green)'>머신 설치됨</span>":""}
       <button class="x" data-close>닫기 ✕</button></h4>
       <div class="qrow">${slots}</div>
-      ${buf?`<div class="blocked" style="margin-bottom:9px">📦 ${Core.recipeById(DATA,buf.r).emoji} ${buf.n}개가 진열 공간 대기 중 — 진열대를 업그레이드하세요!</div>`:""}
+      ${P>1?`<div style="font-size:10px;font-weight:800;color:#b4650a;margin:-4px 0 8px">⚙️ 동시 제작 ${P}레인 (보조 기계 효과)</div>`:""}
+      ${buf.length?`<div class="blocked" style="margin-bottom:9px">📦 ${buf.reduce((a,x)=>a+x.n,0)}개가 진열 공간 대기 중 — 진열대를 업그레이드하세요!</div>`:""}
       <div class="menu-btns">${menus.map(r=>{
         const t=Core.craftSeconds(DATA,S,r);
         const pct=Core.masteryBonusPct(DATA,S,r.id);
@@ -2227,6 +2265,48 @@ function offlineSettleAndShow(){
 /* ===================================================================
    헤더 / 공통 렌더
    =================================================================== */
+/* ----- ⚡ 부스트: 가동 중인 설비 위에 주기적으로 등장 — 탭하면 제작 단축 (능동 생산) ----- */
+let boostEl=null,boostAcc=0,boostNext=14;
+const ST2FX={oven:"oven",coffee:"coffeebar",juice:"juice",brunch:"brunch",icecream:"icecream",grill:"grill"};
+function tickBoost(dt){
+  if(EDIT||!S)return;
+  if(boostEl){return;} // 동시에 1개
+  boostAcc+=dt;
+  if(boostAcc<boostNext)return;
+  boostAcc=0;boostNext=14+Math.random()*18;
+  // 남은 시간이 충분한 가동 스테이션 선택
+  const busy=Object.keys(S.queues).filter(st=>{
+    const q=S.queues[st];return q.length&&q[0].remain!=null&&q[0].remain>25;
+  });
+  if(!busy.length)return;
+  const st=busy[Math.floor(Math.random()*busy.length)];
+  const fx=fixtures(),pos=fx[ST2FX[st]];
+  if(!pos)return;
+  boostEl=document.createElement("div");
+  boostEl.className="boostbub";
+  boostEl.textContent="⚡";
+  boostEl.style.left=isoX(pos.x,pos.y)+"px";
+  boostEl.style.top=(isoY(pos.x,pos.y)-58)+"px";
+  boostEl.dataset.st=st;
+  $("#room").appendChild(boostEl);
+  const el=boostEl;
+  setTimeout(()=>{if(el.isConnected)el.remove();if(boostEl===el)boostEl=null;},8000);
+}
+function tapBoost(el){
+  const st=el.dataset.st;
+  el.remove();if(boostEl===el)boostEl=null;
+  const q=S.queues[st];
+  if(q&&q.length&&q[0].remain!=null){
+    q[0].remain=Math.max(0.5,q[0].remain-20);
+    Snd.play("golden");
+    const r=$("#viewport").getBoundingClientRect();
+    const fx=fixtures(),pos=fx[ST2FX[st]];
+    const ups=Core.addXp(DATA,S,2);
+    toast("⚡ 서둘러 제작! -20초");
+    queueLevelUps(ups);
+    renderObjects();renderHeader();saveLocal();
+  }
+}
 /* ----- 🐾 애견카페: 펫 배회·쓰다듬기·코인 발굴 ----- */
 let PETS=[]; // 런타임 펫 액터 {def,el,x,y,wp,t,idle,dug,patAt,digAt}
 function petDef(id){return (DATA.balance.pets.types||[]).find(t=>t.id===id);}
@@ -2440,6 +2520,7 @@ function loop(now){
     }
     stepActors(dtRaw);
     tickPets(dtRaw);
+    tickBoost(dtRaw);
     tickCleaning(dtRaw);
     ftueTick();
     checkDailyReset();
