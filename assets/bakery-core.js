@@ -98,7 +98,7 @@
   function ensureStations(data, state) {
     for (var k in data.balance.stations) {
       if (!state.queues[k]) state.queues[k] = [];
-      if (!(k in state.buffer)) state.buffer[k] = null;
+      if (!Array.isArray(state.buffer[k])) state.buffer[k] = state.buffer[k] ? [state.buffer[k]] : [];
     }
   }
   function stationUnlocked(data, state, station) {
@@ -115,6 +115,20 @@
     return data.recipes.recipes.filter(function (r) { return recipeUnlocked(data, state, r); });
   }
 
+  // 스테이션 병렬 생산 레인 수: 기본 1 + 배치된 보조 기계(가구 machine 필드) 수
+  function parallelSlots(data, state, st) {
+    var n = 1;
+    if (state.layout && data.furniture) {
+      var cap = (data.balance.machines && data.balance.machines.maxPerStation) || 2;
+      var add = 0;
+      for (var i = 0; i < state.layout.length; i++) {
+        var f = furnitureById(data, state.layout[i].id);
+        if (f && f.machine === st) add++;
+      }
+      n += Math.min(cap, add);
+    }
+    return n;
+  }
   // 설비당 대기열 칸 수: 기본 + 레벨 마일스톤 보너스(성장 보람 — 큐 확장)
   function queueSlots(data, state) {
     var q = data.balance.queue, n = q.slotsPerStation;
@@ -130,7 +144,7 @@
     var q = state.queues[r.station];
     if (!q || q.length >= queueSlots(data, state)) return false;
     // remain 은 잡이 헤드가 될 때 확정(장비 업그레이드 반영). 대기 중엔 null.
-    q.push({ r: recipeId, remain: q.length === 0 && !state.buffer[r.station] ? craftSeconds(data, state, r) : null });
+    q.push({ r: recipeId, remain: null }); // remain은 레인에 올라갈 때 확정
     return true;
   }
 
@@ -335,25 +349,33 @@
       var dt = Math.min(left, 30); // 최대 30초 스텝(재고 상한·큐 상호작용 정확도)
       left -= dt;
 
-      /* 1) 생산: 완충(buffer) → 진열 이동 시도, 시간 예산 내 다중 완성 처리 */
+      /* 1) 생산(병렬 레인): 레인마다 dt 예산으로 동시 제작 — 보조 기계 = 실제 처리량 증가.
+         완성분은 buffer(레인당 1배치 대기)로, 진열 공간이 생기는 대로 이동 */
       for (var si = 0; si < stations.length; si++) {
         var st = stations[si];
-        // 완성 대기분 진열 시도(진열대에 공간이 생기는 대로)
         flushBuffer(data, state, st, sum);
-        // 시간 예산(dt)을 소진하며 제작 — 짧은 배치는 한 스텝에 여러 개 완성 가능
-        var budget = dt, guard = 0;
-        while (budget > 0 && !state.buffer[st] && state.queues[st].length > 0 && guard++ < 200) {
-          var job = state.queues[st][0];
+        var P = parallelSlots(data, state, st);
+        var lane = 0, budgets = [], guard = 0;
+        for (var bi = 0; bi < P; bi++) budgets[bi] = dt;
+        while (lane < P && guard++ < 400) {
+          var job = state.queues[st][lane];
+          if (!job) { lane++; continue; }
           var jr = recipeById(data, job.r);
           if (job.remain == null) job.remain = craftSeconds(data, state, jr);
-          var use = Math.min(budget, job.remain);
-          job.remain -= use; budget -= use;
+          var use = Math.min(budgets[lane], job.remain);
+          job.remain -= use; budgets[lane] -= use;
           if (job.remain <= 0) {
-            state.queues[st].shift();
-            state.buffer[st] = { r: job.r, n: jr.batch };
-            if (state.queues[st].length > 0) state.queues[st][0].remain = null;
-            flushBuffer(data, state, st, sum); // 공간 있으면 즉시 진열 → 다음 잡 계속
+            // 버퍼 여유(레인당 1배치)가 없으면 이 레인은 완성 상태로 대기(진열 공간 필요)
+            flushBuffer(data, state, st, sum);
+            if (state.buffer[st].length >= P) { lane++; continue; }
+            state.queues[st].splice(lane, 1);
+            state.buffer[st].push({ r: job.r, n: jr.batch });
+            flushBuffer(data, state, st, sum);
+            // 남은 예산으로 이 레인의 다음 잡 계속
+            if (budgets[lane] <= 0) lane++;
+            continue;
           }
+          lane++;
         }
       }
 
@@ -431,18 +453,21 @@
     return n;
   }
 
-  // 완충(완성 대기) 물량을 진열대 공간이 허용하는 만큼 이동
+  // 완충(완성 대기) 물량을 진열대 공간이 허용하는 만큼 이동 — 버퍼는 배치 배열
   function flushBuffer(data, state, st, sum) {
-    var buf = state.buffer[st];
-    if (!buf) return;
-    var space = stockCap(data, state) - totalStock(state);
-    if (space <= 0) return;
-    var mv = Math.min(space, buf.n);
-    state.stock[buf.r] = (state.stock[buf.r] || 0) + mv;
-    if (sum) sum.produced[buf.r] = (sum.produced[buf.r] || 0) + mv;
-    state.daily.baked = (state.daily.baked || 0) + mv; // 일일퀘스트: 오늘 제작량
-    buf.n -= mv;
-    if (buf.n <= 0) state.buffer[st] = null;
+    if (!Array.isArray(state.buffer[st])) state.buffer[st] = state.buffer[st] ? [state.buffer[st]] : [];
+    var q = state.buffer[st];
+    while (q.length) {
+      var buf = q[0];
+      var space = stockCap(data, state) - totalStock(state);
+      if (space <= 0) return;
+      var mv = Math.min(space, buf.n);
+      state.stock[buf.r] = (state.stock[buf.r] || 0) + mv;
+      if (sum) sum.produced[buf.r] = (sum.produced[buf.r] || 0) + mv;
+      state.daily.baked = (state.daily.baked || 0) + mv;
+      buf.n -= mv;
+      if (buf.n <= 0) q.shift(); else return;
+    }
   }
 
   /* ---------- 스크립트 판매 (FTUE 첫 손님 등 연출용 확정 구매) ----------
@@ -504,7 +529,7 @@
       tipsJar: 0, tipAcc: 0,
       stock: {}, sellAcc: {},
       queues: (function () { var q = {}; for (var k in data.balance.stations) q[k] = []; return q; })(),
-      buffer: (function () { var bf = {}; for (var k in data.balance.stations) bf[k] = null; return bf; })(),
+      buffer: (function () { var bf = {}; for (var k in data.balance.stations) bf[k] = []; return bf; })(),
       equip: { oven: 1, display: 1, counter: 1, sign: 1 },
       sold: {}, totalSold: 0,
       daily: { date: "", sold: 0, soldBy: {}, upgrades: 0, claimed: {}, tipCollects: 0, baked: 0, special: null },
@@ -532,7 +557,14 @@
       s.v = 3; return s;
     },
     // v4: 카페 경영 확장 — 신규 스테이션 큐/버퍼는 ensureStations가 지연 보장, dirt 필드
-    4: function (s) { s.dirt = s.dirt || []; s.v = 4; return s; }
+    4: function (s) { s.dirt = s.dirt || []; s.v = 4; return s; },
+    // v5: 병렬 생산 — buffer를 배치 배열로
+    5: function (s) {
+      if (s.buffer) for (var k in s.buffer)
+        if (!Array.isArray(s.buffer[k])) s.buffer[k] = s.buffer[k] ? [s.buffer[k]] : [];
+      s.pets = s.pets || [];
+      s.v = 5; return s;
+    }
   };
   function migrate(data, state) {
     if (!state || typeof state !== "object") return null;
@@ -570,7 +602,7 @@
     gradeForLevel: gradeForLevel,
     equipLevel: equipLevel, ovenTimeMult: ovenTimeMult, stockCap: stockCap,
     counterMult: counterMult, signMult: signMult, upgradeCost: upgradeCost,
-    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds, queueSlots: queueSlots, ensureStations: ensureStations,
+    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds, queueSlots: queueSlots, ensureStations: ensureStations, parallelSlots: parallelSlots,
     recipeUnlocked: recipeUnlocked, unlockedRecipes: unlockedRecipes,
     enqueue: enqueue, masteryBonusPct: masteryBonusPct, unitPrice: unitPrice,
     tipAmount: tipAmount, saleRatePerSec: saleRatePerSec,
