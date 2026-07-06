@@ -40,13 +40,15 @@
     for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
     return h;
   }
-  function pick(arr, n) { return arr[n % arr.length]; }
+  function pick(arr, n) { return arr[(n >>> 0) % arr.length]; } // >>>0: 음수 인덱스 방지
   function darken(hex, f) {
+    if (!hex || hex.charAt(0) !== "#") hex = "#c99e6d";
     var n = parseInt(hex.slice(1), 16);
     var r = Math.min(255, ((n >> 16) & 255) * f) | 0, g = Math.min(255, ((n >> 8) & 255) * f) | 0, b = Math.min(255, (n & 255) * f) | 0;
     return "rgb(" + r + "," + g + "," + b + ")";
   }
   function lighten(hex, amt) {
+    if (!hex || hex.charAt(0) !== "#") hex = "#c99e6d";
     var n = parseInt(hex.slice(1), 16);
     var r = Math.min(255, ((n >> 16) & 255) + amt), g = Math.min(255, ((n >> 8) & 255) + amt), b = Math.min(255, (n & 255) + amt);
     return "rgb(" + r + "," + g + "," + b + ")";
@@ -84,10 +86,10 @@
   function lookFromSeed(seed) {
     var h = hash(String(seed));
     return {
-      skin: pick(SKINS, h), hair: (h >> 3) % 7, hairC: pick(HAIRC, h >> 6), iris: pick(IRIS, h >> 8),
-      top: (h >> 9) % 4, topC: pick(CLOTH, h >> 12), pantsC: pick(PANTS, h >> 15),
-      glasses: ((h >> 18) % 10) < 3, hat: ((h >> 21) % 10) < 2, bag: ((h >> 24) % 10) < 3,
-      hatC: pick(CLOTH, h >> 26)
+      skin: pick(SKINS, h), hair: (h >>> 3) % 7, hairC: pick(HAIRC, h >>> 6), iris: pick(IRIS, h >>> 8),
+      top: (h >>> 9) % 4, topC: pick(CLOTH, h >>> 12), pantsC: pick(PANTS, h >>> 15),
+      glasses: ((h >>> 18) % 10) < 3, hat: ((h >>> 21) % 10) < 2, bag: ((h >>> 24) % 10) < 3,
+      hatC: pick(CLOTH, h >>> 26)
     };
   }
   function randomLook(rng) {
