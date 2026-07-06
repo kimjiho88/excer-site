@@ -472,6 +472,14 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .obj.picked{animation:pickpulse .9s ease-in-out infinite}
 .obj.picked>*{filter:drop-shadow(0 0 8px rgba(96,200,130,.95)) drop-shadow(0 6px 10px rgba(40,90,40,.35))}
 @keyframes pickpulse{0%,100%{transform:translate(-50%,-82%) translateY(0)}50%{transform:translate(-50%,-82%) translateY(-6px)}}
+/* 🐾 펫 */
+.actor.pet{pointer-events:auto;cursor:pointer}
+body.editing .actor.pet{pointer-events:none}
+.actor.pet .charwrap{display:inline-block}
+.actor.pet.walk .charwrap{animation:walkbob .5s ease-in-out infinite alternate}
+.actor.pet .digspark{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:14px;animation:gsparkle .9s ease-in-out infinite}
+.staffsway{display:inline-block;animation:staffsway 3s ease-in-out infinite;transform-origin:50% 95%}
+@keyframes staffsway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.2deg)}}
 /* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
 .flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
@@ -1169,6 +1177,14 @@ function renderObjects(){
   const coffeeBusy=stBusy("coffee");
   html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,
     spriteOr([coffeeBusy?"staff_barista_busy":"staff_barista","staff_barista","staff_cashier"],Art.baristaSVG(coffeeBusy)),"",false);
+  // 신규 스테이션 전담 직원 — 고정 외모(시드), 매장이 북적이는 연출
+  for(const stId of ["juice","brunch","icecream","grill"]){
+    const def=DATA.balance.stations[stId],pos=fx[stId];
+    if(!def||!pos||S.level<def.unlockLevel)continue;
+    html+=`<div class="obj staffobj" data-obj="staff-${stId}"
+      style="left:${isoX(Math.min(ROOM.w-1,pos.x+0.15),Math.min(ROOM.h-1,pos.y+0.85))}px;top:${isoY(Math.min(ROOM.w-1,pos.x+0.15),Math.min(ROOM.h-1,pos.y+0.85))+TH*0.35}px;z-index:${Math.round((pos.x+pos.y+1)*10+6)}">
+      <span class="staffsway">${Art.charSVG(Art.lookFromSeed("staff_"+stId+"_엑서"),{mood:"happy"})}</span></div>`;
+  }
   // 얼룩(청소 대상) — 탭하면 닦기
   (S.dirt||[]).forEach((d,i)=>{
     html+=`<div class="obj tappable dirtspot" data-obj="dirt-${i}"
@@ -1228,6 +1244,8 @@ $("#room").addEventListener("click",e=>{
     }
     return;
   }
+  const petEl=e.target.closest(".actor.pet");
+  if(petEl&&!EDIT){tapPet(petEl);return;}
   const obj=e.target.closest("[data-obj]");
   if(EDIT){
     // ── 자유 배치: 오브젝트 탭 = 집어들기 / 같은 가구 재탭 = 보관 / 타일 탭 = 이동·배치 ──
@@ -1326,6 +1344,7 @@ function unplacedCount(id){return (S.owned[id]||0)-placedCount(id);}
 let MOVING=null; // 꾸미기: 집어든 오브젝트 {kind:'station'|'fur', ...}
 function setEdit(on){
   EDIT=on;SELECTED=null;MOVING=null;
+  document.body.classList.toggle("editing",on);
   $("#dockEdit").classList.toggle("on",on);
   $("#tray").classList.toggle("on",on);
   renderRoom();renderTray();
@@ -1362,9 +1381,30 @@ function openShop(){
       ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel} 해금</button>`
         :`<button class="rb" data-buy="${f.id}" ${S.coins<f.price?"disabled":""}>🪙 ${fmt(f.price)}</button>`}</div>`;
   }).join("");
-  openSheet(`<h4 class="hd-shop">🛒 가구 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>
-    <div class="subhead" style="margin-top:0">🌳 정원 가구는 꾸미기 모드에서 앞마당(초록 존)에 배치해요 (Lv.${TERRACE_UNLOCK} 테라스 오픈)</div>${html}`);
+  // 🐾 펫 분양
+  const petRows=(DATA.balance.pets.types||[]).map(t=>{
+    const locked=S.level<t.unlockLevel;
+    const owned=(S.pets||[]).filter(x=>x.type===t.id).length;
+    return `<div class="rowitem${locked?" dim":""}">
+      <div class="re">${{"cat_cream":"🐱","cat_black":"🐈‍⬛","dog_shiba":"🐕","dog_white":"🐩","rabbit":"🐰"}[t.id]||"🐾"}</div>
+      <div><div class="rn">${locked?"???":t.name}</div>
+      <div class="rd">✨분위기 +${DATA.balance.pets.moodPerPet} · 가끔 동전 발굴 · 보유 ${owned}</div></div>
+      ${locked?`<button class="rb" disabled>Lv.${t.unlockLevel} 해금</button>`
+        :`<button class="rb" data-adopt="${t.id}" ${S.coins<t.price?"disabled":""}>🪙 ${fmt(t.price)}</button>`}</div>`;
+  }).join("");
+  openSheet(`<h4 class="hd-shop">🛒 상점 <span style="font-size:10px;color:var(--mut);font-weight:750">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>
+    <div class="subhead" style="margin-top:0">🐾 펫 분양 — 매장을 돌아다니며 손님을 홀립니다</div>${petRows}
+    <div class="subhead">🛋️ 가구 — 🌳 정원 가구는 앞마당(초록 존)에 배치 (Lv.${TERRACE_UNLOCK}~)</div>${html}`);
 }
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-adopt]");if(!b||!S)return;
+  const t=petDef(b.dataset.adopt);
+  if(!t||S.coins<t.price||S.level<t.unlockLevel)return;
+  S.coins-=t.price;
+  S.pets=S.pets||[];S.pets.push({type:t.id});
+  Snd.play("done");toast("🐾 "+t.name+"을(를) 입양했어요! 매장을 돌아다녀요");
+  syncPets();openShop();renderHeader();saveLocal();
+});
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-buy]");if(!b||!S)return;
   const f=Core.furnitureById(DATA,b.dataset.buy);
@@ -1456,6 +1496,11 @@ function openDex(){
   openSheet(`<h4 class="hd-quest">📖 도감 <span style="font-size:10px;color:var(--mut)">모을수록 가게가 강해져요</span><button class="x" data-close>닫기 ✕</button></h4>
     <div class="subhead">🍽️ 메뉴 마스터리 <span style="font-weight:400">— 별을 채우면 판매가 보너스</span></div>${menuRows}
     <div class="subhead">💗 단골 앨범 (단골 ${regCount}/${mem.length})</div>${memRows}
+    <div class="subhead">🐾 펫 (${new Set((S.pets||[]).map(x=>x.type)).size}/${(DATA.balance.pets.types||[]).length})</div><div class="dex-grid">${(DATA.balance.pets.types||[]).map(t=>{
+      const n=(S.pets||[]).filter(x=>x.type===t.id).length;
+      const em={"cat_cream":"🐱","cat_black":"🐈‍⬛","dog_shiba":"🐕","dog_white":"🐩","rabbit":"🐰"}[t.id]||"🐾";
+      return `<div class="dexcell${n>0?"":" locked"}">${n>0?em:"🔒"}<small>${n>0?t.name+(n>1?" ×"+n:""):"Lv."+t.unlockLevel}</small></div>`;
+    }).join("")}</div>
     <div class="subhead">🪑 가구 컬렉션 (${ownedKinds}/${furItems.length})</div><div class="dex-grid">${furCells}</div>`);
 }
 function openSoon(title){ openSheet(`<h4 class="hd-shop">${title}<button class="x" data-close>닫기 ✕</button></h4><div class="soon-msg">🚧 준비 중입니다<br>곧 업데이트로 찾아올게요!</div>`); }
@@ -1484,7 +1529,7 @@ function openRank(){
     ${row("💎","하루 최고 수익",fmt(Math.max(r.bestCoinsDay,d.coinsEarned||0)))}
     ${row("🔥","최장 연속 출석",(r.maxStreak||S.att&&S.att.streak||0)+"일")}
     ${row("🍞","누적 판매",fmt(S.totalSold||0)+"개")}
-    <div class="subhead">🌐 커뮤니티 주간 랭킹</div>
+    <div class="subhead">🌐 커뮤니티 레벨 랭킹 <span style="font-weight:400">— 기준은 딱 하나, 레벨!</span></div>
     <div id="rankBoard" class="soon-msg" style="padding:14px">불러오는 중…</div>`);
   loadWeeklyBoard();
 }
@@ -1499,14 +1544,14 @@ async function loadWeeklyBoard(){
     if(sbUser&&eligible){
       try{await sb.from("bakery_weekly").upsert({uid:sbUser.id,week_key:S.week.key,shop_name:S.name||"엑서 빵집",level:Math.min(S.level,DATA.balance.xpCurve.maxLevel),sold:wkSold,coins_earned:Math.min(10000000,(S.week?S.week.coins:0)+(S.daily.coinsEarned||0))});}catch(e){}
     }
-    const {data:rows,error}=await sb.from("bakery_weekly").select("shop_name,level,sold").eq("week_key",S.week.key).order("sold",{ascending:false}).limit(10);
+    const {data:rows,error}=await sb.from("bakery_weekly").select("shop_name,level,sold").eq("week_key",S.week.key).order("level",{ascending:false}).order("sold",{ascending:false}).limit(10);
     if(error)throw error;
     if(!rows||!rows.length){el.innerHTML="아직 이번 주 기록이 없어요<br>첫 번째로 이름을 올려보세요!";return;}
     const medal=["🥇","🥈","🥉"];
     el.className="";
     el.innerHTML=rows.map((x,i)=>`<div class="rowitem"><div class="re">${medal[i]||(i+1)+"위"}</div>
-      <div><div class="rn">${(x.shop_name||"이름없는 빵집").replace(/</g,"&lt;")}</div><div class="rd">Lv.${x.level}</div></div>
-      <b style="color:var(--brown)">${fmt(x.sold)}개</b></div>`).join("");
+      <div><div class="rn">${(x.shop_name||"이름없는 빵집").replace(/</g,"&lt;")}</div><div class="rd">이번 주 판매 ${fmt(x.sold)}개</div></div>
+      <b style="font-size:15px;color:var(--brown)">Lv.${x.level}</b></div>`).join("");
   }catch(e){
     el.innerHTML="🌐 주간 랭킹은 커뮤니티 서버 연결 후 열려요<br><small>(운영자 Supabase 설정 대기 중 — stage2/schema_bakery_social.sql)</small>";
   }
@@ -1769,6 +1814,7 @@ function checkDailyReset(){
   const today=kstDateStr(nowSec());
   if(S.daily.date!==today){rollRecords();Core.resetDaily(S,today,DATA);ensureRecords();if(SHEET&&SHEET.type==="quest")renderSheet();renderHeader();}
   if(!S.daily.special){S.daily.special=Core.pickDailySpecial(DATA,S,today);renderHeader();} // 구버전 세이브 백필
+  ensurePetGrant();
   // 출석: 하루 1회 (FTUE 중엔 미루기 — 다음 날부터)
   if(S.ftue&&S.ftue.done){
     const att=Core.claimAttendance(DATA,S,today);
@@ -1900,9 +1946,40 @@ function stepActors(dt){
     }
     a.t+=dt;
     if(a.state==="toqueue"){
+      // 구경 동선: 스크립트(FTUE) 제외, 70% 확률로 매장 곳곳(진열대·스테이션·가구·펫) 1~2곳 관심
+      if(!a.scripted&&a.browse===undefined){
+        a.browse=[];
+        if(Math.random()<0.7){
+          const pois=[];
+          pois.push({x:fx.display.x,y:Math.min(ROOM.h-1,fx.display.y+1.2)});
+          for(const k of ["oven","coffeebar","juice","brunch","icecream","grill"]){
+            const def=DATA.balance.stations[k==="coffeebar"?"coffee":k];
+            if(def&&S.level>=def.unlockLevel&&fx[k])pois.push({x:Math.min(ROOM.w-1,fx[k].x+0.8),y:Math.min(ROOM.h-1,fx[k].y+1.2)});
+          }
+          for(const it of S.layout)if(it.y<ROOM.h)pois.push({x:it.x,y:Math.min(ROOM.h-1,it.y+0.8)});
+          for(const pp of PETS)if(pp.y<ROOM.h)pois.push({x:pp.x,y:Math.min(ROOM.h-1,pp.y+0.6)});
+          const n=1+(Math.random()<0.4?1:0);
+          for(let i=0;i<n&&pois.length;i++)a.browse.push(pois.splice(Math.floor(Math.random()*pois.length),1)[0]);
+        }
+      }
+      if(a.browse&&a.browse.length){
+        a.state="browse";a.wp=[a.browse.shift()];a.t=0;continue;
+      }
       // 줄 위치 배정
       const qi=Math.min(queueIndex(a),fx.queueSpots.length-1);
       a.state="queue";a.wp=[fx.queueSpots[Math.max(0,qi)]];a.t=0;
+    }
+    else if(a.state==="browse"){
+      if(!a.wp.length){ // 도착: 관심 이모트 + 잠시 구경
+        if(!a.browseT){
+          a.browseT=1.2+Math.random()*1.6;
+          const r=a.el.getBoundingClientRect();
+          coinPop(r.left+r.width/2-8,r.top-4,["👀","😍","📸","💭"][Math.floor(Math.random()*4)]);
+          a.el.classList.remove("walk");
+        }
+        a.browseT-=dt;
+        if(a.browseT<=0){a.browseT=0;a.state="toqueue";}
+      }
     }
     else if(a.state==="queue"){
       const qi=queueIndex(a);
@@ -2025,7 +2102,16 @@ function confettiBurst(wrap){
   }
 }
 function levelEntry(lv){return DATA.levels.levels.find(x=>x.level===lv)||DATA.levels.roadmap.find(x=>x.level===lv)||null;}
+function ensurePetGrant(){
+  const cfg=DATA.balance.pets;
+  if(!cfg||S.level<cfg.freeFirstAtLevel||S.granted.pet1)return;
+  S.granted.pet1=true;
+  S.pets=S.pets||[];S.pets.push({type:"cat_cream"});
+  syncPets();
+  setTimeout(()=>{Snd.play("done");modal("🐱","첫 펫 입양!","크림 고양이가 우리 매장에 왔어요.<br>돌아다니는 고양이를 <b>쓰다듬어</b> 보세요 —<br>가끔 <b>동전도 찾아온답니다!</b> 💰",{okText:"환영해!"});},600);
+}
 function ensureGrants(){
+  ensurePetGrant();
   // 현재 레벨 이하의 미지급 가구를 지급 (멱등)
   for(const entry of DATA.levels.levels){
     if(entry.level>S.level)continue;
@@ -2141,6 +2227,76 @@ function offlineSettleAndShow(){
 /* ===================================================================
    헤더 / 공통 렌더
    =================================================================== */
+/* ----- 🐾 애견카페: 펫 배회·쓰다듬기·코인 발굴 ----- */
+let PETS=[]; // 런타임 펫 액터 {def,el,x,y,wp,t,idle,dug,patAt,digAt}
+function petDef(id){return (DATA.balance.pets.types||[]).find(t=>t.id===id);}
+function syncPets(){
+  S.pets=S.pets||[];
+  // 부족분 생성/초과분 제거
+  while(PETS.length<S.pets.length){
+    const i=PETS.length,def=petDef(S.pets[i].type)||DATA.balance.pets.types[0];
+    const el=document.createElement("div");
+    el.className="actor pet";
+    el.innerHTML='<span class="charwrap">'+Art.petSVG(S.pets[i].type)+'</span>';
+    $("#room").appendChild(el);
+    const x=2+Math.random()*(ROOM.w-4),y=2+Math.random()*(ROOM.h-3);
+    PETS.push({def,type:S.pets[i].type,el,x,y,wp:[],t:0,idle:1+Math.random()*3,dug:false,patAt:0,
+      digAt:nowSec()+ (DATA.balance.pets.digMinLow+Math.random()*(DATA.balance.pets.digMinHigh-DATA.balance.pets.digMinLow))*60});
+    positionActor(PETS[i]);
+  }
+  while(PETS.length>S.pets.length){const pp=PETS.pop();pp.el.remove();}
+}
+function tickPets(dt){
+  if(!DATA.balance.pets)return;
+  syncPets();
+  const cfg=DATA.balance.pets;
+  for(const pp of PETS){
+    pp.t+=dt;
+    // 이동
+    if(pp.wp.length){
+      const tgt=pp.wp[0];
+      const tx=isoX(tgt.x,tgt.y),ty=isoY(tgt.x,tgt.y),cx=isoX(pp.x,pp.y),cy=isoY(pp.x,pp.y);
+      const dx=tx-cx,dy=ty-cy,dist=Math.hypot(dx,dy);
+      if(dist<3){pp.x=tgt.x;pp.y=tgt.y;pp.wp.shift();pp.el.classList.remove("walk");pp.idle=2+Math.random()*5;}
+      else{const mv=SPEED*0.55*dt,r=Math.min(1,mv/dist);pp.x+=(tgt.x-pp.x)*r;pp.y+=(tgt.y-pp.y)*r;pp.el.classList.add("walk");}
+      positionActor(pp);
+    }else{
+      pp.idle-=dt;
+      if(pp.idle<=0){
+        // 실내+테라스 잔디를 자유 배회
+        const gx=Math.random()<0.8?1+Math.random()*(ROOM.w-2):-1+Math.random()*(ROOM.w+1);
+        const gy=Math.random()<0.8?1+Math.random()*(ROOM.h-2):ROOM.h+Math.random()*2;
+        pp.wp=[{x:gx,y:gy}];
+      }
+      if(Math.random()<dt*0.06){const r=pp.el.getBoundingClientRect();coinPop(r.left+r.width/2-8,r.top-2,["🐾","💤","❤️","🎾"][Math.floor(Math.random()*4)]);}
+    }
+    // 코인 발굴
+    if(!pp.dug&&nowSec()>=pp.digAt){
+      pp.dug=true;
+      const sp=document.createElement("span");sp.className="gspark digspark";sp.textContent="💰";pp.el.appendChild(sp);
+    }
+  }
+}
+function tapPet(el){
+  const pp=PETS.find(x=>x.el===el||x.el.contains(el));
+  if(!pp)return false;
+  const cfg=DATA.balance.pets,r=el.getBoundingClientRect();
+  if(pp.dug){ // 발굴 코인 수집
+    pp.dug=false;pp.digAt=nowSec()+(cfg.digMinLow+Math.random()*(cfg.digMinHigh-cfg.digMinLow))*60;
+    el.querySelectorAll(".digspark").forEach(x=>x.remove());
+    const coins=5+Math.floor(S.level*1.5);
+    S.coins+=coins;
+    Snd.play("golden");coinPop(r.left+r.width/2-12,r.top,"+"+coins+" 🪙");flyCoins(r.left+r.width/2,r.top,3);
+    toast("🐾 "+pp.def.name+"이(가) 동전을 찾아왔어요!");
+    renderHeader();saveLocal();return true;
+  }
+  if(nowSec()-pp.patAt>=cfg.patCooldownSec){ // 쓰다듬기
+    pp.patAt=nowSec();
+    Snd.play("pop");coinPop(r.left+r.width/2-8,r.top-4,"❤️");
+    actorSay(pp,null,["골골골…","멍멍! 🐶","기분 좋아~","🐾"][Math.floor(Math.random()*4)],1300);
+  }else coinPop(r.left+r.width/2-8,r.top-4,"💕");
+  return true;
+}
 /* ----- 매장 관리: 청소 (얼룩 탭 → 전부 닦으면 '반짝반짝' 팁 버프) ----- */
 let dirtAcc=0;
 function tickCleaning(dt){
@@ -2283,6 +2439,7 @@ function loop(now){
       if((pendingSales.length>0||Core.totalStock(S)>0)&&waiting<5&&actors.length<12)mkActor();
     }
     stepActors(dtRaw);
+    tickPets(dtRaw);
     tickCleaning(dtRaw);
     ftueTick();
     checkDailyReset();

@@ -853,13 +853,75 @@
   }
 
 
+
+  /* ---------- 펫(애견카페): 크림/까망 고양이 · 시바견 · 말티즈 · 토끼 ---------- */
+  function petSVG(type) {
+    var wag = '<animateTransform attributeName="transform" type="rotate" values="-14 0 0;16 0 0;-14 0 0" dur="0.9s" repeatCount="indefinite"/>';
+    var o = ' stroke="' + T.out + '" stroke-width="1.6" stroke-linejoin="round"';
+    function cat(body, belly, stripe) {
+      return '<svg width="38" height="34" viewBox="0 0 44 40" style="overflow:visible">' +
+        '<ellipse cx="22" cy="37" rx="13" ry="3.4" fill="rgba(96,56,16,.22)"/>' +
+        '<g transform="translate(37,26)"><path d="M0 0 Q9 -3 8 -12 Q12 -4 4 3 Z" fill="' + body + '"' + o + '>' + wag + '</path></g>' +
+        '<path d="M10 22 Q10 12 22 12 Q34 12 34 22 Q34 32 22 33 Q10 32 10 22 Z" fill="' + body + '"' + o + '/>' +
+        (stripe ? '<path d="M14 15 L17 19 M22 13 L22 18 M30 15 L27 19" stroke="' + stripe + '" stroke-width="2" stroke-linecap="round"/>' : '') +
+        '<path d="M12 12 L10 4 L17 9 Z" fill="' + body + '"' + o + '/><path d="M32 12 L34 4 L27 9 Z" fill="' + body + '"' + o + '/>' +
+        '<path d="M12.8 10 L11.8 6.4 L15 8.6 Z" fill="#f4a9be"/><path d="M31.2 10 L32.2 6.4 L29 8.6 Z" fill="#f4a9be"/>' +
+        '<ellipse cx="22" cy="27" rx="7' + '" ry="5" fill="' + belly + '"/>' +
+        '<circle cx="17.5" cy="21" r="1.7" fill="' + T.out + '"/><circle cx="26.5" cy="21" r="1.7" fill="' + T.out + '"/>' +
+        '<path d="M20.6 24.4 L23.4 24.4 L22 26 Z" fill="#e88a8a"/>' +
+        '<path d="M22 26 Q22 27.6 20 27.9 M22 26 Q22 27.6 24 27.9" stroke="' + T.out + '" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+        '<path d="M12 23 L7 22 M12 25 L7.6 26 M32 23 L37 22 M32 25 L36.4 26" stroke="rgba(91,58,38,.55)" stroke-width=".9" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+    if (type === "cat_cream") return cat("#f2dcb6", "#fdf3dd", "#dcbe8c");
+    if (type === "cat_black") return cat("#4a4348", "#6b6068", null);
+    if (type === "dog_shiba") {
+      return '<svg width="40" height="36" viewBox="0 0 46 42" style="overflow:visible">' +
+        '<ellipse cx="23" cy="39" rx="14" ry="3.6" fill="rgba(96,56,16,.22)"/>' +
+        '<g transform="translate(38,24)"><path d="M0 2 Q8 0 7 -9 Q13 -2 4 5 Z" fill="#e8a35c"' + o + '>' + wag + '</path></g>' +
+        '<path d="M9 24 Q9 13 23 13 Q37 13 37 24 Q37 34 23 35 Q9 34 9 24 Z" fill="#e8a35c"' + o + '/>' +
+        '<path d="M12 14 L9 5 L18 10 Z" fill="#e8a35c"' + o + '/><path d="M34 14 L37 5 L28 10 Z" fill="#e8a35c"' + o + '/>' +
+        '<path d="M13 12.6 L11.4 7.6 L16.4 10.4 Z" fill="#f7d3ae"/><path d="M33 12.6 L34.6 7.6 L29.6 10.4 Z" fill="#f7d3ae"/>' +
+        '<path d="M14 24 Q14 18 23 18 Q32 18 32 24 Q32 31 23 32 Q14 31 14 24 Z" fill="#fdf0dd"/>' +
+        '<circle cx="18" cy="21.6" r="1.8" fill="' + T.out + '"/><circle cx="28" cy="21.6" r="1.8" fill="' + T.out + '"/>' +
+        '<ellipse cx="23" cy="25.4" rx="2.2" ry="1.7" fill="' + T.out + '"/>' +
+        '<path d="M23 27 Q23 29 20.6 29.3 M23 27 Q23 29 25.4 29.3" stroke="' + T.out + '" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M19 30.5 Q23 32.4 27 30.5" stroke="#e88a8a" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+    if (type === "dog_white") {
+      return '<svg width="38" height="34" viewBox="0 0 44 40" style="overflow:visible">' +
+        '<ellipse cx="22" cy="37" rx="13" ry="3.4" fill="rgba(96,56,16,.22)"/>' +
+        '<g transform="translate(36,25)"><path d="M0 1 Q7 0 6 -8 Q11 -1 3 4 Z" fill="#fdf6ec"' + o + '>' + wag + '</path></g>' +
+        '<g' + o + ' fill="#fdf6ec"><circle cx="15" cy="16" r="6"/><circle cx="29" cy="16" r="6"/><circle cx="22" cy="13" r="7"/><path d="M9 24 Q9 15 22 15 Q35 15 35 24 Q35 33 22 34 Q9 33 9 24 Z"/></g>' +
+        '<path d="M10 16 Q6 18 7 24 Q10 26 12 23 Z" fill="#f3e6d0"' + o + '/><path d="M34 16 Q38 18 37 24 Q34 26 32 23 Z" fill="#f3e6d0"' + o + '/>' +
+        '<circle cx="17.5" cy="22" r="1.7" fill="' + T.out + '"/><circle cx="26.5" cy="22" r="1.7" fill="' + T.out + '"/>' +
+        '<ellipse cx="22" cy="25.6" rx="2" ry="1.5" fill="' + T.out + '"/>' +
+        '<path d="M18.6 28.6 Q22 30.6 25.4 28.6" stroke="#e88a8a" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+        '<circle cx="22" cy="10" r="2.2" fill="#f4a9be" stroke="#d98aa2" stroke-width="1"/>' +
+        '</svg>';
+    }
+    // rabbit
+    return '<svg width="36" height="40" viewBox="0 0 42 48" style="overflow:visible">' +
+      '<ellipse cx="21" cy="45" rx="12" ry="3.2" fill="rgba(96,56,16,.22)"/>' +
+      '<path d="M14 20 Q11 4 16.5 3 Q21 3 19.5 19 Z" fill="#fdf3f6"' + o + '/><path d="M28 20 Q31 4 25.5 3 Q21 3 22.5 19 Z" fill="#fdf3f6"' + o + '/>' +
+      '<path d="M15.6 16 Q14.4 6.6 16.8 6 Q18.8 6.4 18 16 Z" fill="#f4b9cb"/><path d="M26.4 16 Q27.6 6.6 25.2 6 Q23.2 6.4 24 16 Z" fill="#f4b9cb"/>' +
+      '<path d="M9 31 Q9 18 21 18 Q33 18 33 31 Q33 41 21 42 Q9 41 9 31 Z" fill="#fdf3f6"' + o + '/>' +
+      '<ellipse cx="21" cy="35" rx="6.4" ry="4.6" fill="#fff"/>' +
+      '<circle cx="16.5" cy="28" r="1.7" fill="' + T.out + '"/><circle cx="25.5" cy="28" r="1.7" fill="' + T.out + '"/>' +
+      '<path d="M19.8 31 L22.2 31 L21 32.4 Z" fill="#e88a8a"/>' +
+      '<path d="M21 32.4 Q21 34 19.2 34.3 M21 32.4 Q21 34 22.8 34.3" stroke="' + T.out + '" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="13" cy="31.5" r="1.6" fill="#f4b9cb" opacity=".8"/><circle cx="29" cy="31.5" r="1.6" fill="#f4b9cb" opacity=".8"/>' +
+      '</svg>';
+  }
+
   global.BakeryArt = {
     TOKENS: T,
     bushSVG: bushSVG, aboardSVG: aboardSVG, catSVG: catSVG, shelfSVG: shelfSVG,
     lookFromSeed: lookFromSeed, randomLook: randomLook, charSVG: charSVG,
     bakerSVG: bakerSVG, baristaSVG: baristaSVG, cashierSVG: cashierSVG,
     ovenSVG: ovenSVG, displaySVG: displaySVG, coffeeSVG: coffeeSVG, counterSVG: counterSVG,
-    stationSVG: stationSVG,
+    stationSVG: stationSVG, petSVG: petSVG,
 
     tableSVG: tableSVG, tableCoupleSVG: tableCoupleSVG, sofaSVG: sofaSVG, parasolSVG: parasolSVG,
     doorSVG: doorSVG, windowSVG: windowSVG, lampSVG: lampSVG
