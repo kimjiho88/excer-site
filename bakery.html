@@ -447,6 +447,18 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .hbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .hbar i{display:block;width:100%;max-width:26px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#ffd873,#f2ab2e)}
 .hbar small{font-size:8px;color:var(--mut);margin-top:2px}
+/* ===== 무한 지형 배경: 부지 밖도 '세계'로 (타운쉽식 — 어디를 봐도 빈 공간 없음) ===== */
+.grade-1 .viewport,.grade-2 .viewport,.grade-3 .viewport{
+  background:
+    radial-gradient(120% 90% at 50% 38%,rgba(255,246,214,.30),rgba(255,246,214,0) 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Crect width='128' height='128' fill='%2384b26b'/%3E%3Cellipse cx='24' cy='30' rx='16' ry='9' fill='%237aa960' opacity='.55'/%3E%3Cellipse cx='92' cy='78' rx='20' ry='11' fill='%237aa960' opacity='.45'/%3E%3Cellipse cx='56' cy='112' rx='14' ry='8' fill='%238fbd75' opacity='.5'/%3E%3Ccircle cx='70' cy='22' r='2.2' fill='%23a3cc87' opacity='.8'/%3E%3Ccircle cx='14' cy='84' r='1.8' fill='%23a3cc87' opacity='.7'/%3E%3Ccircle cx='108' cy='40' r='2' fill='%23a3cc87' opacity='.7'/%3E%3Ccircle cx='44' cy='64' r='1.6' fill='%2372a058' opacity='.8'/%3E%3Cpath d='M30 96q4-9 8 0q-4 3-8 0' fill='%236f9e58' opacity='.6'/%3E%3Cpath d='M104 12q4-9 8 0q-4 3-8 0' fill='%236f9e58' opacity='.55'/%3E%3C/svg%3E") repeat,
+    linear-gradient(180deg,#8cba74,#79a862)}
+.viewport::before{display:none}
+.camhome{position:absolute;left:10px;bottom:12px;z-index:16;width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;font-size:19px;color:#7a4f28;
+  background:linear-gradient(180deg,#fffdf6,#ffedd0);border:2px solid #c89a68;
+  box-shadow:0 3px 0 #d9b183,0 4px 9px rgba(120,80,30,.2)}
+.camhome:active{transform:translateY(2px);box-shadow:0 1px 0 #d9b183}
 .roofdeco{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;line-height:1;
   filter:drop-shadow(0 3px 3px rgba(60,40,10,.3))}
 .dockbtn.on{color:var(--brown)}
@@ -709,10 +721,11 @@ function skirtSVG(){
 let CAM={x:0,y:0,z:1}, WORLD={w:1,h:1}, camInit=false, _lastRoomW=0;
 function clampZoom(z){
   const vp=$("#viewport"); if(!vp) return z;
-  // 최소 줌 = 부지(실내+정원) 전체가 화면에 들어오는 배율
+  // 최소 줌 = 부지가 화면을 '덮는' 배율 (타운쉽식 — 월드 밖 빈 공간이 보이지 않음.
+  // 다이아몬드 모서리의 미세 노출은 무한 지형 배경이 받쳐준다)
   const lotW=WORLD.w+SKIRT*TW, lotH=WORLD.h+SKIRT*TH*1.6;
-  const zmin=Math.min(vp.clientWidth/lotW, vp.clientHeight/lotH)*0.98;
-  return Math.max(Math.min(zmin,1), Math.min(z, 3.0)); // 최대 3배 확대(디테일 감상)
+  const zmin=Math.max(vp.clientWidth/lotW, vp.clientHeight/lotH)*0.92;
+  return Math.max(Math.min(zmin,1.2), Math.min(z, 3.0)); // 최대 3배 확대(디테일 감상)
 }
 function clampCam(){
   const vp=$("#viewport"); if(!vp) return;
@@ -742,16 +755,45 @@ function fitCamera(){
   CAM.y=(WORLD.h/2-ay)*CAM.z;
   clampCam();
 }
-/* ----- 포인터: 팬/줌 + 탭 판별 ----- */
-let _ptrs=new Map(), _panLast=null, _pinchDist=0, _panMoved=false, suppressTap=false;
-function isUIHit(t){ return !!(t.closest && t.closest(".rail,.tray,.dock,.fabs,button,[data-close],[data-sel],[data-buy]")); }
+/* ----- 포인터: 팬(관성)/줌(앵커 고정) + 탭/더블탭 판별 — 메이저 게임 카메라 UX ----- */
+let _ptrs=new Map(), _panLast=null, _pinchDist=0, _pinchMid=null, _panMoved=false, suppressTap=false;
+let _vel={x:0,y:0}, _inertiaRAF=0, _lastTap={t:0,x:0,y:0};
+function isUIHit(t){ return !!(t.closest && t.closest(".rail,.tray,.dock,.fabs,button,.camhome,[data-close],[data-sel],[data-buy]")); }
+// 화면상의 앵커점(뷰포트 중심 기준 오프셋)이 그대로 머물도록 줌 — 커서/핀치 중심 줌
+function zoomAt(ax,ay,z1){
+  const z0=CAM.z; z1=clampZoom(z1);
+  CAM.x=ax-(ax-CAM.x)*z1/z0;
+  CAM.y=ay-(ay-CAM.y)*z1/z0;
+  CAM.z=z1; applyCamera();
+}
+function vpOffset(e){
+  const r=$("#viewport").getBoundingClientRect();
+  return {x:e.clientX-r.left-r.width/2, y:e.clientY-r.top-r.height/2};
+}
+function stopInertia(){ if(_inertiaRAF){cancelAnimationFrame(_inertiaRAF);_inertiaRAF=0;} }
+function startInertia(){
+  stopInertia();
+  const step=()=>{
+    _vel.x*=0.93; _vel.y*=0.93;
+    if(Math.hypot(_vel.x,_vel.y)<0.5){_inertiaRAF=0;return;}
+    CAM.x+=_vel.x; CAM.y+=_vel.y; applyCamera();
+    _inertiaRAF=requestAnimationFrame(step);
+  };
+  if(Math.hypot(_vel.x,_vel.y)>3)_inertiaRAF=requestAnimationFrame(step);
+}
 function bindCamera(){
   const vp=$("#viewport");
   vp.addEventListener("pointerdown",e=>{
     if(isUIHit(e.target))return;
+    stopInertia();
     _ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(_ptrs.size===1){ _panLast={x:e.clientX,y:e.clientY}; _panMoved=false; }
-    else if(_ptrs.size===2){ const p=[..._ptrs.values()]; _pinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y); }
+    if(_ptrs.size===1){ _panLast={x:e.clientX,y:e.clientY}; _panMoved=false; _vel={x:0,y:0}; }
+    else if(_ptrs.size===2){
+      const p=[..._ptrs.values()];
+      _pinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+      const r=vp.getBoundingClientRect();
+      _pinchMid={x:(p[0].x+p[1].x)/2-r.left-r.width/2, y:(p[0].y+p[1].y)/2-r.top-r.height/2};
+    }
     // 캡처는 실제 팬/핀치가 시작될 때만 — 단순 탭은 click 이벤트가 오브젝트로 정상 전달되게 둔다
   });
   vp.addEventListener("pointermove",e=>{
@@ -759,21 +801,35 @@ function bindCamera(){
     _ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(_ptrs.size>=2){
       const p=[..._ptrs.values()]; const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
-      if(_pinchDist>0){ CAM.z=clampZoom(CAM.z*(d/_pinchDist)); applyCamera(); }
+      if(_pinchDist>0&&_pinchMid) zoomAt(_pinchMid.x,_pinchMid.y,CAM.z*(d/_pinchDist)); // 핀치 중심 고정 줌
       _pinchDist=d; _panMoved=true; return;
     }
     if(_panLast){
       const dx=e.clientX-_panLast.x, dy=e.clientY-_panLast.y;
       if(!_panMoved&&Math.hypot(dx,dy)>6){ _panMoved=true; vp.classList.add("grabbing"); try{vp.setPointerCapture(e.pointerId);}catch(_){} }
-      if(_panMoved){ CAM.x+=dx; CAM.y+=dy; _panLast={x:e.clientX,y:e.clientY}; applyCamera(); }
+      if(_panMoved){
+        CAM.x+=dx; CAM.y+=dy;
+        _vel={x:dx,y:dy}; // 관성용 최근 속도
+        _panLast={x:e.clientX,y:e.clientY}; applyCamera();
+      }
     }
   });
   function endPtr(e){
     _ptrs.delete(e.pointerId);
-    if(_ptrs.size<2)_pinchDist=0;
+    if(_ptrs.size<2){_pinchDist=0;_pinchMid=null;}
     if(_ptrs.size===0){
-      $("#viewport").classList.remove("grabbing");
-      if(_panMoved){ suppressTap=true; setTimeout(()=>suppressTap=false,60); }
+      vp.classList.remove("grabbing");
+      if(_panMoved){
+        suppressTap=true; setTimeout(()=>suppressTap=false,60);
+        startInertia(); // 플릭 후 관성 이동
+      }else if(!isUIHit(e.target)&&!e.target.closest("[data-obj],.actor")){
+        // 빈 바닥 더블탭 → 확대/전체 토글 (모바일 표준)
+        const now=performance.now(), o=vpOffset(e);
+        if(now-_lastTap.t<320&&Math.hypot(o.x-_lastTap.x,o.y-_lastTap.y)<36){
+          if(CAM.z<1.5) zoomAt(o.x,o.y,1.9); else fitCamera(),applyCamera();
+          _lastTap={t:0,x:0,y:0};
+        }else _lastTap={t:now,x:o.x,y:o.y};
+      }
       _panLast=null;
     }else if(_ptrs.size===1){ const p=[..._ptrs.values()][0]; _panLast={x:p.x,y:p.y}; }
   }
@@ -781,8 +837,14 @@ function bindCamera(){
   vp.addEventListener("pointercancel",endPtr);
   vp.addEventListener("wheel",e=>{
     e.preventDefault();
-    CAM.z=clampZoom(CAM.z*(e.deltaY<0?1.12:0.89)); applyCamera();
+    const o=vpOffset(e);
+    zoomAt(o.x,o.y,CAM.z*(e.deltaY<0?1.13:0.885)); // 커서 위치 고정 줌
   },{passive:false});
+  // 카메라 홈 버튼 — 기본 프레이밍 복귀
+  const home=document.createElement("button");
+  home.className="camhome"; home.textContent="⌖"; home.title="기본 시점";
+  home.addEventListener("click",()=>{stopInertia();fitCamera();applyCamera();});
+  vp.appendChild(home);
 }
 
 /* 고정 설비 배치 (방 크기의 함수) */
