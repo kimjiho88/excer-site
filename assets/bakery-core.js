@@ -158,12 +158,15 @@
     return null;
   }
   function moodScore(data, state) {
-    if (!state.layout || !data.furniture) return 0;
     var m = 0;
-    for (var i = 0; i < state.layout.length; i++) {
-      var f = furnitureById(data, state.layout[i].id);
-      if (f) m += f.mood || 0;
+    if (state.layout && data.furniture) {
+      for (var i = 0; i < state.layout.length; i++) {
+        var f = furnitureById(data, state.layout[i].id);
+        if (f) m += f.mood || 0;
+      }
     }
+    // 펫(애견카페): 마리당 분위기 보너스
+    if (data.balance.pets && state.pets) m += state.pets.length * (data.balance.pets.moodPerPet || 0);
     return m;
   }
   function tipChanceOf(data, state) {
