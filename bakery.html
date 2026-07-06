@@ -504,7 +504,7 @@ async function syncServerTime(){
 let SPRITES={};
 async function loadSprites(){
   try{
-    const m=await (await fetch("assets/sprites/manifest.json?v=1")).json();
+    const m=await (await fetch("assets/sprites/manifest.json",{cache:"no-cache"})).json(); // 항상 재검증 → 에셋 추가가 즉시 반영
     await Promise.all(Object.entries(m.sprites||{}).map(([k,v])=>new Promise(res=>{
       const img=new Image();
       img.onload=()=>{SPRITES[k]={src:"assets/sprites/"+v.file,w:v.w||64,dy:v.dy||0};res();};
