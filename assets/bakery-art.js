@@ -786,12 +786,64 @@
       '</svg>';
   }
 
+  /* ---------- 신규 스테이션: 주스바 / 브런치 키친 / 아이스 스테이션 ---------- */
+  function juiceSVG(busy) {
+    var b = isoBox(10, 26, 33, 26, "#e8c98a", T.wood, T.woodDk);
+    var whirl = busy ? '<circle cx="59" cy="18" r="4.5" fill="#ffd9a3" opacity=".85"><animate attributeName="r" values="4.5;3.2;4.5" dur="0.5s" repeatCount="indefinite"/></circle>' : '<circle cx="59" cy="18" r="4.5" fill="#ffd9a3"/>';
+    return '<svg width="92" height="82" viewBox="0 0 92 82" style="overflow:visible"><defs>' + b.defs + '</defs>' +
+      contactShadow(46, 76, 34) + b.html +
+      '<rect x="14" y="6" width="30" height="9" rx="4" fill="#e2574c"' + FO + '/><rect x="18" y="6" width="7" height="9" fill="#fdf6ec"/><rect x="32" y="6" width="7" height="9" fill="#fdf6ec"/>' +
+      '<circle cx="22" cy="24" r="7" fill="#f5a03c"' + FO + '/><circle cx="20" cy="21.6" r="2" fill="#ffd9a3"/>' +
+      '<circle cx="34" cy="21" r="6" fill="#e8564f"' + FO + '/><path d="M32.7 15.5 L34 12.6 L35.4 15.5" fill="#5f9e4e"/>' +
+      '<circle cx="44" cy="25" r="5.4" fill="#f6d34c"' + FO + '/>' +
+      '<path d="M53 10 L65 10 L63 30 L55 30 Z" fill="rgba(214,239,255,.85)"' + FO + '/>' + whirl +
+      '<rect x="53.5" y="30" width="11" height="5" rx="2" fill="#8a6a4a"' + FO + '/>' +
+      '<path d="M18 40 L30 37 L30 47 L18 50 Z" fill="#fff3d9" stroke="#d9b183" stroke-width="1.5"/>' +
+      '<text x="24" y="46" font-size="7" text-anchor="middle" fill="#a8642a" font-weight="bold">JUICE</text></svg>';
+  }
+  function brunchSVG(busy) {
+    var b = isoBox(8, 30, 36, 24, "#d9d2c6", T.wood, T.woodDk);
+    var steam = busy ? '<g class="smoke"><circle cx="34" cy="14" r="4" fill="#f4ede2" opacity=".7"/><circle cx="39" cy="7" r="5" fill="#f4ede2" opacity=".45"/></g>' : "";
+    return '<svg width="96" height="84" viewBox="0 0 96 84" style="overflow:visible"><defs>' + b.defs + '</defs>' +
+      contactShadow(48, 78, 36) + b.html +
+      '<ellipse cx="34" cy="24" rx="12" ry="6" fill="#3f3a34"' + FO + '/><ellipse cx="34" cy="22.6" rx="9.5" ry="4.4" fill="#57504a"/>' +
+      '<circle cx="34" cy="22" r="4" fill="#ffe9ad"/><circle cx="34" cy="22" r="2" fill="#f5b93c"/>' + steam +
+      '<path d="M52 22 L70 17 L70 24 L52 29 Z" fill="#f2b23c"' + FO + '/>' +
+      '<path d="M52 18 L70 13 L70 17 L52 22 Z" fill="#7fae5f"' + FO + '/>' +
+      '<path d="M52 14 L70 9 L70 13 L52 18 Z" fill="#fdf6ec"' + FO + '/>' +
+      '<rect x="74" y="20" width="10" height="14" rx="2" fill="#cf4f42"' + FO + '/><rect x="76" y="23" width="6" height="3" fill="#fdf6ec"/>' +
+      '<path d="M14 42 L28 38.5 L28 49 L14 52.5 Z" fill="#fff3d9" stroke="#d9b183" stroke-width="1.5"/>' +
+      '<text x="21" y="48" font-size="6.4" text-anchor="middle" fill="#a8642a" font-weight="bold">BRUNCH</text></svg>';
+  }
+  function icecreamSVG(busy) {
+    var b = isoBox(9, 28, 34, 25, "#cfe8ef", "#a8d4de", "#8dbfca");
+    var frost = busy ? '<g class="smoke"><circle cx="30" cy="12" r="3.5" fill="#e8f6fb" opacity=".8"/><circle cx="60" cy="10" r="4" fill="#e8f6fb" opacity=".6"/></g>' : "";
+    return '<svg width="94" height="82" viewBox="0 0 94 82" style="overflow:visible"><defs>' + b.defs + '</defs>' +
+      contactShadow(47, 76, 34) + b.html +
+      '<path d="M24 22 L30 8 L36 22 Z" fill="#e8c290"' + FO + '/><circle cx="30" cy="8.5" r="5.5" fill="#fdf0f4"' + FO + '/><circle cx="30" cy="5" r="3.4" fill="#f4a9be"/>' +
+      '<path d="M44 21 L49 10 L54 21 Z" fill="#e8c290"' + FO + '/><circle cx="49" cy="10" r="5" fill="#e9d9f6"' + FO + '/>' +
+      '<circle cx="63" cy="18" r="6.5" fill="#fff6ea"' + FO + '/><path d="M56.5 18 A6.5 6.5 0 0 1 69.5 18" fill="#9fd8c3"/>' + frost +
+      '<rect x="16" y="36" width="26" height="8" rx="3" fill="rgba(214,243,251,.85)" stroke="#8dbfca" stroke-width="1.5"/>' +
+      '<path d="M60 40 L74 36.5 L74 46 L60 49.5 Z" fill="#fff3d9" stroke="#d9b183" stroke-width="1.5"/>' +
+      '<text x="67" y="45.5" font-size="6.2" text-anchor="middle" fill="#3d8a9e" font-weight="bold">ICE</text></svg>';
+  }
+  // 스테이션 id → 아트 (신규 스테이션 공용 진입점)
+  function stationSVG(id, busy) {
+    if (id === "juice") return juiceSVG(busy);
+    if (id === "brunch") return brunchSVG(busy);
+    if (id === "icecream") return icecreamSVG(busy);
+    return coffeeSVG(false, busy);
+  }
+
+
   global.BakeryArt = {
     TOKENS: T,
     bushSVG: bushSVG, aboardSVG: aboardSVG, catSVG: catSVG, shelfSVG: shelfSVG,
     lookFromSeed: lookFromSeed, randomLook: randomLook, charSVG: charSVG,
     bakerSVG: bakerSVG, baristaSVG: baristaSVG, cashierSVG: cashierSVG,
     ovenSVG: ovenSVG, displaySVG: displaySVG, coffeeSVG: coffeeSVG, counterSVG: counterSVG,
+    stationSVG: stationSVG,
+
     tableSVG: tableSVG, tableCoupleSVG: tableCoupleSVG, sofaSVG: sofaSVG, parasolSVG: parasolSVG,
     doorSVG: doorSVG, windowSVG: windowSVG, lampSVG: lampSVG
   };
