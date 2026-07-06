@@ -44,7 +44,7 @@ function fillQueues(state) {
   const unlocked = Core.unlockedRecipes(data, state);
   if (!unlocked.length) return;
   let guard = 0;
-  while (guard++ < 20) {
+  while (guard++ < 40) {
     // 재고+생산중 물량이 수요 대비 가장 부족한 메뉴 선택
     let best = null, bestRatio = Infinity;
     for (const r of unlocked) {
@@ -127,7 +127,7 @@ function fillQueuesFor(c) {
   const unlocked = Core.unlockedRecipes(data, c);
   if (!unlocked.length) return;
   let guard = 0;
-  while (guard++ < 20) {
+  while (guard++ < 40) {
     let best = null, bestRatio = Infinity;
     for (const r of unlocked) {
       let pending = 0;

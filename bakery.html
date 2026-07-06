@@ -459,6 +459,16 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   background:linear-gradient(180deg,#fffdf6,#ffedd0);border:2px solid #c89a68;
   box-shadow:0 3px 0 #d9b183,0 4px 9px rgba(120,80,30,.2)}
 .camhome:active{transform:translateY(2px);box-shadow:0 1px 0 #d9b183}
+/* 주방 스테이션 탭 */
+.stabs{display:flex;gap:6px;margin:-2px 0 10px;overflow-x:auto;padding-bottom:2px}
+.stab{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:56px;padding:6px 8px 5px;border-radius:12px;
+  font-size:17px;background:linear-gradient(180deg,#fffdf6,#ffedd0);border:2px solid #d9b183;color:var(--ink2);position:relative}
+.stab small{font-size:8.5px;font-weight:800}
+.stab.on{border-color:#b98046;background:linear-gradient(180deg,#ffe9bd,#ffd98f);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7)}
+.stab .qb{position:absolute;top:-5px;right:-4px;font-size:8.5px;font-weight:900;font-style:normal;color:#fff;background:var(--green);
+  border-radius:99px;min-width:14px;height:14px;display:grid;place-items:center;border:1.5px solid #fff}
+.dirtspot{cursor:pointer}
+.dirtspot:active{transform:translate(-50%,-82%) scale(.9)}
 /* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
 .flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
@@ -937,8 +947,11 @@ function fixtures(){
   const fx={
     oven:{x:1,y:0},
     coffeebar:{x:3,y:0},
+    juice:{x:5,y:0},
     display:{x:w-2,y:0},
     counter:{x:w-2,y:2},
+    brunch:{x:0,y:2},
+    icecream:{x:0,y:4},
   };
   fx.queueSpots=[{x:w-2,y:3},{x:w-3,y:4},{x:w-4,y:4},{x:w-4,y:3}];
   fx.door={x:0,y:h-1};
@@ -962,6 +975,7 @@ function blockedTiles(){
   const fx=fixtures(),set=new Set();
   const put=t=>set.add(t.x+","+t.y);
   put(fx.oven);put(fx.coffeebar);put(fx.display);put(fx.counter);
+  put(fx.juice);put(fx.brunch);put(fx.icecream);
   fx.queueSpots.forEach(put);put(fx.door);
   put({x:fx.counter.x,y:1}); // 캐셔 자리(진열대-카운터 사이)
   put({x:0,y:ROOM.h-2}); // 문 앞 통로
@@ -1100,6 +1114,21 @@ function renderObjects(){
   }else
     html+=objArt("st-coffee-locked",fx.coffeebar.x,fx.coffeebar.y,
       `<span style="display:block;filter:grayscale(1) opacity(.4)">${Art.coffeeSVG(false,false)}</span>`,"Lv.3 해금","",false);
+  // 신규 스테이션(주스바/브런치/아이스) — 제네릭 렌더, 해금 3레벨 전부터 실루엣 예고
+  for(const stId of ["juice","brunch","icecream"]){
+    const def=DATA.balance.stations[stId],pos=fx[stId];
+    if(!def||!pos)continue;
+    if(S.level>=def.unlockLevel){
+      const busy=stBusy(stId);
+      html+=objArt("st-"+stId,pos.x,pos.y,
+        spriteOr([busy?"station_"+stId+"_busy":"station_"+stId,"station_"+stId],Art.stationSVG(stId,busy)),
+        def.name,prog(stId)+(busy?"":`<span class="zz">💤</span>`),true);
+    }else if(S.level>=def.unlockLevel-3){
+      html+=objArt("st-"+stId+"-locked",pos.x,pos.y,
+        `<span style="display:block;filter:grayscale(1) opacity(.45)">${Art.stationSVG(stId,false)}</span>`,
+        "Lv."+def.unlockLevel+" 해금","",false);
+    }
+  }
   // 진열 쇼케이스 — 실제 재고 + 재고 상태(ok/low/empty)별 스프라이트 키
   const stocked=Core.unlockedRecipes(DATA,S).map(r=>({emoji:r.emoji,n:S.stock[r.id]||0})).filter(x=>x.n>0);
   const stockRatio=Core.totalStock(S)/Core.stockCap(DATA,S);
@@ -1116,6 +1145,12 @@ function renderObjects(){
   const coffeeBusy=stBusy("coffee");
   html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,
     spriteOr([coffeeBusy?"staff_barista_busy":"staff_barista","staff_barista","staff_cashier"],Art.baristaSVG(coffeeBusy)),"",false);
+  // 얼룩(청소 대상) — 탭하면 닦기
+  (S.dirt||[]).forEach((d,i)=>{
+    html+=`<div class="obj tappable dirtspot" data-obj="dirt-${i}"
+      style="left:${isoX(d.x,d.y)}px;top:${isoY(d.x,d.y)+TH*0.35}px;z-index:${Math.round((d.x+d.y)*10+4)}">
+      <svg width="30" height="16" viewBox="0 0 30 16"><ellipse cx="15" cy="8" rx="13" ry="6" fill="rgba(110,80,45,.30)"/><ellipse cx="10" cy="7" rx="4" ry="2.2" fill="rgba(90,60,30,.25)"/><ellipse cx="20" cy="10" rx="3.4" ry="2" fill="rgba(90,60,30,.22)"/></svg></div>`;
+  });
   // 제빵사 — 오븐 옆에서 반죽
   html+=objArt("staff-baker",2.25,1.2,
     spriteOr([ovenBusy?"staff_baker_busy":"staff_baker","staff_baker"],Art.bakerSVG(ovenBusy)),"",false);
@@ -1189,8 +1224,10 @@ $("#room").addEventListener("click",e=>{
   }
   if(!obj)return;
   const id=obj.dataset.obj;
+  if(id.startsWith("dirt-")){wipeDirt(+id.slice(5),obj);return;}
   if(id==="st-oven")openKitchen("oven");
   else if(id==="st-coffee")openKitchen("coffee");
+  else if(id.startsWith("st-")&&DATA.balance.stations[id.slice(3)])openKitchen(id.slice(3));
   else if(id==="st-display")openStock();
   else if(id==="st-counter"){
     const amt=Core.collectTipsJar(S); // 수금 횟수가 일일퀘스트에 카운트
@@ -1449,7 +1486,10 @@ function renderSheet(){
     }
     const menus=Core.unlockedRecipes(DATA,S).filter(r=>r.station===st);
     const full=q.length>=nSlots;
-    openSheet(`<h4 class="hd-kitchen">${emoji} ${stDef.name}${st==="coffee"&&Core.hasCoffeeMachine(DATA,S)?" <span style='font-size:10px;color:var(--green)'>머신 설치됨</span>":""}
+    const tabs=Object.entries(DATA.balance.stations)
+      .filter(([k,v])=>S.level>=v.unlockLevel)
+      .map(([k,v])=>`<button class="stab${k===st?" on":""}" data-station="${k}">${k==="coffee"?(Core.hasCoffeeMachine(DATA,S)?"☕":"🫖"):v.emoji}<small>${v.name}</small>${S.queues[k]&&S.queues[k].length?'<i class="qb">'+S.queues[k].length+'</i>':""}</button>`).join("");
+    openSheet(`${Object.keys(DATA.balance.stations).filter(k=>S.level>=DATA.balance.stations[k].unlockLevel).length>1?`<div class="stabs">${tabs}</div>`:""}<h4 class="hd-kitchen">${emoji} ${stDef.name}${st==="coffee"&&Core.hasCoffeeMachine(DATA,S)?" <span style='font-size:10px;color:var(--green)'>머신 설치됨</span>":""}
       <button class="x" data-close>닫기 ✕</button></h4>
       <div class="qrow">${slots}</div>
       ${buf?`<div class="blocked" style="margin-bottom:9px">📦 ${Core.recipeById(DATA,buf.r).emoji} ${buf.n}개가 진열 공간 대기 중 — 진열대를 업그레이드하세요!</div>`:""}
@@ -1530,6 +1570,11 @@ function renderSheet(){
     openSheet(`<h4 class="hd-quest">📋 미션 <span style="font-size:10px;color:var(--mut)">매일 자정(KST) 리셋</span><button class="x" data-close>닫기 ✕</button></h4>${rows}${acRow}${orderRows}`);
   }
 }
+/* 주방 스테이션 탭 전환 */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-station]");if(!b||!S)return;
+  openKitchen(b.dataset.station);
+});
 /* 시트 액션: 굽기 / 업그레이드 / 퀘스트 수령 */
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-bake]");if(!b||!S)return;
@@ -1856,6 +1901,15 @@ function stepActors(dt){
       if(a.t>5+Math.random()*4){
         if(a.foodEl)a.foodEl.remove();
         a.el.classList.remove("eating");
+        // 매장 이용 리뷰: 잘 먹고 간 손님이 별점을 남김 → 평판(칭호 재료)
+        const di=DATA.balance.dineIn;
+        if(di&&Math.random()<di.reviewChance){
+          S.rep+=1;
+          const r=a.el.getBoundingClientRect();
+          coinPop(r.left+r.width/2-10,r.top-6,"⭐ 리뷰!");
+          actorSay(a,null,["⭐⭐⭐⭐⭐ 최고예요!","☕ 분위기 맛집이네요","🥐 또 올게요!","📸 인스타 각!"][Math.floor(Math.random()*4)],1600);
+          renderHeader();
+        }
         a.seatKey=null;a.state="leave";
         a.wp=[fx.corridor,{x:fx.door.x,y:fx.door.y},{x:fx.spawn.x,y:fx.spawn.y}];
       }
@@ -2001,6 +2055,43 @@ function offlineSettleAndShow(){
 /* ===================================================================
    헤더 / 공통 렌더
    =================================================================== */
+/* ----- 매장 관리: 청소 (얼룩 탭 → 전부 닦으면 '반짝반짝' 팁 버프) ----- */
+let dirtAcc=0;
+function tickCleaning(dt){
+  const cfg=DATA.balance.cleaning; if(!cfg)return;
+  S.dirt=S.dirt||[];
+  // 버프 상태를 코어에 전달 (시뮬=0)
+  S.cleanTipAdd=(S.cleanUntil&&nowSec()<S.cleanUntil)?cfg.tipChanceAdd:0;
+  if(EDIT)return;
+  dirtAcc+=dt;
+  if(dirtAcc>=cfg.spawnMinutes*60){
+    dirtAcc=0;
+    if(S.dirt.length<cfg.maxSpots){
+      const blocked=blockedTiles();
+      for(let t=0;t<20;t++){
+        const x=1+Math.floor(Math.random()*(ROOM.w-2)),y=1+Math.floor(Math.random()*(ROOM.h-2));
+        if(!blocked.has(x+","+y)&&!S.dirt.some(d=>d.x===x&&d.y===y)){
+          S.dirt.push({x,y});renderObjects();saveLocal();break;
+        }
+      }
+    }
+  }
+}
+function wipeDirt(idx,el){
+  const cfg=DATA.balance.cleaning;
+  const r=el.getBoundingClientRect();
+  S.dirt.splice(idx,1);
+  Snd.play("pop");
+  coinPop(r.left+r.width/2-8,r.top,"🧽✨");
+  if(S.dirt.length===0){
+    S.cleanUntil=nowSec()+cfg.buffMin*60;
+    S.cleanTipAdd=cfg.tipChanceAdd;
+    Snd.play("done");
+    toast("🧽 반짝반짝! "+cfg.buffMin+"분간 팁 확률 +"+Math.round(cfg.tipChanceAdd*100)+"%");
+    renderTicker();
+  }
+  renderObjects();saveLocal();
+}
 /* ----- 러시 타임 (KST 시간대 버프: 팁 확률↑ + 손님 등장↑) ----- */
 function rushWindow(){
   const cfg=DATA.balance.rush; if(!cfg)return null;
@@ -2029,6 +2120,8 @@ function tickerItems(){
     items.push({html:"⭐ 오늘의 메뉴 <b>"+sp.emoji+" "+sp.name+"</b> XP×"+ds.xpMult+"·팁+"+Math.round(ds.tipChanceAdd*100)+"%",act:()=>openKitchen(sp.station)});}
   const w=rushWindow();
   if(w)items.push({html:"🔥 <b>러시 타임</b> — 팁 확률 UP! (~"+w[1]+"시)",act:null});
+  if(S.cleanUntil&&nowSec()<S.cleanUntil)items.push({html:"🧽 <b>반짝반짝</b> — 팁 확률 +3% ("+Math.ceil((S.cleanUntil-nowSec())/60)+"분)",act:null});
+  else if(S.dirt&&S.dirt.length)items.push({html:"🧹 바닥에 얼룩 "+S.dirt.length+"개 — 탭해서 청소!",act:null});
   return items;
 }
 function renderTicker(){
@@ -2104,6 +2197,7 @@ function loop(now){
       if((pendingSales.length>0||Core.totalStock(S)>0)&&waiting<5&&actors.length<12)mkActor();
     }
     stepActors(dtRaw);
+    tickCleaning(dtRaw);
     ftueTick();
     checkDailyReset();
     uiAcc+=dtRaw;

@@ -91,6 +91,13 @@
       t *= data.balance.stations.coffee.machineTimeMult;
     return t;
   }
+  // 데이터에 정의된 모든 스테이션의 큐/버퍼를 상태에 보장 (신규 스테이션 추가 시 구세이브 호환)
+  function ensureStations(data, state) {
+    for (var k in data.balance.stations) {
+      if (!state.queues[k]) state.queues[k] = [];
+      if (!(k in state.buffer)) state.buffer[k] = null;
+    }
+  }
   function stationUnlocked(data, state, station) {
     var st = data.balance.stations[station];
     return st ? state.level >= st.unlockLevel : false;
@@ -114,6 +121,7 @@
   }
   // 대기열에 배치 1개 추가. 성공 시 true.
   function enqueue(data, state, recipeId) {
+    ensureStations(data, state);
     var r = recipeById(data, recipeId);
     if (!r || !recipeUnlocked(data, state, r)) return false;
     var q = state.queues[r.station];
@@ -160,6 +168,17 @@
     var it = data.balance.interior;
     if (it) base += Math.min(it.tipChanceMax, moodScore(data, state) * it.tipChancePerMood);
     base += state.rushTipAdd || 0; // 러시 타임(클라이언트가 시간대에 따라 설정, 시뮬=0)
+    base += state.cleanTipAdd || 0; // 청소 반짝반짝 버프(클라이언트 설정, 시뮬=0)
+    // 매장 이용(다인인): 좌석 수 × 보너스 — 테이블 서비스 팁
+    var di = data.balance.dineIn;
+    if (di && state.layout && data.furniture) {
+      var seats = 0;
+      for (var si = 0; si < state.layout.length; si++) {
+        var f = furnitureById(data, state.layout[si].id);
+        if (f) seats += f.seats || 0;
+      }
+      base += Math.min(di.tipChanceMax, seats * di.tipChancePerSeat);
+    }
     return base;
   }
 
@@ -301,6 +320,7 @@
   function advance(data, state, seconds, mode, rng) {
     var sum = { coins: 0, xp: 0, tips: 0, sold: 0, soldBy: {}, produced: {}, levelUps: [], repGained: 0, lostDemand: 0 };
     if (seconds <= 0) return sum;
+    ensureStations(data, state);
     var bal = data.balance;
     var stations = Object.keys(state.queues);
     var left = seconds;
@@ -477,8 +497,8 @@
       rep: 0, repProgress: 0,
       tipsJar: 0, tipAcc: 0,
       stock: {}, sellAcc: {},
-      queues: { oven: [], coffee: [] },
-      buffer: { oven: null, coffee: null },
+      queues: (function () { var q = {}; for (var k in data.balance.stations) q[k] = []; return q; })(),
+      buffer: (function () { var bf = {}; for (var k in data.balance.stations) bf[k] = null; return bf; })(),
       equip: { oven: 1, display: 1, counter: 1, sign: 1 },
       sold: {}, totalSold: 0,
       daily: { date: "", sold: 0, soldBy: {}, upgrades: 0, claimed: {}, tipCollects: 0, baked: 0, special: null },
@@ -504,7 +524,9 @@
         if (!("special" in s.daily)) s.daily.special = null;
       }
       s.v = 3; return s;
-    }
+    },
+    // v4: 카페 경영 확장 — 신규 스테이션 큐/버퍼는 ensureStations가 지연 보장, dirt 필드
+    4: function (s) { s.dirt = s.dirt || []; s.v = 4; return s; }
   };
   function migrate(data, state) {
     if (!state || typeof state !== "object") return null;
@@ -542,7 +564,7 @@
     gradeForLevel: gradeForLevel,
     equipLevel: equipLevel, ovenTimeMult: ovenTimeMult, stockCap: stockCap,
     counterMult: counterMult, signMult: signMult, upgradeCost: upgradeCost,
-    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds, queueSlots: queueSlots,
+    hasCoffeeMachine: hasCoffeeMachine, craftSeconds: craftSeconds, queueSlots: queueSlots, ensureStations: ensureStations,
     recipeUnlocked: recipeUnlocked, unlockedRecipes: unlockedRecipes,
     enqueue: enqueue, masteryBonusPct: masteryBonusPct, unitPrice: unitPrice,
     tipAmount: tipAmount, saleRatePerSec: saleRatePerSec,
