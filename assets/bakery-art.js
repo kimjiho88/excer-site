@@ -827,8 +827,25 @@
       '<path d="M60 40 L74 36.5 L74 46 L60 49.5 Z" fill="#fff3d9" stroke="#d9b183" stroke-width="1.5"/>' +
       '<text x="67" y="45.5" font-size="6.2" text-anchor="middle" fill="#3d8a9e" font-weight="bold">ICE</text></svg>';
   }
+  function grillSVG(busy) {
+    var b = isoBox(8, 28, 36, 26, "#4a443e", "#6b5f52", "#3a332c");
+    var flame = busy
+      ? '<path d="M30 20 Q28 14 31 11 Q31 15 34 13 Q35 17 32 20 Z" fill="#ff9d3b"><animate attributeName="opacity" values="1;.6;1" dur="0.4s" repeatCount="indefinite"/></path>'
+      : '';
+    var steam = busy ? '<g class="smoke"><circle cx="52" cy="10" r="4" fill="#f4ede2" opacity=".65"/><circle cx="57" cy="4" r="5" fill="#f4ede2" opacity=".4"/></g>' : "";
+    return '<svg width="96" height="86" viewBox="0 0 96 86" style="overflow:visible"><defs>' + b.defs + '</defs>' +
+      contactShadow(48, 80, 36) + b.html +
+      '<ellipse cx="31" cy="24" rx="11" ry="5.5" fill="#2e2925"' + FO + '/>' +
+      '<path d="M22 22 L40 22 M23 24.5 L39 24.5 M24 27 L38 27" stroke="#57504a" stroke-width="1.6"/>' + flame +
+      '<ellipse cx="55" cy="21" rx="10" ry="5" fill="#e8e2d6"' + FO + '/>' +
+      '<ellipse cx="53" cy="20" rx="5" ry="2.8" fill="#a8503c"/><ellipse cx="59" cy="21.5" rx="3" ry="1.6" fill="#7fae5f"/>' + steam +
+      '<path d="M68 18 L83 14 L83 20 L68 24 Z" fill="#c9922e"' + FO + '/><ellipse cx="75.5" cy="18" rx="4.4" ry="2.2" fill="#ffdf94"/>' +
+      '<rect x="14" y="42" width="26" height="8" rx="3" fill="#fff3d9" stroke="#d9b183" stroke-width="1.5"/>' +
+      '<text x="27" y="48.5" font-size="6.4" text-anchor="middle" fill="#a8642a" font-weight="bold">GRILL</text></svg>';
+  }
   // 스테이션 id → 아트 (신규 스테이션 공용 진입점)
   function stationSVG(id, busy) {
+    if (id === "grill") return grillSVG(busy);
     if (id === "juice") return juiceSVG(busy);
     if (id === "brunch") return brunchSVG(busy);
     if (id === "icecream") return icecreamSVG(busy);

@@ -952,6 +952,7 @@ function fixtures(){
     counter:{x:w-2,y:2},
     brunch:{x:0,y:2},
     icecream:{x:0,y:4},
+    grill:{x:0,y:6},
   };
   fx.queueSpots=[{x:w-2,y:3},{x:w-3,y:4},{x:w-4,y:4},{x:w-4,y:3}];
   fx.door={x:0,y:h-1};
@@ -975,7 +976,7 @@ function blockedTiles(){
   const fx=fixtures(),set=new Set();
   const put=t=>set.add(t.x+","+t.y);
   put(fx.oven);put(fx.coffeebar);put(fx.display);put(fx.counter);
-  put(fx.juice);put(fx.brunch);put(fx.icecream);
+  put(fx.juice);put(fx.brunch);put(fx.icecream);put(fx.grill);
   fx.queueSpots.forEach(put);put(fx.door);
   put({x:fx.counter.x,y:1}); // 캐셔 자리(진열대-카운터 사이)
   put({x:0,y:ROOM.h-2}); // 문 앞 통로
@@ -1115,7 +1116,7 @@ function renderObjects(){
     html+=objArt("st-coffee-locked",fx.coffeebar.x,fx.coffeebar.y,
       `<span style="display:block;filter:grayscale(1) opacity(.4)">${Art.coffeeSVG(false,false)}</span>`,"Lv.3 해금","",false);
   // 신규 스테이션(주스바/브런치/아이스) — 제네릭 렌더, 해금 3레벨 전부터 실루엣 예고
-  for(const stId of ["juice","brunch","icecream"]){
+  for(const stId of ["juice","brunch","icecream","grill"]){
     const def=DATA.balance.stations[stId],pos=fx[stId];
     if(!def||!pos)continue;
     if(S.level>=def.unlockLevel){
@@ -1513,7 +1514,7 @@ function renderSheet(){
         <b style="font-size:16px;color:var(--brown)">${S.stock[r.id]||0}</b></div>`).join("")}`);
   }
   else if(SHEET.type==="upgrade"){
-    const rows=DATA.equipment.equipment.map(e=>{
+    const mkRow=e=>{
       const locked=S.level<e.unlockLevel;
       const lv=Core.equipLevel(S,e.id);
       const cost=Core.upgradeCost(DATA,e.id,lv);
@@ -1522,11 +1523,15 @@ function renderSheet(){
         :`<button class="rb" data-up="${e.id}" ${S.coins<cost?"disabled":""}>🪙 ${fmt(cost)}</button>`;
       return `<div class="rowitem${locked?" dim":""}">
         <div class="re">${e.emoji}<span class="elv">Lv.${lv}</span></div>
-        <div><div class="rn">${e.name}</div><div class="rd">${e.effectPerLevelLabel}${e.id==="display"?` · 상한 ${Core.stockCap(DATA,S)}개`:""}</div></div>${btn}</div>`;
-    }).join("");
+        <div><div class="rn">${locked?"???":e.name}</div><div class="rd">${e.effectPerLevelLabel}${e.id==="display"?` · 상한 ${Core.stockCap(DATA,S)}개`:""}</div></div>${btn}</div>`;
+    };
+    const rows=DATA.equipment.equipment.filter(e=>e.kind!=="staff").map(mkRow).join("");
+    const staffRows=DATA.equipment.equipment.filter(e=>e.kind==="staff").map(mkRow).join("");
     const gsteps=DATA.balance.grades.list.map(x=>
       `<div class="gstep${x.minLevel<=S.level?" onx":""}"><span class="gdot"></span>${x.emoji} ${x.name}<span style="margin-left:auto;font-size:10px">Lv.${x.minLevel}</span></div>`).join("");
-    openSheet(`<h4 class="hd-upgrade">🛠 장비 업그레이드 <button class="x" data-close>닫기 ✕</button></h4>${rows}
+    openSheet(`<h4 class="hd-upgrade">🛠 성장 <button class="x" data-close>닫기 ✕</button></h4>
+      <div class="subhead" style="margin-top:0">🏗️ 설비</div>${rows}
+      <div class="subhead">👨‍🍳 직원 — 교육할수록 제작이 빨라져요</div>${staffRows}
       <div class="subhead">🏆 빵집 등급</div>${gsteps}`);
   }
   else if(SHEET.type==="quest"){
