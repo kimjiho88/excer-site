@@ -488,6 +488,24 @@ body.editing .actor.pet{pointer-events:none}
   animation:boostpulse .7s ease-in-out infinite alternate}
 @keyframes boostpulse{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.14)}}
 .qslot.lane{outline:2px solid rgba(232,182,76,.65);outline-offset:-2px}
+/* 🔔 할 일 말풍선 — 게임이 말을 건다 */
+.needbub{position:absolute;transform:translate(-50%,-100%);background:#fff;border:2px solid #c89a68;border-radius:13px;
+  padding:5px 10px 5px 8px;font-size:11px;font-weight:900;color:#7a4f28;white-space:nowrap;
+  pointer-events:auto;cursor:pointer;box-shadow:0 5px 12px rgba(120,80,30,.28);
+  animation:needfloat 1.1s ease-in-out infinite alternate}
+.needbub::after{content:"";position:absolute;left:50%;bottom:-7.5px;transform:translateX(-50%);
+  border:8px solid transparent;border-top-color:#c89a68;border-bottom:0}
+.needbub::before{content:"";position:absolute;left:50%;bottom:-4.5px;transform:translateX(-50%);z-index:1;
+  border:6.5px solid transparent;border-top-color:#fff;border-bottom:0}
+.needbub:active{transform:translate(-50%,-100%) scale(.92)}
+@keyframes needfloat{0%{margin-top:0}100%{margin-top:-6px}}
+.needbub.tips{background:linear-gradient(180deg,#fff7e0,#ffe9b3);border-color:#e0a33c}
+.needbub.tips::after{border-top-color:#e0a33c}.needbub.tips::before{border-top-color:#ffedbe}
+.needbub.stock{border-color:#e2574c;color:#b5453c}
+.needbub.stock::after{border-top-color:#e2574c}
+/* 독 뱃지: 숫자 카운트 */
+.dockbtn .dot{min-width:14px;height:14px;font-size:8.5px;color:#fff;display:grid;place-items:center;font-weight:900;
+  padding:0 2px;border:1.5px solid #fff}
 /* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
 .flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
@@ -1134,6 +1152,7 @@ function furnitureArt(id){
 function renderObjects(){
   const room=$("#room"),fx=fixtures();
   room.querySelectorAll(".obj[data-obj]").forEach(e=>{if(e.dataset.obj!=="sign")e.remove();});
+  room.querySelectorAll(".needbub").forEach(e=>e.remove());
   let html="";
   const stBusy=st=>S.queues[st]&&S.queues[st].length>0;
   const prog=st=>{
@@ -1148,7 +1167,7 @@ function renderObjects(){
   html+=objArt("st-oven",fx.oven.x,fx.oven.y,
     spriteOr([ovenBusy?"oven_busy":"oven","oven"],Art.ovenSVG(ovenBusy)),
     "오븐 Lv."+Core.equipLevel(S,"oven"),
-    prog("oven")+(ovenBusy?"":`<span class="zz">💤</span>`),true);
+    prog("oven"),true);
   // 커피바 (해금 전엔 실루엣)
   if(S.level>=DATA.balance.stations.coffee.unlockLevel){
     const mac=Core.hasCoffeeMachine(DATA,S),cBusy=stBusy("coffee");
@@ -1156,7 +1175,7 @@ function renderObjects(){
     html+=objArt("st-coffee",fx.coffeebar.x,fx.coffeebar.y,
       spriteOr([cBusy?cKey+"_busy":cKey,cKey],Art.coffeeSVG(mac,cBusy)),
       mac?"커피머신":"핸드드립",
-      prog("coffee")+(cBusy?"":`<span class="zz">💤</span>`),true);
+      prog("coffee"),true);
   }else
     html+=objArt("st-coffee-locked",fx.coffeebar.x,fx.coffeebar.y,
       `<span style="display:block;filter:grayscale(1) opacity(.4)">${Art.coffeeSVG(false,false)}</span>`,"Lv.3 해금","",false);
@@ -1168,7 +1187,7 @@ function renderObjects(){
       const busy=stBusy(stId);
       html+=objArt("st-"+stId,pos.x,pos.y,
         spriteOr([busy?"station_"+stId+"_busy":"station_"+stId,"station_"+stId],Art.stationSVG(stId,busy)),
-        def.name,prog(stId)+(busy?"":`<span class="zz">💤</span>`),true);
+        def.name,prog(stId),true);
     }else if(S.level>=def.unlockLevel-3){
       html+=objArt("st-"+stId+"-locked",pos.x,pos.y,
         `<span style="display:block;filter:grayscale(1) opacity(.45)">${Art.stationSVG(stId,false)}</span>`,
@@ -1191,6 +1210,12 @@ function renderObjects(){
   const coffeeBusy=stBusy("coffee");
   html+=objArt("staff-cashier",fx.counter.x-0.15,fx.counter.y-0.85,
     spriteOr([coffeeBusy?"staff_barista_busy":"staff_barista","staff_barista","staff_cashier"],Art.baristaSVG(coffeeBusy)),"",false);
+  // 🔔 할 일 말풍선
+  NEEDS=needList();
+  NEEDS.forEach((n,i)=>{
+    html+=`<div class="needbub ${n.kind}" data-needi="${i}"
+      style="left:${isoX(n.fx.x,n.fx.y)}px;top:${isoY(n.fx.x,n.fx.y)-72}px;z-index:${8000+i}">${n.icon} ${n.text}</div>`;
+  });
   // 신규 스테이션 전담 직원 — 고정 외모(시드), 매장이 북적이는 연출
   for(const stId of ["juice","brunch","icecream","grill"]){
     const def=DATA.balance.stations[stId],pos=fx[stId];
@@ -1258,6 +1283,8 @@ $("#room").addEventListener("click",e=>{
     }
     return;
   }
+  const nb=e.target.closest(".needbub");
+  if(nb&&!EDIT){const n=NEEDS[+nb.dataset.needi];if(n&&n.act){Snd.play("tap");n.act();}return;}
   const bEl=e.target.closest(".boostbub");
   if(bEl&&!EDIT){tapBoost(bEl);return;}
   const petEl=e.target.closest(".actor.pet");
@@ -2265,6 +2292,34 @@ function offlineSettleAndShow(){
 /* ===================================================================
    헤더 / 공통 렌더
    =================================================================== */
+/* ----- 🔔 할 일 말풍선: 게임이 유저에게 말을 건다 (유휴 설비·재고·팁) ----- */
+let NEEDS=[];
+function needList(){
+  const list=[];
+  if(!S||!S.ftue||!S.ftue.done||EDIT)return list;
+  const fx=fixtures();
+  // 유휴 스테이션 / 빈 레인
+  for(const st of Object.keys(DATA.balance.stations)){
+    const def=DATA.balance.stations[st];
+    if(S.level<def.unlockLevel)continue;
+    const key=ST2FX[st];if(!fx[key])continue;
+    const q=S.queues[st]||[];
+    const P=Core.parallelSlots(DATA,S,st);
+    if(q.length===0)list.push({fx:fx[key],icon:def.emoji,text:"생산할까요?",kind:"kitchen",act:()=>openKitchen(st)});
+    else if(q.length<P)list.push({fx:fx[key],icon:"⚙️",text:"레인이 비었어요!",kind:"kitchen",act:()=>openKitchen(st)});
+  }
+  // 진열: 완충 막힘 > 재고 없음 > 재고 부족
+  const ratio=Core.totalStock(S)/Core.stockCap(DATA,S);
+  const anyBuf=Object.values(S.buffer).some(b=>Array.isArray(b)&&b.length);
+  if(anyBuf)list.push({fx:fx.display,icon:"📦",text:"진열 공간 부족!",kind:"stock",act:openUpgrade});
+  else if(ratio<=0)list.push({fx:fx.display,icon:"🧺",text:"팔 게 없어요!",kind:"stock",act:()=>openKitchen("oven")});
+  else if(ratio<0.2)list.push({fx:fx.display,icon:"🧺",text:"재고 부족!",kind:"stock",act:()=>openKitchen("oven")});
+  // 팁 수금
+  const cap=DATA.balance.tips.jarCap;
+  if(S.tipsJar>=cap)list.push({fx:fx.counter,icon:"💰",text:"팁 가득! 수금하세요",kind:"tips",act:()=>collectTips()});
+  else if(S.tipsJar>=cap*0.6)list.push({fx:fx.counter,icon:"💰",text:"팁 수금!",kind:"tips",act:()=>collectTips()});
+  return list;
+}
 /* ----- ⚡ 부스트: 가동 중인 설비 위에 주기적으로 등장 — 탭하면 제작 단축 (능동 생산) ----- */
 let boostEl=null,boostAcc=0,boostNext=14;
 const ST2FX={oven:"oven",coffee:"coffeebar",juice:"juice",brunch:"brunch",icecream:"icecream",grill:"grill"};
@@ -2435,6 +2490,7 @@ function tickRush(){
 let TICKI=0;
 function tickerItems(){
   const items=[];
+  if(NEEDS.length)items.push({html:"🔔 <b>지금 할 일 "+NEEDS.length+"개</b> — 매장의 말풍선을 탭하세요!",act:null});
   const nx=Core.nextUnlock(DATA,S.level);
   items.push({html:nx?("🎯 다음: <b>Lv."+nx.level+"</b> "+nx.headline):"👑 모든 목표 달성!",act:openUpgrade});
   const sp=specialRecipe();
@@ -2474,10 +2530,10 @@ function renderHeader(){
   const bonus=Math.min(DATA.balance.interior.tipChanceMax,mood*DATA.balance.interior.tipChancePerMood);
   $("#hMood").textContent="✨ "+mood+" (팁+"+Math.round(bonus*100)+"%)";
   renderTicker();
-  const qReady=DATA.balance.quests.daily.some(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];});
-  const oReady=(()=>{const n=Core.orderSlots(DATA,S);const today=kstDateStr(nowSec());
-    for(let i=0;i<n;i++){if(!(S.daily.orders&&S.daily.orders[i])&&Core.canFulfill(S,Core.genOrder(DATA,S,today,i)))return true;}return false;})();
-  $("#dotQuest").style.display=(qReady||oReady)?"":"none";
+  const qN=DATA.balance.quests.daily.filter(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];}).length;
+  let oN=0;{const n=Core.orderSlots(DATA,S);const today=kstDateStr(nowSec());
+    for(let i=0;i<n;i++){if(!(S.daily.orders&&S.daily.orders[i])&&Core.canFulfill(S,Core.genOrder(DATA,S,today,i)))oN++;}}
+  const dq=$("#dotQuest");dq.style.display=(qN+oN)?"":"none";dq.textContent=(qN+oN)||"";
   const canUp=DATA.equipment.equipment.some(e=>{
     if(S.level<e.unlockLevel)return false;
     const c=Core.upgradeCost(DATA,e.id,Core.equipLevel(S,e.id));return c!=null&&S.coins>=c;
@@ -2485,8 +2541,8 @@ function renderHeader(){
   $("#dotUp").style.display=canUp?"":"none";
   // 수금 CTA 강조 + 주방 유휴 알림
   $("#dockCollect").classList.toggle("cta-on",S.tipsJar>0);
-  const idle=Object.keys(S.queues).some(st=>DATA.balance.stations[st]&&DATA.balance.stations[st].unlockLevel<=S.level&&S.queues[st].length===0);
-  $("#dotKitchen").style.display=idle?"":"none";
+  const idleN=Object.keys(S.queues).filter(st=>DATA.balance.stations[st]&&DATA.balance.stations[st].unlockLevel<=S.level&&S.queues[st].length<Core.parallelSlots(DATA,S,st)).length;
+  const dk=$("#dotKitchen");dk.style.display=idleN?"":"none";dk.textContent=idleN||"";
 }
 function renderAll(){renderHeader();renderRoom();if(EDIT)renderTray();if(SHEET)renderSheet();}
 
