@@ -459,6 +459,16 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   background:linear-gradient(180deg,#fffdf6,#ffedd0);border:2px solid #c89a68;
   box-shadow:0 3px 0 #d9b183,0 4px 9px rgba(120,80,30,.2)}
 .camhome:active{transform:translateY(2px);box-shadow:0 1px 0 #d9b183}
+/* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
+.flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
+  filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
+.cur.bump{animation:walletbump .32s cubic-bezier(.3,1.6,.5,1)}
+@keyframes walletbump{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+.confp{position:absolute;left:50%;top:42%;width:8px;height:11px;border-radius:2px;z-index:5;pointer-events:none;
+  animation:conffall 1.25s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes conffall{
+  0%{transform:translate(-50%,-50%) rotate(0);opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 300px)) rotate(var(--r));opacity:0}}
 .roofdeco{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none;line-height:1;
   filter:drop-shadow(0 3px 3px rgba(60,40,10,.3))}
 .dockbtn.on{color:var(--brown)}
@@ -570,6 +580,80 @@ async function syncServerTime(){
   try{ const res=await fetch(SUPA.url+"/rest/v1/",{method:"HEAD",headers:{apikey:SUPA.anon}});
     const d=res.headers.get("date"); if(d){serverOffsetMs=new Date(d).getTime()-Date.now();return;} }catch(e){}
   serverOffsetMs=0;
+}
+
+/* ---------- 사운드 엔진 (WebAudio 합성 — 에셋 0, 상용 SFX 문법) ----------
+   모든 효과음을 오실레이터로 합성: 로딩 없음·용량 0·항상 동작.
+   설정(⚙️)에서 on/off, 첫 사용자 제스처에서 AudioContext 활성화. */
+const Snd=(()=>{
+  let ctx=null,master=null,last={};
+  function init(){
+    if(ctx)return;
+    try{
+      ctx=new (window.AudioContext||window.webkitAudioContext)();
+      master=ctx.createGain();master.gain.value=0.45;master.connect(ctx.destination);
+    }catch(e){ctx=null;}
+  }
+  function tone(freq,type,att,dec,peak,delay,slide){
+    if(!ctx)return;
+    const t0=ctx.currentTime+(delay||0);
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,t0);
+    if(slide)o.frequency.exponentialRampToValueAtTime(slide,t0+att+dec);
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.linearRampToValueAtTime(peak,t0+att);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+att+dec);
+    o.connect(g);g.connect(master);
+    o.start(t0);o.stop(t0+att+dec+0.06);
+  }
+  const SFX={
+    tap:   ()=>tone(540,"sine",.005,.06,.22,0,340),
+    pop:   ()=>tone(290,"sine",.004,.1,.3,0,540),
+    coin:  ()=>{tone(988,"triangle",.003,.11,.2);tone(1319,"triangle",.003,.15,.16,.055);},
+    cash:  ()=>[880,1109,1319].forEach((f,i)=>tone(f,"triangle",.004,.14,.18,i*.06)),
+    done:  ()=>[523,659,784].forEach((f,i)=>tone(f,"sine",.006,.24,.2,i*.09)),
+    levelup:()=>{[523,659,784,1047,1319].forEach((f,i)=>tone(f,"triangle",.005,.3,.22,i*.085));tone(2093,"sine",.01,.5,.1,.44);},
+    order: ()=>{tone(659,"sine",.005,.14,.22);tone(880,"sine",.005,.2,.22,.11);},
+    golden:()=>[1319,1568,2093].forEach((f,i)=>tone(f,"sine",.004,.2,.18,i*.055)),
+    error: ()=>tone(170,"square",.004,.11,.12,0,120)
+  };
+  function play(name){
+    if(S&&S.settings&&S.settings.sound===false)return;
+    init(); if(!ctx)return;
+    if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+    const now=performance.now();
+    if(last[name]&&now-last[name]<110)return;
+    last[name]=now;
+    try{(SFX[name]||SFX.tap)();}catch(e){}
+  }
+  return {play,init};
+})();
+// 버튼류 공통 탭 사운드 (딜리게이트)
+document.addEventListener("pointerdown",e=>{
+  if(e.target.closest&&e.target.closest("button,.tchip,.dockbtn,.railbtn,.mbtn,[data-buy],[data-sel]"))Snd.play("tap");
+},{passive:true});
+
+/* ---------- 코인 플라이 연출: 보상이 상단 지갑으로 날아가 꽂힘 ---------- */
+function flyCoins(x,y,n){
+  const tgtEl=$("#hCoins"); if(!tgtEl)return;
+  const tgt=tgtEl.getBoundingClientRect();
+  n=Math.min(n||5,8);
+  for(let i=0;i<n;i++){
+    const c=document.createElement("div");c.className="flycoin";c.textContent="🪙";
+    document.body.appendChild(c);
+    const sx=x+(Math.random()*28-14),sy=y+(Math.random()*18-9);
+    c.style.left=sx+"px";c.style.top=sy+"px";
+    const dx=tgt.left+6-sx,dy=tgt.top+4-sy;
+    c.animate([
+      {transform:"translate(0,0) scale(1)",opacity:1},
+      {transform:`translate(${dx*0.45+(Math.random()*46-23)}px,${dy*0.5-46}px) scale(1.2)`,opacity:1,offset:0.55},
+      {transform:`translate(${dx}px,${dy}px) scale(.45)`,opacity:.9}
+    ],{duration:600+i*55,easing:"cubic-bezier(.3,.7,.35,1)"}).onfinish=()=>{c.remove();bumpWallet();};
+  }
+}
+function bumpWallet(){
+  const el=$("#hCoins")&&$("#hCoins").closest(".cur"); if(!el)return;
+  el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump");
 }
 
 /* ---------- 스프라이트 에셋 (AI 생성 PNG — docs/ART_GUIDE.md) ----------
@@ -1068,6 +1152,7 @@ $("#room").addEventListener("click",e=>{
       S.coins+=bonus;
       const r=gEl.getBoundingClientRect();
       coinPop(r.left+r.width/2-12,r.top,"+"+bonus+" 🪙");
+      Snd.play("golden");flyCoins(r.left+r.width/2,r.top,5);
       toast("✨ 황금 손님 발견! 보너스 "+bonus+"코인");
       actorSay(a,null,"😊 사장님 최고!",1500);
       renderHeader();saveLocal();
@@ -1111,6 +1196,7 @@ $("#room").addEventListener("click",e=>{
     const amt=Core.collectTipsJar(S); // 수금 횟수가 일일퀘스트에 카운트
     if(amt>0){
       const r=obj.getBoundingClientRect();coinPop(r.left+r.width/2-12,r.top,"+"+amt+" 🪙");
+      Snd.play("cash");flyCoins(r.left+r.width/2,r.top,Math.min(7,2+Math.ceil(amt/25)));
       toast("💰 팁 "+amt+"코인 수금!");
       renderObjects();renderHeader();saveLocal();
     }else toast("팁 항아리가 비어 있어요");
@@ -1173,7 +1259,7 @@ document.addEventListener("click",e=>{
    바텀 시트 (주방/재고/업그레이드/퀘스트)
    =================================================================== */
 let SHEET=null; // {type, station, sig}
-function openSheet(html){$("#sheet").innerHTML=html;$("#sheetwrap").classList.add("on");}
+function openSheet(html){$("#sheet").innerHTML=html;$("#sheetwrap").classList.add("on");Snd.play("pop");}
 // 주방 시트: 구성 시그니처가 바뀔 때만 전체 재렌더 (버튼 안정성), 진행바는 제자리 갱신
 function kitchenSig(st){
   const q=S.queues[st],buf=S.buffer[st];
@@ -1310,6 +1396,7 @@ function collectTips(fromEl){
   const amt=Core.collectTipsJar(S); // 수금 횟수가 일일퀘스트에 카운트
   if(amt>0){
     const r=(fromEl||$("#dockCollect")).getBoundingClientRect();coinPop(r.left+r.width/2-12,r.top,"+"+amt+" 🪙");
+    Snd.play("cash");flyCoins(r.left+r.width/2,r.top,Math.min(7,2+Math.ceil(amt/25)));
     toast("💰 팁 "+amt+"코인 수금!");
     renderObjects();renderHeader();saveLocal();
   }else toast("아직 모인 팁이 없어요");
@@ -1323,7 +1410,23 @@ $("#btnQuest").addEventListener("click",openQuest);
 $("#btnDex").addEventListener("click",openDex);
 $("#btnEvent").addEventListener("click",()=>openSoon("🎁 이벤트"));
 $("#btnRank").addEventListener("click",openRank);
-$("#btnGear").addEventListener("click",()=>openSoon("⚙️ 설정"));
+function openSettings(){
+  S.settings=S.settings||{sound:true};
+  const on=S.settings.sound!==false;
+  openSheet(`<h4 class="hd-shop">⚙️ 설정<button class="x" data-close>닫기 ✕</button></h4>
+    <div class="rowitem"><div class="re">🔊</div>
+      <div><div class="rn">효과음</div><div class="rd">탭·수금·레벨업 등 사운드</div></div>
+      <button class="rb ${on?"green":""}" id="sndToggle">${on?"켜짐":"꺼짐"}</button></div>
+    <div class="rowitem"><div class="re">🏪</div>
+      <div><div class="rn">${S.name||"엑서 빵집"}</div><div class="rd">개업 D+${Math.max(1,Math.floor((nowSec()-(S.createdAt||nowSec()))/86400)+1)} · Lv.${S.level} · 엑서 빵집 타이쿤</div></div></div>`);
+  const t=document.getElementById("sndToggle");
+  if(t)t.addEventListener("click",()=>{
+    S.settings.sound=!(S.settings.sound!==false);
+    saveLocal();openSettings();
+    if(S.settings.sound!==false)Snd.play("done");
+  });
+}
+$("#btnGear").addEventListener("click",openSettings);
 
 function renderSheet(){
   if(!SHEET)return;
@@ -1458,6 +1561,7 @@ document.addEventListener("click",e=>{
   const r=b.getBoundingClientRect();
   coinPop(r.left+r.width/2-14,r.top,"+"+fmt(rep.order.rewardCoins)+" 🪙");
   toast("📦 납품 완료! 🪙"+fmt(rep.order.rewardCoins)+" +⭐"+rep.order.rewardRep);
+  Snd.play("order");flyCoins(r.left+r.width/2,r.top,6);
   queueLevelUps(rep.levelUps);
   renderSheet();renderHeader();renderObjects();saveLocal();
 });
@@ -1470,6 +1574,7 @@ document.addEventListener("click",e=>{
     S.coins+=ac.rewardCoins;S.rep+=ac.rewardRep;
     const ups2=Core.addXp(DATA,S,ac.rewardXp);
     toast("🎉 올클리어! 🪙"+ac.rewardCoins+" +XP"+ac.rewardXp);
+    Snd.play("cash");{const r2=b.getBoundingClientRect();flyCoins(r2.left+r2.width/2,r2.top,7);}
     queueLevelUps(ups2);
     renderSheet();renderHeader();saveLocal();return;
   }
@@ -1480,6 +1585,7 @@ document.addEventListener("click",e=>{
   S.coins+=q.rewardCoins;S.rep+=q.rewardRep;
   const ups=Core.addXp(DATA,S,q.rewardXp);
   toast("🎁 퀘스트 보상! 🪙"+q.rewardCoins+" +XP"+q.rewardXp);
+  Snd.play("cash");{const r2=b.getBoundingClientRect();flyCoins(r2.left+r2.width/2,r2.top,5);}
   queueLevelUps(ups);
   renderSheet();renderHeader();saveLocal();
 });
@@ -1538,7 +1644,7 @@ function checkDailyReset(){
     if(att){
       ensureRecords();
       S.records.maxStreak=Math.max(S.records.maxStreak,att.streak);
-      showAttendance(att);queueLevelUps(att.levelUps);renderHeader();saveLocal();
+      Snd.play("done");showAttendance(att);queueLevelUps(att.levelUps);renderHeader();saveLocal();
     }
   }
 }
@@ -1763,6 +1869,21 @@ function stepActors(dt){
    =================================================================== */
 let lvQueue=[],lvShowing=false;
 function queueLevelUps(ups){for(const lv of ups)lvQueue.push(lv);showNextLevelUp();}
+/* 레벨업 컨페티 — 골드·코랄·민트 파티클 버스트 */
+function confettiBurst(wrap){
+  if(!wrap)return;
+  const colors=["#f2ab2e","#e98f7f","#9fd8c3","#8fd66a","#ffd873","#e2574c"];
+  for(let i=0;i<34;i++){
+    const p=document.createElement("i");p.className="confp";
+    p.style.setProperty("--dx",(Math.random()*280-140)+"px");
+    p.style.setProperty("--dy",(Math.random()*-230-50)+"px");
+    p.style.setProperty("--r",(Math.random()*760-380)+"deg");
+    p.style.background=colors[i%colors.length];
+    p.style.animationDelay=(Math.random()*0.12)+"s";
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(),1500);
+  }
+}
 function levelEntry(lv){return DATA.levels.levels.find(x=>x.level===lv)||DATA.levels.roadmap.find(x=>x.level===lv)||null;}
 function ensureGrants(){
   // 현재 레벨 이하의 미지급 가구를 지급 (멱등)
@@ -1798,6 +1919,7 @@ function showNextLevelUp(){
   $("#luCards").innerHTML=cards.map(c=>`<div class="ucard"><span class="ue">${c.e}</span><span class="un">${c.n}</span><span class="ut">${c.t}</span></div>`).join("")
     ||`<div class="ucard"><span class="ue">📈</span><span class="un">성장 지속</span><span class="ut">다음 해금으로!</span></div>`;
   $("#lvup").classList.add("on");
+  Snd.play("levelup");confettiBurst($("#lvup"));
 }
 $("#luOk").addEventListener("click",()=>{
   $("#lvup").classList.remove("on");lvShowing=false;
@@ -1966,6 +2088,8 @@ function loop(now){
       saleFlashUntil=performance.now()+1600; // POS 판매 피드백
       for(const id in sum.soldBy)for(let i=0;i<sum.soldBy[id];i++)pendingSales.push({recipeId:id});
       if(pendingSales.length>10)pendingSales.length=10;
+      if(sum.sold>0&&performance.now()-(window._sndCoinT||0)>1500){window._sndCoinT=performance.now();Snd.play("coin");}
+      if(Object.keys(sum.produced).length&&performance.now()-(window._sndDoneT||0)>4000){window._sndDoneT=performance.now();Snd.play("done");}
     }
     if(sum.levelUps.length)queueLevelUps(sum.levelUps);
     // 손님 스폰 (간판 레벨로 빨라짐)
