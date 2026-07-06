@@ -89,6 +89,9 @@
     if (recipe.station === "oven") t *= ovenTimeMult(data, state);
     else if (recipe.station === "coffee" && hasCoffeeMachine(data, state))
       t *= data.balance.stations.coffee.machineTimeMult;
+    // 직원 숙련(경영): staff_<station> 장비 레벨당 제작 시간 단축
+    var stf = equipById(data, "staff_" + recipe.station);
+    if (stf) t *= Math.pow(stf.params.craftTimeMult, equipLevel(state, "staff_" + recipe.station) - 1);
     return t;
   }
   // 데이터에 정의된 모든 스테이션의 큐/버퍼를 상태에 보장 (신규 스테이션 추가 시 구세이브 호환)
