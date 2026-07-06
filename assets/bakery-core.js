@@ -159,6 +159,7 @@
     var base = data.balance.tips.chance;
     var it = data.balance.interior;
     if (it) base += Math.min(it.tipChanceMax, moodScore(data, state) * it.tipChancePerMood);
+    base += state.rushTipAdd || 0; // 러시 타임(클라이언트가 시간대에 따라 설정, 시뮬=0)
     return base;
   }
 
@@ -289,6 +290,7 @@
         state.totalSold += can;
         state.daily.sold += can;
         state.daily.soldBy[r2.id] = (state.daily.soldBy[r2.id] || 0) + can;
+        state.daily.coinsEarned = (state.daily.coinsEarned || 0) + price * can; // 기록/랭킹용
 
         // 팁: rng 있으면 개당 판정, 없으면 기대값 누적 (둘 다 항아리 상한 적용)
         var tipEach = tipAmount(data, price);
@@ -360,6 +362,7 @@
     state.sold[recipeId] = (state.sold[recipeId] || 0) + can;
     state.daily.sold += can;
     state.daily.soldBy[recipeId] = (state.daily.soldBy[recipeId] || 0) + can;
+    state.daily.coinsEarned = (state.daily.coinsEarned || 0) + price * can;
     var tip = 0;
     if (withTip) {
       var each = tipAmount(data, price);
@@ -458,7 +461,7 @@
   function resetDaily(state, dateStr, data) {
     state.daily = {
       date: dateStr, sold: 0, soldBy: {}, upgrades: 0, claimed: {},
-      tipCollects: 0, baked: 0,
+      tipCollects: 0, baked: 0, coinsEarned: 0,
       special: data ? pickDailySpecial(data, state, dateStr) : null
     };
   }

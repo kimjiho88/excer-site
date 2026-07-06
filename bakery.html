@@ -408,6 +408,28 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .spbadge{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:900;color:#7a4a08;
   background:linear-gradient(180deg,#ffe084,#f5c04c);border:1px solid #d99a2b;border-radius:99px;padding:1.5px 6px;white-space:nowrap}
 .rowitem.allclear{background:linear-gradient(90deg,#fff6dd,#ffedc2);border:1.5px solid #ecc169;border-radius:12px}
+
+/* ===== 폴리시 v2: 화면 활용·티커·생동감 ===== */
+/* HUD 슬림 — 게임 화면 최대화 */
+.top{padding:5px 10px 6px}
+.nextgoal{margin-top:4px}
+.nextgoal .tick{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  background:linear-gradient(90deg,#fff3d1,#ffe9b3);border:1.5px solid #ecc169;border-radius:9px;padding:2.5px 8px;
+  font-weight:800;color:#8a5a20;animation:tickin .45s ease}
+.nextgoal .tick b{color:#b4650a}
+@keyframes tickin{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+.dock{padding:5px 8px calc(5px + env(safe-area-inset-bottom))}
+.dockbtn:not(.cta){padding:5px 2px 4px}
+.dockbtn .di{font-size:20px}
+/* 캐릭터 생동감 */
+.actor.walk .charwrap{display:inline-block;animation:walkbob .42s ease-in-out infinite alternate}
+@keyframes walkbob{0%{transform:translateY(0)}100%{transform:translateY(-2.2px)}}
+.obj[data-obj^="staff-"] img.spriteimg{animation:idlesway 3.4s ease-in-out infinite;transform-origin:50% 94%}
+@keyframes idlesway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+.actor.golden{pointer-events:auto;cursor:pointer}
+.actor.golden .charwrap{filter:drop-shadow(0 0 7px rgba(255,196,45,.95)) drop-shadow(0 0 14px rgba(255,170,20,.55))}
+.actor.golden .gspark{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:13px;animation:gsparkle 1s ease-in-out infinite}
+@keyframes gsparkle{0%,100%{transform:translateX(-50%) scale(1);opacity:1}50%{transform:translateX(-50%) scale(1.35);opacity:.65}}
 .dockbtn.on{color:var(--brown)}
 .dockbtn.on .di{filter:drop-shadow(0 0 6px rgba(232,182,76,.8))}
 
@@ -442,8 +464,7 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
       </div>
       <button class="gear" id="btnGear">⚙️</button>
     </div>
-    <div class="nextgoal"><span id="hGrade" class="grade">🏠 작은 동네 빵집</span><span id="hNext">🎯 다음 해금: —</span><span class="mood" id="hMood">✨ 0</span></div>
-    <div class="specialrow" id="hSpecial" style="display:none"></div>
+    <div class="nextgoal"><span id="hGrade" class="grade">🏠 작은 동네 빵집</span><span class="tick" id="hTicker">🎯 —</span><span class="mood" id="hMood">✨ 0</span></div>
     <span id="hLv" style="display:none"></span>
   </header>
 
@@ -627,7 +648,7 @@ let CAM={x:0,y:0,z:1}, WORLD={w:1,h:1}, camInit=false, _lastRoomW=0;
 function clampZoom(z){
   const vp=$("#viewport"); if(!vp) return z;
   const zmin=Math.min(vp.clientWidth/WORLD.w, (vp.clientHeight)/WORLD.h)*0.92;
-  return Math.max(Math.min(zmin,1), Math.min(z, 2.4));
+  return Math.max(Math.min(zmin,1), Math.min(z, 3.0)); // 최대 3배 확대(디테일 감상)
 }
 function clampCam(){
   const vp=$("#viewport"); if(!vp) return;
@@ -644,11 +665,16 @@ function applyCamera(){
 }
 function fitCamera(){
   const vp=$("#viewport"); if(!vp) return;
-  // 폭을 채우도록(살짝 오버스캔) — 첫 진입 시 매장이 화면을 꽉 채움
-  const base=(vp.clientWidth/WORLD.w)*1.08;
-  CAM.z=Math.max(clampZoom(base), (vp.clientHeight/WORLD.h)*0.7);
-  CAM.z=Math.min(CAM.z,2.1);
-  CAM.x=0; CAM.y=Math.min(0,(vp.clientHeight-WORLD.h*CAM.z)/2*0.3); // 살짝 위로
+  // 근접 프레이밍: 매장이 커져도 오브젝트가 항상 크게 보이도록
+  // "화면 폭 ≈ 8타일"을 기본 배율로 잡고, 작은 매장은 폭 맞춤 배율을 쓴다.
+  const fitW=(vp.clientWidth/WORLD.w)*1.08;      // 매장 전체 폭 맞춤
+  const closeZ=vp.clientWidth/(TW*8);            // 8타일 프레이밍(대형 매장용)
+  CAM.z=Math.min(Math.max(fitW,closeZ),1.25);
+  CAM.z=Math.max(CAM.z,(vp.clientHeight/WORLD.h)*0.55);
+  // 초기 시점: 오븐·주방 클러스터(좌상단 활동 중심)쪽으로
+  const ax=isoX(Math.min(2.5,ROOM.w*0.35),1.2), ay=isoY(Math.min(2.5,ROOM.w*0.35),1.2);
+  CAM.x=(WORLD.w/2-ax)*CAM.z*0.85;
+  CAM.y=(WORLD.h/2-ay)*CAM.z*0.55;
   clampCam();
 }
 /* ----- 포인터: 팬/줌 + 탭 판별 ----- */
@@ -872,6 +898,23 @@ function renderObjects(){
 /* ---------- 씬 상호작용 ---------- */
 $("#room").addEventListener("click",e=>{
   if(!S||suppressTap)return;              // 팬/줌 중이면 탭 무시
+  // ✨ 황금 손님 탭 → 보너스 코인
+  const gEl=e.target.closest(".actor.golden");
+  if(gEl){
+    const a=actors.find(x=>x.el===gEl);
+    if(a&&a.golden){
+      a.golden=false;gEl.classList.remove("golden");
+      gEl.querySelectorAll(".gspark").forEach(s=>s.remove());
+      const bonus=Math.min(150,8+S.level*2);
+      S.coins+=bonus;
+      const r=gEl.getBoundingClientRect();
+      coinPop(r.left+r.width/2-12,r.top,"+"+bonus+" 🪙");
+      toast("✨ 황금 손님 발견! 보너스 "+bonus+"코인");
+      actorSay(a,null,"😊 사장님 최고!",1500);
+      renderHeader();saveLocal();
+    }
+    return;
+  }
   const obj=e.target.closest("[data-obj]");
   if(EDIT){
     // 가구 회수
@@ -1042,6 +1085,48 @@ function openDex(){
     <div class="subhead">🪑 가구 컬렉션 (${ownedKinds}/${furItems.length})</div><div class="dex-grid">${furCells}</div>`);
 }
 function openSoon(title){ openSheet(`<h4 class="hd-shop">${title}<button class="x" data-close>닫기 ✕</button></h4><div class="soon-msg">🚧 준비 중입니다<br>곧 업데이트로 찾아올게요!</div>`); }
+/* 랭킹/기록 — 오늘의 성적 · 명예의 전당(개인 기록) · 주간 랭킹(서버 연결 시) */
+function openRank(){
+  ensureRecords();
+  const d=S.daily,r=S.records;
+  const days=Math.max(1,Math.floor((nowSec()-(S.createdAt||nowSec()))/86400)+1);
+  const wkSold=(S.week?S.week.sold:0)+(d.sold||0);
+  const row=(e,n,v)=>`<div class="rowitem"><div class="re">${e}</div><div><div class="rn">${n}</div></div><b style="font-size:14px;color:var(--brown)">${v}</b></div>`;
+  openSheet(`<h4 class="hd-quest">🏆 랭킹 · 기록 <span style="font-size:10px;color:var(--mut)">개업 D+${days}</span><button class="x" data-close>닫기 ✕</button></h4>
+    <div class="subhead">📊 오늘</div>
+    ${row("🧾","판매",fmt(d.sold||0)+"개")}${row("🪙","수익",fmt(d.coinsEarned||0))}${row("💰","팁 수금",(d.tipCollects||0)+"회")}
+    <div class="subhead">📅 이번 주 (월~일)</div>
+    ${row("🗓️","주간 판매",fmt(wkSold)+"개")}
+    <div class="subhead">👑 명예의 전당 — 내 기록</div>
+    ${row("🥇","하루 최다 판매",fmt(Math.max(r.bestSoldDay,d.sold||0))+"개")}
+    ${row("💎","하루 최고 수익",fmt(Math.max(r.bestCoinsDay,d.coinsEarned||0)))}
+    ${row("🔥","최장 연속 출석",(r.maxStreak||S.att&&S.att.streak||0)+"일")}
+    ${row("🍞","누적 판매",fmt(S.totalSold||0)+"개")}
+    <div class="subhead">🌐 커뮤니티 주간 랭킹</div>
+    <div id="rankBoard" class="soon-msg" style="padding:14px">불러오는 중…</div>`);
+  loadWeeklyBoard();
+}
+async function loadWeeklyBoard(){
+  const el=document.getElementById("rankBoard"); if(!el)return;
+  try{
+    if(!sb)throw new Error("no-sb");
+    ensureRecords();
+    const wkSold=(S.week?S.week.sold:0)+(S.daily.sold||0);
+    if(sbUser){ // 내 점수 업서트(실패해도 보드는 시도)
+      try{await sb.from("bakery_weekly").upsert({uid:sbUser.id,week_key:S.week.key,shop_name:S.name||"엑서 빵집",level:S.level,sold:wkSold,coins_earned:(S.week?S.week.coins:0)+(S.daily.coinsEarned||0)});}catch(e){}
+    }
+    const {data:rows,error}=await sb.from("bakery_weekly").select("shop_name,level,sold").eq("week_key",S.week.key).order("sold",{ascending:false}).limit(10);
+    if(error)throw error;
+    if(!rows||!rows.length){el.innerHTML="아직 이번 주 기록이 없어요<br>첫 번째로 이름을 올려보세요!";return;}
+    const medal=["🥇","🥈","🥉"];
+    el.className="";
+    el.innerHTML=rows.map((x,i)=>`<div class="rowitem"><div class="re">${medal[i]||(i+1)+"위"}</div>
+      <div><div class="rn">${(x.shop_name||"이름없는 빵집").replace(/</g,"&lt;")}</div><div class="rd">Lv.${x.level}</div></div>
+      <b style="color:var(--brown)">${fmt(x.sold)}개</b></div>`).join("");
+  }catch(e){
+    el.innerHTML="🌐 주간 랭킹은 커뮤니티 서버 연결 후 열려요<br><small>(운영자 Supabase 설정 대기 중 — stage2/schema_bakery_social.sql)</small>";
+  }
+}
 function collectTips(fromEl){
   const amt=Core.collectTipsJar(S); // 수금 횟수가 일일퀘스트에 카운트
   if(amt>0){
@@ -1058,7 +1143,7 @@ $("#dockCollect").addEventListener("click",e=>collectTips(e.currentTarget));
 $("#btnQuest").addEventListener("click",openQuest);
 $("#btnDex").addEventListener("click",openDex);
 $("#btnEvent").addEventListener("click",()=>openSoon("🎁 이벤트"));
-$("#btnRank").addEventListener("click",()=>openSoon("🏆 랭킹"));
+$("#btnRank").addEventListener("click",openRank);
 $("#btnGear").addEventListener("click",()=>openSoon("⚙️ 설정"));
 
 function renderSheet(){
@@ -1201,14 +1286,37 @@ function questState(q){
 function allQuestsDone(){
   return DATA.balance.quests.daily.every(q=>{const st=questState(q);return st&&S.daily.claimed[q.id];});
 }
+/* ----- 개인 기록/주간 집계 (랭킹 패널 데이터) ----- */
+function weekKeyOf(dateStr){ // 해당 주 월요일(KST)
+  const d=new Date(dateStr+"T00:00:00Z");
+  const dow=(d.getUTCDay()+6)%7; // 월=0
+  return new Date(d.getTime()-dow*86400000).toISOString().slice(0,10);
+}
+function ensureRecords(){
+  S.records=S.records||{bestSoldDay:0,bestCoinsDay:0,maxStreak:0};
+  const wk=weekKeyOf(kstDateStr(nowSec()));
+  if(!S.week||S.week.key!==wk)S.week={key:wk,sold:0,coins:0};
+}
+function rollRecords(){ // 하루가 넘어갈 때: 어제 성적을 기록/주간에 반영
+  ensureRecords();
+  const r=S.records;
+  r.bestSoldDay=Math.max(r.bestSoldDay,S.daily.sold||0);
+  r.bestCoinsDay=Math.max(r.bestCoinsDay,S.daily.coinsEarned||0);
+  const wk=weekKeyOf(S.daily.date||kstDateStr(nowSec()));
+  if(S.week&&S.week.key===wk){S.week.sold+=S.daily.sold||0;S.week.coins+=S.daily.coinsEarned||0;}
+}
 function checkDailyReset(){
   const today=kstDateStr(nowSec());
-  if(S.daily.date!==today){Core.resetDaily(S,today,DATA);if(SHEET&&SHEET.type==="quest")renderSheet();renderHeader();}
+  if(S.daily.date!==today){rollRecords();Core.resetDaily(S,today,DATA);ensureRecords();if(SHEET&&SHEET.type==="quest")renderSheet();renderHeader();}
   if(!S.daily.special){S.daily.special=Core.pickDailySpecial(DATA,S,today);renderHeader();} // 구버전 세이브 백필
   // 출석: 하루 1회 (FTUE 중엔 미루기 — 다음 날부터)
   if(S.ftue&&S.ftue.done){
     const att=Core.claimAttendance(DATA,S,today);
-    if(att){showAttendance(att);queueLevelUps(att.levelUps);renderHeader();saveLocal();}
+    if(att){
+      ensureRecords();
+      S.records.maxStreak=Math.max(S.records.maxStreak,att.streak);
+      showAttendance(att);queueLevelUps(att.levelUps);renderHeader();saveLocal();
+    }
   }
 }
 /* 출석부 팝업 — 7칸 스탬프 + 연속 보너스 */
@@ -1276,6 +1384,11 @@ function mkActor(opts){
   el.innerHTML=extra+'<span class="charwrap">'+charHtml+"</span>"+label;
   $("#room").appendChild(el);
   const a={el,c,look,x:fx.spawn.x,y:fx.spawn.y,state:"toqueue",wp:[fx.corridor],t:0,seatKey:null,scripted:opts&&opts.scripted};
+  // ✨ 황금 손님(6%): 탭하면 보너스 코인 — 화면을 지켜보는 재미
+  if(c.type==="walkin"&&!a.scripted&&Math.random()<0.06){
+    a.golden=true;el.classList.add("golden");
+    const sp=document.createElement("span");sp.className="gspark";sp.textContent="✨";el.appendChild(sp);
+  }
   positionActor(a);
   actors.push(a);
   return a;
@@ -1404,6 +1517,11 @@ function stepActors(dt){
       a.el.classList.add("eating"); // 팔을 입으로 가져가는 식사 애니메이션
     }
     else if(a.state==="seated"){
+      // 식사 중 이모트(맛있다·하트·음표) — 살아있는 매장 연출
+      if(Math.random()<dt*0.12){
+        const r=a.el.getBoundingClientRect();
+        coinPop(r.left+r.width/2-8,r.top-4,["😋","❤️","🎵","☕","✨"][Math.floor(Math.random()*5)]);
+      }
       if(a.t>5+Math.random()*4){
         if(a.foodEl)a.foodEl.remove();
         a.el.classList.remove("eating");
@@ -1536,6 +1654,45 @@ function offlineSettleAndShow(){
 /* ===================================================================
    헤더 / 공통 렌더
    =================================================================== */
+/* ----- 러시 타임 (KST 시간대 버프: 팁 확률↑ + 손님 등장↑) ----- */
+function rushWindow(){
+  const cfg=DATA.balance.rush; if(!cfg)return null;
+  const h=new Date((nowSec()+9*3600)*1000).getUTCHours();
+  for(const w of cfg.windows) if(h>=w[0]&&h<w[1]) return w;
+  return null;
+}
+let _rushOn=false;
+function tickRush(){
+  const w=rushWindow(),cfg=DATA.balance.rush;
+  S.rushTipAdd=w&&cfg?cfg.tipChanceAdd:0;
+  if(!!w!==_rushOn){
+    _rushOn=!!w;
+    if(_rushOn)toast("🔥 러시 타임! 팁 확률이 올라가고 손님이 몰려와요 (~"+w[1]+"시)");
+    renderTicker();
+  }
+}
+/* ----- 헤더 티커: 다음 해금 ↔ 오늘의 메뉴 ↔ 러시 타임 순환 ----- */
+let TICKI=0;
+function tickerItems(){
+  const items=[];
+  const nx=Core.nextUnlock(DATA,S.level);
+  items.push({html:nx?("🎯 다음: <b>Lv."+nx.level+"</b> "+nx.headline):"👑 모든 목표 달성!",act:openUpgrade});
+  const sp=specialRecipe();
+  if(sp){const ds=DATA.balance.dailySpecial;
+    items.push({html:"⭐ 오늘의 메뉴 <b>"+sp.emoji+" "+sp.name+"</b> XP×"+ds.xpMult+"·팁+"+Math.round(ds.tipChanceAdd*100)+"%",act:()=>openKitchen(sp.station)});}
+  const w=rushWindow();
+  if(w)items.push({html:"🔥 <b>러시 타임</b> — 팁 확률 UP! (~"+w[1]+"시)",act:null});
+  return items;
+}
+function renderTicker(){
+  const el=$("#hTicker"); if(!el||!S)return;
+  const items=tickerItems();
+  const it=items[TICKI%items.length];
+  el.innerHTML=it.html;
+  el.onclick=it.act||null;
+  el.style.cursor=it.act?"pointer":"default";
+}
+setInterval(()=>{if(S&&DATA){TICKI++;renderTicker();}},5000);
 function renderHeader(){
   $("#hName").textContent=S.name||"엑서 빵집";
   const g=Core.gradeForLevel(DATA,S.level);
@@ -1551,19 +1708,10 @@ function renderHeader(){
   const pct=need===Infinity?100:Math.min(100,S.xp/need*100);
   $("#hXpFill").style.width=pct+"%";
   $("#hXpTxt").textContent=need===Infinity?"MAX":Math.floor(S.xp)+" / "+need+" XP";
-  const nx=Core.nextUnlock(DATA,S.level);
-  $("#hNext").innerHTML=nx?("🎯 다음 해금: <b>Lv."+nx.level+"</b> "+nx.headline):"👑 모든 목표 달성!";
   const mood=Core.moodScore(DATA,S);
   const bonus=Math.min(DATA.balance.interior.tipChanceMax,mood*DATA.balance.interior.tipChancePerMood);
   $("#hMood").textContent="✨ "+mood+" (팁+"+Math.round(bonus*100)+"%)";
-  // ⭐ 오늘의 메뉴 칩 — 탭하면 해당 주방으로
-  const sp=specialRecipe(),spEl=$("#hSpecial");
-  if(sp){
-    const ds=DATA.balance.dailySpecial;
-    spEl.style.display="";
-    spEl.innerHTML=`⭐ 오늘의 메뉴 <b>${sp.emoji} ${sp.name}</b> — XP ×${ds.xpMult} · 팁 확률 +${Math.round(ds.tipChanceAdd*100)}%`;
-    spEl.onclick=()=>openKitchen(sp.station);
-  }else spEl.style.display="none";
+  renderTicker();
   $("#dotQuest").style.display=DATA.balance.quests.daily.some(q=>{const st=questState(q);return st&&st.cur>=st.tgt&&!S.daily.claimed[q.id];})?"":"none";
   const canUp=DATA.equipment.equipment.some(e=>{
     if(S.level<e.unlockLevel)return false;
@@ -1594,8 +1742,10 @@ function loop(now){
     if(sum.levelUps.length)queueLevelUps(sum.levelUps);
     // 손님 스폰 (간판 레벨로 빨라짐)
     spawnAcc+=dtRaw;
-    const interval=Math.max(DATA.balance.customers.visitIntervalSecMin,
+    tickRush();
+    let interval=Math.max(DATA.balance.customers.visitIntervalSecMin,
       DATA.balance.customers.visitIntervalSecBase/Core.signMult(DATA,S));
+    if(_rushOn&&DATA.balance.rush)interval*=DATA.balance.rush.spawnMult; // 러시: 손님 몰림
     const waiting=actors.filter(a=>a.state==="queue"||a.state==="toqueue").length;
     if(spawnAcc>=interval&&ftueStep>=3){
       spawnAcc=0;
