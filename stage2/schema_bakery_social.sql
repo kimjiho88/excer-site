@@ -13,9 +13,11 @@ create table if not exists public.bakery_weekly (
   uid        uuid not null references auth.users(id) on delete cascade,
   week_key   date not null,                      -- 해당 주 월요일(KST 기준, 클라 계산)
   shop_name  text not null default '',
-  level      int  not null default 1,
-  sold       int  not null default 0,            -- 이번 주 누적 판매 개수
-  coins_earned bigint not null default 0,        -- 이번 주 벌어들인 코인(참고 지표)
+  level      int  not null default 1 check (level between 1 and 50),
+  sold       int  not null default 0
+             check (sold >= 0 and sold <= 200000),   -- 개연성 상한(경제 이론상 최대 ≈ 주 10만)
+  coins_earned bigint not null default 0
+             check (coins_earned >= 0 and coins_earned <= 50000000),
   updated_at timestamptz not null default now(),
   primary key (uid, week_key)
 );
