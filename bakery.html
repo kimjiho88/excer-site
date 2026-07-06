@@ -469,6 +469,9 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
   border-radius:99px;min-width:14px;height:14px;display:grid;place-items:center;border:1.5px solid #fff}
 .dirtspot{cursor:pointer}
 .dirtspot:active{transform:translate(-50%,-82%) scale(.9)}
+.obj.picked{animation:pickpulse .9s ease-in-out infinite}
+.obj.picked>*{filter:drop-shadow(0 0 8px rgba(96,200,130,.95)) drop-shadow(0 6px 10px rgba(40,90,40,.35))}
+@keyframes pickpulse{0%,100%{transform:translate(-50%,-82%) translateY(0)}50%{transform:translate(-50%,-82%) translateY(-6px)}}
 /* 코인 플라이 + 지갑 펄스 + 레벨업 컨페티 */
 .flycoin{position:fixed;z-index:80;font-size:15px;pointer-events:none;line-height:1;
   filter:drop-shadow(0 2px 3px rgba(150,100,20,.45))}
@@ -942,6 +945,7 @@ function bindCamera(){
 }
 
 /* 고정 설비 배치 (방 크기의 함수) */
+const MOVABLE_STATIONS=["oven","coffeebar","juice","display","counter","brunch","icecream","grill"];
 function fixtures(){
   const w=ROOM.w,h=ROOM.h;
   const fx={
@@ -954,11 +958,26 @@ function fixtures(){
     icecream:{x:0,y:4},
     grill:{x:0,y:6},
   };
-  fx.queueSpots=[{x:w-2,y:3},{x:w-3,y:4},{x:w-4,y:4},{x:w-4,y:3}];
+  // 유저 커스텀 배치(꾸미기 모드에서 이동) — 매장 확장 시에도 좌표 클램프로 안전
+  if(S&&S.stationPos)for(const k in S.stationPos){
+    if(fx[k]&&S.stationPos[k]){
+      fx[k]={x:Math.min(Math.max(0,S.stationPos[k].x),w-1),y:Math.min(Math.max(0,S.stationPos[k].y),h-1)};
+    }
+  }
+  // 계산 줄은 카운터 위치를 따라감
+  const c=fx.counter;
+  const cl=(x,y)=>({x:Math.min(Math.max(0,x),w-1),y:Math.min(Math.max(1,y),h-1)});
+  fx.queueSpots=[cl(c.x,c.y+1),cl(c.x-1,c.y+2),cl(c.x-2,c.y+2),cl(c.x-2,c.y+1)];
   fx.door={x:0,y:h-1};
   fx.spawn={x:-1.6,y:h-1};
   fx.corridor={x:1,y:h-2};
   return fx;
+}
+// 오브젝트 data-obj id → 스테이션 배치 키
+function stationKeyOf(objId){
+  const map={"st-oven":"oven","st-coffee":"coffeebar","st-display":"display","st-counter":"counter",
+             "st-juice":"juice","st-brunch":"brunch","st-icecream":"icecream","st-grill":"grill"};
+  return map[objId]||null;
 }
 /* ----- 테라스(정원) 배치 존: Lv.10 '테라스 오픈' 이후 실내 밖 앞마당에 배치 가능 ----- */
 const TERRACE_UNLOCK=10;
@@ -972,15 +991,19 @@ function tileAllowed(f,x,y){
   if(z==="any")return inIndoor(x,y)||inTerrace(x,y);
   return inIndoor(x,y);
 }
-function blockedTiles(){
+function blockedTiles(excl){
   const fx=fixtures(),set=new Set();
   const put=t=>set.add(t.x+","+t.y);
-  put(fx.oven);put(fx.coffeebar);put(fx.display);put(fx.counter);
-  put(fx.juice);put(fx.brunch);put(fx.icecream);put(fx.grill);
+  for(const k of MOVABLE_STATIONS){
+    if(excl&&excl.kind==="station"&&excl.id===k)continue;
+    put(fx[k]);
+  }
   fx.queueSpots.forEach(put);put(fx.door);
-  put({x:fx.counter.x,y:1}); // 캐셔 자리(진열대-카운터 사이)
   put({x:0,y:ROOM.h-2}); // 문 앞 통로
-  for(const it of S.layout)put(it);
+  S.layout.forEach((it,i)=>{
+    if(excl&&excl.kind==="fur"&&excl.idx===i)return;
+    put(it);
+  });
   return set;
 }
 const SLOT_EMOJI={
@@ -1162,16 +1185,26 @@ function renderObjects(){
   });
   room.insertAdjacentHTML("beforeend",html);
   // 배치 모드 타일 하이라이트
-  const blocked=blockedTiles();
+  const blocked=blockedTiles(MOVING);
   const selF=SELECTED?Core.furnitureById(DATA,SELECTED):null;
+  const movF=(MOVING&&MOVING.kind==="fur"&&S.layout[MOVING.idx])?Core.furnitureById(DATA,S.layout[MOVING.idx].id):null;
   room.querySelectorAll("[data-tile]").forEach(t=>{
     t.classList.remove("editok","editno");
-    if(EDIT&&selF){
-      const [tx,ty]=t.dataset.tile.split(",").map(Number);
-      const bad=blocked.has(t.dataset.tile)||!tileAllowed(selF,tx,ty);
-      t.classList.add(bad?"editno":"editok");
-    }
+    if(!EDIT)return;
+    const [tx,ty]=t.dataset.tile.split(",").map(Number);
+    let ok=null;
+    if(MOVING)ok=!blocked.has(t.dataset.tile)&&(MOVING.kind==="station"?(tx>=0&&tx<ROOM.w&&ty>=0&&ty<ROOM.h):(movF&&tileAllowed(movF,tx,ty)));
+    else if(selF)ok=!blocked.has(t.dataset.tile)&&tileAllowed(selF,tx,ty);
+    if(ok!==null)t.classList.add(ok?"editok":"editno");
   });
+  // 집어든 오브젝트 강조
+  room.querySelectorAll(".picked").forEach(el=>el.classList.remove("picked"));
+  if(MOVING){
+    const sel=MOVING.kind==="fur"?`[data-obj="fur-${MOVING.idx}"]`
+      :`[data-obj="${Object.entries({oven:"st-oven",coffeebar:"st-coffee",display:"st-display",counter:"st-counter",juice:"st-juice",brunch:"st-brunch",icecream:"st-icecream",grill:"st-grill"}).find(([k])=>k===MOVING.id)[1]}"]`;
+    const el=room.querySelector(sel);
+    if(el)el.classList.add("picked");
+  }
 }
 
 /* ---------- 씬 상호작용 ---------- */
@@ -1197,29 +1230,73 @@ $("#room").addEventListener("click",e=>{
   }
   const obj=e.target.closest("[data-obj]");
   if(EDIT){
-    // 가구 회수
-    if(obj&&obj.dataset.obj.startsWith("fur-")){
-      const idx=+obj.dataset.obj.slice(4);
-      S.layout.splice(idx,1);
-      renderObjects();renderTray();renderHeader();saveLocal();return;
-    }
-    // 배치 (실내/정원 존 검증)
-    const tile=e.target.closest("[data-tile]");
-    if(tile&&SELECTED){
-      const [x,y]=tile.dataset.tile.split(",").map(Number);
-      const f=Core.furnitureById(DATA,SELECTED);
-      if(!f)return;
-      if(blockedTiles().has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
-      if(!tileAllowed(f,x,y)){
-        toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
-          :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요"
-          :"여기엔 놓을 수 없어요");
+    // ── 자유 배치: 오브젝트 탭 = 집어들기 / 같은 가구 재탭 = 보관 / 타일 탭 = 이동·배치 ──
+    if(obj){
+      const id=obj.dataset.obj;
+      // 가구: 집어들기 ↔ (재탭) 보관함
+      if(id.startsWith("fur-")){
+        const idx=+id.slice(4);
+        if(MOVING&&MOVING.kind==="fur"&&MOVING.idx===idx){
+          S.layout.splice(idx,1);MOVING=null;
+          Snd.play("pop");toast("📦 보관함으로 이동했어요");
+          renderObjects();renderTray();renderHeader();saveLocal();
+        }else{
+          MOVING={kind:"fur",idx};SELECTED=null;
+          toast("이동할 칸을 탭하세요 · 다시 탭하면 보관");
+          renderObjects();renderTray();
+        }
         return;
       }
-      if(unplacedCount(SELECTED)<=0){toast("보유한 가구가 없어요");return;}
-      S.layout.push({id:SELECTED,x,y});
-      if(unplacedCount(SELECTED)<=0)SELECTED=null;
-      renderObjects();renderTray();renderHeader();saveLocal();
+      // 스테이션/설비: 집어들기 ↔ (재탭) 취소
+      const stKey=stationKeyOf(id);
+      if(stKey){
+        MOVING=(MOVING&&MOVING.kind==="station"&&MOVING.id===stKey)?null:{kind:"station",id:stKey};
+        SELECTED=null;
+        if(MOVING)toast("🏗️ "+ (id==="st-display"?"진열대":id==="st-counter"?"카운터":DATA.balance.stations[id.slice(3)]?DATA.balance.stations[id.slice(3)].name:"설비") +" — 이동할 칸을 탭하세요");
+        renderObjects();renderTray();
+        return;
+      }
+    }
+    const tile=e.target.closest("[data-tile]");
+    if(tile){
+      const [x,y]=tile.dataset.tile.split(",").map(Number);
+      // 1) 이동 처리 (집어든 오브젝트)
+      if(MOVING){
+        if(blockedTiles(MOVING).has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
+        if(MOVING.kind==="station"){
+          if(!(x>=0&&x<ROOM.w&&y>=0&&y<ROOM.h)){toast("🏠 설비는 매장 안에만 놓을 수 있어요");return;}
+          S.stationPos=S.stationPos||{};
+          S.stationPos[MOVING.id]={x,y};MOVING=null;
+          Snd.play("done");renderRoom();renderObjects();saveLocal();
+        }else{
+          const it=S.layout[MOVING.idx];
+          const f=Core.furnitureById(DATA,it.id);
+          if(!tileAllowed(f,x,y)){
+            toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
+              :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요":"여기엔 놓을 수 없어요");
+            return;
+          }
+          it.x=x;it.y=y;MOVING=null;
+          Snd.play("pop");renderObjects();saveLocal();
+        }
+        return;
+      }
+      // 2) 신규 배치 (보관함에서 선택된 가구)
+      if(SELECTED){
+        const f=Core.furnitureById(DATA,SELECTED);
+        if(!f)return;
+        if(blockedTiles().has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
+        if(!tileAllowed(f,x,y)){
+          toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
+            :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요"
+            :"여기엔 놓을 수 없어요");
+          return;
+        }
+        if(unplacedCount(SELECTED)<=0){toast("보유한 가구가 없어요");return;}
+        S.layout.push({id:SELECTED,x,y});
+        if(unplacedCount(SELECTED)<=0)SELECTED=null;
+        renderObjects();renderTray();renderHeader();saveLocal();
+      }
     }
     return;
   }
@@ -1246,8 +1323,9 @@ $("#room").addEventListener("click",e=>{
    =================================================================== */
 function placedCount(id){return S.layout.filter(x=>x.id===id).length;}
 function unplacedCount(id){return (S.owned[id]||0)-placedCount(id);}
+let MOVING=null; // 꾸미기: 집어든 오브젝트 {kind:'station'|'fur', ...}
 function setEdit(on){
-  EDIT=on;SELECTED=null;
+  EDIT=on;SELECTED=null;MOVING=null;
   $("#dockEdit").classList.toggle("on",on);
   $("#tray").classList.toggle("on",on);
   renderRoom();renderTray();
@@ -1260,11 +1338,14 @@ function renderTray(){
     .filter(f=>(S.owned[f.id]||0)>0)
     .map(f=>`<button class="tchip${SELECTED===f.id?" sel":""}" data-sel="${f.id}">
       <span class="te">${f.emoji}</span><span class="tn">${f.name}</span><span class="tc">보유 ${unplacedCount(f.id)}</span></button>`).join("");
-  $("#trayRow").innerHTML=rows+`<button class="tchip shopbtn" id="openShop"><span class="te">🛒</span><span class="tn">가구 상점</span><span class="tc">✨분위기 ${Core.moodScore(DATA,S)}</span></button>`;
+  $("#trayRow").innerHTML=rows+`<button class="tchip shopbtn" id="openShop"><span class="te">🛒</span><span class="tn">가구 상점</span><span class="tc">✨분위기 ${Core.moodScore(DATA,S)}</span></button>`+
+    (S.stationPos&&Object.keys(S.stationPos).length?`<button class="tchip" id="resetLayout"><span class="te">🔄</span><span class="tn">설비 기본 배치</span><span class="tc">되돌리기</span></button>`:"");
 }
 $("#trayRow").addEventListener("click",e=>{
   const shop=e.target.closest("#openShop");
   if(shop){openShop();return;}
+  const rst=e.target.closest("#resetLayout");
+  if(rst){S.stationPos={};MOVING=null;renderRoom();renderObjects();renderTray();saveLocal();toast("🔄 설비를 기본 배치로 되돌렸어요");return;}
   const b=e.target.closest("[data-sel]");if(!b)return;
   SELECTED=SELECTED===b.dataset.sel?null:b.dataset.sel;
   renderTray();renderObjects();
