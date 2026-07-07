@@ -1,14 +1,18 @@
 /* ============================================================
-   chat-parser.js — 카카오톡 대화 내보내기(.txt) 파서 + 집계
+   chat-parser.js — 카카오톡 대화 내보내기(.txt) 파서 + v2 통계 집계
    · 브라우저: window.ChatParser / node: module.exports
    · 지원 포맷(자동 감지, 한 텍스트에 섞여 있어도 동작):
      - Android: "2026년 6월 1일 오후 9:03, 닉네임 : 메시지"
      - iOS:     "2026. 6. 1. 오후 9:03, 닉네임 : 메시지"
      - PC:      "--------------- 2026년 6월 1일 월요일 ---------------"
                 "[닉네임] [오후 9:03] 메시지"
+   · aggregate() 는 항상 v:2 통계 스키마를 산출한다
+     (스키마 계약: 일 단위 시계열 days[] + 멤버별 daily[] 로
+      기간 필터를 대시보드가 클라이언트에서 계산).
    · 개인정보: parse() 가 내부적으로 text 를 들고 있는 것은
-     aggregate() 의 키워드 추출용일 뿐, aggregate() 결과(통계 JSON)에는
-     대화 원문 문장이 절대 포함되지 않는다.
+     aggregate() 의 키워드/휴리스틱 추출용일 뿐, aggregate() 결과(통계 JSON)에는
+     대화 원문 문장이 절대 포함되지 않는다. 퇴장·강퇴는 개수만 세고
+     누가 나갔는지는 어디에도 남기지 않는다.
    ============================================================ */
 (function (global) {
   "use strict";
@@ -67,10 +71,12 @@
   }
 
   /* ── parse ──────────────────────────────────────────────── */
-  // 반환: { messages:[{date,hour,weekday,name,kind,len,text}], meta:{joins,leaves,format} }
+  // 반환: { messages:[{date,hour,min,weekday,name,kind,len,text}], meta:{joins,leaves,format} }
   // · 입장/퇴장 이벤트는 kind:"join"/"leave" 로 messages 에 포함되지만
   //   (기간별 새 멤버 집계용) aggregate() 는 이를 일반 메시지로 세지 않는다.
-  // · 퇴장/강퇴는 개수만 세고 누가 나갔는지는 어디에도 남기지 않는다.
+  // · join 이벤트는 입장자 닉네임을 name 에 담는다 — 환영(welcome) 휴리스틱의
+  //   "본인 제외" 판정용이며, aggregate() 결과에는 절대 노출되지 않는다.
+  // · 퇴장/강퇴는 개수만 세고 누가 나갔는지는 어디에도 남기지 않는다 (name:"").
   function parse(rawText) {
     var lines = String(rawText || "").replace(/\r\n?/g, "\n").split("\n");
     var messages = [];
@@ -79,11 +85,12 @@
     var curDate = null; // PC 포맷용 현재 날짜
     var last = null;    // 멀티라인 연속용 직전 메시지
 
-    function pushMsg(dateStr, hour, name, body) {
+    function pushMsg(dateStr, hour, min, name, body) {
       var kind = classify(body);
       var msg = {
         date: dateStr,
         hour: hour,
+        min: min == null ? 0 : +min,
         weekday: weekdayOf(dateStr),
         name: String(name).trim(),
         kind: kind,
@@ -94,14 +101,22 @@
       last = msg;
     }
 
-    function pushSystem(dateStr, hour, body) {
-      var kind = null;
-      if (RE_JOIN.test(body)) { meta.joins += 1; kind = "join"; }
-      else if (RE_LEAVE.test(body)) { meta.leaves += 1; kind = "leave"; }
+    function pushSystem(dateStr, hour, min, body) {
+      var kind = null, who = "";
+      if (RE_JOIN.test(body)) {
+        meta.joins += 1; kind = "join";
+        // 입장자 닉네임 추출 (초대 문구 포함) — welcome '본인 제외' 판정 전용
+        var jm = body.match(/님이\s*(.+?)님을\s*초대했습니다/) ||
+                 body.match(/^(.+?)님이\s*(?:들어왔습니다|초대되었습니다)/);
+        if (jm) who = jm[1].trim();
+      } else if (RE_LEAVE.test(body)) {
+        meta.leaves += 1; kind = "leave"; // 퇴장자 닉네임은 기록하지 않는다
+      }
       if (kind && dateStr) {
         messages.push({
-          date: dateStr, hour: hour == null ? 12 : hour, weekday: weekdayOf(dateStr),
-          name: "", kind: kind, len: 0, text: ""
+          date: dateStr, hour: hour == null ? 12 : hour, min: min == null ? 0 : +min,
+          weekday: weekdayOf(dateStr),
+          name: kind === "join" ? who : "", kind: kind, len: 0, text: ""
         });
       }
       last = null; // 시스템 행 뒤의 프리픽스 없는 줄은 이어붙이지 않음
@@ -128,7 +143,7 @@
       if (m) {
         var d1 = toDateStr(m[1], m[2], m[3]);
         curDate = d1; counts.android += 1;
-        pushMsg(d1, toHour24(m[4], m[5]), m[7], m[8]);
+        pushMsg(d1, toHour24(m[4], m[5]), m[6], m[7], m[8]);
         continue;
       }
 
@@ -137,7 +152,7 @@
       if (m) {
         var d2 = toDateStr(m[1], m[2], m[3]);
         curDate = d2; counts.ios += 1;
-        pushMsg(d2, toHour24(m[4], m[5]), m[7], m[8]);
+        pushMsg(d2, toHour24(m[4], m[5]), m[6], m[7], m[8]);
         continue;
       }
 
@@ -145,7 +160,7 @@
       m = line.match(RE_PC_MSG);
       if (m && curDate) {
         counts.pc += 1;
-        pushMsg(curDate, toHour24(m[2], m[3]), m[1], m[5]);
+        pushMsg(curDate, toHour24(m[2], m[3]), m[4], m[1], m[5]);
         continue;
       }
 
@@ -154,7 +169,7 @@
       if (m) {
         var d3 = toDateStr(m[1], m[2], m[3]);
         curDate = d3;
-        pushSystem(d3, toHour24(m[4], m[5]), m[7] || "");
+        pushSystem(d3, toHour24(m[4], m[5]), m[6], m[7] || "");
         continue;
       }
 
@@ -163,7 +178,7 @@
       if (m) { curDate = toDateStr(m[1], m[2], m[3]); last = null; continue; }
 
       // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등)
-      if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, t); continue; }
+      if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, null, t); continue; }
       if (RE_SYS_ETC.test(t)) { last = null; continue; }
 
       // 9) 그 외: 직전 메시지의 연속(멀티라인)
@@ -271,6 +286,102 @@
       .slice(0, limit || 30);
   }
 
+  /* ── v2 휴리스틱 정의 ───────────────────────────────────────
+     모든 휴리스틱 카운트(q/a/welcome/kw/emojiStats)는
+     시스템·미디어 메시지 제외 원칙: kind === "text" 만 검사한다.
+     (photo/video/emoticon/link 는 media 자체 카운트로만 집계) */
+
+  // 질문(q): 텍스트 끝이 '?'/'？'(연속 포함) 이거나
+  //          "~나요/~까요" 로 끝나거나 "어때/궁금" 패턴을 포함
+  var RE_Q_TAIL = /[?？]\s*$/;
+  var RE_Q_ENDING = /(나요|까요)[\s.!~ㅠㅜ]*$/;
+  var RE_Q_WORD = /어때|궁금/;
+  function isQuestion(text) {
+    var t = String(text || "").trim();
+    if (!t) return false;
+    return RE_Q_TAIL.test(t) || RE_Q_ENDING.test(t) || RE_Q_WORD.test(t);
+  }
+
+  // 답변·반응(a):
+  //  ① 다른 멤버의 메시지(종류 무관) 후 5분 이내에 보낸 텍스트 메시지, 또는
+  //  ② 짧은 리액션 패턴 (ㅋㅋ+, ㄹㅇ, 굿, 오~, 맞아, 축하, 화이팅 등 —
+  //     리액션 어휘로 시작하고 나머지가 감탄 부호/자모 뿐인 짧은 메시지)
+  //  한 메시지는 최대 1회만 a 로 센다.
+  var RE_REACTION = /^(ㅋ{2,}|ㅎ{2,}|ㅠ{2,}|ㄹㅇ|ㅇㅈ|인정|굿+|굳+|오+|와+|우와+|(맞아)+|맞네|맞지|맞죠|좋아+|좋네|좋다|최고+|대박+|짱+|헐+|축하(해+요*|합니다|드려요)?|ㅊㅋ+|화이팅|파이팅|응원(해요|합니다)?|고고+|가즈아+|넵+|넹+|네네|ㅇㅋ|오케이?|나이스|nice|good|okay|ok)[!?~^.,\sㅋㅎㅠㅜ]*$/i;
+
+  // 환영(welcome): join 이벤트 후 60분 이내의
+  //   "환영/어서오/반갑/안녕하세요" 포함 텍스트 메시지 (입장 당사자 본인 제외).
+  //   입장자 이름을 모르는 join 이면 '데이터 전체에서 그 멤버의 첫 메시지'를
+  //   본인 인사로 추정해 제외한다. 한 메시지는 최대 1회만 센다.
+  var RE_WELCOME = /환영|어서오|반갑|안녕하세요/;
+
+  // emojiStats (메시지 단위 카운트 — 한 메시지가 각 항목에 최대 1씩 기여):
+  //   laugh = ㅋ 2개 이상 연속 또는 😂/🤣
+  //   cheer = 화이팅/파이팅/응원/축하/👏
+  //   heart = ❤/♥/💜/좋아
+  var RE_LAUGH = /ㅋ{2,}|😂|🤣/;
+  var RE_CHEER = /화이팅|파이팅|응원|축하|👏/;
+  var RE_HEART = /❤|♥|💜|좋아/;
+
+  // 키워드 카테고리 사전 (넉넉히) — 단어/문장에 사전 항목이 '포함'되면 해당 카테고리.
+  //   · 멤버별 kw: 텍스트 메시지에서 카테고리 사전 항목의 언급 횟수 합
+  //   · keywords[].cat: 추출된 키워드가 처음 매칭되는 카테고리 (없으면 null)
+  //   판정 우선순위: 운동 → 식단 → 벙 → 정보
+  var KW_CAT_ORDER = ["운동", "식단", "벙", "정보"];
+  var KW_CATEGORIES = {
+    "운동": [
+      "러닝", "조깅", "마라톤", "달리기", "헬스", "웨이트", "등산", "트레킹", "요가",
+      "필라테스", "크로스핏", "유산소", "근력", "근육", "운동", "수영", "클라이밍",
+      "볼더링", "자전거", "라이딩", "사이클", "배드민턴", "테니스", "탁구", "축구",
+      "풋살", "농구", "야구", "볼링", "골프", "스쿼트", "데드리프트", "벤치프레스",
+      "푸시업", "팔굽혀펴기", "풀업", "턱걸이", "런지", "플랭크", "버피", "케틀벨",
+      "덤벨", "바벨", "오운완", "득근", "체지방", "인바디", "바디프로필", "코어",
+      "하체", "상체", "스트레칭", "헬스장", "체육관", "피티", "홈트", "만보", "걷기"
+    ],
+    "식단": [
+      "식단", "다이어트", "단백질", "프로틴", "닭가슴살", "샐러드", "도시락", "칼로리",
+      "치팅", "치팅데이", "저탄고지", "키토", "간헐적단식", "단식", "탄수화물", "영양제",
+      "보충제", "쉐이크", "오트밀", "고구마", "현미", "잡곡", "브로콜리", "야식",
+      "폭식", "식욕", "체중", "감량", "벌크업", "커팅", "클린식", "저염", "제로칼로리",
+      "제로콜라", "비건", "영양성분", "식비"
+    ],
+    "벙": [
+      "벙", "모임", "정모", "번개", "정산", "벙비", "회비", "참석", "불참", "참여",
+      "공지", "장소", "벙주", "신청", "마감", "명단", "예약", "일정", "투표",
+      "뒤풀이", "집결", "모집", "합류", "출첵", "출석", "노쇼"
+    ],
+    "정보": [
+      "정보", "링크", "공유", "추천", "후기", "꿀팁", "리뷰", "자료", "참고",
+      "가이드", "소식", "뉴스", "이벤트", "할인", "쿠폰", "세일", "특가",
+      "블로그", "유튜브", "기사", "영상추천", "앱추천"
+    ]
+  };
+  var KW_CAT_RE = {};
+  KW_CAT_ORDER.forEach(function (cat) {
+    KW_CAT_RE[cat] = new RegExp(KW_CATEGORIES[cat].join("|"), "g");
+  });
+
+  // 텍스트 한 건에서 카테고리별 언급 횟수를 kw 에 누적
+  function countCategoryMentions(text, kw) {
+    for (var i = 0; i < KW_CAT_ORDER.length; i++) {
+      var cat = KW_CAT_ORDER[i];
+      var hits = String(text).match(KW_CAT_RE[cat]);
+      if (hits) kw[cat] += hits.length;
+    }
+  }
+
+  // 추출 키워드 1개의 카테고리 판정 (첫 매칭 카테고리, 없으면 null)
+  function categorizeWord(word) {
+    var w = String(word).toLowerCase();
+    for (var i = 0; i < KW_CAT_ORDER.length; i++) {
+      var cat = KW_CAT_ORDER[i], terms = KW_CATEGORIES[cat];
+      for (var j = 0; j < terms.length; j++) {
+        if (w.indexOf(terms[j]) !== -1) return cat;
+      }
+    }
+    return null;
+  }
+
   /* ── 날짜 유틸 ──────────────────────────────────────────── */
   function addDays(dateStr, n) {
     var p = dateStr.split("-");
@@ -281,6 +392,13 @@
   function dayDiff(a, b) { // b - a (일 수)
     var pa = a.split("-"), pb = b.split("-");
     return Math.round((Date.UTC(+pb[0], +pb[1] - 1, +pb[2]) - Date.UTC(+pa[0], +pa[1] - 1, +pa[2])) / 86400000);
+  }
+
+  // 메시지의 절대 분(minute) 좌표 — 5분/60분 윈도 휴리스틱용.
+  // min 필드가 없는 메시지(구버전 저장분 등)는 0분으로 취급한다.
+  function epochMin(m) {
+    var p = m.date.split("-");
+    return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 60000) + m.hour * 60 + (m.min || 0);
   }
 
   function autoPeriodLabel(from, to) {
@@ -306,10 +424,14 @@
     return best;
   }
 
-  /* ── aggregate ──────────────────────────────────────────── */
-  // opts: { from, to ("YYYY-MM-DD"), exclude:[닉네임], keywordLimit,
-  //         periodLabel(강제 라벨), dropKeywords:[단어] }
-  // 반환 통계 JSON — 대화 원문 문장은 포함하지 않는다.
+  /* ── aggregate (v2 통계 스키마) ─────────────────────────────
+     opts: { from, to ("YYYY-MM-DD"), exclude:[닉네임], keywordLimit(기본 40),
+             maskNames(true 면 members[].name 을 집계 단계에서 "첫 글자+*" 로 치환),
+             dropKeywords:[단어], periodLabel(강제 라벨),
+             format("android"|"ios"|"pc"|"mixed"), files(병합 파일 수) }
+     반환: v:2 통계 JSON — 일 단위 시계열(days[], members[].daily[])을 담아
+           대시보드가 기간 필터(오늘/이번 주/이번 달/직접 선택)를 클라이언트에서
+           계산할 수 있게 한다. 대화 원문 문장은 절대 포함하지 않는다. */
   function aggregate(allMessages, opts) {
     opts = opts || {};
     var exclude = Object.create(null);
@@ -321,130 +443,279 @@
       return true;
     };
 
-    var msgs = [];   // 일반 메시지(집계 대상)
-    var joins = 0;
+    var msgs = [];       // 일반 메시지(집계 대상)
+    var joinEvents = []; // 범위 내 입장 이벤트 (이름은 welcome 판정에만 쓰고 미출력)
     (allMessages || []).forEach(function (m) {
       if (!m || !m.date || !inRange(m.date)) return;
-      if (m.kind === "join") { joins += 1; return; }
+      if (m.kind === "join") { joinEvents.push(m); return; }
       if (m.kind === "leave") return; // 공개 통계 미포함(운영 민감 정보)
       if (exclude[m.name]) return;
       msgs.push(m);
     });
 
-    var empty = {
-      v: 1, periodLabel: opts.periodLabel || "", range: { from: opts.from || "", to: opts.to || "" },
-      generatedAt: new Date().toISOString(),
-      totals: { messages: 0, activeMembers: 0, days: 0, avgPerDay: 0, newMembers: joins, photos: 0, videos: 0, emoticons: 0, links: 0 },
-      members: [], hourly: zeros(24), weekdays: zeros(7), heatmap: grid7x24(), daily: [],
-      peaks: { bestDay: null, quietDay: null, bestHour: null }, keywords: []
-    };
-    if (!msgs.length) return empty;
+    // 응답(5분)/환영(60분) 윈도 판정을 위해 시간순 정렬
+    var chrono = function (a, b) { return epochMin(a) - epochMin(b); };
+    msgs = msgs.slice().sort(chrono);
+    joinEvents = joinEvents.slice().sort(chrono);
 
-    // 실제 데이터 범위
-    var minD = msgs[0].date, maxD = msgs[0].date;
-    msgs.forEach(function (m) { if (m.date < minD) minD = m.date; if (m.date > maxD) maxD = m.date; });
-    var from = opts.from || minD, to = opts.to || maxD;
+    var generatedAt = new Date().toISOString();
+    if (!msgs.length) {
+      return {
+        v: 2,
+        periodLabel: opts.periodLabel || "",
+        range: { from: opts.from || "", to: opts.to || "" },
+        generatedAt: generatedAt,
+        maskNames: !!opts.maskNames,
+        days: [], members: [], heatmap: grid7x24(),
+        keywords: [], weeklyKeywords: [],
+        emojiStats: { laugh: 0, cheer: 0, heart: 0 },
+        newMembers: { count: joinEvents.length, avgFirstWeekMsgs: 0 },
+        meta: { format: opts.format || "unknown", files: opts.files || 1, totalMessages: 0 }
+      };
+    }
 
-    var hourly = zeros(24), weekdays = zeros(7), heatmap = grid7x24();
-    var dailyMap = Object.create(null);
+    // 실제 데이터 범위 (정렬됐으므로 양끝)
+    var from = opts.from || msgs[0].date;
+    var to = opts.to || msgs[msgs.length - 1].date;
+    var span = dayDiff(from, to) + 1;
+    if (span < 1) span = 1;
+    if (span > 400) span = 400; // 방어: 비정상 범위
+
+    // ── 방 단위 일별 시계열 (빈 날도 0 으로 채움 — 기간 필터의 근간) ──
+    var days = [], dayIdx = Object.create(null), cursor = from;
+    for (var i = 0; i < span; i++) {
+      days.push({ d: cursor, c: 0, byHour: zeros(24), joins: 0 });
+      dayIdx[cursor] = i;
+      cursor = addDays(cursor, 1);
+    }
+    joinEvents.forEach(function (j) {
+      if (dayIdx[j.date] != null) days[dayIdx[j.date]].joins += 1;
+    });
+
+    var heatmap = grid7x24();
+    var emojiStats = { laugh: 0, cheer: 0, heart: 0 };
     var byMember = Object.create(null);
-    var totals = { photos: 0, videos: 0, emoticons: 0, links: 0 };
+    var firstMsgIdx = Object.create(null); // 멤버별 데이터 전체 첫 메시지 인덱스
 
-    msgs.forEach(function (m) {
-      hourly[m.hour] += 1;
-      weekdays[m.weekday] += 1;
-      heatmap[m.weekday][m.hour] += 1;
-      dailyMap[m.date] = (dailyMap[m.date] || 0) + 1;
-
+    function statOf(m) {
       var st = byMember[m.name];
       if (!st) {
         st = byMember[m.name] = {
-          name: m.name, count: 0, hours: zeros(24), weekdays: zeros(7),
-          dates: Object.create(null), media: { photo: 0, video: 0, emoticon: 0, link: 0 },
-          textLen: 0, textCount: 0, firstDate: m.date, lastDate: m.date
+          name: m.name, count: 0, daily: zeros(span),
+          hours: zeros(24), weekdays: zeros(7),
+          q: 0, a: 0, welcome: 0,
+          media: { photo: 0, video: 0, emoticon: 0, link: 0 },
+          textLen: 0, textCount: 0, dates: Object.create(null),
+          kw: { "운동": 0, "식단": 0, "벙": 0, "정보": 0 },
+          firstDate: m.date, lastDate: m.date
         };
       }
+      return st;
+    }
+
+    var prev = null; // 직전 일반 메시지(발신자 무관) — 응답 판정용
+    msgs.forEach(function (m, idx) {
+      var di = dayIdx[m.date];
+      if (di != null) { days[di].c += 1; days[di].byHour[m.hour] += 1; }
+      heatmap[m.weekday][m.hour] += 1;
+      if (firstMsgIdx[m.name] == null) firstMsgIdx[m.name] = idx;
+
+      var st = statOf(m);
       st.count += 1;
+      if (di != null) st.daily[di] += 1;
       st.hours[m.hour] += 1;
       st.weekdays[m.weekday] += 1;
       st.dates[m.date] = 1;
       if (m.date < st.firstDate) st.firstDate = m.date;
       if (m.date > st.lastDate) st.lastDate = m.date;
-      if (m.kind === "photo") { st.media.photo += 1; totals.photos += 1; }
-      else if (m.kind === "video") { st.media.video += 1; totals.videos += 1; }
-      else if (m.kind === "emoticon") { st.media.emoticon += 1; totals.emoticons += 1; }
-      else if (m.kind === "link") { st.media.link += 1; totals.links += 1; }
+
+      if (m.kind === "photo") st.media.photo += 1;
+      else if (m.kind === "video") st.media.video += 1;
+      else if (m.kind === "emoticon") st.media.emoticon += 1;
+      else if (m.kind === "link") st.media.link += 1;
       if (m.kind === "text" || m.kind === "link") { st.textLen += m.len; st.textCount += 1; }
+
+      // 휴리스틱 카운트 — 텍스트만 (시스템·미디어 제외 원칙)
+      if (m.kind === "text") {
+        var t = String(m.text || "").trim();
+        if (isQuestion(t)) st.q += 1;                                  // 질문(q)
+        var gap = prev ? epochMin(m) - epochMin(prev) : -1;
+        var isReply = prev && prev.name !== m.name && gap >= 0 && gap <= 5; // 타인 메시지 5분 내 응답
+        if (isReply || RE_REACTION.test(t)) st.a += 1;                 // 답변·반응(a)
+        if (RE_LAUGH.test(t)) emojiStats.laugh += 1;
+        if (RE_CHEER.test(t)) emojiStats.cheer += 1;
+        if (RE_HEART.test(t)) emojiStats.heart += 1;
+        countCategoryMentions(t, st.kw);                               // 카테고리 키워드 언급
+      }
+      prev = m;
     });
 
+    // ── 환영(welcome): join 후 60분 내 환영 표현, 본인 제외, 메시지당 1회 ──
+    var epochs = msgs.map(epochMin);
+    var welcomed = Object.create(null);
+    var scanFrom = 0;
+    joinEvents.forEach(function (j) {
+      var t0 = epochMin(j), t1 = t0 + 60;
+      while (scanFrom < msgs.length && epochs[scanFrom] < t0) scanFrom += 1;
+      for (var k = scanFrom; k < msgs.length && epochs[k] <= t1; k++) {
+        var m = msgs[k];
+        if (m.kind !== "text" || welcomed[k]) continue;
+        if (!RE_WELCOME.test(m.text)) continue;
+        if (j.name && m.name === j.name) continue;          // 입장 당사자 제외
+        if (!j.name && firstMsgIdx[m.name] === k) continue; // 이름 미상 join: 첫 메시지=본인 인사 추정
+        welcomed[k] = 1;
+        byMember[m.name].welcome += 1;
+      }
+    });
+
+    // ── 멤버 목록 (count 내림차순, 최대 60명) ──
     var totalCount = msgs.length;
-    var members = Object.keys(byMember).map(function (name) {
+    var memberList = Object.keys(byMember).map(function (name) {
       var st = byMember[name];
       return {
         name: st.name,
         count: st.count,
-        share: Math.round((st.count / totalCount) * 1000) / 10,
+        daily: st.daily,
         hours: st.hours,
         weekdays: st.weekdays,
-        activeDays: Object.keys(st.dates).length,
+        q: st.q,
+        a: st.a,
+        welcome: st.welcome,
         media: st.media,
-        avgLen: st.textCount ? Math.round(st.textLen / st.textCount) : 0,
+        avgLen: st.textCount ? Math.round((st.textLen / st.textCount) * 10) / 10 : 0,
         streak: longestStreak(st.dates),
+        activeDays: Object.keys(st.dates).length,
+        kw: st.kw,
         firstDate: st.firstDate,
         lastDate: st.lastDate
       };
     }).sort(function (a, b) { return b.count - a.count || (a.name < b.name ? -1 : 1); });
 
-    // 일별 (범위 내 모든 날짜 0 채움)
-    var daily = [];
-    var span = dayDiff(from, to) + 1;
-    if (span < 1) span = 1;
-    if (span > 400) span = 400; // 방어: 비정상 범위
-    var cursor = from;
-    for (var i = 0; i < span; i++) {
-      daily.push({ d: cursor, c: dailyMap[cursor] || 0 });
-      cursor = addDays(cursor, 1);
+    // ── 신규 적응 지표(개인 식별 없음):
+    //    count = 범위 내 입장 이벤트 수,
+    //    avgFirstWeekMsgs = firstDate 가 범위 시작 이후(중도 합류)인 멤버들의
+    //                       첫 7일(입장일 포함) 메시지 수 평균 ──
+    var joinsInRange = 0;
+    days.forEach(function (d) { joinsInRange += d.joins; });
+    var newcomers = memberList.filter(function (m) { return m.firstDate > from; });
+    var avgFirstWeekMsgs = 0;
+    if (newcomers.length) {
+      var sumFW = 0;
+      newcomers.forEach(function (m) {
+        var i0 = dayIdx[m.firstDate] || 0;
+        var end = Math.min(i0 + 7, m.daily.length);
+        for (var k = i0; k < end; k++) sumFW += m.daily[k];
+      });
+      avgFirstWeekMsgs = Math.round(sumFW / newcomers.length);
     }
 
-    var bestDay = daily[0], quietDay = daily[0];
-    daily.forEach(function (e) {
-      if (e.c > bestDay.c) bestDay = e;
-      if (e.c < quietDay.c) quietDay = e;
-    });
-    var bestHour = 0;
-    hourly.forEach(function (c, h) { if (c > hourly[bestHour]) bestHour = h; });
+    // ── 키워드 (상위 40 기본, 발행 전 dropKeywords 로 편집 가능) ──
+    var memberNames = memberList.map(function (m) { return m.name; });
+    var keywords = extractKeywords(msgs, memberNames, opts.keywordLimit || 40, opts.dropKeywords)
+      .map(function (k) { return { w: k.w, c: k.c, cat: categorizeWord(k.w) }; });
 
-    var keywords = extractKeywords(
-      msgs,
-      members.map(function (m) { return m.name; }),
-      opts.keywordLimit || 30,
-      opts.dropKeywords
-    );
+    // ── 주차별 키워드 (월요일 경계 주 단위, 주당 상위 3) — 주제 변화 추이 ──
+    var weeklyKeywords = [];
+    var ws = from;
+    while (ws <= to) {
+      var we = addDays(ws, 6 - weekdayOf(ws)); // 그 주 일요일
+      if (we > to) we = to;
+      var wStart = ws, wEnd = we;
+      var weekMsgs = msgs.filter(function (m) { return m.date >= wStart && m.date <= wEnd; });
+      if (weekMsgs.length) {
+        weeklyKeywords.push({
+          week: weekLabel(wStart, wEnd),
+          top: extractKeywords(weekMsgs, memberNames, 3, opts.dropKeywords)
+            .map(function (k) { return k.w; })
+        });
+      }
+      ws = addDays(we, 1);
+    }
+
+    var members = memberList.slice(0, 60);
+
+    // ── 닉네임 마스킹: 집계 단계에서 치환(원본은 결과에 남지 않아 복원 불가).
+    //    "첫 글자 + *" — 첫 글자가 겹치면 숫자 접미로만 구분 (예: 민*, 민*2) ──
+    if (opts.maskNames) {
+      var used = Object.create(null);
+      members.forEach(function (m) {
+        var base = (String(m.name).trim().charAt(0) || "?") + "*";
+        var out = base, n = 2;
+        while (used[out]) { out = base + n; n += 1; }
+        used[out] = 1;
+        m.name = out;
+      });
+    }
 
     return {
-      v: 1,
+      v: 2,
       periodLabel: opts.periodLabel || autoPeriodLabel(from, to),
       range: { from: from, to: to },
-      generatedAt: new Date().toISOString(),
-      totals: {
-        messages: totalCount,
-        activeMembers: members.length,
-        days: span,
-        avgPerDay: Math.round(totalCount / span),
-        newMembers: joins,
-        photos: totals.photos,
-        videos: totals.videos,
-        emoticons: totals.emoticons,
-        links: totals.links
-      },
+      generatedAt: generatedAt,
+      maskNames: !!opts.maskNames,
+      days: days,
       members: members,
-      hourly: hourly,
-      weekdays: weekdays,
       heatmap: heatmap,
-      daily: daily,
-      peaks: { bestDay: { d: bestDay.d, c: bestDay.c }, quietDay: { d: quietDay.d, c: quietDay.c }, bestHour: bestHour },
-      keywords: keywords
+      keywords: keywords,
+      weeklyKeywords: weeklyKeywords,
+      emojiStats: emojiStats,
+      newMembers: { count: joinsInRange, avgFirstWeekMsgs: avgFirstWeekMsgs },
+      meta: {
+        format: opts.format || "unknown",
+        files: opts.files || 1,
+        totalMessages: totalCount
+      }
     };
+  }
+
+  // "6/23~6/29" 형태의 주 라벨
+  function weekLabel(ws, we) {
+    var a = ws.split("-"), b = we.split("-");
+    return (+a[1]) + "/" + (+a[2]) + "~" + (+b[1]) + "/" + (+b[2]);
+  }
+
+  /* ── 중복 업로드 감지/병합 헬퍼 ─────────────────────────────
+     서명 = (date, hour, name, len, kind). 같은 내보내기를 두 번 올리거나
+     날짜 범위가 겹치는 파일을 병합할 때 이중 집계를 막는다. */
+
+  // 두 메시지 목록이 겹치는 날짜(YYYY-MM-DD) 목록 (정렬됨)
+  function detectOverlap(messagesA, messagesB) {
+    var inA = Object.create(null), both = Object.create(null);
+    (messagesA || []).forEach(function (m) { if (m && m.date) inA[m.date] = 1; });
+    (messagesB || []).forEach(function (m) { if (m && m.date && inA[m.date]) both[m.date] = 1; });
+    return Object.keys(both).sort();
+  }
+
+  // 여러 목록 병합: 동일 서명 메시지는 파일 간 중복 제거.
+  // · 한 파일 안의 같은 서명 반복(예: 같은 시간대 "ㅋㅋ" 두 번)은 정상 데이터로 보존
+  //   — 서명별로 '한 파일 내 최대 등장 횟수'만큼 유지한다.
+  // · 동수/그 이상이면 나중 파일 우선. 결과는 시간순 정렬.
+  function mergeMessages() {
+    var lists = Array.prototype.slice.call(arguments);
+    if (lists.length === 1 && Array.isArray(lists[0]) && lists[0].length && Array.isArray(lists[0][0])) {
+      lists = lists[0]; // mergeMessages([listA, listB]) 형태도 허용
+    }
+    var sigOf = function (m) {
+      return m.date + "|" + m.hour + "|" + (m.name || "") + "|" + (m.len || 0) + "|" + m.kind;
+    };
+    var groups = Object.create(null); // 서명 → 채택된 메시지 배열
+    lists.forEach(function (list) {
+      var local = Object.create(null);
+      (list || []).forEach(function (m) {
+        if (!m || !m.date || !m.kind) return;
+        var s = sigOf(m);
+        (local[s] = local[s] || []).push(m);
+      });
+      Object.keys(local).forEach(function (s) {
+        if (!groups[s] || local[s].length >= groups[s].length) groups[s] = local[s];
+      });
+    });
+    var merged = [];
+    Object.keys(groups).forEach(function (s) {
+      merged.push.apply(merged, groups[s]);
+    });
+    merged.sort(function (a, b) { return epochMin(a) - epochMin(b); });
+    return merged;
   }
 
   function zeros(n) { var a = []; for (var i = 0; i < n; i++) a.push(0); return a; }
@@ -453,6 +724,8 @@
   var ChatParser = {
     parse: parse,
     aggregate: aggregate,
+    detectOverlap: detectOverlap,
+    mergeMessages: mergeMessages,
     classify: classify,
     toHour24: toHour24,
     weekdayOf: weekdayOf,

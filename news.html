@@ -3,56 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#5F0080" />
-  <title>모임운영 커뮤니티 — 우리방 소식</title>
-  <meta name="description" content="공지 확인, 벙 후기, 자유 수다까지. 우리방 소식 게시판에서 이야기를 나눠요." />
+  <meta name="theme-color" content="#1E0230" />
+  <title>EXCER — 소식</title>
+  <meta name="description" content="공지, 벙 소식, 후기, 정보, 자유 수다까지. 우리방 소식 게시판에서 이야기를 나눠요." />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="assets/site.css" />
 
   <style>
     /* ============================================================
-       소식 게시판 전용 스타일
+       소식 게시판 v2 전용 스타일
        ============================================================ */
-    .pagehead {
-      position: relative; overflow: hidden;
-      padding: clamp(24px, 2.8vw, 36px) clamp(22px, 2.8vw, 38px);
-      border-radius: var(--r-xl); margin-bottom: 22px;
-    }
-    .pagehead-inner { position: relative; z-index: 1; }
-    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -0.055em; font-weight: 880; word-break: keep-all; }
-    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.7; letter-spacing: -0.01em; }
+    /* hidden 속성이 display 지정 클래스(flex/grid 등)에 밀리지 않도록 보강 */
+    [hidden] { display: none !important; }
 
-    .board-wrap { max-width: 880px; margin: 0 auto; }
-
-    /* ── 툴바(칩 필터 + 글쓰기) ── */
-    .board-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
-    .filter-chips { display: flex; flex-wrap: wrap; gap: 7px; flex: 1; min-width: 0; }
-    .filter-chip {
-      display: inline-flex; align-items: center; min-height: 36px; padding: 0 15px; border-radius: var(--r-pill);
-      background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line); color: var(--ink-2);
-      font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: var(--shadow-xs);
-      transition: background 0.16s var(--ease), color 0.16s var(--ease),
-                  border-color 0.16s var(--ease), transform 0.16s var(--ease), box-shadow 0.16s var(--ease);
-    }
-    .filter-chip:hover { transform: translateY(-1px); border-color: var(--line-strong); color: var(--primary); box-shadow: var(--shadow-sm); }
-    .filter-chip.is-on {
-      background: var(--grad-brand); border-color: transparent; color: #fff;
-      box-shadow: var(--shadow-brand), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-    }
-
-    /* ── 준비 중 배너 ── */
+    /* ── 준비 중(데모 모드) 배너 ── */
     .setup-banner {
       display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
       margin-bottom: 16px; padding: 13px 16px; border-radius: 18px;
       border: 1px solid rgba(133, 100, 16, 0.18);
       background: linear-gradient(135deg, var(--pastel-cream), rgba(252, 244, 224, 0.55));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-xs);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-1);
       color: #856410; font-size: 13px; line-height: 1.55; font-weight: 650;
     }
     .setup-banner b { color: #6E520C; }
     .setup-banner .mini-btn { margin-left: auto; background: #fff; color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.18); }
     .setup-banner .mini-btn:hover { background: #fff; }
+
+    /* ── 툴바: 검색 + 정렬 + 글쓰기 + 카테고리 칩 ── */
+    .board-toolbar { display: grid; gap: 12px; margin-bottom: 16px; }
+    .toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .search-box { position: relative; flex: 1; min-width: 220px; display: flex; align-items: center; }
+    .search-box svg {
+      position: absolute; left: 15px; width: 16px; height: 16px;
+      color: var(--gray-2); pointer-events: none;
+    }
+    .search-box input {
+      width: 100%; min-height: 46px; padding: 0 16px 0 41px; border-radius: var(--r-pill);
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      font-weight: 700; outline: none; box-shadow: var(--shadow-1);
+      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+    }
+    .search-box input::placeholder { color: var(--gray-2); font-weight: 650; }
+    .search-box input:focus { border-color: rgba(95, 0, 128, 0.42); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.08); }
+    .search-box input::-webkit-search-cancel-button { cursor: pointer; }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 
     /* ── 폼 공통 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -63,36 +58,48 @@
     .input, .textarea {
       width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
       box-shadow: inset 0 1px 2px rgba(61, 0, 85, 0.03);
-      transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
+      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
     .input { min-height: 46px; padding: 0 14px; border-radius: 13px; font-weight: 700; }
     select.input { padding-right: 34px; }
     .textarea { min-height: 130px; resize: vertical; padding: 13px 14px; border-radius: 15px; line-height: 1.6; font-weight: 600; }
     .input:focus, .textarea:focus { border-color: rgba(95, 0, 128, 0.42); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.08); }
     .counter { justify-self: end; color: var(--gray); font-size: 12px; font-weight: 700; }
-
-    /* ── 글쓰기 패널 ── */
-    .write-panel { padding: 24px; border-radius: var(--r-lg); margin-bottom: 18px; }
-    .write-panel h2 {
-      display: flex; align-items: center; gap: 10px;
-      margin: 0 0 18px; font-size: 17px; letter-spacing: -0.035em; font-weight: 870;
-    }
-    .write-panel h2::before {
-      content: ""; width: 20px; height: 3px; border-radius: 3px; background: var(--grad-brand); flex: none;
-    }
     .admin-note {
       grid-column: span 2; margin: 0; padding: 10px 13px; border-radius: 12px;
       border: 1px solid rgba(133, 100, 16, 0.18); background: var(--pastel-cream);
       color: #856410; font-size: 12.5px; font-weight: 700;
     }
-    .write-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+    /* v3 확장 자리: 이미지 첨부 훅(계약 확정 전까지 비활성) */
+    .attach-hook { grid-column: span 2; }
+    .attach-hook .mini-btn { opacity: 0.55; cursor: not-allowed; }
+    .attach-hook .mini-btn:hover { transform: none; }
+    .attach-hook small { color: var(--gray-2); font-weight: 800; }
+
+    /* ── 글쓰기 모달 (모바일: 풀시트) ── */
+    .write-modal { width: min(640px, 100%); }
+    #passBackdrop { z-index: 240; }
+    .pass-modal { width: min(400px, 100%); }
+    @media (max-width: 640px) {
+      #writeBackdrop { padding: 0; place-items: end stretch; }
+      #writeBackdrop .write-modal {
+        width: 100%; max-width: none; max-height: 92dvh;
+        border-radius: 26px 26px 0 0;
+        padding-bottom: calc(22px + env(safe-area-inset-bottom));
+      }
+    }
 
     /* ── 글 목록 ── */
     .post-list { display: grid; gap: 12px; }
-    .list-loading { padding: 34px 20px; border-radius: 22px; text-align: center; color: var(--gray); font-size: 14px; font-weight: 700; }
-    .post-card { position: relative; border-radius: 22px; overflow: hidden; }
+    .post-skel { border-radius: 22px; }
+    .post-card {
+      position: relative; overflow: hidden;
+      border: 1px solid var(--line); border-radius: 22px;
+      background: var(--white); box-shadow: var(--shadow-1);
+    }
+    .post-card.card-lift:hover { box-shadow: var(--shadow-2); }
     .post-card.is-pinned {
-      background: linear-gradient(135deg, rgba(240, 231, 250, 0.92), rgba(255, 255, 255, 0.90) 55%);
+      background: linear-gradient(135deg, rgba(243, 232, 255, 0.75), #fff 58%);
       border-color: rgba(95, 0, 128, 0.22);
     }
     .post-card.is-pinned::before {
@@ -101,26 +108,35 @@
     }
     .post-h { margin: 0; }
     .post-head {
-      display: block; width: 100%; padding: 16px 18px; text-align: left; cursor: pointer;
+      display: block; width: 100%; padding: 16px 18px 10px; text-align: left; cursor: pointer;
       transition: background 0.16s var(--ease);
     }
-    .post-head:hover { background: rgba(240, 231, 250, 0.45); }
+    .post-head:hover { background: rgba(243, 232, 255, 0.45); }
     .post-topline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-    /* 카테고리 배지 — 시스템 badge-soft 파스텔 페어링 톤 */
-    .cat-badge {
-      display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 3px 10px;
-      border-radius: var(--r-pill); font-size: 11px; font-weight: 900; letter-spacing: -0.01em; line-height: 1.3;
-      background: var(--pastel-lavender); color: var(--primary);
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.09);
-    }
-    .cat-badge.cat-notice { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.14); }
-    .cat-badge.cat-meetup { background: var(--pastel-mint); color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.14); }
-    .cat-badge.cat-question { background: var(--pastel-sky); color: #2560A8; box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.14); }
-    .cat-badge.pin-badge { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
-    .cat-badge.sample-badge { background: rgba(141, 132, 160, 0.13); color: var(--gray); box-shadow: inset 0 0 0 1px rgba(141, 132, 160, 0.16); }
+    .badge-soft.pin-badge { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+    .badge-soft.sample-badge { background: rgba(141, 132, 160, 0.13); color: var(--gray); box-shadow: inset 0 0 0 1px rgba(141, 132, 160, 0.16); }
     .post-title-text { display: block; font-size: 15.5px; font-weight: 850; letter-spacing: -0.02em; line-height: 1.45; color: var(--ink); word-break: break-word; }
     .post-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 7px; color: var(--gray); font-size: 12px; font-weight: 700; }
 
+    /* ── 리액션 바 (터치 타깃 44px) ── */
+    .react-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 18px 14px; }
+    .react-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      min-height: 44px; min-width: 52px; padding: 0 12px;
+      border-radius: var(--r-pill); border: 1px solid var(--line);
+      background: var(--offwhite); font-size: 15px; line-height: 1; cursor: pointer;
+      transition: transform 0.15s var(--ease), background 0.15s var(--ease),
+                  border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+    }
+    .react-btn:hover { transform: translateY(-1px); border-color: var(--line-strong); background: #fff; }
+    .react-btn:active { transform: scale(0.94); }
+    .react-btn.is-on {
+      background: var(--soft-lavender); border-color: rgba(95, 0, 128, 0.32);
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.12);
+    }
+    .react-n { font-size: 12px; font-weight: 850; color: var(--primary); font-variant-numeric: tabular-nums; }
+
+    /* ── 글 상세 (아코디언) ── */
     .post-detail { padding: 16px 18px 18px; border-top: 1px solid var(--line); animation: detail-in 0.42s var(--ease-out) both; }
     @keyframes detail-in {
       from { opacity: 0; transform: translateY(-7px); }
@@ -146,7 +162,7 @@
     .comment-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray); font-weight: 700; }
     .comment-meta b { color: var(--primary-700); font-weight: 850; }
     .comment-del {
-      margin-left: auto; min-height: 24px; padding: 2px 10px; border-radius: var(--r-pill);
+      margin-left: auto; min-height: 28px; padding: 2px 10px; border-radius: var(--r-pill);
       border: 1px solid var(--line); background: transparent; color: var(--gray);
       font-size: 11px; font-weight: 800; cursor: pointer;
       transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
@@ -166,125 +182,68 @@
 
     /* ── 더 보기 / 빈 상태 ── */
     .more-wrap { display: flex; justify-content: center; margin-top: 16px; }
-    .empty-state {
-      position: relative; overflow: hidden;
-      padding: 52px 20px; border-radius: var(--r-lg); text-align: center;
-      color: var(--gray); font-size: 13.5px; line-height: 1.65; font-weight: 600;
-    }
-    .empty-state::before {
-      content: ""; position: absolute; left: 50%; top: -110px; width: 260px; height: 260px;
-      transform: translateX(-50%); border-radius: 50%; pointer-events: none;
-      background: radial-gradient(circle, rgba(181, 126, 220, 0.20), transparent 68%);
-    }
-    .empty-state strong { display: block; position: relative; margin-bottom: 8px; color: var(--primary-900); font-size: 17.5px; letter-spacing: -0.035em; font-weight: 870; }
+    .empty-card { border-radius: 22px; }
 
-    /* ── 비밀번호 모달 ── */
-    .modal-backdrop {
-      position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px;
-      background: rgba(29, 17, 40, 0.48); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    }
-
-    /* hidden 속성이 display 지정 클래스(flex/grid 등)에 밀리지 않도록 보강 */
-    [hidden] { display: none !important; }
-    .modal {
-      position: relative; overflow: hidden;
-      width: min(400px, 100%); padding: 24px; border-radius: 24px; background: #fff;
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-      animation: modal-in 0.32s var(--ease-out) both;
-    }
-    .modal::before {
-      content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
-      background: var(--grad-brand); pointer-events: none;
-    }
-    @keyframes modal-in {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .modal h3 { margin: 0 0 6px; font-size: 17px; letter-spacing: -0.035em; font-weight: 870; }
-    .modal p { margin: 0 0 14px; color: var(--gray); font-size: 13px; line-height: 1.55; }
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
-
+    /* ── 모바일 ── */
     @media (max-width: 767px) {
-      .pagehead { padding: 22px 18px; border-radius: 26px; }
-      .board-toolbar { align-items: stretch; }
-      .board-toolbar .btn { width: 100%; }
-      .filter-chips { flex-basis: 100%; }
-      .write-panel { padding: 18px; border-radius: 22px; }
-      .field-grid { grid-template-columns: 1fr; }
-      .field.is-wide, .admin-note { grid-column: auto; }
-      .write-actions { flex-direction: column-reverse; }
-      .write-actions .btn { width: 100%; }
+      .search-box { flex-basis: 100%; min-width: 0; }
+      #writeOpenBtn { flex: 1; }
       .comment-form .row2 { grid-template-columns: 1fr; }
       .setup-banner .mini-btn { margin-left: 0; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.is-wide, .admin-note, .attach-hook { grid-column: auto; }
+      .modal-foot { flex-direction: column-reverse; }
+      .modal-foot .btn { width: 100%; }
     }
   </style>
 </head>
-
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="주요 메뉴">
-      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
-        <span class="brand-mark">EX</span>
-        <span class="brand-copy">
-          <strong>운영 커뮤니티</strong>
-          <small>강남·논현 모임 플랫폼</small>
-        </span>
+  <header class="topnav" id="topnav">
+    <div class="container topnav-inner">
+      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
+        <span class="topnav-logo">EXCER</span>
+        <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
-
-      <nav class="side-nav" aria-label="데스크톱 내비게이션">
-        <a class="nav-item" href="index.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
-          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item" href="report.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
-          <span class="nav-text">대시보드</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item" href="calculator.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
-          <span class="nav-text">정산기</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item is-active" href="news.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-          <span class="nav-text">소식</span><span class="nav-meta">현재</span>
-        </a>
-        <a class="nav-item" href="games.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
-          <span class="nav-text">게임</span><span class="nav-meta">이동</span>
-        </a>
+      <nav class="topnav-tabs" aria-label="주요 메뉴">
+        <a class="topnav-tab" href="index.html">필독</a>
+        <a class="topnav-tab" href="report.html">대시보드</a>
+        <a class="topnav-tab" href="calculator.html">정산기</a>
+        <a class="topnav-tab is-active" href="news.html" aria-current="page">소식</a>
+        <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <span class="topnav-page" aria-hidden="true">소식</span>
+    </div>
+  </header>
 
-      <div class="sidebar-card">
-        <span>소식 게시판</span>
-        <strong>우리방 이야기가 모이는 곳</strong>
-        <p>공지 확인부터 벙 후기, 자유 수다까지. 닉네임과 비밀번호만 있으면 누구나 글을 남길 수 있어요.</p>
+  <section class="hero-band is-compact" aria-labelledby="heroTitle">
+    <div class="container">
+      <span class="hero-kicker"><i></i>소식 게시판</span>
+      <h1 class="hero-title" id="heroTitle">우리방 소식 —<br /><span class="grad-text-hero">공지부터 후기까지</span></h1>
+      <p class="hero-sub">
+        공지 확인, 벙 소식, 후기와 정보 나눔, 자유 수다까지.
+        <strong>닉네임과 비밀번호만 있으면</strong> 누구나 참여할 수 있어요.
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-hero" id="heroWriteBtn" type="button">✏️ 글쓰기</button>
+        <a class="btn btn-glass" href="#board">목록 보기</a>
       </div>
-    </aside>
+      <div class="hero-meta">
+        <span class="stat-pill"><i></i>카테고리 <strong>5</strong>종</span>
+        <span class="stat-pill"><i></i>리액션 👍 ❤️ 😂 👏 🔥</span>
+      </div>
+    </div>
+  </section>
 
-    <header class="mobile-topbar">
-      <a class="mobile-brand" href="index.html" aria-label="필독으로 이동">
-        <span class="brand-mark">EX</span><span>우리방 소식</span>
-      </a>
-      <button class="mobile-action" id="topbarWriteBtn" type="button">글쓰기</button>
-    </header>
-
-    <main id="main" class="main">
-      <div class="board-wrap">
-        <section class="pagehead panel reveal" aria-labelledby="pageTitle">
-          <i class="glow-orb" style="--orb-size:340px; right:-120px; top:-140px" aria-hidden="true"></i>
-          <i class="glow-orb" style="--orb-size:260px; --orb-color:rgba(230,240,252,0.9); left:-80px; bottom:-120px" aria-hidden="true"></i>
-          <div class="pagehead-inner">
-            <span class="kicker">🔔 소식 게시판</span>
-            <h1 id="pageTitle" class="pagehead-title">우리방 <span class="grad-text">소식</span></h1>
-            <p class="pagehead-desc">
-              공지 확인, 벙 후기, 자유 수다까지 — 우리방 이야기는 여기서 나눠요.
-              닉네임과 비밀번호만 입력하면 바로 글을 쓸 수 있어요.
-            </p>
-          </div>
-        </section>
+  <main id="main" class="page-main">
+    <section class="section" id="board">
+      <div class="container is-narrow">
+        <div class="section-head reveal">
+          <span class="eyebrow">우리방 이야기</span>
+          <h2>소식 게시판</h2>
+          <p>고정 공지는 항상 맨 위에 있어요. 검색·카테고리·정렬로 원하는 글을 바로 찾아보세요.</p>
+        </div>
 
         <div id="setupBanner" class="setup-banner" hidden>
           <span><b>게시판 준비 중</b> — 운영진이 서버 설정(sql/README.md)을 마치면 열려요. 지금 보이는 글은 <b>예시 데이터</b>예요.</span>
@@ -292,77 +251,137 @@
         </div>
 
         <div class="board-toolbar reveal">
-          <div id="filterChips" class="filter-chips" role="group" aria-label="카테고리 필터">
-            <button class="filter-chip is-on" type="button" data-cat="전체">전체</button>
-            <button class="filter-chip" type="button" data-cat="공지">공지</button>
-            <button class="filter-chip" type="button" data-cat="자유">자유</button>
-            <button class="filter-chip" type="button" data-cat="벙 후기">벙 후기</button>
-            <button class="filter-chip" type="button" data-cat="질문">질문</button>
+          <div class="toolbar-row">
+            <label class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input id="searchInput" type="search" placeholder="제목·내용 검색" aria-label="게시글 검색" autocomplete="off" />
+            </label>
+            <div class="tab-row" id="sortRow" role="group" aria-label="정렬 방식">
+              <button type="button" class="is-active" data-sort="latest" aria-pressed="true">최신순</button>
+              <button type="button" data-sort="popular" aria-pressed="false">인기순</button>
+            </div>
+            <button id="writeOpenBtn" class="btn btn-primary" type="button">✏️ 글쓰기</button>
           </div>
-          <button id="writeToggleBtn" class="btn btn-primary" type="button">✏️ 글쓰기</button>
+          <div id="filterChips" class="filter-chips" role="group" aria-label="카테고리 필터">
+            <button class="chip is-active" type="button" data-cat="전체">전체</button>
+            <button class="chip" type="button" data-cat="공지">공지</button>
+            <button class="chip" type="button" data-cat="벙 소식">벙 소식</button>
+            <button class="chip" type="button" data-cat="후기">후기</button>
+            <button class="chip" type="button" data-cat="정보">정보</button>
+            <button class="chip" type="button" data-cat="자유">자유</button>
+          </div>
         </div>
 
-        <section id="writePanel" class="write-panel panel" hidden aria-labelledby="writeTitle">
-          <h2 id="writeTitle">새 글 쓰기</h2>
-          <div class="field-grid">
-            <div class="field">
-              <label for="wCat">카테고리</label>
-              <select id="wCat" class="input">
-                <option value="자유" selected>자유</option>
-                <option value="벙 후기">벙 후기</option>
-                <option value="질문">질문</option>
-                <option value="공지">공지(운영진)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="wNick">닉네임</label>
-              <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
-            </div>
-            <div class="field is-wide">
-              <label for="wPass">비밀번호</label>
-              <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
-              <span class="field-hint">수정·삭제할 때 필요해요</span>
-            </div>
-            <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 등록돼요.</p>
-            <div class="field is-wide">
-              <label for="wTitle">제목</label>
-              <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목을 입력해주세요 (100자)" />
-            </div>
-            <div class="field is-wide">
-              <label for="wBody">내용</label>
-              <textarea id="wBody" class="textarea" maxlength="4000" placeholder="내용을 입력해주세요 (4000자)"></textarea>
-              <span id="wCount" class="counter">0 / 4000</span>
-            </div>
-          </div>
-          <div class="write-actions">
-            <button id="writeCancelBtn" class="btn btn-secondary" type="button">취소</button>
-            <button id="writeSubmitBtn" class="btn btn-primary" type="button">등록하기</button>
-          </div>
-        </section>
-
-        <section id="postList" class="post-list reveal" aria-label="소식 글 목록" aria-live="polite"></section>
+        <div id="postList" class="post-list reveal" aria-label="소식 글 목록" aria-live="polite"></div>
 
         <div id="moreWrap" class="more-wrap" hidden>
           <button id="moreBtn" class="btn btn-secondary" type="button">더 보기</button>
         </div>
       </div>
-    </main>
+    </section>
+  </main>
 
-    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
-      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-      <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
-      <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
-      <a class="tab-item is-active" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-      <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
-    </nav>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="footer-logo">EXCER</span>
+          <p class="footer-tagline">
+            오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
+            필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
+          </p>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+        </div>
+        <nav class="footer-col" aria-label="푸터 메뉴">
+          <h4>바로가기</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">필독</a></li>
+            <li><a href="report.html">운영 대시보드</a></li>
+            <li><a href="calculator.html">정산기</a></li>
+            <li><a href="news.html">소식</a></li>
+            <li><a href="games.html">게임</a></li>
+          </ul>
+        </nav>
+        <div class="footer-col">
+          <h4>안내</h4>
+          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
+          <p>닉네임은 발행 시 마스킹을 선택할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+    <a class="tab-item is-active" href="news.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+  </nav>
+
+  <!-- ── 글쓰기 모달 (모바일: 풀시트) ── -->
+  <div id="writeBackdrop" class="modal-backdrop" hidden>
+    <div class="modal write-modal" role="dialog" aria-modal="true" aria-labelledby="writeTitle">
+      <div class="modal-head">
+        <h3 id="writeTitle">새 글 쓰기</h3>
+        <button id="writeCloseBtn" class="modal-close" type="button" aria-label="글쓰기 닫기">✕</button>
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="wCat">카테고리</label>
+          <select id="wCat" class="input">
+            <option value="자유" selected>자유</option>
+            <option value="벙 소식">벙 소식</option>
+            <option value="후기">후기</option>
+            <option value="정보">정보</option>
+            <option value="공지">공지(운영진)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="wNick">닉네임</label>
+          <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
+        </div>
+        <div class="field is-wide">
+          <label for="wPass">비밀번호</label>
+          <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
+          <span class="field-hint">수정·삭제할 때 필요해요</span>
+        </div>
+        <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 등록되고, 자동으로 맨 위에 고정돼요.</p>
+        <div class="field is-wide">
+          <label for="wTitle">제목</label>
+          <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목을 입력해주세요 (100자)" />
+        </div>
+        <div class="field is-wide">
+          <label for="wBody">내용</label>
+          <textarea id="wBody" class="textarea" maxlength="4000" placeholder="내용을 입력해주세요 (4000자)"></textarea>
+          <span id="wCount" class="counter">0 / 4000</span>
+        </div>
+        <!-- v3 확장 자리: 이미지 첨부 (스토리지 계약 확정 후 활성화) -->
+        <div class="attach-hook">
+          <span class="mini-btn" aria-disabled="true" title="준비 중이에요">🖼 이미지 첨부 <small>준비 중</small></span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="writeCancelBtn" class="btn btn-secondary" type="button">취소</button>
+        <button id="writeSubmitBtn" class="btn btn-primary" type="button">등록하기</button>
+      </div>
+    </div>
   </div>
 
+  <!-- ── 비밀번호 확인 모달 ── -->
   <div id="passBackdrop" class="modal-backdrop" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
-      <h3 id="passTitle">비밀번호 확인</h3>
-      <p id="passDesc"></p>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+      <div class="modal-head">
+        <h3 id="passTitle">비밀번호 확인</h3>
+        <button id="passClose" class="modal-close" type="button" aria-label="닫기">✕</button>
+      </div>
+      <p id="passDesc" style="margin:0 0 14px; color:var(--gray); font-size:13px; line-height:1.55"></p>
       <input id="passInput" class="input" type="password" placeholder="비밀번호" autocomplete="off" />
-      <div class="modal-actions">
+      <div class="modal-foot">
         <button id="passCancel" class="btn btn-secondary btn-sm" type="button">취소</button>
         <button id="passOk" class="btn btn-primary btn-sm" type="button">확인</button>
       </div>
@@ -371,6 +390,92 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- ── 공통 셸 JS (v2-shell 그대로) ── -->
+  <script>
+    (function () {
+      "use strict";
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ── 1. topnav 스크롤 상태 ── */
+      var topnav = document.getElementById("topnav");
+      function syncNav() {
+        if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8);
+      }
+      window.addEventListener("scroll", syncNav, { passive: true });
+      syncNav();
+
+      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
+      var revealEls = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+        revealEls.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ── 3. 토스트 ── */
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400);
+      }
+
+      /* ── 4. 숫자 포맷 + 카운트업 ── */
+      function fmt(n, decimals) {
+        return Number(n).toLocaleString("ko-KR", {
+          minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
+        });
+      }
+      function countUp(el, to, opts) {
+        if (!el) return;
+        opts = opts || {};
+        var dur = opts.duration || 900;
+        var dec = opts.decimals || 0;
+        var suffix = opts.suffix || "";
+        if (reduceMotion || dur <= 0) { el.textContent = fmt(to, dec) + suffix; return; }
+        var start = null;
+        function step(ts) {
+          if (start === null) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3); /* easeOutCubic */
+          el.textContent = fmt(to * eased, dec) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      /* ── 5. data-countup 자동 실행 (뷰포트 진입 시 1회) ── */
+      var cuEls = document.querySelectorAll("[data-countup]");
+      function fire(el) {
+        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
+          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
+          suffix: el.getAttribute("data-countup-suffix") || ""
+        });
+      }
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        cuEls.forEach(fire);
+      } else {
+        var cuIo = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
+          });
+        }, { threshold: 0.4 });
+        cuEls.forEach(function (el) { cuIo.observe(el); });
+      }
+
+      window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
+    })();
+  </script>
+
+  <!-- ── 페이지 로직: 소식 게시판 v2 ── -->
   <script>
     // ── Supabase (plain fetch REST) ─────────────────────────────
     const SUPA = {
@@ -395,7 +500,11 @@
     // ── 상수 / 상태 ─────────────────────────────────────────────
     const PAGE_SIZE = 20;
     const NICK_KEY = "excer_news_nick";
-    const CAT_CLASS = { "공지": "cat-notice", "자유": "cat-free", "벙 후기": "cat-meetup", "질문": "cat-question" };
+    const DEVICE_STORE_KEY = "excer_device_key";
+    const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
+    // 카테고리 v2 — sql/site_features_v2.sql 체크 제약과 동일 집합
+    const CATS = ["공지", "벙 소식", "후기", "정보", "자유"];
+    const CAT_BADGE = { "공지": "is-cream", "벙 소식": "is-sky", "후기": "is-mint", "정보": "", "자유": "is-blush" };
     const ERROR_MAP = {
       BAD_PASS: "비밀번호가 맞지 않아요",
       ADMIN_ONLY: "운영진 비밀번호가 필요해요",
@@ -403,9 +512,12 @@
       NOT_FOUND: "이미 삭제된 글이에요",
       BAD_KEY: "이 정산을 수정할 권한이 없어요"
     };
+    const DEMO_MSG = "게시판이 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.";
 
     const state = {
       category: "전체",
+      sort: "latest",          // latest | popular
+      search: "",
       posts: [],
       offset: 0,
       hasMore: false,
@@ -414,11 +526,13 @@
       busy: false,
       expandedId: null,
       editingId: null,
-      commentsCache: {}
+      commentsCache: {},
+      myReactions: {},         // postId -> Set(emoji)
+      reactBusy: {}            // "postId|emoji" -> true (중복 탭 가드)
     };
 
     const $ = (id) => document.getElementById(id);
-    let toastTimer = null;
+    function showToast(message) { if (window.EXCER) EXCER.toast(message); }
 
     // ── 유틸 ────────────────────────────────────────────────────
     function escapeHTML(value) {
@@ -445,19 +559,12 @@
       return d.getFullYear() + "." + (d.getMonth() + 1) + "." + d.getDate();
     }
 
-    function showToast(message) {
-      const toast = $("toast");
-      toast.textContent = message; toast.classList.add("is-visible");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
-    }
-
     function rpcErrorMessage(err) {
       const msg = String((err && err.message) || "");
       for (const code of Object.keys(ERROR_MAP)) {
         if (msg.includes(code)) return ERROR_MAP[code];
       }
-      if (err && err.status === 404) return "게시판이 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.";
+      if (err && err.status === 404) return DEMO_MSG;
       return "요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.";
     }
 
@@ -465,55 +572,117 @@
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) { /* 무시 */ } }
     function findPost(id) { return state.posts.find((p) => p.id === id); }
 
-    // ── 예시 데이터 (우아한 성능 저하) ──────────────────────────
+    // 기기 키 — localStorage "excer_device_key" (영숫자 24자 난수)
+    let _deviceKey = null;
+    function deviceKey() {
+      if (_deviceKey) return _deviceKey;
+      let key = "";
+      try { key = localStorage.getItem(DEVICE_STORE_KEY) || ""; } catch (e) {}
+      if (!/^[a-z0-9]{16,40}$/.test(key)) {
+        const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+        const buf = new Uint8Array(24);
+        if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(buf);
+        else for (let i = 0; i < 24; i++) buf[i] = Math.floor(Math.random() * 256);
+        key = "";
+        for (let i = 0; i < 24; i++) key += chars[buf[i] % 36];
+        try { localStorage.setItem(DEVICE_STORE_KEY, key); } catch (e) { /* 세션 한정 키 */ }
+      }
+      _deviceKey = key;
+      return key;
+    }
+
+    // PostgREST or= 검색 필터 — 값을 큰따옴표로 감싸 예약문자(, . ( ))를 보호.
+    // 따옴표/역슬래시는 제거해 문법 파손을 막고, * 만 와일드카드로 쓴다.
+    function searchOrParam(term) {
+      const safe = String(term).replace(/[\\"]/g, "").trim();
+      if (!safe) return "";
+      const pat = '"*' + safe + '*"';
+      return "or=" + encodeURIComponent("(title.ilike." + pat + ",body.ilike." + pat + ")");
+    }
+
+    function sumReactions(reactions) {
+      return EMOJIS.reduce((s, e) => s + (Number((reactions || {})[e]) || 0), 0);
+    }
+
+    // ── 예시 데이터 (우아한 성능 저하 / 데모 모드) ──────────────
     function samplePosts() {
       const now = Date.now();
       const iso = (msAgo) => new Date(now - msAgo).toISOString();
+      const mk = (p) => ({ ...p, _sample: true, reaction_count: sumReactions(p.reactions) });
       return [
-        {
-          id: -1, category: "공지", pinned: true, _sample: true,
-          title: "소식 게시판 이용 안내 (예시)", author: "운영진",
-          created_at: iso(2 * 86400000), updated_at: iso(2 * 86400000), comment_count: 2,
-          body: "우리방 소식 게시판이에요.\n\n· 공지: 운영진이 방 소식을 올려요\n· 벙 후기: 다녀온 벙 이야기를 나눠요\n· 자유/질문: 편하게 수다 떨고 궁금한 걸 물어봐요\n\n서버 설정이 끝나면 실제 글을 쓸 수 있어요.",
+        mk({
+          id: -1, category: "공지", pinned: true,
+          title: "소식 게시판 v2 이용 안내 (예시)", author: "운영진",
+          created_at: iso(3 * 86400000), updated_at: iso(3 * 86400000), comment_count: 2,
+          reactions: { "👍": 5, "🔥": 2 },
+          body: "우리방 소식 게시판이 새 단장했어요.\n\n· 공지: 운영진이 방 소식을 올려요 (자동 고정)\n· 벙 소식: 새 벙 모집·일정 공유\n· 후기: 다녀온 벙 이야기\n· 정보: 맛집·꿀팁 등 유용한 정보\n· 자유: 편한 수다\n\n글마다 👍❤️😂👏🔥 리액션을 남길 수 있어요. 서버 설정이 끝나면 실제 글을 쓸 수 있어요.",
           _comments: [
-            { id: -11, post_id: -1, author: "엑서", body: "오픈 기대할게요!", created_at: iso(2 * 86400000 - 3600000) },
-            { id: -12, post_id: -1, author: "민지", body: "벙 후기 게시판 생기는 거 너무 좋아요 👍", created_at: iso(86400000) }
+            { id: -11, post_id: -1, author: "엑서", body: "리액션 기능 너무 좋아요!", created_at: iso(3 * 86400000 - 3600000) },
+            { id: -12, post_id: -1, author: "민지", body: "카테고리 정리된 거 깔끔하네요 👍", created_at: iso(2 * 86400000) }
           ]
-        },
-        {
-          id: -2, category: "벙 후기", pinned: false, _sample: true,
-          title: "금요일 강남 저녁 벙 후기 (예시)", author: "준호",
-          created_at: iso(26 * 3600000), updated_at: iso(26 * 3600000), comment_count: 1,
-          body: "어제 고기집 → 카페 코스 너무 좋았어요.\n처음 오신 분들도 금방 친해져서 다행!\n다음엔 보드게임 벙도 열어주세요 🙌",
+        }),
+        mk({
+          id: -2, category: "벙 소식", pinned: false,
+          title: "이번 주 금요일 강남 저녁 벙 모집해요 (예시)", author: "준호",
+          created_at: iso(30 * 3600000), updated_at: iso(30 * 3600000), comment_count: 1,
+          reactions: { "👍": 4, "❤️": 2, "🔥": 3 },
+          body: "금요일 7시 강남역에서 저녁 벙 열어요!\n고기집 → 카페 코스, 6명 정원.\n참여는 오픈채팅에서 댓글로 받아요 🙌",
           _comments: [
-            { id: -21, post_id: -2, author: "서아", body: "저도 재밌었어요! 다음 벙에서 봬요~", created_at: iso(20 * 3600000) }
+            { id: -21, post_id: -2, author: "서아", body: "참여할게요! 금요일에 봬요~", created_at: iso(20 * 3600000) }
           ]
-        },
-        {
-          id: -3, category: "자유", pinned: false, _sample: true,
-          title: "요즘 다들 뭐하고 지내세요? (예시)", author: "도윤",
-          created_at: iso(3 * 3600000), updated_at: iso(3 * 3600000), comment_count: 0,
-          body: "장마라 그런지 벙이 뜸하네요.\n실내에서 할 만한 벙 아이디어 있으면 댓글로 달아주세요 ☔",
+        }),
+        mk({
+          id: -3, category: "후기", pinned: false,
+          title: "일요일 보드게임 벙 후기 (예시)", author: "서아",
+          created_at: iso(22 * 3600000), updated_at: iso(22 * 3600000), comment_count: 0,
+          reactions: { "❤️": 6, "👏": 2 },
+          body: "처음 오신 분들도 금방 친해져서 너무 즐거웠어요.\n다음엔 마피아 게임도 해봐요!",
           _comments: []
-        }
+        }),
+        mk({
+          id: -4, category: "정보", pinned: false,
+          title: "강남역 근처 단체석 잘 잡히는 집 정리 (예시)", author: "민지",
+          created_at: iso(9 * 3600000), updated_at: iso(9 * 3600000), comment_count: 0,
+          reactions: { "👍": 7, "👏": 1 },
+          body: "벙주분들 참고하세요!\n\n1. ○○식당 — 10명까지 룸 예약 가능\n2. △△포차 — 당일 예약도 잘 돼요\n3. □□카페 — 2차로 넓고 조용해요",
+          _comments: []
+        }),
+        mk({
+          id: -5, category: "자유", pinned: false,
+          title: "장마철엔 다들 뭐하고 노시나요 (예시)", author: "도윤",
+          created_at: iso(2 * 3600000), updated_at: iso(2 * 3600000), comment_count: 0,
+          reactions: { "😂": 3 },
+          body: "비가 계속 오니까 벙이 뜸하네요.\n실내에서 할 만한 벙 아이디어 있으면 댓글로 달아주세요 ☔",
+          _comments: []
+        })
       ];
     }
 
     // ── 데이터 로드 ─────────────────────────────────────────────
+    function orderParam() {
+      // 고정 공지는 어떤 정렬에서도 최상단 (pinned.desc 우선)
+      return state.sort === "popular"
+        ? "order=pinned.desc,reaction_count.desc,created_at.desc"
+        : "order=pinned.desc,created_at.desc";
+    }
+
     async function loadPosts(reset) {
       if (state.loading) return;
       state.loading = true;
       if (reset) state.offset = 0;
       updateMoreBtn();
       const params = [
-        "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count",
-        "order=pinned.desc,created_at.desc",
+        "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count,reactions,reaction_count",
+        orderParam(),
         "limit=" + PAGE_SIZE,
         "offset=" + state.offset
       ];
       if (state.category !== "전체") params.push("category=eq." + encodeURIComponent(state.category));
+      const orFilter = searchOrParam(state.search);
+      if (orFilter) params.push(orFilter);
       try {
         const rows = (await supaFetch("/rest/v1/site_posts_v?" + params.join("&"))) || [];
+        rows.forEach((r) => { r.reactions = r.reactions || {}; });
         state.degraded = false;
         $("setupBanner").hidden = true;
         if (reset) {
@@ -524,12 +693,15 @@
         }
         state.offset += rows.length;
         state.hasMore = rows.length === PAGE_SIZE;
-      } catch (err) {
-        enterDegraded();
-      } finally {
         state.loading = false;
         renderList();
+        loadMyReactions(rows.map((r) => r.id));
+        return;
+      } catch (err) {
+        enterDegraded();
       }
+      state.loading = false;
+      renderList();
     }
 
     function enterDegraded() {
@@ -538,6 +710,22 @@
       state.hasMore = false;
       state.expandedId = null; state.editingId = null; state.commentsCache = {};
       $("setupBanner").hidden = false;
+    }
+
+    // 내 기기가 누른 리액션 복원 — my_reactions(p_device, p_post_ids)
+    async function loadMyReactions(ids) {
+      const real = (ids || []).filter((id) => Number(id) > 0);
+      if (!real.length || state.degraded) return;
+      try {
+        const res = await supaFetch("/rest/v1/rpc/my_reactions", {
+          method: "POST",
+          body: JSON.stringify({ p_device: deviceKey(), p_post_ids: real })
+        });
+        Object.keys(res || {}).forEach((pid) => {
+          state.myReactions[Number(pid)] = new Set(res[pid] || []);
+        });
+        real.forEach((id) => updateReactBar(id));
+      } catch (err) { /* 복원 실패는 조용히 (리액션은 부가 기능) */ }
     }
 
     async function loadComments(postId) {
@@ -560,20 +748,51 @@
 
     // ── 렌더링 ──────────────────────────────────────────────────
     function visiblePosts() {
-      if (!state.degraded || state.category === "전체") return state.posts;
-      return state.posts.filter((p) => p.category === state.category);
+      if (!state.degraded) return state.posts;
+      // 데모 모드: 클라이언트 필터(카테고리+검색) + 정렬
+      let list = state.posts;
+      if (state.category !== "전체") list = list.filter((p) => p.category === state.category);
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        list = list.filter((p) => (p.title + "\n" + p.body).toLowerCase().includes(q));
+      }
+      return list.slice().sort((a, b) =>
+        (Number(b.pinned) - Number(a.pinned)) ||
+        (state.sort === "popular" ? (Number(b.reaction_count) || 0) - (Number(a.reaction_count) || 0) : 0) ||
+        (new Date(b.created_at) - new Date(a.created_at)));
     }
 
     function catBadges(post) {
       const parts = [];
       if (post.pinned) {
-        parts.push(`<span class="cat-badge pin-badge">📌 ${post.category === "공지" ? "공지" : "고정"}</span>`);
+        parts.push(`<span class="badge-soft pin-badge">📌 ${post.category === "공지" ? "공지" : "고정"}</span>`);
       }
       if (!(post.pinned && post.category === "공지")) {
-        parts.push(`<span class="cat-badge ${CAT_CLASS[post.category] || ""}">${escapeHTML(post.category)}</span>`);
+        const cls = CAT_BADGE[post.category] || "";
+        parts.push(`<span class="badge-soft${cls ? " " + cls : ""}">${escapeHTML(post.category)}</span>`);
       }
-      if (post._sample) parts.push(`<span class="cat-badge sample-badge">예시 데이터</span>`);
+      if (post._sample) parts.push(`<span class="badge-soft sample-badge">예시 데이터</span>`);
       return parts.join("");
+    }
+
+    // 리액션 바 — 👍❤️😂👏🔥 (터치 44px)
+    function reactBarHTML(post) {
+      const mine = state.myReactions[post.id];
+      const btns = EMOJIS.map((emoji) => {
+        const n = Number((post.reactions || {})[emoji]) || 0;
+        const on = !!(mine && mine.has(emoji));
+        return `<button type="button" class="react-btn${on ? " is-on" : ""}" data-act="react" data-id="${post.id}" data-emoji="${emoji}"
+          aria-pressed="${on}" aria-label="${emoji} 리액션${n ? ", 현재 " + n + "개" : ""}">${emoji}${n ? `<span class="react-n">${n}</span>` : ""}</button>`;
+      }).join("");
+      return `<div class="react-bar" data-post="${post.id}" role="group" aria-label="리액션 남기기">${btns}</div>`;
+    }
+
+    function updateReactBar(postId) {
+      const post = findPost(postId);
+      if (!post) return;
+      document.querySelectorAll(`.react-bar[data-post="${postId}"]`).forEach((bar) => {
+        bar.outerHTML = reactBarHTML(post);
+      });
     }
 
     function commentHTML(c) {
@@ -588,7 +807,7 @@
     }
 
     function editFormHTML(post) {
-      const opts = ["자유", "벙 후기", "질문", "공지"].map((c) => {
+      const opts = CATS.map((c) => {
         const label = c === "공지" ? "공지(운영진)" : c;
         return `<option value="${escapeHTML(c)}"${post.category === c ? " selected" : ""}>${escapeHTML(label)}</option>`;
       }).join("");
@@ -627,6 +846,7 @@
           <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">✏️ 수정</button>
           <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">🗑 삭제</button>
           <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">📌 ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
+          <!-- v3 확장 자리: 신고/숨김 버튼 (site_post_reports 계약 확정 후 구현) -->
         </div>
         <div class="comment-sec">
           <div class="comment-head">댓글 <b>${Number(post.comment_count) || 0}</b></div>
@@ -647,37 +867,64 @@
     function cardHTML(post) {
       const expanded = state.expandedId === post.id;
       return `
-        <article class="post-card panel${post.pinned ? " is-pinned" : ""}">
+        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
               <span class="post-topline">${catBadges(post)}</span>
               <span class="post-title-text">${escapeHTML(post.title)}</span>
               <span class="post-meta">
-                <span>${escapeHTML(post.author)}</span><span>·</span>
-                <span>${relTime(post.created_at)}</span><span>·</span>
+                <span>${escapeHTML(post.author)}</span><span aria-hidden="true">·</span>
+                <span>${relTime(post.created_at)}</span><span aria-hidden="true">·</span>
                 <span>💬 ${Number(post.comment_count) || 0}</span>
               </span>
             </button>
           </h3>
+          ${reactBarHTML(post)}
           ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
         </article>`;
     }
 
     function emptyStateHTML() {
-      if (state.category !== "전체") {
-        return `<div class="empty-state panel"><strong>아직 "${escapeHTML(state.category)}" 글이 없어요</strong>다른 카테고리를 둘러보거나 첫 글을 남겨보세요.</div>`;
+      if (state.search) {
+        return `<div class="card empty-card"><div class="empty-state">
+          <span class="empty-ic">🔍</span>
+          <strong>"${escapeHTML(state.search)}" 검색 결과가 없어요</strong>
+          <p>다른 검색어로 다시 찾아보거나, 카테고리 필터를 바꿔보세요.</p>
+        </div></div>`;
       }
-      return `<div class="empty-state panel"><strong>첫 글의 주인공이 되어보세요 ✍️</strong>공지 확인, 벙 후기, 자유 수다까지 — 무엇이든 환영이에요.</div>`;
+      if (state.category !== "전체") {
+        return `<div class="card empty-card"><div class="empty-state">
+          <span class="empty-ic">📭</span>
+          <strong>아직 "${escapeHTML(state.category)}" 글이 없어요</strong>
+          <p>다른 카테고리를 둘러보거나 첫 글을 남겨보세요.</p>
+        </div></div>`;
+      }
+      return `<div class="card empty-card"><div class="empty-state">
+        <span class="empty-ic">✍️</span>
+        <strong>첫 글의 주인공이 되어보세요</strong>
+        <p>공지 확인, 벙 소식, 후기, 정보, 자유 수다까지 — 무엇이든 환영이에요.</p>
+      </div></div>`;
     }
 
     function renderList() {
       const posts = visiblePosts();
-      $("postList").innerHTML = posts.length ? posts.map(cardHTML).join("") : emptyStateHTML();
+      const listEl = $("postList");
+      listEl.innerHTML = posts.length ? posts.map(cardHTML).join("") : emptyStateHTML();
+      listEl.removeAttribute("aria-busy");
       updateMoreBtn();
     }
 
+    // 스켈레톤 로딩 (목록 fetch 동안)
     function renderListLoading() {
-      $("postList").innerHTML = `<div class="list-loading panel">소식을 불러오는 중...</div>`;
+      const skel = `
+        <div class="card post-skel" aria-hidden="true">
+          <div class="skeleton skeleton-line" style="width:96px"></div>
+          <div class="skeleton skeleton-line is-lg" style="width:68%; margin-top:12px"></div>
+          <div class="skeleton skeleton-line" style="width:42%; margin-top:10px"></div>
+        </div>`;
+      const listEl = $("postList");
+      listEl.innerHTML = skel + skel + skel;
+      listEl.setAttribute("aria-busy", "true");
       updateMoreBtn();
     }
 
@@ -687,7 +934,53 @@
       $("moreBtn").textContent = state.loading ? "불러오는 중..." : "더 보기";
     }
 
-    // ── 비밀번호 모달 (공용 컴포넌트) ───────────────────────────
+    // ── 리액션 토글 (낙관적 UI + 실패 롤백) ─────────────────────
+    function applyReactLocal(post, emoji, on) {
+      const mine = state.myReactions[post.id] || (state.myReactions[post.id] = new Set());
+      const next = Object.assign({}, post.reactions || {});
+      if (on) {
+        mine.add(emoji);
+        next[emoji] = (Number(next[emoji]) || 0) + 1;
+      } else {
+        mine.delete(emoji);
+        const n = Math.max(0, (Number(next[emoji]) || 0) - 1);
+        if (n) next[emoji] = n; else delete next[emoji];
+      }
+      post.reactions = next;
+      post.reaction_count = sumReactions(next);
+    }
+
+    async function toggleReact(id, emoji) {
+      const post = findPost(id);
+      if (!post || EMOJIS.indexOf(emoji) === -1) return;
+      const busyKey = id + "|" + emoji;
+      if (state.reactBusy[busyKey]) return;
+      const mine = state.myReactions[id];
+      const on = !(mine && mine.has(emoji));
+      applyReactLocal(post, emoji, on);   // 낙관적 반영
+      updateReactBar(id);
+      if (state.degraded || post._sample || post.id < 0) return; // 데모: 로컬 카운트만
+      state.reactBusy[busyKey] = true;
+      try {
+        const res = await supaFetch("/rest/v1/rpc/post_react", {
+          method: "POST",
+          body: JSON.stringify({ p_post_id: id, p_emoji: emoji, p_device: deviceKey(), p_on: on })
+        });
+        if (res && res.reactions) {       // 서버 집계로 보정
+          post.reactions = res.reactions;
+          post.reaction_count = sumReactions(res.reactions);
+          updateReactBar(id);
+        }
+      } catch (err) {
+        applyReactLocal(post, emoji, !on); // 실패 롤백
+        updateReactBar(id);
+        showToast(rpcErrorMessage(err));
+      } finally {
+        delete state.reactBusy[busyKey];
+      }
+    }
+
+    // ── 비밀번호 모달 ───────────────────────────────────────────
     let passResolve = null;
     function askPassword(title, desc) {
       return new Promise((resolve) => {
@@ -706,23 +999,19 @@
       if (resolve) resolve(value);
     }
 
-    // ── 글쓰기 ──────────────────────────────────────────────────
-    function openWritePanel() {
-      $("writePanel").hidden = false;
-      $("writePanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      setTimeout(() => $("wTitle").focus(), 250);
+    // ── 글쓰기 모달 ─────────────────────────────────────────────
+    function openWriteModal() {
+      $("writeBackdrop").hidden = false;
+      $("wNick").value = $("wNick").value || savedNick();
+      setTimeout(() => $("wTitle").focus(), 60);
     }
-    function toggleWritePanel() {
-      if ($("writePanel").hidden) openWritePanel();
-      else $("writePanel").hidden = true;
+    function closeWriteModal() {
+      $("writeBackdrop").hidden = true;
     }
 
     async function submitPost() {
       if (state.busy) return;
-      if (state.degraded) {
-        showToast("게시판이 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.");
-        return;
-      }
+      if (state.degraded) { showToast(DEMO_MSG); return; }
       const nick = $("wNick").value.trim();
       const pass = $("wPass").value;
       const cat = $("wCat").value;
@@ -744,7 +1033,7 @@
         showToast("글을 등록했어요 🎉");
         $("wTitle").value = ""; $("wBody").value = ""; $("wPass").value = "";
         $("wCount").textContent = "0 / 4000";
-        $("writePanel").hidden = true;
+        closeWriteModal();
         renderListLoading();
         await loadPosts(true);
       } catch (err) {
@@ -820,22 +1109,20 @@
           body: JSON.stringify({ p_id: id, p_pass: pass, p_pinned: next })
         });
         showToast(next ? "글을 고정했어요." : "고정을 해제했어요.");
+        state.busy = false;
         renderListLoading();
         await loadPosts(true);
+        return;
       } catch (err) {
         showToast(rpcErrorMessage(err));
-      } finally {
-        state.busy = false;
       }
+      state.busy = false;
     }
 
     // ── 댓글 ────────────────────────────────────────────────────
     async function addComment(card, postId) {
       if (state.busy) return;
-      if (state.degraded) {
-        showToast("게시판이 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.");
-        return;
-      }
+      if (state.degraded) { showToast(DEMO_MSG); return; }
       const nick = card.querySelector(".c-nick").value.trim();
       const pass = card.querySelector(".c-pass").value;
       const body = card.querySelector(".c-body").value;
@@ -896,12 +1183,28 @@
       if (state.commentsCache[id] === undefined) loadComments(id);
     }
 
+    // ── 목록 재조회 공통 (필터/정렬/검색 변경 시) ───────────────
+    function refetchList() {
+      state.expandedId = null; state.editingId = null;
+      if (state.degraded) {
+        renderList();
+      } else {
+        renderListLoading();
+        loadPosts(true);
+      }
+    }
+
     // ── 이벤트 바인딩 ───────────────────────────────────────────
     function bindEvents() {
-      $("writeToggleBtn").addEventListener("click", toggleWritePanel);
-      $("topbarWriteBtn").addEventListener("click", openWritePanel);
-      $("writeCancelBtn").addEventListener("click", () => { $("writePanel").hidden = true; });
+      // 글쓰기 모달 열기/닫기
+      $("writeOpenBtn").addEventListener("click", openWriteModal);
+      $("heroWriteBtn").addEventListener("click", openWriteModal);
+      $("writeCloseBtn").addEventListener("click", closeWriteModal);
+      $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitPost);
+      $("writeBackdrop").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) closeWriteModal();
+      });
       $("wBody").addEventListener("input", () => {
         $("wCount").textContent = $("wBody").value.length + " / 4000";
       });
@@ -909,23 +1212,45 @@
         $("adminNote").hidden = $("wCat").value !== "공지";
       });
 
+      // 검색 (디바운스 300ms)
+      let searchTimer = null;
+      $("searchInput").addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          const term = $("searchInput").value.trim();
+          if (term === state.search) return;
+          state.search = term;
+          refetchList();
+        }, 300);
+      });
+
+      // 정렬 토글 (최신순/인기순)
+      $("sortRow").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-sort]");
+        if (!btn || btn.dataset.sort === state.sort) return;
+        state.sort = btn.dataset.sort;
+        $("sortRow").querySelectorAll("button[data-sort]").forEach((b) => {
+          const on = b.dataset.sort === state.sort;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", String(on));
+        });
+        refetchList();
+      });
+
+      // 카테고리 필터
       $("filterChips").addEventListener("click", (e) => {
-        const chip = e.target.closest(".filter-chip");
+        const chip = e.target.closest(".chip");
         if (!chip || chip.dataset.cat === state.category) return;
         state.category = chip.dataset.cat;
-        document.querySelectorAll(".filter-chip").forEach((c) => c.classList.toggle("is-on", c.dataset.cat === state.category));
-        state.expandedId = null; state.editingId = null;
-        if (state.degraded) {
-          renderList();
-        } else {
-          renderListLoading();
-          loadPosts(true);
-        }
+        $("filterChips").querySelectorAll(".chip").forEach((c) =>
+          c.classList.toggle("is-active", c.dataset.cat === state.category));
+        refetchList();
       });
 
       $("moreBtn").addEventListener("click", () => loadPosts(false));
       $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true); });
 
+      // 글 목록 위임 이벤트
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
         if (!el) return;
@@ -933,10 +1258,8 @@
         const id = Number(el.dataset.id);
         const card = el.closest(".post-card");
         if (act === "toggle") { toggleExpand(id); return; }
-        if (state.degraded && act !== "toggle") {
-          showToast("게시판이 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.");
-          return;
-        }
+        if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
+        if (state.degraded) { showToast(DEMO_MSG); return; }
         if (act === "edit") { state.editingId = id; renderList(); return; }
         if (act === "cancel-edit") { state.editingId = null; renderList(); return; }
         if (act === "save-edit") { saveEdit(card, id); return; }
@@ -946,6 +1269,7 @@
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
 
+      // 수정 폼 글자수 카운터
       $("postList").addEventListener("input", (e) => {
         if (e.target.classList && e.target.classList.contains("e-body")) {
           const counter = e.target.parentElement.querySelector(".counter");
@@ -960,36 +1284,25 @@
         closePassModal(value);
       });
       $("passCancel").addEventListener("click", () => closePassModal(null));
+      $("passClose").addEventListener("click", () => closePassModal(null));
       $("passBackdrop").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) closePassModal(null);
       });
       $("passInput").addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); }
       });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !$("passBackdrop").hidden) closePassModal(null);
-      });
-    }
 
-    // ── 등장 모션 ───────────────────────────────────────────────
-    function setupReveal() {
-      const targets = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window)) {
-        targets.forEach((el) => el.classList.add("is-visible"));
-        return;
-      }
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) { entry.target.classList.add("is-visible"); io.unobserve(entry.target); }
-        });
-      }, { threshold: 0.08 });
-      targets.forEach((el) => io.observe(el));
+      // ESC: 비밀번호 모달 → 글쓰기 모달 순으로 닫기
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!$("passBackdrop").hidden) { closePassModal(null); return; }
+        if (!$("writeBackdrop").hidden) closeWriteModal();
+      });
     }
 
     // ── 초기화 ──────────────────────────────────────────────────
     $("wNick").value = savedNick();
     bindEvents();
-    setupReveal();
     renderListLoading();
     loadPosts(true);
   </script>

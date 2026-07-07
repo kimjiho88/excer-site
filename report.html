@@ -3,837 +3,2210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#5F0080" />
-  <title>모임운영 커뮤니티 — 운영 대시보드</title>
-  <meta name="description" content="우리 오픈채팅방의 한 달 활동을 한눈에. 수다왕 랭킹, 명예의 전당, 시간대 히트맵까지." />
+  <meta name="theme-color" content="#1E0230" />
+  <title>EXCER — 운영 대시보드</title>
+  <meta name="description" content="우리방이 얼마나 뜨거웠는지 한눈에 — 활동 랭킹, 명예의 전당, 시간대 패턴, 키워드까지. 집계 숫자와 키워드만 다루는 오픈채팅 리포트." />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="assets/site.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
     /* ============================================================
-       리포트 전용 스타일
+       운영 대시보드 전용 스타일 (공통은 site.css)
        ============================================================ */
-    .pagehead {
-      position: relative; overflow: hidden;
-      padding: clamp(24px, 2.8vw, 36px) clamp(22px, 2.8vw, 38px);
-      border-radius: var(--r-xl); margin-bottom: 24px;
-    }
-    .pagehead-inner { position: relative; z-index: 1; }
-    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.06; letter-spacing: -0.055em; font-weight: 880; color: var(--primary-900); }
-    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.7; }
 
-    .head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-    .source-badge {
-      display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 6px 13px; border-radius: var(--r-pill);
-      font-size: 12.5px; font-weight: 900; line-height: 1.3;
+    /* ── 히어로 확장: 기간 필터 / 소스 배지 ── */
+    .hero-toprow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .report-select {
+      min-height: 32px; padding: 4px 30px 4px 13px; border-radius: var(--r-pill);
+      border: 1px solid var(--on-dark-line); background: var(--on-dark-glass); color: #fff;
+      font-size: 12.5px; font-weight: 800; cursor: pointer;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E7D7F3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; background-size: 13px;
     }
-    .source-badge.is-sample { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.14); }
-    .source-badge.is-preview { background: var(--pastel-lavender); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.10); }
-    .source-badge.is-live { background: var(--pastel-mint); color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.14); }
-    .period-select {
-      min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
-      background: #fff; color: var(--primary); font-weight: 800; font-size: 13px; box-shadow: var(--shadow-xs);
-      transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
-    }
-    .period-select:hover { border-color: rgba(95, 0, 128, 0.34); box-shadow: var(--shadow-sm); }
+    .report-select option { color: var(--ink); background: #fff; }
 
-    /* ── 스탯 타일 ── */
-    .stat-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
-    .stat-tile {
-      position: relative; overflow: hidden;
-      padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+    .range-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 24px; }
+    .range-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 38px; padding: 0 16px; border-radius: var(--r-pill);
+      border: 1px solid var(--on-dark-line); background: var(--on-dark-glass);
+      color: var(--on-dark-body); font-size: 13px; font-weight: 800; cursor: pointer;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      transition: background 0.16s var(--ease), color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
-    .stat-tile::before {
-      content: ""; position: absolute; right: -34px; top: -34px; width: 96px; height: 96px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(181, 126, 220, 0.20), transparent 70%); pointer-events: none;
+    .range-chip:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+    .range-chip[aria-pressed="true"] {
+      background: #fff; color: var(--primary); border-color: transparent;
+      box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.55);
     }
-    .stat-tile:nth-child(2)::before { background: radial-gradient(circle, rgba(140, 176, 240, 0.22), transparent 70%); }
-    .stat-tile:nth-child(3)::before { background: radial-gradient(circle, rgba(126, 208, 176, 0.24), transparent 70%); }
-    .stat-tile:nth-child(4)::before { background: radial-gradient(circle, rgba(243, 212, 138, 0.28), transparent 70%); }
-    .stat-tile span { display: block; color: var(--gray); font-size: 12.5px; font-weight: 800; }
-    .stat-tile strong { display: block; margin-top: 7px; font-size: clamp(24px, 2.6vw, 34px); font-weight: 880; letter-spacing: -0.05em; color: var(--primary-900); line-height: 1.05; font-variant-numeric: tabular-nums; }
-    .stat-tile small { display: block; margin-top: 5px; color: var(--gray); font-size: 11.5px; font-weight: 700; }
+    .range-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+    .range-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+    .range-custom[hidden] { display: none; }
+    .range-custom input[type="date"] {
+      min-height: 38px; padding: 0 12px; border-radius: 12px;
+      border: 1px solid var(--on-dark-line); background: rgba(255, 255, 255, 0.94);
+      color: var(--ink); font-size: 13px; font-weight: 750;
+      color-scheme: light;
+    }
+    .range-custom .tilde { color: var(--on-dark-muted); font-weight: 800; }
+    .range-custom .mini-btn { min-height: 38px; }
 
-    /* ── 공통 카드 ── */
-    .report-grid { display: grid; gap: 16px; }
-    /* 모바일 가로 오버플로 수정: .hm { min-width: 420px } 가 grid 트랙을
-       min-content 만큼 밀어내지 않도록 grid 자식의 암묵적 min-width:auto 를 해제 */
-    .report-grid > * { min-width: 0; }
-    .card { padding: clamp(18px, 2.2vw, 28px); border-radius: 26px; }
-    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
-    .card-title { margin: 0; font-size: 18px; letter-spacing: -0.04em; font-weight: 850; }
-    .card-note { margin: 2px 0 16px; color: var(--gray); font-size: 12.5px; font-weight: 600; line-height: 1.55; }
+    /* ── 히어로 겹침 카드: 온도 + KPI ── */
+    .pulse-card { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: center; }
+    .temp-wrap { display: grid; justify-items: center; gap: 4px; text-align: center; }
+    .temp-gauge { width: min(100%, 240px); height: auto; display: block; }
+    .temp-value { font-size: clamp(30px, 3.2vw, 40px); font-weight: 900; letter-spacing: -0.045em; color: var(--deep-1); line-height: 1; margin-top: -54px; }
+    .temp-value small { font-size: 0.45em; color: var(--gray); font-weight: 800; }
+    .temp-label { color: var(--gray); font-size: 12.5px; font-weight: 850; }
+    .temp-desc { margin-top: 4px; font-size: 12.5px; font-weight: 800; color: var(--primary); }
+    .pulse-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 22px); }
+    .pulse-kpis .kpi-value { font-variant-numeric: normal; }
+    @media (max-width: 1023px) { .pulse-kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 767px) {
+      .pulse-card { grid-template-columns: 1fr; }
+      .temp-wrap { padding-bottom: 6px; border-bottom: 1px dashed var(--line); }
+    }
+
+    /* 구버전 안내 */
+    .legacy-note {
+      display: flex; gap: 10px; align-items: flex-start; margin-top: 18px;
+      padding: 13px 16px; border-radius: var(--r-sm);
+      background: var(--pastel-cream); color: #856410;
+      box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.16);
+      font-size: 13px; font-weight: 700; line-height: 1.6;
+    }
+
+    /* ── 섹션 접기/펼치기 ── */
+    .section-head.has-toggle { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; max-width: none; }
+    .section-head.has-toggle > div { max-width: 720px; }
+    .sec-toggle {
+      flex: none; display: inline-flex; align-items: center; gap: 6px;
+      min-height: 36px; padding: 0 14px; margin-top: 4px; border-radius: var(--r-pill);
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 850;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+      transition: background 0.16s var(--ease);
+    }
+    .sec-toggle:hover { background: var(--lavender-2); }
+    .sec-toggle .chev { transition: transform 0.2s var(--ease); font-size: 10px; }
+    .sec-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+    .sec-body[hidden] { display: none; }
+
+    /* ── 하이라이트 KPI 줄 ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .kpi-mini { display: grid; gap: 5px; align-content: start; padding: clamp(15px, 1.8vw, 20px); }
+    .kpi-mini .ic {
+      display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px;
+      background: var(--pastel-lavender); font-size: 17px; margin-bottom: 3px;
+    }
+    .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 850; }
+    .kpi-mini .vl { color: var(--deep-1); font-size: clamp(19px, 1.9vw, 24px); font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    .kpi-mini .vl small { font-size: 0.62em; color: var(--gray); font-weight: 800; }
+    .kpi-mini .sub { color: var(--gray-2); font-size: 11.5px; font-weight: 700; }
+    @media (max-width: 767px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
 
     /* ── 랭킹 ── */
-    .rank-list { display: grid; gap: 6px; }
+    .rank-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .rank-toolbar .spacer { flex: 1; }
+    .select-clean, .search-input {
+      min-height: 42px; padding: 0 14px; border-radius: 13px;
+      border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
+      font-size: 13.5px; font-weight: 750;
+      transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+    }
+    .select-clean:focus, .search-input:focus { border-color: rgba(95, 0, 128, 0.45); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.09); outline: none; }
+    .search-input { min-width: min(240px, 100%); }
+    .rank-list { display: grid; gap: 4px; }
     .rank-row {
-      display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 10px; align-items: center;
-      padding: 8px 10px; border-radius: 14px; transition: background 0.16s var(--ease), box-shadow 0.16s var(--ease);
+      display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center;
+      padding: 9px 10px; border-radius: 14px;
+      transition: background 0.15s var(--ease), opacity 0.2s var(--ease);
     }
-    .rank-row:hover { background: rgba(240, 231, 250, 0.6); }
-    .rank-row.is-top {
-      background: linear-gradient(90deg, rgba(240, 231, 250, 0.72), rgba(252, 233, 241, 0.30));
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.06);
-    }
-    .rank-row.is-top:hover { background: linear-gradient(90deg, rgba(236, 223, 247, 0.85), rgba(252, 233, 241, 0.42)); }
-    .rank-no { text-align: center; font-size: 15px; font-weight: 850; color: var(--gray); font-variant-numeric: tabular-nums; }
-    .rank-no.is-medal { font-size: 21px; }
-    .rank-main { min-width: 0; }
-    .rank-name-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-    .rank-name { font-weight: 800; font-size: 13.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-share { color: var(--gray); font-size: 11.5px; font-weight: 700; flex: none; }
-    .rank-bar-line { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-    .rank-track { flex: 1; min-width: 0; height: 12px; }
-    .rank-bar { width: 100%; height: 12px; background: #7B2BB0; border-radius: var(--r-pill); min-width: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18); }
-    .rank-count { flex: none; font-size: 12.5px; font-weight: 850; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-    .rank-more { margin-top: 12px; }
-    .rank-rest[hidden] { display: none; }
+    .rank-row:hover { background: rgba(240, 231, 250, 0.5); }
+    .rank-row.is-dim { opacity: 0.28; }
+    .rank-no { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--lavender); color: var(--primary); font-size: 12.5px; font-weight: 900; }
+    .rank-no.is-medal { background: transparent; font-size: 22px; }
+    .rank-main { min-width: 0; display: grid; gap: 4px; }
+    .rank-top-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .rank-name { font-weight: 850; font-size: 13.5px; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-name mark { background: var(--pastel-cream); color: #6B510D; border-radius: 4px; padding: 0 2px; }
+    .rank-extra { flex: none; color: var(--gray); font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .rank-bar-line { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
+    .rank-track { height: 14px; border-radius: 7px; background: var(--soft-lavender); overflow: hidden; }
+    .rank-bar { display: block; height: 100%; width: 0; border-radius: 7px 4px 4px 7px; background: #C9A5E4; transition: width 0.7s var(--ease-out); }
+    .rank-row.is-top .rank-bar { background: #7B2BB0; }
+    .rank-count { text-align: right; font-size: 13px; font-weight: 900; color: var(--deep-1); font-variant-numeric: tabular-nums; }
+    .rank-foot { display: flex; justify-content: center; margin-top: 12px; }
+    .chart-note { margin: 12px 2px 0; color: var(--gray-2); font-size: 11.5px; font-weight: 700; line-height: 1.6; }
 
-    /* ── 배지 카드 ── */
-    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    /* ── 배지 그리드 ── */
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
     .badge-card {
-      display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center;
-      padding: 14px; border-radius: 18px; border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+      display: flex; gap: 12px; align-items: center;
+      padding: 15px 16px; border-radius: var(--r-sm);
+      border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-1);
     }
-    .badge-card:hover { transform: translateY(-2px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
     .badge-emoji {
-      display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
-      background: var(--pastel-lavender); font-size: 22px;
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.07);
-    }
-    .badge-card:nth-child(4n+2) .badge-emoji { background: var(--pastel-blush); box-shadow: inset 0 0 0 1px rgba(166, 51, 92, 0.09); }
-    .badge-card:nth-child(4n+3) .badge-emoji { background: var(--pastel-mint); box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.09); }
-    .badge-card:nth-child(4n+4) .badge-emoji { background: var(--pastel-sky); box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.09); }
-    .badge-body { min-width: 0; }
-    .badge-title { display: block; font-size: 12px; font-weight: 900; color: var(--primary); letter-spacing: 0.01em; }
-    .badge-name { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .badge-desc { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--gray); }
-
-    /* ── 히트맵 ── */
-    .hm-scroll { overflow-x: auto; padding-bottom: 6px; }
-    .hm { display: grid; grid-template-columns: 30px repeat(24, minmax(12px, 1fr)); gap: 2px; min-width: 420px; }
-    .hm-corner, .hm-hour { font-size: 10px; font-weight: 800; color: var(--gray-2); text-align: center; align-self: end; padding-bottom: 2px; }
-    .hm-day { font-size: 11px; font-weight: 800; color: var(--gray); display: flex; align-items: center; justify-content: center; }
-    .hm-day.is-weekend { color: var(--ink-2); font-weight: 900; }
-    .hm-cell { aspect-ratio: 1 / 1; border-radius: 3px; cursor: default; }
-    .hm-cell:hover { outline: 2px solid rgba(95, 0, 128, 0.5); outline-offset: 1px; }
-    .hm-legend { display: flex; align-items: center; gap: 5px; margin-top: 12px; color: var(--gray); font-size: 11.5px; font-weight: 700; }
-    .hm-legend i { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(61, 0, 85, 0.06); }
-
-    /* ── 일별 추이 ── */
-    .trend-wrap { position: relative; }
-    .trend-wrap svg { display: block; width: 100%; height: auto; border-radius: 12px; }
-    .trend-wrap svg:focus-visible { outline: 3px solid rgba(95, 0, 128, 0.28); outline-offset: 3px; }
-
-    .chart-tip {
-      position: fixed; z-index: 200; pointer-events: none; opacity: 0;
-      padding: 8px 12px; border-radius: 12px; background: rgba(29, 17, 40, 0.94); color: #fff;
-      font-size: 12px; font-weight: 700; white-space: nowrap;
-      box-shadow: var(--shadow-md), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-      transform: translate(-50%, calc(-100% - 12px)); transition: opacity 0.12s var(--ease);
-    }
-    .chart-tip.is-visible { opacity: 1; }
-    .chart-tip strong { display: block; font-size: 14px; font-weight: 900; letter-spacing: -0.01em; }
-    .chart-tip span { color: rgba(255, 255, 255, 0.72); font-weight: 700; }
-
-    .table-details { margin-top: 12px; }
-    .table-details summary { cursor: pointer; color: var(--gray); font-size: 12px; font-weight: 800; transition: color 0.16s var(--ease); }
-    .table-details summary:hover { color: var(--primary); }
-    .table-details table { margin-top: 10px; border-collapse: collapse; font-size: 12px; width: 100%; max-width: 480px; }
-    .table-details th, .table-details td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
-    .table-details th { color: var(--gray); font-weight: 800; text-align: left; }
-    .table-details td:first-child { text-align: left; font-weight: 700; color: var(--ink-2); }
-
-    /* ── 재미 통계 ── */
-    .fun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .fun-tile {
-      padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
-    }
-    .fun-tile:hover { transform: translateY(-2px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
-    .fun-tile span { display: block; color: var(--gray); font-size: 11.5px; font-weight: 800; }
-    .fun-tile strong { display: block; margin-top: 6px; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; color: var(--primary-700); }
-    .fun-tile small { display: block; margin-top: 3px; color: var(--gray); font-size: 11px; font-weight: 700; }
-
-    /* ── 키워드 ── */
-    .kw-cloud { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .kw-chip {
-      display: inline-flex; align-items: baseline; gap: 5px; padding: 6px 13px; border-radius: var(--r-pill);
-      background: var(--pastel-lavender); color: var(--primary-700); font-weight: 800; line-height: 1.2;
+      display: grid; place-items: center; flex: none;
+      width: 46px; height: 46px; border-radius: 15px; font-size: 23px;
+      background: linear-gradient(135deg, var(--pastel-lavender), var(--pastel-blush));
       box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
     }
-    .kw-chip small { color: var(--gray); font-size: 10.5px; font-weight: 700; }
+    .badge-body { min-width: 0; display: grid; gap: 1px; }
+    .badge-title { font-size: 11.5px; font-weight: 900; color: var(--primary); letter-spacing: 0.01em; }
+    .badge-name { font-size: 14px; font-weight: 850; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge-desc { font-size: 11.5px; color: var(--gray); font-weight: 700; }
 
-    /* ── CTA / 푸터 ── */
-    .cta-panel {
+    /* ── 차트 공통 ── */
+    .chart-svg { width: 100%; height: auto; display: block; }
+    .chart-anim { opacity: 0; transform: translateY(10px) scale(0.985); transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out); }
+    .chart-anim.is-in { opacity: 1; transform: none; }
+    .chart-tip {
+      position: fixed; z-index: 300; pointer-events: none;
+      transform: translate(-50%, calc(-100% - 10px));
+      padding: 8px 12px; border-radius: 12px;
+      background: rgba(29, 17, 40, 0.94); color: #fff;
+      box-shadow: var(--shadow-3);
+      opacity: 0; transition: opacity 0.14s var(--ease);
+      text-align: center; max-width: 240px;
+    }
+    .chart-tip.is-visible { opacity: 1; }
+    .chart-tip .tv { display: block; font-size: 14.5px; font-weight: 900; letter-spacing: -0.02em; }
+    .chart-tip .tl { display: block; font-size: 11px; font-weight: 700; color: rgba(231, 215, 243, 0.9); }
+    .table-twin summary { cursor: pointer; color: var(--primary); font-size: 12px; font-weight: 850; padding: 6px 2px; }
+    .table-twin[open] summary { margin-bottom: 6px; }
+    .table-twin .twin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .table-twin table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .table-twin th, .table-twin td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; color: var(--ink-2); }
+    .table-twin td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--deep-1); }
+
+    /* ── 24시간 시계 ── */
+    .clock-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    @media (max-width: 860px) { .clock-layout { grid-template-columns: 1fr; } }
+    .clock-side { display: grid; gap: 12px; align-content: start; }
+    .clock-fact { display: flex; gap: 12px; align-items: center; padding: 13px 15px; border-radius: var(--r-sm); background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
+    .clock-fact .ic { font-size: 20px; flex: none; }
+    .clock-fact b { display: block; font-size: 15px; letter-spacing: -0.02em; color: var(--deep-1); }
+    .clock-fact small { color: var(--gray); font-size: 11.5px; font-weight: 700; }
+    .hour-seg { display: grid; gap: 7px; }
+    .hour-seg .seg-row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 12px; font-weight: 800; color: var(--ink-2); white-space: nowrap; }
+    .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--deep-1); font-weight: 850; }
+
+    /* ── 히트맵 ── */
+    .hm-scroll { overflow-x: auto; padding-bottom: 4px; }
+    .hm-grid { display: grid; grid-template-columns: 34px repeat(24, minmax(16px, 1fr)); gap: 3px; min-width: 560px; }
+    .hm-corner { width: 100%; }
+    .hm-hour { text-align: center; font-size: 10px; font-weight: 800; color: var(--gray-2); }
+    .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 850; color: var(--gray); }
+    .hm-day.is-weekend { color: var(--primary); }
+    .hm-cell { aspect-ratio: 1; border-radius: 4px; min-width: 16px; }
+    .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gray-2); font-size: 11px; font-weight: 750; }
+    .hm-legend i { width: 16px; height: 10px; border-radius: 3px; }
+
+    /* ── 주간 추이 ── */
+    .trend-callout { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+
+    /* ── 키워드 ── */
+    .kw-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .kw-cat-chip {
+      display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 15px;
+      border-radius: var(--r-pill); border: 1px solid var(--line); background: #fff;
+      font-size: 12.5px; font-weight: 850; color: var(--ink-2); cursor: pointer;
+      transition: all 0.15s var(--ease);
+    }
+    .kw-cat-chip i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    .kw-cat-chip b { font-variant-numeric: tabular-nums; color: var(--deep-1); }
+    .kw-cat-chip[aria-pressed="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); color: var(--primary); }
+    .kw-field { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; padding: 8px 0 4px; }
+    .kw-bubble {
+      display: grid; place-content: center; gap: 0; text-align: center;
+      border-radius: 50%; padding: 6px;
+      font-weight: 850; letter-spacing: -0.02em; color: var(--ink);
+      transition: transform 0.2s var(--ease), opacity 0.25s var(--ease);
+      cursor: default;
+    }
+    .kw-bubble:hover { transform: scale(1.06); }
+    .kw-bubble.is-dim { opacity: 0.18; }
+    .kw-bubble .kw { line-height: 1.15; word-break: keep-all; }
+    .kw-bubble .kc { font-size: 10.5px; color: var(--gray); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .kw-weekly { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(148px, 1fr); gap: 10px; overflow-x: auto; padding: 4px 2px 8px; }
+    .kw-week-card { padding: 13px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--offwhite); }
+    .kw-week-card.is-now { border-color: rgba(95, 0, 128, 0.35); background: var(--soft-lavender); }
+    .kw-week-card b { display: block; font-size: 11.5px; color: var(--primary); font-weight: 900; margin-bottom: 7px; }
+    .kw-week-card ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    .kw-week-card li { display: flex; gap: 7px; align-items: baseline; font-size: 12.5px; font-weight: 800; color: var(--ink-2); }
+    .kw-week-card li i { font-style: normal; color: var(--gray-2); font-size: 10.5px; font-weight: 900; }
+
+    /* ── 분위기 리포트 ── */
+    .mood-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+    .mood-card h3 { margin: 0 0 4px; font-size: 14.5px; letter-spacing: -0.03em; color: var(--deep-1); }
+    .mood-card .mood-cap { margin: 0 0 14px; color: var(--gray); font-size: 12px; font-weight: 700; }
+    .mood-bar-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 58px; gap: 9px; align-items: center; margin-top: 9px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
+    .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 850; font-variant-numeric: tabular-nums; }
+    .mood-bar-row .bar-track { height: 12px; border-radius: 6px; background: var(--soft-lavender); overflow: hidden; }
+    .mood-bar-row .bar-fill { display: block; height: 100%; width: 0; border-radius: 6px 4px 4px 6px; transition: width 0.7s var(--ease-out); }
+    .gini-wrap { display: flex; gap: 16px; align-items: center; }
+    .gini-donut { width: 96px; height: 96px; flex: none; }
+    .gini-side { display: grid; gap: 6px; }
+    .mood-big { font-size: clamp(24px, 2.4vw, 30px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1); line-height: 1.1; }
+    .mood-big small { font-size: 0.5em; color: var(--gray); font-weight: 800; }
+    .legend-dots { display: grid; gap: 4px; font-size: 11.5px; font-weight: 750; color: var(--gray); }
+    .legend-dots i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+
+    /* ── 멤버 카드 ── */
+    .member-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+    @media (max-width: 860px) { .member-layout { grid-template-columns: 1fr; } }
+    .member-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .member-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      min-height: 40px; padding: 0 15px; border-radius: var(--r-pill);
+      border: 1px solid var(--line); background: #fff;
+      font-size: 12.5px; font-weight: 800; color: var(--ink-2); cursor: pointer;
+      transition: all 0.15s var(--ease);
+    }
+    .member-pill b { color: var(--deep-1); font-variant-numeric: tabular-nums; }
+    .member-pill:hover { border-color: var(--line-strong); box-shadow: var(--shadow-1); transform: translateY(-1px); }
+    .member-pill[aria-pressed="true"] { background: var(--grad-brand); color: #fff; border-color: transparent; box-shadow: var(--shadow-brand); }
+    .member-pill[aria-pressed="true"] b { color: #fff; }
+    .member-detail-card { position: sticky; top: calc(var(--nav-h) + 16px); }
+    .md-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .md-avatar {
+      display: grid; place-items: center; width: 48px; height: 48px; flex: none;
+      border-radius: 16px; background: var(--grad-brand); color: #fff; font-size: 19px; font-weight: 900;
+      box-shadow: var(--shadow-brand);
+    }
+    .md-head b { display: block; font-size: 16px; letter-spacing: -0.03em; }
+    .md-head small { color: var(--gray); font-size: 11.5px; font-weight: 750; }
+    .md-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+    .md-stat { padding: 10px 12px; border-radius: 13px; background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
+    .md-stat span { display: block; color: var(--gray); font-size: 10.5px; font-weight: 850; }
+    .md-stat strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
+    .md-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+    .md-spark { margin-top: 10px; }
+    .md-spark .spark-cap { color: var(--gray-2); font-size: 11px; font-weight: 750; margin-top: 4px; }
+
+    /* ── 리캡 카드 ── */
+    .recap-stage { display: grid; gap: 14px; justify-items: center; }
+    .recap-card {
       position: relative; overflow: hidden;
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
-      padding: clamp(20px, 2.4vw, 28px); border-radius: 26px;
-      background: var(--grad-brand-soft), rgba(255, 255, 255, 0.82);
-      border: 1px solid var(--line);
+      width: min(640px, 100%); border-radius: 28px;
+      color: #fff; padding: clamp(24px, 4vw, 40px);
+      background:
+        radial-gradient(30rem 18rem at 85% -10%, rgba(185, 128, 217, 0.35), transparent 62%),
+        radial-gradient(24rem 16rem at 0% 108%, rgba(122, 31, 181, 0.4), transparent 64%),
+        linear-gradient(160deg, #3D005C 0%, #2A0140 55%, #1E0230 100%);
+      box-shadow: var(--shadow-3);
     }
-    .cta-copy, .cta-actions { position: relative; z-index: 1; }
-    .cta-copy strong { display: block; font-size: 18px; letter-spacing: -0.04em; font-weight: 850; color: var(--primary-900); }
-    .cta-copy p { margin: 7px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
-    .cta-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recap-card::after { content: ""; position: absolute; inset: 0; background: var(--noise); opacity: 0.8; mix-blend-mode: overlay; pointer-events: none; }
+    .recap-inner { position: relative; z-index: 1; display: grid; gap: 16px; }
+    .recap-brand { display: flex; justify-content: space-between; align-items: center; }
+    .recap-brand .logo { font-size: 17px; font-weight: 920; letter-spacing: 0.06em; background: var(--grad-on-dark-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .recap-brand small { color: var(--on-dark-muted); font-size: 11px; font-weight: 750; }
+    .recap-title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.2; color: #fff; }
+    .recap-title .grad-text-hero { display: inline; }
+    .recap-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .recap-kpi { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13); }
+    .recap-kpi span { display: block; color: var(--on-dark-muted); font-size: 10.5px; font-weight: 850; }
+    .recap-kpi strong { display: block; margin-top: 3px; font-size: clamp(16px, 2.2vw, 21px); font-weight: 900; letter-spacing: -0.03em; color: #fff; }
+    .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 800; }
+    .recap-rows { display: grid; gap: 7px; }
+    .recap-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10); font-size: 13px; font-weight: 800; }
+    .recap-row .ic { flex: none; font-size: 17px; }
+    .recap-row .who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+    .recap-row .what { flex: none; margin-left: auto; color: var(--on-dark-muted); font-size: 11px; font-weight: 800; }
+    .recap-kws { display: flex; flex-wrap: wrap; gap: 6px; }
+    .recap-kw { padding: 5px 12px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: var(--on-dark-body); font-size: 11.5px; font-weight: 800; }
+    .recap-foot { display: flex; justify-content: space-between; gap: 10px; color: rgba(188, 161, 214, 0.85); font-size: 10.5px; font-weight: 700; }
+    .recap-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
-    .report-foot { margin-top: 24px; text-align: center; color: var(--gray); font-size: 12px; font-weight: 600; line-height: 1.7; }
-    .report-foot a { color: var(--gray); text-decoration: underline; text-underline-offset: 3px; transition: color 0.16s var(--ease); }
-    .report-foot a:hover { color: var(--primary); }
+    /* ── CTA ── */
+    .cta-card { text-align: center; display: grid; justify-items: center; gap: 8px; }
+    .cta-card h2 { margin: 4px 0 0; font-size: clamp(20px, 2.4vw, 27px); letter-spacing: -0.045em; color: var(--deep-1); }
+    .cta-card p { margin: 0; color: var(--gray); font-size: 13.5px; max-width: 460px; }
+    .cta-card .hero-actions { justify-content: center; margin-top: 14px; }
+    .cta-card p.cta-admin-note { margin-top: 6px; font-size: 12.5px; color: var(--gray-2); }
+    .cta-card p.cta-admin-note a { color: var(--primary); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 
-    .empty-note { padding: 26px; text-align: center; color: var(--gray); font-size: 13.5px; font-weight: 700; line-height: 1.7; }
+    /* 스켈레톤 채움 */
+    .skeleton-stack { display: grid; gap: 12px; }
 
-    /* hidden 속성이 display 지정 클래스(flex/grid 등)에 밀리지 않도록 보강 */
     [hidden] { display: none !important; }
-
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 767px) {
-      .pagehead { padding: 22px 18px; border-radius: 26px; }
-      .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-      .stat-tile { padding: 13px 14px; border-radius: 16px; }
-      .card { border-radius: 22px; }
-      .badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-      .badge-card { grid-template-columns: 36px minmax(0, 1fr); gap: 9px; padding: 11px; }
-      .badge-emoji { width: 36px; height: 36px; font-size: 18px; border-radius: 11px; }
-      .fun-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-      .cta-panel { flex-direction: column; align-items: stretch; text-align: center; }
-      .cta-actions { justify-content: center; }
-      .rank-row { grid-template-columns: 32px minmax(0, 1fr); padding: 7px 6px; }
-    }
   </style>
 </head>
-
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="주요 메뉴">
-      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
-        <span class="brand-mark">EX</span>
-        <span class="brand-copy">
-          <strong>운영 커뮤니티</strong>
-          <small>강남·논현 모임 플랫폼</small>
-        </span>
-      </a>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
-      <nav class="side-nav" aria-label="데스크톱 내비게이션">
-        <a class="nav-item" href="index.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
-          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item is-active" href="report.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
-          <span class="nav-text">대시보드</span><span class="nav-meta">현재</span>
-        </a>
-        <a class="nav-item" href="calculator.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
-          <span class="nav-text">정산기</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item" href="news.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-          <span class="nav-text">소식</span><span class="nav-meta">이동</span>
-        </a>
-        <a class="nav-item" href="games.html">
-          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
-          <span class="nav-text">게임</span><span class="nav-meta">이동</span>
-        </a>
+  <header class="topnav" id="topnav">
+    <div class="container topnav-inner">
+      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
+        <span class="topnav-logo">EXCER</span>
+        <span class="topnav-sub">오픈채팅 커뮤니티</span>
+      </a>
+      <nav class="topnav-tabs" aria-label="주요 메뉴">
+        <a class="topnav-tab" href="index.html">필독</a>
+        <a class="topnav-tab is-active" href="report.html" aria-current="page">대시보드</a>
+        <a class="topnav-tab" href="calculator.html">정산기</a>
+        <a class="topnav-tab" href="news.html">소식</a>
+        <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <span class="topnav-page" aria-hidden="true">대시보드</span>
+    </div>
+  </header>
 
-      <div class="sidebar-card">
-        <span>프라이버시</span>
-        <strong>숫자만 모아 만든 리포트</strong>
-        <p>대화 원문은 저장하지 않아요. 멤버별·시간대별 집계 숫자만 사용합니다.</p>
+  <section class="hero-band" aria-labelledby="heroTitle">
+    <div class="container">
+      <div class="hero-toprow">
+        <span class="hero-kicker" id="sourceBadge"><i></i><span id="sourceBadgeText">리포트 불러오는 중…</span></span>
+        <label class="sr-only" for="reportSelect">발행된 리포트 선택</label>
+        <select id="reportSelect" class="report-select" hidden></select>
       </div>
-    </aside>
+      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 우리방,<br /><span class="grad-text-hero">이만큼 뜨거웠어요</span></h1>
+      <p class="hero-sub">
+        누가 활약했는지, 어느 시간대가 뜨거웠는지 재미로 확인해요.
+        집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
+        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임이 마스킹</strong>된 버전이에요.</span>
+      </p>
 
-    <header class="mobile-topbar">
-      <a class="mobile-brand" href="index.html" aria-label="필독으로 이동">
-        <span class="brand-mark">EX</span><span>운영 대시보드</span>
-      </a>
-      <a class="mobile-action" href="#rankCard">랭킹 보기</a>
-    </header>
+      <div class="range-filter" role="group" aria-label="기간 필터" id="rangeFilter">
+        <button class="range-chip" type="button" data-range="today" aria-pressed="false">오늘</button>
+        <button class="range-chip" type="button" data-range="week" aria-pressed="true">이번 주</button>
+        <button class="range-chip" type="button" data-range="month" aria-pressed="false">이번 달</button>
+        <button class="range-chip" type="button" data-range="all" aria-pressed="false">전체</button>
+        <button class="range-chip" type="button" data-range="custom" aria-pressed="false">직접 선택</button>
+      </div>
+      <div class="range-custom" id="rangeCustom" hidden>
+        <label class="sr-only" for="customFrom">시작일</label>
+        <input type="date" id="customFrom" />
+        <span class="tilde" aria-hidden="true">~</span>
+        <label class="sr-only" for="customTo">종료일</label>
+        <input type="date" id="customTo" />
+        <button class="mini-btn" type="button" id="customApply">적용</button>
+      </div>
 
-    <main id="reportTop" class="main">
-      <!-- 1) 히어로 -->
-      <section class="pagehead panel reveal" aria-labelledby="pageTitle">
-        <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(181,126,220,0.28); right:-130px; top:-150px" aria-hidden="true"></i>
-        <i class="glow-orb" style="--orb-size:280px; --orb-color:rgba(140,176,240,0.22); left:-110px; bottom:-130px" aria-hidden="true"></i>
-        <div class="pagehead-inner">
-          <div class="head-row">
-            <span class="kicker">📊 운영 대시보드</span>
-            <span id="sourceBadge" class="source-badge" hidden></span>
-            <select id="periodSelect" class="period-select" aria-label="리포트 기간 선택" hidden></select>
+      <div class="hero-meta">
+        <span class="stat-pill"><i></i>기간 <strong id="pillRange">-</strong></span>
+        <span class="stat-pill"><i></i>기준일 <strong id="pillBase">-</strong></span>
+        <span class="stat-pill" id="pillGenWrap" hidden><i></i>발행 <strong id="pillGen">-</strong></span>
+      </div>
+    </div>
+  </section>
+
+  <main id="main" class="page-main">
+    <!-- 온도 + 핵심 KPI (히어로 겹침) -->
+    <div class="container hero-overlap">
+      <div class="card is-lg pulse-card" id="pulseCard" aria-busy="true">
+        <div class="skeleton-stack">
+          <div class="skeleton skeleton-circle" style="width:150px; margin-inline:auto"></div>
+          <div class="skeleton skeleton-line is-lg" style="width:60%; margin-inline:auto"></div>
+        </div>
+        <div class="skeleton-stack">
+          <div class="skeleton skeleton-line is-lg" style="width:45%"></div>
+          <div class="skeleton skeleton-line" style="width:85%"></div>
+          <div class="skeleton skeleton-line" style="width:70%"></div>
+        </div>
+      </div>
+      <div class="legacy-note" id="legacyNote" hidden>
+        <span aria-hidden="true">🗂️</span>
+        <span><b>구버전 리포트예요.</b> 지금 보이는 지표만 제공돼요 — 운영진이 리포트를 다시 발행하면 기간 필터·배지·분위기 리포트 같은 새 지표가 열려요.</span>
+      </div>
+    </div>
+
+    <!-- 빈 상태 (데이터 없음) -->
+    <div class="container" id="emptyWrap" hidden>
+      <div class="card is-lg">
+        <div class="empty-state">
+          <span class="empty-ic" aria-hidden="true">📊</span>
+          <strong>아직 보여줄 리포트가 없어요</strong>
+          <p>발행된 리포트가 없고 예시 데이터도 불러오지 못했어요. 네트워크 상태를 확인하고 새로고침 해주세요.</p>
+          <a class="btn btn-secondary is-sm" href="report.html">새로고침</a>
+          <a class="btn btn-ghost is-sm" href="report-admin.html">🛠️ 운영진 리포트 발행</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashBody">
+      <!-- 1. 이번 주 우리방 활약 -->
+      <section class="section" id="secHighlights">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">하이라이트</span>
+              <h2 id="hlTitle">이번 주 우리방 활약</h2>
+              <p>선택한 기간을 요약했어요. 위의 기간 필터를 바꾸면 모든 숫자가 함께 움직여요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHighlights">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
-          <h1 id="pageTitle" class="pagehead-title">이번 달 우리방, <span id="periodLabel" class="grad-text">불러오는 중…</span></h1>
-          <p class="pagehead-desc">
-            한 달 동안 우리방이 얼마나 뜨거웠는지 숫자로 정리했어요.
-            수다왕 랭킹부터 새벽 반장까지, 다음 주인공은 누구일까요?
-          </p>
-          <div id="statTiles" class="stat-tiles" aria-label="핵심 통계"></div>
+          <div class="sec-body" id="bodyHighlights">
+            <div class="kpi-row" id="kpiRow" aria-busy="true">
+              <div class="card kpi-mini"><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line is-lg" style="width:45%; margin-top:8px"></div></div>
+              <div class="card kpi-mini"><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line is-lg" style="width:45%; margin-top:8px"></div></div>
+              <div class="card kpi-mini"><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line is-lg" style="width:45%; margin-top:8px"></div></div>
+              <div class="card kpi-mini"><div class="skeleton skeleton-line" style="width:60%"></div><div class="skeleton skeleton-line is-lg" style="width:45%; margin-top:8px"></div></div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div class="report-grid">
-        <!-- 2) 수다왕 랭킹 -->
-        <section id="rankCard" class="card panel reveal" aria-labelledby="rankTitle">
-          <div class="card-head"><h2 id="rankTitle" class="card-title">🏆 이달의 수다왕 TOP 10</h2></div>
-          <p class="card-note">메시지 수 기준이에요. 막대 길이가 곧 수다력!</p>
-          <div id="rankTop" class="rank-list"></div>
-          <div id="rankRest" class="rank-list rank-rest" hidden></div>
-          <div class="rank-more"><button id="rankToggle" class="mini-btn" type="button" aria-expanded="false" hidden>전체 순위 보기</button></div>
-        </section>
-
-        <!-- 3) 명예의 전당 -->
-        <section class="card panel reveal" aria-labelledby="hallTitle">
-          <div class="card-head"><h2 id="hallTitle" class="card-title">👑 명예의 전당</h2></div>
-          <p class="card-note">이번 기간 각 부문 1위예요. 조건을 채운 부문만 표시돼요.</p>
-          <div id="badgeGrid" class="badge-grid"></div>
-        </section>
-
-        <!-- 4) 시간대 히트맵 -->
-        <section class="card panel reveal" aria-labelledby="hmTitle">
-          <div class="card-head"><h2 id="hmTitle" class="card-title">🕘 요일 × 시간대 히트맵</h2></div>
-          <p class="card-note">색이 진할수록 메시지가 많았던 시간이에요. 칸을 누르거나 올려보면 정확한 개수가 보여요.</p>
-          <div class="hm-scroll"><div id="heatmap" class="hm" role="img" aria-label="요일별 시간대별 메시지 히트맵"></div></div>
-          <div id="hmLegend" class="hm-legend"></div>
-          <details class="table-details">
-            <summary>표로 보기 (요일·시간대 합계)</summary>
-            <div id="hmTable"></div>
-          </details>
-        </section>
-
-        <!-- 5) 일별 추이 -->
-        <section class="card panel reveal" aria-labelledby="trendTitle">
-          <div class="card-head"><h2 id="trendTitle" class="card-title">📈 일별 메시지 추이</h2></div>
-          <p class="card-note">차트를 따라가면 날짜별 개수를 볼 수 있어요. 키보드 ←→로도 움직여요. 옅은 세로 띠는 주말이에요.</p>
-          <div id="trendWrap" class="trend-wrap"></div>
-          <details class="table-details">
-            <summary>표로 보기 (일별 개수)</summary>
-            <div id="trendTable"></div>
-          </details>
-        </section>
-
-        <!-- 6) 재미 통계 -->
-        <section class="card panel reveal" aria-labelledby="funTitle">
-          <div class="card-head"><h2 id="funTitle" class="card-title">✨ 이런 것도 세어봤어요</h2></div>
-          <div id="funGrid" class="fun-grid"></div>
-        </section>
-
-        <!-- 7) 키워드 -->
-        <section id="kwCard" class="card panel reveal" aria-labelledby="kwTitle" hidden>
-          <div class="card-head"><h2 id="kwTitle" class="card-title">💬 이달의 키워드</h2></div>
-          <p class="card-note">자주 등장한 단어일수록 크게 보여요. (인사말·짧은 감탄사는 뺐어요)</p>
-          <div id="kwCloud" class="kw-cloud"></div>
-        </section>
-
-        <div class="divider-dots" aria-hidden="true"></div>
-
-        <!-- 8) CTA -->
-        <section class="cta-panel panel reveal" aria-label="참여 유도">
-          <i class="glow-orb" style="--orb-size:260px; --orb-color:rgba(181,126,220,0.24); right:-90px; top:-110px" aria-hidden="true"></i>
-          <div class="cta-copy">
-            <strong>다음 리포트의 주인공은?</strong>
-            <p>벙에 오고, 소식 게시판에 후기를 남기면 다음 달 명예의 전당이 가까워져요.</p>
+      <!-- 2. 활동 랭킹 -->
+      <section class="section" id="secRank">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">활동 랭킹</span>
+              <h2>누가 제일 활약했을까요?</h2>
+              <p>기준을 바꿔 다른 랭킹도 볼 수 있어요. 이름을 검색하면 내 순위를 바로 찾아요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyRank">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
-          <div class="cta-actions">
-            <a class="btn btn-primary" href="news.html">소식 게시판 가기</a>
-            <a class="btn btn-secondary" href="calculator.html">벙비 정산기</a>
-          </div>
-        </section>
-      </div>
-
-      <!-- 9) 푸터 노트 -->
-      <p class="report-foot reveal">
-        대화 원문은 저장되지 않아요 — 집계 숫자만 모아 만든 리포트예요.<br />
-        <a href="report-admin.html">운영진이신가요? 리포트 만들기 →</a>
-      </p>
-    </main>
-
-    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
-      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-      <a class="tab-item is-active" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
-      <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
-      <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-      <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
-    </nav>
-  </div>
-
-  <div id="chartTip" class="chart-tip" role="status" aria-live="polite"><strong id="tipValue"></strong><span id="tipLabel"></span></div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script>
-    "use strict";
-    /* ── Supabase (plain fetch REST) ─────────────────────── */
-    const SUPA = {
-      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
-      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
-    };
-    async function supaFetch(path, opts = {}) {
-      const res = await fetch(SUPA.url + path, {
-        ...opts,
-        headers: {
-          apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon,
-          "Content-Type": "application/json", ...(opts.headers || {})
-        }
-      });
-      if (!res.ok) {
-        let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
-        const err = new Error(msg || ("HTTP " + res.status)); err.status = res.status; throw err;
-      }
-      return res.status === 204 ? null : res.json();
-    }
-
-    /* ── 유틸 ─────────────────────────────────────────────── */
-    const $ = (id) => document.getElementById(id);
-    function escapeHTML(value) {
-      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
-    }
-    const nf = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR");
-    const WEEK_KO = ["월", "화", "수", "목", "금", "토", "일"];
-    function fmtDateK(dateStr) {
-      const p = String(dateStr || "").split("-");
-      if (p.length !== 3) return String(dateStr || "");
-      const js = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
-      return `${+p[1]}월 ${+p[2]}일 (${WEEK_KO[(js + 6) % 7]})`;
-    }
-
-    /* 순차 램프 (스펙 고정) */
-    const RAMP = ["#F4EEFB", "#E3D1F2", "#C9A5E4", "#A368D8", "#7B2BB0", "#5A1B80"];
-    const ZERO_COLOR = "#F5F3F7";
-    const SERIES = "#7B2BB0"; /* 팔레트 1번 */
-    function rampColor(v, max) {
-      if (!v) return ZERO_COLOR;
-      const r = v / (max || 1);
-      if (r <= 0.12) return RAMP[0];
-      if (r <= 0.28) return RAMP[1];
-      if (r <= 0.46) return RAMP[2];
-      if (r <= 0.64) return RAMP[3];
-      if (r <= 0.84) return RAMP[4];
-      return RAMP[5];
-    }
-
-    /* ── 공유 툴팁 ────────────────────────────────────────── */
-    const tipEl = $("chartTip");
-    let tipHideTimer = null;
-    function showTip(x, y, value, label) {
-      $("tipValue").textContent = value;
-      $("tipLabel").textContent = label;
-      const pad = 8;
-      const tx = Math.min(Math.max(x, 70), window.innerWidth - 70);
-      tipEl.style.left = tx + "px";
-      tipEl.style.top = Math.max(y, 54) - pad + "px";
-      tipEl.classList.add("is-visible");
-      clearTimeout(tipHideTimer);
-    }
-    function hideTip(delay) {
-      clearTimeout(tipHideTimer);
-      tipHideTimer = setTimeout(() => tipEl.classList.remove("is-visible"), delay || 0);
-    }
-
-    /* ── 데이터 로드 (우선순위: preview → supabase → 샘플) ── */
-    let liveRows = [];
-    async function loadData() {
-      const params = new URLSearchParams(location.search);
-      if (params.get("preview") === "1") {
-        try {
-          const draft = JSON.parse(localStorage.getItem("excer_report_draft") || "null");
-          if (draft && draft.totals) return { stats: draft, source: "preview" };
-        } catch (e) { /* 초안 파손 → 다음 소스로 */ }
-      }
-      try {
-        const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
-        if (Array.isArray(rows) && rows.length && rows[0].stats && rows[0].stats.totals) {
-          liveRows = rows.filter((r) => r.stats && r.stats.totals);
-          if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
-        }
-      } catch (e) { /* 미설치/네트워크 → 샘플로 */ }
-      try {
-        const res = await fetch("data/report-sample.json");
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        const stats = await res.json();
-        return { stats, source: "sample" };
-      } catch (e) {
-        return { stats: null, source: "none" };
-      }
-    }
-
-    /* ── 히어로 ───────────────────────────────────────────── */
-    function renderHero(st, source, row) {
-      $("periodLabel").textContent = st.periodLabel || "리포트";
-      document.title = "모임운영 커뮤니티 — 운영 대시보드 · " + (st.periodLabel || "");
-
-      const badge = $("sourceBadge");
-      badge.hidden = false;
-      if (source === "sample") { badge.className = "source-badge is-sample"; badge.textContent = "📎 예시 데이터 — 발행된 리포트가 아직 없어요"; }
-      else if (source === "preview") { badge.className = "source-badge is-preview"; badge.textContent = "👀 미리보기 — 발행 전 초안이에요"; }
-      else { badge.className = "source-badge is-live"; badge.textContent = "✅ 발행됨 · " + (row && row.updated_at ? row.updated_at.slice(0, 10) : ""); }
-
-      const t = st.totals;
-      const best = st.peaks && st.peaks.bestDay ? st.peaks.bestDay : null;
-      $("statTiles").innerHTML = `
-        <div class="stat-tile"><span>총 메시지</span><strong>${nf(t.messages)}</strong><small>${nf(t.days)}일 동안</small></div>
-        <div class="stat-tile"><span>활동 멤버</span><strong>${nf(t.activeMembers)}명</strong><small>한 마디라도 남긴 멤버</small></div>
-        <div class="stat-tile"><span>하루 평균</span><strong>${nf(t.avgPerDay)}개</strong><small>쉬는 날 포함 평균</small></div>
-        <div class="stat-tile"><span>최고 기록일</span><strong>${best ? nf(best.c) : "-"}</strong><small>${best ? escapeHTML(fmtDateK(best.d)) : "데이터 없음"}</small></div>`;
-    }
-
-    /* 기간 선택 (발행 리포트 여러 개) */
-    function renderPeriodSelect(currentId) {
-      const sel = $("periodSelect");
-      if (liveRows.length < 2) { sel.hidden = true; return; }
-      sel.hidden = false;
-      sel.innerHTML = liveRows.map((r) =>
-        `<option value="${r.id}"${r.id === currentId ? " selected" : ""}>${escapeHTML(r.period_label)}</option>`).join("");
-      sel.onchange = () => {
-        const row = liveRows.find((r) => String(r.id) === sel.value);
-        if (row) renderAll(row.stats, "live", row);
-      };
-    }
-
-    /* ── 랭킹 ─────────────────────────────────────────────── */
-    const MEDALS = ["🥇", "🥈", "🥉"];
-    function rankRowHTML(m, idx, max) {
-      const w = Math.max(1.2, (m.count / (max || 1)) * 100);
-      const medal = idx < 3 ? `<span class="rank-no is-medal">${MEDALS[idx]}</span>` : `<span class="rank-no">${idx + 1}</span>`;
-      return `
-        <div class="rank-row${idx < 3 ? " is-top" : ""}">
-          ${medal}
-          <div class="rank-main">
-            <div class="rank-name-line"><span class="rank-name">${escapeHTML(m.name)}</span><span class="rank-share">${escapeHTML(String(m.share))}%</span></div>
-            <div class="rank-bar-line">
-              <div class="rank-track" style="max-width:${w}%"><div class="rank-bar"></div></div>
-              <span class="rank-count">${nf(m.count)}</span>
+          <div class="sec-body" id="bodyRank">
+            <div class="card is-lg reveal">
+              <div class="rank-toolbar">
+                <label class="sr-only" for="rankMetric">랭킹 기준</label>
+                <select class="select-clean" id="rankMetric">
+                  <option value="total">총 채팅</option>
+                  <option value="rise">상승폭</option>
+                  <option value="steady">꾸준함 (활동일)</option>
+                  <option value="question">질문왕</option>
+                  <option value="reaction">리액션왕</option>
+                </select>
+                <span class="spacer"></span>
+                <label class="sr-only" for="memberSearch">구성원 검색</label>
+                <input class="search-input" id="memberSearch" type="search" placeholder="🔍 닉네임 검색" autocomplete="off" />
+              </div>
+              <div class="rank-list" id="rankList" aria-live="polite" aria-busy="true">
+                <div class="skeleton skeleton-line is-lg" style="width:88%"></div>
+                <div class="skeleton skeleton-line is-lg" style="width:72%"></div>
+                <div class="skeleton skeleton-line is-lg" style="width:58%"></div>
+              </div>
+              <div class="rank-foot"><button class="mini-btn" type="button" id="rankToggle" hidden></button></div>
+              <p class="chart-note" id="rankNote"></p>
             </div>
           </div>
-        </div>`;
-    }
-    function renderRank(members) {
-      const list = (members || []).filter((m) => m && m.count > 0);
-      const max = list.length ? list[0].count : 0;
-      $("rankTop").innerHTML = list.length
-        ? list.slice(0, 10).map((m, i) => rankRowHTML(m, i, max)).join("")
-        : `<div class="empty-note">이 기간에는 집계된 멤버가 없어요.</div>`;
-      const rest = list.slice(10);
-      const toggle = $("rankToggle");
-      const restEl = $("rankRest");
-      restEl.innerHTML = rest.map((m, i) => rankRowHTML(m, i + 10, max)).join("");
-      restEl.hidden = true;
-      toggle.hidden = rest.length === 0;
-      toggle.textContent = `전체 순위 보기 (${nf(list.length)}명)`;
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.onclick = () => {
-        const open = restEl.hidden;
-        restEl.hidden = !open;
-        toggle.setAttribute("aria-expanded", String(open));
-        toggle.textContent = open ? "접기" : `전체 순위 보기 (${nf(list.length)}명)`;
-      };
-    }
+        </div>
+      </section>
 
-    /* ── 명예의 전당 ─────────────────────────────────────── */
-    function computeBadges(st) {
-      const M = (st.members || []).filter((m) => m && m.count > 0);
-      const out = [];
-      const sumH = (m, a, b) => (m.hours || []).slice(a, b + 1).reduce((s, x) => s + (x || 0), 0);
-      const media = (m, k) => (m.media && m.media[k]) || 0;
-      const maxBy = (fn, min) => {
-        let best = null, bv = -1;
-        M.forEach((m) => { const v = fn(m) || 0; if (v > bv) { bv = v; best = m; } });
-        return best && bv >= min ? { m: best, v: bv } : null;
-      };
-      if (M[0]) out.push({ e: "🏆", t: "수다왕", n: M[0].name, d: `${nf(M[0].count)}개 · 점유율 ${M[0].share}%` });
-      const dawn = maxBy((m) => sumH(m, 0, 5), 30);
-      if (dawn) out.push({ e: "🌙", t: "새벽 반장", n: dawn.m.name, d: `새벽 0~5시에 ${nf(dawn.v)}개` });
-      const morning = maxBy((m) => sumH(m, 6, 9), 20);
-      if (morning) out.push({ e: "☀️", t: "아침형 인간", n: morning.m.name, d: `아침 6~9시에 ${nf(morning.v)}개` });
-      const owl = maxBy((m) => sumH(m, 22, 23), 20);
-      if (owl) out.push({ e: "🦉", t: "올빼미", n: owl.m.name, d: `밤 22~23시에 ${nf(owl.v)}개` });
-      const photo = maxBy((m) => media(m, "photo"), 5);
-      if (photo) out.push({ e: "📸", t: "포토왕", n: photo.m.name, d: `사진 ${nf(photo.v)}장` });
-      const emo = maxBy((m) => media(m, "emoticon"), 10);
-      if (emo) out.push({ e: "😆", t: "이모티콘 부자", n: emo.m.name, d: `이모티콘 ${nf(emo.v)}개` });
-      const link = maxBy((m) => media(m, "link"), 5);
-      if (link) out.push({ e: "🔗", t: "링크 수집가", n: link.m.name, d: `링크 ${nf(link.v)}개` });
-      let tmi = null;
-      M.forEach((m) => { if (m.count >= 50 && (!tmi || (m.avgLen || 0) > (tmi.avgLen || 0))) tmi = m; });
-      if (tmi && (tmi.avgLen || 0) >= 25) out.push({ e: "✍️", t: "TMI 장인", n: tmi.name, d: `평균 ${nf(tmi.avgLen)}자 (50개 이상 기준)` });
-      const att = maxBy((m) => m.activeDays || 0, 7);
-      if (att) out.push({ e: "📅", t: "출석왕", n: att.m.name, d: `${nf(att.v)}일 활동` });
-      const streak = maxBy((m) => m.streak || 0, 3);
-      if (streak) out.push({ e: "🔥", t: "열정 스트릭", n: streak.m.name, d: `${nf(streak.v)}일 연속 활동` });
-      return out;
-    }
-    function renderBadges(st) {
-      const badges = computeBadges(st);
-      $("badgeGrid").innerHTML = badges.length
-        ? badges.map((b) => `
-          <div class="badge-card">
-            <span class="badge-emoji" aria-hidden="true">${b.e}</span>
-            <span class="badge-body">
-              <span class="badge-title">${escapeHTML(b.t)}</span>
-              <span class="badge-name">${escapeHTML(b.n)}</span>
-              <span class="badge-desc">${escapeHTML(b.d)}</span>
-            </span>
-          </div>`).join("")
-        : `<div class="empty-note">조건을 채운 배지가 아직 없어요.</div>`;
-    }
+      <!-- 3. 명예의 전당 -->
+      <section class="section" id="secBadges">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">명예의 전당</span>
+              <h2>이 기간의 주인공들</h2>
+              <p>조건을 채운 배지만 보여드려요. 표본이 적은 배지는 아직 잠겨 있어요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyBadges">
+            <div class="badge-grid reveal" id="badgeGrid"></div>
+            <p class="chart-note">시간대·키워드·꾸준함 배지는 발행 기간 전체 기준, 활약왕·성장왕은 선택한 기간 기준이에요.</p>
+          </div>
+        </div>
+      </section>
 
-    /* ── 히트맵 ───────────────────────────────────────────── */
-    function renderHeatmap(heatmap) {
-      const grid = $("heatmap");
-      const rows = Array.isArray(heatmap) && heatmap.length === 7 ? heatmap : null;
-      if (!rows) { grid.innerHTML = ""; return; }
-      let max = 0;
-      rows.forEach((r) => r.forEach((v) => { if (v > max) max = v; }));
+      <!-- 4. 24시간 활동 시계 -->
+      <section class="section" id="secClock">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">시간대 리듬</span>
+              <h2>우리방 24시간 활동 시계</h2>
+              <p>바깥으로 길수록 그 시간대에 대화가 많았다는 뜻이에요. 12시가 위쪽 정오예요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyClock">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyClock">
+            <div class="clock-layout">
+              <div class="card is-lg reveal">
+                <div id="clockWrap" class="chart-anim"></div>
+                <details class="table-twin"><summary>표로 보기</summary><div id="clockTable"></div></details>
+              </div>
+              <div class="clock-side">
+                <div class="card reveal d1" id="clockFacts"></div>
+                <div class="card reveal d2">
+                  <h3 style="margin:0 0 12px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">시간대 구성</h3>
+                  <div class="hour-seg" id="hourSeg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      let html = `<span class="hm-corner" aria-hidden="true"></span>`;
-      for (let h = 0; h < 24; h++) {
-        html += `<span class="hm-hour" aria-hidden="true">${h % 6 === 0 || h === 23 ? h : ""}</span>`;
+      <!-- 5. 요일×시간 히트맵 -->
+      <section class="section" id="secHeatmap">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">요일 × 시간</span>
+              <h2>우리방이 뜨거워지는 순간</h2>
+              <p>진할수록 대화가 몰린 칸이에요. 셀을 짚으면 정확한 수가 떠요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyHeatmap">
+            <div class="card is-lg reveal">
+              <div class="hm-scroll chart-anim">
+                <div class="hm-grid" id="hmGrid" role="img" aria-label="요일과 시간대별 메시지 히트맵"></div>
+              </div>
+              <div class="hm-legend" id="hmLegend"></div>
+              <details class="table-twin"><summary>표로 보기</summary><div id="hmTable" class="twin-grid"></div></details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. 주간 추이 -->
+      <section class="section" id="secTrend">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">주간 추이</span>
+              <h2>주 단위로 본 우리방 온도 변화</h2>
+              <p>발행 기간 전체를 주 단위로 묶었어요. 보라 음영이 지금 보고 있는 기간이에요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyTrend">
+            <div class="card is-lg reveal">
+              <div class="trend-callout" id="trendCallout"></div>
+              <div id="trendWrap" class="chart-anim"></div>
+              <details class="table-twin"><summary>표로 보기</summary><div id="trendTable"></div></details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. 키워드 -->
+      <section class="section" id="secKeywords">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">키워드</span>
+              <h2>우리방을 달군 이야깃거리</h2>
+              <p>발행 기간 전체에서 자주 나온 단어예요. 원문 문장이 아니라 단어 빈도만 세요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyKeywords">
+            <div class="card is-lg reveal">
+              <div class="kw-cats" id="kwCats" role="group" aria-label="키워드 카테고리 필터"></div>
+              <div class="kw-field chart-anim" id="kwField"></div>
+            </div>
+            <div class="card reveal d1" style="margin-top:12px">
+              <h3 style="margin:0 0 4px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">주차별 인기 키워드</h3>
+              <p class="mood-cap" style="margin:0 0 12px; color:var(--gray); font-size:12px; font-weight:700">주마다 화제가 어떻게 옮겨갔는지 볼 수 있어요.</p>
+              <div class="kw-weekly" id="kwWeekly"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. 분위기 리포트 -->
+      <section class="section" id="secMood">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">분위기 리포트</span>
+              <h2>우리방 공기는 어땠나요?</h2>
+              <p>웃음·응원·하트의 비율과 대화가 얼마나 골고루 퍼졌는지 살펴봐요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMood">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyMood">
+            <div class="mood-grid">
+              <div class="card mood-card reveal" id="moodEmoji"></div>
+              <div class="card mood-card reveal d1" id="moodGini"></div>
+              <div class="card mood-card reveal d2" id="moodQa"></div>
+              <div class="card mood-card reveal d3" id="moodNew"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. 멤버 카드 -->
+      <section class="section" id="secMembers">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">멤버 카드</span>
+              <h2>한 명씩 자세히 보기</h2>
+              <p>멤버를 탭하면 미니 프로필이 열려요. 위 랭킹의 검색창과도 연동돼요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMembers">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyMembers">
+            <div class="member-layout">
+              <div class="card reveal"><div class="member-grid" id="memberGrid"></div></div>
+              <div class="card member-detail-card reveal d1" id="memberDetail"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. 리캡 카드 -->
+      <section class="section" id="secRecap">
+        <div class="container">
+          <div class="section-head is-center reveal">
+            <span class="eyebrow">리캡 카드</span>
+            <h2>한 장으로 남기는 우리방 기록</h2>
+            <p>이미지로 저장해서 채팅방에 바로 공유해보세요.</p>
+          </div>
+          <div class="recap-stage reveal">
+            <div class="recap-card" id="recapCard"></div>
+            <div class="recap-actions">
+              <button class="btn btn-primary" type="button" id="recapSaveBtn">🖼️ 이미지 저장</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. CTA -->
+      <section class="section" id="secCta">
+        <div class="container">
+          <div class="card is-lg is-soft cta-card reveal">
+            <span class="badge-soft">다음 리포트 예고</span>
+            <h2>다음 주 주인공은 누구일까요?</h2>
+            <p>오늘 한 마디만 남겨도 랭킹이 움직여요. 벙 소식과 정산도 잊지 마세요!</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="news.html">소식 보러 가기</a>
+              <a class="btn btn-secondary" href="calculator.html">벙비 정산하기</a>
+            </div>
+            <p class="cta-admin-note">운영진이신가요? <a href="report-admin.html">리포트 발행 도구</a>에서 새 리포트를 올릴 수 있어요.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="footer-logo">EXCER</span>
+          <p class="footer-tagline">
+            오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
+            필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
+          </p>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+        </div>
+        <nav class="footer-col" aria-label="푸터 메뉴">
+          <h4>바로가기</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">필독</a></li>
+            <li><a href="report.html">운영 대시보드</a></li>
+            <li><a href="calculator.html">정산기</a></li>
+            <li><a href="news.html">소식</a></li>
+            <li><a href="games.html">게임</a></li>
+          </ul>
+        </nav>
+        <div class="footer-col">
+          <h4>안내</h4>
+          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
+          <p>닉네임은 발행 시 마스킹을 선택할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item is-active" href="report.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+    <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div class="chart-tip" id="chartTip" role="status" aria-hidden="true"><span class="tv" id="tipValue"></span><span class="tl" id="tipLabel"></span></div>
+
+  <!-- 공통 셸 JS (v2-shell 그대로) -->
+  <script>
+    (function () {
+      "use strict";
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ── 1. topnav 스크롤 상태 ── */
+      var topnav = document.getElementById("topnav");
+      function syncNav() {
+        if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8);
       }
-      rows.forEach((row, d) => {
-        html += `<span class="hm-day${d >= 5 ? " is-weekend" : ""}">${WEEK_KO[d]}</span>`;
-        row.forEach((v, h) => {
-          html += `<span class="hm-cell" style="background:${rampColor(v, max)}" data-d="${d}" data-h="${h}" data-v="${v}" title="${WEEK_KO[d]} ${h}시 · ${nf(v)}개"></span>`;
+      window.addEventListener("scroll", syncNav, { passive: true });
+      syncNav();
+
+      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
+      var revealEls = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+        revealEls.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ── 3. 토스트 ── */
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400);
+      }
+
+      /* ── 4. 숫자 포맷 + 카운트업 ── */
+      function fmt(n, decimals) {
+        return Number(n).toLocaleString("ko-KR", {
+          minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
         });
-      });
-      grid.innerHTML = html;
+      }
+      function countUp(el, to, opts) {
+        if (!el) return;
+        opts = opts || {};
+        var dur = opts.duration || 900;
+        var dec = opts.decimals || 0;
+        var suffix = opts.suffix || "";
+        if (reduceMotion || dur <= 0) { el.textContent = fmt(to, dec) + suffix; return; }
+        var start = null;
+        function step(ts) {
+          if (start === null) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = fmt(to * eased, dec) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
 
-      $("hmLegend").innerHTML =
-        `<span>적음</span><i style="background:${ZERO_COLOR}"></i>` +
-        RAMP.map((c) => `<i style="background:${c}"></i>`).join("") +
-        `<span>많음</span>`;
+      /* ── 5. data-countup 자동 실행 ── */
+      var cuEls = document.querySelectorAll("[data-countup]");
+      function fire(el) {
+        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
+          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
+          suffix: el.getAttribute("data-countup-suffix") || ""
+        });
+      }
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        cuEls.forEach(fire);
+      } else {
+        var cuIo = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
+          });
+        }, { threshold: 0.4 });
+        cuEls.forEach(function (el) { cuIo.observe(el); });
+      }
 
-      // 셀 자체가 히트 타깃: 탭/호버 공용 툴팁
-      const onPoint = (e) => {
-        const cell = e.target.closest(".hm-cell");
-        if (!cell) { hideTip(80); return; }
-        const rect = cell.getBoundingClientRect();
-        showTip(rect.left + rect.width / 2, rect.top,
-          nf(cell.dataset.v) + "개",
-          WEEK_KO[+cell.dataset.d] + "요일 " + cell.dataset.h + "시");
+      window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
+    })();
+  </script>
+
+  <!-- ═══ REPORT-METRICS-BEGIN ═══
+       통계 스키마 v2 파생 지표 — 순수 함수 모듈 (DOM 무접촉, node 테스트 대상).
+       계산 정의는 specs/v2-stats-schema.md 의 "파생 지표" 절을 그대로 구현한다.
+       data = v2 통계 JSON, s = { i0, i1 } (data.days 인덱스 슬라이스) -->
+  <script>
+    (function (global) {
+      "use strict";
+
+      function pad2(n) { return (n < 10 ? "0" : "") + n; }
+      function toDateStr(y, m, d) { return y + "-" + pad2(m) + "-" + pad2(d); }
+      function addDays(dateStr, n) {
+        var p = dateStr.split("-");
+        var dt = new Date(+p[0], +p[1] - 1, +p[2] + n);
+        return toDateStr(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+      }
+      function dayDiff(a, b) { // b - a (일)
+        var pa = a.split("-"), pb = b.split("-");
+        return Math.round((Date.UTC(+pb[0], +pb[1] - 1, +pb[2]) - Date.UTC(+pa[0], +pa[1] - 1, +pa[2])) / 86400000);
+      }
+      function weekdayOf(dateStr) { // 0=월 … 6=일
+        var p = dateStr.split("-");
+        return (new Date(+p[0], +p[1] - 1, +p[2]).getDay() + 6) % 7;
+      }
+      function medianOf(arr) {
+        if (!arr.length) return 0;
+        var s = arr.slice().sort(function (a, b) { return a - b; });
+        var mid = s.length >> 1;
+        return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+      }
+
+      /* 기간 프리셋 — 기준일은 range.to (schema: "기준일은 range.to") */
+      function presetRange(data, key) {
+        var to = data.range.to, from = data.range.from;
+        if (key === "today") return { from: to, to: to };
+        if (key === "week") { // 기준일이 속한 주 (월요일 시작)
+          var monday = addDays(to, -weekdayOf(to));
+          return { from: monday < from ? from : monday, to: to };
+        }
+        if (key === "month") {
+          var first = to.slice(0, 8) + "01";
+          return { from: first < from ? from : first, to: to };
+        }
+        return { from: from, to: to }; // all
+      }
+
+      /* 기간 → days[] 인덱스 슬라이스 (범위 밖은 잘라냄, 겹침 없으면 null) */
+      function sliceIdx(data, from, to) {
+        var n = (data.days || []).length;
+        if (!n) return null;
+        var i0 = Math.max(0, dayDiff(data.range.from, from));
+        var i1 = Math.min(n - 1, dayDiff(data.range.from, to));
+        if (i1 < i0) return null;
+        return { i0: i0, i1: i1, len: i1 - i0 + 1, from: data.days[i0].d, to: data.days[i1].d };
+      }
+
+      /* 기간 KPI: 총 채팅/활동 멤버/1인 평균/일 평균 — days·members.daily 슬라이스 합산 */
+      function memberSums(data, s) {
+        return (data.members || []).map(function (m) {
+          var t = 0;
+          for (var i = s.i0; i <= s.i1; i++) t += m.daily[i] || 0;
+          return t;
+        });
+      }
+      function periodKPI(data, s) {
+        var total = 0, joins = 0;
+        for (var i = s.i0; i <= s.i1; i++) { total += data.days[i].c; joins += data.days[i].joins || 0; }
+        var sums = memberSums(data, s);
+        var active = sums.filter(function (v) { return v > 0; }).length;
+        return {
+          total: total,
+          joins: joins,
+          days: s.len,
+          activeMembers: active,
+          avgPerMember: active ? Math.round((total / active) * 10) / 10 : 0,
+          avgPerDay: Math.round((total / s.len) * 10) / 10,
+          sums: sums
+        };
+      }
+
+      /* 직전 동일 길이 기간 (이번 주 ↔ 지난주). 데이터가 모자라면 있는 만큼(partial) */
+      function prevWindow(data, s) {
+        var pi1 = s.i0 - 1;
+        if (pi1 < 0) return null;
+        var pi0 = s.i0 - s.len;
+        var partial = pi0 < 0;
+        if (partial) pi0 = 0;
+        return { i0: pi0, i1: pi1, len: pi1 - pi0 + 1, partial: partial, from: data.days[pi0].d, to: data.days[pi1].d };
+      }
+
+      /* 전 기간 대비 증감률(%): 동일 길이면 총합 비교, partial 이면 일평균 비교 */
+      function deltaPct(data, s, prev) {
+        if (!prev) return null;
+        var cur = periodKPI(data, s), pv = periodKPI(data, prev);
+        if (!prev.partial) {
+          if (pv.total <= 0) return null;
+          return { pct: Math.round(((cur.total - pv.total) / pv.total) * 100), basis: "total", prevTotal: pv.total };
+        }
+        if (pv.avgPerDay <= 0) return null;
+        return { pct: Math.round(((cur.avgPerDay - pv.avgPerDay) / pv.avgPerDay) * 100), basis: "avg", prevTotal: pv.total };
+      }
+
+      /* 신규 멤버: firstDate 가 기간 내 (전체 시작일과 같은 멤버는 '원년 멤버'로 보고 제외) */
+      function newMemberIdx(data, s) {
+        var from = data.days[s.i0].d, to = data.days[s.i1].d;
+        var out = [];
+        (data.members || []).forEach(function (m, i) {
+          if (m.firstDate && m.firstDate >= from && m.firstDate <= to && m.firstDate > data.range.from) out.push(i);
+        });
+        return out;
+      }
+
+      /* 복귀 멤버: 이번 기간 활동 > 0, 직전 기간 활동 0, firstDate 가 직전 기간 이전 */
+      function returningIdx(data, s, prev) {
+        if (!prev) return [];
+        var cur = memberSums(data, s), pv = memberSums(data, prev);
+        var prevFrom = data.days[prev.i0].d;
+        var out = [];
+        (data.members || []).forEach(function (m, i) {
+          if (cur[i] > 0 && pv[i] === 0 && m.firstDate && m.firstDate < prevFrom) out.push(i);
+        });
+        return out;
+      }
+
+      /* 기간 내 시간대 분포: days[].byHour 합산 (heatmap 재계산의 근간) */
+      function hourlyOf(data, s) {
+        var h = new Array(24).fill(0);
+        for (var i = s.i0; i <= s.i1; i++) {
+          var bh = data.days[i].byHour || [];
+          for (var k = 0; k < 24; k++) h[k] += bh[k] || 0;
+        }
+        return h;
+      }
+      function weekdayTotals(data, s) {
+        var w = new Array(7).fill(0);
+        for (var i = s.i0; i <= s.i1; i++) w[weekdayOf(data.days[i].d)] += data.days[i].c;
+        return w;
+      }
+      function heatmapOf(data, s) {
+        var g = [];
+        for (var r = 0; r < 7; r++) g.push(new Array(24).fill(0));
+        for (var i = s.i0; i <= s.i1; i++) {
+          var wd = weekdayOf(data.days[i].d), bh = data.days[i].byHour || [];
+          for (var k = 0; k < 24; k++) g[wd][k] += bh[k] || 0;
+        }
+        return g;
+      }
+      function peakOf(arr) { // 최대 (동률이면 앞 인덱스)
+        var bi = 0;
+        arr.forEach(function (v, i) { if (v > arr[bi]) bi = i; });
+        return { i: bi, v: arr[bi] };
+      }
+      function quietOf(arr) { // 최소 (동률이면 앞 인덱스)
+        var bi = 0;
+        arr.forEach(function (v, i) { if (v < arr[bi]) bi = i; });
+        return { i: bi, v: arr[bi] };
+      }
+
+      /* 주 단위 시계열 (월요일 경계) — 전체 기간 기준 */
+      function weeklySeries(data) {
+        var out = [], n = data.days.length;
+        var i = 0;
+        while (i < n) {
+          var start = i;
+          var wd = weekdayOf(data.days[i].d);
+          var end = Math.min(n - 1, i + (6 - wd));
+          var total = 0;
+          for (var k = start; k <= end; k++) total += data.days[k].c;
+          out.push({ i0: start, i1: end, from: data.days[start].d, to: data.days[end].d, total: total, days: end - start + 1 });
+          i = end + 1;
+        }
+        return out;
+      }
+
+      /* 상승 랭킹: (이번 기간 − 직전 기간) 상위 */
+      function risers(data, s, prev) {
+        if (!prev) return null;
+        var cur = memberSums(data, s), pv = memberSums(data, prev);
+        return (data.members || []).map(function (m, i) {
+          return { idx: i, name: m.name, delta: cur[i] - pv[i], cur: cur[i], prev: pv[i] };
+        }).sort(function (a, b) { return b.delta - a.delta || b.cur - a.cur; });
+      }
+
+      /* 기간 내 활동일수 */
+      function activeDaysOf(data, memberIdx, s) {
+        var m = data.members[memberIdx], n = 0;
+        for (var i = s.i0; i <= s.i1; i++) if ((m.daily[i] || 0) > 0) n += 1;
+        return n;
+      }
+
+      /* 시간대 유형: hours 분포 최빈 구간 — 새벽 0~5 / 아침 6~10 / 점심 11~14 / 저녁 17~21.
+         전체 메시지 30개 미만이면 판정 보류(null). */
+      var TIME_BUCKETS = [
+        { key: "dawn", label: "새벽형", icon: "🌙", a: 0, b: 5 },
+        { key: "morning", label: "아침형", icon: "🌅", a: 6, b: 10 },
+        { key: "lunch", label: "점심형", icon: "🥪", a: 11, b: 14 },
+        { key: "evening", label: "저녁형", icon: "🌆", a: 17, b: 21 }
+      ];
+      function timeType(member) {
+        if (!member || (member.count || 0) < 30 || !member.hours) return null;
+        var best = null;
+        TIME_BUCKETS.forEach(function (bk) {
+          var sum = 0;
+          for (var h = bk.a; h <= bk.b; h++) sum += member.hours[h] || 0;
+          if (!best || sum > best.sum) best = { key: bk.key, label: bk.label, icon: bk.icon, sum: sum };
+        });
+        return best && best.sum > 0 ? best : null;
+      }
+
+      /* 대화 집중도: 기간 내 활동 멤버들의 메시지 수 지니계수 → 라벨 */
+      function gini(values) {
+        var v = values.filter(function (x) { return x > 0; }).sort(function (a, b) { return a - b; });
+        var n = v.length;
+        if (n < 2) return 0;
+        var sum = 0, acc = 0;
+        v.forEach(function (x, i) { sum += x; acc += (2 * (i + 1) - n - 1) * x; });
+        if (!sum) return 0;
+        return Math.round((acc / (n * sum)) * 1000) / 1000;
+      }
+      function concentration(data, s) {
+        var g = gini(memberSums(data, s));
+        return { gini: g, label: g < 0.5 ? "골고루 수다" : "일부 집중", even: g < 0.5 };
+      }
+
+      /* 우리방 온도: 기간 일평균 vs 전체 기간 중앙값 → 0~100 게이지 (+36.5도 연출).
+         ratio 1.0(평소 수준) → 게이지 50 / 온도 36.5℃. */
+      function temperature(data, s) {
+        var med = medianOf((data.days || []).map(function (d) { return d.c; }));
+        var kpi = periodKPI(data, s);
+        var ratio = med > 0 ? kpi.avgPerDay / med : (kpi.avgPerDay > 0 ? 2 : 1);
+        var gauge = Math.max(0, Math.min(100, Math.round(ratio * 50)));
+        var temp = Math.round((36.5 + (ratio - 1) * 8) * 10) / 10;
+        temp = Math.max(30, Math.min(45, temp));
+        return { ratio: Math.round(ratio * 10000) / 10000, gauge: gauge, temp: temp, median: med, avg: kpi.avgPerDay };
+      }
+
+      /* 질문 대비 답변 비율: Σa / Σq (전체 기간 필드) */
+      function qaRatio(data) {
+        var q = 0, a = 0;
+        (data.members || []).forEach(function (m) { q += m.q || 0; a += m.a || 0; });
+        return { q: q, a: a, ratio: q > 0 ? Math.round((a / q) * 10) / 10 : null };
+      }
+
+      /* 분위기 메이커 후보: emoticon + photo + video + 짧은 리액션(a) 종합 상위 */
+      function moodMakers(data) {
+        return (data.members || []).map(function (m, i) {
+          var md = m.media || {};
+          return { idx: i, name: m.name, score: (md.emoticon || 0) + (md.photo || 0) + (md.video || 0) + (m.a || 0) };
+        }).sort(function (a, b) { return b.score - a.score; });
+      }
+
+      /* 랭킹: 기준별 정렬 리스트 [{idx,name,value,extra}] */
+      function rankBy(data, s, prev, metric) {
+        var M = data.members || [];
+        var sums = memberSums(data, s);
+        var list = [];
+        if (metric === "rise") {
+          var r = risers(data, s, prev);
+          if (!r) return null;
+          list = r.filter(function (x) { return x.cur > 0 || x.prev > 0; })
+            .map(function (x) { return { idx: x.idx, name: x.name, value: x.delta, extra: x.prev + " → " + x.cur }; });
+        } else if (metric === "steady") {
+          M.forEach(function (m, i) {
+            if (sums[i] <= 0) return;
+            list.push({ idx: i, name: m.name, value: activeDaysOf(data, i, s), extra: "연속 " + (m.streak || 0) + "일" });
+          });
+          list.sort(function (a, b) { return b.value - a.value || sums[b.idx] - sums[a.idx]; });
+        } else if (metric === "question") {
+          M.forEach(function (m, i) { if ((m.q || 0) > 0) list.push({ idx: i, name: m.name, value: m.q, extra: null }); });
+          list.sort(function (a, b) { return b.value - a.value; });
+        } else if (metric === "reaction") {
+          M.forEach(function (m, i) { if ((m.a || 0) > 0) list.push({ idx: i, name: m.name, value: m.a, extra: null }); });
+          list.sort(function (a, b) { return b.value - a.value; });
+        } else { // total
+          var totalAll = 0;
+          sums.forEach(function (v) { totalAll += v; });
+          M.forEach(function (m, i) {
+            if (sums[i] <= 0) return;
+            list.push({ idx: i, name: m.name, value: sums[i], extra: totalAll ? (Math.round((sums[i] / totalAll) * 1000) / 10) + "%" : null });
+          });
+          list.sort(function (a, b) { return b.value - a.value; });
+        }
+        return list;
+      }
+
+      /* 배지 — 최소 표본 미달 시 제외 (스키마 배지 목록 그대로) */
+      function badges(data, s, prev) {
+        var M = data.members || [];
+        var out = [];
+        if (!M.length) return out;
+        var sums = memberSums(data, s);
+        function top(fn, min) {
+          var bi = -1, bv = -1;
+          M.forEach(function (m, i) {
+            var v = fn(m, i) || 0;
+            if (v > bv) { bv = v; bi = i; }
+          });
+          return bi >= 0 && bv >= min ? { idx: bi, name: M[bi].name, v: bv } : null;
+        }
+        var sumH = function (m, a, b) {
+          var t = 0;
+          for (var h = a; h <= b; h++) t += (m.hours || [])[h] || 0;
+          return t;
+        };
+        var t;
+        if ((t = top(function (m, i) { return sums[i]; }, 20))) out.push({ icon: "🏆", title: "활약왕", idx: t.idx, name: t.name, desc: "이 기간 " + t.v.toLocaleString("ko-KR") + "마디" });
+        var rs = risers(data, s, prev);
+        if (rs && rs.length && rs[0].delta >= 10) out.push({ icon: "🚀", title: "성장왕", idx: rs[0].idx, name: rs[0].name, desc: "직전 기간보다 +" + rs[0].delta.toLocaleString("ko-KR") });
+        if ((t = top(function (m) { return sumH(m, 0, 5); }, 30))) out.push({ icon: "🌙", title: "새벽반", idx: t.idx, name: t.name, desc: "새벽 0~5시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return sumH(m, 6, 10); }, 30))) out.push({ icon: "🌅", title: "아침반", idx: t.idx, name: t.name, desc: "아침 6~10시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return sumH(m, 17, 21); }, 30))) out.push({ icon: "🌆", title: "퇴근반", idx: t.idx, name: t.name, desc: "저녁 17~21시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return (m.kw || {})["운동"]; }, 10))) out.push({ icon: "💪", title: "운동 장인", idx: t.idx, name: t.name, desc: "운동 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return (m.kw || {})["식단"]; }, 10))) out.push({ icon: "🥗", title: "식단 장인", idx: t.idx, name: t.name, desc: "식단 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return (m.kw || {})["벙"]; }, 10))) out.push({ icon: "🍻", title: "벙 지킴이", idx: t.idx, name: t.name, desc: "벙 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return m.streak; }, 5))) out.push({ icon: "🔥", title: "꾸준함", idx: t.idx, name: t.name, desc: t.v.toLocaleString("ko-KR") + "일 연속 활동" });
+        if ((t = top(function (m) { return m.welcome; }, 2))) out.push({ icon: "🧚", title: "환영요정", idx: t.idx, name: t.name, desc: "새 멤버 환영 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return ((m.media || {}).link || 0) + ((m.kw || {})["정보"] || 0); }, 10))) out.push({ icon: "🔗", title: "정보공유왕", idx: t.idx, name: t.name, desc: "링크·정보 " + t.v.toLocaleString("ko-KR") + "건" });
+        if ((t = top(function (m) { return m.a; }, 30))) out.push({ icon: "⚡", title: "리액션왕", idx: t.idx, name: t.name, desc: "답변·리액션 " + t.v.toLocaleString("ko-KR") + "번" });
+        return out;
+      }
+
+      global.ReportMetrics = {
+        pad2: pad2, addDays: addDays, dayDiff: dayDiff, weekdayOf: weekdayOf, medianOf: medianOf,
+        presetRange: presetRange, sliceIdx: sliceIdx,
+        periodKPI: periodKPI, memberSums: memberSums,
+        prevWindow: prevWindow, deltaPct: deltaPct,
+        newMemberIdx: newMemberIdx, returningIdx: returningIdx,
+        hourlyOf: hourlyOf, weekdayTotals: weekdayTotals, heatmapOf: heatmapOf,
+        peakOf: peakOf, quietOf: quietOf,
+        weeklySeries: weeklySeries, risers: risers, activeDaysOf: activeDaysOf,
+        timeType: timeType, TIME_BUCKETS: TIME_BUCKETS,
+        gini: gini, concentration: concentration, temperature: temperature,
+        qaRatio: qaRatio, moodMakers: moodMakers, rankBy: rankBy, badges: badges
       };
-      grid.onpointermove = onPoint;
-      grid.onpointerdown = onPoint;
-      grid.onpointerleave = () => hideTip(120);
+    })(typeof window !== "undefined" ? window : globalThis);
+  </script>
+  <!-- ═══ REPORT-METRICS-END ═══ -->
 
-      // 표 트윈 (요일 합계 + 시간대 합계)
-      const daySum = rows.map((r) => r.reduce((s, x) => s + x, 0));
-      const hourSum = [];
-      for (let h = 0; h < 24; h++) hourSum.push(rows.reduce((s, r) => s + (r[h] || 0), 0));
-      $("hmTable").innerHTML =
-        `<table><thead><tr><th scope="col">요일</th><th scope="col">메시지</th></tr></thead><tbody>` +
-        daySum.map((v, d) => `<tr><td>${WEEK_KO[d]}요일</td><td>${nf(v)}</td></tr>`).join("") +
-        `</tbody></table>` +
-        `<table><thead><tr><th scope="col">시간대</th><th scope="col">메시지</th></tr></thead><tbody>` +
-        hourSum.map((v, h) => `<tr><td>${h}시</td><td>${nf(v)}</td></tr>`).join("") +
-        `</tbody></table>`;
-    }
+  <!-- 페이지 로직 (렌더링) -->
+  <script>
+    (function () {
+      "use strict";
+      const RM = window.ReportMetrics;
+      const $ = (id) => document.getElementById(id);
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    /* ── 일별 추이 (SVG 영역+라인) ────────────────────────── */
-    function niceCeil(v) {
-      if (v <= 10) return 10;
-      const pow = Math.pow(10, Math.floor(Math.log10(v)));
-      for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= v) return m * pow; }
-      return 10 * pow;
-    }
-    function renderTrend(daily, peaks) {
-      const wrap = $("trendWrap");
-      const data = Array.isArray(daily) ? daily : [];
-      if (data.length < 2) { wrap.innerHTML = `<div class="empty-note">추이를 그릴 데이터가 부족해요.</div>`; return; }
-
-      const W = 720, Hh = 250, L = 46, R = 16, T = 16, B = 34;
-      const pw = W - L - R, ph = Hh - T - B;
-      const ymax = niceCeil(Math.max(...data.map((e) => e.c), 1));
-      const x = (i) => L + (i * pw) / (data.length - 1);
-      const y = (v) => T + ph - (v / ymax) * ph;
-
-      // 주말 세로 띠
-      let bands = "";
-      const half = pw / (data.length - 1) / 2;
-      data.forEach((e, i) => {
-        const wd = ChatWeekday(e.d);
-        if (wd >= 5) bands += `<rect x="${(x(i) - half).toFixed(1)}" y="${T}" width="${(half * 2).toFixed(1)}" height="${ph}" fill="#F4EEFB" opacity="0.55"/>`;
-      });
-
-      // 그리드 + y눈금 (깔끔한 수)
-      let grid = "", yticks = "";
-      for (let g = 0; g <= 4; g++) {
-        const gv = (ymax / 4) * g, gy = y(gv);
-        grid += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(95,0,128,0.10)" stroke-width="1"/>`;
-        yticks += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#8D84A0">${nf(gv)}</text>`;
+      function escapeHTML(value) {
+        const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+        return String(value).replace(/[&<>"']/g, (c) => entities[c]);
+      }
+      const nf = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR");
+      const nf1 = (n) => Number(n).toLocaleString("ko-KR", { maximumFractionDigits: 1 });
+      const WEEK_KO = ["월", "화", "수", "목", "금", "토", "일"];
+      function fmtDateK(dateStr) {
+        const p = String(dateStr || "").split("-");
+        if (p.length !== 3) return String(dateStr || "");
+        return `${+p[1]}.${+p[2]}`;
+      }
+      function fmtDateFull(dateStr) {
+        const p = String(dateStr || "").split("-");
+        if (p.length !== 3) return String(dateStr || "");
+        return `${+p[1]}월 ${+p[2]}일 (${WEEK_KO[RM.weekdayOf(dateStr)]})`;
       }
 
-      // 라인/영역 경로
-      let lineP = "", areaP = `M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`;
-      data.forEach((e, i) => {
-        const px = x(i).toFixed(1), py = y(e.c).toFixed(1);
-        lineP += (i ? " L " : "M ") + px + " " + py;
-        areaP += ` L ${px} ${py}`;
-      });
-      areaP += ` L ${x(data.length - 1).toFixed(1)} ${y(0).toFixed(1)} Z`;
-
-      // x눈금: ~6개 + 주말 강조
-      const step = Math.max(1, Math.ceil(data.length / 6));
-      let xticks = "";
-      data.forEach((e, i) => {
-        if (i % step !== 0 && i !== data.length - 1) return;
-        const wd = ChatWeekday(e.d);
-        const wk = wd >= 5;
-        const p = e.d.split("-");
-        xticks += `<text x="${x(i).toFixed(1)}" y="${Hh - 12}" text-anchor="middle" font-size="10.5" font-weight="${wk ? 900 : 700}" fill="${wk ? "#473A58" : "#8D84A0"}">${+p[1]}/${+p[2]}${wk ? " " + WEEK_KO[wd] : ""}</text>`;
-      });
-
-      // 피크 직접 라벨 (툴팁 없이도 값 확인 가능)
-      let peakMark = "";
-      const bi = peaks && peaks.bestDay ? data.findIndex((e) => e.d === peaks.bestDay.d) : -1;
-      if (bi >= 0) {
-        const px = x(bi), py = y(data[bi].c);
-        const anchor = bi > data.length * 0.8 ? "end" : (bi < data.length * 0.2 ? "start" : "middle");
-        peakMark = `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>` +
-          `<text x="${px.toFixed(1)}" y="${(py - 10).toFixed(1)}" text-anchor="${anchor}" font-size="11.5" font-weight="900" fill="#1D1128">${nf(data[bi].c)}개</text>`;
+      /* 차트 팔레트 (스펙 고정) */
+      const PALETTE = ["#7B2BB0", "#1E8E68", "#A8861D", "#2F6FB0", "#C43D63"];
+      const RAMP = ["#F3E8FF", "#D9B3EC", "#B980D9", "#8F3FBF", "#5F0080"];
+      const ZERO_COLOR = "#F5F3F7";
+      const CAT_COLOR = { "운동": "#1E8E68", "식단": "#A8861D", "벙": "#7B2BB0", "정보": "#2F6FB0" };
+      const CAT_SOFT = { "운동": "rgba(30,142,104,0.13)", "식단": "rgba(168,134,29,0.13)", "벙": "rgba(123,43,176,0.11)", "정보": "rgba(47,111,176,0.12)" };
+      function rampColor(v, max) {
+        if (!v) return ZERO_COLOR;
+        const r = v / (max || 1);
+        if (r <= 0.16) return RAMP[0];
+        if (r <= 0.36) return RAMP[1];
+        if (r <= 0.58) return RAMP[2];
+        if (r <= 0.82) return RAMP[3];
+        return RAMP[4];
       }
 
-      wrap.innerHTML = `
-        <svg viewBox="0 0 ${W} ${Hh}" role="img" tabindex="0"
-             aria-label="일별 메시지 추이. 총 ${data.length}일. 좌우 화살표 키로 날짜별 값을 확인할 수 있어요.">
-          ${bands}${grid}${yticks}
-          <path d="${areaP}" fill="${SERIES}" opacity="0.1"/>
-          <path d="${lineP}" fill="none" stroke="${SERIES}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          ${peakMark}${xticks}
-          <g id="crosshair" opacity="0">
-            <line id="chLine" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(95,0,128,0.35)" stroke-width="1"/>
-            <circle id="chDot" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>
-          </g>
-          <rect id="chOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent"/>
+      /* ── 공유 툴팁 ── */
+      const tipEl = $("chartTip");
+      let tipHideTimer = null;
+      function showTip(x, y, value, label) {
+        $("tipValue").textContent = value;
+        $("tipLabel").textContent = label;
+        tipEl.style.left = Math.min(Math.max(x, 84), window.innerWidth - 84) + "px";
+        tipEl.style.top = Math.max(y, 58) + "px";
+        tipEl.classList.add("is-visible");
+        tipEl.setAttribute("aria-hidden", "false");
+        clearTimeout(tipHideTimer);
+      }
+      function hideTip(delay) {
+        clearTimeout(tipHideTimer);
+        tipHideTimer = setTimeout(() => {
+          tipEl.classList.remove("is-visible");
+          tipEl.setAttribute("aria-hidden", "true");
+        }, delay || 0);
+      }
+
+      function animateIn(el) {
+        if (!el) return;
+        el.classList.remove("is-in");
+        if (reduceMotion) { el.classList.add("is-in"); return; }
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("is-in")));
+      }
+
+      /* ── Supabase ── */
+      const SUPA = {
+        url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
+        anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
+      };
+      async function supaFetch(path) {
+        const res = await fetch(SUPA.url + path, {
+          headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon }
+        });
+        if (!res.ok) { const err = new Error("HTTP " + res.status); err.status = res.status; throw err; }
+        return res.json();
+      }
+
+      /* ── 상태 ── */
+      const state = {
+        data: null, source: "none", row: null, legacy: false,
+        preset: "week", slice: null, prev: null,
+        rankMetric: "total", search: "", rankOpen: false,
+        selectedMember: -1, kwCat: "all", badgeList: []
+      };
+      let liveRows = [];
+
+      function isV2(stats) { return stats && stats.v === 2 && Array.isArray(stats.days) && Array.isArray(stats.members); }
+      function isV1(stats) { return stats && stats.totals && !isV2(stats); }
+
+      /* v1 → v2 근사 어댑터 (가능한 지표만; legacy 플래그로 안내) */
+      function adaptV1(st) {
+        const daily = Array.isArray(st.daily) ? st.daily : [];
+        const hourly = Array.isArray(st.hourly) ? st.hourly : new Array(24).fill(0);
+        const days = daily.map((e) => ({ d: e.d, c: e.c || 0, byHour: null, joins: 0 }));
+        const from = days.length ? days[0].d : (st.range && st.range.from) || "";
+        const to = days.length ? days[days.length - 1].d : (st.range && st.range.to) || "";
+        return {
+          v: 1, legacy: true,
+          periodLabel: st.periodLabel || "구버전 리포트",
+          range: { from, to },
+          generatedAt: st.generatedAt || "",
+          maskNames: !!st.maskNames,
+          days, hourlyAll: hourly,
+          members: (st.members || []).map((m) => ({
+            name: m.name, count: m.count || 0, daily: null, hours: m.hours || null,
+            weekdays: null, q: m.q || 0, a: m.a || 0, welcome: 0,
+            media: m.media || {}, avgLen: m.avgLen || 0, streak: m.streak || 0,
+            activeDays: m.activeDays || 0, kw: null, firstDate: "", lastDate: "",
+            share: m.share
+          })),
+          heatmap: Array.isArray(st.heatmap) && st.heatmap.length === 7 ? st.heatmap : null,
+          keywords: (st.keywords || []).map((k) => ({ w: k.w, c: k.c, cat: null })),
+          weeklyKeywords: [], emojiStats: null,
+          newMembers: { count: (st.totals && st.totals.newMembers) || 0, avgFirstWeekMsgs: 0 },
+          meta: { totalMessages: (st.totals && st.totals.messages) || 0 },
+          totalsV1: st.totals || {}
+        };
+      }
+
+      /* ── 데이터 로드: preview → 발행본 → 샘플 ── */
+      async function loadData() {
+        const params = new URLSearchParams(location.search);
+        if (params.get("preview") === "1") {
+          try {
+            const draft = JSON.parse(localStorage.getItem("excer_report_draft") || "null");
+            if (isV2(draft) || isV1(draft)) return { stats: draft, source: "preview" };
+          } catch (e) { /* 파손 → 다음 소스 */ }
+        }
+        try {
+          const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
+          liveRows = (rows || []).filter((r) => isV2(r.stats) || isV1(r.stats));
+          if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
+        } catch (e) { /* 미설치/네트워크 → 샘플 */ }
+        try {
+          const res = await fetch("data/report-sample.json");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return { stats: await res.json(), source: "sample" };
+        } catch (e) {
+          return { stats: null, source: "none" };
+        }
+      }
+
+      /* ═══════════ 렌더링 ═══════════ */
+
+      const PRESET_WORD = { today: "오늘", week: "이번 주", month: "이번 달", all: "전 기간", custom: "이 기간" };
+
+      function renderHero() {
+        const st = state.data;
+        document.title = "EXCER — 운영 대시보드 · " + (st.periodLabel || "");
+        const badge = $("sourceBadgeText");
+        if (state.source === "sample") badge.textContent = "📎 예시 데이터 · " + (st.periodLabel || "");
+        else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 · " + (st.periodLabel || "");
+        else badge.textContent = "✅ " + (st.periodLabel || "리포트");
+        $("maskNote").hidden = !st.maskNames;
+        $("pillBase").textContent = fmtDateK(st.range.to);
+        const gen = String(st.generatedAt || "").slice(0, 10);
+        $("pillGenWrap").hidden = !gen;
+        $("pillGen").textContent = gen;
+
+        const sel = $("reportSelect");
+        if (state.source === "live" && liveRows.length >= 2) {
+          sel.hidden = false;
+          sel.innerHTML = liveRows.map((r) =>
+            `<option value="${r.id}"${state.row && r.id === state.row.id ? " selected" : ""}>${escapeHTML(r.period_label)}</option>`).join("");
+        } else sel.hidden = true;
+
+        // 직접 선택 입력 한계
+        $("customFrom").min = st.range.from; $("customFrom").max = st.range.to;
+        $("customTo").min = st.range.from; $("customTo").max = st.range.to;
+        if (!$("customFrom").value) $("customFrom").value = st.range.from;
+        if (!$("customTo").value) $("customTo").value = st.range.to;
+      }
+
+      function tempDescOf(ratio) {
+        if (ratio >= 1.4) return "펄펄 끓었어요 🔥";
+        if (ratio >= 1.12) return "평소보다 뜨거웠어요 🔥";
+        if (ratio >= 0.88) return "평소만큼 도란도란 ☕";
+        if (ratio >= 0.6) return "조금 차분했어요 🍃";
+        return "조용한 휴식기였어요 😴";
+      }
+
+      function gaugeSVG(gauge) {
+        // 반원 게이지: 180° 아크, 트랙 라벤더 + 채움 보라
+        const cx = 110, cy = 104, r = 86, sw = 17;
+        const arc = (pct) => {
+          const a = Math.PI * (1 - pct); // 180°→0°
+          const x = cx + r * Math.cos(a), y = cy - r * Math.sin(a);
+          const large = 0;
+          return `M ${cx - r} ${cy} A ${r} ${r} 0 ${large} 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
+        };
+        const pct = Math.max(0.02, Math.min(1, gauge / 100));
+        return `<svg class="temp-gauge" viewBox="0 0 220 116" role="img" aria-label="우리방 온도 게이지 ${gauge}점 (100점 만점)">
+          <path d="${arc(1)}" fill="none" stroke="#F3E8FF" stroke-width="${sw}" stroke-linecap="round"/>
+          <path d="${arc(pct)}" fill="none" stroke="url(#tempGrad)" stroke-width="${sw}" stroke-linecap="round"/>
+          <defs><linearGradient id="tempGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#B980D9"/><stop offset="1" stop-color="#5F0080"/>
+          </linearGradient></defs>
         </svg>`;
-
-      // 크로스헤어 + 툴팁 (호버/탭/키보드)
-      const svg = wrap.querySelector("svg");
-      const cross = svg.querySelector("#crosshair");
-      const chLine = svg.querySelector("#chLine");
-      const chDot = svg.querySelector("#chDot");
-      const overlay = svg.querySelector("#chOverlay");
-      let focusIdx = -1;
-
-      function setIdx(i, viaKeyboard) {
-        focusIdx = Math.max(0, Math.min(data.length - 1, i));
-        const e = data[focusIdx];
-        const px = x(focusIdx), py = y(e.c);
-        cross.setAttribute("opacity", "1");
-        chLine.setAttribute("x1", px); chLine.setAttribute("x2", px);
-        chDot.setAttribute("cx", px); chDot.setAttribute("cy", py);
-        const rect = svg.getBoundingClientRect();
-        const sx = rect.left + (px / W) * rect.width;
-        const sy = rect.top + (py / Hh) * rect.height;
-        showTip(sx, sy, nf(e.c) + "개", fmtDateK(e.d));
-        if (viaKeyboard) svg.setAttribute("aria-label", `${fmtDateK(e.d)} 메시지 ${nf(e.c)}개`);
       }
-      function clearIdx() { cross.setAttribute("opacity", "0"); hideTip(120); }
 
-      overlay.addEventListener("pointermove", (ev) => {
-        const rect = svg.getBoundingClientRect();
-        const vx = ((ev.clientX - rect.left) / rect.width) * W;
-        setIdx(Math.round(((vx - L) / pw) * (data.length - 1)), false);
-      });
-      overlay.addEventListener("pointerdown", (ev) => {
-        const rect = svg.getBoundingClientRect();
-        const vx = ((ev.clientX - rect.left) / rect.width) * W;
-        setIdx(Math.round(((vx - L) / pw) * (data.length - 1)), false);
-      });
-      overlay.addEventListener("pointerleave", clearIdx);
-      svg.addEventListener("keydown", (ev) => {
-        if (ev.key === "ArrowRight") { ev.preventDefault(); setIdx(focusIdx < 0 ? 0 : focusIdx + 1, true); }
-        else if (ev.key === "ArrowLeft") { ev.preventDefault(); setIdx(focusIdx < 0 ? data.length - 1 : focusIdx - 1, true); }
-        else if (ev.key === "Escape") clearIdx();
-      });
-      svg.addEventListener("blur", clearIdx);
+      function renderPulse() {
+        const card = $("pulseCard");
+        const st = state.data, s = state.slice;
+        if (state.legacy) {
+          const t = st.totalsV1;
+          card.removeAttribute("aria-busy");
+          card.innerHTML = `
+            <div class="temp-wrap">
+              ${gaugeSVG(50)}
+              <div class="temp-value">-<small>℃</small></div>
+              <div class="temp-label">우리방 온도</div>
+              <div class="temp-desc">구버전 리포트에서는 계산할 수 없어요</div>
+            </div>
+            <div class="pulse-kpis">
+              <div class="kpi"><span class="kpi-label">총 채팅</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">발행 기간 전체</span></div>
+              <div class="kpi"><span class="kpi-label">활동 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
+              <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
+              <div class="kpi"><span class="kpi-label">하루 평균</span><strong class="kpi-value"><span id="pkDelta">0</span><small>건</small></strong><span class="kpi-delta">쉬는 날 포함</span></div>
+            </div>`;
+          EXCER.countUp($("pkTotal"), t.messages || 0);
+          EXCER.countUp($("pkMembers"), t.activeMembers || 0);
+          EXCER.countUp($("pkAvgM"), t.activeMembers ? Math.round((t.messages || 0) / t.activeMembers) : 0);
+          EXCER.countUp($("pkDelta"), t.avgPerDay || 0);
+          return;
+        }
+        const kpi = RM.periodKPI(st, s);
+        const temp = RM.temperature(st, s);
+        const delta = RM.deltaPct(st, s, state.prev);
+        let deltaHTML;
+        if (delta) {
+          const up = delta.pct >= 0;
+          const basis = delta.basis === "avg" ? "일평균 기준" : "직전 " + s.len + "일 대비";
+          deltaHTML = `<strong class="kpi-value" style="color:${up ? "var(--mint)" : "var(--pink)"}">${up ? "▲" : "▼"} <span id="pkDelta">0</span><small>%</small></strong><span class="kpi-delta">${escapeHTML(basis)}</span>`;
+        } else {
+          deltaHTML = `<strong class="kpi-value">—</strong><span class="kpi-delta">비교할 직전 기간이 없어요</span>`;
+        }
+        card.removeAttribute("aria-busy");
+        card.innerHTML = `
+          <div class="temp-wrap">
+            ${gaugeSVG(temp.gauge)}
+            <div class="temp-value"><span id="tempNum">0</span><small>℃</small></div>
+            <div class="temp-label">우리방 온도 · 평소(중앙값 ${nf1(temp.median)}건/일) 대비</div>
+            <div class="temp-desc">${escapeHTML(tempDescOf(temp.ratio))}</div>
+          </div>
+          <div class="pulse-kpis">
+            <div class="kpi"><span class="kpi-label">총 채팅</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">${escapeHTML(PRESET_WORD[state.preset])} ${s.len}일</span></div>
+            <div class="kpi"><span class="kpi-label">활동 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
+            <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
+            <div class="kpi"><span class="kpi-label">전 기간 대비</span>${deltaHTML}</div>
+          </div>`;
+        EXCER.countUp($("tempNum"), temp.temp, { decimals: 1 });
+        EXCER.countUp($("pkTotal"), kpi.total);
+        EXCER.countUp($("pkMembers"), kpi.activeMembers);
+        EXCER.countUp($("pkAvgM"), Math.round(kpi.avgPerMember));
+        if (delta) EXCER.countUp($("pkDelta"), Math.abs(delta.pct));
+      }
 
-      // 표 트윈
-      $("trendTable").innerHTML =
-        `<table><thead><tr><th scope="col">날짜</th><th scope="col">메시지</th></tr></thead><tbody>` +
-        data.map((e) => `<tr><td>${escapeHTML(fmtDateK(e.d))}</td><td>${nf(e.c)}</td></tr>`).join("") +
-        `</tbody></table>`;
-    }
-    function ChatWeekday(dateStr) {
-      const p = String(dateStr).split("-");
-      return (new Date(+p[0], +p[1] - 1, +p[2]).getDay() + 6) % 7;
-    }
+      function kpiMiniCard(ic, lb, vl, unit, sub) {
+        return `<div class="card kpi-mini card-lift"><span class="ic" aria-hidden="true">${ic}</span><span class="lb">${lb}</span><span class="vl">${vl}<small>${unit}</small></span><span class="sub">${sub}</span></div>`;
+      }
+      function renderHighlights() {
+        const st = state.data, s = state.slice;
+        $("hlTitle").textContent = PRESET_WORD[state.preset] + " 우리방 활약";
+        const row = $("kpiRow");
+        row.removeAttribute("aria-busy");
+        if (state.legacy) {
+          const hourly = st.hourlyAll || [];
+          const pk = RM.peakOf(hourly.length ? hourly : [0]), qt = RM.quietOf(hourly.length ? hourly : [0]);
+          const wt = st.heatmap ? st.heatmap.map((r) => r.reduce((x, y) => x + y, 0)) : null;
+          const pw = wt ? RM.peakOf(wt) : null;
+          row.innerHTML = [
+            kpiMiniCard("🌱", "신규 참여자", nf(st.newMembers.count), "명", "발행 기간 전체"),
+            kpiMiniCard("👋", "복귀 참여자", "—", "", "새 리포트에서 열려요"),
+            kpiMiniCard("📅", "가장 활발한 요일", pw ? WEEK_KO[pw.i] + "요일" : "—", "", pw ? nf(pw.v) + "건" : ""),
+            kpiMiniCard("⏰", "가장 활발한 시간대", hourly.length ? pk.i + "시" : "—", "", hourly.length ? nf(pk.v) + "건" : ""),
+            kpiMiniCard("🤫", "조용했던 시간대", hourly.length ? qt.i + "시" : "—", "", hourly.length ? nf(qt.v) + "건" : ""),
+            kpiMiniCard("💬", "일평균 채팅", nf(st.totalsV1.avgPerDay || 0), "건", "쉬는 날 포함")
+          ].join("");
+          return;
+        }
+        const kpi = RM.periodKPI(st, s);
+        const newIdx = RM.newMemberIdx(st, s);
+        const retIdx = RM.returningIdx(st, s, state.prev);
+        const hourly = RM.hourlyOf(st, s);
+        const wt = RM.weekdayTotals(st, s);
+        const pkH = RM.peakOf(hourly), qtH = RM.quietOf(hourly), pkW = RM.peakOf(wt);
+        row.innerHTML = [
+          kpiMiniCard("🌱", "신규 참여자", nf(newIdx.length), "명", kpi.joins ? "입장 이벤트 " + nf(kpi.joins) + "번" : "첫 등장 기준"),
+          kpiMiniCard("👋", "복귀 참여자", state.prev ? nf(retIdx.length) : "—", state.prev ? "명" : "", state.prev ? "직전 기간엔 조용했어요" : "비교 기간이 없어요"),
+          kpiMiniCard("📅", "가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건"),
+          kpiMiniCard("⏰", "가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건"),
+          kpiMiniCard("🤫", "조용했던 시간대", qtH.i + "시", "", nf(qtH.v) + "건"),
+          kpiMiniCard("💬", "일평균 채팅", nf1(kpi.avgPerDay), "건", "쉬는 날 포함 평균")
+        ].join("");
+      }
 
-    /* ── 재미 통계 ────────────────────────────────────────── */
-    function renderFun(st) {
-      const t = st.totals || {};
-      const pk = st.peaks || {};
-      const tiles = [];
-      if (pk.bestDay) tiles.push({ e: "🔥", k: "가장 뜨거웠던 날", v: fmtDateK(pk.bestDay.d), s: nf(pk.bestDay.c) + "개" });
-      if (pk.quietDay) tiles.push({ e: "😴", k: "가장 조용했던 날", v: fmtDateK(pk.quietDay.d), s: nf(pk.quietDay.c) + "개" });
-      if (pk.bestHour != null) tiles.push({ e: "⏰", k: "피크 시간대", v: pk.bestHour + "시", s: "이 시간에 폰을 놓지 못해요" });
-      tiles.push({ e: "👋", k: "새로 온 멤버", v: nf(t.newMembers) + "명", s: "이번 기간 입장 기준" });
-      tiles.push({ e: "📸", k: "공유된 사진", v: nf(t.photos) + "장", s: "동영상 " + nf(t.videos) + "개" });
-      tiles.push({ e: "😆", k: "이모티콘", v: nf(t.emoticons) + "개", s: "말보다 빠른 리액션" });
-      tiles.push({ e: "🔗", k: "공유된 링크", v: nf(t.links) + "개", s: "맛집·예약·공지 링크" });
-      $("funGrid").innerHTML = tiles.map((x) => `
-        <div class="fun-tile">
-          <span>${x.e} ${escapeHTML(x.k)}</span>
-          <strong>${escapeHTML(x.v)}</strong>
-          <small>${escapeHTML(x.s)}</small>
-        </div>`).join("");
-    }
-
-    /* ── 키워드 클라우드 ─────────────────────────────────── */
-    function renderKeywords(keywords) {
-      const card = $("kwCard");
-      const list = (keywords || []).filter((k) => k && k.w && k.c > 0);
-      if (!list.length) { card.hidden = true; return; }
-      card.hidden = false;
-      const max = list[0].c, min = list[list.length - 1].c;
-      const size = (c) => {
-        const r = max === min ? 1 : (c - min) / (max - min);
-        return (12.5 + r * 9.5).toFixed(1);
+      /* ── 랭킹 ── */
+      const MEDALS = ["🥇", "🥈", "🥉"];
+      const RANK_NOTES = {
+        total: "막대는 기간 내 메시지 수, 오른쪽 %는 전체 대화에서의 점유율이에요.",
+        rise: "직전 동일 길이 기간과 비교한 증감이에요. (직전 → 이번)",
+        steady: "기간 내 활동한 날 수예요. 연속 기록은 발행 기간 전체 기준이에요.",
+        question: "질문 수는 발행 기간 전체 기준이에요. (물음표·질문 말투 감지)",
+        reaction: "답변·리액션 수는 발행 기간 전체 기준이에요. (5분 내 응답, ㅋㅋ·굿 등)"
       };
-      $("kwCloud").innerHTML = list.map((k) =>
-        `<span class="kw-chip" style="font-size:${size(k.c)}px">${escapeHTML(k.w)}<small>${nf(k.c)}</small></span>`).join("");
-    }
-
-    /* ── 전체 렌더 ────────────────────────────────────────── */
-    function renderAll(stats, source, row) {
-      renderHero(stats, source, row);
-      renderPeriodSelect(row ? row.id : null);
-      renderRank(stats.members);
-      renderBadges(stats);
-      renderHeatmap(stats.heatmap);
-      renderTrend(stats.daily, stats.peaks);
-      renderFun(stats);
-      renderKeywords(stats.keywords);
-    }
-
-    /* ── reveal 등장 모션 ─────────────────────────────────── */
-    function setupReveal() {
-      const els = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window)) { els.forEach((el) => el.classList.add("is-visible")); return; }
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("is-visible"); io.unobserve(en.target); } });
-      }, { threshold: 0.08 });
-      els.forEach((el) => io.observe(el));
-    }
-
-    /* ── 시작 ─────────────────────────────────────────────── */
-    (async function init() {
-      setupReveal();
-      const { stats, source, row } = await loadData();
-      if (!stats || !stats.totals) {
-        $("periodLabel").textContent = "준비 중이에요";
-        $("statTiles").innerHTML = `<div class="empty-note" style="grid-column:1/-1">리포트 데이터를 불러오지 못했어요. 잠시 후 다시 열어주세요.</div>`;
-        return;
+      function highlightName(name) {
+        const q = state.search.trim();
+        const esc = escapeHTML(name);
+        if (!q) return esc;
+        const i = name.toLowerCase().indexOf(q.toLowerCase());
+        if (i < 0) return esc;
+        return escapeHTML(name.slice(0, i)) + "<mark>" + escapeHTML(name.slice(i, i + q.length)) + "</mark>" + escapeHTML(name.slice(i + q.length));
       }
-      renderAll(stats, source, row);
+      function renderRank() {
+        const st = state.data;
+        const host = $("rankList");
+        host.removeAttribute("aria-busy");
+        let list;
+        if (state.legacy) {
+          if (state.rankMetric === "rise" || state.rankMetric === "steady") {
+            host.innerHTML = `<div class="empty-state"><span class="empty-ic">🗂️</span><strong>구버전 리포트에서는 볼 수 없어요</strong><p>리포트를 다시 발행하면 상승·꾸준 랭킹이 열려요.</p></div>`;
+            $("rankToggle").hidden = true; $("rankNote").textContent = "";
+            return;
+          }
+          // 구버전: daily 시계열이 없으므로 count/q/a 필드로 직접 구성
+          const key = state.rankMetric === "question" ? "q" : state.rankMetric === "reaction" ? "a" : "count";
+          list = st.members
+            .map((m, i) => ({ idx: i, name: m.name, value: m[key] || 0, extra: key === "count" && m.share != null ? m.share + "%" : null }))
+            .filter((x) => x.value > 0)
+            .sort((a, b) => b.value - a.value);
+        } else {
+          list = RM.rankBy(st, state.slice, state.prev, state.rankMetric);
+        }
+        if (list === null) {
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic">📉</span><strong>비교할 직전 기간이 없어요</strong><p>기간을 조금 뒤로 옮기거나 다른 기준을 골라보세요.</p></div>`;
+          $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
+          return;
+        }
+        const q = state.search.trim().toLowerCase();
+        if (!list.length) {
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic">💤</span><strong>이 기간에는 기록이 없어요</strong><p>다른 기간을 선택해보세요.</p></div>`;
+          $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
+          return;
+        }
+        const maxAbs = Math.max(...list.map((x) => Math.abs(x.value)), 1);
+        const visible = state.rankOpen ? list : list.slice(0, 10);
+        host.innerHTML = visible.map((x, i) => {
+          const dim = q && x.name.toLowerCase().indexOf(q) < 0;
+          const w = Math.max(2, (Math.abs(x.value) / maxAbs) * 100);
+          const medal = i < 3 ? `<span class="rank-no is-medal" aria-label="${i + 1}위">${MEDALS[i]}</span>` : `<span class="rank-no">${i + 1}</span>`;
+          const isRise = state.rankMetric === "rise";
+          const barColor = isRise ? (x.value >= 0 ? "#1E8E68" : "#C43D63") : "";
+          const valTxt = isRise ? (x.value >= 0 ? "+" + nf(x.value) : "−" + nf(Math.abs(x.value)))
+            : state.rankMetric === "steady" ? nf(x.value) + "일" : nf(x.value);
+          return `
+          <div class="rank-row${i < 3 ? " is-top" : ""}${dim ? " is-dim" : ""}" data-member="${escapeHTML(x.name)}">
+            ${medal}
+            <div class="rank-main">
+              <div class="rank-top-line">
+                <button class="rank-name" type="button" data-open-member="${x.idx}" style="background:none;padding:0;text-align:left;cursor:pointer">${highlightName(x.name)}</button>
+                ${x.extra ? `<span class="rank-extra">${escapeHTML(String(x.extra))}</span>` : ""}
+              </div>
+              <div class="rank-bar-line">
+                <div class="rank-track"><span class="rank-bar" data-w="${w.toFixed(1)}"${barColor ? ` style="background:${barColor}"` : ""}></span></div>
+                <span class="rank-count">${valTxt}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join("");
+        // 막대 자라나기
+        requestAnimationFrame(() => {
+          host.querySelectorAll(".rank-bar").forEach((b) => { b.style.width = b.dataset.w + "%"; });
+        });
+        const toggle = $("rankToggle");
+        if (list.length > 10) {
+          toggle.hidden = false;
+          toggle.textContent = state.rankOpen ? "접기" : `전체 보기 (${nf(list.length)}명)`;
+          toggle.setAttribute("aria-expanded", String(state.rankOpen));
+        } else toggle.hidden = true;
+        $("rankNote").textContent = RANK_NOTES[state.rankMetric];
+      }
+
+      /* ── 배지 ── */
+      function renderBadges() {
+        const host = $("badgeGrid");
+        if (state.legacy) {
+          state.badgeList = [];
+          host.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>구버전 리포트에서는 볼 수 없어요</strong><p>리포트를 다시 발행하면 명예의 전당이 열려요.</p></div></div>`;
+          return;
+        }
+        const badges = RM.badges(state.data, state.slice, state.prev);
+        state.badgeList = badges;
+        host.innerHTML = badges.length
+          ? badges.map((b) => `
+            <div class="badge-card card-lift">
+              <span class="badge-emoji" aria-hidden="true">${b.icon}</span>
+              <span class="badge-body">
+                <span class="badge-title">${escapeHTML(b.title)}</span>
+                <span class="badge-name">${highlightName(b.name)}</span>
+                <span class="badge-desc">${escapeHTML(b.desc)}</span>
+              </span>
+            </div>`).join("")
+          : `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>조건을 채운 배지가 아직 없어요</strong><p>기간을 넓히면 배지가 열릴 수 있어요.</p></div></div>`;
+      }
+
+      /* ── 24시간 활동 시계 (방사형 SVG) ── */
+      function renderClock() {
+        const st = state.data;
+        const hourly = state.legacy ? (st.hourlyAll || new Array(24).fill(0)) : RM.hourlyOf(st, state.slice);
+        const max = Math.max(...hourly, 1);
+        const cx = 170, cy = 170, r0 = 62, rMax = 148;
+        const pk = RM.peakOf(hourly), qt = RM.quietOf(hourly);
+        let paths = "";
+        for (let h = 0; h < 24; h++) {
+          const v = hourly[h];
+          const frac = v / max;
+          const r1 = r0 + Math.max(3, frac * (rMax - r0));
+          const a0 = ((h * 15 - 90 + 2.2) * Math.PI) / 180;
+          const a1 = (((h + 1) * 15 - 90 - 2.2) * Math.PI) / 180;
+          const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+          const d = `M ${p(r0, a0)} A ${r0} ${r0} 0 0 1 ${p(r0, a1)} L ${p(r1, a1)} A ${r1} ${r1} 0 0 0 ${p(r1, a0)} Z`;
+          const color = h === pk.i ? "#5F0080" : rampColor(v, max);
+          paths += `<path d="${d}" fill="${color}" data-h="${h}" data-v="${v}" tabindex="0" role="img" aria-label="${h}시 ${nf(v)}건"><title>${h}시 · ${nf(v)}건</title></path>`;
+        }
+        let labels = "";
+        [0, 3, 6, 9, 12, 15, 18, 21].forEach((h) => {
+          const a = ((h * 15 - 90 + 7.5) * Math.PI) / 180;
+          const lx = cx + 160 * Math.cos(a), ly = cy + 160 * Math.sin(a);
+          labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="#8D84A0">${h}시</text>`;
+        });
+        $("clockWrap").innerHTML = `
+          <svg class="chart-svg" viewBox="0 0 340 340" aria-label="24시간대별 메시지 분포 방사형 차트">
+            <circle cx="${cx}" cy="${cy}" r="${r0 - 6}" fill="#FBF8FE"/>
+            ${paths}${labels}
+            <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="26" font-weight="900" fill="#3D005C" letter-spacing="-1">${pk.i}시</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#6B6180">피크 시간</text>
+          </svg>`;
+        animateIn($("clockWrap"));
+
+        const svg = $("clockWrap").querySelector("svg");
+        const onPoint = (e) => {
+          const t = e.target.closest("path[data-h]");
+          if (!t) { hideTip(80); return; }
+          const rect = t.getBoundingClientRect();
+          showTip(rect.left + rect.width / 2, rect.top, nf(t.dataset.v) + "건", t.dataset.h + "시 ~ " + ((+t.dataset.h + 1) % 24) + "시");
+        };
+        svg.addEventListener("pointermove", onPoint);
+        svg.addEventListener("pointerdown", onPoint);
+        svg.addEventListener("pointerleave", () => hideTip(120));
+        svg.addEventListener("focusin", onPoint);
+        svg.addEventListener("focusout", () => hideTip(120));
+
+        $("clockTable").innerHTML = `<table><thead><tr><th scope="col">시간대</th><th scope="col">메시지</th></tr></thead><tbody>${
+          hourly.map((v, h) => `<tr><td>${h}시</td><td>${nf(v)}</td></tr>`).join("")}</tbody></table>`;
+
+        // 사이드: 피크/조용 + 세그먼트 구성
+        $("clockFacts").innerHTML = `
+          <h3 style="margin:0 0 12px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">시간대 요약</h3>
+          <div style="display:grid; gap:8px">
+            <div class="clock-fact"><span class="ic" aria-hidden="true">🔥</span><span><b>${pk.i}시가 피크</b><small>${nf(pk.v)}건 — 하루 중 가장 뜨거워요</small></span></div>
+            <div class="clock-fact"><span class="ic" aria-hidden="true">🤫</span><span><b>${qt.i}시가 제일 조용</b><small>${nf(qt.v)}건 — 다들 쉬는 시간이에요</small></span></div>
+          </div>`;
+        const segs = [
+          { lb: "새벽 0~5", a: 0, b: 5 }, { lb: "아침 6~10", a: 6, b: 10 },
+          { lb: "낮 11~16", a: 11, b: 16 }, { lb: "저녁 17~21", a: 17, b: 21 },
+          { lb: "밤 22~23", a: 22, b: 23 }
+        ];
+        const totalH = hourly.reduce((s, x) => s + x, 0) || 1;
+        $("hourSeg").innerHTML = segs.map((sg) => {
+          let v = 0;
+          for (let h = sg.a; h <= sg.b; h++) v += hourly[h];
+          const pct = Math.round((v / totalH) * 100);
+          return `<div class="seg-row"><span>${sg.lb}시</span><span class="progress is-brand" style="height:10px"><span style="width:${pct}%"></span></span><em>${pct}%</em></div>`;
+        }).join("");
+      }
+
+      /* ── 히트맵 ── */
+      function renderHeatmap() {
+        const st = state.data;
+        const grid = state.legacy ? st.heatmap : RM.heatmapOf(st, state.slice);
+        const host = $("hmGrid");
+        if (!grid) {
+          host.innerHTML = "";
+          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>히트맵 데이터가 없어요</strong><p>리포트를 다시 발행하면 볼 수 있어요.</p></div>`;
+          return;
+        }
+        let max = 0;
+        grid.forEach((r) => r.forEach((v) => { if (v > max) max = v; }));
+        let html = `<span class="hm-corner" aria-hidden="true"></span>`;
+        for (let h = 0; h < 24; h++) html += `<span class="hm-hour" aria-hidden="true">${h % 6 === 0 || h === 23 ? h : ""}</span>`;
+        grid.forEach((row, d) => {
+          html += `<span class="hm-day${d >= 5 ? " is-weekend" : ""}" aria-hidden="true">${WEEK_KO[d]}</span>`;
+          row.forEach((v, h) => {
+            html += `<span class="hm-cell" style="background:${rampColor(v, max)}" data-d="${d}" data-h="${h}" data-v="${v}"></span>`;
+          });
+        });
+        host.innerHTML = html;
+        animateIn(host.closest(".chart-anim"));
+        $("hmLegend").innerHTML = `<span>적음</span><i style="background:${ZERO_COLOR}"></i>` +
+          RAMP.map((c) => `<i style="background:${c}"></i>`).join("") + `<span>많음</span>`;
+        const onPoint = (e) => {
+          const cell = e.target.closest(".hm-cell");
+          if (!cell) { hideTip(80); return; }
+          const rect = cell.getBoundingClientRect();
+          showTip(rect.left + rect.width / 2, rect.top, nf(cell.dataset.v) + "건", WEEK_KO[+cell.dataset.d] + "요일 " + cell.dataset.h + "시");
+        };
+        host.onpointermove = onPoint;
+        host.onpointerdown = onPoint;
+        host.onpointerleave = () => hideTip(120);
+
+        const daySum = grid.map((r) => r.reduce((s, x) => s + x, 0));
+        const hourSum = [];
+        for (let h = 0; h < 24; h++) hourSum.push(grid.reduce((s, r) => s + (r[h] || 0), 0));
+        $("hmTable").innerHTML =
+          `<table><thead><tr><th scope="col">요일</th><th scope="col">메시지</th></tr></thead><tbody>${
+            daySum.map((v, d) => `<tr><td>${WEEK_KO[d]}요일</td><td>${nf(v)}</td></tr>`).join("")}</tbody></table>` +
+          `<table><thead><tr><th scope="col">시간대</th><th scope="col">메시지</th></tr></thead><tbody>${
+            hourSum.map((v, h) => `<tr><td>${h}시</td><td>${nf(v)}</td></tr>`).join("")}</tbody></table>`;
+      }
+
+      /* ── 주간 추이 (라인) ── */
+      function renderTrend() {
+        const st = state.data;
+        const wrap = $("trendWrap");
+        const weeks = RM.weeklySeries(st);
+        if (weeks.length < 2) {
+          wrap.innerHTML = `<div class="empty-state"><span class="empty-ic">📈</span><strong>추이를 그릴 주가 부족해요</strong><p>2주 이상 데이터가 쌓이면 라인이 생겨요.</p></div>`;
+          $("trendCallout").innerHTML = ""; $("trendTable").innerHTML = "";
+          return;
+        }
+        const W = 760, H = 268, L = 48, R = 18, T = 16, B = 40;
+        const pw = W - L - R, ph = H - T - B;
+        const ymaxRaw = Math.max(...weeks.map((w) => w.total), 1);
+        const pow = Math.pow(10, Math.max(0, Math.floor(Math.log10(ymaxRaw))));
+        let ymax = pow;
+        for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= ymaxRaw) { ymax = m * pow; break; } }
+        const x = (i) => L + (weeks.length === 1 ? pw / 2 : (i * pw) / (weeks.length - 1));
+        const y = (v) => T + ph - (v / ymax) * ph;
+
+        // 선택 기간 음영
+        let shade = "";
+        if (!state.legacy && state.slice) {
+          const idxs = weeks.map((w, i) => ({ w, i })).filter((o) => o.w.i1 >= state.slice.i0 && o.w.i0 <= state.slice.i1).map((o) => o.i);
+          if (idxs.length) {
+            const half = weeks.length > 1 ? pw / (weeks.length - 1) / 2 : pw / 2;
+            const x0 = Math.max(L, x(idxs[0]) - half), x1 = Math.min(W - R, x(idxs[idxs.length - 1]) + half);
+            shade = `<rect x="${x0.toFixed(1)}" y="${T}" width="${(x1 - x0).toFixed(1)}" height="${ph}" fill="#F3E8FF" opacity="0.75" rx="8"/>`;
+          }
+        }
+        let gridL = "", yt = "";
+        for (let g = 0; g <= 4; g++) {
+          const gv = (ymax / 4) * g, gy = y(gv);
+          gridL += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(95,0,128,0.08)" stroke-width="1"/>`;
+          yt += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#8D84A0">${nf(gv)}</text>`;
+        }
+        let lineP = "", areaP = `M ${x(0).toFixed(1)} ${(T + ph).toFixed(1)}`;
+        weeks.forEach((w, i) => {
+          const px = x(i).toFixed(1), py = y(w.total).toFixed(1);
+          lineP += (i ? " L " : "M ") + px + " " + py;
+          areaP += ` L ${px} ${py}`;
+        });
+        areaP += ` L ${x(weeks.length - 1).toFixed(1)} ${(T + ph).toFixed(1)} Z`;
+        let xLabels = "";
+        const step = weeks.length > 10 ? 2 : 1;
+        weeks.forEach((w, i) => {
+          if (i % step !== 0 && i !== weeks.length - 1) return;
+          xLabels += `<text x="${x(i).toFixed(1)}" y="${H - 14}" text-anchor="middle" font-size="10.5" font-weight="750" fill="#8D84A0">${fmtDateK(w.from)}</text>`;
+        });
+        const last = weeks[weeks.length - 1];
+        const endDot = `<circle cx="${x(weeks.length - 1).toFixed(1)}" cy="${y(last.total).toFixed(1)}" r="5" fill="#7B2BB0" stroke="#fff" stroke-width="2.5"/>
+          <text x="${(x(weeks.length - 1) - 8).toFixed(1)}" y="${(y(last.total) - 10).toFixed(1)}" text-anchor="end" font-size="11.5" font-weight="900" fill="#3D005C">${nf(last.total)}</text>`;
+        wrap.innerHTML = `
+          <svg class="chart-svg" viewBox="0 0 ${W} ${H}" aria-label="주 단위 메시지 추이 라인 차트">
+            ${shade}${gridL}${yt}
+            <path d="${areaP}" fill="rgba(123,43,176,0.09)"/>
+            <path d="${lineP}" fill="none" stroke="#7B2BB0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <line id="trendHair" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(95,0,128,0.28)" stroke-width="1" opacity="0"/>
+            ${weeks.map((w, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(w.total).toFixed(1)}" r="3.4" fill="#7B2BB0" stroke="#fff" stroke-width="2"/>`).join("")}
+            ${endDot}${xLabels}
+          </svg>`;
+        animateIn(wrap);
+
+        // 크로스헤어 + 툴팁 (가장 가까운 주 스냅)
+        const svg = wrap.querySelector("svg");
+        const hair = svg.querySelector("#trendHair");
+        const onPoint = (e) => {
+          const rect = svg.getBoundingClientRect();
+          const rx = ((e.clientX - rect.left) / rect.width) * W;
+          let bi = 0, bd = Infinity;
+          weeks.forEach((w, i) => { const d = Math.abs(x(i) - rx); if (d < bd) { bd = d; bi = i; } });
+          hair.setAttribute("x1", x(bi).toFixed(1)); hair.setAttribute("x2", x(bi).toFixed(1));
+          hair.setAttribute("opacity", "1");
+          const cy = (y(weeks[bi].total) / H) * rect.height + rect.top;
+          showTip((x(bi) / W) * rect.width + rect.left, cy, nf(weeks[bi].total) + "건", fmtDateK(weeks[bi].from) + "~" + fmtDateK(weeks[bi].to) + " 주");
+        };
+        svg.addEventListener("pointermove", onPoint);
+        svg.addEventListener("pointerdown", onPoint);
+        svg.addEventListener("pointerleave", () => { hair.setAttribute("opacity", "0"); hideTip(120); });
+
+        // 콜아웃: 완주(7일) 기준으로만 전주 대비 계산 — 진행 중인 주는 "집계 중" 표기
+        const fullWeeks = weeks.filter((w) => w.days === 7);
+        let deltaTxt = "";
+        if (fullWeeks.length >= 2) {
+          const a = fullWeeks[fullWeeks.length - 1], b = fullWeeks[fullWeeks.length - 2];
+          if (b.total > 0) {
+            const pct = Math.round(((a.total - b.total) / b.total) * 100);
+            deltaTxt = `<span class="badge-soft ${pct >= 0 ? "is-mint" : "is-blush"}">${pct >= 0 ? "▲" : "▼"} 최근 완주 주(${fmtDateK(a.from)}~) 전주 대비 ${Math.abs(pct)}%</span>`;
+          }
+        }
+        const lastLabel = last.days < 7
+          ? `마지막 주 ${nf(last.total)}건 · ${last.days}일 집계 중`
+          : `마지막 주 ${nf(last.total)}건`;
+        $("trendCallout").innerHTML =
+          `<span class="badge-soft">${lastLabel}</span>${deltaTxt}<span class="badge-soft is-sky">주 평균 ${nf(Math.round(weeks.reduce((s, w) => s + w.total, 0) / weeks.length))}건</span>`;
+        $("trendTable").innerHTML = `<table><thead><tr><th scope="col">주</th><th scope="col">메시지</th></tr></thead><tbody>${
+          weeks.map((w) => `<tr><td>${fmtDateK(w.from)}~${fmtDateK(w.to)}</td><td>${nf(w.total)}</td></tr>`).join("")}</tbody></table>`;
+      }
+
+      /* ── 키워드 ── */
+      function renderKeywords() {
+        const st = state.data;
+        const kws = st.keywords || [];
+        const cats = ["운동", "식단", "벙", "정보"];
+        // 카테고리 언급량 (멤버 kw 합)
+        const catTotals = {};
+        cats.forEach((c) => { catTotals[c] = 0; });
+        (st.members || []).forEach((m) => {
+          if (!m.kw) return;
+          cats.forEach((c) => { catTotals[c] += m.kw[c] || 0; });
+        });
+        const hasCatData = cats.some((c) => catTotals[c] > 0);
+        $("kwCats").innerHTML =
+          `<button class="kw-cat-chip" type="button" data-cat="all" aria-pressed="${state.kwCat === "all"}"><i style="background:var(--gray-2)"></i>전체</button>` +
+          cats.map((c) => `<button class="kw-cat-chip" type="button" data-cat="${c}" aria-pressed="${state.kwCat === c}">
+            <i style="background:${CAT_COLOR[c]}"></i>${c}${hasCatData ? ` <b>${nf(catTotals[c])}</b>` : ""}</button>`).join("");
+
+        const field = $("kwField");
+        if (!kws.length) {
+          field.innerHTML = `<div class="empty-state"><span class="empty-ic">💬</span><strong>키워드가 없어요</strong><p>발행 시 키워드가 모두 제외됐거나 데이터가 부족해요.</p></div>`;
+          return;
+        }
+        const top = kws.slice(0, 28);
+        const max = Math.max(...top.map((k) => k.c), 1);
+        field.innerHTML = top.map((k) => {
+          const size = Math.round(52 + 62 * Math.sqrt(k.c / max));
+          const fs = Math.max(11, Math.min(17, Math.round(size / 5.2)));
+          const cat = k.cat && CAT_COLOR[k.cat] ? k.cat : null;
+          const bg = cat ? CAT_SOFT[cat] : "rgba(141,132,160,0.12)";
+          const ring = cat ? CAT_COLOR[cat] : "#8D84A0";
+          const dim = state.kwCat !== "all" && k.cat !== state.kwCat;
+          return `<span class="kw-bubble${dim ? " is-dim" : ""}" style="width:${size}px; height:${size}px; background:${bg}; box-shadow:inset 0 0 0 1.5px ${ring}44; font-size:${fs}px" title="${escapeHTML(k.w)} · ${nf(k.c)}회${cat ? " · " + cat : ""}">
+            <span class="kw">${escapeHTML(k.w)}</span><span class="kc">${nf(k.c)}</span>
+          </span>`;
+        }).join("");
+        animateIn(field);
+
+        // 주차별 키워드
+        const weekly = st.weeklyKeywords || [];
+        $("kwWeekly").innerHTML = weekly.length
+          ? weekly.map((w, i) => `
+            <div class="kw-week-card${i === weekly.length - 1 ? " is-now" : ""}">
+              <b>${escapeHTML(w.week)}</b>
+              <ol>${(w.top || []).map((t, j) => `<li><i>${j + 1}</i>${escapeHTML(t)}</li>`).join("")}</ol>
+            </div>`).join("")
+          : `<div class="empty-state" style="grid-auto-flow:row"><span class="empty-ic">🗓️</span><strong>주차별 데이터가 없어요</strong><p>리포트를 다시 발행하면 볼 수 있어요.</p></div>`;
+      }
+
+      /* ── 분위기 리포트 ── */
+      function renderMood() {
+        const st = state.data;
+        // 1) 이모지/리액션
+        const es = st.emojiStats;
+        if (es && (es.laugh || es.cheer || es.heart)) {
+          const totalE = (es.laugh || 0) + (es.cheer || 0) + (es.heart || 0) || 1;
+          const rows = [
+            { lb: "😂 웃음", v: es.laugh || 0, c: "#7B2BB0" },
+            { lb: "📣 응원", v: es.cheer || 0, c: "#1E8E68" },
+            { lb: "💜 하트", v: es.heart || 0, c: "#C43D63" }
+          ];
+          $("moodEmoji").innerHTML = `<h3>이모지·리액션 분위기</h3><p class="mood-cap">발행 기간 전체의 웃음·응원·하트 비율이에요.</p>` +
+            rows.map((r) => `<div class="mood-bar-row"><span>${r.lb}</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((r.v / totalE) * 100)}" style="background:${r.c}"></span></span><em>${nf(r.v)}</em></div>`).join("");
+          requestAnimationFrame(() => {
+            $("moodEmoji").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
+          });
+        } else {
+          $("moodEmoji").innerHTML = `<h3>이모지·리액션 분위기</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">😶</span><strong>집계가 없어요</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+        }
+
+        // 2) 대화 집중도 (지니 → 도넛)
+        if (!state.legacy) {
+          const conc = RM.concentration(state.data, state.slice);
+          const sums = RM.memberSums(state.data, state.slice).filter((v) => v > 0).sort((a, b) => b - a);
+          const totalS = sums.reduce((s, x) => s + x, 0) || 1;
+          const top3 = sums.slice(0, 3).reduce((s, x) => s + x, 0);
+          const mid = sums.slice(3, 10).reduce((s, x) => s + x, 0);
+          const rest = totalS - top3 - mid;
+          const segs = [
+            { lb: "상위 1~3위", v: top3, c: "#7B2BB0" },
+            { lb: "4~10위", v: mid, c: "#B980D9" },
+            { lb: "그 외", v: rest, c: "#F3E8FF" }
+          ].filter((x) => x.v > 0);
+          const R = 40, CC = 2 * Math.PI * R;
+          let off = 0;
+          const circles = segs.map((sg) => {
+            const frac = sg.v / totalS;
+            const el = `<circle r="${R}" cx="48" cy="48" fill="none" stroke="${sg.c}" stroke-width="14"
+              stroke-dasharray="${(frac * CC - 2).toFixed(1)} ${(CC - frac * CC + 2).toFixed(1)}"
+              stroke-dashoffset="${(-off * CC + CC / 4).toFixed(1)}"/>`;
+            off += sg.v / totalS;
+            return el;
+          }).join("");
+          $("moodGini").innerHTML = `<h3>대화 집중도</h3><p class="mood-cap">몇 명에게 대화가 몰렸는지 봤어요.</p>
+            <div class="gini-wrap">
+              <svg class="gini-donut" viewBox="0 0 96 96" role="img" aria-label="대화 점유율 도넛 차트">
+                ${circles}
+                <text x="48" y="46" text-anchor="middle" font-size="15" font-weight="900" fill="#3D005C">${conc.gini.toFixed(2)}</text>
+                <text x="48" y="60" text-anchor="middle" font-size="8" font-weight="800" fill="#6B6180">지니계수</text>
+              </svg>
+              <div class="gini-side">
+                <span class="badge-soft ${conc.even ? "is-mint" : "is-cream"}">${conc.even ? "🗣️ 골고루 수다" : "🎯 일부 집중"}</span>
+                <div class="legend-dots">${segs.map((sg) => `<span><i style="background:${sg.c}"></i>${sg.lb} ${Math.round((sg.v / totalS) * 100)}%</span>`).join("")}</div>
+              </div>
+            </div>`;
+        } else {
+          $("moodGini").innerHTML = `<h3>대화 집중도</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">🗂️</span><strong>구버전 리포트</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+        }
+
+        // 3) 질문 대비 답변
+        const qa = RM.qaRatio(st);
+        if (qa.q > 0 || qa.a > 0) {
+          const maxQa = Math.max(qa.q, qa.a, 1);
+          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><p class="mood-cap">발행 기간 전체의 질문·응답 흐름이에요.</p>
+            <div class="mood-big">${qa.ratio == null ? "—" : "질문 1개당 " + nf1(qa.ratio) + "개"}<small> 답변·반응</small></div>
+            <div class="mood-bar-row"><span>❓ 질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#2F6FB0"></span></span><em>${nf(qa.q)}</em></div>
+            <div class="mood-bar-row"><span>💬 답변</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}" style="background:#7B2BB0"></span></span><em>${nf(qa.a)}</em></div>`;
+          requestAnimationFrame(() => {
+            $("moodQa").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
+          });
+        } else {
+          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">❓</span><strong>집계가 없어요</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+        }
+
+        // 4) 신규 멤버 적응
+        const nm = st.newMembers || { count: 0, avgFirstWeekMsgs: 0 };
+        $("moodNew").innerHTML = `<h3>새 멤버, 잘 적응했나요?</h3><p class="mood-cap">발행 기간에 들어온 멤버들의 첫 주 이야기예요.</p>
+          <div class="mood-big">${nf(nm.count)}<small>명 합류</small></div>
+          <p style="margin:10px 0 0; font-size:13px; color:var(--ink-2); font-weight:700; line-height:1.6">
+            ${nm.avgFirstWeekMsgs > 0
+              ? `첫 주에 평균 <b style="color:var(--primary)">${nf(nm.avgFirstWeekMsgs)}마디</b>씩 남겼어요. ${nm.avgFirstWeekMsgs >= 15 ? "환영 분위기가 통했나 봐요! 🎉" : "따뜻한 환영 한 마디가 큰 힘이 돼요 🙌"}`
+              : "이 기간에는 새 멤버 적응 기록이 없어요."}
+          </p>`;
+      }
+
+      /* ── 멤버 카드 ── */
+      function renderMembers() {
+        const st = state.data;
+        const grid = $("memberGrid");
+        if (state.legacy || !st.members || !st.members.length) {
+          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "구버전 리포트예요 — 다시 발행하면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
+          $("memberDetail").innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
+          return;
+        }
+        const sums = RM.memberSums(st, state.slice);
+        const q = state.search.trim().toLowerCase();
+        const items = st.members
+          .map((m, i) => ({ m, i, v: sums[i] }))
+          .filter((x) => x.v > 0 && (!q || x.m.name.toLowerCase().indexOf(q) >= 0))
+          .sort((a, b) => b.v - a.v);
+        grid.innerHTML = items.length
+          ? items.map((x) => `<button class="member-pill" type="button" data-open-member="${x.i}" aria-pressed="${state.selectedMember === x.i}">${highlightName(x.m.name)} <b>${nf(x.v)}</b></button>`).join("")
+          : `<div class="empty-state" style="width:100%"><span class="empty-ic">🔍</span><strong>검색 결과가 없어요</strong><p>다른 이름으로 찾아보세요.</p></div>`;
+        if (state.selectedMember < 0 && items.length) state.selectedMember = items[0].i;
+        renderMemberDetail();
+      }
+
+      function sparkSVG(series, labelFrom, labelTo) {
+        const W = 280, H = 76, L = 4, R = 4, T = 8, B = 8;
+        const pw = W - L - R, ph = H - T - B;
+        const max = Math.max(...series, 1);
+        const x = (i) => L + (series.length === 1 ? pw / 2 : (i * pw) / (series.length - 1));
+        const y = (v) => T + ph - (v / max) * ph;
+        let lineP = "", areaP = `M ${x(0).toFixed(1)} ${(T + ph).toFixed(1)}`;
+        series.forEach((v, i) => {
+          const px = x(i).toFixed(1), py = y(v).toFixed(1);
+          lineP += (i ? " L " : "M ") + px + " " + py;
+          areaP += ` L ${px} ${py}`;
+        });
+        areaP += ` L ${x(series.length - 1).toFixed(1)} ${(T + ph).toFixed(1)} Z`;
+        const li = series.length - 1;
+        return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="일별 활동 스파크라인 (${labelFrom}~${labelTo})">
+          <path d="${areaP}" fill="rgba(123,43,176,0.10)"/>
+          <path d="${lineP}" fill="none" stroke="#7B2BB0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="${x(li).toFixed(1)}" cy="${y(series[li]).toFixed(1)}" r="4" fill="#7B2BB0" stroke="#fff" stroke-width="2"/>
+        </svg>`;
+      }
+
+      function renderMemberDetail() {
+        const st = state.data;
+        const host = $("memberDetail");
+        const i = state.selectedMember;
+        if (state.legacy || i < 0 || !st.members[i]) {
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
+          return;
+        }
+        const m = st.members[i];
+        const s = state.slice;
+        const periodCount = RM.memberSums(st, s)[i];
+        const actDays = RM.activeDaysOf(st, i, s);
+        const tt = RM.timeType(m);
+        const myBadges = (state.badgeList || []).filter((b) => b.idx === i);
+        // 스파크라인: 기간이 짧으면 최근 14일로 넓혀서
+        let s0 = s.i0, s1 = s.i1;
+        let sparkNote = "선택한 기간의 일별 활동";
+        if (s1 - s0 < 6) { s0 = Math.max(0, s1 - 13); sparkNote = "최근 " + (s1 - s0 + 1) + "일 활동"; }
+        const series = [];
+        for (let k = s0; k <= s1; k++) series.push(m.daily[k] || 0);
+        host.innerHTML = `
+          <div class="md-head">
+            <span class="md-avatar" aria-hidden="true">${escapeHTML(String(m.name || "?").trim().charAt(0) || "?")}</span>
+            <span><b>${escapeHTML(m.name)}</b><small>${tt ? tt.icon + " " + tt.label + " 멤버" : "유형 판정 대기 (30마디 이상부터)"} · 평균 ${nf1(m.avgLen || 0)}자</small></span>
+          </div>
+          <div class="md-stats">
+            <div class="md-stat"><span>기간 채팅</span><strong>${nf(periodCount)}</strong></div>
+            <div class="md-stat"><span>기간 활동일</span><strong>${nf(actDays)}일</strong></div>
+            <div class="md-stat"><span>최장 연속</span><strong>${nf(m.streak || 0)}일</strong></div>
+          </div>
+          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="badge-soft">${b.icon} ${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">이 기간에 획득한 배지는 없어요.</p>`}
+          <div class="md-spark">${sparkSVG(series, fmtDateK(st.days[s0].d), fmtDateK(st.days[s1].d))}<div class="spark-cap">${sparkNote} · ${fmtDateK(st.days[s0].d)}~${fmtDateK(st.days[s1].d)}</div></div>`;
+        // 그리드 선택 상태 갱신
+        $("memberGrid").querySelectorAll("[data-open-member]").forEach((b) => {
+          b.setAttribute("aria-pressed", String(+b.dataset.openMember === i));
+        });
+      }
+
+      /* ── 리캡 카드 ── */
+      function renderRecap() {
+        const st = state.data;
+        const host = $("recapCard");
+        const s = state.slice;
+        if (state.legacy) {
+          const t = st.totalsV1;
+          host.innerHTML = `
+            <div class="recap-inner">
+              <div class="recap-brand"><span class="logo">EXCER</span><small>월간 리캡</small></div>
+              <h3 class="recap-title">${escapeHTML(st.periodLabel)} — <span class="grad-text-hero">우리방 기록</span></h3>
+              <div class="recap-kpis">
+                <div class="recap-kpi"><span>총 채팅</span><strong>${nf(t.messages || 0)}<small>건</small></strong></div>
+                <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(t.activeMembers || 0)}<small>명</small></strong></div>
+                <div class="recap-kpi"><span>하루 평균</span><strong>${nf(t.avgPerDay || 0)}<small>건</small></strong></div>
+              </div>
+              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>excer</span></div>
+            </div>`;
+          return;
+        }
+        const kpi = RM.periodKPI(st, s);
+        const temp = RM.temperature(st, s);
+        const badges = (state.badgeList || []).slice(0, 3);
+        const kws = (st.keywords || []).slice(0, 3);
+        host.innerHTML = `
+          <div class="recap-inner">
+            <div class="recap-brand"><span class="logo">EXCER</span><small>${escapeHTML(PRESET_WORD[state.preset])} 리캡 · ${fmtDateK(s.from)}~${fmtDateK(s.to)}</small></div>
+            <h3 class="recap-title">${escapeHTML(st.periodLabel)},<br /><span class="grad-text-hero">우리방 온도 ${temp.temp}℃</span></h3>
+            <div class="recap-kpis">
+              <div class="recap-kpi"><span>총 채팅</span><strong>${nf(kpi.total)}<small>건</small></strong></div>
+              <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(kpi.activeMembers)}<small>명</small></strong></div>
+              <div class="recap-kpi"><span>하루 평균</span><strong>${nf1(kpi.avgPerDay)}<small>건</small></strong></div>
+            </div>
+            ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="ic" aria-hidden="true">${b.icon}</span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)} · ${escapeHTML(b.desc)}</span></div>`).join("")}</div>` : ""}
+            ${kws.length ? `<div class="recap-kws">${kws.map((k) => `<span class="recap-kw">#${escapeHTML(k.w)}</span>`).join("")}</div>` : ""}
+            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>excer · 운영 대시보드</span></div>
+          </div>`;
+      }
+
+      let cachedFontCSS = null;
+      async function saveRecap() {
+        const target = $("recapCard");
+        const btn = $("recapSaveBtn");
+        if (!window.htmlToImage) { EXCER.toast("이미지 저장 라이브러리를 불러오지 못했어요."); return; }
+        try {
+          btn.disabled = true; btn.textContent = "저장 중…";
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          if (cachedFontCSS === null && typeof window.htmlToImage.getFontEmbedCSS === "function") {
+            try { cachedFontCSS = await window.htmlToImage.getFontEmbedCSS(target); } catch (e) { cachedFontCSS = ""; }
+          }
+          const options = { pixelRatio: 2, cacheBust: true };
+          if (cachedFontCSS) options.fontEmbedCSS = cachedFontCSS;
+          await window.htmlToImage.toPng(target, options); // 1차: 폰트/레이아웃 워밍업
+          const dataUrl = await window.htmlToImage.toPng(target, options);
+          const a = document.createElement("a");
+          a.download = "excer-recap-" + String(state.data.periodLabel || "report").replace(/[\\/:*?"<>|\s]+/g, "_") + ".png";
+          a.href = dataUrl;
+          a.click();
+          EXCER.toast("리캡 카드를 저장했어요!");
+        } catch (e) {
+          EXCER.toast("이미지 저장에 실패했어요. 다시 시도해주세요.");
+        } finally {
+          btn.disabled = false; btn.textContent = "🖼️ 이미지 저장";
+        }
+      }
+
+      /* ── 기간 필터 적용 ── */
+      function applyPreset(key, customFrom, customTo) {
+        const st = state.data;
+        if (state.legacy) {
+          EXCER.toast("구버전 리포트는 기간 필터를 지원하지 않아요.");
+          return;
+        }
+        let range;
+        if (key === "custom") {
+          if (!customFrom || !customTo) return;
+          if (customFrom > customTo) { const t = customFrom; customFrom = customTo; customTo = t; }
+          range = { from: customFrom, to: customTo };
+        } else {
+          range = RM.presetRange(st, key);
+        }
+        const s = RM.sliceIdx(st, range.from, range.to);
+        if (!s) { EXCER.toast("선택한 기간에 데이터가 없어요."); return; }
+        state.preset = key;
+        state.slice = s;
+        state.prev = RM.prevWindow(st, s);
+        state.rankOpen = false;
+        document.querySelectorAll(".range-chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === key)));
+        $("rangeCustom").hidden = key !== "custom";
+        $("heroPeriodWord").textContent = PRESET_WORD[key];
+        $("pillRange").textContent = fmtDateK(s.from) + " ~ " + fmtDateK(s.to);
+        renderDynamic();
+      }
+
+      function renderDynamic() {
+        renderPulse();
+        renderHighlights();
+        renderBadges();  // 배지 먼저 (멤버 카드가 badgeList 참조)
+        renderRank();
+        renderClock();
+        renderHeatmap();
+        renderTrend();
+        renderKeywords();
+        renderMood();
+        renderMembers();
+        renderRecap();
+      }
+
+      /* ── 이벤트 ── */
+      function bindEvents() {
+        document.querySelectorAll(".range-chip").forEach((b) => {
+          b.addEventListener("click", () => {
+            if (b.dataset.range === "custom") {
+              $("rangeCustom").hidden = false;
+              document.querySelectorAll(".range-chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+              return;
+            }
+            applyPreset(b.dataset.range);
+          });
+        });
+        $("customApply").addEventListener("click", () => {
+          applyPreset("custom", $("customFrom").value, $("customTo").value);
+        });
+        $("rankMetric").addEventListener("change", () => {
+          state.rankMetric = $("rankMetric").value;
+          state.rankOpen = false;
+          renderRank();
+        });
+        let searchTimer = null;
+        $("memberSearch").addEventListener("input", () => {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(() => {
+            state.search = $("memberSearch").value;
+            renderRank();
+            renderBadges();
+            renderMembers();
+          }, 160);
+        });
+        $("rankToggle").addEventListener("click", () => {
+          state.rankOpen = !state.rankOpen;
+          renderRank();
+        });
+        $("kwCats").addEventListener("click", (e) => {
+          const b = e.target.closest("[data-cat]");
+          if (!b) return;
+          state.kwCat = b.dataset.cat;
+          renderKeywords();
+        });
+        document.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-open-member]");
+          if (!b) return;
+          state.selectedMember = +b.dataset.openMember;
+          renderMemberDetail();
+          const detail = $("memberDetail");
+          if (b.closest("#rankList") && detail) detail.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+        });
+        $("recapSaveBtn").addEventListener("click", saveRecap);
+        $("reportSelect").addEventListener("change", () => {
+          const row = liveRows.find((r) => String(r.id) === $("reportSelect").value);
+          if (row) bootWith(row.stats, "live", row);
+        });
+        // 섹션 접기/펼치기
+        document.querySelectorAll(".sec-toggle").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const body = document.getElementById(btn.getAttribute("aria-controls"));
+            if (!body) return;
+            const open = body.hidden;
+            body.hidden = !open;
+            btn.setAttribute("aria-expanded", String(open));
+            btn.innerHTML = (open ? "접기 " : "펼치기 ") + '<span class="chev" aria-hidden="true">▼</span>';
+          });
+        });
+      }
+
+      /* ── 부트 ── */
+      function bootWith(stats, source, row) {
+        state.source = source;
+        state.row = row || null;
+        state.selectedMember = -1;
+        state.search = "";
+        $("memberSearch").value = "";
+        if (isV2(stats)) {
+          state.data = stats;
+          state.legacy = false;
+          $("legacyNote").hidden = true;
+          $("rangeFilter").querySelectorAll(".range-chip").forEach((b) => { b.disabled = false; });
+          renderHero();
+          applyPreset("week");
+        } else {
+          state.data = adaptV1(stats);
+          state.legacy = true;
+          state.slice = state.data.days.length ? { i0: 0, i1: state.data.days.length - 1, len: state.data.days.length, from: state.data.range.from, to: state.data.range.to } : null;
+          state.prev = null;
+          $("legacyNote").hidden = false;
+          $("rangeFilter").querySelectorAll(".range-chip").forEach((b) => {
+            b.disabled = b.dataset.range !== "all";
+            b.setAttribute("aria-pressed", String(b.dataset.range === "all"));
+          });
+          state.preset = "all";
+          renderHero();
+          $("heroPeriodWord").textContent = PRESET_WORD.all;
+          $("pillRange").textContent = fmtDateK(state.data.range.from) + " ~ " + fmtDateK(state.data.range.to);
+          renderDynamic();
+        }
+      }
+
+      async function boot() {
+        bindEvents();
+        const { stats, source, row } = await loadData();
+        if (!stats) {
+          $("dashBody").hidden = true;
+          $("pulseCard").hidden = true;
+          $("emptyWrap").hidden = false;
+          $("sourceBadgeText").textContent = "😴 리포트 없음";
+          return;
+        }
+        bootWith(stats, source, row);
+        if (source === "sample") EXCER.toast("예시 데이터로 대시보드를 보여드리고 있어요.");
+      }
+
+      boot();
     })();
   </script>
 </body>
