@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#672091" />
+  <title>모임운영 커뮤니티 — 우리방 리포트</title>
+  <meta name="description" content="우리 오픈채팅방의 한 달 활동을 한눈에. 수다왕 랭킹, 명예의 전당, 시간대 히트맵까지." />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+
+  <style>
+    /* ============================================================
+       리포트 전용 스타일
+       ============================================================ */
+    .pagehead {
+      position: relative; overflow: hidden;
+      padding: clamp(22px, 2.6vw, 32px) clamp(22px, 2.8vw, 36px);
+      border-radius: var(--r-xl); margin-bottom: 18px;
+    }
+    .pagehead::after {
+      content: ""; position: absolute; right: -120px; top: -130px; width: 320px; height: 320px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(160, 95, 208, 0.22), transparent 68%); pointer-events: none;
+    }
+    .pagehead-inner { position: relative; z-index: 1; }
+    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -0.05em; font-weight: 850; }
+    .pagehead-title span { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.68; }
+
+    .head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .source-badge {
+      display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: var(--r-pill);
+      font-size: 12.5px; font-weight: 900;
+    }
+    .source-badge.is-sample { background: rgba(201, 162, 39, 0.16); color: #7a5f1e; border: 1px solid rgba(201, 162, 39, 0.3); }
+    .source-badge.is-preview { background: rgba(126, 34, 206, 0.12); color: var(--violet); border: 1px solid rgba(126, 34, 206, 0.25); }
+    .source-badge.is-live { background: rgba(47, 182, 138, 0.12); color: #1c7a5b; border: 1px solid rgba(47, 182, 138, 0.25); }
+    .period-select {
+      min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
+      background: #fff; color: var(--primary); font-weight: 800; font-size: 13px;
+    }
+
+    /* ── 스탯 타일 ── */
+    .stat-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+    .stat-tile { padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow-xs); }
+    .stat-tile span { display: block; color: var(--gray); font-size: 12.5px; font-weight: 800; }
+    .stat-tile strong { display: block; margin-top: 7px; font-size: clamp(24px, 2.6vw, 34px); font-weight: 850; letter-spacing: -0.04em; color: var(--ink); line-height: 1.05; }
+    .stat-tile small { display: block; margin-top: 5px; color: var(--gray-2); font-size: 11.5px; font-weight: 700; }
+
+    /* ── 공통 카드 ── */
+    .report-grid { display: grid; gap: 16px; }
+    .card { padding: clamp(18px, 2.2vw, 26px); border-radius: 26px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+    .card-title { margin: 0; font-size: 18px; letter-spacing: -0.03em; }
+    .card-note { margin: 2px 0 16px; color: var(--gray); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+
+    /* ── 랭킹 ── */
+    .rank-list { display: grid; gap: 6px; }
+    .rank-row {
+      display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 10px; align-items: center;
+      padding: 8px 10px; border-radius: 14px; transition: background 0.16s var(--ease);
+    }
+    .rank-row:hover { background: rgba(243, 237, 249, 0.55); }
+    .rank-no { text-align: center; font-size: 15px; font-weight: 850; color: var(--gray); }
+    .rank-no.is-medal { font-size: 21px; }
+    .rank-main { min-width: 0; }
+    .rank-name-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .rank-name { font-weight: 800; font-size: 13.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-share { color: var(--gray-2); font-size: 11.5px; font-weight: 700; flex: none; }
+    .rank-bar-line { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .rank-track { flex: 1; min-width: 0; height: 12px; }
+    .rank-bar { width: 100%; height: 12px; background: #7B2BB0; border-radius: 0 4px 4px 0; min-width: 3px; }
+    .rank-count { flex: none; font-size: 12.5px; font-weight: 850; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .rank-more { margin-top: 12px; }
+    .rank-rest[hidden] { display: none; }
+
+    /* ── 배지 카드 ── */
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .badge-card {
+      display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center;
+      padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs);
+    }
+    .badge-emoji { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--lavender); font-size: 22px; }
+    .badge-body { min-width: 0; }
+    .badge-title { display: block; font-size: 12px; font-weight: 900; color: var(--primary); }
+    .badge-name { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge-desc { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--gray); }
+
+    /* ── 히트맵 ── */
+    .hm-scroll { overflow-x: auto; padding-bottom: 6px; }
+    .hm { display: grid; grid-template-columns: 30px repeat(24, minmax(12px, 1fr)); gap: 2px; min-width: 420px; }
+    .hm-corner, .hm-hour { font-size: 10px; font-weight: 800; color: var(--gray-2); text-align: center; align-self: end; padding-bottom: 2px; }
+    .hm-day { font-size: 11px; font-weight: 800; color: var(--gray); display: flex; align-items: center; justify-content: center; }
+    .hm-day.is-weekend { color: var(--ink-2); font-weight: 900; }
+    .hm-cell { aspect-ratio: 1 / 1; border-radius: 3px; cursor: default; }
+    .hm-cell:hover { outline: 2px solid rgba(103, 32, 145, 0.5); outline-offset: 1px; }
+    .hm-legend { display: flex; align-items: center; gap: 5px; margin-top: 12px; color: var(--gray); font-size: 11.5px; font-weight: 700; }
+    .hm-legend i { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* ── 일별 추이 ── */
+    .trend-wrap { position: relative; }
+    .trend-wrap svg { display: block; width: 100%; height: auto; border-radius: 12px; }
+    .trend-wrap svg:focus-visible { outline: 3px solid rgba(103, 32, 145, 0.26); outline-offset: 3px; }
+
+    .chart-tip {
+      position: fixed; z-index: 200; pointer-events: none; opacity: 0;
+      padding: 8px 12px; border-radius: 12px; background: rgba(28, 19, 38, 0.94); color: #fff;
+      font-size: 12px; font-weight: 700; box-shadow: var(--shadow-md); white-space: nowrap;
+      transform: translate(-50%, calc(-100% - 12px)); transition: opacity 0.12s var(--ease);
+    }
+    .chart-tip.is-visible { opacity: 1; }
+    .chart-tip strong { display: block; font-size: 14px; font-weight: 900; letter-spacing: -0.01em; }
+    .chart-tip span { color: rgba(255, 255, 255, 0.72); font-weight: 700; }
+
+    .table-details { margin-top: 12px; }
+    .table-details summary { cursor: pointer; color: var(--gray); font-size: 12px; font-weight: 800; }
+    .table-details table { margin-top: 10px; border-collapse: collapse; font-size: 12px; width: 100%; max-width: 480px; }
+    .table-details th, .table-details td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
+    .table-details th { color: var(--gray); font-weight: 800; text-align: left; }
+    .table-details td:first-child { text-align: left; font-weight: 700; color: var(--ink-2); }
+
+    /* ── 재미 통계 ── */
+    .fun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .fun-tile { padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs); }
+    .fun-tile span { display: block; color: var(--gray); font-size: 11.5px; font-weight: 800; }
+    .fun-tile strong { display: block; margin-top: 6px; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; color: var(--ink); }
+    .fun-tile small { display: block; margin-top: 3px; color: var(--gray-2); font-size: 11px; font-weight: 700; }
+
+    /* ── 키워드 ── */
+    .kw-cloud { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .kw-chip {
+      display: inline-flex; align-items: baseline; gap: 5px; padding: 6px 13px; border-radius: var(--r-pill);
+      background: var(--lavender); color: var(--primary-700); font-weight: 800; line-height: 1.2;
+    }
+    .kw-chip small { color: var(--gray-2); font-size: 10.5px; font-weight: 700; }
+
+    /* ── CTA / 푸터 ── */
+    .cta-panel {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+      padding: clamp(20px, 2.4vw, 28px); border-radius: 26px; background: var(--grad-brand-soft);
+      border: 1px solid var(--line);
+    }
+    .cta-copy strong { display: block; font-size: 18px; letter-spacing: -0.03em; }
+    .cta-copy p { margin: 7px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+    .cta-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .report-foot { margin-top: 22px; text-align: center; color: var(--gray-2); font-size: 12px; font-weight: 600; line-height: 1.7; }
+    .report-foot a { color: var(--gray-2); text-decoration: underline; text-underline-offset: 3px; }
+    .report-foot a:hover { color: var(--primary); }
+
+    .empty-note { padding: 26px; text-align: center; color: var(--gray); font-size: 13.5px; font-weight: 700; line-height: 1.7; }
+
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 767px) {
+      .pagehead { padding: 22px 18px; border-radius: 26px; }
+      .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .stat-tile { padding: 13px 14px; border-radius: 16px; }
+      .card { border-radius: 22px; }
+      .badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .badge-card { grid-template-columns: 36px minmax(0, 1fr); gap: 9px; padding: 11px; }
+      .badge-emoji { width: 36px; height: 36px; font-size: 18px; border-radius: 11px; }
+      .fun-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .cta-panel { flex-direction: column; align-items: stretch; text-align: center; }
+      .cta-actions { justify-content: center; }
+      .rank-row { grid-template-columns: 32px minmax(0, 1fr); padding: 7px 6px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-mark">EX</span>
+        <span class="brand-copy">
+          <strong>운영 커뮤니티</strong>
+          <small>강남·논현 모임 플랫폼</small>
+        </span>
+      </a>
+
+      <nav class="side-nav" aria-label="데스크톱 내비게이션">
+        <a class="nav-item" href="index.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
+          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item is-active" href="report.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
+          <span class="nav-text">리포트</span><span class="nav-meta">현재</span>
+        </a>
+        <a class="nav-item" href="calculator.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
+          <span class="nav-text">정산기</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="news.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="nav-text">소식</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="games.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
+          <span class="nav-text">게임</span><span class="nav-meta">이동</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <span>프라이버시</span>
+        <strong>숫자만 모아 만든 리포트</strong>
+        <p>대화 원문은 저장하지 않아요. 멤버별·시간대별 집계 숫자만 사용합니다.</p>
+      </div>
+    </aside>
+
+    <header class="mobile-topbar">
+      <a class="mobile-brand" href="index.html" aria-label="필독으로 이동">
+        <span class="brand-mark">EX</span><span>우리방 리포트</span>
+      </a>
+      <a class="mobile-action" href="#rankCard">랭킹 보기</a>
+    </header>
+
+    <main id="reportTop" class="main">
+      <!-- 1) 히어로 -->
+      <section class="pagehead panel reveal" aria-labelledby="pageTitle">
+        <div class="pagehead-inner">
+          <div class="head-row">
+            <span class="kicker">📊 우리방 리포트</span>
+            <span id="sourceBadge" class="source-badge" hidden></span>
+            <select id="periodSelect" class="period-select" aria-label="리포트 기간 선택" hidden></select>
+          </div>
+          <h1 id="pageTitle" class="pagehead-title">이번 달 우리방, <span id="periodLabel">불러오는 중…</span></h1>
+          <p class="pagehead-desc">
+            한 달 동안 우리방이 얼마나 뜨거웠는지 숫자로 정리했어요.
+            수다왕 랭킹부터 새벽 반장까지, 다음 주인공은 누구일까요?
+          </p>
+          <div id="statTiles" class="stat-tiles" aria-label="핵심 통계"></div>
+        </div>
+      </section>
+
+      <div class="report-grid">
+        <!-- 2) 수다왕 랭킹 -->
+        <section id="rankCard" class="card panel reveal" aria-labelledby="rankTitle">
+          <div class="card-head"><h2 id="rankTitle" class="card-title">🏆 이달의 수다왕 TOP 10</h2></div>
+          <p class="card-note">메시지 수 기준이에요. 막대 길이가 곧 수다력!</p>
+          <div id="rankTop" class="rank-list"></div>
+          <div id="rankRest" class="rank-list rank-rest" hidden></div>
+          <div class="rank-more"><button id="rankToggle" class="mini-btn" type="button" aria-expanded="false" hidden>전체 순위 보기</button></div>
+        </section>
+
+        <!-- 3) 명예의 전당 -->
+        <section class="card panel reveal" aria-labelledby="hallTitle">
+          <div class="card-head"><h2 id="hallTitle" class="card-title">👑 명예의 전당</h2></div>
+          <p class="card-note">이번 기간 각 부문 1위예요. 조건을 채운 부문만 표시돼요.</p>
+          <div id="badgeGrid" class="badge-grid"></div>
+        </section>
+
+        <!-- 4) 시간대 히트맵 -->
+        <section class="card panel reveal" aria-labelledby="hmTitle">
+          <div class="card-head"><h2 id="hmTitle" class="card-title">🕘 요일 × 시간대 히트맵</h2></div>
+          <p class="card-note">색이 진할수록 메시지가 많았던 시간이에요. 칸을 누르거나 올려보면 정확한 개수가 보여요.</p>
+          <div class="hm-scroll"><div id="heatmap" class="hm" role="img" aria-label="요일별 시간대별 메시지 히트맵"></div></div>
+          <div id="hmLegend" class="hm-legend"></div>
+          <details class="table-details">
+            <summary>표로 보기 (요일·시간대 합계)</summary>
+            <div id="hmTable"></div>
+          </details>
+        </section>
+
+        <!-- 5) 일별 추이 -->
+        <section class="card panel reveal" aria-labelledby="trendTitle">
+          <div class="card-head"><h2 id="trendTitle" class="card-title">📈 일별 메시지 추이</h2></div>
+          <p class="card-note">차트를 따라가면 날짜별 개수를 볼 수 있어요. 키보드 ←→로도 움직여요. 옅은 세로 띠는 주말이에요.</p>
+          <div id="trendWrap" class="trend-wrap"></div>
+          <details class="table-details">
+            <summary>표로 보기 (일별 개수)</summary>
+            <div id="trendTable"></div>
+          </details>
+        </section>
+
+        <!-- 6) 재미 통계 -->
+        <section class="card panel reveal" aria-labelledby="funTitle">
+          <div class="card-head"><h2 id="funTitle" class="card-title">✨ 이런 것도 세어봤어요</h2></div>
+          <div id="funGrid" class="fun-grid"></div>
+        </section>
+
+        <!-- 7) 키워드 -->
+        <section id="kwCard" class="card panel reveal" aria-labelledby="kwTitle" hidden>
+          <div class="card-head"><h2 id="kwTitle" class="card-title">💬 이달의 키워드</h2></div>
+          <p class="card-note">자주 등장한 단어일수록 크게 보여요. (인사말·짧은 감탄사는 뺐어요)</p>
+          <div id="kwCloud" class="kw-cloud"></div>
+        </section>
+
+        <!-- 8) CTA -->
+        <section class="cta-panel panel reveal" aria-label="참여 유도">
+          <div class="cta-copy">
+            <strong>다음 리포트의 주인공은?</strong>
+            <p>벙에 오고, 소식 게시판에 후기를 남기면 다음 달 명예의 전당이 가까워져요.</p>
+          </div>
+          <div class="cta-actions">
+            <a class="btn btn-primary" href="news.html">소식 게시판 가기</a>
+            <a class="btn btn-secondary" href="calculator.html">벙비 정산기</a>
+          </div>
+        </section>
+      </div>
+
+      <!-- 9) 푸터 노트 -->
+      <p class="report-foot reveal">
+        대화 원문은 저장되지 않아요 — 집계 숫자만 모아 만든 리포트예요.<br />
+        <a href="report-admin.html">운영진이신가요? 리포트 만들기 →</a>
+      </p>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+      <a class="tab-item is-active" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>리포트</a>
+      <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+      <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+      <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+    </nav>
+  </div>
+
+  <div id="chartTip" class="chart-tip" role="status" aria-live="polite"><strong id="tipValue"></strong><span id="tipLabel"></span></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+    /* ── Supabase (plain fetch REST) ─────────────────────── */
+    const SUPA = {
+      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
+      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
+    };
+    async function supaFetch(path, opts = {}) {
+      const res = await fetch(SUPA.url + path, {
+        ...opts,
+        headers: {
+          apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon,
+          "Content-Type": "application/json", ...(opts.headers || {})
+        }
+      });
+      if (!res.ok) {
+        let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
+        const err = new Error(msg || ("HTTP " + res.status)); err.status = res.status; throw err;
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    /* ── 유틸 ─────────────────────────────────────────────── */
+    const $ = (id) => document.getElementById(id);
+    function escapeHTML(value) {
+      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
+    }
+    const nf = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR");
+    const WEEK_KO = ["월", "화", "수", "목", "금", "토", "일"];
+    function fmtDateK(dateStr) {
+      const p = String(dateStr || "").split("-");
+      if (p.length !== 3) return String(dateStr || "");
+      const js = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
+      return `${+p[1]}월 ${+p[2]}일 (${WEEK_KO[(js + 6) % 7]})`;
+    }
+
+    /* 순차 램프 (스펙 고정) */
+    const RAMP = ["#F4EEFB", "#E3D1F2", "#C9A5E4", "#A368D8", "#7B2BB0", "#5A1B80"];
+    const ZERO_COLOR = "#F5F3F7";
+    const SERIES = "#7B2BB0"; /* 팔레트 1번 */
+    function rampColor(v, max) {
+      if (!v) return ZERO_COLOR;
+      const r = v / (max || 1);
+      if (r <= 0.12) return RAMP[0];
+      if (r <= 0.28) return RAMP[1];
+      if (r <= 0.46) return RAMP[2];
+      if (r <= 0.64) return RAMP[3];
+      if (r <= 0.84) return RAMP[4];
+      return RAMP[5];
+    }
+
+    /* ── 공유 툴팁 ────────────────────────────────────────── */
+    const tipEl = $("chartTip");
+    let tipHideTimer = null;
+    function showTip(x, y, value, label) {
+      $("tipValue").textContent = value;
+      $("tipLabel").textContent = label;
+      const pad = 8;
+      const tx = Math.min(Math.max(x, 70), window.innerWidth - 70);
+      tipEl.style.left = tx + "px";
+      tipEl.style.top = Math.max(y, 54) - pad + "px";
+      tipEl.classList.add("is-visible");
+      clearTimeout(tipHideTimer);
+    }
+    function hideTip(delay) {
+      clearTimeout(tipHideTimer);
+      tipHideTimer = setTimeout(() => tipEl.classList.remove("is-visible"), delay || 0);
+    }
+
+    /* ── 데이터 로드 (우선순위: preview → supabase → 샘플) ── */
+    let liveRows = [];
+    async function loadData() {
+      const params = new URLSearchParams(location.search);
+      if (params.get("preview") === "1") {
+        try {
+          const draft = JSON.parse(localStorage.getItem("excer_report_draft") || "null");
+          if (draft && draft.totals) return { stats: draft, source: "preview" };
+        } catch (e) { /* 초안 파손 → 다음 소스로 */ }
+      }
+      try {
+        const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
+        if (Array.isArray(rows) && rows.length && rows[0].stats && rows[0].stats.totals) {
+          liveRows = rows.filter((r) => r.stats && r.stats.totals);
+          if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
+        }
+      } catch (e) { /* 미설치/네트워크 → 샘플로 */ }
+      try {
+        const res = await fetch("data/report-sample.json");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const stats = await res.json();
+        return { stats, source: "sample" };
+      } catch (e) {
+        return { stats: null, source: "none" };
+      }
+    }
+
+    /* ── 히어로 ───────────────────────────────────────────── */
+    function renderHero(st, source, row) {
+      $("periodLabel").textContent = st.periodLabel || "리포트";
+      document.title = "모임운영 커뮤니티 — 우리방 리포트 · " + (st.periodLabel || "");
+
+      const badge = $("sourceBadge");
+      badge.hidden = false;
+      if (source === "sample") { badge.className = "source-badge is-sample"; badge.textContent = "📎 예시 데이터 — 발행된 리포트가 아직 없어요"; }
+      else if (source === "preview") { badge.className = "source-badge is-preview"; badge.textContent = "👀 미리보기 — 발행 전 초안이에요"; }
+      else { badge.className = "source-badge is-live"; badge.textContent = "✅ 발행됨 · " + (row && row.updated_at ? row.updated_at.slice(0, 10) : ""); }
+
+      const t = st.totals;
+      const best = st.peaks && st.peaks.bestDay ? st.peaks.bestDay : null;
+      $("statTiles").innerHTML = `
+        <div class="stat-tile"><span>총 메시지</span><strong>${nf(t.messages)}</strong><small>${nf(t.days)}일 동안</small></div>
+        <div class="stat-tile"><span>활동 멤버</span><strong>${nf(t.activeMembers)}명</strong><small>한 마디라도 남긴 멤버</small></div>
+        <div class="stat-tile"><span>하루 평균</span><strong>${nf(t.avgPerDay)}개</strong><small>쉬는 날 포함 평균</small></div>
+        <div class="stat-tile"><span>최고 기록일</span><strong>${best ? nf(best.c) : "-"}</strong><small>${best ? escapeHTML(fmtDateK(best.d)) : "데이터 없음"}</small></div>`;
+    }
+
+    /* 기간 선택 (발행 리포트 여러 개) */
+    function renderPeriodSelect(currentId) {
+      const sel = $("periodSelect");
+      if (liveRows.length < 2) { sel.hidden = true; return; }
+      sel.hidden = false;
+      sel.innerHTML = liveRows.map((r) =>
+        `<option value="${r.id}"${r.id === currentId ? " selected" : ""}>${escapeHTML(r.period_label)}</option>`).join("");
+      sel.onchange = () => {
+        const row = liveRows.find((r) => String(r.id) === sel.value);
+        if (row) renderAll(row.stats, "live", row);
+      };
+    }
+
+    /* ── 랭킹 ─────────────────────────────────────────────── */
+    const MEDALS = ["🥇", "🥈", "🥉"];
+    function rankRowHTML(m, idx, max) {
+      const w = Math.max(1.2, (m.count / (max || 1)) * 100);
+      const medal = idx < 3 ? `<span class="rank-no is-medal">${MEDALS[idx]}</span>` : `<span class="rank-no">${idx + 1}</span>`;
+      return `
+        <div class="rank-row${idx < 3 ? " is-top" : ""}">
+          ${medal}
+          <div class="rank-main">
+            <div class="rank-name-line"><span class="rank-name">${escapeHTML(m.name)}</span><span class="rank-share">${escapeHTML(String(m.share))}%</span></div>
+            <div class="rank-bar-line">
+              <div class="rank-track" style="max-width:${w}%"><div class="rank-bar"></div></div>
+              <span class="rank-count">${nf(m.count)}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+    function renderRank(members) {
+      const list = (members || []).filter((m) => m && m.count > 0);
+      const max = list.length ? list[0].count : 0;
+      $("rankTop").innerHTML = list.length
+        ? list.slice(0, 10).map((m, i) => rankRowHTML(m, i, max)).join("")
+        : `<div class="empty-note">이 기간에는 집계된 멤버가 없어요.</div>`;
+      const rest = list.slice(10);
+      const toggle = $("rankToggle");
+      const restEl = $("rankRest");
+      restEl.innerHTML = rest.map((m, i) => rankRowHTML(m, i + 10, max)).join("");
+      restEl.hidden = true;
+      toggle.hidden = rest.length === 0;
+      toggle.textContent = `전체 순위 보기 (${nf(list.length)}명)`;
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.onclick = () => {
+        const open = restEl.hidden;
+        restEl.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.textContent = open ? "접기" : `전체 순위 보기 (${nf(list.length)}명)`;
+      };
+    }
+
+    /* ── 명예의 전당 ─────────────────────────────────────── */
+    function computeBadges(st) {
+      const M = (st.members || []).filter((m) => m && m.count > 0);
+      const out = [];
+      const sumH = (m, a, b) => (m.hours || []).slice(a, b + 1).reduce((s, x) => s + (x || 0), 0);
+      const media = (m, k) => (m.media && m.media[k]) || 0;
+      const maxBy = (fn, min) => {
+        let best = null, bv = -1;
+        M.forEach((m) => { const v = fn(m) || 0; if (v > bv) { bv = v; best = m; } });
+        return best && bv >= min ? { m: best, v: bv } : null;
+      };
+      if (M[0]) out.push({ e: "🏆", t: "수다왕", n: M[0].name, d: `${nf(M[0].count)}개 · 점유율 ${M[0].share}%` });
+      const dawn = maxBy((m) => sumH(m, 0, 5), 30);
+      if (dawn) out.push({ e: "🌙", t: "새벽 반장", n: dawn.m.name, d: `새벽 0~5시에 ${nf(dawn.v)}개` });
+      const morning = maxBy((m) => sumH(m, 6, 9), 20);
+      if (morning) out.push({ e: "☀️", t: "아침형 인간", n: morning.m.name, d: `아침 6~9시에 ${nf(morning.v)}개` });
+      const owl = maxBy((m) => sumH(m, 22, 23), 20);
+      if (owl) out.push({ e: "🦉", t: "올빼미", n: owl.m.name, d: `밤 22~23시에 ${nf(owl.v)}개` });
+      const photo = maxBy((m) => media(m, "photo"), 5);
+      if (photo) out.push({ e: "📸", t: "포토왕", n: photo.m.name, d: `사진 ${nf(photo.v)}장` });
+      const emo = maxBy((m) => media(m, "emoticon"), 10);
+      if (emo) out.push({ e: "😆", t: "이모티콘 부자", n: emo.m.name, d: `이모티콘 ${nf(emo.v)}개` });
+      const link = maxBy((m) => media(m, "link"), 5);
+      if (link) out.push({ e: "🔗", t: "링크 수집가", n: link.m.name, d: `링크 ${nf(link.v)}개` });
+      let tmi = null;
+      M.forEach((m) => { if (m.count >= 50 && (!tmi || (m.avgLen || 0) > (tmi.avgLen || 0))) tmi = m; });
+      if (tmi && (tmi.avgLen || 0) >= 25) out.push({ e: "✍️", t: "TMI 장인", n: tmi.name, d: `평균 ${nf(tmi.avgLen)}자 (50개 이상 기준)` });
+      const att = maxBy((m) => m.activeDays || 0, 7);
+      if (att) out.push({ e: "📅", t: "출석왕", n: att.m.name, d: `${nf(att.v)}일 활동` });
+      const streak = maxBy((m) => m.streak || 0, 3);
+      if (streak) out.push({ e: "🔥", t: "열정 스트릭", n: streak.m.name, d: `${nf(streak.v)}일 연속 활동` });
+      return out;
+    }
+    function renderBadges(st) {
+      const badges = computeBadges(st);
+      $("badgeGrid").innerHTML = badges.length
+        ? badges.map((b) => `
+          <div class="badge-card">
+            <span class="badge-emoji" aria-hidden="true">${b.e}</span>
+            <span class="badge-body">
+              <span class="badge-title">${escapeHTML(b.t)}</span>
+              <span class="badge-name">${escapeHTML(b.n)}</span>
+              <span class="badge-desc">${escapeHTML(b.d)}</span>
+            </span>
+          </div>`).join("")
+        : `<div class="empty-note">조건을 채운 배지가 아직 없어요.</div>`;
+    }
+
+    /* ── 히트맵 ───────────────────────────────────────────── */
+    function renderHeatmap(heatmap) {
+      const grid = $("heatmap");
+      const rows = Array.isArray(heatmap) && heatmap.length === 7 ? heatmap : null;
+      if (!rows) { grid.innerHTML = ""; return; }
+      let max = 0;
+      rows.forEach((r) => r.forEach((v) => { if (v > max) max = v; }));
+
+      let html = `<span class="hm-corner" aria-hidden="true"></span>`;
+      for (let h = 0; h < 24; h++) {
+        html += `<span class="hm-hour" aria-hidden="true">${h % 6 === 0 || h === 23 ? h : ""}</span>`;
+      }
+      rows.forEach((row, d) => {
+        html += `<span class="hm-day${d >= 5 ? " is-weekend" : ""}">${WEEK_KO[d]}</span>`;
+        row.forEach((v, h) => {
+          html += `<span class="hm-cell" style="background:${rampColor(v, max)}" data-d="${d}" data-h="${h}" data-v="${v}" title="${WEEK_KO[d]} ${h}시 · ${nf(v)}개"></span>`;
+        });
+      });
+      grid.innerHTML = html;
+
+      $("hmLegend").innerHTML =
+        `<span>적음</span><i style="background:${ZERO_COLOR}"></i>` +
+        RAMP.map((c) => `<i style="background:${c}"></i>`).join("") +
+        `<span>많음</span>`;
+
+      // 셀 자체가 히트 타깃: 탭/호버 공용 툴팁
+      const onPoint = (e) => {
+        const cell = e.target.closest(".hm-cell");
+        if (!cell) { hideTip(80); return; }
+        const rect = cell.getBoundingClientRect();
+        showTip(rect.left + rect.width / 2, rect.top,
+          nf(cell.dataset.v) + "개",
+          WEEK_KO[+cell.dataset.d] + "요일 " + cell.dataset.h + "시");
+      };
+      grid.onpointermove = onPoint;
+      grid.onpointerdown = onPoint;
+      grid.onpointerleave = () => hideTip(120);
+
+      // 표 트윈 (요일 합계 + 시간대 합계)
+      const daySum = rows.map((r) => r.reduce((s, x) => s + x, 0));
+      const hourSum = [];
+      for (let h = 0; h < 24; h++) hourSum.push(rows.reduce((s, r) => s + (r[h] || 0), 0));
+      $("hmTable").innerHTML =
+        `<table><thead><tr><th scope="col">요일</th><th scope="col">메시지</th></tr></thead><tbody>` +
+        daySum.map((v, d) => `<tr><td>${WEEK_KO[d]}요일</td><td>${nf(v)}</td></tr>`).join("") +
+        `</tbody></table>` +
+        `<table><thead><tr><th scope="col">시간대</th><th scope="col">메시지</th></tr></thead><tbody>` +
+        hourSum.map((v, h) => `<tr><td>${h}시</td><td>${nf(v)}</td></tr>`).join("") +
+        `</tbody></table>`;
+    }
+
+    /* ── 일별 추이 (SVG 영역+라인) ────────────────────────── */
+    function niceCeil(v) {
+      if (v <= 10) return 10;
+      const pow = Math.pow(10, Math.floor(Math.log10(v)));
+      for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= v) return m * pow; }
+      return 10 * pow;
+    }
+    function renderTrend(daily, peaks) {
+      const wrap = $("trendWrap");
+      const data = Array.isArray(daily) ? daily : [];
+      if (data.length < 2) { wrap.innerHTML = `<div class="empty-note">추이를 그릴 데이터가 부족해요.</div>`; return; }
+
+      const W = 720, Hh = 250, L = 46, R = 16, T = 16, B = 34;
+      const pw = W - L - R, ph = Hh - T - B;
+      const ymax = niceCeil(Math.max(...data.map((e) => e.c), 1));
+      const x = (i) => L + (i * pw) / (data.length - 1);
+      const y = (v) => T + ph - (v / ymax) * ph;
+
+      // 주말 세로 띠
+      let bands = "";
+      const half = pw / (data.length - 1) / 2;
+      data.forEach((e, i) => {
+        const wd = ChatWeekday(e.d);
+        if (wd >= 5) bands += `<rect x="${(x(i) - half).toFixed(1)}" y="${T}" width="${(half * 2).toFixed(1)}" height="${ph}" fill="#F4EEFB" opacity="0.55"/>`;
+      });
+
+      // 그리드 + y눈금 (깔끔한 수)
+      let grid = "", yticks = "";
+      for (let g = 0; g <= 4; g++) {
+        const gv = (ymax / 4) * g, gy = y(gv);
+        grid += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(103,32,145,0.10)" stroke-width="1"/>`;
+        yticks += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#968ea6">${nf(gv)}</text>`;
+      }
+
+      // 라인/영역 경로
+      let lineP = "", areaP = `M ${x(0).toFixed(1)} ${y(0).toFixed(1)}`;
+      data.forEach((e, i) => {
+        const px = x(i).toFixed(1), py = y(e.c).toFixed(1);
+        lineP += (i ? " L " : "M ") + px + " " + py;
+        areaP += ` L ${px} ${py}`;
+      });
+      areaP += ` L ${x(data.length - 1).toFixed(1)} ${y(0).toFixed(1)} Z`;
+
+      // x눈금: ~6개 + 주말 강조
+      const step = Math.max(1, Math.ceil(data.length / 6));
+      let xticks = "";
+      data.forEach((e, i) => {
+        if (i % step !== 0 && i !== data.length - 1) return;
+        const wd = ChatWeekday(e.d);
+        const wk = wd >= 5;
+        const p = e.d.split("-");
+        xticks += `<text x="${x(i).toFixed(1)}" y="${Hh - 12}" text-anchor="middle" font-size="10.5" font-weight="${wk ? 900 : 700}" fill="${wk ? "#443a52" : "#968ea6"}">${+p[1]}/${+p[2]}${wk ? " " + WEEK_KO[wd] : ""}</text>`;
+      });
+
+      // 피크 직접 라벨 (툴팁 없이도 값 확인 가능)
+      let peakMark = "";
+      const bi = peaks && peaks.bestDay ? data.findIndex((e) => e.d === peaks.bestDay.d) : -1;
+      if (bi >= 0) {
+        const px = x(bi), py = y(data[bi].c);
+        const anchor = bi > data.length * 0.8 ? "end" : (bi < data.length * 0.2 ? "start" : "middle");
+        peakMark = `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>` +
+          `<text x="${px.toFixed(1)}" y="${(py - 10).toFixed(1)}" text-anchor="${anchor}" font-size="11.5" font-weight="900" fill="#1C1326">${nf(data[bi].c)}개</text>`;
+      }
+
+      wrap.innerHTML = `
+        <svg viewBox="0 0 ${W} ${Hh}" role="img" tabindex="0"
+             aria-label="일별 메시지 추이. 총 ${data.length}일. 좌우 화살표 키로 날짜별 값을 확인할 수 있어요.">
+          ${bands}${grid}${yticks}
+          <path d="${areaP}" fill="${SERIES}" opacity="0.1"/>
+          <path d="${lineP}" fill="none" stroke="${SERIES}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          ${peakMark}${xticks}
+          <g id="crosshair" opacity="0">
+            <line id="chLine" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(103,32,145,0.35)" stroke-width="1"/>
+            <circle id="chDot" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>
+          </g>
+          <rect id="chOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent"/>
+        </svg>`;
+
+      // 크로스헤어 + 툴팁 (호버/탭/키보드)
+      const svg = wrap.querySelector("svg");
+      const cross = svg.querySelector("#crosshair");
+      const chLine = svg.querySelector("#chLine");
+      const chDot = svg.querySelector("#chDot");
+      const overlay = svg.querySelector("#chOverlay");
+      let focusIdx = -1;
+
+      function setIdx(i, viaKeyboard) {
+        focusIdx = Math.max(0, Math.min(data.length - 1, i));
+        const e = data[focusIdx];
+        const px = x(focusIdx), py = y(e.c);
+        cross.setAttribute("opacity", "1");
+        chLine.setAttribute("x1", px); chLine.setAttribute("x2", px);
+        chDot.setAttribute("cx", px); chDot.setAttribute("cy", py);
+        const rect = svg.getBoundingClientRect();
+        const sx = rect.left + (px / W) * rect.width;
+        const sy = rect.top + (py / Hh) * rect.height;
+        showTip(sx, sy, nf(e.c) + "개", fmtDateK(e.d));
+        if (viaKeyboard) svg.setAttribute("aria-label", `${fmtDateK(e.d)} 메시지 ${nf(e.c)}개`);
+      }
+      function clearIdx() { cross.setAttribute("opacity", "0"); hideTip(120); }
+
+      overlay.addEventListener("pointermove", (ev) => {
+        const rect = svg.getBoundingClientRect();
+        const vx = ((ev.clientX - rect.left) / rect.width) * W;
+        setIdx(Math.round(((vx - L) / pw) * (data.length - 1)), false);
+      });
+      overlay.addEventListener("pointerdown", (ev) => {
+        const rect = svg.getBoundingClientRect();
+        const vx = ((ev.clientX - rect.left) / rect.width) * W;
+        setIdx(Math.round(((vx - L) / pw) * (data.length - 1)), false);
+      });
+      overlay.addEventListener("pointerleave", clearIdx);
+      svg.addEventListener("keydown", (ev) => {
+        if (ev.key === "ArrowRight") { ev.preventDefault(); setIdx(focusIdx < 0 ? 0 : focusIdx + 1, true); }
+        else if (ev.key === "ArrowLeft") { ev.preventDefault(); setIdx(focusIdx < 0 ? data.length - 1 : focusIdx - 1, true); }
+        else if (ev.key === "Escape") clearIdx();
+      });
+      svg.addEventListener("blur", clearIdx);
+
+      // 표 트윈
+      $("trendTable").innerHTML =
+        `<table><thead><tr><th scope="col">날짜</th><th scope="col">메시지</th></tr></thead><tbody>` +
+        data.map((e) => `<tr><td>${escapeHTML(fmtDateK(e.d))}</td><td>${nf(e.c)}</td></tr>`).join("") +
+        `</tbody></table>`;
+    }
+    function ChatWeekday(dateStr) {
+      const p = String(dateStr).split("-");
+      return (new Date(+p[0], +p[1] - 1, +p[2]).getDay() + 6) % 7;
+    }
+
+    /* ── 재미 통계 ────────────────────────────────────────── */
+    function renderFun(st) {
+      const t = st.totals || {};
+      const pk = st.peaks || {};
+      const tiles = [];
+      if (pk.bestDay) tiles.push({ e: "🔥", k: "가장 뜨거웠던 날", v: fmtDateK(pk.bestDay.d), s: nf(pk.bestDay.c) + "개" });
+      if (pk.quietDay) tiles.push({ e: "😴", k: "가장 조용했던 날", v: fmtDateK(pk.quietDay.d), s: nf(pk.quietDay.c) + "개" });
+      if (pk.bestHour != null) tiles.push({ e: "⏰", k: "피크 시간대", v: pk.bestHour + "시", s: "이 시간에 폰을 놓지 못해요" });
+      tiles.push({ e: "👋", k: "새로 온 멤버", v: nf(t.newMembers) + "명", s: "이번 기간 입장 기준" });
+      tiles.push({ e: "📸", k: "공유된 사진", v: nf(t.photos) + "장", s: "동영상 " + nf(t.videos) + "개" });
+      tiles.push({ e: "😆", k: "이모티콘", v: nf(t.emoticons) + "개", s: "말보다 빠른 리액션" });
+      tiles.push({ e: "🔗", k: "공유된 링크", v: nf(t.links) + "개", s: "맛집·예약·공지 링크" });
+      $("funGrid").innerHTML = tiles.map((x) => `
+        <div class="fun-tile">
+          <span>${x.e} ${escapeHTML(x.k)}</span>
+          <strong>${escapeHTML(x.v)}</strong>
+          <small>${escapeHTML(x.s)}</small>
+        </div>`).join("");
+    }
+
+    /* ── 키워드 클라우드 ─────────────────────────────────── */
+    function renderKeywords(keywords) {
+      const card = $("kwCard");
+      const list = (keywords || []).filter((k) => k && k.w && k.c > 0);
+      if (!list.length) { card.hidden = true; return; }
+      card.hidden = false;
+      const max = list[0].c, min = list[list.length - 1].c;
+      const size = (c) => {
+        const r = max === min ? 1 : (c - min) / (max - min);
+        return (12.5 + r * 9.5).toFixed(1);
+      };
+      $("kwCloud").innerHTML = list.map((k) =>
+        `<span class="kw-chip" style="font-size:${size(k.c)}px">${escapeHTML(k.w)}<small>${nf(k.c)}</small></span>`).join("");
+    }
+
+    /* ── 전체 렌더 ────────────────────────────────────────── */
+    function renderAll(stats, source, row) {
+      renderHero(stats, source, row);
+      renderPeriodSelect(row ? row.id : null);
+      renderRank(stats.members);
+      renderBadges(stats);
+      renderHeatmap(stats.heatmap);
+      renderTrend(stats.daily, stats.peaks);
+      renderFun(stats);
+      renderKeywords(stats.keywords);
+    }
+
+    /* ── reveal 등장 모션 ─────────────────────────────────── */
+    function setupReveal() {
+      const els = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window)) { els.forEach((el) => el.classList.add("is-visible")); return; }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("is-visible"); io.unobserve(en.target); } });
+      }, { threshold: 0.08 });
+      els.forEach((el) => io.observe(el));
+    }
+
+    /* ── 시작 ─────────────────────────────────────────────── */
+    (async function init() {
+      setupReveal();
+      const { stats, source, row } = await loadData();
+      if (!stats || !stats.totals) {
+        $("periodLabel").textContent = "준비 중이에요";
+        $("statTiles").innerHTML = `<div class="empty-note" style="grid-column:1/-1">리포트 데이터를 불러오지 못했어요. 잠시 후 다시 열어주세요.</div>`;
+        return;
+      }
+      renderAll(stats, source, row);
+    })();
+  </script>
+</body>
+</html>
