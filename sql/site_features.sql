@@ -112,7 +112,9 @@ create table if not exists site_comments (
 alter table site_comments enable row level security;
 
 -- 공개 뷰: pass_hash 는 절대 노출하지 않는다
-create or replace view site_posts_v as
+-- 뷰는 재실행/버전 간 컬럼 수가 달라질 수 있어 drop 후 재생성(42P16 방지)
+drop view if exists site_posts_v cascade;
+create view site_posts_v as
   select p.id, p.category, p.title, p.body, p.author, p.pinned,
          p.created_at, p.updated_at,
          (select count(*) from site_comments c where c.post_id = p.id) as comment_count

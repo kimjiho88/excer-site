@@ -32,7 +32,9 @@ create table if not exists site_post_reactions (
 alter table site_post_reactions enable row level security;  -- RPC/뷰 전용
 
 -- 게시글 뷰 v2: 리액션 집계 + 댓글 수 포함 (pass_hash 미노출)
-create or replace view site_posts_v as
+-- drop 후 재생성 — v1 뷰(컬럼 적음)에서 확장할 때 42P16 방지
+drop view if exists site_posts_v cascade;
+create view site_posts_v as
   select p.id, p.category, p.title, p.body, p.author, p.pinned,
          p.created_at, p.updated_at,
          (select count(*) from site_comments c where c.post_id = p.id) as comment_count,
