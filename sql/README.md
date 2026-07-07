@@ -3,7 +3,22 @@
 리포트 발행·소식 게시판·정산 공유(입금 체크 동기화)는 Supabase 테이블이 필요합니다.
 아래 한 번만 해두면 이후에는 사이트에서 모든 것이 처리됩니다.
 
-## 적용 순서
+## 가장 쉬운 방법 (권장) — 한 번에 설치
+
+`sql/setup_all.sql` **하나만** 실행하면 게시판·대시보드 발행·정산 공유·방문자 카운터가
+전부 켜집니다. (아래의 v1/v2/v3 를 순서대로 돌리는 것과 결과가 같고, 순서 실수·재실행 충돌이 없습니다.)
+
+1. [SQL Editor](https://supabase.com/dashboard/project/drggzlnzwvkhtalvkqyo/sql/new) 열기
+2. `sql/setup_all.sql` 전체 붙여넣기
+3. `CHANGE_ME` 를 운영진 비밀번호로 바꾸기 (작은따옴표 `'` 는 그대로)
+4. **Run** → 끝
+
+> 이미 일부만 실행해서 에러(예: `42P16 cannot drop columns from view`)가 났더라도,
+> 이 파일을 그대로 다시 실행하면 깨끗하게 정리되며 완료됩니다.
+
+---
+
+## (수동) 파일별 적용 순서
 
 1. [Supabase 대시보드](https://supabase.com/dashboard) → 기존 프로젝트(`drggzlnzwvkhtalvkqyo`) → **SQL Editor**
 2. `sql/site_features.sql` 파일을 열어 전체 복사
