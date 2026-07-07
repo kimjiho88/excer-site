@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#5F0080" />
+  <title>모임운영 커뮤니티 — 리포트 만들기 (운영진)</title>
+  <meta name="description" content="카톡 대화 내보내기 파일로 운영 대시보드 리포트를 만들어 발행하는 운영진 페이지." />
+  <meta name="robots" content="noindex" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+  <script src="assets/chat-parser.js"></script>
+
+  <style>
+    /* ============================================================
+       리포트 어드민 전용 스타일
+       ============================================================ */
+    .pagehead {
+      position: relative; overflow: hidden;
+      padding: clamp(24px, 2.8vw, 36px) clamp(22px, 2.8vw, 38px);
+      border-radius: var(--r-xl); margin-bottom: 24px;
+    }
+    .pagehead-inner { position: relative; z-index: 1; }
+    .pagehead-title { margin: 14px 0 0; font-size: clamp(25px, 2.8vw, 36px); line-height: 1.08; letter-spacing: -0.055em; font-weight: 880; color: var(--primary-900); }
+    .privacy-note {
+      display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; padding: 13px 16px;
+      border-radius: 16px; background: var(--pastel-mint);
+      box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.14);
+      color: #0D7A55; font-size: 13px; line-height: 1.6; font-weight: 700;
+    }
+
+    .admin-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+    .admin-layout > * { min-width: 0; }
+    .stack { display: grid; gap: 16px; min-width: 0; }
+    .card { padding: clamp(18px, 2vw, 24px); border-radius: 26px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .card-title { margin: 0; font-size: 17px; letter-spacing: -0.04em; font-weight: 850; display: flex; align-items: center; gap: 10px; }
+    .card-step {
+      display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px;
+      background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 900; flex: none;
+      box-shadow: 0 4px 10px -3px rgba(95, 0, 128, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    .card-note { margin: -6px 0 14px; color: var(--gray); font-size: 12.5px; font-weight: 600; line-height: 1.55; }
+
+    /* ── 업로드 ── */
+    .dropzone {
+      position: relative; overflow: hidden;
+      display: grid; place-items: center; gap: 6px; min-height: 172px; padding: 26px;
+      border: 2px dashed rgba(95, 0, 128, 0.22); border-radius: 22px;
+      background:
+        radial-gradient(30rem 13rem at 50% -46%, rgba(181, 126, 220, 0.16), transparent 70%),
+        var(--offwhite);
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease),
+                  box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+    }
+    .dropzone::before {
+      content: ""; width: 52px; height: 52px; border-radius: 17px; margin-bottom: 2px;
+      background: var(--pastel-lavender)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235F0080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4'/%3E%3Cpath d='m6 10 6-6 6 6'/%3E%3Cpath d='M4 20h16'/%3E%3C/svg%3E")
+        center / 24px 24px no-repeat;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.10), 0 8px 18px -8px rgba(95, 0, 128, 0.35);
+      transition: transform 0.25s var(--ease);
+    }
+    .dropzone:hover { border-color: var(--primary-300); background-color: var(--lavender); box-shadow: var(--shadow-sm); }
+    .dropzone:hover::before { transform: translateY(-3px); }
+    .dropzone.is-over {
+      border-color: var(--primary); background-color: var(--pastel-lavender);
+      box-shadow: inset 0 0 0 3px rgba(95, 0, 128, 0.10), var(--shadow-sm);
+      transform: scale(1.008);
+    }
+    .dropzone.is-over::before { transform: translateY(-3px) scale(1.06); }
+    .dropzone strong { font-size: 15px; letter-spacing: -0.02em; color: var(--ink); }
+    .dropzone p { margin: 0; color: var(--gray); font-size: 12.5px; font-weight: 700; line-height: 1.6; }
+    .file-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .file-chip {
+      display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 8px 0 13px;
+      border-radius: var(--r-pill); background: var(--pastel-lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.09);
+    }
+    .file-chip button {
+      display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(95, 0, 128, 0.12); color: var(--primary); font-size: 11px; font-weight: 900;
+      transition: background 0.15s var(--ease), color 0.15s var(--ease);
+    }
+    .file-chip button:hover { background: rgba(192, 57, 43, 0.15); color: var(--danger); }
+    .parse-info { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .parse-info span {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r-pill);
+      background: rgba(255, 255, 255, 0.88); border: 1px solid var(--line); color: var(--ink-2); font-size: 12px; font-weight: 800;
+      box-shadow: var(--shadow-xs);
+    }
+    .parse-info b { color: var(--primary-700); font-variant-numeric: tabular-nums; }
+
+    /* ── 기간 필터 ── */
+    .range-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+    .range-row .tilde { text-align: center; color: var(--gray-2); font-weight: 800; }
+    .quick-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+    .quick-btn {
+      min-height: 34px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
+      background: #fff; color: var(--ink-2); font-size: 12.5px; font-weight: 800; cursor: pointer;
+      transition: all 0.15s var(--ease);
+    }
+    .quick-btn:hover { border-color: var(--primary-300); color: var(--primary); box-shadow: var(--shadow-xs); }
+    .quick-btn.is-on {
+      background: var(--grad-brand); border-color: transparent; color: #fff;
+      box-shadow: 0 5px 12px -4px rgba(95, 0, 128, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+    .input {
+      width: 100%; min-height: 44px; padding: 0 13px; border-radius: 13px;
+      border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink); font-weight: 700;
+      transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
+    }
+    .input:focus { border-color: rgba(95, 0, 128, 0.45); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.09); }
+    .field { display: grid; gap: 7px; }
+    .field label { color: var(--ink-2); font-size: 13px; font-weight: 800; }
+
+    /* ── 멤버 표 ── */
+    .member-table { display: grid; gap: 4px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
+    .member-row {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center;
+      padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff;
+      font-size: 13px; cursor: pointer; transition: background 0.14s var(--ease), opacity 0.14s var(--ease);
+    }
+    .member-row:hover { background: rgba(240, 231, 250, 0.55); border-color: var(--line-strong); }
+    .member-row input { width: 17px; height: 17px; accent-color: var(--primary); flex: none; }
+    .member-row.is-excluded { opacity: 0.45; }
+    .member-row.is-excluded .m-name { text-decoration: line-through; }
+    .m-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m-count { font-weight: 850; color: var(--primary-700); font-variant-numeric: tabular-nums; }
+    .m-share { color: var(--gray); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+
+    /* ── 키워드 칩 ── */
+    .kw-edit { display: flex; flex-wrap: wrap; gap: 7px; }
+    .kw-edit-chip {
+      display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 7px 0 13px;
+      border-radius: var(--r-pill); background: var(--pastel-lavender); color: var(--primary-700); font-size: 12.5px; font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+    }
+    .kw-edit-chip small { color: var(--gray); font-weight: 700; }
+    .kw-edit-chip button {
+      display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(95, 0, 128, 0.12); color: var(--primary); font-size: 11px; font-weight: 900;
+      transition: background 0.15s var(--ease), color 0.15s var(--ease);
+    }
+    .kw-edit-chip button:hover { background: rgba(192, 57, 43, 0.15); color: var(--danger); }
+
+    /* ── 발행 영역 ── */
+    .publish-stack { position: sticky; top: 24px; display: grid; gap: 14px; min-width: 0; }
+    .mini-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .mini-stat {
+      padding: 12px 14px; border-radius: 15px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+    }
+    .mini-stat span { display: block; color: var(--gray); font-size: 11.5px; font-weight: 800; }
+    .mini-stat strong { display: block; margin-top: 4px; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; color: var(--primary-700); font-variant-numeric: tabular-nums; }
+    .action-col { display: grid; gap: 8px; margin-top: 14px; }
+    .action-col .btn { width: 100%; }
+
+    .report-list { display: grid; gap: 8px; }
+    .report-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff;
+      transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+    }
+    .report-item:hover { border-color: var(--line-strong); box-shadow: var(--shadow-xs); }
+    .report-item b { font-size: 13.5px; letter-spacing: -0.02em; }
+    .report-item small { display: block; margin-top: 2px; color: var(--gray); font-size: 11px; font-weight: 700; }
+    .report-empty { color: var(--gray); font-size: 12.5px; font-weight: 700; padding: 8px 2px; line-height: 1.6; }
+
+    .setup-box {
+      padding: 15px 17px; border-radius: 16px;
+      background: var(--pastel-cream);
+      box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.16);
+      color: #856410; font-size: 12.5px; line-height: 1.7; font-weight: 600;
+    }
+    .setup-box b { color: #6B510D; }
+    .setup-box code { padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.75); font-size: 11.5px; }
+
+    .hint { color: var(--gray); font-size: 11.5px; font-weight: 700; line-height: 1.6; }
+
+    /* hidden 속성이 display 지정 클래스(flex/grid 등)에 밀리지 않도록 보강 */
+    [hidden] { display: none !important; }
+
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .publish-stack { position: relative; top: auto; }
+    }
+    @media (max-width: 767px) {
+      .pagehead { padding: 22px 18px; border-radius: 26px; }
+      .admin-layout { grid-template-columns: 1fr; gap: 14px; }
+      .publish-stack { position: relative; top: auto; }
+      .card { padding: 18px; border-radius: 22px; }
+      .range-row { grid-template-columns: 1fr; }
+      .range-row .tilde { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-mark">EX</span>
+        <span class="brand-copy">
+          <strong>운영 커뮤니티</strong>
+          <small>강남·논현 모임 플랫폼</small>
+        </span>
+      </a>
+
+      <nav class="side-nav" aria-label="데스크톱 내비게이션">
+        <a class="nav-item" href="index.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
+          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item is-active" href="report.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
+          <span class="nav-text">대시보드</span><span class="nav-meta">현재</span>
+        </a>
+        <a class="nav-item" href="calculator.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
+          <span class="nav-text">정산기</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="news.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="nav-text">소식</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="games.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
+          <span class="nav-text">게임</span><span class="nav-meta">이동</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <span>운영진 전용</span>
+        <strong>브라우저 안에서만 분석</strong>
+        <p>대화 파일은 서버로 전송되지 않고, 집계 숫자만 발행돼요.</p>
+      </div>
+    </aside>
+
+    <header class="mobile-topbar">
+      <a class="mobile-brand" href="report.html" aria-label="대시보드로 이동">
+        <span class="brand-mark">EX</span><span>리포트 만들기</span>
+      </a>
+      <a class="mobile-action" href="report.html">대시보드 보기</a>
+    </header>
+
+    <main id="adminTop" class="main">
+      <section class="pagehead panel" aria-labelledby="pageTitle">
+        <i class="glow-orb" style="--orb-size:320px; --orb-color:rgba(181,126,220,0.26); right:-120px; top:-140px" aria-hidden="true"></i>
+        <i class="glow-orb" style="--orb-size:240px; --orb-color:rgba(126,208,176,0.20); left:-90px; bottom:-110px" aria-hidden="true"></i>
+        <div class="pagehead-inner">
+          <span class="kicker">🛠️ 운영진 전용</span>
+          <h1 id="pageTitle" class="pagehead-title">카톡 파일 하나로 <span class="grad-text">운영 대시보드</span> 발행</h1>
+          <div class="privacy-note">
+            <span aria-hidden="true">🔒</span>
+            <span>파일은 이 브라우저 안에서만 분석돼요. 대화 원문은 서버로 전송되지 않아요 —
+            발행되는 건 멤버별·시간대별 <b>집계 숫자뿐</b>이에요.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-layout" aria-label="리포트 작성 도구">
+        <div class="stack">
+          <!-- 1) 업로드 -->
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title"><span class="card-step">1</span>대화 파일 올리기</h2></div>
+            <p class="card-note">카카오톡 채팅방 → 메뉴 → 대화 내용 내보내기(.txt). 여러 파일을 올리면 하나로 합쳐서 집계해요.</p>
+            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 드래그해서 올리기">
+              <strong>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</strong>
+              <p>Android · iPhone · PC 내보내기 형식을 자동으로 알아봐요<br />같은 기간이 겹치는 파일을 함께 올리면 중복 집계될 수 있어요</p>
+            </div>
+            <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" />
+            <div id="fileChips" class="file-chips"></div>
+            <div id="parseInfo" class="parse-info" hidden></div>
+          </section>
+
+          <!-- 2) 기간 -->
+          <section id="rangeCard" class="card panel" hidden>
+            <div class="card-head"><h2 class="card-title"><span class="card-step">2</span>집계 기간</h2></div>
+            <div class="range-row">
+              <div class="field"><label for="fromDate">시작일</label><input id="fromDate" class="input" type="date" /></div>
+              <span class="tilde" aria-hidden="true">~</span>
+              <div class="field"><label for="toDate">종료일</label><input id="toDate" class="input" type="date" /></div>
+            </div>
+            <div class="quick-row" role="group" aria-label="기간 빠른 선택">
+              <button class="quick-btn" type="button" data-quick="prev">지난달</button>
+              <button class="quick-btn" type="button" data-quick="this">이번 달</button>
+              <button class="quick-btn" type="button" data-quick="30">최근 30일</button>
+              <button class="quick-btn" type="button" data-quick="all">전체</button>
+            </div>
+          </section>
+
+          <!-- 3) 멤버 -->
+          <section id="memberCard" class="card panel" hidden>
+            <div class="card-head"><h2 class="card-title"><span class="card-step">3</span>멤버 확인</h2></div>
+            <p class="card-note">통계에서 뺄 멤버(운영봇, 공지 계정 등)는 체크를 해제하세요. 바로 다시 집계돼요.</p>
+            <div id="memberTable" class="member-table" aria-label="멤버별 메시지 수"></div>
+          </section>
+
+          <!-- 4) 키워드 -->
+          <section id="kwEditCard" class="card panel" hidden>
+            <div class="card-head"><h2 class="card-title"><span class="card-step">4</span>키워드 다듬기</h2></div>
+            <p class="card-note">리포트에 보여주기 애매한 단어는 ×로 빼세요. (민감한 단어·장소 등)</p>
+            <div id="kwEdit" class="kw-edit"></div>
+          </section>
+        </div>
+
+        <!-- 발행 사이드 -->
+        <aside class="publish-stack" aria-label="발행">
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title"><span class="card-step">✓</span>확인 후 발행</h2></div>
+            <div id="miniSummary" class="mini-summary">
+              <div class="mini-stat"><span>기간 내 메시지</span><strong id="sumMsg">-</strong></div>
+              <div class="mini-stat"><span>활동 멤버</span><strong id="sumMember">-</strong></div>
+              <div class="mini-stat"><span>하루 평균</span><strong id="sumAvg">-</strong></div>
+              <div class="mini-stat"><span>새 멤버</span><strong id="sumJoin">-</strong></div>
+            </div>
+            <div class="field" style="margin-top:14px">
+              <label for="labelInput">리포트 제목 (기간 라벨)</label>
+              <input id="labelInput" class="input" type="text" placeholder="예: 2026년 6월" maxlength="40" />
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label for="passInput">운영진 비밀번호 (발행·삭제할 때만 필요)</label>
+              <input id="passInput" class="input" type="password" autocomplete="off" placeholder="발행할 때 입력하세요" />
+            </div>
+            <div class="action-col">
+              <button id="previewBtn" class="btn btn-secondary" type="button" disabled>👀 미리보기</button>
+              <button id="publishBtn" class="btn btn-primary" type="button" disabled>🚀 발행하기</button>
+              <button id="downloadBtn" class="btn btn-ghost" type="button" disabled>JSON 내려받기</button>
+            </div>
+            <p class="hint" style="margin-top:10px">
+              미리보기는 이 브라우저에만 저장돼요. 발행하면 같은 제목의 리포트는 새 내용으로 교체돼요.
+              비밀번호는 저장하지 않아요.
+            </p>
+          </section>
+
+          <section class="card panel">
+            <div class="card-head"><h2 class="card-title">발행된 리포트</h2><button id="reloadListBtn" class="mini-btn" type="button">새로고침</button></div>
+            <div id="reportList" class="report-list"><div class="report-empty">불러오는 중…</div></div>
+            <div id="setupBox" class="setup-box" style="margin-top:12px" hidden>
+              <b>서버 설정이 아직이에요.</b> 발행 기능을 쓰려면
+              <a href="https://supabase.com/dashboard" target="_blank" rel="noopener" style="text-decoration:underline">Supabase 대시보드</a>
+              → SQL Editor에서 저장소의 <code>sql/site_features.sql</code> 전체를 붙여넣고
+              <code>CHANGE_ME</code>를 운영진 비밀번호로 바꿔 Run 하세요.
+              자세한 순서는 <code>sql/README.md</code>에 있어요. 설정 전에도 미리보기·JSON 내려받기는 그대로 쓸 수 있어요.
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+      <a class="tab-item is-active" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+      <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+      <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+      <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+    /* ── Supabase (plain fetch REST) ─────────────────────── */
+    const SUPA = {
+      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
+      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
+    };
+    async function supaFetch(path, opts = {}) {
+      const res = await fetch(SUPA.url + path, {
+        ...opts,
+        headers: {
+          apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon,
+          "Content-Type": "application/json", ...(opts.headers || {})
+        }
+      });
+      if (!res.ok) {
+        let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
+        const err = new Error(msg || ("HTTP " + res.status)); err.status = res.status; throw err;
+      }
+      return res.status === 204 ? null : res.json();
+    }
+    function rpcErrorText(err, fallback) {
+      const m = String((err && err.message) || "");
+      if (m.includes("BAD_PASS")) return "비밀번호가 맞지 않아요";
+      if (m.includes("ADMIN_ONLY")) return "운영진 비밀번호가 필요해요";
+      if (m.includes("PASS_TOO_SHORT")) return "비밀번호는 4자 이상이에요";
+      if (m.includes("NOT_FOUND")) return "이미 삭제됐어요";
+      if (m.includes("BAD_PERIOD")) return "리포트 제목을 입력해주세요";
+      if (m.includes("BAD_STATS")) return "통계 데이터가 비었거나 너무 커요";
+      return fallback || "잠시 후 다시 시도해주세요";
+    }
+    function isMissingTable(err) {
+      const m = String((err && err.message) || "");
+      return (err && err.status === 404) || m.includes("42P01") || m.includes("does not exist") ||
+        m.includes("Could not find") || m.includes("schema cache");
+    }
+
+    /* ── 유틸 ─────────────────────────────────────────────── */
+    const $ = (id) => document.getElementById(id);
+    function escapeHTML(value) {
+      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
+    }
+    const nf = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR");
+    let toastTimer = null;
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message; toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
+    }
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
+    function ymd(dt) { return dt.getFullYear() + "-" + pad2(dt.getMonth() + 1) + "-" + pad2(dt.getDate()); }
+    const FORMAT_KO = { android: "Android", ios: "iPhone", pc: "PC", mixed: "혼합", unknown: "알 수 없음" };
+
+    /* ── 상태 ─────────────────────────────────────────────── */
+    const DRAFT_KEY = "excer_report_draft";
+    let files = [];              // {name, text}
+    let parsed = null;           // {messages, meta}
+    let dataMin = null, dataMax = null;
+    const excluded = new Set(); // 통계 제외 멤버
+    const dropped = new Set();  // 삭제한 키워드
+    let labelDirty = false;
+    let currentStats = null;    // 발행/미리보기 대상
+
+    /* ── 파일 처리 ───────────────────────────────────────── */
+    function readFileText(file) {
+      if (file.text) return file.text();
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result || ""));
+        fr.onerror = reject;
+        fr.readAsText(file);
+      });
+    }
+
+    async function addFiles(fileList) {
+      const list = Array.from(fileList || []).filter((f) =>
+        /\.txt$/i.test(f.name) || (f.type || "").startsWith("text/"));
+      if (!list.length) { showToast(".txt 파일만 올릴 수 있어요."); return; }
+      for (const f of list) {
+        if (files.some((x) => x.name === f.name && x.size === f.size)) continue;
+        try {
+          const text = await readFileText(f);
+          files.push({ name: f.name, size: f.size, text });
+        } catch (e) { showToast(`"${f.name}" 파일을 읽지 못했어요.`); }
+      }
+      reparse();
+    }
+
+    function removeFile(idx) {
+      files.splice(idx, 1);
+      reparse();
+    }
+
+    function reparse() {
+      renderFileChips();
+      if (!files.length) {
+        parsed = null; currentStats = null; dataMin = dataMax = null;
+        $("parseInfo").hidden = true;
+        ["rangeCard", "memberCard", "kwEditCard"].forEach((id) => { $(id).hidden = true; });
+        updateActions();
+        renderMiniSummary(null);
+        return;
+      }
+      const all = { messages: [], meta: { joins: 0, leaves: 0, format: "unknown" } };
+      const formats = new Set();
+      files.forEach((f) => {
+        const r = ChatParser.parse(f.text);
+        all.messages = all.messages.concat(r.messages);
+        all.meta.joins += r.meta.joins;
+        all.meta.leaves += r.meta.leaves;
+        if (r.meta.format !== "unknown") formats.add(r.meta.format);
+      });
+      all.meta.format = formats.size === 1 ? [...formats][0] : (formats.size > 1 ? "mixed" : "unknown");
+      parsed = all;
+
+      dataMin = dataMax = null;
+      parsed.messages.forEach((m) => {
+        if (!dataMin || m.date < dataMin) dataMin = m.date;
+        if (!dataMax || m.date > dataMax) dataMax = m.date;
+      });
+
+      const normal = parsed.messages.filter((m) => m.kind !== "join" && m.kind !== "leave").length;
+      const info = $("parseInfo");
+      info.hidden = false;
+      info.innerHTML = `
+        <span>포맷 <b>${escapeHTML(FORMAT_KO[all.meta.format] || all.meta.format)}</b></span>
+        <span>감지 기간 <b>${escapeHTML(dataMin || "-")} ~ ${escapeHTML(dataMax || "-")}</b></span>
+        <span>총 메시지 <b>${nf(normal)}</b></span>
+        <span>입장 <b>${nf(all.meta.joins)}</b></span>`;
+
+      if (!normal) {
+        showToast("메시지를 찾지 못했어요. 카톡 내보내기 원본 .txt인지 확인해주세요.");
+        ["rangeCard", "memberCard", "kwEditCard"].forEach((id) => { $(id).hidden = true; });
+        currentStats = null; updateActions(); renderMiniSummary(null);
+        return;
+      }
+
+      $("rangeCard").hidden = false;
+      applyDefaultRange();
+      recompute();
+    }
+
+    function renderFileChips() {
+      $("fileChips").innerHTML = files.map((f, i) => `
+        <span class="file-chip">📄 ${escapeHTML(f.name)}
+          <button type="button" data-remove="${i}" aria-label="${escapeHTML(f.name)} 빼기">×</button>
+        </span>`).join("");
+    }
+
+    /* ── 기간 ─────────────────────────────────────────────── */
+    function monthRange(base, offset) {
+      const y = base.getFullYear(), m = base.getMonth() + offset;
+      const first = new Date(y, m, 1);
+      const last = new Date(y, m + 1, 0);
+      return [ymd(first), ymd(last)];
+    }
+    function hasDataBetween(a, b) {
+      if (!parsed) return false;
+      return parsed.messages.some((m) => m.kind !== "join" && m.kind !== "leave" && m.date >= a && m.date <= b);
+    }
+    function applyDefaultRange() {
+      const now = new Date();
+      const [pa, pb] = monthRange(now, -1);
+      if (hasDataBetween(pa, pb)) { setRange(pa, pb, "prev"); return; }
+      setRange(dataMin, dataMax, "all");
+    }
+    function setRange(from, to, quickKey) {
+      $("fromDate").value = from || "";
+      $("toDate").value = to || "";
+      document.querySelectorAll(".quick-btn").forEach((b) =>
+        b.classList.toggle("is-on", b.dataset.quick === quickKey));
+    }
+
+    /* ── 집계 ─────────────────────────────────────────────── */
+    function currentRange() {
+      let from = $("fromDate").value || dataMin;
+      let to = $("toDate").value || dataMax;
+      if (from && to && from > to) { const t = from; from = to; to = t; }
+      return { from, to };
+    }
+
+    function recompute() {
+      if (!parsed) return;
+      const { from, to } = currentRange();
+
+      // 멤버 표는 "제외 전" 집계 기준으로 그려야 다시 체크할 수 있다
+      const baseAgg = ChatParser.aggregate(parsed.messages, { from, to });
+      renderMemberTable(baseAgg.members);
+
+      currentStats = ChatParser.aggregate(parsed.messages, {
+        from, to,
+        exclude: [...excluded],
+        dropKeywords: [...dropped],
+        keywordLimit: 30
+      });
+
+      // 라벨 자동 제안 (사용자가 직접 고친 뒤에는 유지)
+      if (!labelDirty) $("labelInput").value = currentStats.periodLabel;
+      currentStats.periodLabel = $("labelInput").value.trim() || currentStats.periodLabel;
+
+      renderKwEdit(currentStats.keywords);
+      renderMiniSummary(currentStats);
+      updateActions();
+    }
+
+    function renderMemberTable(members) {
+      const card = $("memberCard");
+      const list = members || [];
+      card.hidden = list.length === 0;
+      $("memberTable").innerHTML = list.map((m) => {
+        const off = excluded.has(m.name);
+        return `
+        <label class="member-row${off ? " is-excluded" : ""}">
+          <input type="checkbox" data-member="${escapeHTML(m.name)}" ${off ? "" : "checked"} />
+          <span class="m-name">${escapeHTML(m.name)}</span>
+          <span class="m-count">${nf(m.count)}</span>
+          <span class="m-share">${escapeHTML(String(m.share))}%</span>
+        </label>`;
+      }).join("");
+    }
+
+    function renderKwEdit(keywords) {
+      const card = $("kwEditCard");
+      const list = keywords || [];
+      card.hidden = list.length === 0 && dropped.size === 0;
+      $("kwEdit").innerHTML = list.length
+        ? list.map((k) => `
+          <span class="kw-edit-chip">${escapeHTML(k.w)}<small>${nf(k.c)}</small>
+            <button type="button" data-drop="${escapeHTML(k.w)}" aria-label="키워드 ${escapeHTML(k.w)} 빼기">×</button>
+          </span>`).join("")
+        : `<span class="hint">남은 키워드가 없어요.</span>`;
+    }
+
+    function renderMiniSummary(st) {
+      $("sumMsg").textContent = st ? nf(st.totals.messages) : "-";
+      $("sumMember").textContent = st ? nf(st.totals.activeMembers) + "명" : "-";
+      $("sumAvg").textContent = st ? nf(st.totals.avgPerDay) + "개" : "-";
+      $("sumJoin").textContent = st ? nf(st.totals.newMembers) + "명" : "-";
+    }
+
+    function updateActions() {
+      const ready = !!(currentStats && currentStats.totals.messages > 0);
+      $("previewBtn").disabled = !ready;
+      $("publishBtn").disabled = !ready;
+      $("downloadBtn").disabled = !ready;
+    }
+
+    function finalizedStats() {
+      if (!currentStats) return null;
+      const label = $("labelInput").value.trim();
+      currentStats.periodLabel = label || currentStats.periodLabel || "운영 대시보드";
+      return currentStats;
+    }
+
+    /* ── 액션 ─────────────────────────────────────────────── */
+    function doPreview() {
+      const st = finalizedStats();
+      if (!st) return;
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(st));
+      } catch (e) { showToast("미리보기 저장에 실패했어요 (저장 공간 부족)"); return; }
+      window.open("report.html?preview=1", "_blank", "noopener");
+    }
+
+    async function doPublish() {
+      const st = finalizedStats();
+      if (!st) return;
+      const pass = $("passInput").value;
+      if (!pass) { showToast("운영진 비밀번호를 입력해주세요."); $("passInput").focus(); return; }
+      if (!st.periodLabel) { showToast("리포트 제목을 입력해주세요."); $("labelInput").focus(); return; }
+      const btn = $("publishBtn");
+      btn.disabled = true; btn.textContent = "발행 중…";
+      try {
+        const r = await supaFetch("/rest/v1/rpc/report_publish", {
+          method: "POST",
+          body: JSON.stringify({ p_pass: pass, p_period: st.periodLabel, p_stats: st })
+        });
+        showToast(`"${(r && r.periodLabel) || st.periodLabel}" 리포트를 발행했어요!`);
+        loadReportList();
+      } catch (e) {
+        if (isMissingTable(e)) { $("setupBox").hidden = false; showToast("서버 설정이 필요해요. 안내를 확인해주세요."); }
+        else showToast(rpcErrorText(e, "발행에 실패했어요. 잠시 후 다시 시도해주세요."));
+      } finally {
+        btn.disabled = false; btn.textContent = "🚀 발행하기"; updateActions();
+      }
+    }
+
+    function doDownload() {
+      const st = finalizedStats();
+      if (!st) return;
+      const blob = new Blob([JSON.stringify(st, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "report-" + (st.periodLabel || "stats").replace(/[\\/:*?"<>|\s]+/g, "_") + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+
+    /* ── 발행된 리포트 목록 ──────────────────────────────── */
+    async function loadReportList() {
+      const host = $("reportList");
+      try {
+        const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,updated_at");
+        $("setupBox").hidden = true;
+        host.innerHTML = (rows && rows.length)
+          ? rows.map((r) => `
+            <div class="report-item">
+              <div><b>${escapeHTML(r.period_label)}</b><small>업데이트 ${escapeHTML(String(r.updated_at || "").slice(0, 10))}</small></div>
+              <button class="mini-btn" type="button" data-del="${r.id}" data-label="${escapeHTML(r.period_label)}">삭제</button>
+            </div>`).join("")
+          : `<div class="report-empty">아직 발행된 리포트가 없어요. 첫 리포트를 만들어보세요!</div>`;
+      } catch (e) {
+        if (isMissingTable(e)) {
+          host.innerHTML = `<div class="report-empty">서버 설정 전이에요 — 아래 안내를 따라주세요.</div>`;
+          $("setupBox").hidden = false;
+        } else {
+          host.innerHTML = `<div class="report-empty">목록을 불러오지 못했어요. 네트워크 확인 후 새로고침 해주세요.</div>`;
+        }
+      }
+    }
+
+    async function doDelete(id, label, btn) {
+      const pass = $("passInput").value;
+      if (!pass) { showToast("삭제하려면 운영진 비밀번호를 입력해주세요."); $("passInput").focus(); return; }
+      if (!window.confirm(`"${label}" 리포트를 삭제할까요? 되돌릴 수 없어요.`)) return;
+      btn.disabled = true;
+      try {
+        await supaFetch("/rest/v1/rpc/report_delete", {
+          method: "POST",
+          body: JSON.stringify({ p_pass: pass, p_id: Number(id) })
+        });
+        showToast("삭제했어요.");
+        loadReportList();
+      } catch (e) {
+        btn.disabled = false;
+        if (isMissingTable(e)) { $("setupBox").hidden = false; }
+        else showToast(rpcErrorText(e, "삭제에 실패했어요."));
+      }
+    }
+
+    /* ── 이벤트 바인딩 ───────────────────────────────────── */
+    function bindEvents() {
+      const dz = $("dropzone");
+      const fi = $("fileInput");
+      dz.addEventListener("click", () => fi.click());
+      dz.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fi.click(); } });
+      dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("is-over"); });
+      dz.addEventListener("dragleave", () => dz.classList.remove("is-over"));
+      dz.addEventListener("drop", (e) => {
+        e.preventDefault(); dz.classList.remove("is-over");
+        addFiles(e.dataTransfer && e.dataTransfer.files);
+      });
+      fi.addEventListener("change", () => { addFiles(fi.files); fi.value = ""; });
+
+      $("fileChips").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-remove]");
+        if (b) removeFile(+b.dataset.remove);
+      });
+
+      $("fromDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
+      $("toDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
+      document.querySelectorAll(".quick-btn").forEach((b) => {
+        b.addEventListener("click", () => {
+          const now = new Date();
+          if (b.dataset.quick === "prev") { const [a, z] = monthRange(now, -1); setRange(a, z, "prev"); }
+          else if (b.dataset.quick === "this") { const [a, z] = monthRange(now, 0); setRange(a, z, "this"); }
+          else if (b.dataset.quick === "30") {
+            const to = new Date(now); const from = new Date(now); from.setDate(from.getDate() - 29);
+            setRange(ymd(from), ymd(to), "30");
+          }
+          else setRange(dataMin, dataMax, "all");
+          recompute();
+        });
+      });
+
+      $("memberTable").addEventListener("change", (e) => {
+        const cb = e.target.closest("input[data-member]");
+        if (!cb) return;
+        const name = cb.dataset.member;
+        if (cb.checked) excluded.delete(name); else excluded.add(name);
+        recompute();
+      });
+
+      $("kwEdit").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-drop]");
+        if (!b) return;
+        dropped.add(b.dataset.drop);
+        recompute();
+      });
+
+      $("labelInput").addEventListener("input", () => {
+        labelDirty = $("labelInput").value.trim().length > 0;
+        if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+      });
+
+      $("previewBtn").addEventListener("click", doPreview);
+      $("publishBtn").addEventListener("click", doPublish);
+      $("downloadBtn").addEventListener("click", doDownload);
+      $("reloadListBtn").addEventListener("click", loadReportList);
+      $("reportList").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-del]");
+        if (b) doDelete(b.dataset.del, b.dataset.label || "", b);
+      });
+    }
+
+    bindEvents();
+    loadReportList();
+  </script>
+</body>
+</html>
