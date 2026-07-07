@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#672091" />
+  <meta name="theme-color" content="#5F0080" />
   <title>모임운영 커뮤니티 — 벙비 정산기</title>
   <meta name="description" content="멤버와 차수만 넣으면 1원 단위까지 자동 1/N 정산. 카톡에 바로 붙여넣고 이미지로 저장하세요." />
 
@@ -21,38 +21,39 @@
 
   <style>
     /* ============================================================
-       정산기 전용 스타일
+       정산기 전용 스타일 — v2 "정갈한 프리미엄"
        ============================================================ */
     .pagehead {
       position: relative; overflow: hidden;
-      padding: clamp(22px, 2.6vw, 32px) clamp(22px, 2.8vw, 36px);
-      border-radius: var(--r-xl); margin-bottom: 18px;
-    }
-    .pagehead::after {
-      content: ""; position: absolute; right: -120px; top: -130px; width: 320px; height: 320px;
-      border-radius: 50%; background: radial-gradient(circle, rgba(160, 95, 208, 0.22), transparent 68%); pointer-events: none;
+      padding: clamp(26px, 3vw, 38px) clamp(22px, 3vw, 40px);
+      border-radius: var(--r-xl); margin-bottom: 24px;
     }
     .pagehead-inner { position: relative; z-index: 1; }
-    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -0.05em; font-weight: 850; }
-    .pagehead-title span { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.68; letter-spacing: -0.01em; }
-    .pagehead-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .pagehead-title { margin: 14px 0 0; font-size: clamp(28px, 3.2vw, 42px); line-height: 1.06; letter-spacing: -0.055em; font-weight: 900; }
+    .pagehead-desc { max-width: 640px; margin: 14px 0 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.7; letter-spacing: -0.01em; }
+    .pagehead-steps { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
     .pagehead-steps span {
-      display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: var(--r-pill);
-      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--line); color: var(--ink-2); font-size: 12.5px; font-weight: 800;
+      display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 8px; border-radius: var(--r-pill);
+      background: rgba(255, 255, 255, 0.86); border: 1px solid var(--line); color: var(--ink-2); font-size: 12.5px; font-weight: 800;
+      box-shadow: var(--shadow-xs);
     }
-    .pagehead-steps b { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: var(--grad-brand); color: #fff; font-size: 11px; }
+    .pagehead-steps b {
+      display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--grad-brand); color: #fff; font-size: 11px; font-weight: 900;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
 
     .calculator-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; align-items: start; }
     .input-stack { display: grid; gap: 16px; min-width: 0; }
     .result-stack { position: sticky; top: 24px; display: grid; gap: 14px; min-width: 0; }
 
-    .card { padding: 22px; border-radius: 26px; }
-    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; }
-    .card-title { margin: 0; font-size: 17px; letter-spacing: -0.03em; display: flex; align-items: center; gap: 10px; }
+    .card { padding: clamp(20px, 2.4vw, 26px); border-radius: var(--r-lg); }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .card-title { margin: 0; font-size: 17px; letter-spacing: -0.035em; display: flex; align-items: center; gap: 10px; }
     .card-step {
-      display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px;
+      display: grid; place-items: center; width: 27px; height: 27px; border-radius: 10px;
       background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 900; flex: none;
+      box-shadow: 0 6px 14px -6px rgba(95, 0, 128, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28);
     }
     .card-sub { margin: 18px 0 0; }
 
@@ -63,34 +64,42 @@
 
     .input, .textarea {
       width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
+      box-shadow: 0 1px 2px rgba(61, 0, 85, 0.03);
       transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
     .input { min-height: 46px; padding: 0 14px; border-radius: 13px; font-weight: 700; }
     .textarea { min-height: 96px; resize: vertical; padding: 13px 14px; border-radius: 15px; line-height: 1.55; font-weight: 600; }
-    .input:focus, .textarea:focus { border-color: rgba(103, 32, 145, 0.42); box-shadow: 0 0 0 4px rgba(103, 32, 145, 0.08); }
+    .input:hover, .textarea:hover { border-color: var(--line-strong); }
+    .input:focus, .textarea:focus { border-color: rgba(95, 0, 128, 0.45); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.09); }
 
     .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
     .chip {
       display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: var(--r-pill);
-      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+      background: var(--pastel-lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.09);
     }
-    .chip.is-host { background: rgba(201, 162, 39, 0.16); color: #7a5f1e; }
-    .chip-count { color: var(--gray); font-weight: 700; }
+    .chip.is-host { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.16); }
+    .chip-count { background: #fff; color: var(--gray); font-weight: 700; box-shadow: inset 0 0 0 1px var(--line); }
 
     /* ── 차수 ── */
     .round-list { display: grid; gap: 12px; }
-    .round { display: grid; gap: 10px; padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+    .round {
+      display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-md);
+      background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs);
+    }
     .round-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: center; }
     .round-badge {
       display: grid; place-items: center; min-width: 42px; height: 34px; padding: 0 10px; border-radius: 11px;
       background: var(--grad-brand); color: #fff; font-size: 12px; font-weight: 900;
+      box-shadow: 0 6px 14px -6px rgba(95, 0, 128, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.26);
     }
     .round-amount-wrap { position: relative; }
     .round-amount-wrap .won-suffix { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-2); font-size: 13px; font-weight: 800; pointer-events: none; }
     .round-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .round-meta .per {
       display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: var(--r-pill);
-      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+      background: var(--pastel-lavender); color: var(--primary); font-size: 12px; font-weight: 800;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
     }
     .round-meta .per b { font-weight: 900; }
     .round-members { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -98,12 +107,17 @@
       min-height: 30px; padding: 0 11px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; cursor: pointer;
       transition: all 0.16s var(--ease);
     }
-    .mchip.is-on { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+    .mchip.is-on {
+      background: var(--primary); color: #fff; border: 1px solid var(--primary);
+      box-shadow: 0 5px 12px -6px rgba(95, 0, 128, 0.55);
+    }
     .mchip.is-off { background: #fff; color: var(--gray-2); border: 1px solid var(--line-strong); text-decoration: line-through; }
     .round-empty { color: var(--gray); font-size: 12px; font-weight: 700; }
 
     .target-help {
-      margin-top: 12px; padding: 13px 15px; border-radius: 15px; background: rgba(243, 237, 249, 0.6);
+      margin-top: 12px; padding: 13px 15px; border-radius: 15px;
+      background: linear-gradient(135deg, rgba(240, 231, 250, 0.75), rgba(252, 233, 241, 0.45));
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.07);
       color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 600;
     }
     .target-help b { color: var(--primary-700); }
@@ -111,10 +125,10 @@
     .notice-options { display: grid; gap: 8px; }
     .notice-option {
       display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; align-items: center;
-      padding: 12px 14px; border-radius: 13px; border: 1px solid var(--line); background: #fff; cursor: pointer;
+      padding: 12px 14px; border-radius: 13px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); cursor: pointer;
       transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
     }
-    .notice-option:hover { border-color: var(--line-strong); }
+    .notice-option:hover { border-color: var(--line-strong); background: #fff; }
     .notice-option input { width: 18px; height: 18px; accent-color: var(--primary); }
     .notice-option span { color: var(--ink-2); font-size: 13px; font-weight: 700; line-height: 1.45; }
 
@@ -125,14 +139,16 @@
     .group-chip {
       display: inline-flex; align-items: stretch; overflow: hidden; border-radius: var(--r-pill);
       border: 1px solid var(--line-strong); background: #fff; box-shadow: var(--shadow-xs);
+      transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
+    .group-chip:hover { border-color: rgba(95, 0, 128, 0.32); box-shadow: var(--shadow-sm); }
     .group-load {
       display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 5px 0 13px;
       color: var(--primary); font-size: 12.5px; font-weight: 800; cursor: pointer;
       transition: background 0.16s var(--ease);
     }
     .group-load small { color: var(--gray-2); font-size: 11px; font-weight: 700; }
-    .group-load:hover { background: var(--lavender); }
+    .group-load:hover { background: var(--pastel-lavender); }
     .group-del {
       display: inline-flex; align-items: center; padding: 0 11px 0 6px; color: var(--gray-2);
       font-size: 14px; font-weight: 800; cursor: pointer; transition: color 0.16s var(--ease);
@@ -143,74 +159,107 @@
     /* ── 영수증 첨부 ── */
     .receipt-add-label { cursor: pointer; }
     .receipt-thumbs { display: flex; flex-wrap: wrap; gap: 9px; }
-    .receipt-thumb { position: relative; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-strong); background: var(--offwhite); }
+    .receipt-thumb { position: relative; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-strong); background: var(--offwhite); box-shadow: var(--shadow-xs); }
     .receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .receipt-thumb-del {
       position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
-      display: grid; place-items: center; background: rgba(28, 19, 38, 0.72); color: #fff; font-size: 12px; font-weight: 900;
+      display: grid; place-items: center; background: rgba(29, 17, 40, 0.74); color: #fff; font-size: 12px; font-weight: 900;
       cursor: pointer; line-height: 1;
     }
     .receipt-hint { margin: 12px 0 0; color: var(--gray); font-size: 12.5px; line-height: 1.55; font-weight: 600; }
     .receipt-hint b { color: var(--ink-2); }
     .receipt-imgs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .receipt-img { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }
+    .receipt-img { width: 100%; border-radius: 12px; border: 1px solid #EBE2F3; display: block; }
     .receipt-imgs .receipt-img:only-child { grid-column: span 2; }
 
     /* ── 송금 버튼 ── */
-    .pay-send { background: rgba(47, 182, 138, 0.13); color: #17795A; }
-    .pay-send:hover { background: rgba(47, 182, 138, 0.22); }
+    .pay-send { background: var(--pastel-mint); color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.13); }
+    .pay-send:hover { background: #D3F0E3; }
 
     /* ── 공유 링크 ── */
-    .btn-share { grid-column: 1 / -1; background: var(--lavender); color: var(--primary); border-color: var(--line); }
+    .btn-share { grid-column: 1 / -1; background: var(--pastel-lavender); color: var(--primary); border-color: var(--line); }
     .btn-share:hover { background: var(--lavender-2); }
 
     .helper-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .save-status { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--gray); font-size: 12px; font-weight: 700; }
-    .save-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); }
+    .save-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 3px rgba(18, 147, 106, 0.14); }
 
-    /* ── 결과 ── */
+    /* ── 결과 요약 타일 ── */
     .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .summary-card { padding: 15px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs); }
-    .summary-card span { display: block; margin-bottom: 6px; color: var(--gray); font-size: 12px; font-weight: 800; }
-    .summary-card strong { display: block; color: var(--primary-700); font-size: 16.5px; letter-spacing: -0.04em; white-space: nowrap; }
+    .summary-card {
+      padding: 15px 15px 14px; border-radius: var(--r-md); border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs);
+    }
+    .summary-card::before { content: ""; display: block; width: 18px; height: 3px; border-radius: 2px; background: var(--grad-brand); margin-bottom: 10px; }
+    .summary-card span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 11.5px; font-weight: 800; letter-spacing: 0.01em; }
+    .summary-card strong { display: block; color: var(--primary-900); font-size: 17px; font-weight: 900; letter-spacing: -0.045em; white-space: nowrap; }
 
-    .receipt { overflow: hidden; border-radius: 26px; }
-    .capture-target { padding: 22px; background: radial-gradient(circle at 100% 0%, rgba(160, 95, 208, 0.12), transparent 18rem), #fff; }
-    .receipt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-    .receipt-head small { display: inline-flex; margin-bottom: 8px; padding: 6px 10px; border-radius: var(--r-pill); background: var(--lavender); color: var(--primary); font-size: 11px; font-weight: 900; }
-    .receipt-head h2 { margin: 0; font-size: 23px; line-height: 1.2; letter-spacing: -0.04em; }
-    .receipt-head p { margin: 8px 0 0; color: var(--gray); font-size: 13px; line-height: 1.5; }
+    /* ── 영수증(캡처 대상) — ⚠ 이 안은 캡처 안전 범위: 불투명 배경만, blur·반투명 유리 금지 ── */
+    .receipt { overflow: hidden; border-radius: var(--r-lg); }
+    .capture-target {
+      padding: 28px 22px 24px;
+      background:
+        linear-gradient(90deg, #5F0080 0%, #8A0FA8 52%, #B01E8E 100%) left top / 100% 6px no-repeat,
+        linear-gradient(180deg, #FBF7FE 0%, #FFFFFF 240px);
+    }
+    .receipt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 18px; border-bottom: 1px dashed #D9C3E8; }
+    .receipt-head small {
+      display: inline-flex; margin-bottom: 9px; padding: 6px 11px; border-radius: var(--r-pill);
+      background: #F0E7FA; color: #5F0080; font-size: 11px; font-weight: 900; letter-spacing: 0.01em;
+      border: 1px solid #E3D2F1;
+    }
+    .receipt-head h2 { margin: 0; color: #1D1128; font-size: 23px; line-height: 1.18; letter-spacing: -0.045em; font-weight: 870; }
+    .receipt-head p { margin: 8px 0 0; color: #6B6180; font-size: 13px; line-height: 1.5; font-weight: 600; }
     .receipt-total { text-align: right; white-space: nowrap; }
-    .receipt-total span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 12px; font-weight: 800; }
-    .receipt-total strong { color: var(--primary); font-size: 22px; letter-spacing: -0.04em; }
+    .receipt-total span { display: block; margin-bottom: 5px; color: #6B6180; font-size: 12px; font-weight: 800; }
+    .receipt-total strong { color: #5F0080; font-size: 24px; font-weight: 900; letter-spacing: -0.05em; }
 
-    .deposit-box { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--offwhite); border: 1px solid var(--line); color: var(--ink-2); font-size: 13px; line-height: 1.5; font-weight: 700; }
+    .deposit-box {
+      margin-top: 16px; padding: 13px 15px; border-radius: 14px;
+      background: #F5EDFA; border: 1px solid #E7D8F3; border-left: 4px solid #B57EDC;
+      color: #473A58; font-size: 13px; line-height: 1.55; font-weight: 700;
+    }
 
-    .receipt-section { margin-top: 16px; }
-    .receipt-section h3 { margin: 0 0 10px; font-size: 14px; letter-spacing: -0.02em; }
+    .receipt-section { margin-top: 18px; }
+    .receipt-section h3 {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 0 10px; color: #3D0055; font-size: 13.5px; letter-spacing: -0.01em; font-weight: 900;
+    }
+    .receipt-section h3::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #5F0080, #B01E8E); flex: none; }
     .pay-list, .detail-list { display: grid; gap: 8px; }
-    .pay-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--offwhite); border: 1px solid var(--line); }
-    .pay-row > span { color: var(--ink); font-weight: 800; }
+    .pay-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 14px; background: #FBF8FE; border: 1px solid #EFE7F6;
+    }
+    .pay-row > span { color: #1D1128; font-weight: 800; }
     .pay-right { display: flex; align-items: center; gap: 10px; }
-    .pay-right strong { color: var(--primary-700); font-size: 17px; letter-spacing: -0.02em; }
-    .pay-copy { min-height: 30px; padding: 0 12px; border-radius: var(--r-pill); background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 800; cursor: pointer; transition: background 0.16s var(--ease), transform 0.16s var(--ease); }
-    .pay-copy:hover { transform: translateY(-1px); background: var(--lavender-2); }
-    .pay-row.is-host { background: rgba(201, 162, 39, 0.09); border-color: rgba(201, 162, 39, 0.2); }
-    .pay-row.is-host strong { color: #7a5f1e; }
+    .pay-right strong { color: #4B0068; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; }
+    .pay-copy {
+      min-height: 30px; padding: 0 12px; border-radius: var(--r-pill);
+      background: #F0E7FA; color: #5F0080; font-size: 12px; font-weight: 800; cursor: pointer;
+      transition: background 0.16s var(--ease), transform 0.16s var(--ease);
+    }
+    .pay-copy:hover { transform: translateY(-1px); background: #E7D8F3; }
+    .pay-row.is-host { background: #FCF4E0; border-color: #F0E2BC; }
+    .pay-row.is-host strong { color: #856410; }
 
-    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
-    .detail-line b { display: block; margin-bottom: 3px; letter-spacing: -0.02em; }
-    .detail-line span { display: block; color: var(--gray); font-size: 12px; line-height: 1.4; }
-    .detail-line strong { white-space: nowrap; color: var(--primary-700); letter-spacing: -0.02em; }
+    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px dashed #E3D4EF; }
+    .detail-line b { display: block; margin-bottom: 3px; color: #1D1128; letter-spacing: -0.02em; }
+    .detail-line span { display: block; color: #6B6180; font-size: 12px; line-height: 1.4; }
+    .detail-line strong { white-space: nowrap; color: #4B0068; letter-spacing: -0.02em; }
 
     .notice-lines { display: grid; gap: 6px; }
-    .notice-line { color: var(--ink-2); font-size: 13px; line-height: 1.5; font-weight: 600; }
+    .notice-line { color: #473A58; font-size: 13px; line-height: 1.5; font-weight: 600; }
 
     .warning-list { display: grid; gap: 8px; }
-    .warning-item { padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(192, 57, 43, 0.16); background: rgba(192, 57, 43, 0.045); color: var(--danger); font-size: 13px; line-height: 1.5; font-weight: 700; }
+    .warning-item { padding: 11px 13px; border-radius: 13px; border: 1px solid #F0CFC9; background: #FCF2F0; color: #C0392B; font-size: 13px; line-height: 1.5; font-weight: 700; }
+    /* ── 캡처 안전 범위 끝 ── */
 
-    .kakao-tip { padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(201, 162, 39, 0.22); background: rgba(201, 162, 39, 0.08); color: #67522A; font-size: 13px; line-height: 1.6; font-weight: 600; }
-    .kakao-tip b { color: #5a4622; }
+    .kakao-tip {
+      padding: 14px 16px; border-radius: var(--r-md); border: 1px solid rgba(133, 100, 16, 0.16);
+      background: var(--pastel-cream); color: #6E5310; font-size: 13px; line-height: 1.6; font-weight: 600;
+    }
+    .kakao-tip b { color: #856410; }
 
     .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .result-actions .btn { width: 100%; }
@@ -221,14 +270,16 @@
       .result-stack { position: relative; top: auto; }
     }
     @media (max-width: 767px) {
-      .pagehead { padding: 22px 18px; border-radius: 26px; }
+      .pagehead { padding: 24px 18px; border-radius: var(--r-lg); margin-bottom: 18px; }
       .calculator-layout { grid-template-columns: 1fr; gap: 16px; }
       .result-stack { position: relative; top: auto; }
-      .card { padding: 18px; border-radius: 22px; }
+      .card { padding: 18px 16px; border-radius: 24px; }
       .field-grid, .result-actions { grid-template-columns: 1fr; }
       .field.is-wide { grid-column: auto; }
       .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .summary-card { padding: 13px 12px; }
       .summary-card strong { font-size: 15px; }
+      .capture-target { padding: 24px 18px 20px; }
       .receipt-head { flex-direction: column; }
       .receipt-total { text-align: left; }
       .save-status { width: 100%; margin-left: 0; justify-content: flex-end; }
@@ -286,9 +337,11 @@
 
     <main id="calcTop" class="main">
       <section class="pagehead panel" aria-labelledby="pageTitle">
+        <i class="glow-orb" style="--orb-size:340px; right:-120px; top:-140px" aria-hidden="true"></i>
+        <i class="glow-orb" style="--orb-size:260px; --orb-color:rgba(230,240,252,0.9); left:-80px; bottom:-120px" aria-hidden="true"></i>
         <div class="pagehead-inner">
           <span class="kicker">💸 벙비 정산기</span>
-          <h1 id="pageTitle" class="pagehead-title">멤버와 차수만 넣으면 <span>끝</span></h1>
+          <h1 id="pageTitle" class="pagehead-title">멤버와 차수만 넣으면 <span class="grad-text">끝</span></h1>
           <p class="pagehead-desc">
             1차·2차로 나눠 입력하고, 차수마다 빠진 사람만 칩에서 빼면 됩니다.
             벙주는 자동 포함되고, 1원 단위까지 정확히 나눠 카톡에 바로 붙여넣게 정리돼요.
@@ -336,7 +389,7 @@
           <section class="card panel">
             <div class="card-head">
               <h2 class="card-title"><span class="card-step">2</span>차수별 비용</h2>
-              <button id="addRoundBtn" class="btn btn-primary" type="button">＋ 차수 추가</button>
+              <button id="addRoundBtn" class="btn btn-secondary" type="button">＋ 차수 추가</button>
             </div>
             <div id="roundsHost" class="round-list"></div>
             <div class="target-help">

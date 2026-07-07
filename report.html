@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#672091" />
+  <meta name="theme-color" content="#5F0080" />
   <title>모임운영 커뮤니티 — 운영 대시보드</title>
   <meta name="description" content="우리 오픈채팅방의 한 달 활동을 한눈에. 수다왕 랭킹, 명예의 전당, 시간대 히트맵까지." />
 
@@ -16,61 +16,78 @@
        ============================================================ */
     .pagehead {
       position: relative; overflow: hidden;
-      padding: clamp(22px, 2.6vw, 32px) clamp(22px, 2.8vw, 36px);
-      border-radius: var(--r-xl); margin-bottom: 18px;
-    }
-    .pagehead::after {
-      content: ""; position: absolute; right: -120px; top: -130px; width: 320px; height: 320px;
-      border-radius: 50%; background: radial-gradient(circle, rgba(160, 95, 208, 0.22), transparent 68%); pointer-events: none;
+      padding: clamp(24px, 2.8vw, 36px) clamp(22px, 2.8vw, 38px);
+      border-radius: var(--r-xl); margin-bottom: 24px;
     }
     .pagehead-inner { position: relative; z-index: 1; }
-    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.08; letter-spacing: -0.05em; font-weight: 850; }
-    .pagehead-title span { background: var(--grad-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.68; }
+    .pagehead-title { margin: 14px 0 0; font-size: clamp(27px, 3vw, 40px); line-height: 1.06; letter-spacing: -0.055em; font-weight: 880; color: var(--primary-900); }
+    .pagehead-desc { max-width: 640px; margin: 13px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.7; }
 
     .head-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
     .source-badge {
-      display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border-radius: var(--r-pill);
-      font-size: 12.5px; font-weight: 900;
+      display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 6px 13px; border-radius: var(--r-pill);
+      font-size: 12.5px; font-weight: 900; line-height: 1.3;
     }
-    .source-badge.is-sample { background: rgba(201, 162, 39, 0.16); color: #7a5f1e; border: 1px solid rgba(201, 162, 39, 0.3); }
-    .source-badge.is-preview { background: rgba(126, 34, 206, 0.12); color: var(--violet); border: 1px solid rgba(126, 34, 206, 0.25); }
-    .source-badge.is-live { background: rgba(47, 182, 138, 0.12); color: #1c7a5b; border: 1px solid rgba(47, 182, 138, 0.25); }
+    .source-badge.is-sample { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.14); }
+    .source-badge.is-preview { background: var(--pastel-lavender); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.10); }
+    .source-badge.is-live { background: var(--pastel-mint); color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.14); }
     .period-select {
       min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
-      background: #fff; color: var(--primary); font-weight: 800; font-size: 13px;
+      background: #fff; color: var(--primary); font-weight: 800; font-size: 13px; box-shadow: var(--shadow-xs);
+      transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
+    .period-select:hover { border-color: rgba(95, 0, 128, 0.34); box-shadow: var(--shadow-sm); }
 
     /* ── 스탯 타일 ── */
-    .stat-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
-    .stat-tile { padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.9); box-shadow: var(--shadow-xs); }
+    .stat-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+    .stat-tile {
+      position: relative; overflow: hidden;
+      padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+    }
+    .stat-tile::before {
+      content: ""; position: absolute; right: -34px; top: -34px; width: 96px; height: 96px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(181, 126, 220, 0.20), transparent 70%); pointer-events: none;
+    }
+    .stat-tile:nth-child(2)::before { background: radial-gradient(circle, rgba(140, 176, 240, 0.22), transparent 70%); }
+    .stat-tile:nth-child(3)::before { background: radial-gradient(circle, rgba(126, 208, 176, 0.24), transparent 70%); }
+    .stat-tile:nth-child(4)::before { background: radial-gradient(circle, rgba(243, 212, 138, 0.28), transparent 70%); }
     .stat-tile span { display: block; color: var(--gray); font-size: 12.5px; font-weight: 800; }
-    .stat-tile strong { display: block; margin-top: 7px; font-size: clamp(24px, 2.6vw, 34px); font-weight: 850; letter-spacing: -0.04em; color: var(--ink); line-height: 1.05; }
-    .stat-tile small { display: block; margin-top: 5px; color: var(--gray-2); font-size: 11.5px; font-weight: 700; }
+    .stat-tile strong { display: block; margin-top: 7px; font-size: clamp(24px, 2.6vw, 34px); font-weight: 880; letter-spacing: -0.05em; color: var(--primary-900); line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .stat-tile small { display: block; margin-top: 5px; color: var(--gray); font-size: 11.5px; font-weight: 700; }
 
     /* ── 공통 카드 ── */
     .report-grid { display: grid; gap: 16px; }
-    .card { padding: clamp(18px, 2.2vw, 26px); border-radius: 26px; }
+    /* 모바일 가로 오버플로 수정: .hm { min-width: 420px } 가 grid 트랙을
+       min-content 만큼 밀어내지 않도록 grid 자식의 암묵적 min-width:auto 를 해제 */
+    .report-grid > * { min-width: 0; }
+    .card { padding: clamp(18px, 2.2vw, 28px); border-radius: 26px; }
     .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
-    .card-title { margin: 0; font-size: 18px; letter-spacing: -0.03em; }
-    .card-note { margin: 2px 0 16px; color: var(--gray); font-size: 12.5px; font-weight: 600; line-height: 1.5; }
+    .card-title { margin: 0; font-size: 18px; letter-spacing: -0.04em; font-weight: 850; }
+    .card-note { margin: 2px 0 16px; color: var(--gray); font-size: 12.5px; font-weight: 600; line-height: 1.55; }
 
     /* ── 랭킹 ── */
     .rank-list { display: grid; gap: 6px; }
     .rank-row {
       display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 4px 10px; align-items: center;
-      padding: 8px 10px; border-radius: 14px; transition: background 0.16s var(--ease);
+      padding: 8px 10px; border-radius: 14px; transition: background 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
-    .rank-row:hover { background: rgba(243, 237, 249, 0.55); }
-    .rank-no { text-align: center; font-size: 15px; font-weight: 850; color: var(--gray); }
+    .rank-row:hover { background: rgba(240, 231, 250, 0.6); }
+    .rank-row.is-top {
+      background: linear-gradient(90deg, rgba(240, 231, 250, 0.72), rgba(252, 233, 241, 0.30));
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.06);
+    }
+    .rank-row.is-top:hover { background: linear-gradient(90deg, rgba(236, 223, 247, 0.85), rgba(252, 233, 241, 0.42)); }
+    .rank-no { text-align: center; font-size: 15px; font-weight: 850; color: var(--gray); font-variant-numeric: tabular-nums; }
     .rank-no.is-medal { font-size: 21px; }
     .rank-main { min-width: 0; }
     .rank-name-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
     .rank-name { font-weight: 800; font-size: 13.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-share { color: var(--gray-2); font-size: 11.5px; font-weight: 700; flex: none; }
+    .rank-share { color: var(--gray); font-size: 11.5px; font-weight: 700; flex: none; }
     .rank-bar-line { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
     .rank-track { flex: 1; min-width: 0; height: 12px; }
-    .rank-bar { width: 100%; height: 12px; background: #7B2BB0; border-radius: 0 4px 4px 0; min-width: 3px; }
+    .rank-bar { width: 100%; height: 12px; background: #7B2BB0; border-radius: var(--r-pill); min-width: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18); }
     .rank-count { flex: none; font-size: 12.5px; font-weight: 850; color: var(--ink-2); font-variant-numeric: tabular-nums; }
     .rank-more { margin-top: 12px; }
     .rank-rest[hidden] { display: none; }
@@ -79,11 +96,22 @@
     .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
     .badge-card {
       display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center;
-      padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs);
+      padding: 14px; border-radius: 18px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
     }
-    .badge-emoji { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--lavender); font-size: 22px; }
+    .badge-card:hover { transform: translateY(-2px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
+    .badge-emoji {
+      display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
+      background: var(--pastel-lavender); font-size: 22px;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.07);
+    }
+    .badge-card:nth-child(4n+2) .badge-emoji { background: var(--pastel-blush); box-shadow: inset 0 0 0 1px rgba(166, 51, 92, 0.09); }
+    .badge-card:nth-child(4n+3) .badge-emoji { background: var(--pastel-mint); box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.09); }
+    .badge-card:nth-child(4n+4) .badge-emoji { background: var(--pastel-sky); box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.09); }
     .badge-body { min-width: 0; }
-    .badge-title { display: block; font-size: 12px; font-weight: 900; color: var(--primary); }
+    .badge-title { display: block; font-size: 12px; font-weight: 900; color: var(--primary); letter-spacing: 0.01em; }
     .badge-name { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .badge-desc { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 700; color: var(--gray); }
 
@@ -94,19 +122,20 @@
     .hm-day { font-size: 11px; font-weight: 800; color: var(--gray); display: flex; align-items: center; justify-content: center; }
     .hm-day.is-weekend { color: var(--ink-2); font-weight: 900; }
     .hm-cell { aspect-ratio: 1 / 1; border-radius: 3px; cursor: default; }
-    .hm-cell:hover { outline: 2px solid rgba(103, 32, 145, 0.5); outline-offset: 1px; }
+    .hm-cell:hover { outline: 2px solid rgba(95, 0, 128, 0.5); outline-offset: 1px; }
     .hm-legend { display: flex; align-items: center; gap: 5px; margin-top: 12px; color: var(--gray); font-size: 11.5px; font-weight: 700; }
-    .hm-legend i { width: 14px; height: 14px; border-radius: 3px; }
+    .hm-legend i { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(61, 0, 85, 0.06); }
 
     /* ── 일별 추이 ── */
     .trend-wrap { position: relative; }
     .trend-wrap svg { display: block; width: 100%; height: auto; border-radius: 12px; }
-    .trend-wrap svg:focus-visible { outline: 3px solid rgba(103, 32, 145, 0.26); outline-offset: 3px; }
+    .trend-wrap svg:focus-visible { outline: 3px solid rgba(95, 0, 128, 0.28); outline-offset: 3px; }
 
     .chart-tip {
       position: fixed; z-index: 200; pointer-events: none; opacity: 0;
-      padding: 8px 12px; border-radius: 12px; background: rgba(28, 19, 38, 0.94); color: #fff;
-      font-size: 12px; font-weight: 700; box-shadow: var(--shadow-md); white-space: nowrap;
+      padding: 8px 12px; border-radius: 12px; background: rgba(29, 17, 40, 0.94); color: #fff;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+      box-shadow: var(--shadow-md), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
       transform: translate(-50%, calc(-100% - 12px)); transition: opacity 0.12s var(--ease);
     }
     .chart-tip.is-visible { opacity: 1; }
@@ -114,7 +143,8 @@
     .chart-tip span { color: rgba(255, 255, 255, 0.72); font-weight: 700; }
 
     .table-details { margin-top: 12px; }
-    .table-details summary { cursor: pointer; color: var(--gray); font-size: 12px; font-weight: 800; }
+    .table-details summary { cursor: pointer; color: var(--gray); font-size: 12px; font-weight: 800; transition: color 0.16s var(--ease); }
+    .table-details summary:hover { color: var(--primary); }
     .table-details table { margin-top: 10px; border-collapse: collapse; font-size: 12px; width: 100%; max-width: 480px; }
     .table-details th, .table-details td { padding: 5px 10px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
     .table-details th { color: var(--gray); font-weight: 800; text-align: left; }
@@ -122,31 +152,41 @@
 
     /* ── 재미 통계 ── */
     .fun-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .fun-tile { padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-xs); }
+    .fun-tile {
+      padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+    }
+    .fun-tile:hover { transform: translateY(-2px); border-color: var(--line-strong); box-shadow: var(--shadow-sm); }
     .fun-tile span { display: block; color: var(--gray); font-size: 11.5px; font-weight: 800; }
-    .fun-tile strong { display: block; margin-top: 6px; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; color: var(--ink); }
-    .fun-tile small { display: block; margin-top: 3px; color: var(--gray-2); font-size: 11px; font-weight: 700; }
+    .fun-tile strong { display: block; margin-top: 6px; font-size: 17px; font-weight: 850; letter-spacing: -0.03em; color: var(--primary-700); }
+    .fun-tile small { display: block; margin-top: 3px; color: var(--gray); font-size: 11px; font-weight: 700; }
 
     /* ── 키워드 ── */
     .kw-cloud { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .kw-chip {
       display: inline-flex; align-items: baseline; gap: 5px; padding: 6px 13px; border-radius: var(--r-pill);
-      background: var(--lavender); color: var(--primary-700); font-weight: 800; line-height: 1.2;
+      background: var(--pastel-lavender); color: var(--primary-700); font-weight: 800; line-height: 1.2;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
     }
-    .kw-chip small { color: var(--gray-2); font-size: 10.5px; font-weight: 700; }
+    .kw-chip small { color: var(--gray); font-size: 10.5px; font-weight: 700; }
 
     /* ── CTA / 푸터 ── */
     .cta-panel {
+      position: relative; overflow: hidden;
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
-      padding: clamp(20px, 2.4vw, 28px); border-radius: 26px; background: var(--grad-brand-soft);
+      padding: clamp(20px, 2.4vw, 28px); border-radius: 26px;
+      background: var(--grad-brand-soft), rgba(255, 255, 255, 0.82);
       border: 1px solid var(--line);
     }
-    .cta-copy strong { display: block; font-size: 18px; letter-spacing: -0.03em; }
+    .cta-copy, .cta-actions { position: relative; z-index: 1; }
+    .cta-copy strong { display: block; font-size: 18px; letter-spacing: -0.04em; font-weight: 850; color: var(--primary-900); }
     .cta-copy p { margin: 7px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
     .cta-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-    .report-foot { margin-top: 22px; text-align: center; color: var(--gray-2); font-size: 12px; font-weight: 600; line-height: 1.7; }
-    .report-foot a { color: var(--gray-2); text-decoration: underline; text-underline-offset: 3px; }
+    .report-foot { margin-top: 24px; text-align: center; color: var(--gray); font-size: 12px; font-weight: 600; line-height: 1.7; }
+    .report-foot a { color: var(--gray); text-decoration: underline; text-underline-offset: 3px; transition: color 0.16s var(--ease); }
     .report-foot a:hover { color: var(--primary); }
 
     .empty-note { padding: 26px; text-align: center; color: var(--gray); font-size: 13.5px; font-weight: 700; line-height: 1.7; }
@@ -224,13 +264,15 @@
     <main id="reportTop" class="main">
       <!-- 1) 히어로 -->
       <section class="pagehead panel reveal" aria-labelledby="pageTitle">
+        <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(181,126,220,0.28); right:-130px; top:-150px" aria-hidden="true"></i>
+        <i class="glow-orb" style="--orb-size:280px; --orb-color:rgba(140,176,240,0.22); left:-110px; bottom:-130px" aria-hidden="true"></i>
         <div class="pagehead-inner">
           <div class="head-row">
             <span class="kicker">📊 운영 대시보드</span>
             <span id="sourceBadge" class="source-badge" hidden></span>
             <select id="periodSelect" class="period-select" aria-label="리포트 기간 선택" hidden></select>
           </div>
-          <h1 id="pageTitle" class="pagehead-title">이번 달 우리방, <span id="periodLabel">불러오는 중…</span></h1>
+          <h1 id="pageTitle" class="pagehead-title">이번 달 우리방, <span id="periodLabel" class="grad-text">불러오는 중…</span></h1>
           <p class="pagehead-desc">
             한 달 동안 우리방이 얼마나 뜨거웠는지 숫자로 정리했어요.
             수다왕 랭킹부터 새벽 반장까지, 다음 주인공은 누구일까요?
@@ -292,8 +334,11 @@
           <div id="kwCloud" class="kw-cloud"></div>
         </section>
 
+        <div class="divider-dots" aria-hidden="true"></div>
+
         <!-- 8) CTA -->
         <section class="cta-panel panel reveal" aria-label="참여 유도">
+          <i class="glow-orb" style="--orb-size:260px; --orb-color:rgba(181,126,220,0.24); right:-90px; top:-110px" aria-hidden="true"></i>
           <div class="cta-copy">
             <strong>다음 리포트의 주인공은?</strong>
             <p>벙에 오고, 소식 게시판에 후기를 남기면 다음 달 명예의 전당이 가까워져요.</p>
@@ -622,8 +667,8 @@
       let grid = "", yticks = "";
       for (let g = 0; g <= 4; g++) {
         const gv = (ymax / 4) * g, gy = y(gv);
-        grid += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(103,32,145,0.10)" stroke-width="1"/>`;
-        yticks += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#968ea6">${nf(gv)}</text>`;
+        grid += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(95,0,128,0.10)" stroke-width="1"/>`;
+        yticks += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#8D84A0">${nf(gv)}</text>`;
       }
 
       // 라인/영역 경로
@@ -643,7 +688,7 @@
         const wd = ChatWeekday(e.d);
         const wk = wd >= 5;
         const p = e.d.split("-");
-        xticks += `<text x="${x(i).toFixed(1)}" y="${Hh - 12}" text-anchor="middle" font-size="10.5" font-weight="${wk ? 900 : 700}" fill="${wk ? "#443a52" : "#968ea6"}">${+p[1]}/${+p[2]}${wk ? " " + WEEK_KO[wd] : ""}</text>`;
+        xticks += `<text x="${x(i).toFixed(1)}" y="${Hh - 12}" text-anchor="middle" font-size="10.5" font-weight="${wk ? 900 : 700}" fill="${wk ? "#473A58" : "#8D84A0"}">${+p[1]}/${+p[2]}${wk ? " " + WEEK_KO[wd] : ""}</text>`;
       });
 
       // 피크 직접 라벨 (툴팁 없이도 값 확인 가능)
@@ -653,7 +698,7 @@
         const px = x(bi), py = y(data[bi].c);
         const anchor = bi > data.length * 0.8 ? "end" : (bi < data.length * 0.2 ? "start" : "middle");
         peakMark = `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>` +
-          `<text x="${px.toFixed(1)}" y="${(py - 10).toFixed(1)}" text-anchor="${anchor}" font-size="11.5" font-weight="900" fill="#1C1326">${nf(data[bi].c)}개</text>`;
+          `<text x="${px.toFixed(1)}" y="${(py - 10).toFixed(1)}" text-anchor="${anchor}" font-size="11.5" font-weight="900" fill="#1D1128">${nf(data[bi].c)}개</text>`;
       }
 
       wrap.innerHTML = `
@@ -664,7 +709,7 @@
           <path d="${lineP}" fill="none" stroke="${SERIES}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
           ${peakMark}${xticks}
           <g id="crosshair" opacity="0">
-            <line id="chLine" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(103,32,145,0.35)" stroke-width="1"/>
+            <line id="chLine" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(95,0,128,0.35)" stroke-width="1"/>
             <circle id="chDot" r="4.5" fill="${SERIES}" stroke="#fff" stroke-width="2"/>
           </g>
           <rect id="chOverlay" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent"/>
