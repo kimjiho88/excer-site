@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#672091" />
+  <title>모임운영 커뮤니티 — 정산 확인</title>
+  <meta name="description" content="벙주가 공유한 정산 링크. 내 금액을 확인하고 입금 완료를 체크하세요." />
+  <meta name="robots" content="noindex" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+
+  <style>
+    /* ============================================================
+       공유 정산 페이지 전용 스타일 (모바일 최우선)
+       ============================================================ */
+    .settle-wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
+
+    .s-card { padding: 20px; border-radius: 24px; }
+    .s-card h2 { margin: 0 0 12px; font-size: 15px; letter-spacing: -0.02em; }
+
+    /* ── 헤더 ── */
+    .s-head { position: relative; overflow: hidden; padding: 24px 22px; border-radius: 28px; }
+    .s-head::after {
+      content: ""; position: absolute; right: -110px; top: -120px; width: 280px; height: 280px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(160, 95, 208, 0.2), transparent 68%); pointer-events: none;
+    }
+    .s-head-inner { position: relative; z-index: 1; }
+    .s-head-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .local-badge {
+      display: inline-flex; align-items: center; padding: 6px 11px; border-radius: var(--r-pill);
+      background: rgba(201, 162, 39, 0.14); color: #7a5f1e; font-size: 11.5px; font-weight: 900;
+    }
+    .s-title { margin: 13px 0 0; font-size: clamp(23px, 5.4vw, 30px); line-height: 1.15; letter-spacing: -0.04em; font-weight: 850; }
+    .s-meta { margin: 9px 0 0; color: var(--gray); font-size: 13px; font-weight: 700; }
+    .s-total {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      margin-top: 16px; padding: 13px 16px; border-radius: 16px;
+      background: var(--lavender); border: 1px solid var(--line);
+    }
+    .s-total span { color: var(--gray); font-size: 12.5px; font-weight: 800; }
+    .s-total strong { color: var(--primary); font-size: 22px; letter-spacing: -0.04em; }
+
+    /* ── 입금 진행 바 ── */
+    .progress-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .progress-row b { font-size: 15px; letter-spacing: -0.02em; }
+    .progress-row b em { font-style: normal; color: var(--mint); }
+    .progress-row span { color: var(--gray); font-size: 12.5px; font-weight: 800; }
+    .progress-bar { height: 12px; border-radius: var(--r-pill); background: var(--lavender); overflow: hidden; }
+    .progress-bar i { display: block; height: 100%; width: 0%; border-radius: var(--r-pill); background: var(--mint); transition: width 0.45s var(--ease); }
+    .progress-done { margin: 12px 0 0; color: var(--mint); font-size: 13px; font-weight: 800; }
+    .s-note { margin: 12px 0 0; color: var(--gray); font-size: 12.5px; line-height: 1.55; font-weight: 600; }
+
+    /* ── 입금 정보 ── */
+    .deposit-rows { display: grid; gap: 8px; }
+    .deposit-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 13px; background: var(--offwhite); border: 1px solid var(--line); }
+    .deposit-row span { color: var(--gray); font-size: 12.5px; font-weight: 800; flex: none; }
+    .deposit-row b { font-size: 14.5px; letter-spacing: -0.01em; word-break: break-all; text-align: right; }
+    .kakao-badge {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-pill);
+      background: rgba(250, 225, 0, 0.25); border: 1px solid rgba(201, 162, 39, 0.3); color: #5a4622; font-size: 12.5px; font-weight: 800;
+    }
+    .deposit-actions { margin-top: 12px; }
+    .deposit-actions .btn { width: 100%; }
+
+    /* ── 멤버 명단 ── */
+    .m-list { display: grid; gap: 8px; }
+    .m-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 16px; background: var(--offwhite); border: 1px solid var(--line);
+      transition: opacity 0.2s var(--ease), background 0.2s var(--ease);
+    }
+    .m-left { min-width: 0; }
+    .m-name { display: flex; align-items: center; gap: 6px; }
+    .m-name b { font-size: 14.5px; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+    .me-chip { flex: none; display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--r-pill); background: var(--grad-brand); color: #fff; font-size: 10.5px; font-weight: 900; }
+    .m-amt { display: block; margin-top: 3px; color: var(--primary-700); font-size: 16.5px; letter-spacing: -0.02em; font-weight: 800; }
+    .m-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+    .m-btn {
+      min-height: 34px; padding: 0 13px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 800; cursor: pointer;
+      transition: transform 0.16s var(--ease), background 0.16s var(--ease);
+    }
+    .m-btn:hover { transform: translateY(-1px); }
+    .m-send { background: rgba(47, 182, 138, 0.13); color: #17795A; }
+    .m-toggle { background: #fff; color: var(--primary); border: 1px solid var(--line-strong); }
+    .m-row.is-paid { opacity: 0.55; background: rgba(47, 182, 138, 0.06); border-color: rgba(47, 182, 138, 0.2); }
+    .m-row.is-paid .m-name b { text-decoration: line-through; }
+    .m-row.is-paid .m-toggle { background: var(--mint); color: #fff; border-color: var(--mint); }
+    .m-row.is-me { border-color: rgba(103, 32, 145, 0.4); box-shadow: 0 0 0 3px rgba(103, 32, 145, 0.08); background: #fff; }
+    .m-hint { margin: 12px 0 0; color: var(--gray); font-size: 12.5px; line-height: 1.55; font-weight: 600; }
+    .m-hint b { color: var(--ink-2); }
+
+    /* ── 안내 문구 ── */
+    .notice-lines { display: grid; gap: 6px; }
+    .notice-line { color: var(--ink-2); font-size: 13px; line-height: 1.55; font-weight: 600; }
+
+    /* ── 차수별 내역 (접기) ── */
+    .s-details { padding: 0; overflow: hidden; }
+    .s-details summary {
+      list-style: none; cursor: pointer; padding: 17px 20px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      font-size: 15px; font-weight: 850; letter-spacing: -0.02em;
+    }
+    .s-details summary::-webkit-details-marker { display: none; }
+    .s-details summary::after { content: "펼치기"; color: var(--primary); font-size: 12px; font-weight: 800; }
+    .s-details[open] summary::after { content: "접기"; }
+    .s-details-body { padding: 0 20px 18px; }
+    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+    .detail-line b { display: block; margin-bottom: 3px; letter-spacing: -0.02em; }
+    .detail-line span { display: block; color: var(--gray); font-size: 12px; line-height: 1.4; }
+    .detail-line strong { white-space: nowrap; color: var(--primary-700); letter-spacing: -0.02em; }
+
+    /* ── 푸터 홍보 ── */
+    .s-footer { text-align: center; padding: 8px 0 4px; }
+    .s-footer a {
+      display: inline-flex; align-items: center; gap: 7px; padding: 12px 18px; border-radius: var(--r-pill);
+      background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line); color: var(--primary);
+      font-size: 13px; font-weight: 800; box-shadow: var(--shadow-xs);
+      transition: transform 0.16s var(--ease), background 0.16s var(--ease);
+    }
+    .s-footer a:hover { transform: translateY(-2px); background: var(--lavender); }
+
+    /* ── 로딩 / 에러 ── */
+    .s-status { padding: 44px 24px; border-radius: 28px; text-align: center; }
+    .s-status .emoji { font-size: 44px; line-height: 1; }
+    .s-status h1 { margin: 16px 0 0; font-size: 20px; letter-spacing: -0.03em; }
+    .s-status p { margin: 10px auto 0; max-width: 380px; color: var(--gray); font-size: 13.5px; line-height: 1.65; font-weight: 600; }
+    .s-status .actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+    .s-status small { display: block; margin-top: 16px; color: var(--gray-2); font-size: 11.5px; font-weight: 600; }
+    .spinner {
+      width: 34px; height: 34px; margin: 0 auto; border-radius: 50%;
+      border: 4px solid var(--lavender); border-top-color: var(--primary);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 767px) {
+      .s-card { padding: 17px; border-radius: 20px; }
+      .s-head { padding: 20px 18px; border-radius: 24px; }
+      .m-row { flex-wrap: wrap; }
+      .m-actions { width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="주요 메뉴">
+      <a class="brand" href="index.html" aria-label="운영 커뮤니티 플랫폼">
+        <span class="brand-mark">EX</span>
+        <span class="brand-copy">
+          <strong>운영 커뮤니티</strong>
+          <small>강남·논현 모임 플랫폼</small>
+        </span>
+      </a>
+
+      <nav class="side-nav" aria-label="데스크톱 내비게이션">
+        <a class="nav-item" href="index.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
+          <span class="nav-text">필독</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="report.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
+          <span class="nav-text">리포트</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item is-active" href="calculator.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>
+          <span class="nav-text">정산기</span><span class="nav-meta">현재</span>
+        </a>
+        <a class="nav-item" href="news.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="nav-text">소식</span><span class="nav-meta">이동</span>
+        </a>
+        <a class="nav-item" href="games.html">
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg></span>
+          <span class="nav-text">게임</span><span class="nav-meta">이동</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <span>정산 확인</span>
+        <strong>내 금액 보고, 체크만 하면 끝</strong>
+        <p>벙주가 보낸 링크예요. 입금하고 입금 완료를 누르면 벙주 화면에도 반영돼요.</p>
+      </div>
+    </aside>
+
+    <header class="mobile-topbar">
+      <a class="mobile-brand" href="index.html" aria-label="필독으로 이동">
+        <span class="brand-mark">EX</span><span>정산 확인</span>
+      </a>
+      <a class="mobile-action" href="calculator.html">내 정산 만들기</a>
+    </header>
+
+    <main class="main">
+      <div id="app" class="settle-wrap" aria-live="polite"></div>
+    </main>
+
+    <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+      <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+      <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>리포트</a>
+      <a class="tab-item is-active" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+      <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+      <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    /* ============================================================
+       공유 정산 페이지
+       - ?id=…  : settle_get RPC 로드 + 20초 폴링 (입금 체크 실시간 공유)
+       - #d=…   : 링크 자체에 담긴 데이터 디코드 (체크는 이 기기에서만)
+       ============================================================ */
+    const SUPA = {
+      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
+      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
+    };
+    async function supaFetch(path, opts = {}) {
+      const res = await fetch(SUPA.url + path, {
+        ...opts,
+        headers: {
+          apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon,
+          "Content-Type": "application/json", ...(opts.headers || {})
+        }
+      });
+      if (!res.ok) {
+        let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
+        const err = new Error(msg || ("HTTP " + res.status)); err.status = res.status; throw err;
+      }
+      return res.status === 204 ? null : res.json();
+    }
+
+    const MYNAME_KEY = "excer_settle_myname_v1";
+    const LOCAL_PAID_KEY = "excer_settle_local_paid_v1";
+    const POLL_MS = 20000;
+
+    const $ = (id) => document.getElementById(id);
+    const app = $("app");
+    let toastTimer = null;
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message; toast.classList.add("is-visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
+    }
+    function escapeHTML(value) {
+      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
+    }
+    function formatWon(value) { return `${Math.round(Number(value) || 0).toLocaleString("ko-KR")}원`; }
+    function isMobileUA() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ""); }
+
+    async function copyToClipboard(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text; ta.style.position = "fixed"; ta.style.left = "-9999px";
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand("copy"); ta.remove();
+        }
+        return true;
+      } catch (e) { return false; }
+    }
+
+    /* ── 모드 판별 ── */
+    const rawId = (new URLSearchParams(window.location.search).get("id") || "").trim().toLowerCase();
+    const settleId = /^[a-z0-9]{8,32}$/.test(rawId) ? rawId : "";
+    const hashRaw = (window.location.hash || "").indexOf("#d=") === 0 ? window.location.hash.slice(3) : "";
+    const mode = settleId ? "live" : (hashRaw ? "local" : "none");
+
+    let payload = null;      // 정산 스냅샷
+    let paid = {};           // { "멤버명": true }
+    let localKey = "";       // local 모드 체크 저장용 키
+    let pendingOps = 0;      // 진행 중인 토글 수 (폴링과 충돌 방지)
+    let pollTimer = null;
+    let myName = "";
+    let detailsOpen = false;   // 폴링 재렌더 시 접기 상태 유지
+    let lastLiveSig = "";      // 변화 없으면 재렌더 생략
+    try { myName = localStorage.getItem(MYNAME_KEY) || ""; } catch (e) {}
+
+    function b64urlDecode(s) {
+      let t = String(s).replace(/-/g, "+").replace(/_/g, "/");
+      while (t.length % 4) t += "=";
+      const bin = atob(t);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+    function hashStr(s) {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+      return h.toString(36);
+    }
+
+    /* 외부에서 온 payload 는 형태를 강제하고 길이를 제한한다 */
+    function normalizePayload(p) {
+      if (!p || typeof p !== "object") return null;
+      const rows = Array.isArray(p.rows)
+        ? p.rows
+            .filter((r) => r && typeof r.name === "string" && r.name.trim())
+            .map((r) => ({ name: String(r.name).trim().slice(0, 30), amount: Math.max(0, Math.round(Number(r.amount) || 0)) }))
+            .slice(0, 60)
+        : [];
+      if (!rows.length) return null;
+      const pay = (p.pay && typeof p.pay === "object") ? p.pay : {};
+      return {
+        title: String(p.title || "모임 정산").slice(0, 80),
+        date: String(p.date || "").slice(0, 20),
+        host: String(p.host || "").slice(0, 30),
+        pay: {
+          bank: String(pay.bank || "").slice(0, 30),
+          account: String(pay.account || "").slice(0, 40),
+          holder: String(pay.holder || "").slice(0, 30),
+          kakao: !!pay.kakao
+        },
+        notices: Array.isArray(p.notices) ? p.notices.map((n) => String(n).slice(0, 200)).slice(0, 10) : [],
+        rounds: Array.isArray(p.rounds)
+          ? p.rounds.map((r) => ({
+              label: String((r && r.label) || "").slice(0, 60),
+              amount: Math.max(0, Math.round(Number(r && r.amount) || 0)),
+              count: Math.max(0, Math.round(Number(r && r.count) || 0)),
+              active: Array.isArray(r && r.active) ? r.active.map((n) => String(n).slice(0, 30)).slice(0, 60) : []
+            })).slice(0, 30)
+          : [],
+        rows,
+        total: Math.max(0, Math.round(Number(p.total) || 0)),
+        hostBurden: Math.max(0, Math.round(Number(p.hostBurden) || 0))
+      };
+    }
+
+    /* ── local 모드: 이 기기 전용 입금 체크 저장 ── */
+    function loadLocalPaid() {
+      try {
+        const all = JSON.parse(localStorage.getItem(LOCAL_PAID_KEY) || "{}");
+        const map = all && typeof all === "object" ? all[localKey] : null;
+        return map && typeof map === "object" ? map : {};
+      } catch (e) { return {}; }
+    }
+    function persistLocalPaid() {
+      try {
+        let all = {};
+        try { all = JSON.parse(localStorage.getItem(LOCAL_PAID_KEY) || "{}") || {}; } catch (e) {}
+        if (typeof all !== "object" || Array.isArray(all)) all = {};
+        all[localKey] = paid;
+        localStorage.setItem(LOCAL_PAID_KEY, JSON.stringify(all));
+      } catch (e) {}
+    }
+
+    /* ============================================================
+       화면
+       ============================================================ */
+    function renderLoading() {
+      app.innerHTML = `
+        <section class="s-status panel">
+          <div class="spinner" aria-hidden="true"></div>
+          <h1>정산을 불러오고 있어요</h1>
+          <p>잠시만 기다려주세요.</p>
+        </section>`;
+    }
+
+    function renderError(kind) {
+      const isNetwork = kind === "network";
+      app.innerHTML = `
+        <section class="s-status panel">
+          <div class="emoji" aria-hidden="true">${isNetwork ? "📡" : "🔍"}</div>
+          <h1>${isNetwork ? "연결이 잠깐 불안정해요" : "정산을 찾을 수 없어요"}</h1>
+          <p>${isNetwork
+            ? "네트워크 상태를 확인하고 다시 시도해주세요."
+            : "링크가 만료됐거나 주소가 잘못됐을 수 있어요.<br />벙주에게 새 링크를 요청해주세요."}</p>
+          <div class="actions">
+            ${isNetwork ? `<button id="retryBtn" class="btn btn-primary" type="button">다시 시도</button>` : ""}
+            <a class="btn btn-secondary" href="calculator.html">벙비 정산기 열기</a>
+          </div>
+          ${isNetwork ? "" : `<small>운영진이라면 sql/site_features.sql 이 적용됐는지 확인해주세요.</small>`}
+        </section>`;
+    }
+
+    function transferButton(amount) {
+      const bank = payload.pay.bank.trim();
+      const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
+      if (!bank || !digits) return "";
+      return `<button class="m-btn m-send" type="button" data-send-amount="${amount}"
+        title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>`;
+    }
+
+    function renderView() {
+      const rows = payload.rows;
+      const paidCount = rows.filter((r) => paid[r.name]).length;
+      const pct = rows.length ? Math.round((paidCount / rows.length) * 100) : 0;
+      const pay = payload.pay;
+      const hasPayInfo = !!(pay.bank.trim() || pay.account.trim() || pay.holder.trim());
+      const accountLine = [pay.bank.trim(), pay.account.trim()].filter(Boolean).join(" ")
+        + (pay.holder.trim() ? ` (${pay.holder.trim()})` : "");
+
+      const memberHTML = rows.map((r) => {
+        const isPaid = !!paid[r.name];
+        const isMe = myName && r.name === myName;
+        return `
+        <div class="m-row${isPaid ? " is-paid" : ""}${isMe ? " is-me" : ""}">
+          <div class="m-left">
+            <div class="m-name"><b>${escapeHTML(r.name)}</b>${isMe ? `<span class="me-chip">나</span>` : ""}</div>
+            <strong class="m-amt">${formatWon(r.amount)}</strong>
+          </div>
+          <div class="m-actions">
+            ${isPaid ? "" : transferButton(r.amount)}
+            <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}"
+              aria-pressed="${isPaid ? "true" : "false"}">${isPaid ? "✓ 입금 완료" : "입금 완료"}</button>
+          </div>
+        </div>`;
+      }).join("");
+
+      const detailHTML = payload.rounds.map((r) => `
+        <div class="detail-line">
+          <div><b>${escapeHTML(r.label || "차수")}</b><span>${r.count}명${r.active.length ? ` · ${escapeHTML(r.active.join(", "))}` : ""}</span></div>
+          <strong>${formatWon(r.amount)}</strong>
+        </div>`).join("");
+
+      app.innerHTML = `
+        <section class="s-head panel" aria-label="정산 요약">
+          <div class="s-head-inner">
+            <div class="s-head-top">
+              <span class="kicker">💸 정산 안내</span>
+              ${mode === "local" ? `<span class="local-badge">체크는 이 기기 전용</span>` : ""}
+            </div>
+            <h1 class="s-title">${escapeHTML(payload.title)}</h1>
+            <p class="s-meta">${payload.date ? `${escapeHTML(payload.date)} · ` : ""}벙주 ${escapeHTML(payload.host || "-")}${payload.hostBurden ? ` · 벙주 부담 ${formatWon(payload.hostBurden)}` : ""}</p>
+            <div class="s-total"><span>총 결제</span><strong>${formatWon(payload.total)}</strong></div>
+          </div>
+        </section>
+
+        <section class="s-card panel" aria-label="입금 진행 상황">
+          <div class="progress-row">
+            <b><em>${paidCount}</em>/${rows.length}명 입금 완료</b>
+            <span>${pct}%</span>
+          </div>
+          <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${rows.length}" aria-valuenow="${paidCount}"><i style="width:${pct}%"></i></div>
+          ${paidCount === rows.length && rows.length ? `<p class="progress-done">🎉 모두 입금 완료! 정산이 끝났어요.</p>` : ""}
+          ${mode === "local" ? `<p class="s-note">이 링크는 데이터가 링크에 담긴 버전이라, 입금 체크가 <b>이 기기에서만</b> 보여요. 벙주 화면에는 반영되지 않아요.</p>` : ""}
+        </section>
+
+        ${hasPayInfo ? `
+        <section class="s-card panel" aria-label="입금 정보">
+          <h2>입금 정보</h2>
+          <div class="deposit-rows">
+            ${pay.bank.trim() ? `<div class="deposit-row"><span>은행</span><b>${escapeHTML(pay.bank.trim())}</b></div>` : ""}
+            ${pay.account.trim() ? `<div class="deposit-row"><span>계좌번호</span><b>${escapeHTML(pay.account.trim())}</b></div>` : ""}
+            ${pay.holder.trim() ? `<div class="deposit-row"><span>예금주</span><b>${escapeHTML(pay.holder.trim())}</b></div>` : ""}
+          </div>
+          ${pay.kakao ? `<span class="kakao-badge">💛 카카오페이 송금도 가능해요</span>` : ""}
+          ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
+        </section>` : ""}
+
+        <section class="s-card panel" aria-label="입금 명단">
+          <h2>입금 명단</h2>
+          <div class="m-list">${memberHTML}</div>
+          <p class="m-hint">입금을 마쳤다면 내 이름 옆 <b>입금 완료</b>를 눌러주세요.${mode === "live" ? " 벙주와 멤버 모두의 화면에 반영돼요." : ""}</p>
+        </section>
+
+        ${payload.notices.length ? `
+        <section class="s-card panel" aria-label="안내 문구">
+          <h2>안내</h2>
+          <div class="notice-lines">${payload.notices.map((n) => `<div class="notice-line">· ${escapeHTML(n)}</div>`).join("")}</div>
+        </section>` : ""}
+
+        ${payload.rounds.length ? `
+        <details class="s-details panel"${detailsOpen ? " open" : ""}>
+          <summary>차수별 내역 (${payload.rounds.length}건)</summary>
+          <div class="s-details-body">${detailHTML}</div>
+        </details>` : ""}
+
+        <div class="s-footer">
+          <a href="calculator.html">⚡ 벙비 정산기로 1초 만에 만들었어요 →</a>
+        </div>`;
+
+      const details = app.querySelector(".s-details");
+      if (details) details.addEventListener("toggle", () => { detailsOpen = details.open; });
+    }
+
+    /* ============================================================
+       동작
+       ============================================================ */
+    async function handleTransfer(amount) {
+      const bank = payload.pay.bank.trim();
+      const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
+      if (!bank || !digits) { showToast("입금 계좌 정보가 없어요."); return; }
+      if (isMobileUA()) {
+        window.location.href = "supertoss://send?amount=" + amount + "&bank=" + encodeURIComponent(bank) + "&accountNo=" + digits;
+        showToast("토스 앱으로 연결할게요. 안 열리면 계좌 복사를 이용해주세요.");
+      } else {
+        const holder = payload.pay.holder.trim();
+        const text = `${bank} ${payload.pay.account.trim()}${holder ? ` (${holder})` : ""} ${formatWon(amount)}`;
+        const ok = await copyToClipboard(text);
+        showToast(ok ? "계좌와 금액을 복사했어요." : "복사에 실패했어요.");
+      }
+    }
+
+    function rememberMe(name) {
+      if (myName) return;
+      myName = name;
+      try { localStorage.setItem(MYNAME_KEY, name); } catch (e) {}
+    }
+
+    async function togglePaid(name) {
+      const row = payload.rows.find((r) => r.name === name);
+      if (!row) return;
+      const next = !paid[name];
+      if (next) rememberMe(name);
+
+      if (mode === "local") {
+        if (next) paid[name] = true; else delete paid[name];
+        persistLocalPaid();
+        renderView();
+        showToast(next ? "입금 완료로 체크했어요. (이 기기에서만 보여요)" : "입금 체크를 해제했어요.");
+        return;
+      }
+
+      // live: 낙관적 UI → 실패 시 롤백
+      const prev = !!paid[name];
+      if (next) paid[name] = true; else delete paid[name];
+      renderView();
+      pendingOps += 1;
+      try {
+        const res = await supaFetch("/rest/v1/rpc/settle_set_paid", {
+          method: "POST",
+          body: JSON.stringify({ p_id: settleId, p_name: name, p_paid: next })
+        });
+        if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderView(); }
+        if (next) showToast("입금 완료! 벙주 화면에도 반영됐어요.");
+      } catch (err) {
+        if (prev) paid[name] = true; else delete paid[name];
+        renderView();
+        const msg = String((err && err.message) || "");
+        showToast(msg.indexOf("NOT_FOUND") >= 0
+          ? "정산을 찾을 수 없어요. 벙주에게 새 링크를 요청해주세요."
+          : "입금 체크에 실패했어요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        pendingOps -= 1;
+      }
+    }
+
+    async function loadLive(isInitial) {
+      try {
+        const data = await supaFetch("/rest/v1/rpc/settle_get", {
+          method: "POST",
+          body: JSON.stringify({ p_id: settleId })
+        });
+        if (!data) { stopPolling(); renderError("notfound"); return; }
+        const normalized = normalizePayload(data.payload);
+        if (!normalized) { stopPolling(); renderError("notfound"); return; }
+        payload = normalized;
+        if (pendingOps === 0) paid = (data.paid && typeof data.paid === "object") ? data.paid : {};
+        const sig = JSON.stringify({ p: payload, d: paid });
+        if (isInitial || sig !== lastLiveSig) renderView();
+        lastLiveSig = sig;
+        startPolling();
+      } catch (err) {
+        if (isInitial) renderError(err && err.status === 404 ? "notfound" : "network");
+        // 폴링 중 일시 오류는 조용히 다음 주기에 재시도
+      }
+    }
+
+    function startPolling() {
+      if (pollTimer || mode !== "live") return;
+      pollTimer = setInterval(() => {
+        if (document.hidden || pendingOps > 0) return;
+        loadLive(false);
+      }, POLL_MS);
+    }
+    function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+
+    app.addEventListener("click", async (e) => {
+      const toggle = e.target.closest("[data-toggle-name]");
+      if (toggle) { togglePaid(toggle.dataset.toggleName); return; }
+      const send = e.target.closest("[data-send-amount]");
+      if (send) { handleTransfer(Number(send.dataset.sendAmount) || 0); return; }
+      const copyAcct = e.target.closest("#copyAccountBtn");
+      if (copyAcct) {
+        const ok = await copyToClipboard(copyAcct.dataset.account || "");
+        showToast(ok ? "계좌를 복사했어요." : "복사에 실패했어요.");
+        return;
+      }
+      const retry = e.target.closest("#retryBtn");
+      if (retry) { renderLoading(); loadLive(true); }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && mode === "live" && payload && pendingOps === 0) loadLive(false);
+    });
+
+    /* ── 시작 ── */
+    if (mode === "live") {
+      renderLoading();
+      loadLive(true);
+    } else if (mode === "local") {
+      try {
+        const decoded = normalizePayload(b64urlDecode(hashRaw));
+        if (!decoded) throw new Error("bad payload");
+        payload = decoded;
+        localKey = hashStr(hashRaw);
+        paid = loadLocalPaid();
+        renderView();
+      } catch (e) {
+        renderError("notfound");
+      }
+    } else {
+      renderError("notfound");
+    }
+  </script>
+</body>
+</html>
