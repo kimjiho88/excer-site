@@ -107,6 +107,15 @@
     .field { display: grid; gap: 7px; }
     .field label { color: var(--ink-2); font-size: 13px; font-weight: 800; }
 
+    /* ── 현재 멤버 명단 도구 ── */
+    .roster-tool { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--soft-lavender, rgba(243,232,255,0.5)); margin-bottom: 6px; }
+    .roster-label { display: block; font-size: 12.5px; font-weight: 800; color: var(--ink-2, #4a3d5c); margin-bottom: 8px; }
+    .roster-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .roster-status { margin: 10px 0 0; font-size: 12.5px; font-weight: 700; line-height: 1.55; }
+    .roster-status.ok { color: #1e7a52; }
+    .roster-status.warn { color: #9a5a00; }
+    .roster-status b { font-weight: 900; }
+
     /* ── 멤버 표 ── */
     .member-table { display: grid; gap: 4px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
     .member-row {
@@ -317,7 +326,19 @@
             <!-- 3) 멤버 -->
             <section id="memberCard" class="card is-lg reveal" aria-labelledby="stepMember" hidden>
               <div class="step-head"><h2 class="step-title" id="stepMember"><span class="step-no">3</span>멤버 확인</h2></div>
-              <p class="step-note">통계에서 뺄 멤버(운영봇, 공지 계정 등)는 체크를 해제하세요. 바로 다시 집계돼요.</p>
+              <p class="step-note">지금 방에 없는 사람(나간 사람·내보낸 사람)은 통계에서 빼는 게 좋아요. 아래에 <b>현재 방 멤버 명단</b>을 붙여넣으면 그 사람들만 남겨요.</p>
+
+              <div class="roster-tool">
+                <label class="roster-label" for="rosterInput">현재 방에 있는 멤버 명단 (한 줄에 한 명 · 선택)</label>
+                <textarea id="rosterInput" class="textarea" rows="4" placeholder="예:&#10;엑서 논현 남 88 0125&#10;민지 강남 여 95 0312&#10;… (또는 닉네임만: 엑서, 민지 …)"></textarea>
+                <div class="roster-actions">
+                  <button id="rosterApply" class="btn btn-primary is-sm" type="button">이 명단만 남기기</button>
+                  <button id="rosterClear" class="mini-btn" type="button">전체 포함(초기화)</button>
+                </div>
+                <p id="rosterStatus" class="roster-status" hidden></p>
+              </div>
+
+              <p class="step-note" style="margin-top:14px">운영봇·공지 계정처럼 통계에서 뺄 사람은 아래에서 체크를 해제해도 돼요.</p>
               <div id="memberTable" class="member-table" aria-label="멤버별 메시지 수"></div>
             </section>
 
@@ -637,6 +658,62 @@
       const dropped = new Set();    // 삭제한 키워드
       let labelDirty = false;
       let currentStats = null;      // 발행/미리보기 대상 (v2)
+      let lastMembers = [];         // 최근 집계된 전체 멤버(제외 판단용)
+
+      /* 현재 방 멤버 명단으로 "그 사람만 남기기".
+         닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. */
+      function normName(s) { return String(s || "").trim().replace(/\s+/g, " "); }
+      function firstTok(s) { return normName(s).split(" ")[0].toLowerCase(); }
+      function applyRoster() {
+        const raw = $("rosterInput").value || "";
+        const lines = raw.split(/[\n,]+/).map(normName).filter(Boolean);
+        const statusEl = $("rosterStatus");
+        if (!lines.length) {
+          statusEl.hidden = false; statusEl.className = "roster-status warn";
+          statusEl.innerHTML = "명단이 비어 있어요. 현재 방 멤버를 한 줄에 한 명씩 붙여넣어 주세요.";
+          return;
+        }
+        if (!lastMembers.length) return;
+        // 붙여넣은 명단: 전체 문자열 + 첫 단어(닉네임) 두 형태로 색인
+        const full = new Set(lines.map((l) => l.toLowerCase()));
+        const nick = new Set(lines.map(firstTok));
+        const matchedRosterFull = new Set();  // 매칭된 붙여넣기 항목(오탈자 확인용)
+        let keep = 0;
+        excluded.clear();
+        lastMembers.forEach((m) => {
+          const nm = normName(m.name).toLowerCase();
+          const nk = firstTok(m.name);
+          const hit = full.has(nm) || nick.has(nk) || full.has(nk) || nick.has(nm);
+          if (hit) {
+            keep += 1;
+            lines.forEach((l) => { if (l.toLowerCase() === nm || firstTok(l) === nk) matchedRosterFull.add(l); });
+          } else {
+            excluded.add(m.name);
+          }
+        });
+        const unmatched = lines.filter((l) => !matchedRosterFull.has(l));
+        statusEl.hidden = false;
+        if (keep === 0) {
+          statusEl.className = "roster-status warn";
+          statusEl.innerHTML = "명단과 일치하는 멤버를 못 찾았어요. 닉네임 철자를 확인해 주세요. (대화 내역의 닉네임과 같아야 해요)";
+        } else {
+          statusEl.className = "roster-status ok";
+          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${excluded.size}명</b>(나간·내보낸 사람 등)은 통계에서 뺐어요.`;
+          if (unmatched.length) {
+            const show = unmatched.slice(0, 8).map(escapeHTML).join(", ");
+            msg += `<br><span class="warn">명단에 있지만 대화 내역에서 못 찾은 이름 ${unmatched.length}개: ${show}${unmatched.length > 8 ? " …" : ""} (오탈자거나 그 기간에 말을 안 한 사람일 수 있어요)</span>`;
+          }
+          statusEl.innerHTML = msg;
+        }
+        recompute();
+      }
+      function clearRoster() {
+        excluded.clear();
+        const statusEl = $("rosterStatus");
+        statusEl.hidden = false; statusEl.className = "roster-status ok";
+        statusEl.textContent = "모든 멤버를 다시 포함했어요.";
+        recompute();
+      }
 
       /* ── 파일 처리 ── */
       function readFileText(file) {
@@ -796,6 +873,7 @@
         const baseAgg = ChatParser.aggregate(merged, {
           from, to, format: mergedMeta.format, files: mergedMeta.files
         });
+        lastMembers = baseAgg.members || [];
         renderMemberTable(baseAgg.members, baseAgg.meta.totalMessages);
 
         currentStats = ChatParser.aggregate(merged, {
@@ -1018,6 +1096,9 @@
           if (cb.checked) excluded.delete(name); else excluded.add(name);
           recompute();
         });
+
+        $("rosterApply").addEventListener("click", applyRoster);
+        $("rosterClear").addEventListener("click", clearRoster);
 
         $("kwEdit").addEventListener("click", (e) => {
           const b = e.target.closest("[data-drop]");
