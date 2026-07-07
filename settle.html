@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>EXCER — 정산 확인</title>
-  <meta name="description" content="벙주가 공유한 정산 링크. 내 금액을 확인하고 입금 완료를 체크하세요." />
+  <title>우리방 · 정산 확인</title>
+  <meta name="description" content="벙주가 보낸 정산 링크예요. 내 금액을 확인하고 입금 완료를 체크할 수 있어요." />
   <meta name="robots" content="noindex" />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -242,8 +242,8 @@
 
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
-        <span class="topnav-logo">EXCER</span>
+      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
+        <span class="topnav-logo">우리방</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
@@ -253,6 +253,12 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span>
+      </div>
       <span class="topnav-page" aria-hidden="true">정산 확인</span>
     </div>
   </header>
@@ -260,9 +266,9 @@
   <section class="hero-band is-compact" aria-labelledby="heroTitle">
     <div class="container">
       <span class="hero-kicker"><i></i>💸 정산 확인</span>
-      <h1 class="hero-title" id="heroTitle">내 금액 확인하고,<br /><span class="grad-text-hero">체크 한 번이면 끝</span></h1>
+      <h1 class="hero-title" id="heroTitle">내 벙비 얼마인지<br /><span class="grad-text-hero">여기서 확인해요</span></h1>
       <p class="hero-sub">
-        벙주가 보낸 정산 링크예요. 입금하고 <strong>입금 완료</strong>만 눌러주세요 —
+        벙주가 보낸 정산 링크예요. 입금한 다음 <strong>입금 완료</strong>를 눌러주시면
         벙주 화면에도 바로 반영돼요.
       </p>
       <div class="hero-meta">
@@ -284,7 +290,7 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">EXCER</span>
+          <span class="footer-logo">우리방</span>
           <p class="footer-tagline">
             오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
             필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
@@ -308,7 +314,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
@@ -399,6 +405,54 @@
         }, { threshold: 0.4 });
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
+
+      /* ── 6. 방문자 카운터 (우측 상단) ── */
+      (function () {
+        var box = document.getElementById("visitBox");
+        if (!box) return;
+        var elToday = document.getElementById("visitToday");
+        var elTotal = document.getElementById("visitTotal");
+        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+        function devKey() {
+          var k = null;
+          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
+          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
+            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
+            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
+          }
+          return k;
+        }
+        function show(today, total) {
+          box.hidden = false;
+          countUp(elToday, today || 0, { duration: 700 });
+          countUp(elTotal, total || 0, { duration: 700 });
+        }
+        function localFallback() {
+          var total = 1, today = 1;
+          try {
+            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
+            var d = new Date().toISOString().slice(0, 10);
+            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
+            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
+            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
+            total = raw.total; today = raw.today;
+          } catch (e) {}
+          show(today, total);
+        }
+        var counted = false;
+        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
+        fetch(U + "/rest/v1/rpc/visit_ping", {
+          method: "POST",
+          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
+        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+          .then(function (d) {
+            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
+            show(d.today, d.total);
+          }).catch(function () { localFallback(); });
+      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -720,8 +774,8 @@
         ${complete ? `
         <section class="s-card card celebrate" aria-label="정산 완료">
           <span class="cel-emoji" aria-hidden="true">🎉</span>
-          <strong>모두 입금 완료! 정산이 끝났어요</strong>
-          <p>${rows.length}명 전원이 입금을 마쳤어요. 벙주님, 수고하셨어요 — 다음 벙에서 만나요!</p>
+          <strong>전원 입금 완료, 정산이 끝났어요</strong>
+          <p>${rows.length}명 모두 입금을 마쳤어요. 벙주님 수고하셨어요. 다음 벙에서 만나요.</p>
         </section>` : ""}
 
         <section class="s-card card" aria-label="입금 진행 상황">
@@ -732,7 +786,7 @@
           <div class="progress is-thick" role="progressbar" aria-valuemin="0" aria-valuemax="${rows.length}" aria-valuenow="${paidCount}"><span style="width:${pct}%"></span></div>
           ${waiting.length ? `
           <div class="waitline">
-            <span class="wait-label">⏳ 아직 ${waiting.length}명</span>
+            <span class="wait-label">아직 ${waiting.length}명</span>
             ${waiting.map((r) => `<span class="wait-chip">${escapeHTML(r.name)}</span>`).join("")}
           </div>` : ""}
           ${mode === "local" ? `<p class="s-note">이 링크는 데이터가 링크에 담긴 버전이라, 입금 체크가 <b>이 기기에서만</b> 보여요. 벙주 화면에는 반영되지 않아요.</p>` : ""}
@@ -752,7 +806,7 @@
 
         <section class="s-card card" aria-label="입금 명단">
           <h2>입금 명단</h2>
-          ${waiting.length ? `<div class="m-group-head is-wait">⏳ 대기 중 <b>${waiting.length}명</b><i></i></div>
+          ${waiting.length ? `<div class="m-group-head is-wait">대기 중 <b>${waiting.length}명</b><i></i></div>
           <div class="m-list">${waiting.map(memberRow).join("")}</div>` : ""}
           ${done.length ? `<div class="m-group-head is-done">✅ 입금 완료 <b>${done.length}명</b><i></i></div>
           <div class="m-list">${done.map(memberRow).join("")}</div>` : ""}
@@ -799,7 +853,7 @@
         </details>` : ""}
 
         <div class="s-promo">
-          <a href="calculator.html">⚡ 벙비 정산기로 1초 만에 만들었어요 →</a>
+          <a href="calculator.html">이 정산서는 벙비 정산기로 만들었어요</a>
         </div>`;
 
       const details = app.querySelector(".s-details");
@@ -865,7 +919,7 @@
           body: JSON.stringify({ p_id: settleId, p_name: name, p_paid: next })
         });
         if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderView(); }
-        if (next) showToast("입금 완료! 벙주 화면에도 반영됐어요.");
+        if (next) showToast("입금 완료로 체크했어요. 벙주 화면에도 반영됐어요.");
       } catch (err) {
         if (prev) paid[name] = true; else delete paid[name];
         renderView();

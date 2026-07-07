@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>EXCER — 리포트 발행 (운영진)</title>
+  <title>우리방 · 리포트 발행 (운영진)</title>
   <meta name="description" content="카톡 대화 내보내기 파일로 운영 대시보드 리포트를 만들어 발행하는 운영진 페이지." />
   <meta name="robots" content="noindex" />
 
@@ -229,8 +229,8 @@
 
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
-        <span class="topnav-logo">EXCER</span>
+      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
+        <span class="topnav-logo">우리방</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
@@ -240,6 +240,12 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span>
+      </div>
       <span class="topnav-page" aria-hidden="true">리포트 발행</span>
     </div>
   </header>
@@ -257,7 +263,7 @@
         <a class="btn btn-glass" href="index.html">필독 안내</a>
       </div>
       <br />
-      <span class="privacy-pill">🔒 <span>대화 원문은 <b>서버로 전송되지 않아요</b> — 파일은 업로드 즉시 브라우저 메모리에서만 쓰고 버려요.</span></span>
+      <span class="privacy-pill">🔒 <span>대화 원문은 <b>서버로 전송되지 않아요.</b> 파일은 업로드 즉시 브라우저 메모리에서만 쓰고 버려요.</span></span>
     </div>
   </section>
 
@@ -269,10 +275,10 @@
             <!-- 1) 업로드 + 중복 감지 -->
             <section class="card is-lg reveal" aria-labelledby="stepUpload">
               <div class="step-head"><h2 class="step-title" id="stepUpload"><span class="step-no">1</span>대화 파일 올리기</h2></div>
-              <p class="step-note">카카오톡 채팅방 → 메뉴 → 대화 내용 내보내기(.txt). 여러 파일을 함께 올려도 돼요 — 겹치는 날짜는 자동으로 알려드려요.</p>
+              <p class="step-note">카카오톡 채팅방 → 메뉴 → 대화 내용 내보내기(.txt). 여러 파일을 함께 올려도 돼요. 겹치는 날짜는 자동으로 알려드려요.</p>
               <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 드래그해서 올리기">
                 <strong>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</strong>
-                <p>Android · iPhone · PC 내보내기 형식을 자동으로 알아봐요<br />여러 파일도 한 번에 — 기간이 겹치면 중복을 정리해드려요</p>
+                <p>Android · iPhone · PC 내보내기 형식을 자동으로 알아봐요<br />여러 파일도 한 번에 올릴 수 있어요. 기간이 겹치면 중복을 정리해드려요</p>
               </div>
               <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" />
               <div id="fileChips" class="file-chips"></div>
@@ -284,7 +290,7 @@
                 <div class="overlap-dates" id="overlapDates"></div>
                 <label class="merge-toggle">
                   <input type="checkbox" id="autoMergeChk" checked />
-                  <span><b>겹침 자동 정리 (권장)</b> — 겹치는 날짜의 동일 메시지는 한 번만 세요.
+                  <span><b>겹침 자동 정리 (권장)</b>: 겹치는 날짜의 동일 메시지는 한 번만 세요.
                   동일 여부는 (날짜·시각·닉네임·길이·종류) 서명으로 판단해요.</span>
                 </label>
                 <div class="merge-result" id="mergeResult" hidden></div>
@@ -363,7 +369,7 @@
               </div>
               <div class="action-col">
                 <button id="previewBtn" class="btn btn-secondary" type="button" disabled>👀 미리보기</button>
-                <button id="publishBtn" class="btn btn-primary" type="button" disabled>🚀 발행하기</button>
+                <button id="publishBtn" class="btn btn-primary" type="button" disabled>발행하기</button>
                 <button id="downloadBtn" class="btn btn-ghost" type="button" disabled>JSON 내려받기</button>
               </div>
               <p class="hint" style="margin-top:10px">
@@ -387,7 +393,7 @@
             <section class="retain-box reveal d3" aria-label="데이터 보관 안내">
               <b>🔒 데이터는 이렇게 다뤄요</b>
               <ul>
-                <li>발행본에는 <b>집계 숫자와 키워드만</b> 담겨요 — 대화 문장은 없어요.</li>
+                <li>발행본에는 <b>집계 숫자와 키워드만</b> 담겨요. 대화 문장은 안 들어가요.</li>
                 <li>원본 .txt 는 업로드 즉시 <b>브라우저 메모리에서만</b> 사용하고 페이지를 떠나면 사라져요.</li>
                 <li>발행한 리포트는 위 목록에서 <b>언제든 삭제</b>할 수 있어요.</li>
               </ul>
@@ -402,7 +408,7 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">EXCER</span>
+          <span class="footer-logo">우리방</span>
           <p class="footer-tagline">
             오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
             필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
@@ -426,7 +432,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
@@ -517,6 +523,54 @@
         }, { threshold: 0.4 });
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
+
+      /* ── 6. 방문자 카운터 (우측 상단) ── */
+      (function () {
+        var box = document.getElementById("visitBox");
+        if (!box) return;
+        var elToday = document.getElementById("visitToday");
+        var elTotal = document.getElementById("visitTotal");
+        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+        function devKey() {
+          var k = null;
+          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
+          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
+            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
+            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
+          }
+          return k;
+        }
+        function show(today, total) {
+          box.hidden = false;
+          countUp(elToday, today || 0, { duration: 700 });
+          countUp(elTotal, total || 0, { duration: 700 });
+        }
+        function localFallback() {
+          var total = 1, today = 1;
+          try {
+            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
+            var d = new Date().toISOString().slice(0, 10);
+            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
+            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
+            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
+            total = raw.total; today = raw.today;
+          } catch (e) {}
+          show(today, total);
+        }
+        var counted = false;
+        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
+        fetch(U + "/rest/v1/rpc/visit_ping", {
+          method: "POST",
+          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
+        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+          .then(function (d) {
+            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
+            show(d.today, d.total);
+          }).catch(function () { localFallback(); });
+      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -856,13 +910,13 @@
             method: "POST",
             body: JSON.stringify({ p_pass: pass, p_period: st.periodLabel, p_stats: st })
           });
-          EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 리포트를 발행했어요!`);
+          EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 리포트를 발행했어요.`);
           loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요해요. 안내를 확인해주세요."); }
           else EXCER.toast(rpcErrorText(e, "발행에 실패했어요. 잠시 후 다시 시도해주세요."));
         } finally {
-          btn.disabled = false; btn.textContent = "🚀 발행하기"; updateActions();
+          btn.disabled = false; btn.textContent = "발행하기"; updateActions();
         }
       }
 
@@ -889,10 +943,10 @@
                 <div><b>${escapeHTML(r.period_label)}</b><small>업데이트 ${escapeHTML(String(r.updated_at || "").slice(0, 10))}</small></div>
                 <button class="mini-btn" type="button" data-del="${r.id}" data-label="${escapeHTML(r.period_label)}">삭제</button>
               </div>`).join("")
-            : `<div class="report-empty">아직 발행된 리포트가 없어요. 첫 리포트를 만들어보세요!</div>`;
+            : `<div class="report-empty">아직 발행된 리포트가 없어요. 위에서 파일을 올리면 바로 만들 수 있어요.</div>`;
         } catch (e) {
           if (isMissingTable(e)) {
-            host.innerHTML = `<div class="report-empty">서버 설정 전이에요 — 아래 안내를 따라주세요.</div>`;
+            host.innerHTML = `<div class="report-empty">서버 설정 전이에요. 아래 안내를 따라주세요.</div>`;
             $("setupBox").hidden = false;
           } else {
             host.innerHTML = `<div class="report-empty">목록을 불러오지 못했어요. 네트워크 확인 후 새로고침 해주세요.</div>`;

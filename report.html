@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>EXCER — 운영 대시보드</title>
-  <meta name="description" content="우리방이 얼마나 뜨거웠는지 한눈에 — 활동 랭킹, 명예의 전당, 시간대 패턴, 키워드까지. 집계 숫자와 키워드만 다루는 오픈채팅 리포트." />
+  <title>우리방 · 운영 대시보드</title>
+  <meta name="description" content="활동 랭킹, 명예의 전당, 시간대 패턴, 키워드까지 우리방 활동을 한눈에 봐요. 집계 숫자와 키워드만 다루는 오픈채팅 리포트예요." />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="assets/site.css" />
@@ -340,8 +340,8 @@
 
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
-        <span class="topnav-logo">EXCER</span>
+      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
+        <span class="topnav-logo">우리방</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
@@ -351,6 +351,12 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span>
+      </div>
       <span class="topnav-page" aria-hidden="true">대시보드</span>
     </div>
   </header>
@@ -362,7 +368,7 @@
         <label class="sr-only" for="reportSelect">발행된 리포트 선택</label>
         <select id="reportSelect" class="report-select" hidden></select>
       </div>
-      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 우리방,<br /><span class="grad-text-hero">이만큼 뜨거웠어요</span></h1>
+      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 우리방,<br /><span class="grad-text-hero">이렇게 지냈어요</span></h1>
       <p class="hero-sub">
         누가 활약했는지, 어느 시간대가 뜨거웠는지 재미로 확인해요.
         집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
@@ -409,7 +415,7 @@
       </div>
       <div class="legacy-note" id="legacyNote" hidden>
         <span aria-hidden="true">🗂️</span>
-        <span><b>구버전 리포트예요.</b> 지금 보이는 지표만 제공돼요 — 운영진이 리포트를 다시 발행하면 기간 필터·배지·분위기 리포트 같은 새 지표가 열려요.</span>
+        <span><b>구버전 리포트예요.</b> 지금 보이는 지표만 제공돼요. 운영진이 리포트를 다시 발행하면 기간 필터·배지·분위기 리포트 같은 새 지표가 열려요.</span>
       </div>
     </div>
 
@@ -493,7 +499,7 @@
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">명예의 전당</span>
-              <h2>이 기간의 주인공들</h2>
+              <h2>이 기간 배지를 받은 멤버들</h2>
               <p>조건을 채운 배지만 보여드려요. 표본이 적은 배지는 아직 잠겨 있어요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true">▼</span></button>
@@ -540,7 +546,7 @@
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">요일 × 시간</span>
-              <h2>우리방이 뜨거워지는 순간</h2>
+              <h2>대화가 몰리는 요일과 시간</h2>
               <p>진할수록 대화가 몰린 칸이에요. 셀을 짚으면 정확한 수가 떠요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true">▼</span></button>
@@ -584,7 +590,7 @@
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">키워드</span>
-              <h2>우리방을 달군 이야깃거리</h2>
+              <h2>요즘 우리방 이야깃거리</h2>
               <p>발행 기간 전체에서 자주 나온 단어예요. 원문 문장이 아니라 단어 빈도만 세요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true">▼</span></button>
@@ -650,8 +656,8 @@
         <div class="container">
           <div class="section-head is-center reveal">
             <span class="eyebrow">리캡 카드</span>
-            <h2>한 장으로 남기는 우리방 기록</h2>
-            <p>이미지로 저장해서 채팅방에 바로 공유해보세요.</p>
+            <h2>이 기간 기록을 한 장으로 정리했어요</h2>
+            <p>이미지로 저장해서 채팅방에 공유하면 돼요.</p>
           </div>
           <div class="recap-stage reveal">
             <div class="recap-card" id="recapCard"></div>
@@ -666,9 +672,9 @@
       <section class="section" id="secCta">
         <div class="container">
           <div class="card is-lg is-soft cta-card reveal">
-            <span class="badge-soft">다음 리포트 예고</span>
-            <h2>다음 주 주인공은 누구일까요?</h2>
-            <p>오늘 한 마디만 남겨도 랭킹이 움직여요. 벙 소식과 정산도 잊지 마세요!</p>
+            <span class="badge-soft">다음 리포트</span>
+            <h2>오늘 한 마디 남기면 다음 주 순위가 달라져요</h2>
+            <p>벙 소식이랑 정산은 아래에서 바로 확인할 수 있어요.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="news.html">소식 보러 가기</a>
               <a class="btn btn-secondary" href="calculator.html">벙비 정산하기</a>
@@ -684,7 +690,7 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">EXCER</span>
+          <span class="footer-logo">우리방</span>
           <p class="footer-tagline">
             오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
             필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
@@ -708,7 +714,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
@@ -805,6 +811,54 @@
         }, { threshold: 0.4 });
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
+
+      /* ── 6. 방문자 카운터 (우측 상단) ── */
+      (function () {
+        var box = document.getElementById("visitBox");
+        if (!box) return;
+        var elToday = document.getElementById("visitToday");
+        var elTotal = document.getElementById("visitTotal");
+        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+        function devKey() {
+          var k = null;
+          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
+          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
+            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
+            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
+          }
+          return k;
+        }
+        function show(today, total) {
+          box.hidden = false;
+          countUp(elToday, today || 0, { duration: 700 });
+          countUp(elTotal, total || 0, { duration: 700 });
+        }
+        function localFallback() {
+          var total = 1, today = 1;
+          try {
+            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
+            var d = new Date().toISOString().slice(0, 10);
+            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
+            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
+            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
+            total = raw.total; today = raw.today;
+          } catch (e) {}
+          show(today, total);
+        }
+        var counted = false;
+        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
+        fetch(U + "/rest/v1/rpc/visit_ping", {
+          method: "POST",
+          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
+        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+          .then(function (d) {
+            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
+            show(d.today, d.total);
+          }).catch(function () { localFallback(); });
+      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -1300,7 +1354,7 @@
 
       function renderHero() {
         const st = state.data;
-        document.title = "EXCER — 운영 대시보드 · " + (st.periodLabel || "");
+        document.title = "우리방 · 운영 대시보드 · " + (st.periodLabel || "");
         const badge = $("sourceBadgeText");
         if (state.source === "sample") badge.textContent = "📎 예시 데이터 · " + (st.periodLabel || "");
         else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 · " + (st.periodLabel || "");
@@ -1611,8 +1665,8 @@
         $("clockFacts").innerHTML = `
           <h3 style="margin:0 0 12px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">시간대 요약</h3>
           <div style="display:grid; gap:8px">
-            <div class="clock-fact"><span class="ic" aria-hidden="true">🔥</span><span><b>${pk.i}시가 피크</b><small>${nf(pk.v)}건 — 하루 중 가장 뜨거워요</small></span></div>
-            <div class="clock-fact"><span class="ic" aria-hidden="true">🤫</span><span><b>${qt.i}시가 제일 조용</b><small>${nf(qt.v)}건 — 다들 쉬는 시간이에요</small></span></div>
+            <div class="clock-fact"><span class="ic" aria-hidden="true">🔥</span><span><b>${pk.i}시가 피크</b><small>${nf(pk.v)}건 · 하루 중 제일 붐벼요</small></span></div>
+            <div class="clock-fact"><span class="ic" aria-hidden="true">🤫</span><span><b>${qt.i}시가 제일 조용</b><small>${nf(qt.v)}건 · 다들 쉬는 시간이에요</small></span></div>
           </div>`;
         const segs = [
           { lb: "새벽 0~5", a: 0, b: 5 }, { lb: "아침 6~10", a: 6, b: 10 },
@@ -1900,7 +1954,7 @@
           <div class="mood-big">${nf(nm.count)}<small>명 합류</small></div>
           <p style="margin:10px 0 0; font-size:13px; color:var(--ink-2); font-weight:700; line-height:1.6">
             ${nm.avgFirstWeekMsgs > 0
-              ? `첫 주에 평균 <b style="color:var(--primary)">${nf(nm.avgFirstWeekMsgs)}마디</b>씩 남겼어요. ${nm.avgFirstWeekMsgs >= 15 ? "환영 분위기가 통했나 봐요! 🎉" : "따뜻한 환영 한 마디가 큰 힘이 돼요 🙌"}`
+              ? `첫 주에 평균 <b style="color:var(--primary)">${nf(nm.avgFirstWeekMsgs)}마디</b>씩 남겼어요. ${nm.avgFirstWeekMsgs >= 15 ? "환영 분위기가 통했나 봐요." : "환영 인사 한 마디가 큰 힘이 돼요."}`
               : "이 기간에는 새 멤버 적응 기록이 없어요."}
           </p>`;
       }
@@ -1910,7 +1964,7 @@
         const st = state.data;
         const grid = $("memberGrid");
         if (state.legacy || !st.members || !st.members.length) {
-          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "구버전 리포트예요 — 다시 발행하면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
+          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "구버전 리포트예요. 다시 발행하면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
           $("memberDetail").innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
           return;
         }
@@ -1995,14 +2049,14 @@
           const t = st.totalsV1;
           host.innerHTML = `
             <div class="recap-inner">
-              <div class="recap-brand"><span class="logo">EXCER</span><small>월간 리캡</small></div>
+              <div class="recap-brand"><span class="logo">우리방</span><small>월간 리캡</small></div>
               <h3 class="recap-title">${escapeHTML(st.periodLabel)} — <span class="grad-text-hero">우리방 기록</span></h3>
               <div class="recap-kpis">
                 <div class="recap-kpi"><span>총 채팅</span><strong>${nf(t.messages || 0)}<small>건</small></strong></div>
                 <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(t.activeMembers || 0)}<small>명</small></strong></div>
                 <div class="recap-kpi"><span>하루 평균</span><strong>${nf(t.avgPerDay || 0)}<small>건</small></strong></div>
               </div>
-              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>excer</span></div>
+              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>우리방</span></div>
             </div>`;
           return;
         }
@@ -2012,7 +2066,7 @@
         const kws = (st.keywords || []).slice(0, 3);
         host.innerHTML = `
           <div class="recap-inner">
-            <div class="recap-brand"><span class="logo">EXCER</span><small>${escapeHTML(PRESET_WORD[state.preset])} 리캡 · ${fmtDateK(s.from)}~${fmtDateK(s.to)}</small></div>
+            <div class="recap-brand"><span class="logo">우리방</span><small>${escapeHTML(PRESET_WORD[state.preset])} 리캡 · ${fmtDateK(s.from)}~${fmtDateK(s.to)}</small></div>
             <h3 class="recap-title">${escapeHTML(st.periodLabel)},<br /><span class="grad-text-hero">우리방 온도 ${temp.temp}℃</span></h3>
             <div class="recap-kpis">
               <div class="recap-kpi"><span>총 채팅</span><strong>${nf(kpi.total)}<small>건</small></strong></div>
@@ -2021,7 +2075,7 @@
             </div>
             ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="ic" aria-hidden="true">${b.icon}</span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)} · ${escapeHTML(b.desc)}</span></div>`).join("")}</div>` : ""}
             ${kws.length ? `<div class="recap-kws">${kws.map((k) => `<span class="recap-kw">#${escapeHTML(k.w)}</span>`).join("")}</div>` : ""}
-            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>excer · 운영 대시보드</span></div>
+            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>우리방 · 운영 대시보드</span></div>
           </div>`;
       }
 
@@ -2044,7 +2098,7 @@
           a.download = "excer-recap-" + String(state.data.periodLabel || "report").replace(/[\\/:*?"<>|\s]+/g, "_") + ".png";
           a.href = dataUrl;
           a.click();
-          EXCER.toast("리캡 카드를 저장했어요!");
+          EXCER.toast("리캡 카드를 저장했어요.");
         } catch (e) {
           EXCER.toast("이미지 저장에 실패했어요. 다시 시도해주세요.");
         } finally {

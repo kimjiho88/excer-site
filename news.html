@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>EXCER — 소식</title>
+  <title>우리방 · 소식</title>
   <meta name="description" content="공지, 벙 소식, 후기, 정보, 자유 수다까지. 우리방 소식 게시판에서 이야기를 나눠요." />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -202,8 +202,8 @@
 
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="EXCER 홈(필독)으로 이동">
-        <span class="topnav-logo">EXCER</span>
+      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
+        <span class="topnav-logo">우리방</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
@@ -213,6 +213,12 @@
         <a class="topnav-tab is-active" href="news.html" aria-current="page">소식</a>
         <a class="topnav-tab" href="games.html">게임</a>
       </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span>
+      </div>
       <span class="topnav-page" aria-hidden="true">소식</span>
     </div>
   </header>
@@ -285,7 +291,7 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">EXCER</span>
+          <span class="footer-logo">우리방</span>
           <p class="footer-tagline">
             오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
             필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
@@ -309,7 +315,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 EXCER 오픈채팅 커뮤니티</small>
+        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
@@ -343,7 +349,7 @@
         </div>
         <div class="field">
           <label for="wNick">닉네임</label>
-          <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
+          <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 지훈" autocomplete="nickname" />
         </div>
         <div class="field is-wide">
           <label for="wPass">비밀번호</label>
@@ -470,6 +476,54 @@
         }, { threshold: 0.4 });
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
+
+      /* ── 6. 방문자 카운터 (우측 상단) ── */
+      (function () {
+        var box = document.getElementById("visitBox");
+        if (!box) return;
+        var elToday = document.getElementById("visitToday");
+        var elTotal = document.getElementById("visitTotal");
+        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+        function devKey() {
+          var k = null;
+          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
+          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
+            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
+            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
+          }
+          return k;
+        }
+        function show(today, total) {
+          box.hidden = false;
+          countUp(elToday, today || 0, { duration: 700 });
+          countUp(elTotal, total || 0, { duration: 700 });
+        }
+        function localFallback() {
+          var total = 1, today = 1;
+          try {
+            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
+            var d = new Date().toISOString().slice(0, 10);
+            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
+            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
+            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
+            total = raw.total; today = raw.today;
+          } catch (e) {}
+          show(today, total);
+        }
+        var counted = false;
+        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
+        fetch(U + "/rest/v1/rpc/visit_ping", {
+          method: "POST",
+          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
+        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+          .then(function (d) {
+            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
+            show(d.today, d.total);
+          }).catch(function () { localFallback(); });
+      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -617,7 +671,7 @@
           reactions: { "👍": 5, "🔥": 2 },
           body: "우리방 소식 게시판이 새 단장했어요.\n\n· 공지: 운영진이 방 소식을 올려요 (자동 고정)\n· 벙 소식: 새 벙 모집·일정 공유\n· 후기: 다녀온 벙 이야기\n· 정보: 맛집·꿀팁 등 유용한 정보\n· 자유: 편한 수다\n\n글마다 👍❤️😂👏🔥 리액션을 남길 수 있어요. 서버 설정이 끝나면 실제 글을 쓸 수 있어요.",
           _comments: [
-            { id: -11, post_id: -1, author: "엑서", body: "리액션 기능 너무 좋아요!", created_at: iso(3 * 86400000 - 3600000) },
+            { id: -11, post_id: -1, author: "지훈", body: "리액션 기능 너무 좋아요!", created_at: iso(3 * 86400000 - 3600000) },
             { id: -12, post_id: -1, author: "민지", body: "카테고리 정리된 거 깔끔하네요 👍", created_at: iso(2 * 86400000) }
           ]
         }),
