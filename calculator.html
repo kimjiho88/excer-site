@@ -560,7 +560,7 @@
                 <button id="addAdjBtn" class="btn btn-secondary is-sm" type="button">＋ 항목 추가</button>
               </div>
               <div id="adjList" class="adj-list"></div>
-              <p class="card-note">예: <b>준호 +5,000원 (택시)</b>, <b>서아 −3,000원 (미리 냄)</b>처럼 벙주에게 보낼 금액에 더하거나 뺄 수 있어요.</p>
+              <p class="card-note">예: <b>서아 −4,000원 (일찍 감)</b>, <b>준호 +3,000원 (더 먹음)</b>처럼 개인별로 더하거나 뺀 금액은, 벙주가 떠안지 않고 <b>남은 참여자가 똑같이 나눠</b> 반영돼요.</p>
             </section>
 
             <!-- 4. 입금 정보 -->
@@ -891,6 +891,19 @@
         }
       }
 
+      /* 정수 total 을 k 개로 최대한 균등 분할(부호 유지). 합 = total */
+      function splitSigned(total, k) {
+        total = Math.round(Number(total) || 0);
+        k = Math.max(1, k | 0);
+        var base = Math.trunc(total / k);
+        var rem = total - base * k;              // |rem| < k, total 과 같은 부호
+        var step = rem > 0 ? 1 : -1;
+        var r = Math.abs(rem);
+        var arr = new Array(k);
+        for (var i = 0; i < k; i++) arr[i] = base + (i < r ? step : 0);
+        return arr;
+      }
+
       /*
        * computeSettlement(input)
        *   input = {
@@ -902,7 +915,8 @@
        * 규칙:
        *   · 차수 금액은 참여 멤버 1/N (1원 단위, 나머지는 벙주 외 우선 +1원)
        *   · 결제자(payer)가 없으면 벙주, 결제자 본인 몫은 자기 부담
-       *   · 추가/차감은 벙주(없으면 첫 결제자)에게 보낼 금액에 반영
+       *   · 추가/차감은 그 사람이 조정액만큼 더/덜 부담하고,
+       *     반대편 금액은 남은 참여자가 균등 배분(벙주가 통째로 떠안지 않음)
        *   · 단위 반올림 잔차는 결제자 부담 — verify 로 합계 검증 제공
        */
       function computeSettlement(input) {
@@ -950,8 +964,13 @@
           roundsOut.push({ label: label, amount: amount, count: active.length, active: active.slice(), payer: payer });
         });
 
-        /* 개인별 추가·차감 — 벙주(없으면 첫 결제자)에게 보낼 금액에 반영 */
+        /* 개인별 추가·차감 — 그 사람은 조정액만큼 더/덜 부담하고,
+           반대편 금액(−조정액)은 '남은 참여자'가 균등 배분한다.
+           결제자(벙주)는 정산 허브로서 자기 몫만 부담(차액을 통째로 떠안지 않음). */
         var adjTarget = (host && members.indexOf(host) >= 0) ? host : (roundsOut.length ? roundsOut[0].payer : "");
+        var participants = members.filter(function (m) { return (memberExact.get(m) || 0) > 0; });
+        if (!participants.length) participants = members.slice();
+        var deltaBurden = new Map();   // member → 조정으로 인한 부담 변화(원)
         var adjustments = [];
         (input.adjustments || []).forEach(function (a) {
           var name = a && a.name ? String(a.name).trim() : "";
@@ -963,18 +982,29 @@
             return;
           }
           if (!adjTarget) {
-            warnings.push("추가·차감을 반영할 벙주(결제자)가 없어요. 차수 금액을 먼저 입력해주세요.");
+            warnings.push("추가·차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
             return;
           }
-          if (name === adjTarget) {
-            warnings.push("추가·차감: " + name + "은(는) 받는 사람 본인이라 입금액에 반영되지 않아요.");
+          var others = participants.filter(function (m) { return m !== name; });
+          if (!others.length) {
+            warnings.push("추가·차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
             adjustments.push({ name: name, amount: amount, reason: reason, applied: false });
             return;
           }
-          var pm = owed.get(name);
-          pm.set(adjTarget, (pm.get(adjTarget) || 0) + amount);
-          memberExact.set(name, (memberExact.get(name) || 0) + amount);
+          // 본인은 +amount, 남은 참여자는 −amount 를 균등(1원 단위)으로 나눠 배분
+          deltaBurden.set(name, (deltaBurden.get(name) || 0) + amount);
+          var portions = splitSigned(-amount, others.length);
+          others.forEach(function (Y, i) { deltaBurden.set(Y, (deltaBurden.get(Y) || 0) + portions[i]); });
           adjustments.push({ name: name, amount: amount, reason: reason, applied: true });
+        });
+        // 조정 부담을 결제자에게 보낼 금액(owed)과 소비합(memberExact)에 반영.
+        // 결제자 본인 몫은 받을 금액이 줄어드는 형태로 암묵 부담(허브).
+        deltaBurden.forEach(function (d, m) {
+          if (!d) return;
+          memberExact.set(m, (memberExact.get(m) || 0) + d);
+          if (m === adjTarget) return;
+          var pm = owed.get(m);
+          if (pm) pm.set(adjTarget, (pm.get(adjTarget) || 0) + d);
         });
 
         /* 차감이 부담액보다 큰 경우 0원으로 클램프 */
