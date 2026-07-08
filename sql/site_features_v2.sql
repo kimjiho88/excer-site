@@ -9,11 +9,11 @@
 -- ============================================================
 
 -- ── 1) 카테고리 개편 ─────────────────────────────────────────
+-- 옛 제약을 먼저 풀어야 '후기'/'자유'로 이관하는 UPDATE 가 위반 없이 실행된다.
+alter table site_posts drop constraint if exists site_posts_category_check;
 -- 기존 데이터 이관: '벙 후기' → '후기', '질문' → '자유'
 update site_posts set category = '후기' where category = '벙 후기';
 update site_posts set category = '자유' where category = '질문';
-
-alter table site_posts drop constraint if exists site_posts_category_check;
 alter table site_posts add constraint site_posts_category_check
   check (category in ('공지', '벙 소식', '후기', '정보', '자유'));
 

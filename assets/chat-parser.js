@@ -110,13 +110,19 @@
                  body.match(/^(.+?)님이\s*(?:들어왔습니다|초대되었습니다)/);
         if (jm) who = jm[1].trim();
       } else if (RE_LEAVE.test(body)) {
-        meta.leaves += 1; kind = "leave"; // 퇴장자 닉네임은 기록하지 않는다
+        meta.leaves += 1; kind = "leave";
+        // 퇴장/강퇴자 닉네임 추출 — '현재 방 멤버 자동 감지'(membership) 전용.
+        // 이 이름은 parse() 내부 메시지 객체에만 남고, aggregate() 통계 JSON 에는
+        // 절대 노출되지 않는다(aggregate 는 leave 를 세지도 출력하지도 않음).
+        var lm = body.match(/^(.+?)님이\s*나갔습니다/) ||
+                 body.match(/^(.+?)님을\s*내보냈습니다/);
+        if (lm) who = lm[1].trim();
       }
       if (kind && dateStr) {
         messages.push({
           date: dateStr, hour: hour == null ? 12 : hour, min: min == null ? 0 : +min,
           weekday: weekdayOf(dateStr),
-          name: kind === "join" ? who : "", kind: kind, len: 0, text: ""
+          name: who, kind: kind, len: 0, text: ""
         });
       }
       last = null; // 시스템 행 뒤의 프리픽스 없는 줄은 이어붙이지 않음
@@ -718,12 +724,42 @@
     return merged;
   }
 
+  /* ── 현재 방 멤버 자동 감지 (membership) ─────────────────────
+     퇴장/강퇴 시스템 메시지를 근거로 "지금 방에 없는 사람"을 추정한다.
+     각 닉네임의 마지막 사건(메시지 / 입장 / 퇴장)을 시간순으로 보고,
+     마지막이 '퇴장'이면 나간 것으로 본다(그 뒤 재입장·발화가 있으면 다시 '있음').
+     · 대화 내보내기에 퇴장 메시지가 없으면(오래된 내역·초대 전 등) 감지가 안 될 수
+       있으므로, 결과는 '자동 제외 후보'로만 쓰고 운영진이 최종 확인한다.
+     · 이 함수는 판정에만 쓰이고, 통계 JSON 에는 누가 나갔는지 남기지 않는다.
+     반환: { leftNames:[닉], joins:n, leaves:n } */
+  function membership(allMessages) {
+    // 카톡 타임스탬프는 분 단위라 같은 분에 발생한 나감·재입장·발화의 실제 순서는
+    // 시각만으로 알 수 없다. 대신 내보내기 파일의 등장 순서가 곧 실제 순서이므로,
+    // '시각(분) 기준 안정 정렬 + 등장 인덱스 타이브레이크'로 파일 순서를 보존한다.
+    // → '나갈게요(발화)+나감'(같은 분)은 나감이 뒤라 out, '나감+재입장+발화'는 발화가 뒤라 in.
+    var evs = [];
+    var joins = 0, leaves = 0;
+    (allMessages || []).forEach(function (m, idx) {
+      if (!m || !m.date || !m.name) return;
+      var isLeave = m.kind === "leave";
+      if (m.kind === "join") joins += 1;
+      else if (isLeave) leaves += 1;
+      evs.push({ name: m.name, t: epochMin(m), idx: idx, leave: isLeave });
+    });
+    evs.sort(function (a, b) { return a.t - b.t || a.idx - b.idx; });
+    var state = Object.create(null); // 닉 → "in" | "out"
+    evs.forEach(function (e) { state[e.name] = e.leave ? "out" : "in"; });
+    var leftNames = Object.keys(state).filter(function (n) { return state[n] === "out"; });
+    return { leftNames: leftNames, joins: joins, leaves: leaves };
+  }
+
   function zeros(n) { var a = []; for (var i = 0; i < n; i++) a.push(0); return a; }
   function grid7x24() { var g = []; for (var i = 0; i < 7; i++) g.push(zeros(24)); return g; }
 
   var ChatParser = {
     parse: parse,
     aggregate: aggregate,
+    membership: membership,
     detectOverlap: detectOverlap,
     mergeMessages: mergeMessages,
     classify: classify,

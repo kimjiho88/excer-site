@@ -86,10 +86,12 @@ create table if not exists site_comments (
 );
 alter table site_comments enable row level security;
 
--- 기존에 옛 카테고리 데이터가 있으면 이관 후, 최신 카테고리 집합으로 제약 갱신
+-- 기존에 옛 카테고리 데이터가 있으면 이관 후, 최신 카테고리 집합으로 제약 갱신.
+-- ★ 옛 제약을 먼저 DROP 해야 한다 — UPDATE 로 '후기'/'자유'(옛 집합에 없는 값)를 쓰기
+--   전에 옛 CHECK 를 풀지 않으면, v1 만 쓰던 기존 방 업그레이드 시 제약 위반으로 전체 롤백된다.
+alter table site_posts drop constraint if exists site_posts_category_check;
 update site_posts set category = '후기' where category = '벙 후기';
 update site_posts set category = '자유' where category = '질문';
-alter table site_posts drop constraint if exists site_posts_category_check;
 alter table site_posts add constraint site_posts_category_check
   check (category in ('공지', '벙 소식', '후기', '정보', '자유'));
 

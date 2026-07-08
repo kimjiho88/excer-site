@@ -1037,12 +1037,15 @@
         return out;
       }
 
-      /* 상승 랭킹: (이번 기간 − 직전 기간) 상위 */
+      /* 상승 랭킹: (이번 기간 − 직전 기간) 상위.
+         직전 기간이 partial(더 짧음)이면 직전 합을 이번 길이에 맞춰 환산해 비교(공정) */
       function risers(data, s, prev) {
         if (!prev) return null;
         var cur = memberSums(data, s), pv = memberSums(data, prev);
+        var norm = (prev.partial && prev.len > 0) ? (s.len / prev.len) : 1;
         return (data.members || []).map(function (m, i) {
-          return { idx: i, name: m.name, delta: cur[i] - pv[i], cur: cur[i], prev: pv[i] };
+          var prevAdj = Math.round(pv[i] * norm);
+          return { idx: i, name: m.name, delta: cur[i] - prevAdj, cur: cur[i], prev: pv[i], prevAdj: prevAdj };
         }).sort(function (a, b) { return b.delta - a.delta || b.cur - a.cur; });
       }
 
@@ -1087,16 +1090,20 @@
         return { gini: g, label: g < 0.5 ? "골고루 수다" : "일부 집중", even: g < 0.5 };
       }
 
-      /* 우리방 온도: 기간 일평균 vs 전체 기간 중앙값 → 0~100 게이지 (+36.5도 연출).
-         ratio 1.0(평소 수준) → 게이지 50 / 온도 36.5℃. */
+      /* 우리방 온도: 기간 일평균 vs 발행 기간 전체의 하루 평균(baseline) → 0~100 게이지 (+36.5도 연출).
+         ratio 1.0(방의 평소 수준) → 게이지 50 / 온도 36.5℃.
+         · baseline 을 '전체 하루 평균'(0인 날 포함)으로 잡아, 조용한 날이 많은 방에서도
+           중앙값 0으로 인한 폭주(항상 44.5℃) 없이 방의 자기 기준과 비교되게 한다. */
       function temperature(data, s) {
-        var med = medianOf((data.days || []).map(function (d) { return d.c; }));
+        var allDays = (data.days || []).map(function (d) { return d.c; });
+        var sum = 0; allDays.forEach(function (c) { sum += c; });
+        var baseline = allDays.length ? sum / allDays.length : 0;
         var kpi = periodKPI(data, s);
-        var ratio = med > 0 ? kpi.avgPerDay / med : (kpi.avgPerDay > 0 ? 2 : 1);
+        var ratio = baseline > 0 ? kpi.avgPerDay / baseline : 1;
         var gauge = Math.max(0, Math.min(100, Math.round(ratio * 50)));
         var temp = Math.round((36.5 + (ratio - 1) * 8) * 10) / 10;
         temp = Math.max(30, Math.min(45, temp));
-        return { ratio: Math.round(ratio * 10000) / 10000, gauge: gauge, temp: temp, median: med, avg: kpi.avgPerDay };
+        return { ratio: Math.round(ratio * 10000) / 10000, gauge: gauge, temp: temp, baseline: Math.round(baseline * 10) / 10, avg: kpi.avgPerDay };
       }
 
       /* 질문 대비 답변 비율: Σa / Σq (전체 기간 필드) */
@@ -1123,7 +1130,7 @@
           var r = risers(data, s, prev);
           if (!r) return null;
           list = r.filter(function (x) { return x.cur > 0 || x.prev > 0; })
-            .map(function (x) { return { idx: x.idx, name: x.name, value: x.delta, extra: x.prev + " → " + x.cur }; });
+            .map(function (x) { return { idx: x.idx, name: x.name, value: x.delta, extra: x.prevAdj + " → " + x.cur }; });
         } else if (metric === "steady") {
           M.forEach(function (m, i) {
             if (sums[i] <= 0) return;
@@ -1447,7 +1454,7 @@
           <div class="temp-wrap">
             ${gaugeSVG(temp.gauge)}
             <div class="temp-value"><span id="tempNum">0</span><small>℃</small></div>
-            <div class="temp-label">우리방 온도 · 평소(중앙값 ${nf1(temp.median)}건/일) 대비</div>
+            <div class="temp-label">우리방 온도 · 평소(하루 평균 ${nf1(temp.baseline)}건) 대비</div>
             <div class="temp-desc">${escapeHTML(tempDescOf(temp.ratio))}</div>
           </div>
           <div class="pulse-kpis">
@@ -1506,7 +1513,7 @@
       const MEDALS = ["🥇", "🥈", "🥉"];
       const RANK_NOTES = {
         total: "막대는 기간 내 메시지 수, 오른쪽 %는 전체 대화에서의 점유율이에요.",
-        rise: "직전 동일 길이 기간과 비교한 증감이에요. (직전 → 이번)",
+        rise: "직전 같은 길이 기간 대비 증감이에요. (직전 → 이번, 직전이 짧으면 같은 길이로 환산)",
         steady: "기간 내 활동한 날 수예요. 연속 기록은 발행 기간 전체 기준이에요.",
         question: "질문 수는 발행 기간 전체 기준이에요. (물음표·질문 말투 감지)",
         reaction: "답변·리액션 수는 발행 기간 전체 기준이에요. (5분 내 응답, ㅋㅋ·굿 등)"
