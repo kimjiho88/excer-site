@@ -618,8 +618,8 @@
               </div>
               <input id="receiptInput" type="file" accept="image/*" multiple hidden />
               <div id="receiptThumbs" class="receipt-thumbs"></div>
-              <p class="card-note">첨부한 영수증은 정산 이미지 맨 아래에 함께 담겨요.
-                메모리에만 보관돼서 <b>새로고침하면 사라져요</b>. 이미지 저장까지 한 번에 해주세요.</p>
+              <p class="card-note">첨부한 영수증은 <b>정산 이미지</b> 맨 아래와 <b>공유 링크</b>(최대 2장)에 함께 담겨요.
+                메모리에만 보관돼서 <b>새로고침하면 사라져요</b> — 이미지 저장·링크 만들기까지 한 번에 해주세요.</p>
             </section>
 
             <div class="helper-row reveal">
@@ -662,9 +662,9 @@
             </section>
 
             <div class="kakao-tip">
-              <b>카톡 알림 팁</b> — 붙여넣은 <b>@닉네임</b>은 글자로만 보이고 알림은 가지 않아요.
-              알림이 꼭 필요한 사람은 채팅창에서 <b>@를 직접 입력해 멤버를 선택</b>한 뒤 금액을 붙여주세요.
-              명단의 <b>복사</b> 버튼으로 한 명씩 빠르게 처리할 수 있어요.
+              <b>카톡 태그(멘션) 안내</b> — 정산 글을 <b>복사·붙여넣기</b> 하면 이름은 <b>글자</b>로만 들어가요.
+              카톡 태그(멘션 알림)는 <b>붙여넣기로는 절대 안 걸려요</b> — 채팅창에서 <b>@를 직접 입력</b>해 뜨는 목록에서 멤버를 골라야 알림이 가요.
+              특정 사람에게 알림을 주고 싶으면, 채팅창에서 <b>@이름</b>을 입력해 태그한 뒤 아래 <b>복사</b> 버튼으로 금액만 붙여넣으면 돼요.
             </div>
 
             <div class="result-actions">
@@ -964,12 +964,16 @@
           roundsOut.push({ label: label, amount: amount, count: active.length, active: active.slice(), payer: payer });
         });
 
+        /* 라운드에 실제 참여한 사람(조정 전 기준) — 배분 대상·1인 금액 산정에 사용 */
+        var roundParticipants = members.filter(function (m) { return (memberExact.get(m) || 0) > 0; });
+
         /* 개인별 추가·차감 — 그 사람은 조정액만큼 더/덜 부담하고,
            반대편 금액(−조정액)은 '남은 참여자'가 균등 배분한다.
-           결제자(벙주)는 정산 허브로서 자기 몫만 부담(차액을 통째로 떠안지 않음). */
-        var adjTarget = (host && members.indexOf(host) >= 0) ? host : (roundsOut.length ? roundsOut[0].payer : "");
-        var participants = members.filter(function (m) { return (memberExact.get(m) || 0) > 0; });
-        if (!participants.length) participants = members.slice();
+           결제자(벙주)는 정산 허브로서 자기 몫만 부담(차액을 통째로 떠안지 않음).
+           adjTarget 은 반드시 '실제 결제자'여야 한다 — 결제 안 한 벙주로 두면
+           조정 채무가 결제자 목록에 없는 대상으로 붕 떠서(payerOrder 누락) 사라진다. */
+        var adjTarget = (host && paidTotals.has(host)) ? host : (roundsOut.length ? roundsOut[0].payer : "");
+        var participants = roundParticipants.length ? roundParticipants : members.slice();
         var deltaBurden = new Map();   // member → 조정으로 인한 부담 변화(원)
         var adjustments = [];
         (input.adjustments || []).forEach(function (a) {
@@ -1067,22 +1071,28 @@
         var residual = exactSum - roundedSum;              /* >0: 결제자 부담, <0: 결제자 이득 */
         var burden = totalAmount - totalReceivable;        /* 결제자(벙주 포함) 부담 합계 — 음수 가능 */
 
-        /* 1인 금액: 모두 같으면 그 값, 아니면 평균 */
-        var participantVals = members
-          .map(function (m) { return memberExact.get(m) || 0; })
-          .filter(function (v) { return v > 0; });
-        var uniform = participantVals.length > 0 && participantVals.every(function (v) { return v === participantVals[0]; });
-        var participantCount = participantVals.length;
+        /* 1인 금액: 라운드 참여자 기준(조정으로 0 이하가 돼도 인원에서 빼지 않음).
+           모두 같으면 그 값, 아니면 평균 */
+        var pVals = roundParticipants.map(function (m) { return memberExact.get(m) || 0; });
+        var uniform = pVals.length > 0 && pVals.every(function (v) { return v === pVals[0]; });
+        var participantCount = roundParticipants.length;
         var perPerson = participantCount
-          ? { uniform: uniform, value: uniform ? participantVals[0] : Math.round(totalAmount / participantCount), count: participantCount }
+          ? { uniform: uniform, value: uniform ? pVals[0] : Math.round(totalAmount / participantCount), count: participantCount }
           : { uniform: false, value: 0, count: 0 };
+
+        /* 무결성: 결제자 순서에 없는 대상으로 잘못 배정된 채무가 있으면 안 됨(붕 뜬 금액 탐지) */
+        var orphaned = 0;
+        owed.forEach(function (pm) {
+          pm.forEach(function (v, p) { if (v > 0 && payerOrder.indexOf(p) < 0) orphaned += v; });
+        });
+        if (orphaned > 0) warnings.push("정산에 배분되지 않은 금액이 " + fmtKR(orphaned) + "원 있어요. 결제자·벙주 설정을 확인해 주세요.");
 
         var verify = {
           total: totalAmount,
           transfers: totalReceivable,
           burden: burden,
           residual: residual,
-          ok: (totalReceivable + burden) === totalAmount
+          ok: orphaned === 0 && (totalReceivable + burden) === totalAmount
         };
 
         return {
@@ -1474,7 +1484,7 @@
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
               ${canSend ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
-              <button class="pay-copy no-capture" type="button" data-copy="@${escapeHTML(row.name)} ${formatWon(row.amount)}">복사</button>
+              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="금액만 복사 — 카톡에서 @${escapeHTML(row.name)} 태그한 뒤 붙여넣으면 알림이 가요">금액 복사</button>
             </div>
           </div>`;
       };
@@ -1555,57 +1565,81 @@
     function buildCopyText() {
       const c = calc();
       const L = [];
-      L.push(`[${state.eventTitle || "모임 정산"}] 정산`);
+      const detail = state.msgStyle === "detail";
+
+      /* ── 헤더 ── */
+      L.push(`💰 ${state.eventTitle || "모임 정산"} 정산`);
       const sub = [];
       if (state.eventDate) sub.push(state.eventDate);
       sub.push(`벙주 ${c.host || "-"}`);
       L.push(sub.join(" · "));
-      L.push("");
 
+      /* ── 한눈 요약 ── */
       if (c.perPerson.count) {
-        L.push(`총 벙비 ${formatWon(c.totalAmount)} / 참여자 ${c.perPerson.count}명 / 1인 ${c.perPerson.uniform ? "" : "평균 "}${formatWon(c.perPerson.value)}`);
         L.push("");
+        L.push(`총 벙비 ${formatWon(c.totalAmount)}`);
+        L.push(`참여자 ${c.perPerson.count}명 · 1인 ${c.perPerson.uniform ? "" : "평균 "}${formatWon(c.perPerson.value)}`);
       }
 
+      /* ── 💸 보낼 금액 (핵심 · 받는 사람별로 묶어서) ── */
       const activePayers = c.payers.filter((p) => p.rows.length);
+      L.push("");
+      L.push("💸 보낼 금액");
       if (!activePayers.length) {
-        L.push("입금 대상 없음");
+        L.push("입금 대상이 없어요");
       } else if (activePayers.length === 1) {
-        activePayers[0].rows.forEach((r) => L.push(`@${r.name} ${formatWon(r.amount)}`));
+        L.push(`📥 ${activePayers[0].name}님에게`);
+        activePayers[0].rows.forEach((r) => L.push(`• ${r.name}  ${formatWon(r.amount)}`));
       } else {
         activePayers.forEach((p, i) => {
           if (i > 0) L.push("");
-          L.push(`▸ ${p.name}에게`);
-          p.rows.forEach((r) => L.push(`@${r.name} ${formatWon(r.amount)}`));
+          L.push(`📥 ${p.name}님에게`);
+          p.rows.forEach((r) => L.push(`• ${r.name}  ${formatWon(r.amount)}`));
         });
       }
 
-      if (state.msgStyle === "detail") {
+      /* ── 벙주(결제자) 부담: 요약형에서만 ── */
+      if (!detail && c.totalAmount) {
+        L.push("");
+        L.push(`🧑‍🍳 ${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
+      }
+
+      /* ── 상세형: 차수 · 추가차감 · 검증 · 안내 ── */
+      if (detail) {
         if (c.rounds.length) {
           L.push("");
-          L.push("— 차수별 —");
-          c.rounds.forEach((r) => L.push(`· ${r.label} ${formatWon(r.amount)} (${r.count}명 · 결제 ${r.payer})`));
+          L.push("🧾 차수별 내역");
+          c.rounds.forEach((r) => L.push(`• ${r.label} ${formatWon(r.amount)} (${r.count}명 · 결제 ${r.payer})`));
         }
         if (c.adjustments.length) {
           L.push("");
-          L.push("— 추가·차감 —");
-          c.adjustments.forEach((a) => L.push(`· ${a.name} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원${a.reason ? ` (${a.reason})` : ""}${a.applied ? "" : " — 미반영"}`));
+          L.push("➕ 추가 · 차감");
+          c.adjustments.forEach((a) => L.push(`• ${a.name} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원${a.reason ? ` (${a.reason})` : ""}${a.applied ? "" : " — 미반영"}`));
         }
         if (c.totalAmount) {
           L.push("");
-          L.push(`합계 검증: ${verifyText(c)}`);
+          L.push("🔍 합계 검증");
+          L.push(verifyText(c));
         }
         const notices = checkedNotices();
-        if (notices.length) { L.push(""); notices.forEach((n) => L.push(`· ${n.text}`)); }
-      } else if (c.totalAmount) {
-        L.push("");
-        L.push(`${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
+        if (notices.length) {
+          L.push("");
+          L.push("📌 안내");
+          notices.forEach((n) => L.push(`• ${n.text}`));
+        }
       }
 
+      /* ── 입금 계좌 ── */
       const pt = payText();
-      if (pt) { L.push(""); L.push(`입금계좌: ${pt}`); }
+      if (pt) { L.push(""); L.push(`🏦 입금계좌  ${pt}`); }
+
+      /* ── 공유 링크 ── */
       const shareUrl = currentShareUrl();
-      if (shareUrl) { L.push(""); L.push(`입금 후 완료 체크 부탁드려요 👉 ${shareUrl}`); }
+      if (shareUrl) {
+        L.push("");
+        L.push("✅ 입금 후 완료 체크 부탁드려요");
+        L.push(`👉 ${shareUrl}`);
+      }
       return L.join("\n");
     }
     function burdenWord(c) {
@@ -1806,7 +1840,7 @@
     /* ============================================================
        영수증 첨부 — 메모리 보관, 정산 이미지 하단에 포함
        ============================================================ */
-    function resizeImageFile(file, maxSize) {
+    function resizeImageFile(file, maxSize, quality) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = () => reject(new Error("read fail"));
@@ -1823,7 +1857,7 @@
               const ctx = canvas.getContext("2d");
               ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, w, h);
               ctx.drawImage(img, 0, 0, w, h);
-              resolve(canvas.toDataURL("image/jpeg", 0.85));
+              resolve(canvas.toDataURL("image/jpeg", quality || 0.85));
             } catch (e) { reject(e); }
           };
           img.src = reader.result;
@@ -1838,8 +1872,10 @@
         if (receipts.length >= MAX_RECEIPTS) { showToast(`영수증은 ${MAX_RECEIPTS}장까지 첨부할 수 있어요.`); break; }
         if (!/^image\//.test(file.type || "")) { failed += 1; continue; }
         try {
-          const dataUrl = await resizeImageFile(file, 900);
-          receipts.push({ id: uid(), dataUrl });
+          const dataUrl = await resizeImageFile(file, 900);            // 화면·이미지 저장용(고화질)
+          let shareUrl = "";
+          try { shareUrl = await resizeImageFile(file, 640, 0.7); } catch (e) { shareUrl = ""; } // 공유 링크용(경량)
+          receipts.push({ id: uid(), dataUrl, shareUrl });
           added += 1;
         } catch (e) { failed += 1; }
       }
@@ -1847,6 +1883,20 @@
       renderResults();
       if (added) showToast(`영수증 ${added}장을 첨부했어요.${failed ? " (일부는 읽지 못했어요)" : ""}`);
       else if (failed) showToast("이미지를 읽지 못했어요. 다른 사진으로 시도해주세요.");
+    }
+
+    /* 공유 링크에 담을 경량 영수증 — 크기 예산 안에서 최대 2장 */
+    const SHARE_RECEIPT_MAX = 2;
+    const SHARE_RECEIPT_BUDGET = 300 * 1024;   // base64 문자 수 예산
+    function buildShareReceipts() {
+      const out = [];
+      let left = SHARE_RECEIPT_BUDGET;
+      for (const r of receipts.slice(0, SHARE_RECEIPT_MAX)) {
+        const u = r.shareUrl || r.dataUrl;
+        if (!u || u.length > left) break;
+        out.push(u); left -= u.length;
+      }
+      return out;
     }
 
     function renderReceiptThumbs() {
@@ -1892,6 +1942,8 @@
 
     function buildSharePayload() {
       const c = calc();
+      const activePayers = c.payers.filter((p) => p.rows.length);
+      const rc = buildShareReceipts();
       return {
         v: 2,
         title: state.eventTitle.trim() || "모임 정산",
@@ -1901,7 +1953,7 @@
         notices: checkedNotices().map((n) => n.text),
         rounds: c.rounds.map((r) => ({ label: r.label, amount: r.amount, count: r.count, active: r.active, payer: r.payer })),
         rows: c.rows.map((r) => ({ name: r.name, amount: r.amount, parts: r.parts.length > 1 ? r.parts : undefined })),
-        groups: c.payers.filter((p) => p.rows.length).map((p) => ({
+        groups: activePayers.map((p) => ({
           payer: p.name, amount: p.receivable,
           rows: p.rows.map((r) => ({ name: r.name, amount: r.amount }))
         })),
@@ -1909,8 +1961,10 @@
         perPerson: c.perPerson,
         verifyText: c.totalAmount ? verifyText(c) : "",
         total: c.totalAmount,
+        payerCount: activePayers.length,
         hostBurden: Math.max(0, c.burden),
-        burden: c.burden
+        burden: c.burden,
+        receipts: rc.length ? rc : undefined
       };
     }
 
@@ -1943,10 +1997,15 @@
         try {
           saved = await settleSave(id, manage, payload);
         } catch (err) {
-          // 키가 안 맞으면(다른 기기에서 만든 id 등) 새 id 로 한 번 더
-          if (err && String(err.message || "").includes("BAD_KEY")) {
+          const msg = String((err && err.message) || "");
+          if (msg.includes("BAD_KEY")) {
+            // 키가 안 맞으면(다른 기기에서 만든 id 등) 새 id 로 한 번 더
             id = randKey(12); manage = randKey(16);
             try { saved = await settleSave(id, manage, payload); } catch (e2) { saved = null; }
+          } else if (payload.receipts) {
+            // 용량 문제로 실패했을 수 있으니 영수증을 빼고 한 번 더 시도
+            const slim = Object.assign({}, payload); delete slim.receipts;
+            try { saved = await settleSave(id, manage, slim); if (saved) payload.receipts = undefined; } catch (e3) { saved = null; }
           }
         }
         if (saved) {
@@ -1957,13 +2016,21 @@
           saveHistorySnapshot(true);
           applySettleStatus(saved);
           const ok = await copyToClipboard(settleURL(id));
-          showToast(ok ? "공유 링크를 복사했어요. 카톡에 붙여넣어 주세요!" : "링크가 준비됐어요. 전체 복사에 함께 담겨요.");
+          const droppedReceipts = receipts.length && (!payload.receipts || payload.receipts.length < receipts.length);
+          if (droppedReceipts) {
+            showToast("링크를 복사했어요. 영수증 일부는 링크에 안 담겨요 — '이미지 저장'으로 함께 보내주세요.");
+          } else {
+            showToast(ok ? "공유 링크를 복사했어요. 카톡에 붙여넣어 주세요!" : "링크가 준비됐어요. 전체 복사에 함께 담겨요.");
+          }
         } else {
-          // 우아한 성능 저하: 테이블 미설치·오프라인 → 링크 자체에 데이터를 담은 폴백
-          fallbackShareUrl = new URL("settle.html", window.location.href).href + "#d=" + b64urlEncode(payload);
+          // 우아한 성능 저하: 테이블 미설치·오프라인 → 링크 자체에 데이터를 담은 폴백.
+          // 영수증(이미지)은 URL 길이 폭증을 막기 위해 링크 데이터에서 제외한다.
+          const slim = Object.assign({}, payload); delete slim.receipts;
+          fallbackShareUrl = new URL("settle.html", window.location.href).href + "#d=" + b64urlEncode(slim);
           saveHistorySnapshot(true);
           const ok = await copyToClipboard(fallbackShareUrl);
-          showToast((ok ? "공유 링크를 복사했어요. " : "") + "입금 체크 실시간 공유는 서버 설정 후 가능해요.");
+          const extra = receipts.length ? " 영수증은 '이미지 저장'으로 함께 보내주세요." : "";
+          showToast((ok ? "공유 링크를 복사했어요. " : "") + "입금 체크 실시간 공유는 서버 설정 후 가능해요." + extra);
         }
       } finally {
         btn.disabled = false; btn.textContent = prevLabel;

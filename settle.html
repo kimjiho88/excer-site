@@ -179,6 +179,8 @@
     /* ── 안내 문구 ── */
     .notice-lines { display: grid; gap: 6px; }
     .notice-line { color: var(--ink-2); font-size: 13px; line-height: 1.55; font-weight: 600; }
+    .s-receipts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .s-receipt { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }
 
     /* ── 차수별 내역 (접기) ── */
     .s-details { padding: 0; overflow: hidden; }
@@ -623,7 +625,14 @@
         verifyText: String(p.verifyText || "").slice(0, 300),
         rows,
         total: intAmount(p.total),
-        hostBurden: intAmount(p.hostBurden)
+        payerCount: Math.max(0, Math.round(Number(p.payerCount) || 0)),
+        hostBurden: intAmount(p.hostBurden),
+        // 영수증: 검증된 data:image base64 만, 장당 300KB·최대 2장 (SSRF/XSS 방지)
+        receipts: Array.isArray(p.receipts)
+          ? p.receipts
+              .filter((u) => typeof u === "string" && /^data:image\/(jpe?g|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u) && u.length < 300000)
+              .slice(0, 2)
+          : []
       };
     }
 
@@ -767,7 +776,7 @@
               ${mode === "local" ? `<span class="local-badge">체크는 이 기기 전용</span>` : ""}
             </div>
             <h1 class="s-title">${escapeHTML(payload.title)}</h1>
-            <p class="s-meta">${payload.date ? `${escapeHTML(payload.date)} · ` : ""}벙주 ${escapeHTML(payload.host || "-")}${payload.hostBurden ? ` · 벙주 부담 ${formatWon(payload.hostBurden)}` : ""}</p>
+            <p class="s-meta">${payload.date ? `${escapeHTML(payload.date)} · ` : ""}벙주 ${escapeHTML(payload.host || "-")}${payload.hostBurden ? ` · ${payload.payerCount > 1 ? "결제자" : "벙주"} 부담 ${formatWon(payload.hostBurden)}` : ""}</p>
             <div class="s-total"><span>총 벙비</span><strong>${formatWon(payload.total)}</strong></div>
             ${per && per.count ? `
             <div class="s-perline">
@@ -847,6 +856,12 @@
         <section class="s-card card" aria-label="안내 문구">
           <h2>안내</h2>
           <div class="notice-lines">${payload.notices.map((n) => `<div class="notice-line">· ${escapeHTML(n)}</div>`).join("")}</div>
+        </section>` : ""}
+
+        ${payload.receipts.length ? `
+        <section class="s-card card" aria-label="영수증">
+          <h2>영수증</h2>
+          <div class="s-receipts">${payload.receipts.map((u) => `<img class="s-receipt" src="${u}" alt="영수증" loading="lazy" />`).join("")}</div>
         </section>` : ""}
 
         ${payload.rounds.length ? `
