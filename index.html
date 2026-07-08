@@ -30,8 +30,49 @@
     .hero-home .hero-sub { margin-inline: auto; }
     .hero-home .hero-actions, .hero-home .hero-meta { justify-content: center; }
 
-    /* ── 히어로에 겹치는 감성 스탯 스트립 ── */
-    .stat-strip { display: grid; gap: clamp(12px, 1.6vw, 18px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* ── 이번 주 스포트라이트: 활약왕 카드 (브랜드 큰 셀) ── */
+    .mvp-card { text-decoration: none; display: flex; flex-direction: column; }
+    .mvp-top { display: flex; align-items: center; gap: 16px; }
+    .mvp-ava {
+      display: grid; place-items: center; width: 62px; height: 62px; border-radius: 20px; flex: none;
+      background: var(--grad-gold); color: #5a4506; font-size: 30px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 20px -8px rgba(165, 130, 30, 0.5);
+    }
+    .mvp-crown { align-self: flex-start; margin-bottom: 14px; }
+    .mvp-name { font-size: clamp(21px, 2.5vw, 29px); font-weight: 940; letter-spacing: -0.045em; color: #fff; line-height: 1.08; }
+    .mvp-line { margin-top: 5px; color: rgba(255, 255, 255, 0.82); font-size: 14px; font-weight: 750; }
+    .mvp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .mvp-chip {
+      padding: 6px 13px; border-radius: var(--r-pill);
+      background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #fff; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
+    }
+    .mvp-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: auto; padding-top: 22px; }
+    .mvp-src { color: rgba(255, 255, 255, 0.6); font-size: 12px; font-weight: 700; }
+    .mvp-go { display: inline-flex; align-items: center; gap: 6px; color: #fff; font-size: 13px; font-weight: 850; letter-spacing: -0.02em; }
+    .mvp-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
+    .mvp-card:hover .mvp-go svg { transform: translateX(4px); }
+
+    /* ── 이야기 많이 나눈 친구들 (리더보드) ── */
+    .lb-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .lb-head h3 { margin: 0; font-size: var(--fs-h3); font-weight: 880; letter-spacing: -0.035em; color: var(--deep-1); }
+    .lb-head span { color: var(--gray); font-size: 12px; font-weight: 750; }
+    .lb-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
+    .lb-row { display: grid; grid-template-columns: 26px minmax(56px, 30%) 1fr auto; align-items: center; gap: 11px; }
+    .lb-rank {
+      display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px;
+      background: var(--pastel-lavender); color: var(--primary);
+      font-size: 12.5px; font-weight: 900; font-variant-numeric: tabular-nums;
+    }
+    .lb-rank.is-1 { background: var(--grad-gold); color: #5a4506; }
+    .lb-name { font-size: 14px; font-weight: 820; letter-spacing: -0.02em; color: var(--deep-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-bar { height: 8px; border-radius: 6px; background: var(--warm-gray); overflow: hidden; }
+    .lb-bar i { display: block; height: 100%; border-radius: 6px; background: var(--grad-brand); }
+    .lb-cnt { color: var(--ink-2); font-size: 13px; font-weight: 850; font-variant-numeric: tabular-nums; }
+    .lb-foot { margin: 16px 0 0; color: var(--gray); font-size: 12.5px; font-weight: 700; }
+
+    /* ── 감성 스탯 타일 그리드 (온도/친구/하이라이트) ── */
+    .home-tiles { display: grid; gap: clamp(12px, 1.6vw, 18px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(16px, 1.9vw, 22px); }
 
     /* ── Bento 기능 카드 (링크형) ── */
     .feature-card { text-decoration: none; }
@@ -57,22 +98,6 @@
       background: rgba(255, 255, 255, 0.16); color: #fff; box-shadow: none;
     }
     .feature-card.is-brand .fc-go, .feature-card.is-dark .fc-go { color: #fff; }
-
-    /* ── 미리보기(샘플 리포트) 셀 내부 ── */
-    .preview-badge { align-self: flex-start; margin-bottom: 4px; }
-    .preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .preview-mvp { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
-    .preview-mvp .pm-ava {
-      display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; flex: none;
-      background: var(--grad-gold); color: #5a4506; font-size: 20px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-    }
-    .preview-mvp .pm-name { font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: #fff; }
-    .preview-mvp .pm-sub { color: rgba(255, 255, 255, 0.72); font-size: 12.5px; font-weight: 700; }
-    .preview-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
-    .preview-metrics .pmt { padding: 12px 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
-    .preview-metrics .pmt b { display: block; font-size: 20px; font-weight: 900; letter-spacing: -0.04em; color: #fff; font-variant-numeric: tabular-nums; }
-    .preview-metrics .pmt span { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.7); font-size: 11px; font-weight: 750; }
 
     /* ── 인기 키워드 칩 ── */
     .kw-cloud { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
@@ -109,8 +134,8 @@
       .hero-home .hero-actions .btn { flex: 1 1 100%; }
     }
     @media (max-width: 620px) {
-      .stat-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .preview-metrics { gap: 8px; }
+      .home-tiles { grid-template-columns: 1fr; }
+      .lb-row { grid-template-columns: 24px minmax(52px, 34%) 1fr auto; gap: 9px; }
     }
   </style>
 </head>
@@ -126,10 +151,11 @@
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab is-active" href="index.html" aria-current="page">홈</a>
-        <a class="topnav-tab" href="report.html">운영 대시보드</a>
         <a class="topnav-tab" href="guide.html">필독</a>
-        <a class="topnav-tab" href="calculator.html">벙비 정산기</a>
+        <a class="topnav-tab" href="report.html">대시보드</a>
+        <a class="topnav-tab" href="calculator.html">정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
+        <a class="topnav-tab" href="games.html">게임</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -151,8 +177,8 @@
         같이 뛰고, 먹고, 노는<br /><span class="grad-text-hero">동네친구들</span>
       </h1>
       <p class="hero-sub">
-        오픈채팅에서 만나 동네에서 진짜로 만나요.
-        벙 잡고, 같이 운동하고, 끝나면 <strong>깔끔하게 정산</strong>해요.
+        채팅으로 시작해 동네에서 진짜로 만나요.
+        같이 운동하고 밥 먹고, 끝나면 벙비는 <strong>깔끔하게 나눠요</strong>.
       </p>
       <div class="hero-actions">
         <a class="btn btn-hero is-lg" href="guide.html">필독부터 보기</a>
@@ -167,51 +193,85 @@
   </section>
 
   <main id="main" class="page-main">
-    <!-- ── 히어로에 겹치는 감성 스탯 스트립 ── -->
-    <div class="container hero-overlap">
-      <div class="stat-strip" id="statStrip" aria-label="이번 달 동네친구들 요약">
-        <article class="stat-tile is-lift reveal" style="--st-glow:rgba(185,128,217,.26)">
-          <div class="st-top">
-            <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12z"/></svg></span>
-            <span class="st-label">이번 달 메시지</span>
+    <!-- ── 이번 주 동네친구들 (발행 리포트 기준 · 히어로 위로 겹침) ── -->
+    <section class="container hero-overlap" aria-label="이번 주 동네친구들 활동 요약">
+      <div class="bento">
+        <!-- 활약왕 (실제 인물 · 브랜드 큰 셀) -->
+        <a class="bento-card mvp-card is-brand bento-2x reveal" href="report.html" aria-label="이번 활약왕 — 운영 대시보드로 이동">
+          <span class="badge-soft is-cream mvp-crown">👑 이번 활약왕</span>
+          <div class="mvp-top">
+            <span class="mvp-ava" aria-hidden="true">🏆</span>
+            <div>
+              <div class="mvp-name" id="mvpName">민지</div>
+              <div class="mvp-line" id="mvpLine">이 기간 1,046마디</div>
+            </div>
           </div>
-          <div class="st-value"><span id="stMsg" data-countup="7100">0</span><small>건</small></div>
-          <span class="st-foot">동네친구들이 나눈 대화</span>
-        </article>
-        <article class="stat-tile is-lift reveal d1" style="--st-glow:rgba(255,184,209,.24)">
-          <div class="st-top">
-            <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg></span>
-            <span class="st-label">함께한 친구</span>
+          <div class="mvp-chips" id="mvpChips">
+            <span class="mvp-chip">개근 58일</span>
+            <span class="mvp-chip">질문 135번</span>
+            <span class="mvp-chip">리액션 479번</span>
           </div>
-          <div class="st-value"><span id="stMembers" data-countup="16">0</span><small>명</small></div>
-          <span class="st-foot is-up" id="stNewFoot">▲ 새로 온 친구 2명</span>
-        </article>
-        <article class="stat-tile is-lift reveal d2" style="--st-glow:rgba(184,242,230,.28)">
-          <div class="st-top">
-            <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>
-            <span class="st-label">동네친구들 온도</span>
+          <div class="mvp-foot">
+            <span class="mvp-src" id="mvpSrc">예시 데이터 기준</span>
+            <span class="mvp-go">칭호 전체 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </div>
-          <div class="st-value"><span id="stTemp" data-countup="37.7" data-countup-decimals="1">0</span><small>°</small></div>
-          <span class="st-foot is-up">▲ 지난달보다 따뜻해요</span>
-        </article>
-        <article class="stat-tile is-lift is-brand reveal d3">
-          <div class="st-top">
-            <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.8 6.1 20.8l1.2-6.6L2.5 9l6.6-.9z"/></svg></span>
-            <span class="st-label">이번 주 하이라이트</span>
-          </div>
-          <div class="st-value" style="font-size:clamp(20px,2.2vw,26px)" id="stHi">웃음 1,096번</div>
-          <span class="st-foot">함께 웃은 순간들</span>
-        </article>
-      </div>
-    </div>
+        </a>
 
-    <!-- ── 기능 허브 (Bento) ── -->
+        <!-- 이야기 많이 나눈 친구들 (실제 인물 리더보드) -->
+        <div class="bento-card bento-2x reveal d1">
+          <div class="lb-head">
+            <h3>이야기 많이 나눈 친구들</h3>
+            <span id="lbPeriod">이번 기간</span>
+          </div>
+          <ol class="lb-list" id="lbList">
+            <li class="lb-row"><span class="lb-rank is-1">1</span><span class="lb-name">민지</span><span class="lb-bar"><i style="width:100%"></i></span><span class="lb-cnt">1,046</span></li>
+            <li class="lb-row"><span class="lb-rank">2</span><span class="lb-name">준호</span><span class="lb-bar"><i style="width:80%"></i></span><span class="lb-cnt">837</span></li>
+            <li class="lb-row"><span class="lb-rank">3</span><span class="lb-name">서아</span><span class="lb-bar"><i style="width:66%"></i></span><span class="lb-cnt">686</span></li>
+            <li class="lb-row"><span class="lb-rank">4</span><span class="lb-name">도윤</span><span class="lb-bar"><i style="width:58%"></i></span><span class="lb-cnt">609</span></li>
+            <li class="lb-row"><span class="lb-rank">5</span><span class="lb-name">하늘</span><span class="lb-bar"><i style="width:58%"></i></span><span class="lb-cnt">609</span></li>
+          </ol>
+          <p class="lb-foot">순위는 활동량 기준이에요. 마이너스는 없어요 — 다들 각자 페이스로 함께해요.</p>
+        </div>
+
+        <!-- 온도 / 함께한 친구 / 하이라이트 타일 3종 -->
+        <div class="bento-full">
+          <div class="home-tiles">
+            <article class="stat-tile is-lift reveal" style="--st-glow:rgba(184,242,230,.28)">
+              <div class="st-top">
+                <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>
+                <span class="st-label">동네친구들 온도</span>
+              </div>
+              <div class="st-value"><span id="stTemp" data-countup="37.7" data-countup-decimals="1">0</span><small>°</small></div>
+              <span class="st-foot is-up">▲ 대화가 따뜻할수록 올라가요</span>
+            </article>
+            <article class="stat-tile is-lift reveal d1" style="--st-glow:rgba(185,128,217,.26)">
+              <div class="st-top">
+                <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg></span>
+                <span class="st-label">함께한 친구</span>
+              </div>
+              <div class="st-value"><span id="stMembers" data-countup="16">0</span><small>명</small></div>
+              <span class="st-foot is-up" id="stNewFoot">▲ 새로 온 친구 2명</span>
+            </article>
+            <article class="stat-tile is-lift is-brand reveal d2">
+              <div class="st-top">
+                <span class="st-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12z"/></svg></span>
+                <span class="st-label">이번 달 메시지</span>
+              </div>
+              <div class="st-value"><span id="stMsg" data-countup="7100">0</span><small>건</small></div>
+              <span class="st-foot" id="stLaughFoot">웃음만 1,096번 오갔어요</span>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 기능 허브 (Bento · 6개) ── -->
     <section class="section" aria-labelledby="hubTitle">
       <div class="container">
         <div class="section-head reveal">
           <span class="eyebrow">둘러보기</span>
           <h2 id="hubTitle">필요한 건 여기서 다 돼요</h2>
-          <p>대시보드부터 정산기까지, 자주 쓰는 것들을 한곳에 모았어요.</p>
+          <p>대시보드부터 정산기, 게임까지 자주 쓰는 것들을 한곳에 모았어요.</p>
         </div>
 
         <div class="bento">
@@ -219,41 +279,20 @@
           <a class="bento-card feature-card is-brand bento-2x reveal" href="report.html" aria-label="운영 대시보드로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
             <h3>운영 대시보드</h3>
-            <p>이번 주 동네친구들 분위기를 숫자와 키워드로 봐요. 활약왕, 온도, 인기 화제까지 한 화면에.</p>
+            <p>이번 주 분위기를 숫자와 키워드로 봐요. 활약왕, 온도, 인기 화제까지 한 화면에.</p>
             <span class="fc-go">요즘 분위기 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
-          <!-- 샘플 리포트 미리보기 (다크 셀) -->
-          <a class="bento-card feature-card is-dark bento-2x reveal d1" id="previewCard" href="report.html" aria-label="샘플 리포트 미리보기 — 대시보드로 이동">
-            <span class="badge-soft is-blush preview-badge" id="previewPeriod">2026년 6월 미리보기</span>
-            <div class="preview-head">
-              <h3>이번 달 활약왕</h3>
-            </div>
-            <div class="preview-mvp">
-              <span class="pm-ava" aria-hidden="true">👑</span>
-              <div>
-                <div class="pm-name" id="previewName">민지</div>
-                <div class="pm-sub" id="previewCount">메시지 1,046건 · 개근 58일</div>
-              </div>
-            </div>
-            <div class="preview-metrics">
-              <div class="pmt"><b id="pmChat">7,100</b><span>총 채팅</span></div>
-              <div class="pmt"><b id="pmTemp">37.7°</b><span>온도</span></div>
-              <div class="pmt"><b id="pmNew">2</b><span>새 친구</span></div>
-            </div>
-            <span class="fc-go">전체 리포트 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-          </a>
-
-          <!-- 필독 -->
-          <a class="bento-card feature-card reveal d2" href="guide.html" aria-label="필독으로 이동">
+          <!-- 필독 (큰 셀) -->
+          <a class="bento-card feature-card bento-2x reveal d1" href="guide.html" aria-label="필독으로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
             <h3>필독</h3>
-            <p>벙 참여랑 정산, 매너 같은 기본을 3분이면 훑어요.</p>
+            <p>벙 참여랑 정산, 매너 같은 기본을 3분이면 훑어요. 처음 온 분도 오래 함께한 멤버도 같이 봐요.</p>
             <span class="fc-go">가이드 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
           <!-- 벙비 정산기 -->
-          <a class="bento-card feature-card reveal d3" href="calculator.html" aria-label="벙비 정산기로 이동">
+          <a class="bento-card feature-card reveal d2" href="calculator.html" aria-label="벙비 정산기로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg></span>
             <h3>벙비 정산기</h3>
             <p>차수별 1/N을 넣으면 카톡에 붙일 수 있게 정리돼요.</p>
@@ -261,29 +300,37 @@
           </a>
 
           <!-- 소식 -->
-          <a class="bento-card feature-card reveal d4" href="news.html" aria-label="소식으로 이동">
+          <a class="bento-card feature-card reveal d3" href="news.html" aria-label="소식으로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
             <h3>소식</h3>
             <p>공지랑 후기, 새 소식을 여기서 확인해요.</p>
             <span class="fc-go">소식 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
+
+          <!-- 게임 -->
+          <a class="bento-card feature-card reveal d4" href="games.html" aria-label="게임으로 이동">
+            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg></span>
+            <h3>게임</h3>
+            <p>쉬어갈 땐 미니게임 한 판. 빵집 타이쿤이랑 좀비 헌팅이 있어요.</p>
+            <span class="fc-go">게임 하러 가기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- ── 이번 주 인기 키워드 + 예정/최근 벙 ── -->
-    <section class="section is-tight" aria-labelledby="weekTitle">
+    <!-- ── 인기 키워드 + 예정/최근 벙 ── -->
+    <section class="section is-tight" aria-labelledby="kwTitle">
       <div class="container">
         <div class="section-head reveal">
           <span class="eyebrow">요즘 우리는</span>
-          <h2 id="weekTitle">이번 주 동네친구들은 이런 얘길 했어요</h2>
+          <h2 id="kwTitle">이런 얘길 많이 했어요</h2>
           <p>대화에서 자주 나온 키워드예요. 자세한 흐름은 대시보드에서 볼 수 있어요.</p>
         </div>
 
         <div class="bento">
           <div class="bento-card bento-2x reveal">
             <h3 style="margin:0 0 4px;font-size:var(--fs-h3);color:var(--deep-1)">인기 키워드</h3>
-            <p style="margin:0 0 14px;color:var(--gray);font-size:13px">이번 달 대화에서 가장 많이 등장했어요.</p>
+            <p style="margin:0 0 14px;color:var(--gray);font-size:13px">이 기간 대화에서 가장 많이 등장했어요.</p>
             <div class="kw-cloud" id="kwCloud">
               <span class="kw-chip is-top"><span class="kw-rank">1</span>정산<span class="kw-cnt">328</span></span>
               <span class="kw-chip is-top"><span class="kw-rank">2</span>벙비<span class="kw-cnt">316</span></span>
@@ -350,8 +397,8 @@
           <h4>바로가기</h4>
           <ul class="footer-links">
             <li><a href="index.html">홈</a></li>
-            <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="guide.html">필독</a></li>
+            <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
             <li><a href="games.html">🎮 게임</a></li>
@@ -373,27 +420,32 @@
   <!-- ════════ 모바일 하단 탭바 (공통 셸 · 활성=홈) ════════ -->
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item is-active" href="index.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
-    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
     <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg>게임</a>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ════════ 홈 페이지 로직 — 샘플 리포트 미리보기 fetch (우아한 폴백) ════════ -->
+  <!-- ════════ 홈 페이지 로직 — 발행 리포트(실데이터) → 예시 순으로 채움 (우아한 폴백) ════════ -->
   <script>
     (function () {
       "use strict";
+      var SUPA_URL = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+      var SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+
       function esc(v) {
         var e = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
         return String(v).replace(/[&<>"']/g, function (c) { return e[c]; });
       }
       function nf(n) { return Number(n || 0).toLocaleString("ko-KR"); }
       function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
+      function firstTok(name) { return String(name || "").trim().split(/\s+/)[0] || "동네친구"; }
 
       /* 뷰포트 진입 카운트업(공통 셸)이 이미 폴백값으로 돌더라도,
-         fetch 성공 시 data-countup 속성만 갱신하고 EXCER.countUp 으로 다시 맞춘다. */
+         데이터가 오면 data-countup 속성을 갱신하고 EXCER.countUp 으로 다시 맞춘다. */
       function reCount(id, to, opts) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -407,64 +459,113 @@
         }
       }
 
-      fetch("data/report-sample.json", { cache: "no-store" })
-        .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
-        .then(function (d) {
-          if (!d || typeof d !== "object") throw new Error("shape");
+      function isV2(s) { return s && s.v === 2 && Array.isArray(s.days) && Array.isArray(s.members); }
+      function isV1(s) { return s && s.totals && !isV2(s); }
 
-          var total = (d.meta && d.meta.totalMessages) || 0;
-          var members = Array.isArray(d.members) ? d.members : [];
-          var newCnt = (d.newMembers && d.newMembers.count) || 0;
-          var emoji = d.emojiStats || {};
-          var laugh = emoji.laugh || 0;
-          var period = d.periodLabel || "";
+      function render(d, source) {
+        if (!d || typeof d !== "object") return;
 
-          /* 동네친구들 온도 — 이모지 온기로 살짝 데우는 감성 지표 */
-          var warmth = (laugh + (emoji.cheer || 0) + (emoji.heart || 0));
-          var temp = Math.round((36.5 + Math.min(2.4, warmth / 1500)) * 10) / 10;
+        var total = (d.meta && d.meta.totalMessages) || (d.totals && d.totals.messages) || 0;
+        var members = Array.isArray(d.members) ? d.members.slice() : [];
+        members.sort(function (a, b) { return (b.count || 0) - (a.count || 0); });
+        var newCnt = (d.newMembers && d.newMembers.count) || 0;
+        var emoji = d.emojiStats || {};
+        var laugh = emoji.laugh || 0;
+        var period = d.periodLabel || "";
 
-          /* 히어로 스탯 필 */
-          if (total) reCount("heroMsg", total, {});
-          if (members.length) reCount("heroMembers", members.length, {});
-          reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+        /* 동네친구들 온도 — 이모지 온기로 살짝 데우는 감성 지표 */
+        var warmth = (laugh + (emoji.cheer || 0) + (emoji.heart || 0));
+        var temp = Math.round((36.5 + Math.min(2.4, warmth / 1500)) * 10) / 10;
 
-          /* 스탯 스트립 */
-          if (total) reCount("stMsg", total, {});
-          if (members.length) reCount("stMembers", members.length, {});
-          reCount("stTemp", temp, { decimals: 1 });
-          if (newCnt) setText("stNewFoot", "▲ 새로 온 친구 " + newCnt + "명");
-          if (laugh) setText("stHi", "웃음 " + nf(laugh) + "번");
+        /* 출처 문구 */
+        var srcTxt = source === "live"
+          ? (period ? period + " 발행 리포트 기준" : "발행 리포트 기준")
+          : (period ? period + " 예시 데이터" : "예시 데이터");
+        setText("mvpSrc", srcTxt);
+        setText("lbPeriod", period || "이번 기간");
 
-          /* 미리보기 카드 (활약왕) */
-          if (period) setText("previewPeriod", period + " 미리보기");
-          if (members.length) {
-            var top = members[0] || {};
-            var nameTok = String(top.name || "").trim().split(/\s+/)[0] || "동네친구";
-            setText("previewName", nameTok);
-            var sub = "메시지 " + nf(top.count || 0) + "건";
-            if (top.streak) sub += " · 개근 " + top.streak + "일";
-            setText("previewCount", sub);
-          }
-          setText("pmChat", nf(total));
-          setText("pmTemp", temp.toFixed(1) + "°");
-          setText("pmNew", nf(newCnt));
+        /* 히어로 스탯 필 */
+        if (total) reCount("heroMsg", total, {});
+        if (members.length) reCount("heroMembers", members.length, {});
+        reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
 
-          /* 인기 키워드 */
-          var kws = Array.isArray(d.keywords) ? d.keywords.slice(0, 8) : [];
-          var cloud = document.getElementById("kwCloud");
-          if (cloud && kws.length) {
-            cloud.innerHTML = kws.map(function (k, i) {
-              var top = i < 2 ? " is-top" : "";
-              return '<span class="kw-chip' + top + '">' +
-                '<span class="kw-rank">' + (i + 1) + "</span>" +
-                esc(k.w) +
-                '<span class="kw-cnt">' + nf(k.c) + "</span></span>";
+        /* 감성 타일 3종 */
+        reCount("stTemp", temp, { decimals: 1 });
+        if (members.length) reCount("stMembers", members.length, {});
+        setText("stNewFoot", newCnt ? ("▲ 새로 온 친구 " + newCnt + "명") : "요즘 함께하는 친구들");
+        if (total) reCount("stMsg", total, {});
+        setText("stLaughFoot", laugh ? ("웃음만 " + nf(laugh) + "번 오갔어요") : "함께 나눈 대화예요");
+
+        /* 활약왕 (실제 인물) */
+        if (members.length) {
+          var top = members[0] || {};
+          setText("mvpName", firstTok(top.name));
+          setText("mvpLine", "이 기간 " + nf(top.count || 0) + "마디");
+          var chips = [];
+          if (top.activeDays) chips.push("개근 " + top.activeDays + "일");
+          else if (top.streak) chips.push(top.streak + "일 연속");
+          if (top.q) chips.push("질문 " + nf(top.q) + "번");
+          if (top.a) chips.push("리액션 " + nf(top.a) + "번");
+          var chipHost = document.getElementById("mvpChips");
+          if (chipHost && chips.length) {
+            chipHost.innerHTML = chips.map(function (c) {
+              return '<span class="mvp-chip">' + esc(c) + "</span>";
             }).join("");
           }
-        })
-        .catch(function () {
-          /* 우아한 폴백: HTML 에 이미 샘플 값이 들어 있어 화면이 비지 않는다. */
-        });
+        }
+
+        /* 이야기 많이 나눈 친구들 (실제 인물 TOP5) */
+        var lb = document.getElementById("lbList");
+        if (lb && members.length) {
+          var topN = members.slice(0, 5);
+          var max = (topN[0] && topN[0].count) || 1;
+          lb.innerHTML = topN.map(function (m, i) {
+            var pct = Math.max(8, Math.round((m.count || 0) / max * 100));
+            return '<li class="lb-row">' +
+              '<span class="lb-rank' + (i === 0 ? " is-1" : "") + '">' + (i + 1) + "</span>" +
+              '<span class="lb-name">' + esc(firstTok(m.name)) + "</span>" +
+              '<span class="lb-bar"><i style="width:' + pct + '%"></i></span>' +
+              '<span class="lb-cnt">' + nf(m.count || 0) + "</span>" +
+              "</li>";
+          }).join("");
+        }
+
+        /* 인기 키워드 */
+        var kws = Array.isArray(d.keywords) ? d.keywords.slice(0, 8) : [];
+        var cloud = document.getElementById("kwCloud");
+        if (cloud && kws.length) {
+          cloud.innerHTML = kws.map(function (k, i) {
+            var t = i < 2 ? " is-top" : "";
+            return '<span class="kw-chip' + t + '">' +
+              '<span class="kw-rank">' + (i + 1) + "</span>" +
+              esc(k.w) +
+              '<span class="kw-cnt">' + nf(k.c) + "</span></span>";
+          }).join("");
+        }
+      }
+
+      /* 1) 발행 리포트(실데이터) → 2) 예시 JSON → 3) 정적 폴백(HTML 그대로) */
+      function fromLive() {
+        return fetch(SUPA_URL + "/rest/v1/site_reports_v?select=id,period_label,stats,updated_at", {
+          headers: { apikey: SUPA_ANON, Authorization: "Bearer " + SUPA_ANON }
+        }).then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
+          .then(function (rows) {
+            var live = (rows || []).filter(function (x) { return isV2(x.stats) || isV1(x.stats); });
+            if (!live.length) throw new Error("empty");
+            return { stats: live[0].stats, source: "live" };
+          });
+      }
+      function fromSample() {
+        return fetch("data/report-sample.json", { cache: "no-store" })
+          .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
+          .then(function (s) { return { stats: s, source: "sample" }; });
+      }
+
+      fromLive().catch(fromSample).then(function (res) {
+        if (res && res.stats) render(res.stats, res.source);
+      }).catch(function () {
+        /* 우아한 폴백: HTML 에 이미 예시 값이 들어 있어 화면이 비지 않는다. */
+      });
     })();
   </script>
 
