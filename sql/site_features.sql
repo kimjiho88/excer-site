@@ -23,14 +23,17 @@ create table if not exists site_config (
 -- RLS 활성 + 정책 없음 = 클라이언트에서 직접 읽기/쓰기 불가 (RPC 내부 전용)
 alter table site_config enable row level security;
 
-insert into site_config (key, value)
-values ('admin_pass_hash', encode(digest('CHANGE_ME', 'sha256'), 'hex'))
-on conflict (key) do update set value = excluded.value;
-
+-- pgcrypto의 digest 는 Supabase에서 extensions 스키마에 있으므로 search_path 에 포함해야
+-- 함수 실행 시(search_path=public) digest 를 찾을 수 있다. (없으면 42883: digest 없음 오류)
 create or replace function site_hash(p_pass text)
-returns text language sql immutable as $$
+returns text language sql immutable
+set search_path = extensions, public as $$
   select encode(digest(coalesce(p_pass, ''), 'sha256'), 'hex');
 $$;
+
+insert into site_config (key, value)
+values ('admin_pass_hash', site_hash('CHANGE_ME'))
+on conflict (key) do update set value = excluded.value;
 
 create or replace function site_is_admin(p_pass text)
 returns boolean language sql stable security definer set search_path = public as $$

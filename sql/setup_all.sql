@@ -15,16 +15,20 @@ drop view if exists site_comments_v cascade;
 drop view if exists site_reports_v cascade;
 
 -- ── 운영진 비밀번호 (해시로만 저장) ──
+-- pgcrypto의 digest 는 Supabase에서 extensions 스키마에 있으므로, search_path 에 extensions 를
+-- 반드시 포함해야 함수 실행 시(search_path=public) digest 를 찾을 수 있다. (없으면 42883 오류)
+create or replace function site_hash(p_pass text)
+returns text language sql immutable
+set search_path = extensions, public as $$
+  select encode(digest(coalesce(p_pass, ''), 'sha256'), 'hex');
+$$;
+
 create table if not exists site_config (key text primary key, value text not null);
 alter table site_config enable row level security;
 insert into site_config (key, value)
-values ('admin_pass_hash', encode(digest('CHANGE_ME', 'sha256'), 'hex'))
+values ('admin_pass_hash', site_hash('CHANGE_ME'))
 on conflict (key) do update set value = excluded.value;
 
-create or replace function site_hash(p_pass text)
-returns text language sql immutable as $$
-  select encode(digest(coalesce(p_pass, ''), 'sha256'), 'hex');
-$$;
 create or replace function site_is_admin(p_pass text)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from site_config where key = 'admin_pass_hash' and value = site_hash(p_pass));
