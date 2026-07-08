@@ -57,6 +57,12 @@
     }
     .dropzone strong { font-size: 15px; letter-spacing: -0.02em; color: var(--ink); }
     .dropzone p { margin: 0; color: var(--gray); font-size: 12.5px; font-weight: 700; line-height: 1.6; }
+    /* 파일 업로드 대신 붙여넣기 */
+    .paste-alt { margin-top: 12px; }
+    .paste-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+    .paste-hint { font-size: 12.5px; font-weight: 700; }
+    .paste-hint.ok { color: #1e7a52; }
+    .paste-hint.warn { color: #9a5a00; }
     .file-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
     .file-chip {
       display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 8px 0 13px;
@@ -303,6 +309,19 @@
                 <p>Android · iPhone · PC 내보내기 형식을 자동으로 알아봐요<br />여러 파일도 한 번에 올릴 수 있어요. 기간이 겹치면 중복을 정리해드려요</p>
               </div>
               <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" />
+
+              <div class="paste-alt">
+                <button id="pasteToggle" class="mini-btn" type="button" aria-expanded="false">📋 파일 업로드가 막히나요? 대화 내용을 직접 붙여넣기</button>
+                <div id="pasteBox" hidden>
+                  <p class="step-note" style="margin:10px 0 8px">카톡 <b>대화 내용 내보내기 → 텍스트</b>로 나온 파일(또는 '나에게 보내기'로 받은 내용)을 열어 전체 선택(<b>Ctrl/⌘+A</b>) 후 복사해서 아래에 붙여넣어 주세요. 업로드 없이 바로 분석돼요.</p>
+                  <textarea id="pasteInput" class="textarea" rows="6" placeholder="여기에 카톡 대화 내용을 붙여넣기 (Ctrl/⌘+V)"></textarea>
+                  <div class="paste-actions">
+                    <button id="pasteApply" class="btn btn-primary is-sm" type="button">이 내용으로 분석</button>
+                    <span id="pasteHint" class="paste-hint" hidden></span>
+                  </div>
+                </div>
+              </div>
+
               <div id="fileChips" class="file-chips"></div>
               <div id="parseInfo" class="parse-info" hidden></div>
 
@@ -772,6 +791,23 @@
         rebuild();
       }
 
+      // 파일 업로드가 막힐 때: 붙여넣은 텍스트를 '가상 파일'로 추가(같은 분석 파이프라인)
+      function addPastedText() {
+        const text = ($("pasteInput").value || "").trim();
+        const hint = $("pasteHint");
+        const warn = (msg) => { hint.hidden = false; hint.className = "paste-hint warn"; hint.textContent = msg; };
+        if (text.length < 20) { warn("내용이 너무 짧아요. 대화 내용을 붙여넣어 주세요."); return; }
+        const parsed = ChatParser.parse(text);
+        const normal = parsed.messages.filter((m) => m.kind !== "join" && m.kind !== "leave").length;
+        if (!normal) { warn("대화를 못 찾았어요. 카톡 '대화 내보내기'로 나온 내용 그대로인지 확인해주세요."); return; }
+        const n = files.filter((f) => /^붙여넣은 대화/.test(f.name)).length + 1;
+        files.push({ name: "붙여넣은 대화 " + n, size: text.length, text, parsed });
+        hint.hidden = false; hint.className = "paste-hint ok";
+        hint.textContent = `메시지 ${nf(normal)}건을 읽었어요.`;
+        $("pasteInput").value = "";
+        rebuild();
+      }
+
       function removeFile(idx) {
         files.splice(idx, 1);
         rebuild();
@@ -1121,6 +1157,14 @@
           addFiles(e.dataTransfer && e.dataTransfer.files);
         });
         fi.addEventListener("change", () => { addFiles(fi.files); fi.value = ""; });
+
+        $("pasteToggle").addEventListener("click", () => {
+          const box = $("pasteBox");
+          box.hidden = !box.hidden;
+          $("pasteToggle").setAttribute("aria-expanded", box.hidden ? "false" : "true");
+          if (!box.hidden) $("pasteInput").focus();
+        });
+        $("pasteApply").addEventListener("click", addPastedText);
 
         $("fileChips").addEventListener("click", (e) => {
           const b = e.target.closest("[data-remove]");
