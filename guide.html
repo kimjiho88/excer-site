@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1E0230" />
+
+  <title>동네친구들 — 필독</title>
+  <meta name="description" content="동네친구들과 편하게 함께 지내기 위한 안내예요. 벙 참여, 벙비 정산, 대화 매너, 자주 묻는 질문을 한곳에 정리했어요." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="동네친구들" />
+  <meta property="og:title" content="동네친구들 — 필독" />
+  <meta property="og:description" content="처음 온 분도, 기존 멤버도 함께 보는 안내예요." />
+  <meta property="og:image" content="assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+
+  <style>
+    /* ============================================================
+       필독(guide) 전용 스타일 — v3 (site.css 수정 금지)
+       ============================================================ */
+
+    /* ── 컴팩트 히어로(가운데 정렬) ── */
+    .hero-band.is-compact .container { text-align: center; }
+    .hero-band.is-compact .hero-title { font-size: clamp(28px, 4vw, 48px); line-height: 1.12; }
+    .hero-band.is-compact .hero-sub { margin-inline: auto; }
+    .hero-band.is-compact .hero-actions,
+    .hero-band.is-compact .hero-meta { justify-content: center; }
+
+    /* ── 3초 요약 카드 ── */
+    .tldr {
+      margin-top: clamp(-56px, -4.4vw, -40px); position: relative; z-index: 2;
+    }
+    .tldr-card { padding: clamp(20px, 2.6vw, 30px); }
+    .tldr-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tldr-head h2 { margin: 0; font-size: clamp(18px, 2vw, 22px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1); }
+    .tldr-head p { margin: 0; color: var(--gray); font-size: 13px; font-weight: 700; }
+    .tldr-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .tldr-item {
+      display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start;
+      padding: 14px; border-radius: 16px; border: 1px solid var(--line);
+      background: linear-gradient(165deg, rgba(240, 231, 250, 0.6), rgba(255, 255, 255, 0.5));
+    }
+    .tldr-ic {
+      display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; flex: none;
+      background: var(--pastel-lavender); color: var(--primary);
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+    }
+    .tldr-ic svg { width: 20px; height: 20px; }
+    .tldr-ic.is-mint  { background: var(--pastel-mint);  color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.13); }
+    .tldr-ic.is-sky   { background: var(--pastel-sky);   color: #2560A8; box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.13); }
+    .tldr-ic.is-cream { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.13); }
+    .tldr-ic.is-blush { background: var(--pastel-blush); color: #A6335C; box-shadow: inset 0 0 0 1px rgba(166, 51, 92, 0.13); }
+    .tldr-item b { display: block; font-size: 13.5px; letter-spacing: -0.03em; color: var(--ink); line-height: 1.4; }
+    .tldr-item span { display: block; margin-top: 3px; color: var(--gray); font-size: 12.5px; line-height: 1.5; }
+
+    /* ── 점프 내비 + 검색 (스티키 바) ── */
+    .guide-nav {
+      position: sticky; top: var(--nav-h); z-index: 110;
+      background: rgba(247, 245, 248, 0.9);
+      border-block: 1px solid var(--line);
+      backdrop-filter: blur(14px) saturate(1.35);
+      -webkit-backdrop-filter: blur(14px) saturate(1.35);
+    }
+    .guide-nav-inner { display: flex; align-items: center; gap: 12px; padding-block: 10px; }
+    .guide-chips {
+      display: flex; gap: 8px; flex: 1 1 auto; min-width: 0;
+      overflow-x: auto; padding-block: 2px;
+      scrollbar-width: none; scroll-snap-type: x proximity;
+    }
+    .guide-chips::-webkit-scrollbar { display: none; }
+    .guide-chips .chip { min-height: 44px; flex: none; scroll-snap-align: start; }
+    .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+    .chip-dot.lv-must { background: var(--primary); }
+    .chip-dot.lv-info { background: #2560A8; }
+    .chip-dot.lv-ban  { background: var(--danger); }
+    .chip.is-active .chip-dot { background: #fff; }
+    .chip.is-dim { opacity: 0.35; }
+    .guide-count { flex: none; color: var(--gray); font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .guide-search { position: relative; flex: none; width: 250px; }
+    .guide-search svg {
+      position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; color: var(--primary); pointer-events: none;
+    }
+    .guide-search input {
+      width: 100%; min-height: 44px; padding: 0 15px 0 41px;
+      border: 1px solid var(--line); border-radius: var(--r-pill); outline: none;
+      background: #fff; color: var(--ink); font-weight: 700; font-size: 13.5px;
+      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+    }
+    .guide-search input:focus { border-color: rgba(95, 0, 128, 0.42); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.08); }
+
+    /* ── 카테고리 섹션 ── */
+    .guide-cat { margin-block: clamp(36px, 4.6vw, 60px); scroll-margin-top: calc(var(--nav-h) + 86px); }
+    .guide-cat[hidden] { display: none; }
+    .cat-head { display: grid; gap: 10px; margin-bottom: clamp(16px, 2.4vw, 26px); }
+    .cat-head-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cat-index {
+      display: inline-grid; place-items: center; min-width: 46px; height: 46px; padding: 0 10px;
+      border-radius: 15px; font-size: 15px; font-weight: 900; letter-spacing: -0.02em;
+    }
+    .lv-must .cat-index {
+      background: var(--grad-brand); color: #fff;
+      box-shadow: 0 5px 12px rgba(95, 0, 128, 0.16), 0 14px 28px -10px rgba(95, 0, 128, 0.34),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    .lv-info .cat-index { background: var(--pastel-sky); color: #2560A8; box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.15); }
+    .lv-ban  .cat-index { background: rgba(192, 57, 43, 0.10); color: var(--danger); box-shadow: inset 0 0 0 1px rgba(192, 57, 43, 0.15); }
+    .level-badge {
+      display: inline-flex; align-items: center; padding: 5px 12px;
+      border-radius: var(--r-pill); font-size: 11.5px; font-weight: 900;
+    }
+    .lv-must .level-badge { background: var(--pastel-lavender); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.09); }
+    .lv-info .level-badge { background: var(--pastel-sky); color: #2560A8; box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.14); }
+    .lv-ban  .level-badge { background: rgba(192, 57, 43, 0.09); color: var(--danger); box-shadow: inset 0 0 0 1px rgba(192, 57, 43, 0.14); }
+    .cat-eyebrow { color: var(--gray); font-size: 12.5px; font-weight: 850; letter-spacing: 0; }
+    .cat-head h2 { margin: 2px 0 0; font-size: var(--fs-title); font-weight: 880; letter-spacing: -0.045em; color: var(--deep-1); }
+    .cat-head > p { margin: 0; max-width: 660px; color: var(--gray); font-size: 14px; line-height: 1.7; }
+
+    .cat-body { display: grid; gap: 14px; }
+    .cat-block { min-width: 0; }
+    .cat-lead { margin: 0; color: var(--ink); font-size: 15.5px; line-height: 1.78; letter-spacing: -0.02em; font-weight: 650; }
+    .cat-para { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.72; }
+    .cat-subhead {
+      display: flex; align-items: center; gap: 9px;
+      margin: 10px 0 0; font-size: 16.5px; font-weight: 880; letter-spacing: -0.04em; color: var(--deep-1);
+    }
+    .cat-subhead::before { content: ""; width: 20px; height: 3px; border-radius: 3px; background: var(--grad-brand); flex: none; }
+
+    /* ── 콜아웃 ── */
+    .callout { padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .callout-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+    .callout-ic { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; flex: none; }
+    .callout-ic svg { width: 16px; height: 16px; }
+    .callout strong { font-size: 14.5px; letter-spacing: -0.03em; color: var(--ink); }
+    .callout ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+    .callout li { position: relative; padding-left: 20px; color: var(--ink-2); font-size: 13.5px; line-height: 1.62; }
+    .callout li::before { content: ""; position: absolute; left: 4px; top: 8px; width: 6px; height: 6px; border-radius: 2px; }
+    .callout.is-brand { border-left: 4px solid var(--primary); background: linear-gradient(180deg, #fff, rgba(240, 231, 250, 0.62)); }
+    .callout.is-brand .callout-ic { background: var(--pastel-lavender); color: var(--primary); }
+    .callout.is-brand li::before { background: var(--primary-300); }
+    .callout.is-sky { border-left: 4px solid #2560A8; background: linear-gradient(180deg, #fff, rgba(230, 240, 252, 0.66)); }
+    .callout.is-sky .callout-ic { background: var(--pastel-sky); color: #2560A8; }
+    .callout.is-sky li::before { background: #9CC0EA; }
+    .callout.is-warn { border-left: 4px solid var(--gold); background: linear-gradient(180deg, #fff, rgba(252, 244, 224, 0.75)); }
+    .callout.is-warn .callout-ic { background: var(--pastel-cream); color: #856410; }
+    .callout.is-warn li::before { background: var(--gold); }
+    .callout.is-danger { border-left: 4px solid var(--danger); background: linear-gradient(180deg, #fff, rgba(192, 57, 43, 0.05)); }
+    .callout.is-danger .callout-ic { background: rgba(192, 57, 43, 0.12); color: var(--danger); }
+    .callout.is-danger li::before { background: rgba(192, 57, 43, 0.55); }
+
+    /* ── 핵심 수치 / 재입장 페어 ── */
+    .metric-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+    .metric-tile {
+      padding: 16px 12px; border-radius: 18px; border: 1px solid var(--line); text-align: center;
+      background: linear-gradient(160deg, var(--pastel-lavender), rgba(255, 255, 255, 0.55));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .metric-tile b { display: block; font-size: 26px; font-weight: 900; letter-spacing: -0.045em; color: var(--primary-900); }
+    .metric-tile span { display: block; margin-top: 4px; color: var(--ink-2); font-size: 12.5px; font-weight: 700; }
+
+    .pair-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .pair-card {
+      padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line);
+      background: linear-gradient(160deg, var(--pastel-lavender), rgba(255, 255, 255, 0.6));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    .pair-card small { display: block; color: var(--gray); font-size: 12px; font-weight: 850; }
+    .pair-card b { display: block; margin-top: 6px; font-size: 24px; font-weight: 900; letter-spacing: -0.04em; color: var(--primary-900); }
+    .pair-card span { display: block; margin-top: 2px; color: var(--ink-2); font-size: 12.5px; font-weight: 700; }
+
+    /* ── 규칙 카드 그리드 ── */
+    .rule-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(236px, 1fr)); }
+    .rule-card {
+      padding: 18px; border-radius: 18px; border: 1px solid var(--line);
+      background: #fff; box-shadow: var(--shadow-1);
+    }
+    .rule-ic {
+      display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 12px;
+      border-radius: 13px; background: var(--pastel-lavender); color: var(--primary);
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+    }
+    .rule-ic svg { width: 20px; height: 20px; }
+    .rule-ic.is-mint  { background: var(--pastel-mint);  color: #0D7A55; box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.13); }
+    .rule-ic.is-sky   { background: var(--pastel-sky);   color: #2560A8; box-shadow: inset 0 0 0 1px rgba(37, 96, 168, 0.13); }
+    .rule-ic.is-blush { background: var(--pastel-blush); color: #A6335C; box-shadow: inset 0 0 0 1px rgba(166, 51, 92, 0.13); }
+    .rule-ic.is-cream { background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.13); }
+    .rule-card h3 { margin: 0 0 9px; font-size: 15.5px; letter-spacing: -0.035em; color: var(--ink); }
+    .rule-card ul { margin: 0; padding-left: 17px; display: grid; gap: 5px; color: var(--ink-2); font-size: 13.5px; line-height: 1.64; }
+
+    /* ── 체크 스텝 (참여 절차 / 정산 절차) ── */
+    .check-card { padding: 18px 20px 12px; border-radius: 18px; border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-1); }
+    .block-title { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 15px; font-weight: 880; letter-spacing: -0.03em; color: var(--primary-700); }
+    .checksteps { list-style: none; margin: 0; padding: 0; display: grid; }
+    .checksteps li { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; padding: 12px 0; }
+    .checksteps li:not(:last-child)::after {
+      content: ""; position: absolute; left: 19px; top: 54px; bottom: -4px; width: 2px; border-radius: 2px;
+      background: linear-gradient(180deg, rgba(95, 0, 128, 0.22), rgba(95, 0, 128, 0.05));
+    }
+    .cs-mark {
+      display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px;
+      background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 900;
+      box-shadow: 0 6px 14px -6px rgba(95, 0, 128, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+    .cs-mark svg { width: 18px; height: 18px; }
+    .checksteps strong { display: block; font-size: 14.5px; letter-spacing: -0.03em; color: var(--ink); }
+    .checksteps p { margin: 3px 0 0; color: var(--gray); font-size: 13.5px; line-height: 1.6; }
+
+    /* ── 아코디언 (site.css .accordion 컴포넌트 사용, 여기선 Q 뱃지/아이콘만 보강) ── */
+    .accordion .acc-head { gap: 12px; }
+    .acc-qmark {
+      display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; flex: none;
+      background: var(--pastel-lavender); color: var(--primary); font-size: 13px; font-weight: 900;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+    }
+    .acc-qmark svg { width: 16px; height: 16px; }
+    .acc-body-inner .cat-body-inner { display: grid; gap: 12px; }
+    .acc-body-inner > * + * { margin-top: 12px; }
+
+    /* ── 미니 리스트 (아코디언 내부) ── */
+    .mini-list { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--offwhite); }
+    .mini-list b { display: block; margin-bottom: 8px; font-size: 13.5px; letter-spacing: -0.03em; color: var(--primary-700); }
+    .mini-list ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); font-size: 13.5px; line-height: 1.62; }
+
+    /* ── 제재 사다리 ── */
+    .ladder-wrap {
+      padding: 16px 18px; border-radius: 18px;
+      border: 1px solid rgba(192, 57, 43, 0.16);
+      background: linear-gradient(180deg, #fff, rgba(192, 57, 43, 0.035));
+    }
+    .ladder-title { display: block; margin-bottom: 14px; font-size: 14px; font-weight: 880; letter-spacing: -0.03em; color: #7e2a22; }
+    .ladder { display: grid; }
+    .ladder-step {
+      position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center;
+      padding: 13px 16px; border: 1px solid var(--line); border-radius: 16px; background: #fff; margin-bottom: 22px;
+    }
+    .ladder-step:last-child { margin-bottom: 0; }
+    .ladder-step:not(:last-child)::after {
+      content: "↓"; position: absolute; left: 28px; bottom: -22px; height: 22px;
+      display: grid; place-items: center; color: var(--gray-2); font-weight: 900; font-size: 15px;
+    }
+    .ladder-tag {
+      display: grid; place-items: center; min-width: 52px; height: 36px; padding: 0 10px; border-radius: 11px;
+      font-size: 13px; font-weight: 900;
+      background: var(--pastel-cream); color: #856410; box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.14);
+    }
+    .ladder-step.sev-final { border-color: rgba(192, 57, 43, 0.30); background: rgba(192, 57, 43, 0.04); }
+    .ladder-step.sev-final .ladder-tag { background: var(--danger); color: #fff; box-shadow: 0 6px 14px -6px rgba(192, 57, 43, 0.5); }
+    .ladder-text b { display: block; letter-spacing: -0.02em; color: var(--ink); }
+    .ladder-text span { color: var(--gray); font-size: 12.5px; }
+
+    /* ── 닉네임 양식 ── */
+    .format-card { padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-1); }
+    .format-card > b { display: block; margin-bottom: 6px; color: var(--primary-700); letter-spacing: -0.03em; }
+    .format-note { margin: 0 0 12px; color: var(--gray); font-size: 13px; line-height: 1.6; }
+    .format-flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+    .format-part { display: grid; gap: 4px; flex: 1 1 84px; }
+    .format-part .fp-label { font-size: 11px; font-weight: 800; color: var(--gray); text-align: center; }
+    .format-part .fp-ex {
+      display: grid; place-items: center; min-height: 42px; border-radius: 12px; padding: 0 8px;
+      background: var(--pastel-lavender); color: var(--primary); font-weight: 900; font-size: 15px; letter-spacing: -0.02em;
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.07);
+    }
+    .format-sep { display: grid; place-items: center; color: var(--gray-2); font-weight: 900; align-self: end; padding-bottom: 8px; }
+
+    /* ── 좋은/나쁜 예시 ── */
+    .example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .example-card { padding: 16px 18px; border-radius: 18px; border: 1px solid var(--line); background: #fff; }
+    .example-card.good { border-color: rgba(18, 147, 106, 0.26); background: linear-gradient(180deg, #fff, rgba(226, 246, 237, 0.8)); }
+    .example-card.bad { border-color: rgba(192, 57, 43, 0.18); background: linear-gradient(180deg, #fff, rgba(192, 57, 43, 0.05)); }
+    .example-card > span {
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 9px; padding: 5px 10px; border-radius: var(--r-pill);
+      background: #fff; font-size: 11px; font-weight: 900; box-shadow: var(--shadow-1);
+    }
+    .example-card.good > span { color: #0D7A55; }
+    .example-card.bad > span { color: var(--danger); }
+    .example-card strong { display: block; margin-bottom: 6px; letter-spacing: -0.03em; color: var(--ink); }
+    .example-card p { margin: 0; color: var(--gray); font-size: 13px; line-height: 1.6; }
+
+    /* ── 금지 그리드 ── */
+    .forbid-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 9px; }
+    .forbid-item {
+      display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start;
+      padding: 13px 14px; border-radius: 14px; border: 1px solid rgba(192, 57, 43, 0.16);
+      background: rgba(192, 57, 43, 0.04); color: #7e2a22; font-size: 13px; line-height: 1.5; font-weight: 650;
+    }
+    .forbid-item .fx {
+      display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
+      background: rgba(192, 57, 43, 0.14); color: var(--danger); font-weight: 900; font-size: 13px;
+    }
+
+    /* ── 정산기 CTA 카드 ── */
+    .cta-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 18px 20px; border-radius: 18px; border: 1px solid var(--line);
+      background: var(--grad-brand-soft), #fff;
+      transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+    }
+    .cta-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+    .cta-card b { display: block; margin-bottom: 3px; color: var(--primary-700); letter-spacing: -0.03em; }
+    .cta-card .sub { display: block; color: var(--gray); font-size: 13px; font-weight: 650; line-height: 1.5; }
+    .cta-card .btn { pointer-events: none; flex: none; }
+
+    /* ── 마무리: 요약 + 체크리스트 2열 ── */
+    .wrap-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+    .sum-card { padding: clamp(20px, 2.6vw, 28px); }
+    .sum-card h3 { margin: 0 0 4px; font-size: 18px; letter-spacing: -0.04em; color: var(--deep-1); }
+    .sum-card > p { margin: 0 0 14px; color: var(--gray); font-size: 13.5px; line-height: 1.6; }
+    .sum-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sum-list li { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+    .sum-list .sl-ic {
+      display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; flex: none;
+      background: var(--pastel-mint); color: #0D7A55;
+    }
+    .sum-list .sl-ic svg { width: 15px; height: 15px; }
+    .sum-list b { color: var(--ink); font-weight: 800; }
+
+    /* ── 하단 CTA 밴드 (다크) ── */
+    .cta-band {
+      position: relative; overflow: hidden; text-align: center;
+      padding: clamp(38px, 5vw, 66px) clamp(22px, 4vw, 56px);
+      border-radius: var(--r-xl);
+      background: var(--grad-aurora), var(--grad-hero);
+      background-color: var(--deep-2);
+      color: var(--on-dark-ink);
+      box-shadow: var(--shadow-3);
+    }
+    .cta-band::after {
+      content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background: var(--noise); opacity: 0.9; mix-blend-mode: overlay;
+    }
+    .cta-band > * { position: relative; z-index: 1; }
+    .cta-band h2 { margin: 14px 0 0; font-size: clamp(25px, 3.3vw, 40px); font-weight: 900; letter-spacing: -0.05em; color: #fff; }
+    .cta-band p { max-width: 560px; margin: 12px auto 0; color: var(--on-dark-body); font-size: 14.5px; line-height: 1.72; }
+    .cta-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 26px; }
+
+    #noResults { margin-block: clamp(36px, 4.6vw, 60px); }
+
+    /* ── 반응형 ── */
+    @media (max-width: 860px) {
+      .guide-nav-inner { flex-wrap: wrap; gap: 8px; }
+      .guide-search { order: -1; width: 100%; }
+      .guide-count { display: none; }
+      .guide-cat { scroll-margin-top: calc(var(--nav-h) + 134px); }
+      .hero-band.is-compact .hero-actions .btn { flex: 1 1 100%; }
+      .cta-actions .btn { flex: 1 1 100%; }
+    }
+    @media (max-width: 640px) {
+      .rule-grid, .example-grid, .forbid-grid { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cta-card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+  <!-- ════════ 상단 글래스 내비 (공통 셸 · 활성=필독) ════════ -->
+  <header class="topnav" id="topnav">
+    <div class="container topnav-inner">
+      <a class="topnav-brand" href="index.html" aria-label="동네친구들 홈으로 이동">
+        <span class="topnav-logo">동네친구들</span>
+        <span class="topnav-sub">오픈채팅 커뮤니티</span>
+      </a>
+      <nav class="topnav-tabs" aria-label="주요 메뉴">
+        <a class="topnav-tab" href="index.html">홈</a>
+        <a class="topnav-tab" href="report.html">운영 대시보드</a>
+        <a class="topnav-tab is-active" href="guide.html" aria-current="page">필독</a>
+        <a class="topnav-tab" href="calculator.html">벙비 정산기</a>
+        <a class="topnav-tab" href="news.html">소식</a>
+      </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
+      </div>
+      <span class="topnav-page" aria-hidden="true">필독</span>
+    </div>
+  </header>
+
+  <!-- ════════ 다크 컴팩트 히어로 ════════ -->
+  <section class="hero-band is-compact" aria-labelledby="heroTitle">
+    <i class="glow-orb" style="--orb-size:440px; --orb-color:rgba(185,128,217,0.32); right:-130px; top:-150px" aria-hidden="true"></i>
+    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(255,184,209,0.20); left:-120px; bottom:-170px" aria-hidden="true"></i>
+    <div class="container">
+      <span class="hero-kicker"><i></i>함께 보는 안내</span>
+      <h1 class="hero-title" id="heroTitle">
+        동네친구들과 편하게<br /><span class="grad-text-hero">함께하기 위한 가이드</span>
+      </h1>
+      <p class="hero-sub">
+        처음 오신 분도, 오래 함께한 멤버도 같이 보는 안내예요.
+        벙 참여랑 벙비 정산, 대화 매너를 한 번만 훑어두면 지내기 훨씬 편해요.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-hero is-lg" href="#tldr">3초 요약부터 보기</a>
+        <a class="btn btn-glass is-lg" href="report.html">요즘 분위기 보기</a>
+      </div>
+      <div class="hero-meta">
+        <span class="stat-pill"><i></i>카테고리 <strong>7개</strong></span>
+        <span class="stat-pill"><i></i>읽는 시간 <strong>약 3분</strong></span>
+      </div>
+    </div>
+  </section>
+
+  <main id="main" class="page-main">
+    <!-- ── 3초 요약 카드 ── -->
+    <section class="tldr" id="tldr" aria-labelledby="tldrTitle">
+      <div class="container">
+        <div class="card is-lg tldr-card reveal">
+          <div class="tldr-head">
+            <h2 id="tldrTitle">3초 요약</h2>
+            <p>바쁘면 이 다섯 개만 기억해도 충분해요.</p>
+          </div>
+          <div class="tldr-grid">
+            <div class="tldr-item">
+              <span class="tldr-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8"/><path d="M12 13c0-4.2 3.1-7 8-7 0 4.2-3.1 7-8 7z"/><path d="M12 13c0-3.4-2.5-5.7-6.8-5.7 0 3.4 2.5 5.7 6.8 5.7z"/></svg></span>
+              <div><b>새로 왔다면 한 달 안에 첫 벙</b><span>첫 벙은 맨정신으로 편하게 와요.</span></div>
+            </div>
+            <div class="tldr-item">
+              <span class="tldr-ic is-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2v6h-6"/><path d="M3 12a9 9 0 0 1 14.6-7L17 8"/><path d="M7 22v-6h6"/><path d="M21 12a9 9 0 0 1-14.6 7L7 16"/></svg></span>
+              <div><b>두 달에 한 번은 얼굴 보기</b><span>자주 봐야 분위기가 유지돼요.</span></div>
+            </div>
+            <div class="tldr-item">
+              <span class="tldr-ic is-sky" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+              <div><b>참석 눌렀으면 꼭 나오기</b><span>못 오게 되면 벙주에게 미리요.</span></div>
+            </div>
+            <div class="tldr-item">
+              <span class="tldr-ic is-cream" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21z"/><path d="M9.5 8.5h5M9.5 12.5h5"/></svg></span>
+              <div><b>벙비는 1/N, 영수증 첨부</b><span>확인하고 바로 입금하면 깔끔해요.</span></div>
+            </div>
+            <div class="tldr-item">
+              <span class="tldr-ic is-blush" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12z"/></svg></span>
+              <div><b>불편한 일은 운영진에게 1:1</b><span>공개 저격 대신 조용히 알려줘요.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 점프 내비 + 검색 (스티키) ── -->
+    <div class="guide-nav" id="guideNav">
+      <div class="container guide-nav-inner">
+        <nav class="guide-chips" id="chipRow" aria-label="카테고리 바로가기"></nav>
+        <span class="guide-count" id="searchCount" aria-live="polite">전체 7개 카테고리</span>
+        <label class="guide-search">
+          <span class="sr-only">필독 내용 검색</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+          <input id="guideSearch" type="search" placeholder="검색 (예: 정산, 닉네임, 재입장)" autocomplete="off" />
+        </label>
+      </div>
+    </div>
+
+    <!-- ── 카테고리 (JS 렌더) ── -->
+    <div id="catsHost"></div>
+
+    <!-- ── 검색 빈 상태 ── -->
+    <div class="container is-narrow" id="noResults" hidden>
+      <div class="card">
+        <div class="empty-state">
+          <span class="empty-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></span>
+          <strong>검색 결과가 없어요</strong>
+          <p>다른 단어로 검색해 보세요. 예: 정산, 닉네임, 노쇼, 재입장</p>
+          <button class="btn btn-ghost is-sm" id="clearSearch" type="button">검색 지우기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 마무리: 이것만 지키면 충분해요 + 벙 참여 전 체크리스트 ── -->
+    <section class="section" aria-labelledby="wrapTitle">
+      <div class="container">
+        <div class="section-head is-center reveal">
+          <span class="eyebrow">마무리</span>
+          <h2 id="wrapTitle">이것만 지키면 충분해요</h2>
+          <p>기존 멤버도 가끔 다시 보면 좋은 내용이에요. 벙 나가기 전에 한 번씩 확인해요.</p>
+        </div>
+        <div class="wrap-grid">
+          <div class="card sum-card reveal">
+            <h3>핵심만 다시</h3>
+            <p>세세한 건 위에서 찾아보고, 평소엔 이 정도면 충분해요.</p>
+            <ul class="sum-list">
+              <li><span class="sl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span><b>서로 배려하며</b> 대화하고, 공지를 먼저 확인해요.</span></li>
+              <li><span class="sl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span>벙은 <b>참석 버튼</b>을 누르고, 중간 합류는 벙주에게 먼저요.</span></li>
+              <li><span class="sl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span>벙비는 <b>1/N에 영수증 첨부</b>, 확인 후 신속히 입금해요.</span></li>
+              <li><span class="sl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span>정기 참여는 <b>2개월에 1회 이상</b>, 사정이 있으면 미리 공유해요.</span></li>
+              <li><span class="sl-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><span>불편한 일은 <b>운영진에게 1:1</b>로, 공개 저격은 하지 않아요.</span></li>
+            </ul>
+          </div>
+          <div class="card check-card sum-card reveal d1">
+            <h3 class="block-title" style="font-size:18px;color:var(--deep-1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>벙 참여 전 체크리스트</h3>
+            <ol class="checksteps">
+              <li><span class="cs-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><div><strong>공지의 참석 버튼을 눌렀어요</strong><p>참여가 확정되면 꼭 눌러요.</p></div></li>
+              <li><span class="cs-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><div><strong>시간·장소를 확인했어요</strong><p>공지한 시간은 꼭 지켜요.</p></div></li>
+              <li><span class="cs-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><div><strong>중간 합류라면 벙주에게 미리 연락했어요</strong><p>임의 참여는 자리·정산에 혼선을 줘요.</p></div></li>
+              <li><span class="cs-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span><div><strong>끝나면 벙비를 바로 확인·입금해요</strong><p>금액이 이상하면 벙주에게 먼저요.</p></div></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 하단 CTA 밴드 (운영진 문의) ── -->
+    <section class="section" aria-labelledby="ctaTitle">
+      <div class="container">
+        <div class="cta-band reveal">
+          <i class="glow-orb" style="--orb-size:320px; --orb-color:rgba(185,128,217,0.35); right:-90px; top:-120px" aria-hidden="true"></i>
+          <span class="hero-kicker"><i></i>다 봤다면</span>
+          <h2 id="ctaTitle">궁금한 건 편하게 물어봐요</h2>
+          <p>여기 없는 상황이나 애매한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.
+            요즘 분위기는 대시보드에서, 공지는 소식에서 볼 수 있어요.</p>
+          <div class="cta-actions">
+            <a class="btn btn-hero" href="report.html">운영 대시보드 보기</a>
+            <a class="btn btn-glass" href="news.html">소식 보기</a>
+            <a class="btn btn-glass" href="calculator.html">벙비 정산기 열기</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ════════ 다크 푸터 (공통 셸) ════════ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="footer-logo">동네친구들</span>
+          <p class="footer-tagline">
+            오픈채팅에서 만난 동네친구들 —<br />
+            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+          </p>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+        </div>
+        <nav class="footer-col" aria-label="푸터 메뉴">
+          <h4>바로가기</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">홈</a></li>
+            <li><a href="report.html">운영 대시보드</a></li>
+            <li><a href="guide.html">필독</a></li>
+            <li><a href="calculator.html">벙비 정산기</a></li>
+            <li><a href="news.html">소식</a></li>
+            <li><a href="games.html">🎮 게임</a></li>
+          </ul>
+        </nav>
+        <div class="footer-col">
+          <h4>안내</h4>
+          <p>벙 참여·정산·매너 기준은 이 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
+          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ════════ 모바일 하단 탭바 (공통 셸 · 활성=필독) ════════ -->
+  <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item is-active" href="guide.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
+    <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ════════ 페이지 콘텐츠 렌더 + 인터랙션 (공통 셸 JS 보다 먼저) ════════ -->
+  <script>
+    (function () {
+      "use strict";
+
+      /* ── 유틸 ── */
+      function esc(value) {
+        var entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+        return String(value).replace(/[&<>"']/g, function (ch) { return entities[ch]; });
+      }
+      function flat(obj) { return JSON.stringify(obj).toLowerCase(); }
+
+      /* ── 아이콘 ── */
+      var SW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+      var ICONS = {
+        check:    SW + '<path d="m5 13 4 4L19 7"/></svg>',
+        info:     SW + '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
+        warn:     SW + '<path d="M12 3 2 20h20z"/><path d="M12 9v5M12 17h.01"/></svg>',
+        ban:      SW + '<circle cx="12" cy="12" r="9"/><path d="m5.8 5.8 12.4 12.4"/></svg>',
+        seed:     SW + '<path d="M12 21v-8"/><path d="M12 13c0-4.2 3.1-7 8-7 0 4.2-3.1 7-8 7z"/><path d="M12 13c0-3.4-2.5-5.7-6.8-5.7 0 3.4 2.5 5.7 6.8 5.7z"/></svg>',
+        calendar: SW + '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+        users:    SW + '<circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg>',
+        receipt:  SW + '<path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21z"/><path d="M9.5 8.5h5M9.5 12.5h5"/></svg>',
+        chat:     SW + '<path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.3A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>',
+        clock:    SW + '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+        edit:     SW + '<path d="M4 20h4L20 8.5 15.5 4 4 15.5z"/><path d="m13 6.5 4.5 4.5"/></svg>',
+        shield:   SW + '<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z"/><path d="m9 11.5 2 2 4-4"/></svg>',
+        repeat:   SW + '<path d="M17 2v6h-6"/><path d="M3 12a9 9 0 0 1 14.6-7L17 8"/><path d="M7 22v-6h6"/><path d="M21 12a9 9 0 0 1-14.6 7L7 16"/></svg>',
+        chevron:  SW + '<path d="m6 9 6 6 6-6"/></svg>'
+      };
+
+      var LEVELS = { must: "필수", info: "안내", ban: "주의" };
+      var CALLOUT_IC = { brand: "info", sky: "info", warn: "warn", danger: "ban" };
+
+      /* ══════════════════════════════════════════════════════
+         규칙 데이터 — 기존 규칙의 실질(숫자·기한·절차·예외) 100% 보존.
+         톤만 포용적으로(처음 온 분·기존 멤버 모두 대상). 새 규칙 발명·기존 규칙 누락 없음.
+         ══════════════════════════════════════════════════════ */
+      var CATS = [
+        {
+          id: "cat-must", no: "01", level: "must", nav: "꼭 지키는 약속",
+          eyebrow: "함께 지켜요", title: "꼭 지키는 약속",
+          desc: "우리가 서로 편하게 지내려고 정해둔 약속이에요. 많지 않으니 한 번씩 봐 주세요.",
+          keywords: ["신입", "첫 벙", "1개월", "정기 참여", "2개월", "유령회원", "게스트 초대", "음주"],
+          blocks: [
+            { type: "metric", items: [
+              { big: "1개월", label: "첫 벙 참여 기한" },
+              { big: "1회", label: "최소 참여 횟수" },
+              { big: "0잔", label: "첫 벙 음주" },
+              { big: "2개월", label: "정기 참여 주기" }
+            ] },
+            { type: "cards", items: [
+              { icon: "seed", tone: "", title: "새로 오면 1개월 안에 첫 벙", lines: [
+                "빨리 적응할 수 있도록, 입장 후 1개월 안에 벙 1회 참여가 필수예요.",
+                "벙에 한 번 참여하면 신입 표시가 사라져요.",
+                "벙 1회 참여 후부터 벙 개설과 게스트 초대가 가능해요."
+              ] },
+              { icon: "ban", tone: "blush", title: "첫 벙은 맨정신으로", lines: [
+                "첫 벙은 음주 상태로 참여할 수 없어요.",
+                "첫 참여에서는 분위기 파악과 기본 매너를 우선해 주세요."
+              ] },
+              { icon: "repeat", tone: "mint", title: "2개월에 1회 이상 참여", lines: [
+                "모든 멤버는 2개월에 한 번 이상 벙에 참여해요.",
+                "유령회원을 막고 실제로 활동하는 멤버 중심으로 모임을 유지하기 위해서예요.",
+                "자주 얼굴을 봐야 모임 분위기도 유지되니까요."
+              ] }
+            ] },
+            { type: "callout", tone: "warn", title: "사정이 있다면 미리 알려주세요", items: [
+              "장기간 활동이 어렵거나 특별한 사정이 있으면 운영진에게 미리 공유해 주세요."
+            ] }
+          ]
+        },
+        {
+          id: "cat-basics", no: "02", level: "info", nav: "닉네임·재입장",
+          eyebrow: "기본 안내", title: "닉네임과 재입장",
+          desc: "닉네임 짓는 법이랑 재입장 기준이에요. 공지를 먼저 확인하는 것도 여기 담았어요.",
+          keywords: ["운영 원칙", "배려", "공지", "닉네임", "양식", "변경", "재입장", "횟수", "기기 교체", "엣지케이스"],
+          blocks: [
+            { type: "lead", text: "어려운 건 없어요. 서로 편하게 지내려고 정해둔 기본 약속이에요." },
+            { type: "callout", tone: "sky", title: "기본 원칙", items: [
+              "운영 룰은 모두가 같은 기준으로 참여하기 위한 공통 약속이에요.",
+              "서로 배려하는 마음으로 대화하고 참여해요.",
+              "운영진 안내와 공지가 운영의 기준이니 먼저 확인해 주세요."
+            ] },
+            { type: "subhead", text: "닉네임은 이렇게 지어요" },
+            { type: "format", title: "닉네임 양식",
+              note: "닉네임은 서로를 알아보고 참여 이력을 확인하는 기준이에요. 정해진 양식을 지켜주세요.",
+              parts: [
+                { label: "닉네임", ex: "엑서" },
+                { label: "지역", ex: "논현" },
+                { label: "성별", ex: "남" },
+                { label: "출생년도", ex: "88" },
+                { label: "입장일", ex: "0125" }
+              ] },
+            { type: "examples", items: [
+              { tone: "good", label: "좋은 예시", title: "엑서 논현 남 88 0125", text: "필요한 정보가 순서대로 있어 누구나 바로 확인할 수 있어요." },
+              { tone: "bad", label: "나쁜 예시", title: "엑서 / 이모지만 사용 / 항목 누락", text: "지역·성별·출생년도·입장일이 빠지면 누가 누군지 확인하기 어려워요." }
+            ] },
+            { type: "callout", tone: "warn", title: "닉네임 변경 규칙", items: [
+              "닉네임 변경은 입장 후 1회만 가능해요.",
+              "변경할 때는 운영진 3명을 모두 태그하고 진행해요.",
+              "식별이 어려울 만큼 잦은 변경은 지양해요."
+            ] },
+            { type: "subhead", text: "재입장 횟수" },
+            { type: "para", text: "재입장은 운영 기록에 영향을 주기 때문에 아래 기준으로 관리해요." },
+            { type: "pairs", items: [
+              { label: "1981년생 및 이전", big: "최대 1회", sub: "재입장 가능" },
+              { label: "1982년생 및 이후", big: "최대 3회", sub: "재입장 가능" }
+            ] },
+            { type: "callout", tone: "sky", title: "재입장 예외", items: [
+              "기기 교체처럼 불가피한 사유는 미리 공유하면 예외 적용이 가능해요."
+            ] },
+            { type: "callout", tone: "sky", title: "룰에 없는 상황이 생기면", items: [
+              "미리 정해두지 못한 상황이나 엣지케이스는 운영진 논의로 판단해요.",
+              "판단에 따라 안내·조정·제재가 있을 수 있으니 이해와 협조를 부탁드려요."
+            ] }
+          ]
+        },
+        {
+          id: "cat-bung", no: "03", level: "must", nav: "벙 참여",
+          eyebrow: "벙 참여 · 개설", title: "벙 참여 방법",
+          desc: "참여 전에 몇 가지만 확인해 주세요. 자리 배정이나 정산이 훨씬 수월해져요.",
+          keywords: ["참석 버튼", "중간 합류", "사전 연락", "벙주", "임의 참여", "벙 만들기", "캘린더", "중복 벙", "비벙", "공식 벙", "시간 엄수"],
+          blocks: [
+            { type: "checklist", title: "벙 참여 절차", variant: "num", steps: [
+              { title: "참여가 확정되면 참석 버튼 누르기", text: "참여가 확정되면 공지의 '참석' 버튼을 꼭 눌러요." },
+              { title: "중간 합류는 벙주에게 먼저 연락", text: "중간부터 합류하고 싶다면 벙주(모임 주최자)에게 먼저 연락한 뒤 합류해요." },
+              { title: "현장에서는 안내에 맞추기", text: "벙주가 안내한 시간과 방식에 맞춰 참여해요." }
+            ] },
+            { type: "callout", tone: "danger", title: "임의 참여는 금지예요", items: [
+              "절차 없는 임의 참여는 좌석 배정과 정산에 혼선을 만들어요.",
+              "참여 여부가 바뀌거나 늦게 합류하게 되면 벙주에게 먼저 알려주세요."
+            ] },
+            { type: "subhead", text: "벙을 열고 싶다면" },
+            { type: "para", text: "오프라인 모임은 가능한 한 공식 벙으로 여는 게 원칙이에요. 일정·장소·인원·정산 기준을 누구나 확인할 수 있어야 해요." },
+            { type: "accordion", items: [
+              { icon: "calendar", q: "벙은 어떻게 만드나요?", body: [
+                { type: "checklist", variant: "num", steps: [
+                  { title: "캘린더 열기", text: "채팅 우측 상단 ≡ 메뉴에서 캘린더로 들어가요." },
+                  { title: "벙 작성", text: "연필 아이콘을 누르고 제목·날짜·시간·위치·참석 여부를 채워요." },
+                  { title: "완료 및 공유", text: "내용을 확인해 올리고, 필요한 안내도 함께 남겨요." },
+                  { title: "시간 엄수", text: "공지한 시간은 꼭 지켜요. 지각이나 변경이 생기면 벙주에게 바로 알려요." }
+                ] }
+              ] },
+              { icon: "clock", q: "중복 벙은 언제 열 수 있나요?", body: [
+                { type: "para", text: "같은 시간대에 이미 벙이 있으면 원칙적으로 중복 개설은 금지예요. 인원 분산을 막고 각 벙이 안정적으로 진행되게 하기 위한 제한이에요." },
+                { type: "list", title: "새 벙을 열 수 있는 예외", items: [
+                  "기존 벙의 정원이 마감된 경우",
+                  "기존 벙의 설정 마감 시간이 지난 경우",
+                  "기존 벙주가 사전에 동의한 경우"
+                ] }
+              ] },
+              { icon: "users", q: "공식 벙으로 안 열어도 되는 만남은?", body: [
+                { type: "list", title: "공식 벙 기준의 예외", items: [
+                  "가족·친척과의 만남은 예외예요.",
+                  "직장·학연·오래된 친구처럼 오픈채팅방 밖 인연과의 사적 모임도 예외예요.",
+                  "방 안 공식 커플의 만남도 예외예요.",
+                  "방 안 지인 두 명 이상이 함께 만나면 벙 기준을 적용해요. 판단 기준은 현재 방에 있는 사람들이에요."
+                ] }
+              ] },
+              { icon: "warn", q: "비벙(공지 없이 따로 모이는 모임)은요?", body: [
+                { type: "para", text: "비벙은 지양해요. 비벙 관련 언급·사진·후일담은 채팅방에 올리지 않아요. 올라오면 아래 단계로 조치해요." },
+                { type: "ladder", title: "비벙 관련 조치 단계", steps: [
+                  { tag: "1차", text: "구두 경고", sub: "주의 안내" },
+                  { tag: "2차", text: "운영진 면담", sub: "사유 확인" },
+                  { tag: "3차", text: "강제퇴장", sub: "최종 조치", final: true }
+                ] }
+              ] }
+            ] }
+          ]
+        },
+        {
+          id: "cat-settle", no: "04", level: "must", nav: "벙비 정산",
+          eyebrow: "벙 끝나고 할 일", title: "벙비 정산 안내",
+          desc: "돈 얘기는 깔끔한 게 서로 편해요. 정산 기준과 순서를 정리했어요.",
+          keywords: ["정산", "1/N", "영수증", "결제 내역", "계좌", "입금", "댓글", "정산기", "벙비"],
+          blocks: [
+            { type: "callout", tone: "brand", title: "정산 기본 원칙", items: [
+              "정산은 1/N이 원칙이에요. 상황에 따라 벙주 판단으로 예외를 둘 수 있어요."
+            ] },
+            { type: "checklist", title: "정산 체크리스트", variant: "check", steps: [
+              { title: "영수증·결제 내역 첨부", text: "증빙 첨부는 필수예요." },
+              { title: "내용을 명확히 적기", text: "날짜·참여자·금액·계좌·참석자 태그를 명확히 적어요." },
+              { title: "벙 공지 댓글에 남기기", text: "벙주는 정산 내용을 벙 공지 댓글에 남겨요." },
+              { title: "확인하고 신속히 입금", text: "멤버는 내용을 확인하고 신속히 입금해요." }
+            ] },
+            { type: "callout", tone: "warn", title: "입금 전에 확인해 주세요", items: [
+              "금액이 불명확하거나 빠진 참여자가 있으면 입금 전에 벙주에게 먼저 확인해요.",
+              "정산 오류를 발견해도 공개적으로 문제 삼기보다 벙주나 운영진에게 조용히 확인해 주세요."
+            ] },
+            { type: "cta", text: "차수별 1/N 계산은 정산기를 쓰면 편해요", sub: "멤버랑 금액만 넣으면 카톡에 붙여넣을 수 있게 정리돼요.", href: "calculator.html", label: "정산기 열기" }
+          ]
+        },
+        {
+          id: "cat-manner", no: "05", level: "info", nav: "대화 매너",
+          eyebrow: "같이 지내는 법", title: "대화 매너",
+          desc: "규칙이라기보다는, 서로 지켜주면 좋은 것들이에요.",
+          keywords: ["매너", "1:1", "운영진", "중재", "저격", "메시지 삭제", "가리기", "지각", "시간 약속"],
+          blocks: [
+            { type: "cards", items: [
+              { icon: "chat", tone: "", title: "문제는 운영진에게 1:1로", lines: [
+                "부당한 일은 공개 채팅방이 아닌 운영진에게 1:1로 알려주세요.",
+                "필요하면 운영진이 중재하거나 공지로 정리해요.",
+                "공개 저격과 감정적 확산은 해결에 도움이 되지 않아요."
+              ] },
+              { icon: "edit", tone: "sky", title: "메시지 삭제는 지양해요", lines: [
+                "과도한 삭제는 대화 흐름을 끊고, 새로 온 분이 맥락을 잡기 어려워져 유입과 정착에도 좋지 않아요.",
+                "꼭 지워야 한다면 직접 삭제하는 대신 운영진에게 가리기를 요청해 주세요."
+              ] },
+              { icon: "clock", tone: "cream", title: "시간 약속을 지켜요", lines: [
+                "공지한 시간은 꼭 지켜요.",
+                "지각이나 변경이 생기면 벙주에게 바로 알려요."
+              ] }
+            ] }
+          ]
+        },
+        {
+          id: "cat-ban", no: "06", level: "ban", nav: "지양할 것",
+          eyebrow: "이건 피해요", title: "지양할 것 · 금지사항",
+          desc: "아래 행동은 예외 없이 안 돼요. 술을 마셨는지와 관계없이 똑같이 적용돼요.",
+          keywords: ["금지", "노쇼", "불참", "플러팅", "연락처", "홍보", "개인정보", "반말", "폭언", "성희롱", "뒷담화", "기혼자", "강제퇴장", "감정싸움"],
+          blocks: [
+            { type: "forbidden", title: "반드시 금지되는 행동", items: [
+              "무단 노쇼·불참 (참석 버튼 후 불참 포함)",
+              "과도한 플러팅",
+              "무단 연락처 요구·교환",
+              "다른 방 홍보·초대",
+              "동의 없는 사진·개인정보 유포",
+              "사전 합의 없는 반말 등 사생활 침해",
+              "비매너·폭언·성희롱",
+              "타인 비방·분열 조장·뒷담화",
+              "기혼자 출입"
+            ] },
+            { type: "callout", tone: "danger", title: "감정싸움·비생산적 논쟁 금지", items: [
+              "공개 채팅방에서 감정적 언쟁이나 비생산적 논쟁, 분위기를 해치는 말싸움을 하지 않아요."
+            ] },
+            { type: "ladder", title: "위반 시 조치 단계", steps: [
+              { tag: "1차", text: "구두 경고", sub: "주의 안내" },
+              { tag: "2차", text: "강제퇴장", sub: "재적발 시", final: true }
+            ] }
+          ]
+        },
+        {
+          id: "cat-faq", no: "07", level: "info", nav: "자주 묻는 질문",
+          eyebrow: "FAQ", title: "자주 묻는 질문",
+          desc: "자주 나오는 질문을 모았어요. 답은 위 내용 그대로예요.",
+          keywords: ["질문", "FAQ", "닉네임", "재입장", "중복 벙", "메시지 삭제", "비벙", "정산", "장기 미참여"],
+          blocks: [
+            { type: "accordion", faq: true, items: [
+              { q: "닉네임은 어떻게 정하나요?", body: [
+                { type: "para", text: "'닉네임 지역 성별 출생년도 입장일' 순서로 지어요. 예: 엑서 논현 남 88 0125. 닉네임은 서로를 알아보고 참여 이력을 확인하는 기준이라 양식을 꼭 지켜주세요." }
+              ] },
+              { q: "닉네임을 바꾸고 싶어요.", body: [
+                { type: "para", text: "닉네임 변경은 입장 후 1회만 가능해요. 변경할 때는 운영진 3명을 모두 태그하고 진행하고, 식별이 어려울 만큼 잦은 변경은 지양해요." }
+              ] },
+              { q: "재입장은 몇 번까지 되나요?", body: [
+                { type: "para", text: "1981년생 및 이전은 최대 1회, 1982년생 및 이후는 최대 3회 재입장할 수 있어요. 기기 교체처럼 불가피한 사유는 미리 공유하면 예외 적용이 가능해요." }
+              ] },
+              { q: "중복 벙은 언제 만들 수 있나요?", body: [
+                { type: "para", text: "같은 시간대에 이미 벙이 있으면 원칙적으로 금지지만, 기존 벙의 정원이 마감됐거나 설정 마감 시간이 지났거나 기존 벙주가 사전에 동의한 경우에는 새 벙을 열 수 있어요." }
+              ] },
+              { q: "벙 공지 없이 따로 만나도 되나요?", body: [
+                { type: "para", text: "비벙은 지양하고, 비벙 관련 언급·사진·후일담도 채팅방에 올리지 않아요. 다만 가족·친척, 직장·학연·오래된 친구 같은 방 밖 인연과의 사적 모임, 방 안 공식 커플의 만남은 예외예요. 방 안 지인 두 명 이상이 함께 만나면 벙 기준을 적용해요(판단 기준은 현재 방에 있는 사람들)." }
+              ] },
+              { q: "벙에 중간부터 합류해도 되나요?", body: [
+                { type: "para", text: "네, 대신 벙주에게 먼저 연락한 뒤 합류해요. 절차 없는 임의 참여는 좌석 배정과 정산에 혼선을 만들어요." }
+              ] },
+              { q: "메시지 삭제해도 되나요?", body: [
+                { type: "para", text: "지양해요. 과도한 삭제는 대화 흐름을 끊고 새로 온 분이 맥락을 잡기 어려워져요. 꼭 지워야 한다면 직접 삭제하는 대신 운영진에게 가리기를 요청해 주세요." }
+              ] },
+              { q: "정산 금액이 이상한 것 같아요.", body: [
+                { type: "para", text: "입금 전에 벙주에게 먼저 확인해요. 오류를 발견해도 공개적으로 문제 삼기보다 벙주나 운영진에게 조용히 확인해 주세요." }
+              ] },
+              { q: "한동안 벙에 못 나갈 것 같아요.", body: [
+                { type: "para", text: "장기간 활동이 어렵거나 특별한 사정이 있으면 운영진에게 미리 공유해 주세요. 정기 참여 기준은 2개월에 1회 이상이에요." }
+              ] },
+              { q: "규칙에 없는 상황이 생기면요?", body: [
+                { type: "para", text: "미리 정해두지 못한 상황이나 엣지케이스는 운영진 논의로 판단해요. 판단에 따라 안내·조정·제재가 있을 수 있으니 이해와 협조를 부탁드려요." }
+              ] }
+            ] }
+          ]
+        }
+      ];
+
+      /* ── 블록 렌더러 ── */
+      var accSeq = 0;
+
+      function accItem(it, isFaq) {
+        accSeq += 1;
+        var id = "acc-" + accSeq;
+        var mark = isFaq
+          ? '<span class="acc-qmark" aria-hidden="true">Q</span>'
+          : '<span class="acc-qmark" aria-hidden="true">' + (ICONS[it.icon] || ICONS.info) + "</span>";
+        return '<div class="acc-item" data-search="' + esc(flat(it)) + '">' +
+          '<button class="acc-head" type="button" id="' + id + '-btn" aria-expanded="false" aria-controls="' + id + '-panel">' +
+            mark +
+            '<span>' + esc(it.q) + "</span>" +
+            '<span class="acc-chevron" aria-hidden="true">' + ICONS.chevron + "</span>" +
+          "</button>" +
+          '<div class="acc-body" id="' + id + '-panel" role="region" aria-labelledby="' + id + '-btn">' +
+            '<div class="acc-body-inner">' + it.body.map(renderBlock).join("") + "</div>" +
+          "</div></div>";
+      }
+
+      function renderBlock(b) {
+        if (b.type === "lead") return '<p class="cat-lead">' + esc(b.text) + "</p>";
+        if (b.type === "para") return '<p class="cat-para">' + esc(b.text) + "</p>";
+        if (b.type === "subhead") return '<h3 class="cat-subhead">' + esc(b.text) + "</h3>";
+
+        if (b.type === "metric") {
+          return '<div class="metric-grid">' + b.items.map(function (m) {
+            return '<div class="metric-tile"><b>' + esc(m.big) + "</b><span>" + esc(m.label) + "</span></div>";
+          }).join("") + "</div>";
+        }
+
+        if (b.type === "pairs") {
+          return '<div class="pair-grid">' + b.items.map(function (p) {
+            return '<div class="pair-card"><small>' + esc(p.label) + "</small><b>" + esc(p.big) + "</b><span>" + esc(p.sub) + "</span></div>";
+          }).join("") + "</div>";
+        }
+
+        if (b.type === "cards") {
+          return '<div class="rule-grid">' + b.items.map(function (c) {
+            return '<article class="rule-card card-lift">' +
+              '<span class="rule-ic' + (c.tone ? " is-" + esc(c.tone) : "") + '" aria-hidden="true">' + (ICONS[c.icon] || ICONS.check) + "</span>" +
+              "<h3>" + esc(c.title) + "</h3>" +
+              "<ul>" + c.lines.map(function (l) { return "<li>" + esc(l) + "</li>"; }).join("") + "</ul>" +
+            "</article>";
+          }).join("") + "</div>";
+        }
+
+        if (b.type === "callout") {
+          var icName = CALLOUT_IC[b.tone] || "info";
+          return '<div class="callout is-' + esc(b.tone) + '">' +
+            '<div class="callout-head"><span class="callout-ic" aria-hidden="true">' + ICONS[icName] + "</span><strong>" + esc(b.title) + "</strong></div>" +
+            "<ul>" + b.items.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + "</ul></div>";
+        }
+
+        if (b.type === "checklist") {
+          return '<div class="check-card">' +
+            (b.title ? '<h3 class="block-title">' + esc(b.title) + "</h3>" : "") +
+            '<ol class="checksteps">' + b.steps.map(function (s, i) {
+              var mark = b.variant === "check" ? ICONS.check : String(i + 1).padStart(2, "0");
+              return '<li><span class="cs-mark" aria-hidden="true">' + mark + "</span>" +
+                "<div><strong>" + esc(s.title) + "</strong><p>" + esc(s.text) + "</p></div></li>";
+            }).join("") + "</ol></div>";
+        }
+
+        if (b.type === "list") {
+          return '<div class="mini-list">' +
+            (b.title ? "<b>" + esc(b.title) + "</b>" : "") +
+            "<ul>" + b.items.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + "</ul></div>";
+        }
+
+        if (b.type === "accordion") {
+          return '<div class="accordion">' + b.items.map(function (it) { return accItem(it, !!b.faq); }).join("") + "</div>";
+        }
+
+        if (b.type === "ladder") {
+          return '<div class="ladder-wrap">' +
+            (b.title ? '<b class="ladder-title">' + esc(b.title) + "</b>" : "") +
+            '<div class="ladder">' + b.steps.map(function (s) {
+              return '<div class="ladder-step' + (s.final ? " sev-final" : "") + '">' +
+                '<span class="ladder-tag">' + esc(s.tag) + "</span>" +
+                '<div class="ladder-text"><b>' + esc(s.text) + "</b>" + (s.sub ? "<span>" + esc(s.sub) + "</span>" : "") + "</div></div>";
+            }).join("") + "</div></div>";
+        }
+
+        if (b.type === "format") {
+          var parts = b.parts.map(function (p) {
+            return '<div class="format-part"><span class="fp-label">' + esc(p.label) + '</span><span class="fp-ex">' + esc(p.ex) + "</span></div>";
+          }).join('<span class="format-sep" aria-hidden="true">/</span>');
+          return '<div class="format-card"><b>' + esc(b.title) + "</b>" +
+            (b.note ? '<p class="format-note">' + esc(b.note) + "</p>" : "") +
+            '<div class="format-flow">' + parts + "</div></div>";
+        }
+
+        if (b.type === "examples") {
+          return '<div class="example-grid">' + b.items.map(function (it) {
+            return '<div class="example-card ' + esc(it.tone) + '">' +
+              "<span>" + (it.tone === "good" ? "○" : "✕") + " " + esc(it.label) + "</span>" +
+              "<strong>" + esc(it.title) + "</strong><p>" + esc(it.text) + "</p></div>";
+          }).join("") + "</div>";
+        }
+
+        if (b.type === "forbidden") {
+          return '<div class="callout is-danger">' +
+            '<div class="callout-head"><span class="callout-ic" aria-hidden="true">' + ICONS.ban + "</span><strong>" + esc(b.title) + "</strong></div>" +
+            '<div class="forbid-grid">' + b.items.map(function (i) {
+              return '<div class="forbid-item"><span class="fx" aria-hidden="true">✕</span><span>' + esc(i) + "</span></div>";
+            }).join("") + "</div></div>";
+        }
+
+        if (b.type === "cta") {
+          return '<a class="cta-card" href="' + esc(b.href) + '">' +
+            "<div><b>" + esc(b.text) + '</b><span class="sub">' + esc(b.sub) + "</span></div>" +
+            '<span class="btn btn-primary is-sm">' + esc(b.label) + "</span></a>";
+        }
+
+        return "";
+      }
+
+      /* ── 렌더 ── */
+      var chipRow = document.getElementById("chipRow");
+      var catsHost = document.getElementById("catsHost");
+      var searchInput = document.getElementById("guideSearch");
+      var searchCount = document.getElementById("searchCount");
+      var noResults = document.getElementById("noResults");
+      var clearBtn = document.getElementById("clearSearch");
+
+      chipRow.innerHTML = CATS.map(function (c) {
+        return '<a class="chip" href="#' + esc(c.id) + '" data-chip="' + esc(c.id) + '">' +
+          '<span class="chip-dot lv-' + esc(c.level) + '" aria-hidden="true"></span>' + esc(c.nav) + "</a>";
+      }).join("");
+
+      catsHost.innerHTML = CATS.map(function (cat) {
+        return '<section class="section guide-cat lv-' + esc(cat.level) + '" id="' + esc(cat.id) + '"' +
+          ' aria-labelledby="' + esc(cat.id) + '-title" data-search="' + esc(flat(cat)) + '">' +
+          '<div class="container is-narrow">' +
+            '<header class="cat-head reveal">' +
+              '<div class="cat-head-top">' +
+                '<span class="cat-index" aria-hidden="true">' + esc(cat.no) + "</span>" +
+                '<span class="level-badge">' + esc(LEVELS[cat.level]) + "</span>" +
+                '<span class="cat-eyebrow">' + esc(cat.eyebrow) + "</span>" +
+              "</div>" +
+              '<h2 id="' + esc(cat.id) + '-title">' + esc(cat.title) + "</h2>" +
+              "<p>" + esc(cat.desc) + "</p>" +
+            "</header>" +
+            '<div class="cat-body">' + cat.blocks.map(function (b) {
+              return '<div class="cat-block reveal">' + renderBlock(b) + "</div>";
+            }).join("") + "</div>" +
+          "</div></section>";
+      }).join("");
+
+      /* ── 아코디언 (site.css .accordion 컴포넌트 · maxHeight 전환 + aria) ── */
+      function setAcc(item, open) {
+        item.classList.toggle("is-open", open);
+        var head = item.querySelector(".acc-head");
+        var body = item.querySelector(".acc-body");
+        var inner = body ? body.querySelector(".acc-body-inner") : null;
+        if (head) head.setAttribute("aria-expanded", String(open));
+        if (body && inner) body.style.maxHeight = open ? inner.scrollHeight + "px" : "";
+      }
+      catsHost.addEventListener("click", function (e) {
+        var head = e.target.closest(".acc-head");
+        if (!head) return;
+        var item = head.closest(".acc-item");
+        setAcc(item, !item.classList.contains("is-open"));
+      });
+      /* 열린 아코디언 높이 재계산 (리사이즈 시) */
+      var resizeTimer = null;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          catsHost.querySelectorAll(".acc-item.is-open").forEach(function (item) {
+            var body = item.querySelector(".acc-body");
+            var inner = body ? body.querySelector(".acc-body-inner") : null;
+            if (body && inner) body.style.maxHeight = inner.scrollHeight + "px";
+          });
+        }, 160);
+      }, { passive: true });
+
+      /* ── 검색 (텍스트 평탄화 기반) ── */
+      function applyFilter() {
+        var kw = searchInput.value.trim().toLowerCase();
+        var visible = 0;
+        document.querySelectorAll(".guide-cat").forEach(function (sec) {
+          var show = !kw || sec.dataset.search.indexOf(kw) !== -1;
+          sec.hidden = !show;
+          if (show) visible += 1;
+          var chip = chipRow.querySelector('[data-chip="' + sec.id + '"]');
+          if (chip) chip.classList.toggle("is-dim", !show);
+        });
+        if (kw.length >= 2) {
+          document.querySelectorAll(".guide-cat:not([hidden]) .acc-item").forEach(function (item) {
+            if (item.dataset.search.indexOf(kw) !== -1) setAcc(item, true);
+          });
+        }
+        searchCount.textContent = kw ? visible + "개 카테고리" : "전체 " + CATS.length + "개 카테고리";
+        noResults.hidden = visible !== 0;
+      }
+      searchInput.addEventListener("input", applyFilter);
+      clearBtn.addEventListener("click", function () {
+        searchInput.value = "";
+        applyFilter();
+        searchInput.focus();
+      });
+
+      /* ── 점프 내비: 클릭 시 검색 해제 + 스크롤 스파이 ── */
+      var chips = Array.prototype.slice.call(chipRow.querySelectorAll("[data-chip]"));
+      function setActiveChip(id) {
+        chips.forEach(function (c) { c.classList.toggle("is-active", c.dataset.chip === id); });
+      }
+      chipRow.addEventListener("click", function (e) {
+        var chip = e.target.closest("[data-chip]");
+        if (!chip) return;
+        if (searchInput.value) { searchInput.value = ""; applyFilter(); }
+        setActiveChip(chip.dataset.chip);
+      });
+      setActiveChip(CATS[0].id);
+      if ("IntersectionObserver" in window) {
+        var spy = new IntersectionObserver(function (entries) {
+          var hit = entries.filter(function (en) { return en.isIntersecting; })
+            .sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; })[0];
+          if (hit) setActiveChip(hit.target.id);
+        }, { rootMargin: "-22% 0px -62% 0px", threshold: 0.01 });
+        document.querySelectorAll(".guide-cat").forEach(function (s) { spy.observe(s); });
+      }
+    })();
+  </script>
+
+  <!-- ════════ 공통 셸 JS (v3-shell 그대로) ════════ -->
+  <script>
+    (function () {
+      "use strict";
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ── 1. topnav 스크롤 상태 ── */
+      var topnav = document.getElementById("topnav");
+      function syncNav() {
+        if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8);
+      }
+      window.addEventListener("scroll", syncNav, { passive: true });
+      syncNav();
+
+      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
+      var revealEls = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+        revealEls.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ── 3. 토스트 ── */
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400);
+      }
+
+      /* ── 4. 숫자 포맷 + 카운트업 ── */
+      function fmt(n, decimals) {
+        return Number(n).toLocaleString("ko-KR", {
+          minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
+        });
+      }
+      function countUp(el, to, opts) {
+        if (!el) return;
+        opts = opts || {};
+        var dur = opts.duration || 900;
+        var dec = opts.decimals || 0;
+        var suffix = opts.suffix || "";
+        if (reduceMotion || dur <= 0) { el.textContent = fmt(to, dec) + suffix; return; }
+        var start = null;
+        function step(ts) {
+          if (start === null) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = fmt(to * eased, dec) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      /* ── 5. data-countup 자동 실행 ── */
+      var cuEls = document.querySelectorAll("[data-countup]");
+      function fire(el) {
+        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
+          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
+          suffix: el.getAttribute("data-countup-suffix") || ""
+        });
+      }
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        cuEls.forEach(fire);
+      } else {
+        var cuIo = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
+          });
+        }, { threshold: 0.4 });
+        cuEls.forEach(function (el) { cuIo.observe(el); });
+      }
+
+      /* ── 6. 방문자 카운터 ── */
+      (function () {
+        var box = document.getElementById("visitBox");
+        if (!box) return;
+        var elToday = document.getElementById("visitToday");
+        var elTotal = document.getElementById("visitTotal");
+        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
+        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+        function devKey() {
+          var k = null;
+          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
+          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
+            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
+            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
+          }
+          return k;
+        }
+        function show(today, total) {
+          box.hidden = false;
+          countUp(elToday, today || 0, { duration: 700 });
+          countUp(elTotal, total || 0, { duration: 700 });
+        }
+        function localFallback() {
+          var total = 1, today = 1;
+          try {
+            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
+            var d = new Date().toISOString().slice(0, 10);
+            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
+            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
+            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
+            total = raw.total; today = raw.today;
+          } catch (e) {}
+          show(today, total);
+        }
+        var counted = false;
+        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
+        fetch(U + "/rest/v1/rpc/visit_ping", {
+          method: "POST",
+          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
+        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
+          .then(function (d) {
+            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
+            show(d.today, d.total);
+          }).catch(function () { localFallback(); });
+      })();
+
+      window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
+    })();
+  </script>
+</body>
+</html>

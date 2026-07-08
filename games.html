@@ -4,33 +4,44 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>우리방 · 게임</title>
-  <meta name="description" content="쉬는 시간에 가볍게 하는 미니 게임 모음. 좀비 헌팅 RPG와 엑서 빵집 타이쿤이 있어요." />
 
+  <title>동네친구들 — 게임</title>
+  <meta name="description" content="쉬는 시간에 가볍게 하는 미니 게임 모음. 좀비 헌팅 RPG와 엑서 빵집 타이쿤이 있어요." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="동네친구들" />
+  <meta property="og:title" content="동네친구들 — 게임" />
+  <meta property="og:description" content="모임 없는 날에도 심심하지 않게, 단톡 멤버끼리 가볍게 즐기는 미니 게임." />
+  <meta property="og:image" content="assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="assets/site.css" />
 
   <style>
     /* ============================================================
-       게임 허브 전용 스타일
+       게임 허브 v3 — 페이지 전용 (site.css 수정 금지)
        ============================================================ */
     .game-grid {
-      display: grid; gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      display: grid; gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
     }
     .game-card {
       position: relative; overflow: hidden;
       display: flex; flex-direction: column;
       border: 1px solid var(--line); border-radius: var(--r-lg);
       background: var(--white); box-shadow: var(--shadow-1);
+      transition: box-shadow 0.24s var(--ease), transform 0.24s var(--ease), border-color 0.24s var(--ease);
     }
-    .game-card.card-lift:hover { box-shadow: var(--shadow-2); }
-    .game-card.soon { opacity: 0.78; }
+    .game-card.card-lift:hover { box-shadow: var(--shadow-2); transform: translateY(-4px); border-color: var(--line-strong); }
+    .game-card.soon { opacity: 0.82; }
 
     /* 그라데이션 커버 */
     .game-art {
-      position: relative; height: 158px;
-      display: grid; place-items: center; font-size: 58px;
+      position: relative; height: 168px;
+      display: grid; place-items: center; font-size: 60px;
     }
     .game-art::before {
       content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -38,14 +49,18 @@
     }
     .game-art::after {
       content: ""; position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 40%, rgba(20, 0, 36, 0.22));
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 40%, rgba(20, 0, 36, 0.24));
     }
     .game-art .art-emoji {
       position: relative; z-index: 1;
-      filter: drop-shadow(0 12px 20px rgba(10, 0, 20, 0.38));
+      filter: drop-shadow(0 12px 22px rgba(10, 0, 20, 0.4));
       transition: transform 0.4s var(--ease);
     }
-    .game-card:hover .art-emoji { transform: translateY(-5px) scale(1.07); }
+    .game-card:hover .art-emoji { transform: translateY(-6px) scale(1.08); }
+    @media (prefers-reduced-motion: reduce) {
+      .game-card.card-lift:hover { transform: none; }
+      .game-card:hover .art-emoji { transform: none; }
+    }
     .game-art.zombie {
       background:
         radial-gradient(circle at 28% 18%, rgba(168, 30, 155, 0.5), transparent 62%),
@@ -59,7 +74,7 @@
         linear-gradient(135deg, #E7C868, #8A5A33);
     }
     .game-art.soon-art {
-      font-size: 42px;
+      font-size: 44px;
       background:
         radial-gradient(circle at 30% 24%, rgba(185, 128, 217, 0.32), transparent 64%),
         linear-gradient(135deg, var(--pastel-lavender), #fff);
@@ -91,18 +106,19 @@
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
+  <!-- ── 상단 글래스 내비 (IA 5탭 · 게임은 보조 페이지 → 활성 탭 없음) ── -->
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
-        <span class="topnav-logo">우리방</span>
+      <a class="topnav-brand" href="index.html" aria-label="동네친구들 홈으로 이동">
+        <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
-        <a class="topnav-tab" href="index.html">필독</a>
-        <a class="topnav-tab" href="report.html">대시보드</a>
-        <a class="topnav-tab" href="calculator.html">정산기</a>
+        <a class="topnav-tab" href="index.html">홈</a>
+        <a class="topnav-tab" href="report.html">운영 대시보드</a>
+        <a class="topnav-tab" href="guide.html">필독</a>
+        <a class="topnav-tab" href="calculator.html">벙비 정산기</a>
         <a class="topnav-tab" href="news.html">소식</a>
-        <a class="topnav-tab is-active" href="games.html" aria-current="page">게임</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -114,7 +130,10 @@
     </div>
   </header>
 
+  <!-- ── 다크 히어로 ── -->
   <section class="hero-band" aria-labelledby="heroTitle">
+    <i class="glow-orb" style="--orb-size:440px; --orb-color:rgba(200,162,232,0.32); right:-140px; top:-160px" aria-hidden="true"></i>
+    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(255,184,209,0.18); left:-120px; bottom:-170px" aria-hidden="true"></i>
     <div class="container">
       <span class="hero-kicker"><i></i>미니 게임</span>
       <h1 class="hero-title" id="heroTitle">쉬는 시간엔<br /><span class="grad-text-hero">게임 한 판</span></h1>
@@ -124,7 +143,7 @@
       </p>
       <div class="hero-actions">
         <a class="btn btn-hero" href="#games">게임 보러 가기</a>
-        <a class="btn btn-glass" href="news.html">소식 게시판</a>
+        <a class="btn btn-glass" href="news.html">소식 보러 가기</a>
       </div>
       <div class="hero-meta">
         <span class="stat-pill"><i></i>플레이 가능 <strong>2</strong>종</span>
@@ -138,7 +157,7 @@
       <div class="container">
         <div class="section-head reveal">
           <span class="eyebrow">함께 즐기기</span>
-          <h2>우리들의 게임</h2>
+          <h2>동네친구들의 게임</h2>
           <p>틈틈이 하기 좋은 미니 게임이에요. 단톡 멤버끼리 전투력이나 매출로 은근히 경쟁하게 돼요.</p>
         </div>
 
@@ -197,46 +216,49 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">우리방</span>
+          <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
-            필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네친구들 —<br />
+            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
           </p>
           <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
           <ul class="footer-links">
-            <li><a href="index.html">필독</a></li>
+            <li><a href="index.html">홈</a></li>
             <li><a href="report.html">운영 대시보드</a></li>
-            <li><a href="calculator.html">정산기</a></li>
+            <li><a href="guide.html">필독</a></li>
+            <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="games.html">게임</a></li>
+            <li><a href="games.html">🎮 게임</a></li>
           </ul>
         </nav>
         <div class="footer-col">
           <h4>안내</h4>
           <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행 시 마스킹을 선택할 수 있어요.</p>
+          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
+        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
 
+  <!-- ── 모바일 하단 탭바 (IA 5탭 · 게임은 보조 페이지 → 활성 탭 없음) ── -->
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
-    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
     <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
     <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item is-active" href="games.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- ── 공통 셸 JS — v3-shell 그대로 ── -->
   <script>
     (function () {
       "use strict";
@@ -317,7 +339,7 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 (우측 상단) ── */
+      /* ── 6. 방문자 카운터 (우측 상단, visit_ping) ── */
       (function () {
         var box = document.getElementById("visitBox");
         if (!box) return;

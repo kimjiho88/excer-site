@@ -4,9 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>우리방 · 운영 대시보드</title>
-  <meta name="description" content="활동 랭킹, 명예의 전당, 시간대 패턴, 키워드까지 우리방 활동을 한눈에 봐요. 집계 숫자와 키워드만 다루는 오픈채팅 리포트예요." />
+  <title>동네친구들 — 운영 대시보드</title>
+  <meta name="description" content="이번 주 동네친구들 분위기를 한눈에. 활동 랭킹, 배지, 시간대 패턴, 키워드까지 집계 숫자와 키워드만 담은 오픈채팅 리포트예요." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="동네친구들" />
+  <meta property="og:title" content="동네친구들 — 운영 대시보드" />
+  <meta property="og:description" content="이번 주 동네친구들 분위기를 한눈에. 대화 원문은 저장하지 않아요." />
+  <meta property="og:image" content="assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
 
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="assets/site.css" />
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
@@ -54,20 +63,33 @@
     .range-custom .tilde { color: var(--on-dark-muted); font-weight: 800; }
     .range-custom .mini-btn { min-height: 38px; }
 
-    /* ── 히어로 겹침 카드: 온도 + KPI ── */
-    .pulse-card { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: center; }
+    /* ── 히어로 겹침 카드: 온도 + 분위기 카피 + KPI (감성 요약) ── */
+    .pulse-card { display: grid; grid-template-columns: minmax(210px, 288px) minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: center; }
     .temp-wrap { display: grid; justify-items: center; gap: 4px; text-align: center; }
     .temp-gauge { width: min(100%, 240px); height: auto; display: block; }
     .temp-value { font-size: clamp(30px, 3.2vw, 40px); font-weight: 900; letter-spacing: -0.045em; color: var(--deep-1); line-height: 1; margin-top: -54px; }
     .temp-value small { font-size: 0.45em; color: var(--gray); font-weight: 800; }
     .temp-label { color: var(--gray); font-size: 12.5px; font-weight: 850; }
     .temp-desc { margin-top: 4px; font-size: 12.5px; font-weight: 800; color: var(--primary); }
-    .pulse-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 1.6vw, 22px); }
-    .pulse-kpis .kpi-value { font-variant-numeric: normal; }
+    /* 분위기 카피 리드 */
+    .pulse-side { display: grid; gap: clamp(14px, 1.8vw, 18px); align-content: center; }
+    .pulse-lead { display: grid; gap: 7px; }
+    .pulse-lead .badge-soft { justify-self: start; }
+    .pulse-mood { margin: 0; font-size: clamp(20px, 2.5vw, 28px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.18; color: var(--deep-1); }
+    .pulse-mood .grad-text { display: inline; }
+    .pulse-mood-sub { margin: 0; color: var(--gray); font-size: 13px; font-weight: 700; line-height: 1.55; }
+    .pulse-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(10px, 1.4vw, 16px); }
+    .pulse-kpis .kpi {
+      gap: 4px; padding: clamp(13px, 1.5vw, 17px); border-radius: var(--r-sm);
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), var(--soft-lavender));
+      box-shadow: inset 0 0 0 1px rgba(95,0,128,0.07), var(--shadow-1);
+    }
+    .pulse-kpis .kpi-value { font-variant-numeric: normal; font-size: clamp(21px, 2.1vw, 27px); }
+    .pulse-kpis .kpi-delta { font-size: 11px; }
     @media (max-width: 1023px) { .pulse-kpis { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 767px) {
       .pulse-card { grid-template-columns: 1fr; }
-      .temp-wrap { padding-bottom: 6px; border-bottom: 1px dashed var(--line); }
+      .temp-wrap { padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
     }
 
     /* 구버전 안내 */
@@ -155,9 +177,15 @@
       box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
     }
     .badge-body { min-width: 0; display: grid; gap: 1px; }
-    .badge-title { font-size: 11.5px; font-weight: 900; color: var(--primary); letter-spacing: 0.01em; }
+    .badge-title {
+      font-size: 11.5px; font-weight: 900; letter-spacing: 0.01em;
+      background: var(--grad-display); -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: var(--primary);
+    }
     .badge-name { font-size: 14px; font-weight: 850; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .badge-desc { font-size: 11.5px; color: var(--gray); font-weight: 700; }
+    /* 이모지를 tb-ic 에 넣을 때(멤버 카드 칭호) 폭 자동 */
+    .md-badges .title-badge .tb-ic { width: auto; height: auto; font-size: 13px; line-height: 1; }
 
     /* ── 차트 공통 ── */
     .chart-svg { width: 100%; height: auto; display: block; }
@@ -340,16 +368,16 @@
 
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
-      <a class="topnav-brand" href="index.html" aria-label="우리방 홈(필독)으로 이동">
-        <span class="topnav-logo">우리방</span>
+      <a class="topnav-brand" href="index.html" aria-label="동네친구들 홈으로 이동">
+        <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
-        <a class="topnav-tab" href="index.html">필독</a>
-        <a class="topnav-tab is-active" href="report.html" aria-current="page">대시보드</a>
-        <a class="topnav-tab" href="calculator.html">정산기</a>
+        <a class="topnav-tab" href="index.html">홈</a>
+        <a class="topnav-tab is-active" href="report.html" aria-current="page">운영 대시보드</a>
+        <a class="topnav-tab" href="guide.html">필독</a>
+        <a class="topnav-tab" href="calculator.html">벙비 정산기</a>
         <a class="topnav-tab" href="news.html">소식</a>
-        <a class="topnav-tab" href="games.html">게임</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -357,7 +385,7 @@
         <span class="tv-sep" aria-hidden="true"></span>
         <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
       </div>
-      <span class="topnav-page" aria-hidden="true">대시보드</span>
+      <span class="topnav-page" aria-hidden="true">운영 대시보드</span>
     </div>
   </header>
 
@@ -368,11 +396,11 @@
         <label class="sr-only" for="reportSelect">발행된 리포트 선택</label>
         <select id="reportSelect" class="report-select" hidden></select>
       </div>
-      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 우리방,<br /><span class="grad-text-hero">이렇게 지냈어요</span></h1>
+      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 동네친구들,<br /><span class="grad-text-hero">이만큼 도란도란했어요</span></h1>
       <p class="hero-sub">
-        누가 활약했는지, 어느 시간대가 뜨거웠는지 재미로 확인해요.
+        누가 활약했고 어느 시간대가 뜨거웠는지 가볍게 둘러봐요.
         집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
-        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임이 마스킹</strong>된 버전이에요.</span>
+        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임을 가린</strong> 버전이에요.</span>
       </p>
 
       <div class="range-filter" role="group" aria-label="기간 필터" id="rangeFilter">
@@ -400,7 +428,7 @@
   </section>
 
   <main id="main" class="page-main">
-    <!-- 온도 + 핵심 KPI (히어로 겹침) -->
+    <!-- 상단 감성 요약: 동네친구들 온도 + 분위기 카피 + 핵심 KPI (히어로 겹침) -->
     <div class="container hero-overlap">
       <div class="card is-lg pulse-card" id="pulseCard" aria-busy="true">
         <div class="skeleton-stack">
@@ -415,7 +443,7 @@
       </div>
       <div class="legacy-note" id="legacyNote" hidden>
         <span aria-hidden="true">🗂️</span>
-        <span><b>구버전 리포트예요.</b> 지금 보이는 지표만 제공돼요. 운영진이 리포트를 다시 발행하면 기간 필터·배지·분위기 리포트 같은 새 지표가 열려요.</span>
+        <span><b>예전 형식으로 만든 리포트예요.</b> 지금 보이는 지표까지만 나와요. 운영진이 리포트를 다시 발행하면 기간 필터·배지·온도 같은 새 지표가 함께 열려요.</span>
       </div>
     </div>
 
@@ -425,22 +453,22 @@
         <div class="empty-state">
           <span class="empty-ic" aria-hidden="true">📊</span>
           <strong>아직 보여줄 리포트가 없어요</strong>
-          <p>발행된 리포트가 없고 예시 데이터도 불러오지 못했어요. 네트워크 상태를 확인하고 새로고침 해주세요.</p>
-          <a class="btn btn-secondary is-sm" href="report.html">새로고침</a>
-          <a class="btn btn-ghost is-sm" href="report-admin.html">🛠️ 운영진 리포트 발행</a>
+          <p>발행된 리포트가 없고 예시 데이터도 불러오지 못했어요. 잠깐 네트워크를 확인하고 다시 열어봐 주세요.</p>
+          <a class="btn btn-secondary is-sm" href="report.html">다시 불러오기</a>
+          <a class="btn btn-ghost is-sm" href="report-admin.html">🛠️ 운영진: 리포트 발행하기</a>
         </div>
       </div>
     </div>
 
     <div id="dashBody">
-      <!-- 1. 이번 주 우리방 활약 -->
+      <!-- 1. 이번 주 하이라이트 -->
       <section class="section" id="secHighlights">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
-              <span class="eyebrow">하이라이트</span>
-              <h2 id="hlTitle">이번 주 우리방 활약</h2>
-              <p>선택한 기간을 요약했어요. 위의 기간 필터를 바꾸면 모든 숫자가 함께 움직여요.</p>
+              <span class="eyebrow">이번 주 요약</span>
+              <h2 id="hlTitle">이번 주 동네친구들 활동 요약</h2>
+              <p>선택한 기간을 한눈에 정리했어요. 위 기간 필터를 바꾸면 아래 숫자도 같이 움직여요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHighlights">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -461,8 +489,8 @@
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">활동 랭킹</span>
-              <h2>누가 제일 활약했을까요?</h2>
-              <p>기준을 바꿔 다른 랭킹도 볼 수 있어요. 이름을 검색하면 내 순위를 바로 찾아요.</p>
+              <h2>이번 주 활약한 친구들</h2>
+              <p>기준을 바꾸면 다른 관점의 순위도 볼 수 있어요. 이름을 검색하면 내 자리를 바로 찾아요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyRank">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -471,15 +499,15 @@
               <div class="rank-toolbar">
                 <label class="sr-only" for="rankMetric">랭킹 기준</label>
                 <select class="select-clean" id="rankMetric">
-                  <option value="total">총 채팅</option>
-                  <option value="rise">상승폭</option>
-                  <option value="steady">꾸준함 (활동일)</option>
-                  <option value="question">질문왕</option>
-                  <option value="reaction">리액션왕</option>
+                  <option value="total">메시지 많은 순</option>
+                  <option value="rise">지난 기간보다 많이 는 순</option>
+                  <option value="steady">꾸준히 나온 순 (활동일)</option>
+                  <option value="question">질문 많은 순</option>
+                  <option value="reaction">리액션 많은 순</option>
                 </select>
                 <span class="spacer"></span>
-                <label class="sr-only" for="memberSearch">구성원 검색</label>
-                <input class="search-input" id="memberSearch" type="search" placeholder="🔍 닉네임 검색" autocomplete="off" />
+                <label class="sr-only" for="memberSearch">멤버 검색</label>
+                <input class="search-input" id="memberSearch" type="search" placeholder="🔍 닉네임으로 내 자리 찾기" autocomplete="off" />
               </div>
               <div class="rank-list" id="rankList" aria-live="polite" aria-busy="true">
                 <div class="skeleton skeleton-line is-lg" style="width:88%"></div>
@@ -493,32 +521,14 @@
         </div>
       </section>
 
-      <!-- 3. 명예의 전당 -->
-      <section class="section" id="secBadges">
-        <div class="container">
-          <div class="section-head has-toggle reveal">
-            <div>
-              <span class="eyebrow">명예의 전당</span>
-              <h2>이 기간 배지를 받은 멤버들</h2>
-              <p>조건을 채운 배지만 보여드려요. 표본이 적은 배지는 아직 잠겨 있어요.</p>
-            </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true">▼</span></button>
-          </div>
-          <div class="sec-body" id="bodyBadges">
-            <div class="badge-grid reveal" id="badgeGrid"></div>
-            <p class="chart-note">시간대·키워드·꾸준함 배지는 발행 기간 전체 기준, 활약왕·성장왕은 선택한 기간 기준이에요.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. 24시간 활동 시계 -->
+      <!-- 3. 24시간 활동 시계 -->
       <section class="section" id="secClock">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">시간대 리듬</span>
-              <h2>우리방 24시간 활동 시계</h2>
-              <p>바깥으로 길수록 그 시간대에 대화가 많았다는 뜻이에요. 12시가 위쪽 정오예요.</p>
+              <h2>하루 중 언제 가장 북적일까요?</h2>
+              <p>바깥으로 뻗을수록 그 시간대에 대화가 많았어요. 12시가 위쪽 정오예요. 조각을 짚으면 정확한 수가 떠요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyClock">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -531,7 +541,7 @@
               <div class="clock-side">
                 <div class="card reveal d1" id="clockFacts"></div>
                 <div class="card reveal d2">
-                  <h3 style="margin:0 0 12px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">시간대 구성</h3>
+                  <h3 style="margin:0 0 12px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">시간대별 대화 비중</h3>
                   <div class="hour-seg" id="hourSeg"></div>
                 </div>
               </div>
@@ -540,14 +550,14 @@
         </div>
       </section>
 
-      <!-- 5. 요일×시간 히트맵 -->
+      <!-- 4. 요일×시간 히트맵 -->
       <section class="section" id="secHeatmap">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">요일 × 시간</span>
               <h2>대화가 몰리는 요일과 시간</h2>
-              <p>진할수록 대화가 몰린 칸이에요. 셀을 짚으면 정확한 수가 떠요.</p>
+              <p>진한 칸일수록 대화가 몰린 때예요. 벙 잡기 좋은 시간을 고를 때 참고해요. 셀을 짚으면 정확한 수가 떠요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -563,35 +573,14 @@
         </div>
       </section>
 
-      <!-- 6. 주간 추이 -->
-      <section class="section" id="secTrend">
-        <div class="container">
-          <div class="section-head has-toggle reveal">
-            <div>
-              <span class="eyebrow">주간 추이</span>
-              <h2>주 단위로 본 우리방 온도 변화</h2>
-              <p>발행 기간 전체를 주 단위로 묶었어요. 보라 음영이 지금 보고 있는 기간이에요.</p>
-            </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true">▼</span></button>
-          </div>
-          <div class="sec-body" id="bodyTrend">
-            <div class="card is-lg reveal">
-              <div class="trend-callout" id="trendCallout"></div>
-              <div id="trendWrap" class="chart-anim"></div>
-              <details class="table-twin"><summary>표로 보기</summary><div id="trendTable"></div></details>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 7. 키워드 -->
+      <!-- 5. 인기 키워드 -->
       <section class="section" id="secKeywords">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
-              <span class="eyebrow">키워드</span>
-              <h2>요즘 우리방 이야깃거리</h2>
-              <p>발행 기간 전체에서 자주 나온 단어예요. 원문 문장이 아니라 단어 빈도만 세요.</p>
+              <span class="eyebrow">인기 키워드</span>
+              <h2>요즘 동네친구들 이야깃거리</h2>
+              <p>발행 기간 전체에서 자주 나온 단어예요. 원문 문장이 아니라 단어 빈도만 세요. 카테고리를 누르면 그 주제만 볼 수 있어요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -601,22 +590,22 @@
               <div class="kw-field chart-anim" id="kwField"></div>
             </div>
             <div class="card reveal d1" style="margin-top:12px">
-              <h3 style="margin:0 0 4px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">주차별 인기 키워드</h3>
-              <p class="mood-cap" style="margin:0 0 12px; color:var(--gray); font-size:12px; font-weight:700">주마다 화제가 어떻게 옮겨갔는지 볼 수 있어요.</p>
+              <h3 style="margin:0 0 4px; font-size:14.5px; letter-spacing:-0.03em; color:var(--deep-1)">주마다 바뀐 화제</h3>
+              <p class="mood-cap" style="margin:0 0 12px; color:var(--gray); font-size:12px; font-weight:700">관심사가 주마다 어떻게 옮겨갔는지 따라가 봐요.</p>
               <div class="kw-weekly" id="kwWeekly"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 8. 분위기 리포트 -->
+      <!-- 6. 동네친구들 온도 (분위기) -->
       <section class="section" id="secMood">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
-              <span class="eyebrow">분위기 리포트</span>
-              <h2>우리방 공기는 어땠나요?</h2>
-              <p>웃음·응원·하트의 비율과 대화가 얼마나 골고루 퍼졌는지 살펴봐요.</p>
+              <span class="eyebrow">동네친구들 온도</span>
+              <h2>요즘 분위기는 어땠나요?</h2>
+              <p>웃음·응원·하트가 얼마나 오갔는지, 대화가 몇몇에게 쏠렸는지 골고루 퍼졌는지 살펴봐요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMood">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -631,14 +620,53 @@
         </div>
       </section>
 
-      <!-- 9. 멤버 카드 -->
+      <!-- 7. 주 단위 대화 흐름 -->
+      <section class="section" id="secTrend">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">대화 흐름</span>
+              <h2>주마다 이어진 대화 흐름</h2>
+              <p>발행 기간 전체를 주 단위로 묶었어요. 보라 음영이 지금 보고 있는 기간이에요. 벙 소식이 있던 주엔 대화가 늘곤 해요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyTrend">
+            <div class="card is-lg reveal">
+              <div class="trend-callout" id="trendCallout"></div>
+              <div id="trendWrap" class="chart-anim"></div>
+              <details class="table-twin"><summary>표로 보기</summary><div id="trendTable"></div></details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. 배지 · 칭호 -->
+      <section class="section" id="secBadges">
+        <div class="container">
+          <div class="section-head has-toggle reveal">
+            <div>
+              <span class="eyebrow">배지 · 칭호</span>
+              <h2>이번 기간, 이런 친구들이 빛났어요</h2>
+              <p>조건을 채운 칭호만 보여드려요. 좋은 활약을 담은 배지라 표본이 적으면 살짝 잠겨 있어요.</p>
+            </div>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true">▼</span></button>
+          </div>
+          <div class="sec-body" id="bodyBadges">
+            <div class="badge-grid reveal" id="badgeGrid"></div>
+            <p class="chart-note">시간대·키워드·꾸준함 칭호는 발행 기간 전체 기준, 활약왕·성장왕은 선택한 기간 기준이에요.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. 멤버 활동 카드 -->
       <section class="section" id="secMembers">
         <div class="container">
           <div class="section-head has-toggle reveal">
             <div>
               <span class="eyebrow">멤버 카드</span>
               <h2>한 명씩 자세히 보기</h2>
-              <p>멤버를 탭하면 미니 프로필이 열려요. 위 랭킹의 검색창과도 연동돼요.</p>
+              <p>멤버를 누르면 미니 프로필이 열려요. 위 랭킹의 검색창과도 이어져 있어요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMembers">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -651,18 +679,18 @@
         </div>
       </section>
 
-      <!-- 10. 리캡 카드 -->
+      <!-- 10. 월간 리캡 카드 -->
       <section class="section" id="secRecap">
         <div class="container">
           <div class="section-head is-center reveal">
-            <span class="eyebrow">리캡 카드</span>
-            <h2>이 기간 기록을 한 장으로 정리했어요</h2>
-            <p>이미지로 저장해서 채팅방에 공유하면 돼요.</p>
+            <span class="eyebrow">월간 리캡</span>
+            <h2>이 기간을 한 장으로 담았어요</h2>
+            <p>이미지로 저장해서 채팅방에 그대로 공유하면 돼요.</p>
           </div>
           <div class="recap-stage reveal">
             <div class="recap-card" id="recapCard"></div>
             <div class="recap-actions">
-              <button class="btn btn-primary" type="button" id="recapSaveBtn">🖼️ 이미지 저장</button>
+              <button class="btn btn-primary" type="button" id="recapSaveBtn">🖼️ 이미지로 저장</button>
             </div>
           </div>
         </div>
@@ -673,7 +701,7 @@
         <div class="container">
           <div class="card is-lg is-soft cta-card reveal">
             <span class="badge-soft">다음 리포트</span>
-            <h2>오늘 한 마디 남기면 다음 주 순위가 달라져요</h2>
+            <h2>오늘 한 마디가 다음 주 순위를 바꿔요</h2>
             <p>벙 소식이랑 정산은 아래에서 바로 확인할 수 있어요.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="news.html">소식 보러 가기</a>
@@ -690,42 +718,43 @@
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="footer-logo">우리방</span>
+          <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅 커뮤니티를 즐겁고 안전하게 —<br />
-            필독 가이드부터 운영 대시보드, 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네친구들 —<br />
+            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
           </p>
           <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
           <ul class="footer-links">
-            <li><a href="index.html">필독</a></li>
+            <li><a href="index.html">홈</a></li>
             <li><a href="report.html">운영 대시보드</a></li>
-            <li><a href="calculator.html">정산기</a></li>
+            <li><a href="guide.html">필독</a></li>
+            <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="games.html">게임</a></li>
+            <li><a href="games.html">🎮 게임</a></li>
           </ul>
         </nav>
         <div class="footer-col">
           <h4>안내</h4>
           <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행 시 마스킹을 선택할 수 있어요.</p>
+          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
         </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 우리방 오픈채팅 커뮤니티</small>
+        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
 
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
-    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
     <a class="tab-item is-active" href="report.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
     <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산기</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="14" r="1"/></svg>게임</a>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -1090,7 +1119,7 @@
         return { gini: g, label: g < 0.5 ? "골고루 수다" : "일부 집중", even: g < 0.5 };
       }
 
-      /* 우리방 온도: 기간 일평균 vs 발행 기간 전체의 하루 평균(baseline) → 0~100 게이지 (+36.5도 연출).
+      /* 동네친구들 온도: 기간 일평균 vs 발행 기간 전체의 하루 평균(baseline) → 0~100 게이지 (+36.5도 연출).
          ratio 1.0(방의 평소 수준) → 게이지 50 / 온도 36.5℃.
          · baseline 을 '전체 하루 평균'(0인 날 포함)으로 잡아, 조용한 날이 많은 방에서도
            중앙값 0으로 인한 폭주(항상 44.5℃) 없이 방의 자기 기준과 비교되게 한다. */
@@ -1361,7 +1390,7 @@
 
       function renderHero() {
         const st = state.data;
-        document.title = "우리방 · 운영 대시보드 · " + (st.periodLabel || "");
+        document.title = "동네친구들 — 운영 대시보드 · " + (st.periodLabel || "");
         const badge = $("sourceBadgeText");
         if (state.source === "sample") badge.textContent = "📎 예시 데이터 · " + (st.periodLabel || "");
         else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 · " + (st.periodLabel || "");
@@ -1393,6 +1422,14 @@
         if (ratio >= 0.6) return "조금 차분했어요 🍃";
         return "조용한 휴식기였어요 😴";
       }
+      /* 상단 감성 요약용 한 줄 분위기 카피 (강조 구절은 grad-text 로) */
+      function moodCopyOf(ratio) {
+        if (ratio >= 1.4) return { head: "이번 주 동네친구들,", hi: "제대로 불이 붙었어요", sub: "평소보다 대화가 훨씬 많았어요. 분위기 최고예요." };
+        if (ratio >= 1.12) return { head: "요즘 동네친구들,", hi: "부쩍 따뜻해졌어요", sub: "평소보다 대화가 조금 더 오갔어요." };
+        if (ratio >= 0.88) return { head: "동네친구들,", hi: "평소처럼 도란도란", sub: "여느 때만큼 편안하게 이야기가 이어졌어요." };
+        if (ratio >= 0.6) return { head: "이번엔 동네친구들,", hi: "조금 차분했어요", sub: "잠시 숨 고르는 한 주였어요. 한 마디면 다시 살아나요." };
+        return { head: "동네친구들,", hi: "잠깐 쉬어가는 중", sub: "조용한 기간이었어요. 가벼운 인사부터 다시 시작해요." };
+      }
 
       function gaugeSVG(gauge) {
         // 반원 게이지: 180° 아크, 트랙 라벤더 + 채움 보라
@@ -1404,7 +1441,7 @@
           return `M ${cx - r} ${cy} A ${r} ${r} 0 ${large} 1 ${x.toFixed(1)} ${y.toFixed(1)}`;
         };
         const pct = Math.max(0.02, Math.min(1, gauge / 100));
-        return `<svg class="temp-gauge" viewBox="0 0 220 116" role="img" aria-label="우리방 온도 게이지 ${gauge}점 (100점 만점)">
+        return `<svg class="temp-gauge" viewBox="0 0 220 116" role="img" aria-label="동네친구들 온도 게이지 ${gauge}점 (100점 만점)">
           <path d="${arc(1)}" fill="none" stroke="#F3E8FF" stroke-width="${sw}" stroke-linecap="round"/>
           <path d="${arc(pct)}" fill="none" stroke="url(#tempGrad)" stroke-width="${sw}" stroke-linecap="round"/>
           <defs><linearGradient id="tempGrad" x1="0" y1="0" x2="1" y2="0">
@@ -1423,14 +1460,21 @@
             <div class="temp-wrap">
               ${gaugeSVG(50)}
               <div class="temp-value">-<small>℃</small></div>
-              <div class="temp-label">우리방 온도</div>
-              <div class="temp-desc">구버전 리포트에서는 계산할 수 없어요</div>
+              <div class="temp-label">동네친구들 온도</div>
+              <div class="temp-desc">예전 형식 리포트라 계산할 수 없어요</div>
             </div>
-            <div class="pulse-kpis">
-              <div class="kpi"><span class="kpi-label">총 채팅</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">발행 기간 전체</span></div>
-              <div class="kpi"><span class="kpi-label">활동 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
-              <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
-              <div class="kpi"><span class="kpi-label">하루 평균</span><strong class="kpi-value"><span id="pkDelta">0</span><small>건</small></strong><span class="kpi-delta">쉬는 날 포함</span></div>
+            <div class="pulse-side">
+              <div class="pulse-lead">
+                <span class="badge-soft is-cream">🗂️ 예전 형식 리포트</span>
+                <p class="pulse-mood">동네친구들 <span class="grad-text">활동 기록</span></p>
+                <p class="pulse-mood-sub">다시 발행하면 온도와 분위기까지 함께 볼 수 있어요.</p>
+              </div>
+              <div class="pulse-kpis">
+                <div class="kpi"><span class="kpi-label">총 메시지</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">발행 기간 전체</span></div>
+                <div class="kpi"><span class="kpi-label">함께한 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
+                <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
+                <div class="kpi"><span class="kpi-label">하루 평균</span><strong class="kpi-value"><span id="pkDelta">0</span><small>건</small></strong><span class="kpi-delta">쉬는 날 포함</span></div>
+              </div>
             </div>`;
           EXCER.countUp($("pkTotal"), t.messages || 0);
           EXCER.countUp($("pkMembers"), t.activeMembers || 0);
@@ -1449,19 +1493,27 @@
         } else {
           deltaHTML = `<strong class="kpi-value">—</strong><span class="kpi-delta">비교할 직전 기간이 없어요</span>`;
         }
+        const mood = moodCopyOf(temp.ratio);
         card.removeAttribute("aria-busy");
         card.innerHTML = `
           <div class="temp-wrap">
             ${gaugeSVG(temp.gauge)}
             <div class="temp-value"><span id="tempNum">0</span><small>℃</small></div>
-            <div class="temp-label">우리방 온도 · 평소(하루 평균 ${nf1(temp.baseline)}건) 대비</div>
+            <div class="temp-label">동네친구들 온도 · 평소(하루 평균 ${nf1(temp.baseline)}건) 대비</div>
             <div class="temp-desc">${escapeHTML(tempDescOf(temp.ratio))}</div>
           </div>
-          <div class="pulse-kpis">
-            <div class="kpi"><span class="kpi-label">총 채팅</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">${escapeHTML(PRESET_WORD[state.preset])} ${s.len}일</span></div>
-            <div class="kpi"><span class="kpi-label">활동 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
-            <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
-            <div class="kpi"><span class="kpi-label">전 기간 대비</span>${deltaHTML}</div>
+          <div class="pulse-side">
+            <div class="pulse-lead">
+              <span class="badge-soft">${escapeHTML(PRESET_WORD[state.preset])} 분위기</span>
+              <p class="pulse-mood">${escapeHTML(mood.head)} <span class="grad-text">${escapeHTML(mood.hi)}</span></p>
+              <p class="pulse-mood-sub">${escapeHTML(mood.sub)}</p>
+            </div>
+            <div class="pulse-kpis">
+              <div class="kpi"><span class="kpi-label">총 메시지</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">${escapeHTML(PRESET_WORD[state.preset])} ${s.len}일</span></div>
+              <div class="kpi"><span class="kpi-label">함께한 멤버</span><strong class="kpi-value"><span id="pkMembers">0</span><small>명</small></strong><span class="kpi-delta">한 마디라도 남긴</span></div>
+              <div class="kpi"><span class="kpi-label">1인 평균</span><strong class="kpi-value"><span id="pkAvgM">0</span><small>건</small></strong><span class="kpi-delta">활동 멤버 기준</span></div>
+              <div class="kpi"><span class="kpi-label">지난 기간 대비</span>${deltaHTML}</div>
+            </div>
           </div>`;
         EXCER.countUp($("tempNum"), temp.temp, { decimals: 1 });
         EXCER.countUp($("pkTotal"), kpi.total);
@@ -1475,7 +1527,7 @@
       }
       function renderHighlights() {
         const st = state.data, s = state.slice;
-        $("hlTitle").textContent = PRESET_WORD[state.preset] + " 우리방 활약";
+        $("hlTitle").textContent = PRESET_WORD[state.preset] + " 동네친구들 활동 요약";
         const row = $("kpiRow");
         row.removeAttribute("aria-busy");
         if (state.legacy) {
@@ -2039,7 +2091,7 @@
             <div class="md-stat"><span>기간 활동일</span><strong>${nf(actDays)}일</strong></div>
             <div class="md-stat"><span>최장 연속</span><strong>${nf(m.streak || 0)}일</strong></div>
           </div>
-          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="badge-soft">${b.icon} ${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">이 기간에 획득한 배지는 없어요.</p>`}
+          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true">${b.icon}</span>${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">이 기간에 받은 칭호는 아직 없어요.</p>`}
           <div class="md-spark">${sparkSVG(series, fmtDateK(st.days[s0].d), fmtDateK(st.days[s1].d))}<div class="spark-cap">${sparkNote} · ${fmtDateK(st.days[s0].d)}~${fmtDateK(st.days[s1].d)}</div></div>`;
         // 그리드 선택 상태 갱신
         $("memberGrid").querySelectorAll("[data-open-member]").forEach((b) => {
@@ -2056,14 +2108,14 @@
           const t = st.totalsV1;
           host.innerHTML = `
             <div class="recap-inner">
-              <div class="recap-brand"><span class="logo">우리방</span><small>월간 리캡</small></div>
-              <h3 class="recap-title">${escapeHTML(st.periodLabel)} — <span class="grad-text-hero">우리방 기록</span></h3>
+              <div class="recap-brand"><span class="logo">동네친구들</span><small>월간 리캡</small></div>
+              <h3 class="recap-title">${escapeHTML(st.periodLabel)} — <span class="grad-text-hero">동네친구들 기록</span></h3>
               <div class="recap-kpis">
                 <div class="recap-kpi"><span>총 채팅</span><strong>${nf(t.messages || 0)}<small>건</small></strong></div>
                 <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(t.activeMembers || 0)}<small>명</small></strong></div>
                 <div class="recap-kpi"><span>하루 평균</span><strong>${nf(t.avgPerDay || 0)}<small>건</small></strong></div>
               </div>
-              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>우리방</span></div>
+              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>동네친구들</span></div>
             </div>`;
           return;
         }
@@ -2073,8 +2125,8 @@
         const kws = (st.keywords || []).slice(0, 3);
         host.innerHTML = `
           <div class="recap-inner">
-            <div class="recap-brand"><span class="logo">우리방</span><small>${escapeHTML(PRESET_WORD[state.preset])} 리캡 · ${fmtDateK(s.from)}~${fmtDateK(s.to)}</small></div>
-            <h3 class="recap-title">${escapeHTML(st.periodLabel)},<br /><span class="grad-text-hero">우리방 온도 ${temp.temp}℃</span></h3>
+            <div class="recap-brand"><span class="logo">동네친구들</span><small>${escapeHTML(PRESET_WORD[state.preset])} 리캡 · ${fmtDateK(s.from)}~${fmtDateK(s.to)}</small></div>
+            <h3 class="recap-title">${escapeHTML(st.periodLabel)},<br /><span class="grad-text-hero">동네친구들 온도 ${temp.temp}℃</span></h3>
             <div class="recap-kpis">
               <div class="recap-kpi"><span>총 채팅</span><strong>${nf(kpi.total)}<small>건</small></strong></div>
               <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(kpi.activeMembers)}<small>명</small></strong></div>
@@ -2082,7 +2134,7 @@
             </div>
             ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="ic" aria-hidden="true">${b.icon}</span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)} · ${escapeHTML(b.desc)}</span></div>`).join("")}</div>` : ""}
             ${kws.length ? `<div class="recap-kws">${kws.map((k) => `<span class="recap-kw">#${escapeHTML(k.w)}</span>`).join("")}</div>` : ""}
-            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>우리방 · 운영 대시보드</span></div>
+            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>동네친구들 · 운영 대시보드</span></div>
           </div>`;
       }
 
