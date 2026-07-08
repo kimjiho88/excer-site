@@ -216,6 +216,13 @@
     .comment-del:hover { color: var(--danger); border-color: rgba(192, 57, 43, 0.32); }
     .comment-body { margin-top: 5px; color: var(--ink-2); font-size: 13.5px; line-height: 1.65; word-break: break-word; overflow-wrap: anywhere; }
     .comment-body a { color: var(--primary); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+    /* @멘션 칩 — 카톡식 태그 (본문·댓글 공통) */
+    .mention {
+      display: inline; padding: 1px 6px; border-radius: var(--r-pill);
+      background: var(--pastel-lavender); color: var(--primary);
+      font-weight: 800; text-decoration: none; white-space: nowrap;
+    }
+    .post-body-text .mention, .comment-body .mention { text-decoration: none; }
     .comment-empty, .comment-loading { padding: 14px; border-radius: 13px; border: 1px dashed var(--line-strong); color: var(--gray); font-size: 13px; font-weight: 700; text-align: center; }
     .comment-form { margin-top: 12px; display: grid; gap: 8px; }
     .comment-form .row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -667,12 +674,27 @@
       return String(value).replace(/[&<>"']/g, (char) => entities[char]);
     }
 
-    // escape 후 http(s) URL만 안전하게 링크화 + 줄바꿈 <br>
+    // @닉네임 → 카톡식 멘션 칩. 닉네임 = 영문/숫자/_ + 한글(호환 자모 U+3130–U+318F,
+    // 음절 U+AC00–U+D7A3), 1~24자. 경계(@ 앞) = 문자열/런 시작·공백·여는 괄호일 때만 매칭.
+    const MENTION_RE = /(^|[\s([{])@([0-9A-Za-z_㄰-㆏가-힣]{1,24})(?![0-9A-Za-z_㄰-㆏가-힣])/g;
+
+    // escape·링크화가 끝난 문자열에서만 동작. <a>…</a> 블록은 건너뛰고(하이퍼링크·href 보존)
+    // 순수 텍스트 런에서만 멘션을 태깅한다. escape 후 남는 '<' 는 링크 태그의 시작뿐이다.
+    function linkifyMentions(html) {
+      return html.replace(/<a\b[^>]*>[^<]*<\/a>|[^<]+/g, (seg) =>
+        seg[0] === "<"
+          ? seg
+          : seg.replace(MENTION_RE, (_m, b, nick) =>
+              `${b}<span class="mention">@${nick}</span>`));
+    }
+
+    // escape 후 http(s) URL만 안전하게 링크화 → @멘션 태깅 → 줄바꿈 <br>
     function renderBody(text) {
       const escaped = escapeHTML(text);
       const linked = escaped.replace(/https?:\/\/[^\s<]+/g,
         (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
-      return linked.replace(/\n/g, "<br>");
+      const mentioned = linkifyMentions(linked);
+      return mentioned.replace(/\n/g, "<br>");
     }
 
     function relTime(iso) {
