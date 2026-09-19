@@ -87,14 +87,27 @@ select has_function_privilege('anon','public.site_is_admin(text)','execute') as 
 -- ────────────────────────────────────────────────────────────
 -- 대시보드에서 함께 처리한 것 (SQL 아님)
 -- ────────────────────────────────────────────────────────────
--- Authentication → Sign In / Providers
---   · Google  비활성화
---   · Kakao   비활성화
---   · Anonymous sign-ins 비활성화
---     → 게임의 로그인 UI 는 서버 연결이 살아 있을 때만 그려지므로,
---       인증을 끄는 것만으로 로그인 노출 지점 대부분이 코드 수정 없이 닫힌다.
---     → 멤버 페이지 7개는 인증을 전혀 쓰지 않고 주소 호출로만 동작하므로
---       (auth 호출 0건) 게시판·정산·대시보드·방문자 카운터는 영향이 없다.
+-- Authentication → Sign In / Providers → User Signups
+--   · Allow new users to sign up   → OFF
+--   · Allow anonymous sign-ins     → OFF   ← 게임이 서버에 붙던 실제 경로
+--   · Allow manual linking         → OFF (원래 꺼져 있었음)
+--
+--   ★ 익명 사용자는 anon 이 아니라 authenticated 역할을 받는다.
+--     그래서 ①의 회수를 anon 에만 했다면 게임을 통해 들어온 익명 사용자는
+--     여전히 비밀번호 판정 함수를 부를 수 있었다.
+--     from public, anon, authenticated 세 대상을 모두 회수한 이유가 이것이다.
+--     여기서 익명 로그인 자체를 끄면 같은 구멍을 두 겹으로 막는 셈이 된다.
+--
+--   → 게임의 로그인 UI 는 서버 연결이 살아 있을 때만 그려지므로,
+--     인증을 끄는 것만으로 로그인 노출 지점 대부분이 코드 수정 없이 닫힌다.
+--   → 멤버 페이지 7개는 인증을 전혀 쓰지 않고 주소 호출로만 동작하므로
+--     (auth 호출 0건) 게시판·정산·대시보드·방문자 카운터는 영향이 없다.
+--
+-- Authentication → Sign In / Providers → Auth Providers
+--   · Google, Kakao 비활성화 확인
 --
 -- Authentication → URL Configuration
---   · Redirect URLs 비우기 (카카오 OAuth 복귀 경로 제거)
+--   · Redirect URLs 전부 삭제 (2건: /game_v2.html, /** 와일드카드)
+--     와일드카드는 사이트의 모든 경로로 복귀를 허용하고 있었다.
+--     공급자를 다시 켜는 순간 함께 되살아나므로 지금 지워 둔다.
+--   · Site URL 은 유지 — 인증 복귀용이 아니라 기본값·이메일 템플릿용이다.
