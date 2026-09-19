@@ -19,7 +19,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css" />
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
@@ -60,7 +60,7 @@
     .range-custom input[type="date"] {
       min-height: 40px; padding: 0 12px; border-radius: 12px;
       border: 1px solid var(--on-dark-line); background: rgba(255, 255, 255, 0.94);
-      color: var(--ink); font-size: 13px; font-weight: 750;
+      color: var(--ink); font-size: 13px; font-weight: 800;
       color-scheme: light;
     }
     .range-custom .tilde { color: var(--on-dark-muted); font-weight: 800; }
@@ -72,7 +72,7 @@
     .temp-gauge { width: min(100%, 240px); height: auto; display: block; }
     .temp-value { font-size: clamp(30px, 3.2vw, 40px); font-weight: 900; letter-spacing: -0.045em; color: var(--deep-1); line-height: 1; margin-top: -54px; }
     .temp-value small { font-size: 0.45em; color: var(--gray); font-weight: 800; }
-    .temp-label { color: var(--gray); font-size: 12.5px; font-weight: 850; }
+    .temp-label { color: var(--gray); font-size: 12.5px; font-weight: 900; }
     .temp-desc { margin-top: 4px; font-size: 12.5px; font-weight: 800; color: var(--primary); }
     /* 분위기 카피 리드 */
     .pulse-side { display: grid; gap: clamp(14px, 1.8vw, 18px); align-content: center; }
@@ -110,7 +110,7 @@
     .sec-toggle {
       flex: none; display: inline-flex; align-items: center; gap: 6px;
       min-height: 40px; padding: 0 14px; margin-top: 4px; border-radius: var(--r-pill);
-      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 850;
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 900;
       box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
       transition: background 0.16s var(--ease);
     }
@@ -126,7 +126,7 @@
       display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px;
       background: var(--pastel-lavender); font-size: 17px; margin-bottom: 3px;
     }
-    .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 850; }
+    .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 900; }
     .kpi-mini .vl { color: var(--deep-1); font-size: clamp(19px, 1.9vw, 24px); font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
     .kpi-mini .vl small { font-size: 0.62em; color: var(--gray); font-weight: 800; }
     .kpi-mini .sub { color: var(--gray-2); font-size: 11.5px; font-weight: 700; }
@@ -138,7 +138,7 @@
     .select-clean, .search-input {
       min-height: 42px; padding: 0 14px; border-radius: 13px;
       border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
-      font-size: 13.5px; font-weight: 750;
+      font-size: 13.5px; font-weight: 800;
       transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
     .select-clean:focus, .search-input:focus { border-color: rgba(95, 0, 128, 0.45); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.09); outline: none; }
@@ -156,8 +156,11 @@
     .rank-main { min-width: 0; display: grid; gap: 4px; }
     .rank-top-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
     .rank-name {
-      display: inline-flex; align-items: center; min-height: 40px;
-      font-weight: 850; font-size: 13.5px; letter-spacing: -0.02em; color: var(--ink);
+      /* 이름에서 뒷부분을 뺀 뒤로는 '도윤' 처럼 두 글자만 남는다.
+         글자만큼만 눌리면 폭이 23px 이라 WCAG 최소치(24px)에 못 미쳐,
+         짧은 이름에도 겨냥할 자리가 남도록 최소 폭을 준다. */
+      display: inline-flex; align-items: center; min-height: 40px; min-width: 48px;
+      font-weight: 900; font-size: 13.5px; letter-spacing: -0.02em; color: var(--ink);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .rank-name mark { background: var(--pastel-cream); color: #6B510D; border-radius: 4px; padding: 0 2px; }
@@ -189,7 +192,7 @@
       background: var(--grad-display); -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent; color: var(--primary);
     }
-    .badge-name { font-size: 14px; font-weight: 850; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge-name { font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .badge-desc { font-size: 11.5px; color: var(--gray); font-weight: 700; }
     /* 이모지를 tb-ic 에 넣을 때(멤버 카드 칭호) 폭 자동 */
     .md-badges .title-badge .tb-ic { width: auto; height: auto; font-size: 13px; line-height: 1; }
@@ -210,7 +213,7 @@
     .chart-tip.is-visible { opacity: 1; }
     .chart-tip .tv { display: block; font-size: 14.5px; font-weight: 900; letter-spacing: -0.02em; }
     .chart-tip .tl { display: block; font-size: 11px; font-weight: 700; color: rgba(231, 215, 243, 0.9); }
-    .table-twin summary { cursor: pointer; color: var(--primary); font-size: 12px; font-weight: 850; padding: 6px 2px; }
+    .table-twin summary { cursor: pointer; color: var(--primary); font-size: 12px; font-weight: 900; padding: 6px 2px; }
     .table-twin[open] summary { margin-bottom: 6px; }
     .table-twin .twin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .table-twin table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -227,17 +230,17 @@
     .clock-fact small { color: var(--gray); font-size: 11.5px; font-weight: 700; }
     .hour-seg { display: grid; gap: 7px; }
     .hour-seg .seg-row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 12px; font-weight: 800; color: var(--ink-2); white-space: nowrap; }
-    .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--deep-1); font-weight: 850; }
+    .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--deep-1); font-weight: 900; }
 
     /* ── 히트맵 ── */
     .hm-scroll { overflow-x: auto; padding-bottom: 4px; }
     .hm-grid { display: grid; grid-template-columns: 34px repeat(24, minmax(16px, 1fr)); gap: 3px; min-width: 560px; }
     .hm-corner { width: 100%; }
     .hm-hour { text-align: center; font-size: 10px; font-weight: 800; color: var(--gray-2); }
-    .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 850; color: var(--gray); }
+    .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 900; color: var(--gray); }
     .hm-day.is-weekend { color: var(--primary); }
     .hm-cell { aspect-ratio: 1; border-radius: 4px; min-width: 16px; }
-    .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gray-2); font-size: 11px; font-weight: 750; }
+    .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gray-2); font-size: 11px; font-weight: 800; }
     .hm-legend i { width: 16px; height: 10px; border-radius: 3px; }
 
     /* ── 주간 추이 ── */
@@ -248,7 +251,7 @@
     .kw-cat-chip {
       display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 15px;
       border-radius: var(--r-pill); border: 1px solid var(--line); background: #fff;
-      font-size: 12.5px; font-weight: 850; color: var(--ink-2); cursor: pointer;
+      font-size: 12.5px; font-weight: 900; color: var(--ink-2); cursor: pointer;
       transition: all 0.15s var(--ease);
     }
     .kw-cat-chip i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
@@ -258,7 +261,7 @@
     .kw-bubble {
       display: grid; place-content: center; gap: 0; text-align: center;
       border-radius: 50%; padding: 6px;
-      font-weight: 850; letter-spacing: -0.02em; color: var(--ink);
+      font-weight: 900; letter-spacing: -0.02em; color: var(--ink);
       transition: transform 0.2s var(--ease), opacity 0.25s var(--ease);
       cursor: default;
     }
@@ -279,7 +282,7 @@
     .mood-card h3 { margin: 0 0 4px; font-size: 14.5px; letter-spacing: -0.03em; color: var(--deep-1); }
     .mood-card .mood-cap { margin: 0 0 14px; color: var(--gray); font-size: 12px; font-weight: 700; }
     .mood-bar-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 58px; gap: 9px; align-items: center; margin-top: 9px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
-    .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 850; font-variant-numeric: tabular-nums; }
+    .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 900; font-variant-numeric: tabular-nums; }
     .mood-bar-row .bar-track { height: 12px; border-radius: 6px; background: var(--soft-lavender); overflow: hidden; }
     .mood-bar-row .bar-fill { display: block; height: 100%; width: 0; border-radius: 6px 4px 4px 6px; transition: width 0.7s var(--ease-out); }
     .gini-wrap { display: flex; gap: 16px; align-items: center; }
@@ -287,7 +290,7 @@
     .gini-side { display: grid; gap: 6px; }
     .mood-big { font-size: clamp(24px, 2.4vw, 30px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1); line-height: 1.1; }
     .mood-big small { font-size: 0.5em; color: var(--gray); font-weight: 800; }
-    .legend-dots { display: grid; gap: 4px; font-size: 11.5px; font-weight: 750; color: var(--gray); }
+    .legend-dots { display: grid; gap: 4px; font-size: 11.5px; font-weight: 800; color: var(--gray); }
     .legend-dots i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 
     /* ── 멤버 카드 ── */
@@ -313,14 +316,14 @@
       box-shadow: var(--shadow-brand);
     }
     .md-head b { display: block; font-size: 16px; letter-spacing: -0.03em; }
-    .md-head small { color: var(--gray); font-size: 11.5px; font-weight: 750; }
+    .md-head small { color: var(--gray); font-size: 11.5px; font-weight: 800; }
     .md-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
     .md-stat { padding: 10px 12px; border-radius: 13px; background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
-    .md-stat span { display: block; color: var(--gray); font-size: 10.5px; font-weight: 850; }
+    .md-stat span { display: block; color: var(--gray); font-size: 10.5px; font-weight: 900; }
     .md-stat strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
     .md-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
     .md-spark { margin-top: 10px; }
-    .md-spark .spark-cap { color: var(--gray-2); font-size: 11px; font-weight: 750; margin-top: 4px; }
+    .md-spark .spark-cap { color: var(--gray-2); font-size: 11px; font-weight: 800; margin-top: 4px; }
 
     /* ── 리캡 카드 ── */
     .recap-stage { display: grid; gap: 14px; justify-items: center; }
@@ -337,13 +340,13 @@
     .recap-card::after { content: ""; position: absolute; inset: 0; background: var(--noise); opacity: 0.8; mix-blend-mode: overlay; pointer-events: none; }
     .recap-inner { position: relative; z-index: 1; display: grid; gap: 16px; }
     .recap-brand { display: flex; justify-content: space-between; align-items: center; }
-    .recap-brand .logo { font-size: 17px; font-weight: 920; letter-spacing: 0.06em; background: var(--grad-on-dark-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .recap-brand small { color: var(--on-dark-muted); font-size: 11px; font-weight: 750; }
+    .recap-brand .logo { font-size: 17px; font-weight: 900; letter-spacing: 0.06em; background: var(--grad-on-dark-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .recap-brand small { color: var(--on-dark-muted); font-size: 11px; font-weight: 800; }
     .recap-title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.2; color: #fff; }
     .recap-title .grad-text-hero { display: inline; }
     .recap-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .recap-kpi { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13); }
-    .recap-kpi span { display: block; color: var(--on-dark-muted); font-size: 10.5px; font-weight: 850; }
+    .recap-kpi span { display: block; color: var(--on-dark-muted); font-size: 10.5px; font-weight: 900; }
     .recap-kpi strong { display: block; margin-top: 3px; font-size: clamp(16px, 2.2vw, 21px); font-weight: 900; letter-spacing: -0.03em; color: #fff; }
     .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 800; }
     .recap-rows { display: grid; gap: 7px; }
