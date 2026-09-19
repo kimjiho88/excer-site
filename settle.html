@@ -220,7 +220,7 @@
     .detail-line b { display: block; margin-bottom: 3px; letter-spacing: -0.02em; color: var(--ink); }
     .detail-line span { display: block; color: var(--gray); font-size: 12px; line-height: 1.4; }
     .detail-line .sep-row { display: flex; }
-    .detail-line .round-who { margin-top: 1px; color: var(--gray-2); }
+    .detail-line .round-who { margin-top: 1px; color: var(--gray); }
     .detail-line strong { white-space: nowrap; color: var(--primary-700); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
     .verify-line {
       margin: 12px 0 0; padding: 11px 13px; border-radius: 12px;
@@ -303,8 +303,8 @@
         벙주와 멤버 화면에도 바로 반영돼요.
       </p>
       <div class="hero-meta">
-        <span class="stat-pill"><i></i>총 벙비 <strong id="heroTotal">—</strong></span>
-        <span class="stat-pill"><i></i>입금 완료 <strong id="heroPaid">—</strong></span>
+        <span class="stat-pill"><i></i>총 벙비 <strong id="heroTotal">0원</strong></span>
+        <span class="stat-pill"><i></i>입금 완료 <strong id="heroPaid">0/0명</strong></span>
       </div>
     </div>
   </section>
@@ -660,8 +660,8 @@
        ============================================================ */
     function setHeroStats(total, done, count) {
       const t = $("heroTotal"), pc = $("heroPaid");
-      if (t) t.textContent = total == null ? "—" : formatWon(total);
-      if (pc) pc.textContent = (done == null || count == null) ? "—" : `${done}/${count}명`;
+      if (t) t.textContent = total == null ? "0원" : formatWon(total);
+      if (pc) pc.textContent = (done == null || count == null) ? "0/0명" : `${done}/${count}명`;
     }
 
     function renderLoading() {
@@ -822,7 +822,7 @@
           ${pay.kakao ? `<span class="kakao-badge">💛 카카오페이 송금도 가능해요</span>` : ""}
           ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
           ${otherPayers.length ? `<p class="s-note">여기 적힌 계좌는 <b>${escapeHTML(accountOwner)}</b> 님 것이에요.
-            <b>${escapeHTML(otherPayers.join(" · "))}</b> 님께 보낼 금액은 계좌를 따로 물어봐 주세요.</p>` : ""}
+            <b>${escapeHTML(otherPayers.join(", "))}</b> 님께 보낼 금액은 계좌를 따로 물어봐 주세요.</p>` : ""}
         </section>` : ""}
 
         <section class="s-card card" aria-label="입금 명단">

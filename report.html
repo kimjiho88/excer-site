@@ -88,6 +88,8 @@
       box-shadow: inset 0 0 0 1px rgba(95,0,128,0.07), var(--shadow-1);
     }
     .pulse-kpis .kpi-value { font-variant-numeric: normal; font-size: clamp(21px, 2.1vw, 27px); }
+    /* 견줄 값이 없을 때. 숫자 자리에 줄표만 두면 없다는 뜻인지 불러오는 중인지 알 수 없다. */
+    .kpi-value.is-none { font-size: 17px; letter-spacing: -0.02em; color: var(--gray); }
     .pulse-kpis .kpi-delta { font-size: 11px; }
     @media (max-width: 1023px) { .pulse-kpis { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 767px) {
@@ -171,7 +173,9 @@
     .rank-row.is-top .rank-bar { background: #7B2BB0; }
     .rank-count { text-align: right; font-size: 13px; font-weight: 900; color: var(--deep-1); font-variant-numeric: tabular-nums; }
     .rank-foot { display: flex; justify-content: center; margin-top: 12px; }
-    .chart-note { margin: 12px 2px 0; color: var(--gray-2); font-size: 12px; font-weight: 700; line-height: 1.6; }
+    /* 넓은 화면에서 설명 줄이 한 줄에 90자 넘게 늘어져 눈이 다음 줄을 놓쳤다.
+   한글 본문은 한 줄 40자 안팎이 읽기 편하다. */
+    .chart-note { margin: 12px 2px 0; max-width: 42em; color: var(--gray-2); font-size: 12px; font-weight: 700; line-height: 1.6; }
 
     /* ── 배지 그리드 ── */
     .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
@@ -280,7 +284,8 @@
     /* ── 분위기 리포트 ── */
     .mood-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
     .mood-card h3 { margin: 0 0 4px; font-size: 15px; letter-spacing: -0.03em; color: var(--deep-1); }
-    .mood-card .mood-cap { margin: 0 0 14px; color: var(--gray); font-size: 12px; font-weight: 700; }
+    .mood-card .mood-cap { margin: 0 0 14px; max-width: 42em; color: var(--gray); font-size: 12px; font-weight: 700; }
+    .mood-cap { max-width: 42em; }
     .mood-bar-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 58px; gap: 9px; align-items: center; margin-top: 9px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
     .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 900; font-variant-numeric: tabular-nums; }
     .mood-bar-row .bar-track { height: 12px; border-radius: 6px; background: var(--soft-lavender); overflow: hidden; }
@@ -600,7 +605,7 @@
             </div>
             <div class="card reveal d1" style="margin-top:12px">
               <h3 style="margin:0 0 4px; font-size:15px; letter-spacing:-0.03em; color:var(--deep-1)">주마다 바뀐 화제</h3>
-              <p class="mood-cap" style="margin:0 0 12px; color:var(--gray); font-size:12px; font-weight:700">관심사가 주마다 어떻게 옮겨갔는지 따라가 봐요.</p>
+              <p class="mood-cap" style="margin:0 0 12px; color:var(--gray); font-size:12px; font-weight:700; max-width:42em">관심사가 주마다 어떻게 옮겨갔는지 따라가 봐요.</p>
               <div class="kw-weekly" id="kwWeekly"></div>
             </div>
           </div>
@@ -1372,10 +1377,10 @@
 
       function renderHero() {
         const st = state.data;
-        document.title = "동네친구들 — 운영 대시보드 · " + (st.periodLabel || "");
+        document.title = "동네친구들 운영 대시보드 " + (st.periodLabel || "");
         const badge = $("sourceBadgeText");
         if (state.source === "sample") badge.textContent = "📎 예시 데이터 " + (st.periodLabel || "");
-        else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 · " + (st.periodLabel || "");
+        else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 " + (st.periodLabel || "");
         else badge.textContent = "✅ " + (st.periodLabel || "리포트");
         $("maskNote").hidden = !st.maskNames;
         $("pillBase").textContent = fmtDateK(st.range.to);
@@ -1473,7 +1478,7 @@
           const basis = delta.basis === "avg" ? "일평균 기준" : "직전 " + s.len + "일 대비";
           deltaHTML = `<strong class="kpi-value" style="color:${up ? "var(--mint)" : "var(--pink)"}">${up ? "▲" : "▼"} <span id="pkDelta">0</span><small>%</small></strong><span class="kpi-delta">${escapeHTML(basis)}</span>`;
         } else {
-          deltaHTML = `<strong class="kpi-value">—</strong><span class="kpi-delta">비교할 직전 기간이 없어요</span>`;
+          deltaHTML = `<strong class="kpi-value is-none">처음이에요</strong><span class="kpi-delta">견줄 직전 기간이 아직 없어요</span>`;
         }
         const mood = moodCopyOf(temp.ratio);
         card.removeAttribute("aria-busy");
@@ -1519,10 +1524,10 @@
           const pw = wt ? RM.peakOf(wt) : null;
           row.innerHTML = [
             kpiMiniCard("🌱", "신규 참여자", nf(st.newMembers.count), "명", "발행 기간 전체"),
-            kpiMiniCard("👋", "복귀 참여자", "—", "", "새 리포트에서 열려요"),
-            kpiMiniCard("📅", "가장 활발한 요일", pw ? WEEK_KO[pw.i] + "요일" : "—", "", pw ? nf(pw.v) + "건" : ""),
-            kpiMiniCard("⏰", "가장 활발한 시간대", hourly.length ? pk.i + "시" : "—", "", hourly.length ? nf(pk.v) + "건" : ""),
-            kpiMiniCard("🤫", "조용했던 시간대", hourly.length ? qt.i + "시" : "—", "", hourly.length ? nf(qt.v) + "건" : ""),
+            kpiMiniCard("👋", "복귀 참여자", "아직", "", "새 리포트에서 열려요"),
+            kpiMiniCard("📅", "가장 활발한 요일", pw ? WEEK_KO[pw.i] + "요일" : "아직", "", pw ? nf(pw.v) + "건" : ""),
+            kpiMiniCard("⏰", "가장 활발한 시간대", hourly.length ? pk.i + "시" : "아직", "", hourly.length ? nf(pk.v) + "건" : ""),
+            kpiMiniCard("🤫", "조용했던 시간대", hourly.length ? qt.i + "시" : "아직", "", hourly.length ? nf(qt.v) + "건" : ""),
             kpiMiniCard("💬", "일평균 채팅", nf(st.totalsV1.avgPerDay || 0), "건", "쉬는 날 포함")
           ].join("");
           return;
@@ -1535,7 +1540,7 @@
         const pkH = RM.peakOf(hourly), qtH = RM.quietOf(hourly), pkW = RM.peakOf(wt);
         row.innerHTML = [
           kpiMiniCard("🌱", "신규 참여자", nf(newIdx.length), "명", kpi.joins ? "입장 이벤트 " + nf(kpi.joins) + "번" : "첫 등장 기준"),
-          kpiMiniCard("👋", "복귀 참여자", state.prev ? nf(retIdx.length) : "—", state.prev ? "명" : "", state.prev ? "직전 기간엔 조용했어요" : "비교 기간이 없어요"),
+          kpiMiniCard("👋", "복귀 참여자", state.prev ? nf(retIdx.length) : "아직", state.prev ? "명" : "", state.prev ? "직전 기간엔 조용했어요" : "비교 기간이 없어요"),
           kpiMiniCard("📅", "가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건"),
           kpiMiniCard("⏰", "가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건"),
           kpiMiniCard("🤫", "조용했던 시간대", qtH.i + "시", "", nf(qtH.v) + "건"),
@@ -1549,7 +1554,7 @@
         total: "막대는 기간 내 메시지 수, 오른쪽 %는 전체 대화에서의 점유율이에요.",
         rise: "직전 같은 길이 기간 대비 증감이에요. (직전 → 이번, 직전이 짧으면 같은 길이로 환산)",
         steady: "기간 내 활동한 날 수예요. 연속 기록은 발행 기간 전체 기준이에요.",
-        question: "질문 수는 발행 기간 전체 기준이에요. (물음표·질문 말투 감지)",
+        question: "질문 수는 발행 기간 전체를 세요. (물음표나 질문하는 말투를 찾아서)",
         reaction: "답변과 리액션 수는 발행 기간 전체를 세요. (5분 안에 온 응답, ㅋㅋ나 굿 같은 반응)"
       };
       function highlightName(name) {
@@ -1730,7 +1735,7 @@
         const host = $("hmGrid");
         if (!grid) {
           host.innerHTML = "";
-          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>아직 요일·시간을 그릴 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>아직 요일과 시간을 그릴 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
           return;
         }
         let max = 0;
@@ -2091,7 +2096,7 @@
           host.innerHTML = `
             <div class="recap-inner">
               <div class="recap-brand"><span class="logo">동네친구들</span><small>월간 리캡</small></div>
-              <h3 class="recap-title">${escapeHTML(st.periodLabel)} — <span class="grad-text-hero">동네친구들 기록</span></h3>
+              <h3 class="recap-title">${escapeHTML(st.periodLabel)} <span class="grad-text-hero">동네친구들 기록</span></h3>
               <div class="recap-kpis">
                 <div class="recap-kpi"><span>총 채팅</span><strong>${nf(t.messages || 0)}<small>건</small></strong></div>
                 <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(t.activeMembers || 0)}<small>명</small></strong></div>

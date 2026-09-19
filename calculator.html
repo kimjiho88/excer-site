@@ -376,7 +376,8 @@
     .detail-line b { display: block; margin-bottom: 3px; color: #1D1128; letter-spacing: -0.02em; }
     .detail-line span { display: block; color: #6B6180; font-size: 12px; line-height: 1.4; }
     .detail-line .sep-row { display: flex; }
-    .detail-line .round-who { margin-top: 1px; color: #8A8199; }
+    /* 참여자 이름 줄. #8A8199 는 흰 바탕에서 3.64:1 이라 기준(4.5:1)에 못 미쳤다. */
+    .detail-line .round-who { margin-top: 1px; color: #6B6180; }
     .detail-line strong { white-space: nowrap; color: #4B0068; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
     .verify-box {
@@ -536,7 +537,7 @@
       <span class="hero-kicker"><i></i>벙비 정산기</span>
       <h1 class="hero-title" id="heroTitle">벙 끝나고 1분,<br /><span class="grad-text-hero">정산은 여기서 끝내요</span></h1>
       <p class="hero-sub">
-        멤버랑 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
+        멤버와 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
         카톡에 붙일 메시지, 정산 이미지, 입금 체크 링크까지 한 번에 만들어요.
       </p>
       <div class="hero-meta">
@@ -1042,7 +1043,7 @@
           var wantRound = a && a.round ? String(a.round) : "";
           if (!name || !amount) return;
           if (members.indexOf(name) < 0) {
-            warnings.push("추가·차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았어요.");
+            warnings.push("추가와 차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았어요.");
             return;
           }
 
@@ -1056,9 +1057,9 @@
               if (String(roundsOut[ri].id) === wantRound) { R = roundsOut[ri]; break; }
             }
             if (!R) {
-              warnings.push("추가·차감: " + name + " 님 항목이 가리킨 차수가 지금은 계산에 없어요(금액이 비었거나 지워졌어요). 전체 참여자 기준으로 나눴어요.");
+              warnings.push("추가와 차감: " + name + " 님 항목이 가리킨 차수가 지금은 계산에 없어요(금액이 비었거나 지워졌어요). 전체 참여자 기준으로 나눴어요.");
             } else if (R.active.indexOf(name) < 0) {
-              warnings.push("추가·차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았어요.");
+              warnings.push("추가와 차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았어요.");
               adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
                                  roundLabel: R.label, applied: false });
               return;
@@ -1068,12 +1069,12 @@
           }
 
           if (!target) {
-            warnings.push("추가·차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
+            warnings.push("추가와 차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
             return;
           }
           var others = scope.filter(function (m) { return m !== name; });
           if (!others.length) {
-            warnings.push("추가·차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
+            warnings.push("추가와 차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
             adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
                                roundLabel: scopeLabel, applied: false });
             return;
@@ -1190,8 +1191,8 @@
         });
         var balanced = exactBurdenSum === totalAmount;
         if (!balanced) {
-          warnings.push("계산이 맞지 않아요 — 각자 몫을 더하면 " + fmtKR(exactBurdenSum) +
-                        "원인데 실제로 쓴 돈은 " + fmtKR(totalAmount) + "원이에요. 추가·차감 항목을 확인해 주세요.");
+          warnings.push("계산이 맞지 않아요. 각자 몫을 더하면 " + fmtKR(exactBurdenSum) +
+                        "원인데 실제로 쓴 돈은 " + fmtKR(totalAmount) + "원이에요. 추가와 차감 항목을 확인해 주세요.");
         }
 
         var verify = {
@@ -1401,8 +1402,8 @@
 
     function verifyText(c) {
       let s = `입금 합계 ${formatWon(c.totalReceivable)} + 결제자 부담 ${formatWon(c.burden)} = 총 벙비 ${formatWon(c.totalAmount)}`;
-      if (c.residual > 0) s += ` · 단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요`;
-      else if (c.residual < 0) s += ` · 올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요`;
+      if (c.residual > 0) s += `, 단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요`;
+      else if (c.residual < 0) s += `, 올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요`;
       return s;
     }
 
@@ -1535,10 +1536,10 @@
 
         return `
         <div class="adj-row" data-adj-id="${escapeHTML(a.id)}">
-          <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가·차감 멤버">${opts}</select>
+          <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가와 차감 멤버">${opts}</select>
           <select class="select adj-round" data-field="adj-round" data-adj-id="${escapeHTML(a.id)}" aria-label="적용할 차수">${rOpts}</select>
           <button class="adj-sign ${plus ? "is-plus" : "is-minus"}" type="button" data-action="adj-sign" data-adj-id="${escapeHTML(a.id)}"
-            aria-label="${plus ? "추가(+) — 누르면 차감(−)으로" : "차감(−) — 누르면 추가(+)로"}">${plus ? "＋" : "−"}</button>
+            aria-label="${plus ? "지금은 추가(+), 누르면 차감(−)으로 바뀌어요" : "지금은 차감(−), 누르면 추가(+)로 바뀌어요"}">${plus ? "＋" : "−"}</button>
           <input class="input" type="text" inputmode="numeric" placeholder="금액"
             value="${a.amount ? formatNumber(a.amount) : ""}" data-field="adj-amount" data-adj-id="${escapeHTML(a.id)}" aria-label="금액" />
           <input class="input adj-reason" type="text" placeholder="사유 (선택) 예: 택시"
@@ -1618,7 +1619,7 @@
           /* 계좌가 비면 복사 글에 입금계좌 줄이 통째로 빠지고 송금 버튼도 안 생긴다.
              다 됐다고 알려 놓고 계좌 없는 메시지를 보내게 두면 안 된다. */
           hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "금액은 다 나눴어요. <b>3 입금 정보</b>에 은행·계좌번호를 넣으면 메시지에 계좌가 같이 담겨요.";
+          hintEl.innerHTML = "금액은 다 나눴어요. <b>입금 정보</b>에 은행과 계좌번호를 넣으면 메시지에 계좌가 같이 담겨요.";
         } else if (c.rows.length) {
           hintEl.hidden = false; hintEl.className = "calc-hint is-done";
           hintEl.innerHTML = "정산 끝났어요. 바로 <b>복사</b>하거나 <b>공유 링크</b>로 보내세요.";
@@ -1714,7 +1715,7 @@
       const pt = payText();
       const notices = checkedNotices();
       const roundingLine = state.rounding.unit > 1
-        ? ` · ${UNIT_LABEL[state.rounding.unit]} 단위 ${MODE_LABEL[state.rounding.mode]}`
+        ? `, ${UNIT_LABEL[state.rounding.unit]} 단위 ${MODE_LABEL[state.rounding.mode]}`
         : "";
       const residualLine = c.residual !== 0
         ? `<span class="residual">${c.residual > 0

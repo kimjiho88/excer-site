@@ -728,7 +728,7 @@
           statusEl.innerHTML = "명단과 일치하는 멤버를 못 찾았어요. 닉네임 철자를 확인해 주세요. (대화 내역의 닉네임과 같아야 해요)";
         } else {
           statusEl.className = "roster-status ok";
-          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${excluded.size}명</b>(나간·내보낸 사람 등)은 통계에서 뺐어요.`;
+          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${excluded.size}명</b>(나가거나 내보낸 사람)은 통계에서 뺐어요.`;
           if (unmatched.length) {
             const show = unmatched.slice(0, 8).map(escapeHTML).join(", ");
             msg += `<br><span class="warn">명단에 있지만 대화 내역에서 못 찾은 이름 ${unmatched.length}개: ${show}${unmatched.length > 8 ? " …" : ""} (오탈자거나 그 기간에 말을 안 한 사람일 수 있어요)</span>`;
@@ -972,11 +972,11 @@
         if (note) {
           if (detectedInList > 0) {
             note.hidden = false;
-            note.innerHTML = `🔎 채팅의 나감·내보냄 기록을 분석해 <b>${nf(detectedInList)}명</b>을 나간 것으로 보고 미리 뺐어요. ` +
+            note.innerHTML = `🔎 채팅의 나감과 내보냄 기록을 살펴서 <b>${nf(detectedInList)}명</b>을 나간 것으로 보고 미리 뺐어요. ` +
               `아래에서 확인하고, 아직 방에 있는 사람이면 체크를 다시 켜주세요.`;
           } else {
             note.hidden = false;
-            note.innerHTML = `🔎 채팅에서 나감·내보냄 기록을 찾지 못했어요. 오래된 내역이면 기록이 없을 수 있으니, ` +
+            note.innerHTML = `🔎 채팅에서 나가거나 내보낸 기록을 찾지 못했어요. 오래된 내역이면 기록이 없을 수 있으니, ` +
               `위 명단 붙여넣기로 현재 멤버만 남겨주세요.`;
           }
         }
@@ -1129,7 +1129,7 @@
         if (Array.isArray(p.dropped) && p.dropped.length) bits.push("뺀 단어 " + p.dropped.length + "개");
         if (p.mask) bits.push("닉네임 가리기");
         if (!bits.length) return;
-        $("presetText").textContent = "지난번 설정을 불러왔어요 — " + bits.join(" · ") +
+        $("presetText").textContent = "지난번 설정을 불러왔어요. " + bits.join(", ") +
           ". 파일을 올리면 명단이 자동으로 적용돼요.";
         bar.hidden = false;
       }
@@ -1166,9 +1166,9 @@
         const when = days === 0 ? "오늘" : (days === 1 ? "어제" : days + "일 전");
         // 홈의 신선도 배지와 같은 경계(7일/14일)를 쓴다 — 두 화면이 다른 말을 하면 안 된다
         el.className = "check-strip " + (days <= 7 ? "is-ok" : (days <= 14 ? "is-mid" : "is-warn"));
-        el.textContent = "마지막 발행 " + when + " · " + (label || "기간 미상") +
-          " · 전체 " + rows.length + "건" +
-          (days > 14 ? "  — 홈에 '지난 기준'으로 표시되고 있어요" : "");
+        el.textContent = "마지막 발행 " + when + ", " + (label || "기간 미상") +
+          ", 전체 " + rows.length + "건" +
+          (days > 14 ? ". 홈에 '지난 기준'으로 표시되고 있어요" : "");
         el.hidden = false;
       }
 

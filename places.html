@@ -61,7 +61,7 @@
     .sort-btn.is-active { background: var(--lavender); color: var(--primary); }
     /* 힌트가 아니라 읽으라고 둔 안내문이다. 캡션 색(--gray)을 쓴다 —
        --gray-2 는 오프화이트 위에서 4.44:1 로 기준에 살짝 못 미친다. */
-    .price-legend { color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
+    .price-legend { max-width: 44em; color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
 
     /* ── 목록 ── */
     .place-list { display: grid; gap: 12px; }
@@ -90,7 +90,7 @@
     .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 13px; font-weight: 700; }
     /* 가운뎃점은 따로 떨어진 요소가 아니라 뒤따르는 항목에 붙어 있다.
        별개의 <span>·</span> 으로 두면 줄이 바뀔 때 점만 앞 줄 끝에 남는다. */
-    .pc-m + .pc-m::before { content: "·"; margin-right: 7px; color: var(--gray-2); }
+    .pc-m + .pc-m::before { content: ""; display: inline-block; width: 1px; height: 10px; margin-right: 7px; background: currentColor; opacity: 0.34; vertical-align: middle; }
     .pc-area { color: var(--primary); font-weight: 900; }
     .pc-note {
       margin-top: 11px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite);
@@ -703,7 +703,7 @@
           if (state.area !== "전체") bits.push(state.area);
           if (state.cat !== "전체") bits.push(state.cat);
           return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
-            "<strong>" + esc(bits.join(" · ")) + "에는 아직 기록이 없어요</strong>" +
+            "<strong>" + esc(bits.join(" ")) + "에는 아직 기록이 없어요</strong>" +
             "<p>지역이나 종류를 바꿔볼까요?</p>" +
             '<button type="button" class="btn btn-secondary is-sm" data-reset="1">필터 풀기 (' + state.all.length + "곳)</button>" +
             "</div></div>";
@@ -719,7 +719,7 @@
         var list = visible();
         $("placeList").innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
         $("placesCount").textContent = state.all.length
-          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? " · 지금 " + list.length + "곳" : ""))
+          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? ", 지금 " + list.length + "곳" : ""))
           : "아직 등록된 곳이 없어요";
         renderFilters();
       }
