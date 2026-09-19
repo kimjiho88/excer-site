@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
 
-  <title>동네친구들 — 맛집</title>
-  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역·종류로 찾고, 지도로 바로 열어요." />
+  <title>동네친구들 맛집</title>
+  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역이나 종류로 찾고, 지도로 바로 열어요." />
   <meta property="og:url" content="https://excer-site.vercel.app/places.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 — 맛집" />
+  <meta property="og:title" content="동네친구들 맛집" />
   <meta property="og:description" content="벙에서 진짜 가봤던 곳만 모았어요." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -28,7 +28,11 @@
        맛집 목록 v1 — 페이지 전용 (site.css 수정 금지)
        ============================================================ */
     .places-toolbar { display: grid; gap: 10px; margin-bottom: 18px; }
-    .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    /* 그리드 칸은 기본값(min-width:auto)이라 속에 든 것이 크면 칸째로 늘어난다.
+       그래서 칩 줄에 overflow-x:auto 를 줘도 줄이 스크롤되는 대신 페이지가
+       통째로 옆으로 밀렸다 — 390px 화면에서 문서 폭이 750px 이 됐다. */
+    .places-toolbar > * { min-width: 0; }
+    .filter-row { display: flex; gap: 6px; min-width: 0; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
     .filter-row::-webkit-scrollbar { display: none; }
     .filter-chip {
       display: inline-flex; align-items: center; gap: 6px; flex: none;
@@ -39,8 +43,12 @@
     }
     .filter-chip:hover { border-color: var(--line-strong); }
     .filter-chip.is-active { background: var(--grad-brand); color: #fff; border-color: transparent; }
-    .filter-chip.is-empty { opacity: 0.45; }
-    .fc-count { font-size: 11px; font-weight: 900; opacity: 0.75; font-variant-numeric: tabular-nums; }
+    .filter-chip.is-empty {
+      background: var(--offwhite); border-style: dashed; border-color: var(--line-strong);
+      color: var(--gray-2); cursor: default;
+    }
+    /* 개수를 흐리게 두면 대비가 같이 떨어진다 — 색은 site.css 의 .filter-chip .fc-count 가 잡는다 */
+    .fc-count { font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; }
 
     .places-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .places-count { color: var(--gray); font-size: 13px; font-weight: 800; margin-right: auto; }
@@ -53,7 +61,7 @@
     .sort-btn.is-active { background: var(--lavender); color: var(--primary); }
     /* 힌트가 아니라 읽으라고 둔 안내문이다. 캡션 색(--gray)을 쓴다 —
        --gray-2 는 오프화이트 위에서 4.44:1 로 기준에 살짝 못 미친다. */
-    .price-legend { color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
+    .price-legend { max-width: 44em; color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
 
     /* ── 목록 ── */
     .place-list { display: grid; gap: 12px; }
@@ -64,7 +72,11 @@
       display: flex; flex-direction: column; padding: 16px 17px; border-radius: var(--r-md);
       border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
     }
-    .place-card.is-closed { opacity: 0.66; }
+    /* 문 닫은 곳은 카드 전체를 흐리게(opacity) 두고 있었다. 보기에는 '지난 곳' 같았지만
+       그 안의 글자 대비까지 같이 내려가서, '지금은 문 닫았어요' 배지가 2.53:1 까지 떨어졌다.
+       칠한 픽셀에서 잰 값이다. 흐리게 하는 대신 바탕색을 바꾸고 배지를 또렷하게 둔다. */
+    .place-card.is-closed { background: var(--offwhite); border-color: var(--line-strong); }
+    .place-card.is-closed .pc-ic { filter: grayscale(1); opacity: 0.8; }
     .pc-top { display: flex; align-items: flex-start; gap: 11px; }
     .pc-ic {
       display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; flex: none; font-size: 20px;
@@ -78,13 +90,16 @@
     .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 13px; font-weight: 700; }
     /* 가운뎃점은 따로 떨어진 요소가 아니라 뒤따르는 항목에 붙어 있다.
        별개의 <span>·</span> 으로 두면 줄이 바뀔 때 점만 앞 줄 끝에 남는다. */
-    .pc-m + .pc-m::before { content: "·"; margin-right: 7px; color: var(--gray-2); }
+    .pc-m + .pc-m::before { content: ""; display: inline-block; width: 1px; height: 10px; margin-right: 7px; background: currentColor; opacity: 0.34; vertical-align: middle; }
     .pc-area { color: var(--primary); font-weight: 900; }
     .pc-note {
       margin-top: 11px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite);
       color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; font-weight: 600;
     }
     .pc-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
+    /* 이름 앞에 줄표를 찍던 자리. 글자가 아니라 여백과 색으로 구분한다. */
+    .pc-by, .visit-note .pc-by { display: block; margin-top: 4px; }
+    .pc-note.is-empty { background: transparent; border: 1px dashed var(--line-strong); color: var(--gray); }
     .pc-foot { margin-top: auto; padding-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pc-last { color: var(--gray-2); font-size: 12px; font-weight: 700; margin-right: auto; }
     .pc-map {
@@ -103,7 +118,10 @@
     .visit-head small { color: var(--gray-2); font-weight: 700; }
     .visit-note { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.62; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--lavender-2); }
     .visit-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
-    .closed-tag { padding: 2px 8px; border-radius: var(--r-pill); background: var(--card-2, var(--offwhite)); color: var(--gray-2); font-size: 11px; font-weight: 900; }
+    .closed-tag {
+      margin-left: auto; flex: none; padding: 3px 9px; border-radius: var(--r-pill); white-space: nowrap;
+      background: #fff; border: 1px solid var(--line-strong); color: var(--ink-2); font-size: 11px; font-weight: 900;
+    }
 
     /* ── 펼친 카드 안의 행동 ── */
     .pc-detail-actions { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 3px; }
@@ -175,13 +193,13 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab is-active" href="places.html" aria-current="page">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
         <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
         <span class="tv-sep" aria-hidden="true"></span>
         <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
       </div>
-      <span class="topnav-page" aria-hidden="true">게임</span>
+      <span class="topnav-page" aria-hidden="true">맛집</span>
     </div>
   </header>
   <section class="hero-band is-compact" aria-labelledby="heroTitle">
@@ -216,7 +234,9 @@
             </div>
             <button class="btn btn-primary is-sm" type="button" id="addBtn">＋ 맛집 올리기</button>
           </div>
-          <p class="price-legend">가격대는 1인 기준이에요 · ₩ 1만원 이하 · ₩₩ 1~2만원 · ₩₩₩ 2~3만원 · ₩₩₩₩ 3만원 이상 (술값은 뺀 기준)</p>
+          <!-- 올릴 때 고르는 말(1만원대)과 여기 적힌 말(1~2만원)이 서로 달라서 같은 칸인지 헷갈렸다 -->
+          <p class="price-legend">가격대는 1인 기준이고 술값은 빼고 봐요.<br />
+            <span class="sep-row"><span>₩ 1만원 이하</span><span>₩₩ 1만원대</span><span>₩₩₩ 2만원대</span><span>₩₩₩₩ 3만원 이상</span></span></p>
         </div>
 
         <div class="place-list" id="placeList"></div>
@@ -229,10 +249,10 @@
         <div>
           <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅에서 만난 동네친구들 —<br />
-            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네 사람들이에요.<br />
+            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -242,20 +262,15 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="places.html">🍽️ 맛집</a></li>
-            <li><a href="games.html">🎮 게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
+            <li><a href="places.html">맛집</a></li>
+            <li><a href="games.html">게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
           </ul>
         </nav>
-        <div class="footer-col">
-          <h4>안내</h4>
-          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
-        </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
@@ -296,7 +311,7 @@
         </div>
         <div class="field is-wide">
           <label for="pMap">지도 링크 <small>선택</small></label>
-          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵·네이버지도 공유 링크를 붙여넣어 주세요" />
+          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵이나 네이버지도 공유 링크를 붙여넣어 주세요" />
           <span class="field-hint">비워 두면 '지역 + 가게 이름'으로 카카오맵 검색을 열어 줘요.</span>
         </div>
         <div class="field">
@@ -478,11 +493,11 @@
       var $ = function (id) { return document.getElementById(id); };
       var SUPA = window.SUPA;
 
-      var AREAS = ["논현·신사", "역삼·선릉", "강남역", "압구정·청담", "삼성·대치", "서초·교대", "도곡·양재", "잠실·송파", "그 외"];
-      var CATS  = ["고기", "한식", "일식", "중식", "양식·퓨전", "술집·포차", "카페·디저트", "분식·면"];
+      var AREAS = ["논현/신사", "역삼/선릉", "강남역", "압구정/청담", "삼성/대치", "서초/교대", "도곡/양재", "잠실/송파", "그 외"];
+      var CATS  = ["고기", "한식", "일식", "중식", "양식/퓨전", "술집/포차", "카페/디저트", "분식/면"];
       var CAT_ICON = {
         "고기": "🥩", "한식": "🍲", "일식": "🍣", "중식": "🥟",
-        "양식·퓨전": "🍝", "술집·포차": "🍻", "카페·디저트": "☕", "분식·면": "🍜"
+        "양식/퓨전": "🍝", "술집/포차": "🍻", "카페/디저트": "☕", "분식/면": "🍜"
       };
       /* 필터를 켜는 문턱. 이보다 적으면 한 줄 목록이 더 읽기 쉽다. */
       var FILTER_MIN = 15;
@@ -575,7 +590,7 @@
          동명 이점포를 피하려고 지역명을 반드시 앞에 붙인다. */
       function mapUrl(p) {
         if (p.map_url) return p.map_url;
-        var q = (p.area && p.area !== "그 외" ? p.area.split("·")[0] + " " : "") + (p.name || "");
+        var q = (p.area && p.area !== "그 외" ? p.area.split("/")[0] + " " : "") + (p.name || "");
         return "https://map.kakao.com/?q=" + encodeURIComponent(q.trim());
       }
 
@@ -609,10 +624,14 @@
       function chipHTML(kind, value, label) {
         var n = countFor(kind, value);
         var on = (kind === "area" ? state.area : state.cat) === value;
-        // 0인 칩은 숨기지 않고 흐리게 둔다. 숨기면 '우리 동네가 아예 없네'라는
+        // 0인 칩은 숨기지 않고 남겨 둔다. 숨기면 '우리 동네가 아예 없네'라는
         // 정보 자체가 사라지고, 데이터가 늘 때마다 칩이 나타났다 사라져 들썩인다.
-        return '<button type="button" class="filter-chip' + (on ? " is-active" : "") + (n ? "" : " is-empty") +
-          '" data-kind="' + kind + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' +
+        // 다만 눌러 봐야 빈 화면이라 끈 상태로 둔다 — 흐리게(opacity)만 하면
+        // 글자 대비가 같이 떨어지고, 읽는 사람에게 못 누른다는 것도 전해지지 않는다.
+        // 지금 켜져 있는 칩은 끄지 않는다. 끄면 다시 '전체'로 돌아올 방법이 없다.
+        var dead = !n && !on;
+        return '<button type="button" class="filter-chip' + (on ? " is-active" : "") + (dead ? " is-empty" : "") +
+          '"' + (dead ? " disabled" : "") + ' data-kind="' + kind + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' +
           esc(label) + '<span class="fc-count">' + n + "</span></button>";
       }
       function renderFilters() {
@@ -633,7 +652,6 @@
         if (p.area_detail) meta.push(esc(p.area_detail));
         if (p.category) meta.push(esc(p.category));
         if (lv) meta.push(esc(priceText(lv)) + (p.price_note ? " (" + esc(p.price_note) + ")" : ""));
-        if (p.closed) meta.push('<span class="closed-tag">지금은 문 닫았어요</span>');
         meta = meta.map(function (m) { return '<span class="pc-m">' + m + "</span>"; });
 
         var detail = "";
@@ -646,7 +664,7 @@
             return '<div class="visit-row">' +
               (head.length ? '<div class="visit-head">' + head.join("") + "</div>" : "") +
               '<div class="visit-note">' + esc(n.text) +
-              (n.by ? " <b>— " + esc(n.by) + "</b>" : "") +
+              (n.by ? ' <b class="pc-by">' + esc(n.by) + "</b>" : "") +
               ' <button type="button" class="note-del" data-delnote="' + n.id + '">지우기</button></div></div>';
           }).join("");
           detail = '<div class="pc-detail">' +
@@ -661,10 +679,16 @@
         return '<article class="place-card' + (p.closed ? " is-closed" : "") + '" id="place-' + p.id + '">' +
           '<div class="pc-top"><span class="pc-ic" aria-hidden="true">' + (CAT_ICON[p.category] || "🍽️") + "</span>" +
           '<div style="min-width:0"><div class="pc-name">' + esc(p.name) + "</div></div>" +
-          (vc >= 2 ? '<span class="pc-again">또 갔어요 ' + vc + "번</span>" : "") + "</div>" +
+          /* 문 닫았다는 건 그 가게에 대해 가장 먼저 알아야 할 사실이다.
+             지역·종류·가격 사이에 섞어 두면 눈에 걸리지 않아 이름 옆으로 올렸다. */
+          (p.closed ? '<span class="closed-tag">지금은 문 닫았어요</span>'
+                    : (vc >= 2 ? '<span class="pc-again">또 갔어요 ' + vc + "번</span>" : "")) + "</div>" +
           '<div class="pc-metaline">' + meta.join("") + "</div>" +
+          /* 한줄평이 없으면 그 자리가 통째로 비어 카드가 망가진 것처럼 보였다.
+             비워 두는 대신 남겨 달라고 청한다. */
           (latest ? '<div class="pc-note">' + esc(latest.text) +
-            (latest.by ? " <b>— " + esc(latest.by) + "</b>" : "") + "</div>" : "") +
+            (latest.by ? ' <b class="pc-by">' + esc(latest.by) + "</b>" : "") + "</div>"
+                  : '<div class="pc-note is-empty">아직 한줄평이 없어요. 다녀오셨다면 한 줄 남겨 주세요</div>') +
           '<div class="pc-foot">' +
           (p.last_visit ? '<span class="pc-last">마지막 방문 ' + esc(dateText(p.last_visit)) + "</span>" : '<span class="pc-last"></span>') +
           '<a class="pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">🗺 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
@@ -679,7 +703,7 @@
           if (state.area !== "전체") bits.push(state.area);
           if (state.cat !== "전체") bits.push(state.cat);
           return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
-            "<strong>" + esc(bits.join(" · ")) + "에는 아직 기록이 없어요</strong>" +
+            "<strong>" + esc(bits.join(" ")) + "에는 아직 기록이 없어요</strong>" +
             "<p>지역이나 종류를 바꿔볼까요?</p>" +
             '<button type="button" class="btn btn-secondary is-sm" data-reset="1">필터 풀기 (' + state.all.length + "곳)</button>" +
             "</div></div>";
@@ -695,15 +719,24 @@
         var list = visible();
         $("placeList").innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
         $("placesCount").textContent = state.all.length
-          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? " · 지금 " + list.length + "곳" : ""))
+          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? ", 지금 " + list.length + "곳" : ""))
           : "아직 등록된 곳이 없어요";
         renderFilters();
       }
 
+      /* 지역·종류 이름의 가운뎃점을 빗금으로 바꿨다(sql/2026-09-23-places-slash.sql).
+         서버 쪽을 아직 옮기지 않았어도 화면은 새 이름으로 보이게, 받을 때 한 번 맞춰 둔다.
+         맞춰 두지 않으면 칩은 '서초/교대'인데 기록은 '서초·교대'라서 걸러지지 않는다. */
+      function slashName(v) { return String(v == null ? "" : v).replace(/·/g, "/"); }
+
       function load() {
         return api("/rest/v1/site_places_v?select=*")
           .then(function (rows) {
-            state.all = Array.isArray(rows) ? rows : [];
+            state.all = (Array.isArray(rows) ? rows : []).map(function (r) {
+              r.area = slashName(r.area);
+              r.category = slashName(r.category);
+              return r;
+            });
             render();
           })
           .catch(function () {

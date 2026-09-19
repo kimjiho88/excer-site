@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
-  <title>동네친구들 — 벙비 정산기</title>
-  <meta name="description" content="벙 끝나고 1분이면 정산 끝. 멤버·차수·결제자만 넣으면 1원 단위까지 나눠서 카톡 메시지·정산 이미지·입금 체크 링크를 만들어요." />
+  <title>동네친구들 벙비 정산기</title>
+  <meta name="description" content="벙 끝나고 1분이면 정산 끝. 멤버와 차수, 결제자만 넣으면 1원 단위까지 나눠서 카톡 메시지와 정산 이미지, 입금 체크 링크를 만들어요." />
   <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 — 벙비 정산기" />
+  <meta property="og:title" content="동네친구들 벙비 정산기" />
   <meta property="og:description" content="벙 끝나고 1분이면 정산 끝. 카톡에 붙일 메시지랑 입금 체크 링크까지 한 번에." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -41,6 +41,8 @@
     .calc-inputs { display: grid; gap: 14px; min-width: 0; }
     .calc-results { position: sticky; top: calc(var(--nav-h) + 14px); display: grid; gap: 12px; min-width: 0; }
     #resultArea { scroll-margin-top: calc(var(--nav-h) + 12px); }
+    /* 단계 레일로 뛰면 제목이 상단 바에 가려진다 */
+    .card-title[id] { scroll-margin-top: calc(var(--nav-h) + 18px); }
 
     .card-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
     .card-title { margin: 0; font-size: 17px; letter-spacing: -0.035em; font-weight: 900; display: flex; align-items: center; gap: 10px; color: var(--ink); }
@@ -52,6 +54,45 @@
     .card-sub { margin-top: 16px; }
     .card-note { margin: 12px 0 0; color: var(--gray); font-size: var(--fs-sm); line-height: 1.6; font-weight: 600; }
     .card-note b { color: var(--ink-2); }
+
+    /* ── 접어 둔 선택 항목 ──
+       입력 칸이 여섯 덩이나 보이면 어디부터 채워야 할지 알기 어렵다.
+       꼭 필요한 셋만 펼쳐 두고, 나머지는 필요할 때만 열도록 접는다. */
+    .fold-label {
+      display: flex; align-items: center; gap: 10px; margin: 10px 2px 0;
+      color: var(--gray); font-size: var(--fs-micro); font-weight: 800;
+    }
+    .fold-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .fold-card { padding: 0; overflow: hidden; }
+    .fold-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 15px clamp(16px, 2.2vw, 22px); min-height: 56px; cursor: pointer;
+      list-style: none; transition: background 0.16s var(--ease);
+    }
+    .fold-head::-webkit-details-marker { display: none; }
+    .fold-head:hover { background: var(--offwhite); }
+    .fold-head .card-title { font-size: 15px; }
+    .fold-note { color: var(--gray); font-size: var(--fs-caption); font-weight: 700; }
+    .fold-mark {
+      flex: none; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+      background: var(--offwhite); color: var(--ink-2); font-size: 11px; font-weight: 900;
+      transition: transform 0.18s var(--ease);
+    }
+    .fold-mark::before { content: "▼"; }
+    .fold-card[open] .fold-mark { transform: rotate(180deg); }
+    .fold-card[open] .fold-head { border-bottom: 1px solid var(--line); }
+    .fold-body { padding: 16px clamp(16px, 2.2vw, 22px) clamp(16px, 2.2vw, 22px); }
+    .fold-body > .card-head { margin-bottom: 12px; }
+    /* 좁은 화면에서는 제목과 요약이 서로 밀어내며 어색하게 줄바꿈된다 — 위아래로 쌓는다 */
+    @media (max-width: 560px) {
+      .fold-head {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "title mark" "note mark"; row-gap: 3px; align-items: center;
+      }
+      .fold-head .card-title { grid-area: title; }
+      .fold-note { grid-area: note; }
+      .fold-mark { grid-area: mark; }
+    }
 
     /* ── 폼 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -185,7 +226,8 @@
     .opt-row > label { color: var(--ink-2); font-size: 13px; font-weight: 800; }
     .opt-chips { display: flex; flex-wrap: wrap; gap: 7px; }
     .opt-chips .chip { min-height: 40px; padding: 4px 14px; font-size: 13px; }
-    .opt-chips.is-dim { opacity: 0.45; pointer-events: none; }
+    .opt-chips.is-dim .chip { background: var(--offwhite); border-style: dashed; color: var(--gray-2); }
+    .opt-chips.is-dim .chip.is-active { background: var(--offwhite); color: var(--gray-2); box-shadow: none; }
     .msg-toggle { display: inline-flex; }
     .notice-options { display: grid; gap: 8px; }
     .notice-option {
@@ -289,6 +331,7 @@
       background: #F5EDFA; border: 1px solid #E7D8F3; border-left: 4px solid #B57EDC;
       color: #473A58; font-size: 13px; line-height: 1.55; font-weight: 700;
     }
+    .deposit-warn { display: block; margin-top: 5px; color: #856410; font-size: 12px; font-style: normal; font-weight: 800; }
 
     .receipt-section { margin-top: 18px; }
     .receipt-section h3 {
@@ -332,17 +375,22 @@
     .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px dashed #E3D4EF; }
     .detail-line b { display: block; margin-bottom: 3px; color: #1D1128; letter-spacing: -0.02em; }
     .detail-line span { display: block; color: #6B6180; font-size: 12px; line-height: 1.4; }
+    .detail-line .sep-row { display: flex; }
+    /* 참여자 이름 줄. #8A8199 는 흰 바탕에서 3.64:1 이라 기준(4.5:1)에 못 미쳤다. */
+    .detail-line .round-who { margin-top: 1px; color: #6B6180; }
     .detail-line strong { white-space: nowrap; color: #4B0068; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
     .verify-box {
       margin-top: 16px; padding: 12px 14px; border-radius: 13px;
       background: #F2FBF7; border: 1px solid #CBEBDD; color: #116B4F; font-size: 13px; line-height: 1.6; font-weight: 800;
     }
+    .verify-box .vb-label { display: block; margin-bottom: 3px; color: #0D5940; font-weight: 900; }
     .verify-box b { color: #0D5940; font-variant-numeric: tabular-nums; }
     .verify-box .residual { display: block; margin-top: 2px; color: #856410; }
 
     .notice-lines { display: grid; gap: 6px; }
-    .notice-line { color: #473A58; font-size: var(--fs-sm); line-height: 1.5; font-weight: 600; }
+    .notice-line { position: relative; padding-left: 11px; color: #473A58; font-size: var(--fs-sm); line-height: 1.5; font-weight: 600; }
+    .notice-line::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 4px; height: 4px; border-radius: 50%; background: #B08FD0; }
     .warning-list { display: grid; gap: 8px; }
     .warning-item { padding: 11px 13px; border-radius: 13px; border: 1px solid #F0CFC9; background: #FCF2F0; color: #C0392B; font-size: 13px; line-height: 1.5; font-weight: 700; }
     .receipt-imgs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -355,6 +403,9 @@
       background: var(--pastel-cream); color: #6E5310; font-size: 13px; line-height: 1.6; font-weight: 600;
     }
     .kakao-tip b { color: #856410; }
+    .mention-option { background: rgba(255, 255, 255, 0.72); border-color: rgba(133, 100, 16, 0.18); }
+    .mention-option span { color: #6E5310; }
+    .mention-note { margin: 9px 2px 0; }
 
     .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .result-actions .btn { width: 100%; }
@@ -363,7 +414,7 @@
     .link-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
     /* ── 3단계 가이드 레일 ── */
-    .step-rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 0 0 18px; padding: 0; list-style: none; }
+    .step-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 0 0 18px; padding: 0; list-style: none; }
     .step-rail-item a {
       display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: var(--r-md);
       background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line); box-shadow: var(--shadow-1);
@@ -376,8 +427,9 @@
       box-shadow: 0 6px 14px -6px rgba(95, 0, 128, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28);
     }
     .step-rail-item span { color: var(--ink-2); font-size: 13px; font-weight: 900; letter-spacing: -0.02em; }
-    @media (max-width: 520px) {
-      .step-rail { gap: 7px; }
+    .step-rail-item.is-goal b { background: var(--offwhite); color: var(--primary-700); box-shadow: none; }
+    @media (max-width: 640px) {
+      .step-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
       .step-rail-item a { flex-direction: column; align-items: flex-start; gap: 7px; padding: 11px 12px; }
       .step-rail-item span { font-size: 12px; }
     }
@@ -469,7 +521,7 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
         <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
         <span class="tv-sep" aria-hidden="true"></span>
@@ -485,7 +537,7 @@
       <span class="hero-kicker"><i></i>벙비 정산기</span>
       <h1 class="hero-title" id="heroTitle">벙 끝나고 1분,<br /><span class="grad-text-hero">정산은 여기서 끝내요</span></h1>
       <p class="hero-sub">
-        멤버랑 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
+        멤버와 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
         카톡에 붙일 메시지, 정산 이미지, 입금 체크 링크까지 한 번에 만들어요.
       </p>
       <div class="hero-meta">
@@ -505,17 +557,24 @@
           <p>멤버를 넣고, 차수별 금액과 결제한 사람을 고르면 결과가 바로 정리돼요.</p>
         </div>
 
-        <ol class="step-rail reveal" aria-label="정산 3단계">
-          <li class="step-rail-item"><a href="#stepTitle1"><b>1</b><span>금액·멤버</span></a></li>
-          <li class="step-rail-item"><a href="#stepTitle2"><b>2</b><span>참여·조정</span></a></li>
-          <li class="step-rail-item"><a href="#resultArea"><b>3</b><span>결과·공유</span></a></li>
+        <ol class="step-rail reveal" aria-label="정산 단계 바로가기">
+          <li class="step-rail-item"><a href="#stepTitle1"><b>1</b><span>모임과 멤버</span></a></li>
+          <li class="step-rail-item"><a href="#stepTitle2"><b>2</b><span>금액과 결제자</span></a></li>
+          <li class="step-rail-item"><a href="#stepTitle3"><b>3</b><span>입금 정보</span></a></li>
+          <li class="step-rail-item is-goal"><a href="#resultArea"><b aria-hidden="true">↓</b><span>결과 보기</span></a></li>
         </ol>
 
         <div class="calc-grid">
           <div class="calc-inputs">
-            <!-- 1. 모임 정보 · 멤버 -->
+            <div class="helper-row reveal">
+              <button id="loadSampleBtn" class="btn btn-secondary is-sm" type="button">예시로 채워보기</button>
+              <button id="resetBtn" class="btn btn-danger is-sm" type="button">전체 지우기</button>
+              <span class="save-status"><i></i>적은 내용은 이 브라우저에 자동 저장돼요</span>
+            </div>
+
+            <!-- 1. 모임 정보와 멤버 -->
             <section class="card is-lg reveal" aria-labelledby="stepTitle1">
-              <div class="card-head"><h2 class="card-title" id="stepTitle1"><span class="card-step">1</span>모임 정보 · 멤버</h2></div>
+              <div class="card-head"><h2 class="card-title" id="stepTitle1"><span class="card-step">1</span>모임 정보와 멤버</h2></div>
               <div class="field-grid">
                 <div class="field is-wide">
                   <label for="eventTitle">모임명</label>
@@ -531,8 +590,9 @@
                 </div>
               </div>
               <div class="field card-sub">
-                <label for="membersText">참여 멤버 (쉼표 또는 줄바꿈 · 벙주는 자동 포함)</label>
-                <textarea id="membersText" class="textarea" placeholder="예:&#10;민지&#10;준호&#10;서아&#10;도윤"></textarea>
+                <label for="membersText">참여 멤버</label>
+                <span class="field-hint">줄바꿈이나 쉼표, @ 로 구분해요. 벙주는 자동으로 들어가요.</span>
+                <textarea id="membersText" class="textarea" placeholder="예:&#10;민지, 준호, 서아, 도윤&#10;또는 @민지 @준호 @서아 @도윤"></textarea>
                 <div id="memberChips" class="pchips"></div>
               </div>
               <div class="card-sub">
@@ -547,7 +607,7 @@
             <!-- 2. 차수별 비용 + 결제자 -->
             <section class="card is-lg reveal" aria-labelledby="stepTitle2">
               <div class="card-head">
-                <h2 class="card-title" id="stepTitle2"><span class="card-step">2</span>차수별 비용 · 결제자</h2>
+                <h2 class="card-title" id="stepTitle2"><span class="card-step">2</span>차수별 비용과 결제자</h2>
                 <button id="addRoundBtn" class="btn btn-secondary is-sm" type="button">＋ 차수 추가</button>
               </div>
               <div id="roundsHost" class="round-list"></div>
@@ -557,19 +617,9 @@
               </div>
             </section>
 
-            <!-- 3. 개인별 추가 · 차감 -->
+            <!-- 3. 입금 정보 -->
             <section class="card is-lg reveal" aria-labelledby="stepTitle3">
-              <div class="card-head">
-                <h2 class="card-title" id="stepTitle3"><span class="card-step">3</span>개인별 추가 · 차감 <span class="badge-soft">선택</span></h2>
-                <button id="addAdjBtn" class="btn btn-secondary is-sm" type="button">＋ 항목 추가</button>
-              </div>
-              <div id="adjList" class="adj-list"></div>
-              <p class="card-note">예: <b>서아 −4,000원 (일찍 감)</b>, <b>준호 +3,000원 (더 먹음)</b>처럼 개인별로 더하거나 뺀 금액은, 벙주가 떠안지 않고 <b>남은 참여자가 똑같이 나눠</b> 반영돼요.</p>
-            </section>
-
-            <!-- 4. 입금 정보 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle4">
-              <div class="card-head"><h2 class="card-title" id="stepTitle4"><span class="card-step">4</span>입금 정보</h2></div>
+              <div class="card-head"><h2 class="card-title" id="stepTitle3"><span class="card-step">3</span>입금 정보</h2></div>
               <div class="field-grid">
                 <div class="field"><label for="payBank">은행</label><input id="payBank" class="input" type="text" placeholder="예: 카카오뱅크" /></div>
                 <div class="field"><label for="payHolder">예금주</label><input id="payHolder" class="input" type="text" placeholder="예: 엑서" /></div>
@@ -579,11 +629,36 @@
                 <input id="payKakao" type="checkbox" />
                 <span>카카오페이 송금도 가능해요</span>
               </label>
+              <p class="card-note">여기까지만 채워도 정산 결과가 다 나와요. 아래는 필요할 때만 열면 돼요.</p>
             </section>
 
-            <!-- 5. 정산 옵션 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle5">
-              <div class="card-head"><h2 class="card-title" id="stepTitle5"><span class="card-step">5</span>정산 옵션</h2></div>
+            <p class="fold-label reveal">필요할 때만 열어 봐요</p>
+
+            <!-- 개인별 추가와 차감 -->
+            <details class="card fold-card reveal" id="foldAdj">
+              <summary class="fold-head">
+                <h2 class="card-title">개인별 추가와 차감 <span class="badge-soft">선택</span></h2>
+                <span class="fold-note" id="adjFoldNote">일찍 간 사람, 더 먹은 사람</span>
+                <span class="fold-mark" aria-hidden="true"></span>
+              </summary>
+              <div class="fold-body">
+                <div class="card-head">
+                  <p class="card-note" style="margin:0">차수를 고르면 <b>그 차수에 있던 사람끼리만</b> 나눠 반영해요. <b>전체 차수</b>로 두면 택시비처럼 참여자 전원이 나눠요.</p>
+                  <button id="addAdjBtn" class="btn btn-secondary is-sm" type="button">＋ 항목 추가</button>
+                </div>
+                <div id="adjList" class="adj-list"></div>
+                <p class="card-note">예: <b>서아 −4,000원 (일찍 감)</b>, <b>준호 +3,000원 (더 먹음)</b>처럼 개인별로 더하거나 뺀 금액은, 벙주가 떠안지 않고 <b>같은 차수에 남은 사람들이 똑같이 나눠</b> 반영돼요.</p>
+              </div>
+            </details>
+
+            <!-- 정산 옵션 -->
+            <details class="card fold-card reveal" id="foldOpts">
+              <summary class="fold-head">
+                <h2 class="card-title">정산 옵션</h2>
+                <span class="fold-note" id="optFoldNote">1원 그대로, 반올림</span>
+                <span class="fold-mark" aria-hidden="true"></span>
+              </summary>
+              <div class="fold-body">
               <div class="opt-row">
                 <label id="unitLabel">1인 금액 단위</label>
                 <div class="opt-chips" id="unitChips" role="group" aria-labelledby="unitLabel">
@@ -612,35 +687,49 @@
                 <label>안내 문구</label>
                 <div id="noticeOptions" class="notice-options"></div>
               </div>
-            </section>
+              </div>
+            </details>
 
-            <!-- 6. 영수증 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle6">
+            <!-- 영수증 -->
+            <details class="card fold-card reveal" id="foldReceipt">
+              <summary class="fold-head">
+                <h2 class="card-title">영수증 <span class="badge-soft">선택</span></h2>
+                <span class="fold-note" id="receiptFoldNote">사진 첨부 안 함</span>
+                <span class="fold-mark" aria-hidden="true"></span>
+              </summary>
+              <div class="fold-body">
               <div class="card-head">
-                <h2 class="card-title" id="stepTitle6"><span class="card-step">6</span>영수증 <span class="badge-soft">선택</span></h2>
+                <p class="card-note" style="margin:0">찍어 둔 영수증을 붙이면 정산 결과에 같이 담겨요.</p>
                 <label class="mini-btn receipt-add-label" for="receiptInput">＋ 사진 추가</label>
               </div>
-              <input id="receiptInput" type="file" accept="image/*" multiple hidden />
+              <!-- hidden(=display:none) 이 아니라 sr-only 로 감춘다.
+                   카카오톡 같은 인앱 브라우저에서는 display:none 인 파일 입력이
+                   라벨을 눌러도 사진 선택창이 열리지 않는 일이 있다.
+                   이 방에 들어오는 대부분이 카톡 링크를 타고 오므로 그쪽을 기준으로 잡는다.
+                   sr-only 는 화면에서만 감추고 요소 자체는 살아 있어서 정상 동작한다
+                   (발행 화면의 파일 입력이 이미 이 방식을 쓰고 있다). -->
+              <input id="receiptInput" type="file" accept="image/*" multiple class="sr-only" />
               <div id="receiptThumbs" class="receipt-thumbs"></div>
               <p class="card-note">첨부한 영수증은 <b>정산 이미지</b> 맨 아래와 <b>공유 링크</b>(최대 2장)에 함께 담겨요.
-                이 페이지를 닫으면 <b>사라져요</b> — 이미지 저장·링크 만들기까지 한 번에 해주세요.</p>
-            </section>
-
-            <div class="helper-row reveal">
-              <button id="loadSampleBtn" class="btn btn-secondary is-sm" type="button">예시 불러오기</button>
-              <button id="resetBtn" class="btn btn-danger is-sm" type="button">초기화</button>
-              <span class="save-status"><i></i>변경사항 자동 저장</span>
-            </div>
+                이 페이지를 닫으면 <b>사라져요</b>. 이미지 저장과 링크 만들기까지 한 번에 해주세요.</p>
+              </div>
+            </details>
 
             <!-- 이전 정산 기록 -->
-            <section class="card is-lg reveal" aria-labelledby="historyTitle" id="historyCard">
-              <div class="card-head">
-                <h2 class="card-title" id="historyTitle"><span class="card-step">🕘</span>이전 정산</h2>
-                <button id="saveHistoryBtn" class="mini-btn" type="button">＋ 지금 정산 기록하기</button>
+            <details class="card fold-card reveal" id="historyCard">
+              <summary class="fold-head">
+                <h2 class="card-title">이전 정산</h2>
+                <span class="fold-note" id="historyFoldNote">기록 없음</span>
+                <span class="fold-mark" aria-hidden="true"></span>
+              </summary>
+              <div class="fold-body">
+                <div class="card-head">
+                  <p class="card-note" style="margin:0">공유 링크를 만들면 자동으로 기록돼요. 최대 30건까지 이 브라우저에 보관해요.</p>
+                  <button id="saveHistoryBtn" class="mini-btn" type="button">＋ 지금 정산 기록하기</button>
+                </div>
+                <div id="historyList" class="history-list"></div>
               </div>
-              <div id="historyList" class="history-list"></div>
-              <p class="card-note">공유 링크를 만들면 자동으로 기록돼요. 최대 30건까지 이 브라우저에 보관해요.</p>
-            </section>
+            </details>
           </div>
 
           <!-- 우측: 결과 -->
@@ -666,15 +755,18 @@
             </section>
 
             <div class="kakao-tip">
-              <b>카톡 태그(멘션) 안내</b> — 정산 글을 <b>복사·붙여넣기</b> 하면 이름은 <b>글자</b>로만 들어가요.
-              카톡 태그(멘션 알림)는 <b>붙여넣기로는 절대 안 걸려요</b> — 채팅창에서 <b>@를 직접 입력</b>해 뜨는 목록에서 멤버를 골라야 알림이 가요.
-              특정 사람에게 알림을 주고 싶으면, 채팅창에서 <b>@이름</b>을 입력해 태그한 뒤 아래 <b>복사</b> 버튼으로 금액만 붙여넣으면 돼요.
+              <label class="notice-option mention-option">
+                <input id="mentionToggle" type="checkbox" />
+                <span><b>이름 앞에 @ 붙이기</b><br />오픈채팅방에 붙여넣으면 멘션으로 잡혀요</span>
+              </label>
+              <p class="mention-note">정산기에 적은 이름이 <b>오픈채팅 닉네임과 똑같아야</b> 태그돼요.
+                닉네임이 다르면 멤버 칸에 <b>닉네임 그대로</b> 적어 주세요. 일반 채팅방에서는 글자로만 보여요.</p>
             </div>
 
             <div class="result-actions">
               <button id="copyTextBtn" class="btn btn-primary" type="button">전체 복사</button>
               <button id="saveImageBtn" class="btn btn-secondary" type="button">이미지 저장</button>
-              <button id="shareLinkBtn" class="btn btn-share" type="button">🔗 공유 링크 만들기 — 멤버가 입금 체크</button>
+              <button id="shareLinkBtn" class="btn btn-share" type="button">🔗 멤버가 입금 체크하는 링크 만들기</button>
             </div>
             <div class="link-row">
               <button id="copyLinkBtn" class="mini-btn" type="button">정산기 주소 복사</button>
@@ -691,10 +783,10 @@
         <div>
           <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅에서 만난 동네친구들 —<br />
-            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네 사람들이에요.<br />
+            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -704,19 +796,15 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="places.html">🍽️ 맛집</a></li>
-            <li><a href="games.html">🎮 게임</a></li>
+            <li><a href="places.html">맛집</a></li>
+            <li><a href="games.html">게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
           </ul>
         </nav>
-        <div class="footer-col">
-          <h4>안내</h4>
-          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
-        </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
@@ -867,7 +955,7 @@
        *   input = {
        *     members: string[], host: string,
        *     rounds: [{ name, amount, excluded[], payer }],
-       *     adjustments: [{ name, amount(부호 있는 정수), reason }],
+       *     adjustments: [{ name, amount(부호 있는 정수), reason, round(차수 id 또는 "") }],
        *     rounding: { unit: 1|10|100, mode: "round"|"ceil"|"floor" }
        *   }
        * 규칙:
@@ -875,6 +963,8 @@
        *   · 결제자(payer)가 없으면 벙주, 결제자 본인 몫은 자기 부담
        *   · 추가/차감은 그 사람이 조정액만큼 더/덜 부담하고,
        *     반대편 금액은 남은 참여자가 균등 배분(벙주가 통째로 떠안지 않음)
+       *   · round 를 지정하면 그 차수에 실제로 참여한 사람끼리만 나눠 갖고,
+       *     채권자도 그 차수의 결제자가 된다. 비우면 전체 참여자 기준(택시비 같은 공통 항목)
        *   · 단위 반올림 잔차는 결제자 부담 — verify 로 합계 검증 제공
        */
       function computeSettlement(input) {
@@ -919,7 +1009,8 @@
             var pm = owed.get(n);
             pm.set(payer, (pm.get(payer) || 0) + shares.get(n));
           });
-          roundsOut.push({ label: label, amount: amount, count: active.length, active: active.slice(), payer: payer });
+          roundsOut.push({ id: (r && r.id) || "", label: label, amount: amount, count: active.length,
+                           active: active.slice(), payer: payer });
         });
 
         /* 라운드에 실제 참여한 사람(조정 전 기준) — 배분 대상·1인 금액 산정에 사용 */
@@ -928,45 +1019,84 @@
         /* 개인별 추가·차감 — 그 사람은 조정액만큼 더/덜 부담하고,
            반대편 금액(−조정액)은 '남은 참여자'가 균등 배분한다.
            결제자(벙주)는 정산 허브로서 자기 몫만 부담(차액을 통째로 떠안지 않음).
-           adjTarget 은 반드시 '실제 결제자'여야 한다 — 결제 안 한 벙주로 두면
+           채권자는 반드시 '실제 결제한 사람'이어야 한다 — 결제 안 한 벙주로 두면
            조정 채무가 결제자 목록에 없는 대상으로 붕 떠서(payerOrder 누락) 사라진다. */
-        var adjTarget = (host && paidTotals.has(host)) ? host : (roundsOut.length ? roundsOut[0].payer : "");
-        var participants = roundParticipants.length ? roundParticipants : members.slice();
-        var deltaBurden = new Map();   // member → 조정으로 인한 부담 변화(원)
+        var globalTarget = (host && paidTotals.has(host)) ? host : (roundsOut.length ? roundsOut[0].payer : "");
+        var allParticipants = roundParticipants.length ? roundParticipants : members.slice();
+
+        /* 조정마다 채권자가 다를 수 있다(차수를 지정하면 그 차수의 결제자).
+           그래서 '누가 누구에게' 를 함께 들고 다닌다.
+           예전에는 채권자를 하나로 고정해서, 2차 결제자가 따로인데도
+           빚이 벙주에게 잡혔다. */
+        var deltaByTarget = new Map();   // target → Map(member → 부담 변화)
+        function addDelta(target, member, d) {
+          if (!deltaByTarget.has(target)) deltaByTarget.set(target, new Map());
+          var mp = deltaByTarget.get(target);
+          mp.set(member, (mp.get(member) || 0) + d);
+        }
+
         var adjustments = [];
         (input.adjustments || []).forEach(function (a) {
           var name = a && a.name ? String(a.name).trim() : "";
           var amount = Math.round(Number(a && a.amount) || 0);
           var reason = a && a.reason ? String(a.reason).trim() : "";
+          var wantRound = a && a.round ? String(a.round) : "";
           if (!name || !amount) return;
           if (members.indexOf(name) < 0) {
-            warnings.push("추가·차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았어요.");
+            warnings.push("추가와 차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았어요.");
             return;
           }
-          if (!adjTarget) {
-            warnings.push("추가·차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
+
+          /* 범위 정하기.
+             차수를 고르면 그 차수에 실제로 참여한 사람끼리만 주고받는다 —
+             2차에 없던 사람이 2차 쿠폰 값을 나눠 갖는 일이 없어야 한다. */
+          var scope = allParticipants, target = globalTarget, scopeLabel = "";
+          if (wantRound) {
+            var R = null;
+            for (var ri = 0; ri < roundsOut.length; ri++) {
+              if (String(roundsOut[ri].id) === wantRound) { R = roundsOut[ri]; break; }
+            }
+            if (!R) {
+              warnings.push("추가와 차감: " + name + " 님 항목이 가리킨 차수가 지금은 계산에 없어요(금액이 비었거나 지워졌어요). 전체 참여자 기준으로 나눴어요.");
+            } else if (R.active.indexOf(name) < 0) {
+              warnings.push("추가와 차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았어요.");
+              adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
+                                 roundLabel: R.label, applied: false });
+              return;
+            } else {
+              scope = R.active; target = R.payer; scopeLabel = R.label;
+            }
+          }
+
+          if (!target) {
+            warnings.push("추가와 차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
             return;
           }
-          var others = participants.filter(function (m) { return m !== name; });
+          var others = scope.filter(function (m) { return m !== name; });
           if (!others.length) {
-            warnings.push("추가·차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
-            adjustments.push({ name: name, amount: amount, reason: reason, applied: false });
+            warnings.push("추가와 차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
+            adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
+                               roundLabel: scopeLabel, applied: false });
             return;
           }
           // 본인은 +amount, 남은 참여자는 −amount 를 균등(1원 단위)으로 나눠 배분
-          deltaBurden.set(name, (deltaBurden.get(name) || 0) + amount);
+          addDelta(target, name, amount);
           var portions = splitSigned(-amount, others.length);
-          others.forEach(function (Y, i) { deltaBurden.set(Y, (deltaBurden.get(Y) || 0) + portions[i]); });
-          adjustments.push({ name: name, amount: amount, reason: reason, applied: true });
+          others.forEach(function (Y, i) { addDelta(target, Y, portions[i]); });
+          adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
+                             roundLabel: scopeLabel, applied: true });
         });
+
         // 조정 부담을 결제자에게 보낼 금액(owed)과 소비합(memberExact)에 반영.
         // 결제자 본인 몫은 받을 금액이 줄어드는 형태로 암묵 부담(허브).
-        deltaBurden.forEach(function (d, m) {
-          if (!d) return;
-          memberExact.set(m, (memberExact.get(m) || 0) + d);
-          if (m === adjTarget) return;
-          var pm = owed.get(m);
-          if (pm) pm.set(adjTarget, (pm.get(adjTarget) || 0) + d);
+        deltaByTarget.forEach(function (mp, target) {
+          mp.forEach(function (d, m) {
+            if (!d) return;
+            memberExact.set(m, (memberExact.get(m) || 0) + d);
+            if (m === target) return;
+            var pm = owed.get(m);
+            if (pm) pm.set(target, (pm.get(target) || 0) + d);
+          });
         });
 
         /* 차감이 부담액보다 큰 경우 0원으로 클램프 */
@@ -1043,14 +1173,35 @@
         owed.forEach(function (pm) {
           pm.forEach(function (v, p) { if (v > 0 && payerOrder.indexOf(p) < 0) orphaned += v; });
         });
-        if (orphaned > 0) warnings.push("정산에 배분되지 않은 금액이 " + fmtKR(orphaned) + "원 있어요. 결제자·벙주 설정을 확인해 주세요.");
+        if (orphaned > 0) warnings.push("정산에 배분되지 않은 금액이 " + fmtKR(orphaned) + "원 있어요. 결제자와 벙주 설정을 확인해 주세요.");
+
+        /* 계산이 맞는지 보는 진짜 자리.
+           화면에 보여 주는 "입금 합계 + 결제자 부담 = 총 벙비" 는 읽는 사람이
+           눈으로 더해 볼 수 있는 값이긴 해도, 프로그램 입장에서는 부담을
+           (총액 − 입금합계)로 정의해 놓고 도로 꺼내 보이는 항등식이라
+           계산이 틀려도 절대 어긋나지 않는다.
+           실제로 확인해야 할 것은 '각자 지기로 한 몫을 다 더하면 쓴 돈이 되는가' 다.
+           조정이 한쪽에만 반영되거나 나눠 주는 쪽이 빠지면 여기서 어긋난다. */
+        var exactBurden = {};
+        var exactBurdenSum = 0;
+        members.forEach(function (m) {
+          var v = memberExact.get(m) || 0;
+          exactBurden[m] = v;
+          exactBurdenSum += v;
+        });
+        var balanced = exactBurdenSum === totalAmount;
+        if (!balanced) {
+          warnings.push("계산이 맞지 않아요. 각자 몫을 더하면 " + fmtKR(exactBurdenSum) +
+                        "원인데 실제로 쓴 돈은 " + fmtKR(totalAmount) + "원이에요. 추가와 차감 항목을 확인해 주세요.");
+        }
 
         var verify = {
           total: totalAmount,
           transfers: totalReceivable,
           burden: burden,
           residual: residual,
-          ok: orphaned === 0 && (totalReceivable + burden) === totalAmount
+          burdenSum: exactBurdenSum,
+          ok: orphaned === 0 && balanced
         };
 
         return {
@@ -1061,6 +1212,7 @@
           totalReceivable: totalReceivable,
           burden: burden, residual: residual,
           perPerson: perPerson, verify: verify,
+          exactBurden: exactBurden,        // 멤버 → 단위 반올림 전 실부담(음수 가능)
           rounds: roundsOut, warnings: warnings
         };
       }
@@ -1100,11 +1252,15 @@
     ];
     const UNIT_LABEL = { 1: "1원", 10: "10원", 100: "100원" };
     const MODE_LABEL = { round: "반올림", ceil: "올림", floor: "절사" };
+    const MSG_LABEL = { summary: "요약형", detail: "상세형" };
 
     function uid() { return Math.random().toString(36).slice(2, 9); }
     function today() { return new Date().toISOString().slice(0, 10); }
     function createRound(name = "", amount = 0, excluded = [], payer = "") { return { id: uid(), name, amount, excluded, payer }; }
-    function createAdj(name = "", amount = 0, sign = 1, reason = "") { return { id: uid(), name, amount, sign, reason }; }
+    function createAdj(name = "", amount = 0, sign = 1, reason = "", round = "") {
+      // round 는 차수의 id. 비어 있으면 "전체 차수" — 택시비처럼 특정 차수와 무관한 항목이다.
+      return { id: uid(), name, amount, sign, reason, round };
+    }
 
     function defaultState() {
       return {
@@ -1116,6 +1272,7 @@
         adjustments: [],
         rounding: { unit: 1, mode: "round" },
         msgStyle: "summary",
+        mention: true,
         pay: { bank: "카카오뱅크", account: "3333-00-000000", holder: "엑서", kakao: true },
         notices: { split: true, host: false, personal: true, fast: true }
       };
@@ -1136,7 +1293,9 @@
             id: a.id || uid(), name: String(a.name || ""),
             amount: Math.abs(Number(a.amount) || 0),
             sign: a.sign === -1 ? -1 : 1,
-            reason: String(a.reason || "")
+            reason: String(a.reason || ""),
+            // 예전에 저장한 것에는 round 가 없다 — 빈 값(전체)으로 둬서 계산 결과가 그대로 유지된다
+            round: String(a.round || "")
           }))
         : [];
       const rd = parsed.rounding && typeof parsed.rounding === "object" ? parsed.rounding : {};
@@ -1145,6 +1304,8 @@
         mode: ["round", "ceil", "floor"].includes(rd.mode) ? rd.mode : "round"
       };
       parsed.msgStyle = parsed.msgStyle === "detail" ? "detail" : "summary";
+      // 오픈채팅에 붙여넣을 일이 대부분이라 켜 둔 상태가 기본이다
+      parsed.mention = parsed.mention !== false;
       parsed.pay = Object.assign({ bank: "", account: "", holder: "", kakao: false }, parsed.pay || {});
       parsed.notices = Object.assign({ split: true, host: false, personal: false, fast: true }, parsed.notices || {});
       if (typeof parsed.shareId !== "string" || !/^[a-z0-9]{8,32}$/.test(parsed.shareId)) delete parsed.shareId;
@@ -1179,12 +1340,21 @@
       const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
       return String(value).replace(/[&<>"']/g, (char) => entities[char]);
     }
+    /* 이름 목록 읽기.
+       "@민지 @준호" 처럼 오픈채팅에서 쓰던 대로 한 줄에 이어 붙이는 사람이 많다.
+       줄바꿈·쉼표로만 끊으면 이 줄이 통째로 "민지 @준호" 한 사람이 된다.
+       그래서 @ 가 섞여 있으면 @ 도 경계로 쓴다. @ 가 없을 때는 손대지 않는다 —
+       "김 철수" 처럼 이름 사이에 공백이 있는 닉네임을 쪼개면 안 되기 때문이다. */
     function parseNames(text) {
-      return [...new Set(String(text || "").split(/[\n,]+/).map((n) => n.replace(/^@/, "").trim()).filter(Boolean))];
+      const raw = String(text || "");
+      const parts = raw.indexOf("@") >= 0 ? raw.split(/[\n,@]+/) : raw.split(/[\n,]+/);
+      return [...new Set(parts.map((n) => n.trim()).filter(Boolean))];
     }
+    // 벙주 칸에 "@엑서" 로 적으면 멤버 목록의 "엑서" 와 다른 사람이 돼 칩이 두 번 뜬다
+    function cleanName(value) { return String(value || "").replace(/^\s*@/, "").trim(); }
     function memberPool() {
       const list = parseNames(state.membersText);
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       if (host && !list.includes(host)) list.unshift(host);
       return list;
     }
@@ -1211,10 +1381,11 @@
     function calc() {
       return window.CalcCore.computeSettlement({
         members: memberPool(),
-        host: state.hostName.trim(),
+        host: cleanName(state.hostName),
         rounds: state.rounds,
         adjustments: state.adjustments.map((a) => ({
-          name: a.name, amount: (a.sign === -1 ? -1 : 1) * Math.abs(Number(a.amount) || 0), reason: a.reason
+          name: a.name, amount: (a.sign === -1 ? -1 : 1) * Math.abs(Number(a.amount) || 0),
+          reason: a.reason, round: a.round || ""
         })),
         rounding: state.rounding
       });
@@ -1224,15 +1395,15 @@
       const { bank, account, holder, kakao } = state.pay;
       let s = [bank.trim(), account.trim()].filter(Boolean).join(" ");
       if (holder.trim()) s += s ? ` (${holder.trim()})` : holder.trim();
-      if (kakao) s += s ? " · 카카오페이 가능" : "카카오페이 가능";
+      if (kakao) s += s ? ", 카카오페이도 돼요" : "카카오페이도 돼요";
       return s.trim();
     }
     function checkedNotices() { return NOTICES.filter((n) => state.notices[n.id]); }
 
     function verifyText(c) {
       let s = `입금 합계 ${formatWon(c.totalReceivable)} + 결제자 부담 ${formatWon(c.burden)} = 총 벙비 ${formatWon(c.totalAmount)}`;
-      if (c.residual > 0) s += ` · 단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요`;
-      else if (c.residual < 0) s += ` · 올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요`;
+      if (c.residual > 0) s += `, 단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요`;
+      else if (c.residual < 0) s += `, 올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요`;
       return s;
     }
 
@@ -1248,26 +1419,27 @@
       $("payAccount").value = state.pay.account;
       $("payHolder").value = state.pay.holder;
       $("payKakao").checked = state.pay.kakao;
+      $("mentionToggle").checked = state.mention !== false;
     }
 
     function renderMembers() {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       const count = members.length ? `<span class="pchip is-count">총 ${members.length}명</span>` : "";
       $("memberChips").innerHTML = members.length
         ? members.map((n) => {
             const isHost = sameName(n, host);
-            return `<span class="pchip${isHost ? " is-host" : ""}">${escapeHTML(n)}${isHost ? " ·벙주" : ""}</span>`;
+            return `<span class="pchip${isHost ? " is-host" : ""}">${escapeHTML(n)}${isHost ? " (벙주)" : ""}</span>`;
           }).join("") + count
         : `<span class="pchip">멤버 없음</span>`;
     }
 
     function payerOptions(selected) {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       let opts = `<option value=""${!selected ? " selected" : ""}>벙주${host ? ` (${escapeHTML(host)})` : " 자동"}</option>`;
       members.forEach((n) => {
-        opts += `<option value="${escapeHTML(n)}"${sameName(n, selected) ? " selected" : ""}>${escapeHTML(n)}${sameName(n, host) ? " ·벙주" : ""}</option>`;
+        opts += `<option value="${escapeHTML(n)}"${sameName(n, selected) ? " selected" : ""}>${escapeHTML(n)}${sameName(n, host) ? " (벙주)" : ""}</option>`;
       });
       if (selected && !members.includes(selected)) {
         opts += `<option value="${escapeHTML(selected)}" selected>${escapeHTML(selected)} (멤버 아님)</option>`;
@@ -1281,14 +1453,14 @@
       const amount = Math.max(0, Number(r.amount) || 0);
       const allOn = members.length > 0 && active.length === members.length;
       const perText = (amount && active.length)
-        ? `<span class="per">${active.length}명 · 1인 <b>${formatWon(Math.floor(amount / active.length))}~</b></span>`
+        ? `<span class="per">${active.length}명, 1인 <b>${formatWon(Math.floor(amount / active.length))}~</b></span>`
         : `<span class="per" style="background:transparent;color:var(--gray)">${members.length ? active.length + "명 참여" : "멤버 입력 필요"}</span>`;
       return perText + (members.length ? `<button class="mini-btn" type="button" data-action="toggle-all" data-round-id="${escapeHTML(r.id)}">${allOn ? "전체 끄기" : "전체 켜기"}</button>` : "");
     }
 
     function renderRounds() {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       $("roundsHost").innerHTML = state.rounds.map((r, idx) => {
         const ex = new Set(r.excluded);
         return `
@@ -1319,7 +1491,7 @@
                   const on = !ex.has(n);
                   const isHost = sameName(n, host);
                   return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button"
-                    data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " ·벙주" : ""}</button>`;
+                    data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " (벙주)" : ""}</button>`;
                 }).join("")
               : `<span class="round-empty">참여 멤버를 먼저 입력해주세요</span>`}
           </div>
@@ -1331,7 +1503,7 @@
       const members = memberPool();
       const list = $("adjList");
       if (!state.adjustments.length) {
-        list.innerHTML = `<p class="adj-empty">아직 없어요. <b>＋ 항목 추가</b>를 눌러 택시비·미리 낸 금액 같은 개인별 조정을 넣어보세요.</p>`;
+        list.innerHTML = `<p class="adj-empty">아직 없어요. <b>＋ 항목 추가</b>로 택시비나 쿠폰처럼 한 사람에게만 더하거나 빼는 금액을 넣어요.<br />특정 차수에만 해당하면 <b>차수</b>를 골라 주세요. 그 차수에 있던 사람끼리만 나눠 가져요.</p>`;
         return;
       }
       list.innerHTML = state.adjustments.map((a) => {
@@ -1343,11 +1515,31 @@
           opts += `<option value="${escapeHTML(a.name)}" selected>${escapeHTML(a.name)} (멤버 아님)</option>`;
         }
         const plus = a.sign !== -1;
+        /* 차수 고르기. 비우면 '전체 차수' — 택시비처럼 한 차수에 매이지 않는 항목이다.
+           차수를 고르면 그 차수에 있던 사람끼리만 나눠 갖는다. */
+        let rOpts = `<option value=""${!a.round ? " selected" : ""}>전체 차수</option>`;
+        let roundListed = false;
+        state.rounds.forEach((r, i) => {
+          if (!Number(r.amount)) return;                       // 금액 없는 차수는 계산에 안 들어간다
+          const label = `${i + 1}차${r.name ? " " + r.name : ""}`;
+          if (a.round === r.id) roundListed = true;
+          rOpts += `<option value="${escapeHTML(r.id)}"${a.round === r.id ? " selected" : ""}>${escapeHTML(label)}</option>`;
+        });
+        /* 고른 차수의 금액을 지우면 그 항목이 목록에서 사라진다.
+           그대로 두면 칸에는 '전체 차수'가 찍히는데 속으로는 그 차수를 가리키고 있어,
+           금액이 왜 달라졌는지 알 길이 없다. 남겨 두고 이유를 적는다. */
+        if (a.round && !roundListed) {
+          const idx = state.rounds.findIndex((r) => r.id === a.round);
+          const lost = idx >= 0 ? `${idx + 1}차 (금액 없음)` : "지워진 차수";
+          rOpts += `<option value="${escapeHTML(a.round)}" selected>${escapeHTML(lost)}</option>`;
+        }
+
         return `
         <div class="adj-row" data-adj-id="${escapeHTML(a.id)}">
-          <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가·차감 멤버">${opts}</select>
+          <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가와 차감 멤버">${opts}</select>
+          <select class="select adj-round" data-field="adj-round" data-adj-id="${escapeHTML(a.id)}" aria-label="적용할 차수">${rOpts}</select>
           <button class="adj-sign ${plus ? "is-plus" : "is-minus"}" type="button" data-action="adj-sign" data-adj-id="${escapeHTML(a.id)}"
-            aria-label="${plus ? "추가(+) — 누르면 차감(−)으로" : "차감(−) — 누르면 추가(+)로"}">${plus ? "＋" : "−"}</button>
+            aria-label="${plus ? "지금은 추가(+), 누르면 차감(−)으로 바뀌어요" : "지금은 차감(−), 누르면 추가(+)로 바뀌어요"}">${plus ? "＋" : "−"}</button>
           <input class="input" type="text" inputmode="numeric" placeholder="금액"
             value="${a.amount ? formatNumber(a.amount) : ""}" data-field="adj-amount" data-adj-id="${escapeHTML(a.id)}" aria-label="금액" />
           <input class="input adj-reason" type="text" placeholder="사유 (선택) 예: 택시"
@@ -1362,13 +1554,42 @@
         b.classList.toggle("is-active", Number(b.dataset.unit) === state.rounding.unit);
       });
       const modeWrap = $("modeChips");
-      modeWrap.classList.toggle("is-dim", state.rounding.unit === 1);
+      /* 1원 단위면 맞출 것이 없어 이 칸은 쓸 수 없다.
+         예전에는 흐리게(opacity) + pointer-events 로만 막아서, 글자 대비가 같이
+         떨어지고 화면 읽는 사람에게는 '못 쓰는 칸'이라는 사실이 전해지지 않았다.
+         disabled 로 두면 둘 다 해결되고, 꺼진 컨트롤은 대비 기준에서도 빠진다. */
+      const dim = state.rounding.unit === 1;
+      modeWrap.classList.toggle("is-dim", dim);
       modeWrap.querySelectorAll(".chip").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.mode === state.rounding.mode);
+        b.disabled = dim;
       });
       $("msgToggle").querySelectorAll("button").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.msg === state.msgStyle);
       });
+      renderFoldNotes();
+    }
+
+    /* 접어 둔 칸은 안에 뭐가 들었는지 보이지 않는다.
+       요약 한 줄을 제목 옆에 띄워 두고, 내용이 있으면 처음부터 펼쳐 둔다. */
+    function renderFoldNotes() {
+      const unit = state.rounding.unit === 1 ? "1원 그대로" : `${state.rounding.unit}원 단위`;
+      const mode = state.rounding.unit === 1 ? "" : `, ${MODE_LABEL[state.rounding.mode]}`;
+      const on = Object.keys(state.notices).filter((k) => state.notices[k]).length;
+      $("optFoldNote").textContent = `${unit}${mode}, ${MSG_LABEL[state.msgStyle]}${on ? `, 안내 ${on}개` : ""}`;
+
+      const adjCount = state.adjustments.filter((a) => a.name && a.amount).length;
+      $("adjFoldNote").textContent = adjCount ? `${adjCount}건 반영 중` : "일찍 간 사람, 더 먹은 사람";
+
+      $("receiptFoldNote").textContent = receipts.length ? `사진 ${receipts.length}장` : "사진 첨부 안 함";
+      $("historyFoldNote").textContent = historyList.length ? `${historyList.length}건 보관 중` : "기록 없음";
+    }
+
+    /* 들어 있는 내용이 있으면 펼쳐 둔다. 다만 '그때 한 번'만 —
+       매번 그리면서 열면, 사용자가 접어 둔 칸이 키 한 번 누를 때마다 다시 열린다. */
+    function openFoldsWithContent() {
+      if (state.adjustments.some((a) => a.name && a.amount)) $("foldAdj").open = true;
+      if (receipts.length) $("foldReceipt").open = true;
     }
 
     function renderNotices() {
@@ -1394,6 +1615,11 @@
         } else if (!c.totalAmount) {
           hintEl.hidden = false; hintEl.className = "calc-hint is-info";
           hintEl.innerHTML = "<b>차수 금액</b>을 넣어주세요. 총 금액은 0원보다 커야 정산이 만들어져요.";
+        } else if (c.rows.length && !(state.pay.bank.trim() && accountDigits())) {
+          /* 계좌가 비면 복사 글에 입금계좌 줄이 통째로 빠지고 송금 버튼도 안 생긴다.
+             다 됐다고 알려 놓고 계좌 없는 메시지를 보내게 두면 안 된다. */
+          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
+          hintEl.innerHTML = "금액은 다 나눴어요. <b>입금 정보</b>에 은행과 계좌번호를 넣으면 메시지에 계좌가 같이 담겨요.";
         } else if (c.rows.length) {
           hintEl.hidden = false; hintEl.className = "calc-hint is-done";
           hintEl.innerHTML = "정산 끝났어요. 바로 <b>복사</b>하거나 <b>공유 링크</b>로 보내세요.";
@@ -1425,21 +1651,36 @@
       const canSend = !!(state.pay.bank.trim() && accountDigits());
       const activePayers = c.payers.filter((p) => p.rows.length);
       const multiPayer = activePayers.length > 1;
-      /* 추가·차감이 반영되는 대상(벙주, 없으면 첫 결제자) — 해당 그룹 행에만 주석 표시 */
-      const adjTarget = (c.host && c.members.includes(c.host)) ? c.host : (c.rounds.length ? c.rounds[0].payer : "");
+      /* 조정마다 채권자가 다르다(차수를 지정하면 그 차수의 결제자).
+         그 조정이 실제로 잡힌 결제자 행에만 주석을 붙여야, 받는 사람이
+         "왜 내 쪽에 이 메모가 있지" 하지 않는다. */
+      const globalAdjTarget = (c.host && c.members.includes(c.host)) ? c.host : (c.rounds.length ? c.rounds[0].payer : "");
+      const targetOfAdj = (a) => {
+        if (!a.round) return globalAdjTarget;
+        const r = c.rounds.find((x) => String(x.id) === String(a.round));
+        return r ? r.payer : globalAdjTarget;
+      };
 
+      /* 송금 버튼은 입금 정보에 적은 계좌 하나로만 보낸다.
+         결제자가 여럿일 때 "→ 준호에게" 줄에도 버튼을 달면, 준호에게 갈 돈이
+         벙주 계좌로 가 버린다. 계좌 주인 쪽 줄에만 버튼을 둔다. */
+      const accountOwner = state.pay.holder.trim() || c.host;
+      const otherPayers = multiPayer
+        ? activePayers.map((p) => p.name).filter((n) => !sameName(n, accountOwner))
+        : [];
       const rowHTML = (row, payerName) => {
-        const adj = c.adjustments.find((a) => a.applied && a.name === row.name && sameName(payerName, adjTarget));
-        const adjNote = adj
-          ? `<span class="adj-note">${adj.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(adj.amount))}원${adj.reason ? ` ${escapeHTML(adj.reason)}` : ""} 반영</span>`
-          : "";
+        const sendable = canSend && (!multiPayer || sameName(payerName, accountOwner));
+        const mine = c.adjustments.filter((a) => a.applied && a.name === row.name && sameName(payerName, targetOfAdj(a)));
+        const adjNote = mine.map((adj) =>
+          `<span class="adj-note">${adj.roundLabel ? escapeHTML(adj.roundLabel) + " " : ""}${adj.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(adj.amount))}원${adj.reason ? ` ${escapeHTML(adj.reason)}` : ""} 반영</span>`
+        ).join("");
         return `
           <div class="pay-row">
-            <span>@${escapeHTML(row.name)}${adjNote}</span>
+            <span>${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}${adjNote}</span>
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
-              ${canSend ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
-              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="금액만 복사 — 카톡에서 @${escapeHTML(row.name)} 태그한 뒤 붙여넣으면 알림이 가요">금액 복사</button>
+              ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
+              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="${escapeHTML(row.name)} 님 금액만 복사해요">금액 복사</button>
             </div>
           </div>`;
       };
@@ -1466,7 +1707,7 @@
       const detailHTML = c.rounds.length
         ? c.rounds.map((r) => `
           <div class="detail-line">
-            <div><b>${escapeHTML(r.label)}</b><span>${r.count}명 · 결제 ${escapeHTML(r.payer)} · ${escapeHTML(r.active.join(", "))}</span></div>
+            <div><b>${escapeHTML(r.label)}</b><span class="sep-row"><span>${r.count}명이 나눠요</span><span>결제 ${escapeHTML(r.payer)}</span></span><span class="round-who">${escapeHTML(r.active.join(", "))}</span></div>
             <strong>${formatWon(r.amount)}</strong>
           </div>`).join("")
         : `<div class="detail-line"><div><b>입력된 차수가 없어요</b><span>차수와 금액을 입력해주세요.</span></div><strong>${formatWon(0)}</strong></div>`;
@@ -1474,7 +1715,7 @@
       const pt = payText();
       const notices = checkedNotices();
       const roundingLine = state.rounding.unit > 1
-        ? ` · ${UNIT_LABEL[state.rounding.unit]} 단위 ${MODE_LABEL[state.rounding.mode]}`
+        ? `, ${UNIT_LABEL[state.rounding.unit]} 단위 ${MODE_LABEL[state.rounding.mode]}`
         : "";
       const residualLine = c.residual !== 0
         ? `<span class="residual">${c.residual > 0
@@ -1487,7 +1728,7 @@
           <div>
             <small>정산 안내</small>
             <h2>${escapeHTML(state.eventTitle || "모임 정산")}</h2>
-            <p>${state.eventDate ? `${escapeHTML(state.eventDate)} · ` : ""}벙주 ${escapeHTML(c.host || "-")}</p>
+            <p class="sep-row">${state.eventDate ? `<span>${escapeHTML(state.eventDate)}</span>` : ""}<span>벙주 ${escapeHTML(c.host || "-")}</span></p>
           </div>
           <div class="receipt-total"><span>총 벙비</span><strong>${formatWon(c.totalAmount)}</strong></div>
         </div>
@@ -1496,20 +1737,23 @@
           <span>${c.perPerson.uniform ? "1인" : "1인 평균"} <b>${formatWon(c.perPerson.value)}</b></span>
           ${state.rounding.unit > 1 ? `<span>${UNIT_LABEL[state.rounding.unit]} 단위 <b>${MODE_LABEL[state.rounding.mode]}</b></span>` : ""}
         </div>
-        ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}</div>` : ""}
+        ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}${
+          /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
+          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(" · "))} 님께 보낼 금액은 계좌를 따로 알려주세요</em>` : ""
+        }</div>` : ""}
         <div class="receipt-section">
           <h3>입금 명단</h3>
           <div class="pay-list">${payHTML}
             <div class="pay-row is-host"><span>${burdenLabel}</span><strong>${formatWon(c.burden)}</strong></div>
           </div>
         </div>
-        ${adjHTML ? `<div class="receipt-section"><h3>개인별 추가 · 차감</h3><div class="pay-list">${adjHTML}</div></div>` : ""}
+        ${adjHTML ? `<div class="receipt-section"><h3>개인별 추가와 차감</h3><div class="pay-list">${adjHTML}</div></div>` : ""}
         <div class="receipt-section">
           <h3>차수별 내역</h3>
           <div class="detail-list">${detailHTML}</div>
         </div>
-        ${c.totalAmount ? `<div class="verify-box">합계 검증 — <b>${escapeHTML(verifyText(c))}</b>${roundingLine ? `<span class="residual">계산 기준${roundingLine}</span>` : ""}${residualLine}</div>` : ""}
-        ${notices.length ? `<div class="receipt-section"><h3>안내</h3><div class="notice-lines">${notices.map((n) => `<div class="notice-line">· ${escapeHTML(n.text)}</div>`).join("")}</div></div>` : ""}
+        ${c.totalAmount ? `<div class="verify-box"><b class="vb-label">합계 검증</b><b>${escapeHTML(verifyText(c))}</b>${roundingLine ? `<span class="residual">계산 기준${roundingLine}</span>` : ""}${residualLine}</div>` : ""}
+        ${notices.length ? `<div class="receipt-section"><h3>안내</h3><div class="notice-lines">${notices.map((n) => `<div class="notice-line">${escapeHTML(n.text)}</div>`).join("")}</div></div>` : ""}
         ${c.warnings.length ? `<div class="receipt-section"><h3>확인 필요</h3><div class="warning-list">${c.warnings.map((w) => `<div class="warning-item">${escapeHTML(w)}</div>`).join("")}</div></div>` : ""}
         ${receipts.length ? `<div class="receipt-section"><h3>영수증</h3><div class="receipt-imgs">${receipts.map((r) => `<img class="receipt-img" src="${r.dataUrl}" alt="영수증 사진" />`).join("")}</div></div>` : ""}`;
     }
@@ -1521,19 +1765,25 @@
       const c = calc();
       const L = [];
       const detail = state.msgStyle === "detail";
+      /* 오픈채팅방은 보낸 글 안의 @닉네임을 멤버 목록과 맞춰 멘션으로 잡아 준다.
+         그래서 이름 뒤는 반드시 공백으로 끊는다 — "@엑서님에게" 로 붙이면
+         '엑서님에게' 를 닉네임으로 찾다가 아무도 못 찾는다. */
+      const on = state.mention !== false;
+      const at = (name) => (on ? "@" + name : name);
+      const atNim = (name) => (on ? `@${name} 님에게` : `${name}님에게`);
 
       /* ── 헤더 ── */
       L.push(`💰 ${state.eventTitle || "모임 정산"} 정산`);
       const sub = [];
       if (state.eventDate) sub.push(state.eventDate);
       sub.push(`벙주 ${c.host || "-"}`);
-      L.push(sub.join(" · "));
+      L.push(sub.join(", "));
 
       /* ── 한눈 요약 ── */
       if (c.perPerson.count) {
         L.push("");
         L.push(`총 벙비 ${formatWon(c.totalAmount)}`);
-        L.push(`참여자 ${c.perPerson.count}명 · 1인 ${c.perPerson.uniform ? "" : "평균 "}${formatWon(c.perPerson.value)}`);
+        L.push(`참여자 ${c.perPerson.count}명, 1인 ${c.perPerson.uniform ? "" : "평균 "}${formatWon(c.perPerson.value)}`);
       }
 
       /* ── 💸 보낼 금액 (핵심 · 받는 사람별로 묶어서) ── */
@@ -1543,13 +1793,13 @@
       if (!activePayers.length) {
         L.push("입금 대상이 없어요");
       } else if (activePayers.length === 1) {
-        L.push(`📥 ${activePayers[0].name}님에게`);
-        activePayers[0].rows.forEach((r) => L.push(`• ${r.name}  ${formatWon(r.amount)}`));
+        L.push(`📥 ${atNim(activePayers[0].name)}`);
+        activePayers[0].rows.forEach((r) => L.push(`• ${at(r.name)}  ${formatWon(r.amount)}`));
       } else {
         activePayers.forEach((p, i) => {
           if (i > 0) L.push("");
-          L.push(`📥 ${p.name}님에게`);
-          p.rows.forEach((r) => L.push(`• ${r.name}  ${formatWon(r.amount)}`));
+          L.push(`📥 ${atNim(p.name)}`);
+          p.rows.forEach((r) => L.push(`• ${at(r.name)}  ${formatWon(r.amount)}`));
         });
       }
 
@@ -1564,12 +1814,17 @@
         if (c.rounds.length) {
           L.push("");
           L.push("🧾 차수별 내역");
-          c.rounds.forEach((r) => L.push(`• ${r.label} ${formatWon(r.amount)} (${r.count}명 · 결제 ${r.payer})`));
+          c.rounds.forEach((r) => L.push(`• ${r.label} ${formatWon(r.amount)} (${r.count}명, 결제 ${r.payer})`));
         }
         if (c.adjustments.length) {
           L.push("");
           L.push("➕ 추가 · 차감");
-          c.adjustments.forEach((a) => L.push(`• ${a.name} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원${a.reason ? ` (${a.reason})` : ""}${a.applied ? "" : " — 미반영"}`));
+          c.adjustments.forEach((a) => L.push(
+            `• ${at(a.name)} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원` +
+            `${a.reason ? ` (${a.reason})` : ""}` +
+            // 어느 차수에서 오간 돈인지가 빠지면 받는 사람이 확인할 방법이 없다
+            `${a.roundLabel ? ` · ${a.roundLabel}` : " · 전체 차수"}` +
+            `${a.applied ? "" : " — 미반영"}`));
         }
         if (c.totalAmount) {
           L.push("");
@@ -1586,7 +1841,15 @@
 
       /* ── 입금 계좌 ── */
       const pt = payText();
-      if (pt) { L.push(""); L.push(`🏦 입금계좌  ${pt}`); }
+      if (pt) {
+        L.push(""); L.push(`🏦 입금계좌  ${pt}`);
+        /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
+        const owner = state.pay.holder.trim() || c.host;
+        const others = activePayers.map((p) => p.name).filter((n) => !sameName(n, owner));
+        if (activePayers.length > 1 && others.length) {
+          L.push(`※ ${others.map((n) => at(n)).join(" · ")} 님께 보낼 금액은 계좌를 따로 알려드릴게요`);
+        }
+      }
 
       /* ── 공유 링크 ── */
       const shareUrl = currentShareUrl();
@@ -1690,7 +1953,7 @@
       const suggested = state.eventTitle.trim() || "자주 보는 멤버";
       const name = (window.prompt("이 멤버 구성의 이름을 지어주세요.", suggested) || "").trim().slice(0, 20);
       if (!name) return;
-      const group = { id: uid(), name, host: state.hostName.trim(), membersText: state.membersText };
+      const group = { id: uid(), name, host: cleanName(state.hostName), membersText: state.membersText };
       const idx = memberGroups.findIndex((g) => g.name === name);
       if (idx >= 0) {
         group.id = memberGroups[idx].id;
@@ -1759,6 +2022,7 @@
 
     function renderHistory() {
       const hostEl = $("historyList");
+      renderFoldNotes();
       if (!historyList.length) {
         hostEl.innerHTML = `<p class="history-empty">아직 기록이 없어요. 공유 링크를 만들거나 <b>지금 정산 기록하기</b>를 누르면 여기에 쌓여요.</p>`;
         return;
@@ -1767,7 +2031,7 @@
         <div class="history-row" data-hid="${escapeHTML(h.id)}">
           <div class="history-main">
             <b>${escapeHTML(h.title || "모임 정산")}</b>
-            <span>${h.date ? `${escapeHTML(h.date)} · ` : ""}${formatWon(h.total || 0)} · ${h.memberCount || 0}명 · 1인${h.uniform ? "" : " 평균"} ${formatWon(h.perPerson || 0)}${h.shareId ? ` · <em class="h-live">🔗 공유됨</em>` : ""} · 저장 ${formatSavedAt(h.savedAt)}</span>
+            <span class="sep-row">${h.date ? `<span>${escapeHTML(h.date)}</span>` : ""}<span>${formatWon(h.total || 0)}</span><span>${h.memberCount || 0}명</span><span>1인${h.uniform ? "" : " 평균"} ${formatWon(h.perPerson || 0)}</span>${h.shareId ? `<em class="h-live">🔗 공유됨</em>` : ""}<span>저장 ${formatSavedAt(h.savedAt)}</span></span>
           </div>
           <div class="history-acts">
             <button class="mini-btn" type="button" data-action="h-load" data-hid="${escapeHTML(h.id)}">불러오기</button>
@@ -1786,7 +2050,7 @@
       receipts = [];
       fallbackShareUrl = null;
       renderReceiptThumbs();
-      hydrateInputs(); renderAll(); saveState();
+      hydrateInputs(); renderAll(); openFoldsWithContent(); saveState();
       refreshSettleStatus();
       showToast(`"${h.title}" 정산을 불러왔어요.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1860,6 +2124,7 @@
           <img src="${r.dataUrl}" alt="영수증 미리보기" />
           <button class="receipt-thumb-del" type="button" data-receipt-id="${escapeHTML(r.id)}" aria-label="영수증 삭제">×</button>
         </div>`).join("");
+      renderFoldNotes();
     }
 
     /* ============================================================
@@ -1912,7 +2177,8 @@
           payer: p.name, amount: p.receivable,
           rows: p.rows.map((r) => ({ name: r.name, amount: r.amount }))
         })),
-        adjustments: c.adjustments.map((a) => ({ name: a.name, amount: a.amount, reason: a.reason, applied: a.applied })),
+        adjustments: c.adjustments.map((a) => ({ name: a.name, amount: a.amount, reason: a.reason,
+                                                 round: a.round || "", roundLabel: a.roundLabel || "", applied: a.applied })),
         perPerson: c.perPerson,
         verifyText: c.totalAmount ? verifyText(c) : "",
         total: c.totalAmount,
@@ -2036,7 +2302,8 @@
       ];
       fallbackShareUrl = null;
       hideSettleStatus();
-      hydrateInputs(); renderAll(); saveState(); showToast("예시 데이터를 불러왔어요.");
+      hydrateInputs(); renderAll(); openFoldsWithContent(); saveState();
+      showToast("예시 데이터를 불러왔어요.");
     }
 
     function resetAll() {
@@ -2046,6 +2313,7 @@
         adjustments: [],
         rounding: { unit: 1, mode: "round" },
         msgStyle: "summary",
+        mention: state.mention !== false,   // 방 성격에 따른 설정이라 지워도 유지한다
         pay: { bank: "", account: "", holder: "", kakao: false },
         notices: { split: true, host: false, personal: false, fast: true }
       };
@@ -2053,7 +2321,10 @@
       fallbackShareUrl = null;
       hideSettleStatus();
       renderReceiptThumbs();
-      hydrateInputs(); renderAll(); saveState(); showToast("초기화했어요.");
+      $("foldAdj").open = false; $("foldReceipt").open = false;
+      hydrateInputs(); renderAll(); saveState();
+      $("stepTitle1").scrollIntoView({ block: "start" });
+      showToast("모두 지웠어요. 처음부터 적어 주세요.");
     }
 
     function findRound(id) { return state.rounds.find((r) => r.id === id); }
@@ -2071,6 +2342,11 @@
       $("eventTitle").addEventListener("input", (e) => { state.eventTitle = e.target.value; renderAndSave(); });
       $("eventDate").addEventListener("input", (e) => { state.eventDate = e.target.value; renderAndSave(); });
       $("hostName").addEventListener("input", (e) => { state.hostName = e.target.value; renderMembers(); renderRounds(); renderAdjustments(); renderAndSave(); });
+      // 칸에서 손을 떼면 보이는 것과 쓰이는 것을 맞춘다 — 속으로만 @ 를 떼면 왜 다른지 알 수 없다
+      $("hostName").addEventListener("focusout", (e) => {
+        const clean = cleanName(e.target.value);
+        if (clean !== e.target.value) { e.target.value = clean; state.hostName = clean; renderAll(); saveState(); }
+      });
       $("membersText").addEventListener("input", (e) => { state.membersText = e.target.value; renderMembers(); renderRounds(); renderAdjustments(); renderAndSave(); });
 
       $("payBank").addEventListener("input", (e) => { state.pay.bank = e.target.value; renderAndSave(); });
@@ -2109,7 +2385,7 @@
       /* 차수 */
       $("addRoundBtn").addEventListener("click", () => {
         state.rounds.push(createRound());
-        renderRounds(); renderAndSave();
+        renderRounds(); renderAdjustments(); renderAndSave();
       });
 
       $("roundsHost").addEventListener("input", (e) => {
@@ -2118,8 +2394,21 @@
         const round = findRound(id);
         if (!round) return;
         if (field === "round-name") round.name = t.value;
-        if (field === "round-amount") { round.amount = toAmount(t.value); updateRoundMeta(id); }
+        if (field === "round-amount") {
+          const counted = Number(round.amount) > 0;
+          round.amount = toAmount(t.value);
+          updateRoundMeta(id);
+          /* 금액이 0이 되면 이 차수는 계산에서 빠지고, 추가·차감의 차수 목록에서도 사라진다.
+             그 순간에만 목록을 다시 만든다 — 글자 칠 때마다 다시 그리면 낭비다. */
+          if (counted !== (round.amount > 0)) renderAdjustments();
+        }
         renderAndSave();
+      });
+
+      /* 차수 이름을 바꾸면 추가·차감의 차수 목록에 적힌 이름도 따라가야 한다.
+         치는 동안 다시 그리면 낭비라 칸에서 손을 뗄 때 한 번만 맞춘다. */
+      $("roundsHost").addEventListener("focusout", (e) => {
+        if (e.target.dataset.field === "round-name") renderAdjustments();
       });
 
       $("roundsHost").addEventListener("change", (e) => {
@@ -2163,9 +2452,16 @@
         }
         const del = e.target.closest("[data-action='del-round']");
         if (del) {
-          state.rounds = state.rounds.filter((r) => r.id !== del.dataset.roundId);
+          const goneId = del.dataset.roundId;
+          state.rounds = state.rounds.filter((r) => r.id !== goneId);
           if (state.rounds.length === 0) state.rounds.push(createRound());
-          renderRounds(); renderAndSave();
+          // 지운 차수를 가리키던 조정은 '전체 차수'로 돌린다.
+          // 없는 차수를 가리킨 채 두면 계산이 조용히 전체 기준으로 바뀌어
+          // 금액이 왜 달라졌는지 알 수 없다.
+          let moved = 0;
+          state.adjustments.forEach((a) => { if (a.round === goneId) { a.round = ""; moved++; } });
+          renderRounds(); renderAdjustments(); renderAndSave();
+          if (moved) showToast(`지운 차수에 달려 있던 추가·차감 ${moved}건을 '전체 차수'로 옮겼어요.`);
         }
       });
 
@@ -2179,16 +2475,31 @@
         if (!field || !id) return;
         const adj = findAdj(id);
         if (!adj) return;
-        if (field === "adj-amount") adj.amount = toAmount(t.value);
+        if (field === "adj-amount") {
+          // "-3000" 처럼 빼기표를 같이 치는 사람이 많다. ± 버튼을 못 보고 +로 들어가면
+          // 금액이 반대로 움직이므로, 앞에 붙은 빼기표는 차감으로 읽는다.
+          if (/^\s*[-−]/.test(t.value) && adj.sign !== -1) {
+            adj.sign = -1;
+            // 여기서 다시 그리면 글자를 치는 중에 커서가 튄다 — 버튼만 손으로 바꾼다
+            const btn = t.closest(".adj-row").querySelector("[data-action='adj-sign']");
+            if (btn) {
+              btn.classList.remove("is-plus"); btn.classList.add("is-minus");
+              btn.textContent = "−";
+              btn.setAttribute("aria-label", "차감(−) — 누르면 추가(+)로");
+            }
+          }
+          adj.amount = toAmount(t.value);
+        }
         if (field === "adj-reason") adj.reason = t.value;
         renderAndSave();
       });
       $("adjList").addEventListener("change", (e) => {
-        const t = e.target;
-        if (t.dataset.field !== "adj-name") return;
+        const t = e.target, field = t.dataset.field;
+        if (field !== "adj-name" && field !== "adj-round") return;
         const adj = findAdj(t.dataset.adjId);
         if (!adj) return;
-        adj.name = t.value;
+        if (field === "adj-name") adj.name = t.value;
+        if (field === "adj-round") adj.round = t.value;
         renderAndSave();
       });
       $("adjList").addEventListener("focusout", (e) => {
@@ -2287,7 +2598,15 @@
         showToast("입금 현황을 다시 확인했어요.");
       });
       $("loadSampleBtn").addEventListener("click", loadSample);
-      $("resetBtn").addEventListener("click", resetAll);
+      // 버튼을 위로 올린 만큼 잘못 눌릴 일도 늘어난다 — 한 번 묻는다
+      $("resetBtn").addEventListener("click", () => {
+        if (window.confirm("적어 둔 내용을 모두 지울까요? 되돌릴 수 없어요.")) resetAll();
+      });
+      $("mentionToggle").addEventListener("change", (e) => {
+        state.mention = e.target.checked;
+        renderAndSave();
+        showToast(state.mention ? "이름 앞에 @ 를 붙여서 복사돼요." : "이름만 복사돼요.");
+      });
 
       /* 모바일 요약 바 */
       $("mbGo").addEventListener("click", () => {
@@ -2306,6 +2625,7 @@
     renderGroups();
     renderHistory();
     renderReceiptThumbs();
+    openFoldsWithContent();
     bindEvents();
     refreshSettleStatus();
   </script>

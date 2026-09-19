@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
 
-  <title>동네친구들 — 소식</title>
+  <title>동네친구들 소식</title>
   <meta name="description" content="공지부터 벙 소식, 후기, 정보, 자유 수다까지. 동네친구들 소식을 카드 피드로 편하게 나눠요." />
   <meta property="og:url" content="https://excer-site.vercel.app/news.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 — 소식" />
-  <meta property="og:description" content="공지부터 후기·정보까지, 동네친구들 소식을 한곳에서." />
+  <meta property="og:title" content="동네친구들 소식" />
+  <meta property="og:description" content="공지부터 후기까지 동네친구들 소식을 한곳에서." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -195,6 +195,11 @@
     .post-topline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .badge-soft.pin-badge { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
     .post-title-text { display: block; font-size: 16px; font-weight: 900; letter-spacing: -0.025em; line-height: 1.42; color: var(--ink); word-break: break-word; overflow-wrap: anywhere; }
+    .post-excerpt {
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      margin-top: 4px; color: var(--gray); font-size: var(--fs-caption); font-weight: 600; line-height: 1.55;
+      word-break: break-word; overflow-wrap: anywhere;
+    }
     .post-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 1px; color: var(--gray); font-size: 12px; font-weight: 700; }
     .pc-ava {
       width: 21px; height: 21px; border-radius: 50%; display: inline-grid; place-items: center;
@@ -207,7 +212,11 @@
       background: var(--offwhite); border: 1px solid var(--line); color: var(--gray);
       font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums;
     }
-    .pc-sep { color: var(--gray-2); }
+    /* 글쓴이와 시각 사이를 나누는 자리. 가운뎃점을 글자로 찍는 대신 선으로 그린다. */
+    .post-meta .pc-author + span::before {
+      content: ""; display: inline-block; width: 1px; height: 10px; margin-right: 8px;
+      background: currentColor; opacity: 0.32; vertical-align: middle;
+    }
 
     /* ── 리액션 바 (터치 타깃 44px) ── */
     .react-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 18px 14px 74px; }
@@ -319,7 +328,7 @@
         <a class="topnav-tab is-active" href="news.html" aria-current="page">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
         <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
         <span class="tv-sep" aria-hidden="true"></span>
@@ -357,11 +366,11 @@
         <div class="section-head reveal">
           <span class="eyebrow">동네친구들 이야기</span>
           <h2>소식 피드</h2>
-          <p>고정 공지는 항상 맨 위에 있어요. 검색·카테고리·정렬로 원하는 소식을 바로 찾아보세요.</p>
+          <p>고정 공지는 항상 맨 위에 있어요. 검색하거나 카테고리를 골라서 찾아보세요.</p>
         </div>
 
         <div id="setupBanner" class="setup-banner" hidden>
-          <span><b>소식을 불러오지 못했어요</b> — 연결이 잠깐 끊겼을 수 있어요. 잠시 뒤 다시 확인해 주세요.</span>
+          <span><b>소식을 불러오지 못했어요.</b> 연결이 잠깐 끊겼을 수 있어요. 잠시 뒤 다시 확인해 주세요.</span>
           <button id="retryBtn" class="mini-btn" type="button">다시 확인</button>
         </div>
 
@@ -371,7 +380,7 @@
           <div class="toolbar-row">
             <label class="search-box">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input id="searchInput" type="search" placeholder="제목·내용으로 소식 찾기" aria-label="소식 검색" autocomplete="off" />
+              <input id="searchInput" type="search" placeholder="제목이나 내용으로 소식 찾기" aria-label="소식 검색" autocomplete="off" />
             </label>
             <div class="tab-row" id="sortRow" role="group" aria-label="정렬 방식">
               <button type="button" class="is-active" data-sort="latest" aria-pressed="true">최신순</button>
@@ -407,10 +416,10 @@
         <div>
           <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅에서 만난 동네친구들 —<br />
-            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네 사람들이에요.<br />
+            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -420,20 +429,15 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="places.html">🍽️ 맛집</a></li>
-            <li><a href="games.html">🎮 게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
+            <li><a href="places.html">맛집</a></li>
+            <li><a href="games.html">게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
           </ul>
         </nav>
-        <div class="footer-col">
-          <h4>안내</h4>
-          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
-        </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
@@ -473,8 +477,8 @@
         <div class="field is-wide">
           <label for="wPass">비밀번호</label>
           <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
-          <span class="field-hint">나중에 수정·삭제할 때 필요해요</span>
-          <span class="field-hint pass-hint" id="passHint" hidden>이 브라우저에 기억해 뒀어요 ·
+          <span class="field-hint">나중에 고치거나 지울 때 필요해요</span>
+          <span class="field-hint pass-hint" id="passHint" hidden>이 브라우저에 기억해 뒀어요
             <button type="button" class="linkish" id="passForget">지우기</button></span>
         </div>
         <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 올라가고, 자동으로 맨 위에 고정돼요.</p>
@@ -503,7 +507,7 @@
               <input id="wBungCap" class="input" type="number" min="1" max="200" placeholder="예: 8" />
             </div>
           </div>
-          <span class="field-hint">날짜만 넣어도 돼요. 신청은 카톡방에서 받아요 — 정원은 표시만 하고 자동으로 마감하지 않아요.</span>
+          <span class="field-hint">날짜만 넣어도 돼요. 신청은 카톡방에서 받고, 정원은 보여 주기만 할 뿐 자동으로 마감하지 않아요.</span>
         </div>
         <div class="field is-wide">
           <label for="wBody">내용</label>
@@ -723,6 +727,14 @@
         (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
       const mentioned = linkifyMentions(linked);
       return mentioned.replace(/\n/g, "<br>");
+    }
+
+    /* 접혀 있는 카드에는 제목만 보인다. '오늘 한잔?' 같은 제목만으로는
+       열어 보기 전에는 무슨 얘긴지 알 수 없어서, 첫 줄을 미리 보여 준다.
+       본문은 어차피 목록과 함께 받아 오므로 더 부르는 것은 없다. */
+    function excerptOf(body) {
+      const t = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
+      return t.length > 110 ? t.slice(0, 110) + "…" : t;
     }
 
     function relTime(iso) {
@@ -1010,10 +1022,10 @@
               <span class="pc-body">
                 <span class="post-topline">${catBadges(post)}</span>
                 <span class="post-title-text">${escapeHTML(post.title)}</span>
+                ${!expanded && excerptOf(post.body) ? `<span class="post-excerpt">${escapeHTML(excerptOf(post.body))}</span>` : ""}
                 <span class="post-meta">
                   <span class="pc-ava" aria-hidden="true">${initial}</span>
                   <span class="pc-author">${escapeHTML(author || "익명")}</span>
-                  <span class="pc-sep" aria-hidden="true">·</span>
                   <span>${relTime(post.created_at)}</span>
                   <span class="pc-stat" title="댓글 ${cc}개">💬 ${cc}</span>
                   <span class="pc-stat" title="리액션 ${rc}개">🙌 ${rc}</span>
@@ -1055,7 +1067,7 @@
       return `<div class="card empty-card"><div class="empty-state">
         <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M12 8v6M9 11h6"/></svg></span>
         <strong>아직 올라온 소식이 없어요</strong>
-        <p>공지, 벙 소식, 후기, 정보, 자유 수다까지 — 첫 소식을 남겨볼까요?</p>
+        <p>공지든 후기든 그날 있었던 얘기든 좋아요. 첫 소식을 남겨볼까요?</p>
         <button type="button" class="btn btn-primary" data-act="open-write">첫 소식 남기기</button>
       </div></div>`;
     }
@@ -1509,7 +1521,7 @@
       if (b.time) bits.push(b.time);
       if (b.place) bits.push(escapeHTML(b.place));
       if (b.cap) bits.push("정원 " + b.cap + "명");
-      return bits.join(" · ");
+      return bits.map((t) => "<span>" + t + "</span>").join("");
     }
 
     function bungStripHTML(post) {
@@ -1519,7 +1531,7 @@
       const past = d !== null && d < 0;
       return `<div class="bung-strip${past ? " is-past" : ""}">
         <span class="bung-dday">${bungLabel(d)}</span>
-        <span class="bung-when">${bungLine(b)}</span>
+        <span class="bung-when sep-row">${bungLine(b)}</span>
         <span class="bung-state">${past ? "마감 지남" : "모집 중"}</span>
       </div>`;
     }
