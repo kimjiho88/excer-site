@@ -152,12 +152,19 @@
   --container-pad: clamp(18px, 4vw, 32px);
   --nav-h: 64px;
 
-  --fs-display: clamp(36px, 5.4vw, 68px);   /* 히어로 타이틀 — 크게 */
+  /* 글자 크기 사다리.
+     여태 페이지마다 px 를 직접 박아 42종이 생겼고, 화면에 그려지는 글자의
+     62%가 14px 미만이었다. 읽는 글은 --fs-body 에 걸고, 조밀해야 하는
+     칩·배지·표는 아래 작은 칸을 쓴다. 사이 값을 새로 만들지 않는다. */
+  --fs-display: clamp(36px, 5.4vw, 68px);   /* 히어로 타이틀 */
   --fs-title: clamp(24px, 3vw, 36px);       /* 섹션 h2 */
-  --fs-h3: clamp(17px, 1.6vw, 20px);
-  --fs-body: 15px;
-  --fs-caption: 13px;
-  --fs-micro: 12px;
+  --fs-h3: clamp(17px, 1.6vw, 20px);        /* 카드 제목 */
+  --fs-lead: 17px;                          /* 리드문·큰 카드 제목 */
+  --fs-body: 15px;                          /* 읽는 글의 기본 */
+  --fs-sm: 14px;                            /* 보조 설명 */
+  --fs-caption: 13px;                       /* 메타·라벨 */
+  --fs-micro: 12px;                         /* 배지·각주 */
+  --fs-nano: 11px;                          /* 카운터처럼 아주 작은 것 */
 
   /* ══════════ 5. 모션 / z-index / 브레이크포인트 ══════════ */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -301,7 +308,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 
 .eyebrow, .section-eyebrow {
   display: inline-flex; align-items: center; gap: 9px;
-  color: var(--primary); font-size: 12.5px; font-weight: 900; letter-spacing: 0.02em;
+  color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: 0.02em;
 }
 .eyebrow::before, .section-eyebrow::before {
   content: ""; width: 22px; height: 2px; border-radius: 2px;
@@ -352,7 +359,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 .topnav-visits .tv-ic svg { width: 15px; height: 15px; display: block; }
 .topnav-visits .tv-cell { display: inline-flex; align-items: baseline; gap: 5px; }
 .topnav-visits .tv-cell i {
-  color: var(--on-dark-muted); font-size: 9.5px; font-weight: 800; font-style: normal;
+  color: var(--on-dark-muted); font-size: 10px; font-weight: 800; font-style: normal;
   letter-spacing: 0.06em; text-transform: uppercase;
 }
 .topnav-visits .tv-cell b { color: #fff; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -371,14 +378,14 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   -webkit-text-fill-color: transparent; color: transparent;
 }
 .topnav-sub {
-  color: var(--on-dark-muted); font-size: 11.5px; font-weight: 800; letter-spacing: -0.01em;
+  color: var(--on-dark-muted); font-size: 12px; font-weight: 800; letter-spacing: -0.01em;
   white-space: nowrap;
 }
 .topnav-tabs { display: flex; align-items: center; gap: 3px; }
 .topnav-tab {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 38px; padding: 0 13px; border-radius: var(--r-pill);
-  color: var(--on-dark-body); font-size: 13.5px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--on-dark-body); font-size: 14px; font-weight: 800; letter-spacing: -0.02em;
   transition: background 0.18s var(--ease), color 0.18s var(--ease), box-shadow 0.18s var(--ease);
 }
 .topnav-tab:hover { background: rgba(255, 255, 255, 0.10); color: #fff; }
@@ -444,7 +451,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   display: inline-flex; align-items: center; gap: 8px;
   min-height: 32px; padding: 5px 14px; border-radius: var(--r-pill);
   background: var(--on-dark-glass); color: var(--on-dark-body);
-  font-size: 12.5px; font-weight: 900; letter-spacing: 0;
+  font-size: 13px; font-weight: 900; letter-spacing: 0;
   box-shadow: inset 0 0 0 1px var(--on-dark-line);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
@@ -703,7 +710,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   min-height: 40px; padding: 6px 15px; border-radius: var(--r-pill);
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.92); color: var(--ink-2);
-  font-size: 12.5px; font-weight: 800; cursor: pointer;
+  font-size: 13px; font-weight: 800; cursor: pointer;
   transition: transform 0.16s var(--ease), background 0.16s var(--ease),
               color 0.16s var(--ease), border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
 }
@@ -740,7 +747,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
     linear-gradient(#fff, #fff) padding-box,
     var(--grad-title) border-box;
   border: 1.5px solid transparent;
-  color: var(--primary); font-size: 12.5px; font-weight: 900; letter-spacing: -0.01em;
+  color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: -0.01em;
   box-shadow: 0 3px 10px -4px rgba(95, 0, 128, 0.32);
 }
 .title-badge .tb-ic {
@@ -767,7 +774,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   padding: 8px 13px; border-radius: var(--r-pill);
   background: linear-gradient(135deg, var(--pastel-lavender), rgba(252, 233, 241, 0.55));
   color: var(--primary);
-  font-size: 12.5px; font-weight: 900; letter-spacing: -0.01em;
+  font-size: 13px; font-weight: 900; letter-spacing: -0.01em;
   box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.09), 0 2px 6px rgba(61, 0, 85, 0.04);
 }
 
@@ -776,7 +783,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
    ============================================================ */
 .kpi { display: grid; gap: 6px; align-content: start; }
 .kpi-label {
-  color: var(--gray); font-size: 12.5px; font-weight: 900; letter-spacing: -0.01em;
+  color: var(--gray); font-size: 13px; font-weight: 900; letter-spacing: -0.01em;
 }
 .kpi-value {
   color: var(--deep-1); font-size: clamp(26px, 2.8vw, 36px); font-weight: 900;
@@ -825,7 +832,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
 }
 .stat-tile .st-ic svg { width: 18px; height: 18px; }
-.stat-tile .st-label { color: var(--gray); font-size: 12.5px; font-weight: 900; letter-spacing: -0.01em; }
+.stat-tile .st-label { color: var(--gray); font-size: 13px; font-weight: 900; letter-spacing: -0.01em; }
 .stat-tile .st-value {
   position: relative; z-index: 1;
   color: var(--deep-1); font-size: clamp(28px, 3.2vw, 40px); font-weight: 900;
@@ -853,7 +860,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   min-height: 34px; padding: 5px 14px 5px 11px; border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.92); color: var(--ink-2);
   border: 1px solid var(--line);
-  font-size: 12.5px; font-weight: 800;
+  font-size: 13px; font-weight: 800;
   box-shadow: var(--shadow-1);
 }
 .stat-pill i {
@@ -915,7 +922,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 }
 .empty-state .empty-ic svg { width: 26px; height: 26px; }
 .empty-state strong { font-size: 16px; letter-spacing: -0.03em; color: var(--ink); }
-.empty-state p { margin: 0; max-width: 400px; color: var(--gray); font-size: 13.5px; line-height: 1.66; }
+.empty-state p { margin: 0; max-width: 400px; color: var(--gray); font-size: 14px; line-height: 1.66; }
 
 /* ============================================================
    탭 전환 (.tab-row) — 세그먼트 컨트롤
@@ -990,11 +997,11 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 .table-wrap { overflow-x: auto; border-radius: var(--r-sm); }
 .table-clean {
   width: 100%; border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .table-clean th {
   padding: 10px 14px; text-align: left;
-  color: var(--gray); font-size: 11.5px; font-weight: 900; letter-spacing: 0.03em;
+  color: var(--gray); font-size: 12px; font-weight: 900; letter-spacing: 0.03em;
   border-bottom: 1px solid var(--line-strong);
   white-space: nowrap;
 }
@@ -1148,7 +1155,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
-.footer-tagline { margin: 10px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--on-dark-body); }
+.footer-tagline { margin: 10px 0 0; font-size: 14px; line-height: 1.7; color: var(--on-dark-body); }
 .footer-note {
   display: inline-flex; align-items: center; gap: 7px;
   margin-top: 16px; padding: 8px 13px; border-radius: var(--r-pill);
@@ -1167,7 +1174,7 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 .footer-links a {
   display: flex; align-items: center; gap: 7px;
   min-height: 40px; padding: 2px 0;
-  color: var(--on-dark-muted); font-size: 13.5px; font-weight: 700;
+  color: var(--on-dark-muted); font-size: 14px; font-weight: 700;
   transition: color 0.16s var(--ease);
 }
 .footer-links a:hover { color: #fff; }
