@@ -20,7 +20,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css" />
   <script src="assets/site-core.js?v=1"></script>
   <style>
@@ -32,7 +32,7 @@
     .filter-row::-webkit-scrollbar { display: none; }
     .filter-chip {
       display: inline-flex; align-items: center; gap: 6px; flex: none;
-      min-height: 36px; padding: 0 13px; border-radius: var(--r-pill);
+      min-height: 40px; padding: 0 14px; border-radius: var(--r-pill);
       border: 1px solid var(--line); background: var(--white);
       color: var(--ink-2); font-size: 13px; font-weight: 800; letter-spacing: -0.02em; cursor: pointer;
       transition: background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
@@ -43,14 +43,17 @@
     .fc-count { font-size: 11px; font-weight: 900; opacity: 0.75; font-variant-numeric: tabular-nums; }
 
     .places-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .places-count { color: var(--gray); font-size: 13px; font-weight: 750; margin-right: auto; }
+    .places-count { color: var(--gray); font-size: 13px; font-weight: 800; margin-right: auto; }
     .sort-row { display: flex; gap: 4px; }
     .sort-btn {
-      padding: 6px 11px; border-radius: var(--r-pill); border: 0; background: none; cursor: pointer;
-      color: var(--gray); font-size: 12.5px; font-weight: 800;
+      display: inline-flex; align-items: center; min-height: 40px;
+      padding: 0 12px; border-radius: var(--r-pill); border: 0; background: none; cursor: pointer;
+      color: var(--gray); font-size: 13px; font-weight: 800;
     }
     .sort-btn.is-active { background: var(--lavender); color: var(--primary); }
-    .price-legend { color: var(--gray-2); font-size: 12px; font-weight: 650; line-height: 1.6; }
+    /* 힌트가 아니라 읽으라고 둔 안내문이다. 캡션 색(--gray)을 쓴다 —
+       --gray-2 는 오프화이트 위에서 4.44:1 로 기준에 살짝 못 미친다. */
+    .price-legend { color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
 
     /* ── 목록 ── */
     .place-list { display: grid; gap: 12px; }
@@ -67,40 +70,40 @@
       display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; flex: none; font-size: 20px;
       background: var(--pastel-lavender);
     }
-    .pc-name { font-size: 15.5px; font-weight: 870; letter-spacing: -0.03em; color: var(--deep-1); overflow-wrap: anywhere; }
+    .pc-name { font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); overflow-wrap: anywhere; }
     .pc-again {
       margin-left: auto; flex: none; padding: 3px 9px; border-radius: var(--r-pill);
       background: var(--grad-brand); color: #fff; font-size: 11px; font-weight: 900; white-space: nowrap;
     }
-    .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 12.5px; font-weight: 700; }
+    .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 13px; font-weight: 700; }
     /* 가운뎃점은 따로 떨어진 요소가 아니라 뒤따르는 항목에 붙어 있다.
        별개의 <span>·</span> 으로 두면 줄이 바뀔 때 점만 앞 줄 끝에 남는다. */
     .pc-m + .pc-m::before { content: "·"; margin-right: 7px; color: var(--gray-2); }
-    .pc-area { color: var(--primary); font-weight: 850; }
+    .pc-area { color: var(--primary); font-weight: 900; }
     .pc-note {
       margin-top: 11px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite);
-      color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 600;
+      color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; font-weight: 600;
     }
-    .pc-note b { color: var(--gray); font-weight: 750; font-size: 12px; }
+    .pc-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
     .pc-foot { margin-top: auto; padding-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pc-last { color: var(--gray-2); font-size: 12px; font-weight: 700; margin-right: auto; }
     .pc-map {
-      display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px;
+      display: inline-flex; align-items: center; gap: 5px; min-height: 40px; padding: 0 13px;
       border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--white);
-      color: var(--primary); font-size: 12.5px; font-weight: 850; text-decoration: none;
+      color: var(--primary); font-size: 13px; font-weight: 900; text-decoration: none;
     }
     .pc-map:hover { background: var(--lavender); }
     .pc-more {
-      min-height: 34px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line);
-      background: none; color: var(--gray); font-size: 12.5px; font-weight: 800; cursor: pointer;
+      min-height: 40px; padding: 0 13px; border-radius: var(--r-pill); border: 1px solid var(--line);
+      background: none; color: var(--gray); font-size: 13px; font-weight: 800; cursor: pointer;
     }
     .pc-detail { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
     .visit-row { display: grid; gap: 5px; }
-    .visit-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 12.5px; font-weight: 800; }
-    .visit-head small { color: var(--gray-2); font-weight: 650; }
-    .visit-note { color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--lavender-2); }
-    .visit-note b { color: var(--gray); font-weight: 750; font-size: 12px; }
-    .closed-tag { padding: 2px 8px; border-radius: var(--r-pill); background: var(--card-2, var(--offwhite)); color: var(--gray-2); font-size: 11px; font-weight: 850; }
+    .visit-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; font-weight: 800; }
+    .visit-head small { color: var(--gray-2); font-weight: 700; }
+    .visit-note { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.62; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--lavender-2); }
+    .visit-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
+    .closed-tag { padding: 2px 8px; border-radius: var(--r-pill); background: var(--card-2, var(--offwhite)); color: var(--gray-2); font-size: 11px; font-weight: 900; }
 
     /* ── 펼친 카드 안의 행동 ── */
     .pc-detail-actions { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 3px; }

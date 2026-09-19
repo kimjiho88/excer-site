@@ -637,6 +637,25 @@
 
     var members = memberList.slice(0, 60);
 
+    // ── 표시 이름은 언제나 앞 토막까지만 ──
+    //    오픈채팅 닉네임 양식이 "닉네임 지역 성별 출생년도" 라서, 그대로 실으면
+    //    사는 동네와 성별, 태어난 해가 발행본에 함께 담긴다. 발행본은 공개 뷰로
+    //    누구나 내려받을 수 있으므로, 화면에서 가리는 것으로는 부족하다.
+    //    집계는 이름이 아니라 순서로 하니 줄여도 숫자는 그대로다.
+    //    이건 선택이 아니라 기본값이다. 마스킹 스위치는 이보다 한 단계 더 센 선택이다.
+    (function () {
+      var used = Object.create(null);
+      members.forEach(function (m) {
+        var head = String(m.name == null ? "" : m.name).trim().split(/[\s/·|,]+/)[0] || "?";
+        if (head.length > 12) head = head.slice(0, 12);
+        // 앞 토막이 겹치면(동명이인) 숫자로만 구분한다 — 뒤 정보를 되살리지 않는다
+        var out = head, n = 2;
+        while (used[out]) { out = head + n; n += 1; }
+        used[out] = 1;
+        m.name = out;
+      });
+    })();
+
     // ── 닉네임 마스킹: 집계 단계에서 치환(원본은 결과에 남지 않아 복원 불가).
     //    "첫 글자 + *" — 첫 글자가 겹치면 숫자 접미로만 구분 (예: 민*, 민*2) ──
     if (opts.maskNames) {
