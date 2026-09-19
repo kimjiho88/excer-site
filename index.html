@@ -101,6 +101,23 @@
     .news-cat { color: var(--primary); font-weight: 850; }
     .news-react { color: var(--ink-2); font-size: 12.5px; font-weight: 850; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .news-empty { padding: 8px 0 4px; }
+    /* 다가오는 벙 */
+    .next-bung {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+      padding: 14px 16px; border-radius: var(--r-sm); text-decoration: none;
+      background: linear-gradient(135deg, var(--pastel-lavender), rgba(230, 240, 252, 0.6));
+      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.12);
+      transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+    }
+    .next-bung:hover { transform: translateX(3px); box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow-2); }
+    .nb-dday {
+      flex: none; padding: 5px 11px; border-radius: var(--r-pill);
+      background: var(--grad-brand); color: #fff; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums;
+    }
+    .nb-body { min-width: 0; display: grid; gap: 2px; }
+    .nb-title { font-size: 14.5px; font-weight: 850; letter-spacing: -0.03em; color: var(--deep-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nb-when { color: var(--gray); font-size: 12.5px; font-weight: 700; }
+    .nb-go { margin-left: auto; color: var(--primary); font-size: 17px; font-weight: 900; }
 
     /* ── 이번 주 분위기 teaser (대시보드 맛보기 · 실제 인물) ── */
     .vibe-card { display: flex; flex-direction: column; text-decoration: none; }
@@ -337,6 +354,9 @@
           <p>공지랑 벙 모집, 다녀온 후기까지. 새 소식은 여기서 먼저 확인해요.</p>
         </div>
         <div class="card is-lg reveal">
+          <!-- 다가오는 벙 — 소식 중 벙 모집 글에서 날짜가 지나지 않은 가장 가까운 하나.
+               없으면 아예 그리지 않는다(빈 카드도 띄우지 않는다). -->
+          <a class="next-bung" id="nextBung" hidden></a>
           <div class="news-head">
             <h3>최근 소식</h3>
             <a class="news-more" href="news.html">소식 전체 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -780,6 +800,35 @@
           "</div></div>";
       }
 
+      /* 다가오는 벙 — 벙 모집 글의 meta 에서 오늘 이후 가장 가까운 날짜를 고른다.
+         홈에서 "다음에 뭐 하지"에 답하는 유일한 자리다. */
+      function renderNextBung(posts) {
+        var el = document.getElementById("nextBung");
+        if (!el) return;
+        var today;
+        try { today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+        catch (e) { today = new Date().toISOString().slice(0, 10); }
+
+        var up = (posts || []).filter(function (p) {
+          var m = p && p.meta;
+          return m && m.kind === "bung" && m.date && m.date >= today;
+        }).sort(function (a, b) { return String(a.meta.date).localeCompare(String(b.meta.date)); });
+
+        if (!up.length) { el.hidden = true; return; }   // 없으면 그리지 않는다
+        var p = up[0], m = p.meta;
+        var d = Math.round((Date.parse(m.date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000);
+        var dday = d === 0 ? "오늘" : (d === 1 ? "내일" : "D-" + d);
+        var bits = [String(m.date).slice(5).replace("-", "월 ").replace(/^0/, "") + "일"];
+        if (m.time) bits.push(m.time);
+        if (m.place) bits.push(m.place);
+        el.href = "news.html#post-" + p.id;
+        el.innerHTML = '<span class="nb-dday">' + dday + '</span><span class="nb-body">' +
+          '<span class="nb-title">' + esc(p.title || "벙 모집") + '</span>' +
+          '<span class="nb-when">' + esc(bits.join(" · ")) + '</span></span>' +
+          '<span class="nb-go" aria-hidden="true">→</span>';
+        el.hidden = false;
+      }
+
       function renderNews(posts) {
         var host = document.getElementById("newsList");
         if (!host) return;
@@ -803,6 +852,8 @@
         var eb = document.getElementById("newsEyebrow");
         if (eb && newest) eb.textContent = (Date.now() - newest < 86400000) ? "방금 올라온" : "최근 올라온";
 
+        renderNextBung(posts);
+
         host.innerHTML = list.map(function (p) {
           var cat = p.category || "자유";
           var emoji = CAT_EMOJI[cat] || "💬";
@@ -822,7 +873,7 @@
         }).join("");
       }
 
-      supaGet("/rest/v1/site_posts_v?select=id,category,title,author,pinned,created_at,reactions&order=pinned.desc,created_at.desc&limit=8")
+      supaGet("/rest/v1/site_posts_v?select=id,category,title,author,pinned,meta,created_at,reactions&order=pinned.desc,created_at.desc&limit=12")
         .then(renderNews)
         .catch(function () {
           // 예전에는 여기서 아무것도 하지 않아, HTML 에 박힌 가짜 소식 4건이 그대로 남았다.

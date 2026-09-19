@@ -446,7 +446,7 @@
       </div>
       <div class="legacy-note" id="legacyNote" hidden>
         <span aria-hidden="true">🗂️</span>
-        <span><b>예전 형식으로 만든 리포트예요.</b> 지금 보이는 지표까지만 나와요. 운영진이 리포트를 다시 발행하면 기간 필터·배지·온도 같은 새 지표가 함께 열려요.</span>
+        <span><b>지난번에 만든 리포트예요.</b> 지금 보이는 지표까지만 나와요. 운영진이 다음 리포트를 올리면 기간 필터·배지·온도 같은 새 지표가 함께 열려요.</span>
       </div>
     </div>
 
@@ -1293,7 +1293,7 @@
         const to = days.length ? days[days.length - 1].d : (st.range && st.range.to) || "";
         return {
           v: 1, legacy: true,
-          periodLabel: st.periodLabel || "구버전 리포트",
+          periodLabel: st.periodLabel || "지난번 리포트",
           range: { from, to },
           generatedAt: st.generatedAt || "",
           maskNames: !!st.maskNames,
@@ -1414,13 +1414,13 @@
               ${gaugeSVG(50)}
               <div class="temp-value">-<small>℃</small></div>
               <div class="temp-label">동네친구들 온도</div>
-              <div class="temp-desc">예전 형식 리포트라 계산할 수 없어요</div>
+              <div class="temp-desc">지난번 리포트에는 온도가 없어요</div>
             </div>
             <div class="pulse-side">
               <div class="pulse-lead">
-                <span class="badge-soft is-cream">🗂️ 예전 형식 리포트</span>
+                <span class="badge-soft is-cream">🗂️ 지난번 리포트</span>
                 <p class="pulse-mood">동네친구들 <span class="grad-text">활동 기록</span></p>
-                <p class="pulse-mood-sub">다시 발행하면 온도와 분위기까지 함께 볼 수 있어요.</p>
+                <p class="pulse-mood-sub">다음 리포트가 올라오면 온도와 분위기까지 함께 보여요.</p>
               </div>
               <div class="pulse-kpis">
                 <div class="kpi"><span class="kpi-label">총 메시지</span><strong class="kpi-value"><span id="pkTotal">0</span><small>건</small></strong><span class="kpi-delta">발행 기간 전체</span></div>
@@ -1538,7 +1538,7 @@
         let list;
         if (state.legacy) {
           if (state.rankMetric === "rise" || state.rankMetric === "steady") {
-            host.innerHTML = `<div class="empty-state"><span class="empty-ic">🗂️</span><strong>구버전 리포트에서는 볼 수 없어요</strong><p>리포트를 다시 발행하면 상승·꾸준 랭킹이 열려요.</p></div>`;
+            host.innerHTML = `<div class="empty-state"><span class="empty-ic">🗂️</span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 상승·꾸준 랭킹도 함께 열려요.</p></div>`;
             $("rankToggle").hidden = true; $("rankNote").textContent = "";
             return;
           }
@@ -1605,7 +1605,7 @@
         const host = $("badgeGrid");
         if (state.legacy) {
           state.badgeList = [];
-          host.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>구버전 리포트에서는 볼 수 없어요</strong><p>리포트를 다시 발행하면 명예의 전당이 열려요.</p></div></div>`;
+          host.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 명예의 전당도 함께 열려요.</p></div></div>`;
           return;
         }
         const badges = RM.badges(state.data, state.slice, state.prev);
@@ -1701,7 +1701,7 @@
         const host = $("hmGrid");
         if (!grid) {
           host.innerHTML = "";
-          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>히트맵 데이터가 없어요</strong><p>리포트를 다시 발행하면 볼 수 있어요.</p></div>`;
+          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>아직 요일·시간을 그릴 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
           return;
         }
         let max = 0;
@@ -1882,7 +1882,7 @@
               <b>${escapeHTML(w.week)}</b>
               <ol>${(w.top || []).map((t, j) => `<li><i>${j + 1}</i>${escapeHTML(t)}</li>`).join("")}</ol>
             </div>`).join("")
-          : `<div class="empty-state" style="grid-auto-flow:row"><span class="empty-ic">🗓️</span><strong>주차별 데이터가 없어요</strong><p>리포트를 다시 발행하면 볼 수 있어요.</p></div>`;
+          : `<div class="empty-state" style="grid-auto-flow:row"><span class="empty-ic">🗓️</span><strong>아직 주차별 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
       }
 
       /* ── 분위기 리포트 ── */
@@ -1903,7 +1903,7 @@
             $("moodEmoji").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
           });
         } else {
-          $("moodEmoji").innerHTML = `<h3>이모지·리액션 분위기</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">😶</span><strong>집계가 없어요</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+          $("moodEmoji").innerHTML = `<h3>이모지·리액션 분위기</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">😶</span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 2) 대화 집중도 (지니 → 도넛)
@@ -1942,7 +1942,7 @@
               </div>
             </div>`;
         } else {
-          $("moodGini").innerHTML = `<h3>대화 집중도</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">🗂️</span><strong>구버전 리포트</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+          $("moodGini").innerHTML = `<h3>대화 집중도</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">🗂️</span><strong>지난번 리포트</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 3) 질문 대비 답변
@@ -1957,7 +1957,7 @@
             $("moodQa").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
           });
         } else {
-          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">❓</span><strong>집계가 없어요</strong><p>다시 발행하면 볼 수 있어요.</p></div>`;
+          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">❓</span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 4) 신규 멤버 적응
@@ -1976,7 +1976,7 @@
         const st = state.data;
         const grid = $("memberGrid");
         if (state.legacy || !st.members || !st.members.length) {
-          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "구버전 리포트예요. 다시 발행하면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
+          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "지난번 리포트예요. 다음 리포트가 올라오면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
           $("memberDetail").innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
           return;
         }
@@ -2122,7 +2122,7 @@
       function applyPreset(key, customFrom, customTo) {
         const st = state.data;
         if (state.legacy) {
-          EXCER.toast("구버전 리포트는 기간 필터를 지원하지 않아요.");
+          EXCER.toast("지난번 리포트에는 기간 필터가 없어요");
           return;
         }
         let range;
