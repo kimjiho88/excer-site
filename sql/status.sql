@@ -39,6 +39,14 @@ cnt as (
 -- anon 은 사이트가 브라우저에 그대로 싣고 다니는 공개 키의 권한이다.
 -- 표 이름을 그대로 적으면 to_regclass 로 감싸도 파싱 단계에서 죽는다.
 -- CASE 는 그보다 나중에 평가되기 때문이다. 그래서 이쪽도 문자열로 넘긴다.
+-- 벙 모집 글의 날짜·시각·장소·정원이 들어가는 칸.
+-- 이게 없으면 소식에서 '벙 소식'을 써도 날짜가 저장되지 않는다.
+bung as (
+  select to_regclass('public.site_posts') is not null
+         and exists (select 1 from information_schema.columns
+                      where table_schema='public' and table_name='site_posts'
+                        and column_name='meta') as ok
+),
 admin as (
   select case when to_regclass('public.site_config') is null then null
               else (xpath('/row/c/text()', query_to_xml(
@@ -78,4 +86,12 @@ select 30, '운영진 비밀번호',
             when n > 0 then '정상'
             else 'set_admin_password.sql 을 돌려야 발행·공지가 열려요' end
   from admin
+
+union all
+select 10, '벙 날짜·장소 칸',
+       case when ok then '있음' else '없음' end,
+       case when ok then '정상'
+            else '2026-09-20-bung-fields.sql 을 돌려야 벙 날짜가 저장돼요' end
+  from bung
+
 ) x order by x.ord;
