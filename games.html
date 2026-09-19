@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1E0230" />
+  <meta name="theme-color" content="#285244" />
 
   <title>동네친구들 게임</title>
   <meta name="description" content="쉬는 시간에 가볍게 하는 미니 게임 모음. 좀비 헌팅 RPG와 엑서 빵집 타이쿤이 있어요." />
@@ -35,10 +35,10 @@
       position: relative; overflow: hidden;
       display: flex; flex-direction: column;
       border: 1px solid var(--line); border-radius: var(--r-lg);
-      background: var(--white); box-shadow: var(--shadow-1);
+      background: var(--white);
       transition: box-shadow 0.24s var(--ease), transform 0.24s var(--ease), border-color 0.24s var(--ease);
     }
-    .game-card.card-lift:hover { box-shadow: var(--shadow-2); transform: translateY(-4px); border-color: var(--line-strong); }
+    .game-card.card-lift:hover { transform: none; border-color: var(--line-strong); }
     .game-card.soon { opacity: 0.82; }
 
     /* 그라데이션 커버 */
@@ -60,7 +60,7 @@
       transition: transform 0.4s var(--ease);
     }
     /* 준비 중 카드는 갈 곳이 없으므로 반응하지 않는다 */
-    .game-card:not(.soon):hover .art-emoji { transform: translateY(-6px) scale(1.08); }
+    .game-card:not(.soon):hover .art-emoji { transform: none scale(1.08); }
     @media (prefers-reduced-motion: reduce) {
       .game-card.card-lift:hover { transform: none; }
       .game-card:hover .art-emoji { transform: none; }
@@ -69,18 +69,18 @@
       background:
         radial-gradient(circle at 28% 18%, rgba(168, 30, 155, 0.5), transparent 62%),
         radial-gradient(circle at 82% 92%, rgba(122, 31, 181, 0.42), transparent 58%),
-        linear-gradient(135deg, #3D0055, #1A0526);
+        var(--brand);
     }
     .game-art.bakery {
       background:
         radial-gradient(circle at 30% 20%, rgba(231, 200, 104, 0.55), transparent 62%),
-        radial-gradient(circle at 80% 90%, rgba(95, 0, 128, 0.24), transparent 58%),
-        linear-gradient(135deg, #E7C868, #8A5A33);
+        radial-gradient(circle at 80% 90%, rgba(40, 82, 68, 0.24), transparent 58%),
+        #D9B98C;
     }
     .game-art.soon-art {
       font-size: 44px;
       background:
-        radial-gradient(circle at 30% 24%, rgba(185, 128, 217, 0.32), transparent 64%),
+        radial-gradient(circle at 30% 24%, rgba(234, 240, 233, 0.32), transparent 64%),
         linear-gradient(135deg, var(--pastel-lavender), #fff);
     }
     .game-art.soon-art::after { background: none; }
@@ -89,14 +89,13 @@
       position: absolute; left: 14px; top: 14px; z-index: 2;
       display: inline-flex; align-items: center;
       padding: 6px 11px; border-radius: var(--r-pill);
-      font-size: 11px; font-weight: 900; letter-spacing: -0.01em;
+      font-size: 11px; font-weight: 700; letter-spacing: -0.01em;
       background: rgba(255, 255, 255, 0.94); color: var(--primary);
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.10), var(--shadow-1);
     }
-    .game-badge.live { color: #0D7A55; background: rgba(226, 246, 237, 0.95); box-shadow: inset 0 0 0 1px rgba(13, 122, 85, 0.16), var(--shadow-1); }
+    .game-badge.live { color: var(--brand); background: rgba(226, 246, 237, 0.95); }
 
     .game-body { padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 11px; flex: 1; }
-    .game-body h3 { margin: 0; font-size: 20px; letter-spacing: -0.045em; font-weight: 900; color: var(--ink); }
+    .game-body h3 { margin: 0; font-size: 20px; letter-spacing: -0.045em; font-weight: 700; color: var(--ink); }
     .game-body > p { margin: 0; color: var(--gray); font-size: 14px; line-height: 1.66; flex: 1; }
     .game-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .game-cta { margin-top: 4px; }
@@ -126,20 +125,14 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
-        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
-        <span class="tv-sep" aria-hidden="true"></span>
-        <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
-      </div>
-      <span class="topnav-page" aria-hidden="true">게임</span>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
     </div>
   </header>
 
   <!-- ── 다크 히어로 ── -->
   <section class="hero-band" aria-labelledby="heroTitle">
-    <i class="glow-orb" style="--orb-size:440px; --orb-color:rgba(200,162,232,0.32); right:-140px; top:-160px" aria-hidden="true"></i>
-    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(167,139,206,0.20); left:-120px; bottom:-170px" aria-hidden="true"></i>
+    <i class="glow-orb" style="--orb-size:440px; --orb-color:rgba(234, 240, 233,0.32); right:-140px; top:-160px" aria-hidden="true"></i>
+    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(234, 240, 233,0.20); left:-120px; bottom:-170px" aria-hidden="true"></i>
     <div class="container">
       <span class="hero-kicker"><i></i>미니 게임</span>
       <h1 class="hero-title" id="heroTitle">쉬는 시간엔<br /><span class="grad-text-hero">게임 한 판</span></h1>
@@ -244,6 +237,7 @@
         </nav>
       </div>
       <div class="footer-bottom">
+        <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
         <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>

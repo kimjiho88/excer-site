@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1E0230" />
+  <meta name="theme-color" content="#285244" />
   <title>동네친구들 운영 대시보드</title>
   <meta name="description" content="이번 주 동네친구들 분위기를 한눈에. 활동 랭킹, 배지, 시간대 패턴, 키워드까지 집계 숫자와 키워드만 담은 오픈채팅 리포트예요." />
   <meta property="og:url" content="https://excer-site.vercel.app/report.html" />
@@ -32,10 +32,10 @@
     .hero-toprow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
     .report-select {
       min-height: 40px; padding: 4px 30px 4px 13px; border-radius: var(--r-pill);
-      border: 1px solid var(--on-dark-line); background: var(--on-dark-glass); color: #fff;
-      font-size: 13px; font-weight: 800; cursor: pointer;
+      border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+      font-size: 13px; font-weight: 600; cursor: pointer;
       appearance: none; -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E7D7F3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626B63' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 10px center; background-size: 13px;
     }
     .report-select option { color: var(--ink); background: #fff; }
@@ -44,48 +44,43 @@
     .range-chip {
       display: inline-flex; align-items: center; gap: 6px;
       min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
-      border: 1px solid var(--on-dark-line); background: var(--on-dark-glass);
-      color: var(--on-dark-body); font-size: 13px; font-weight: 800; cursor: pointer;
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      transition: background 0.16s var(--ease), color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+      border: 1px solid var(--line-strong); background: var(--surface);
+      color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease), border-color 0.16s var(--ease);
     }
-    .range-chip:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
-    .range-chip[aria-pressed="true"] {
-      background: #fff; color: var(--primary); border-color: transparent;
-      box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.55);
-    }
+    .range-chip:hover { border-color: var(--ink-2); }
+    .range-chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
     .range-chip:disabled { opacity: 0.4; cursor: not-allowed; }
     .range-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
     .range-custom[hidden] { display: none; }
     .range-custom input[type="date"] {
       min-height: 40px; padding: 0 12px; border-radius: 12px;
-      border: 1px solid var(--on-dark-line); background: rgba(255, 255, 255, 0.94);
-      color: var(--ink); font-size: 13px; font-weight: 800;
+      border: 1px solid var(--line-strong); background: var(--surface);
+      color: var(--ink); font-size: 13px; font-weight: 600;
       color-scheme: light;
     }
-    .range-custom .tilde { color: var(--on-dark-muted); font-weight: 800; }
+    .range-custom .tilde { color: var(--ink-2); font-weight: 600; }
     .range-custom .mini-btn { min-height: 40px; }
 
     /* ── 히어로 겹침 카드: 온도 + 분위기 카피 + KPI (감성 요약) ── */
     .pulse-card { display: grid; grid-template-columns: minmax(210px, 288px) minmax(0, 1fr); gap: clamp(18px, 3vw, 40px); align-items: center; }
     .temp-wrap { display: grid; justify-items: center; gap: 4px; text-align: center; }
     .temp-gauge { width: min(100%, 240px); height: auto; display: block; }
-    .temp-value { font-size: clamp(30px, 3.2vw, 40px); font-weight: 900; letter-spacing: -0.045em; color: var(--deep-1); line-height: 1; margin-top: -54px; }
-    .temp-value small { font-size: 0.45em; color: var(--gray); font-weight: 800; }
-    .temp-label { color: var(--gray); font-size: 13px; font-weight: 900; }
-    .temp-desc { margin-top: 4px; font-size: 13px; font-weight: 800; color: var(--primary); }
+    .temp-value { font-size: clamp(30px, 3.2vw, 40px); font-weight: 700; letter-spacing: -0.045em; color: var(--deep-1); line-height: 1; margin-top: -54px; }
+    .temp-value small { font-size: 0.45em; color: var(--gray); font-weight: 600; }
+    .temp-label { color: var(--gray); font-size: 13px; font-weight: 700; }
+    .temp-desc { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--primary); }
     /* 분위기 카피 리드 */
     .pulse-side { display: grid; gap: clamp(14px, 1.8vw, 18px); align-content: center; }
     .pulse-lead { display: grid; gap: 7px; }
     .pulse-lead .badge-soft { justify-self: start; }
-    .pulse-mood { margin: 0; font-size: clamp(20px, 2.5vw, 28px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.18; color: var(--deep-1); }
+    .pulse-mood { margin: 0; font-size: clamp(20px, 2.5vw, 28px); font-weight: 700; letter-spacing: -0.045em; line-height: 1.18; color: var(--deep-1); }
     .pulse-mood .grad-text { display: inline; }
     .pulse-mood-sub { margin: 0; color: var(--gray); font-size: 13px; font-weight: 700; line-height: 1.55; }
     .pulse-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(10px, 1.4vw, 16px); }
     .pulse-kpis .kpi {
       gap: 4px; padding: clamp(13px, 1.5vw, 17px); border-radius: var(--r-sm);
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), var(--soft-lavender));
-      box-shadow: inset 0 0 0 1px rgba(95,0,128,0.07), var(--shadow-1);
+      background: var(--surface);
     }
     .pulse-kpis .kpi-value { font-variant-numeric: normal; font-size: clamp(21px, 2.1vw, 27px); }
     /* 견줄 값이 없을 때. 숫자 자리에 줄표만 두면 없다는 뜻인지 불러오는 중인지 알 수 없다. */
@@ -101,8 +96,7 @@
     .legacy-note {
       display: flex; gap: 10px; align-items: flex-start; margin-top: 18px;
       padding: 13px 16px; border-radius: var(--r-sm);
-      background: var(--pastel-cream); color: #856410;
-      box-shadow: inset 0 0 0 1px rgba(133, 100, 16, 0.16);
+      background: var(--pastel-cream); color: #7A4A32;
       font-size: 13px; font-weight: 700; line-height: 1.6;
     }
 
@@ -112,8 +106,7 @@
     .sec-toggle {
       flex: none; display: inline-flex; align-items: center; gap: 6px;
       min-height: 40px; padding: 0 14px; margin-top: 4px; border-radius: var(--r-pill);
-      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 900;
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+      background: var(--lavender); color: var(--primary); font-size: 12px; font-weight: 700;
       transition: background 0.16s var(--ease);
     }
     .sec-toggle:hover { background: var(--lavender-2); }
@@ -130,9 +123,9 @@
       background: var(--pastel-lavender); color: var(--primary); margin-bottom: 3px;
     }
     .kpi-mini .tile-ic .ic { width: 18px; height: 18px; }
-    .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 900; }
-    .kpi-mini .vl { color: var(--deep-1); font-size: clamp(19px, 1.9vw, 24px); font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
-    .kpi-mini .vl small { font-size: 0.62em; color: var(--gray); font-weight: 800; }
+    .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 700; }
+    .kpi-mini .vl { color: var(--deep-1); font-size: clamp(19px, 1.9vw, 24px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; }
+    .kpi-mini .vl small { font-size: 0.62em; color: var(--gray); font-weight: 600; }
     .kpi-mini .sub { color: var(--gray-2); font-size: 12px; font-weight: 700; }
     @media (max-width: 767px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
 
@@ -142,10 +135,10 @@
     .select-clean, .search-input {
       min-height: 42px; padding: 0 14px; border-radius: 13px;
       border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
-      font-size: 14px; font-weight: 800;
+      font-size: 14px; font-weight: 600;
       transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
-    .select-clean:focus, .search-input:focus { border-color: rgba(95, 0, 128, 0.45); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.09); outline: none; }
+    .select-clean:focus, .search-input:focus { border-color: rgba(40, 82, 68, 0.45); outline: none; }
     .search-input { min-width: min(240px, 100%); }
     .rank-list { display: grid; gap: 4px; }
     .rank-row {
@@ -153,9 +146,9 @@
       padding: 9px 10px; border-radius: 14px;
       transition: background 0.15s var(--ease), opacity 0.2s var(--ease);
     }
-    .rank-row:hover { background: rgba(240, 231, 250, 0.5); }
+    .rank-row:hover { background: rgba(234, 240, 233, 0.5); }
     .rank-row.is-dim { opacity: 0.28; }
-    .rank-no { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--lavender); color: var(--primary); font-size: 13px; font-weight: 900; }
+    .rank-no { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--lavender); color: var(--primary); font-size: 13px; font-weight: 700; }
     .rank-no.is-medal { background: transparent; font-size: 22px; }
     .rank-main { min-width: 0; display: grid; gap: 4px; }
     .rank-top-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -164,16 +157,16 @@
          글자만큼만 눌리면 폭이 23px 이라 WCAG 최소치(24px)에 못 미쳐,
          짧은 이름에도 겨냥할 자리가 남도록 최소 폭을 준다. */
       display: inline-flex; align-items: center; min-height: 40px; min-width: 48px;
-      font-weight: 900; font-size: 14px; letter-spacing: -0.02em; color: var(--ink);
+      font-weight: 700; font-size: 14px; letter-spacing: -0.02em; color: var(--ink);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .rank-name mark { background: var(--pastel-cream); color: #6B510D; border-radius: 4px; padding: 0 2px; }
-    .rank-extra { flex: none; color: var(--gray); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .rank-name mark { background: var(--pastel-cream); color: #7A4A32; border-radius: 4px; padding: 0 2px; }
+    .rank-extra { flex: none; color: var(--gray); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
     .rank-bar-line { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
     .rank-track { height: 14px; border-radius: 7px; background: var(--soft-lavender); overflow: hidden; }
-    .rank-bar { display: block; height: 100%; width: 0; border-radius: 7px 4px 4px 7px; background: #C9A5E4; transition: width 0.7s var(--ease-out); }
-    .rank-row.is-top .rank-bar { background: #7B2BB0; }
-    .rank-count { text-align: right; font-size: 13px; font-weight: 900; color: var(--deep-1); font-variant-numeric: tabular-nums; }
+    .rank-bar { display: block; height: 100%; width: 0; border-radius: 7px 4px 4px 7px; background: var(--brand-soft); transition: width 0.7s var(--ease-out); }
+    .rank-row.is-top .rank-bar { background: var(--brand); }
+    .rank-count { text-align: right; font-size: 13px; font-weight: 700; color: var(--deep-1); font-variant-numeric: tabular-nums; }
     .rank-foot { display: flex; justify-content: center; margin-top: 12px; }
     /* 넓은 화면에서 설명 줄이 한 줄에 90자 넘게 늘어져 눈이 다음 줄을 놓쳤다.
    한글 본문은 한 줄 40자 안팎이 읽기 편하다. */
@@ -186,31 +179,30 @@
     .badge-card {
       display: flex; gap: 12px; align-items: center;
       padding: 15px 16px; border-radius: var(--r-sm);
-      border: 1px solid var(--line); background: #fff; box-shadow: var(--shadow-1);
+      border: 1px solid var(--line); background: #fff;
     }
     .badge-emoji {
       display: grid; place-items: center; flex: none;
       width: 46px; height: 46px; border-radius: 15px; color: var(--primary);
-      background: linear-gradient(135deg, var(--pastel-lavender), var(--pastel-blush));
-      box-shadow: inset 0 0 0 1px rgba(75, 42, 130, 0.09);
+      background: var(--pastel-lavender);
     }
     .badge-emoji .ic { width: 23px; height: 23px; }
     .badge-body { min-width: 0; display: grid; gap: 1px; }
     .badge-title {
-      font-size: 12px; font-weight: 900; letter-spacing: 0.01em;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.01em;
       background: var(--grad-display); -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent; color: var(--primary);
     }
-    .badge-name { font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge-name { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .badge-desc { font-size: 12px; color: var(--gray); font-weight: 700; }
     .md-badges .title-badge .tb-ic { display: inline-grid; place-items: center; width: auto; height: auto; line-height: 1; }
     .md-badges .title-badge .tb-ic .ic { width: 14px; height: 14px; }
 
     /* ── 차트 공통 ── */
     /* 1·2·3 위는 같은 그림에 색만 달리해 가른다 */
-    .rank-1 { color: #9A7B1E; }
-    .rank-2 { color: #6F6B78; }
-    .rank-3 { color: #8A5A34; }
+    .rank-1 { color: #8A6A3A; }
+    .rank-2 { color: var(--ink-2); }
+    .rank-3 { color: #7A4A32; }
 
     .chart-svg { width: 100%; height: auto; display: block; }
     .chart-anim { opacity: 0; transform: translateY(10px) scale(0.985); transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out); }
@@ -219,43 +211,42 @@
       position: fixed; z-index: 300; pointer-events: none;
       transform: translate(-50%, calc(-100% - 10px));
       padding: 8px 12px; border-radius: 12px;
-      background: rgba(29, 17, 40, 0.94); color: #fff;
-      box-shadow: var(--shadow-3);
+      background: rgba(36, 40, 36, 0.94); color: #fff;
       opacity: 0; transition: opacity 0.14s var(--ease);
       text-align: center; max-width: 240px;
     }
     .chart-tip.is-visible { opacity: 1; }
-    .chart-tip .tv { display: block; font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
-    .chart-tip .tl { display: block; font-size: 11px; font-weight: 700; color: rgba(231, 215, 243, 0.9); }
-    .table-twin summary { cursor: pointer; color: var(--primary); font-size: 12px; font-weight: 900; padding: 6px 2px; }
+    .chart-tip .tv { display: block; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+    .chart-tip .tl { display: block; font-size: 12px; font-weight: 500; color: var(--on-dark-body); }
+    .table-twin summary { cursor: pointer; color: var(--primary); font-size: 12px; font-weight: 700; padding: 6px 2px; }
     .table-twin[open] summary { margin-bottom: 6px; }
     .table-twin .twin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .table-twin table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .table-twin th, .table-twin td { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: left; color: var(--ink-2); }
-    .table-twin td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--deep-1); }
+    .table-twin td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--deep-1); }
 
     /* ── 24시간 시계 ── */
     .clock-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
     @media (max-width: 860px) { .clock-layout { grid-template-columns: 1fr; } }
     .clock-side { display: grid; gap: 12px; align-content: start; }
-    .clock-fact { display: flex; gap: 12px; align-items: center; padding: 13px 15px; border-radius: var(--r-sm); background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
+    .clock-fact { display: flex; gap: 12px; align-items: center; padding: 13px 15px; border-radius: var(--r-sm); background: var(--offwhite); }
     .clock-fact .tile-ic { flex: none; display: grid; place-items: center; color: var(--primary); }
     .clock-fact .tile-ic .ic { width: 21px; height: 21px; }
     .clock-fact b { display: block; font-size: 15px; letter-spacing: -0.02em; color: var(--deep-1); }
     .clock-fact small { color: var(--gray); font-size: 12px; font-weight: 700; }
     .hour-seg { display: grid; gap: 7px; }
-    .hour-seg .seg-row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 12px; font-weight: 800; color: var(--ink-2); white-space: nowrap; }
-    .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--deep-1); font-weight: 900; }
+    .hour-seg .seg-row { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+    .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--deep-1); font-weight: 700; }
 
     /* ── 히트맵 ── */
     .hm-scroll { overflow-x: auto; padding-bottom: 4px; }
     .hm-grid { display: grid; grid-template-columns: 34px repeat(24, minmax(16px, 1fr)); gap: 3px; min-width: 560px; }
     .hm-corner { width: 100%; }
-    .hm-hour { text-align: center; font-size: 10px; font-weight: 800; color: var(--gray-2); }
-    .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 900; color: var(--gray); }
+    .hm-hour { text-align: center; font-size: 10px; font-weight: 600; color: var(--gray-2); }
+    .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 700; color: var(--gray); }
     .hm-day.is-weekend { color: var(--primary); }
     .hm-cell { aspect-ratio: 1; border-radius: 4px; min-width: 16px; }
-    .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gray-2); font-size: 11px; font-weight: 800; }
+    .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gray-2); font-size: 11px; font-weight: 600; }
     .hm-legend i { width: 16px; height: 10px; border-radius: 3px; }
 
     /* ── 주간 추이 ── */
@@ -266,47 +257,47 @@
     .kw-cat-chip {
       display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 15px;
       border-radius: var(--r-pill); border: 1px solid var(--line); background: #fff;
-      font-size: 13px; font-weight: 900; color: var(--ink-2); cursor: pointer;
+      font-size: 13px; font-weight: 700; color: var(--ink-2); cursor: pointer;
       transition: all 0.15s var(--ease);
     }
     .kw-cat-chip i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
     .kw-cat-chip b { font-variant-numeric: tabular-nums; color: var(--deep-1); }
-    .kw-cat-chip[aria-pressed="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); color: var(--primary); }
+    .kw-cat-chip[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
     .kw-field { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; padding: 8px 0 4px; }
     .kw-bubble {
       display: grid; place-content: center; gap: 0; text-align: center;
       border-radius: 50%; padding: 6px;
-      font-weight: 900; letter-spacing: -0.02em; color: var(--ink);
+      font-weight: 700; letter-spacing: -0.02em; color: var(--ink);
       transition: transform 0.2s var(--ease), opacity 0.25s var(--ease);
       cursor: default;
     }
     .kw-bubble:hover { transform: scale(1.06); }
     .kw-bubble.is-dim { opacity: 0.18; }
     .kw-bubble .kw { line-height: 1.15; word-break: keep-all; }
-    .kw-bubble .kc { font-size: 11px; color: var(--gray); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .kw-bubble .kc { font-size: 11px; color: var(--gray); font-weight: 600; font-variant-numeric: tabular-nums; }
     .kw-weekly { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(148px, 1fr); gap: 10px; overflow-x: auto; padding: 4px 2px 8px; }
     .kw-week-card { padding: 13px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--offwhite); }
-    .kw-week-card.is-now { border-color: rgba(95, 0, 128, 0.35); background: var(--soft-lavender); }
-    .kw-week-card b { display: block; font-size: 12px; color: var(--primary); font-weight: 900; margin-bottom: 7px; }
+    .kw-week-card.is-now { border-color: rgba(40, 82, 68, 0.35); background: var(--soft-lavender); }
+    .kw-week-card b { display: block; font-size: 12px; color: var(--primary); font-weight: 700; margin-bottom: 7px; }
     .kw-week-card ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-    .kw-week-card li { display: flex; gap: 7px; align-items: baseline; font-size: 13px; font-weight: 800; color: var(--ink-2); }
-    .kw-week-card li i { font-style: normal; color: var(--gray-2); font-size: 11px; font-weight: 900; }
+    .kw-week-card li { display: flex; gap: 7px; align-items: baseline; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    .kw-week-card li i { font-style: normal; color: var(--gray-2); font-size: 11px; font-weight: 700; }
 
     /* ── 분위기 리포트 ── */
     .mood-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
     .mood-card h3 { margin: 0 0 4px; font-size: 15px; letter-spacing: -0.03em; color: var(--deep-1); }
     .mood-card .mood-cap { margin: 0 0 14px; max-width: 42em; color: var(--gray); font-size: 12px; font-weight: 700; }
     .mood-cap { max-width: 42em; }
-    .mood-bar-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 58px; gap: 9px; align-items: center; margin-top: 9px; font-size: 12px; font-weight: 800; color: var(--ink-2); }
-    .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 900; font-variant-numeric: tabular-nums; }
+    .mood-bar-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 58px; gap: 9px; align-items: center; margin-top: 9px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+    .mood-bar-row em { font-style: normal; text-align: right; color: var(--deep-1); font-weight: 700; font-variant-numeric: tabular-nums; }
     .mood-bar-row .bar-track { height: 12px; border-radius: 6px; background: var(--soft-lavender); overflow: hidden; }
     .mood-bar-row .bar-fill { display: block; height: 100%; width: 0; border-radius: 6px 4px 4px 6px; transition: width 0.7s var(--ease-out); }
     .gini-wrap { display: flex; gap: 16px; align-items: center; }
     .gini-donut { width: 96px; height: 96px; flex: none; }
     .gini-side { display: grid; gap: 6px; }
-    .mood-big { font-size: clamp(24px, 2.4vw, 30px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1); line-height: 1.1; }
-    .mood-big small { font-size: 0.5em; color: var(--gray); font-weight: 800; }
-    .legend-dots { display: grid; gap: 4px; font-size: 12px; font-weight: 800; color: var(--gray); }
+    .mood-big { font-size: clamp(24px, 2.4vw, 30px); font-weight: 700; letter-spacing: -0.04em; color: var(--deep-1); line-height: 1.1; }
+    .mood-big small { font-size: 0.5em; color: var(--gray); font-weight: 600; }
+    .legend-dots { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--gray); }
     .legend-dots i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 
     /* ── 멤버 카드 ── */
@@ -317,29 +308,28 @@
       display: inline-flex; align-items: center; gap: 8px;
       min-height: 40px; padding: 0 15px; border-radius: var(--r-pill);
       border: 1px solid var(--line); background: #fff;
-      font-size: 13px; font-weight: 800; color: var(--ink-2); cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer;
       transition: all 0.15s var(--ease);
     }
     .member-pill b { color: var(--deep-1); font-variant-numeric: tabular-nums; }
-    .member-pill:hover { border-color: var(--line-strong); box-shadow: var(--shadow-1); transform: translateY(-1px); }
-    .member-pill[aria-pressed="true"] { background: var(--grad-brand); color: #fff; border-color: transparent; box-shadow: var(--shadow-brand); }
+    .member-pill:hover { border-color: var(--line-strong); transform: none; }
+    .member-pill[aria-pressed="true"] { background: var(--grad-brand); color: #fff; border-color: transparent; }
     .member-pill[aria-pressed="true"] b { color: #fff; }
     .member-detail-card { position: sticky; top: calc(var(--nav-h) + 16px); }
     .md-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .md-avatar {
       display: grid; place-items: center; width: 48px; height: 48px; flex: none;
-      border-radius: 16px; background: var(--grad-brand); color: #fff; font-size: 19px; font-weight: 900;
-      box-shadow: var(--shadow-brand);
+      border-radius: 16px; background: var(--grad-brand); color: #fff; font-size: 19px; font-weight: 700;
     }
     .md-head b { display: block; font-size: 16px; letter-spacing: -0.03em; }
-    .md-head small { color: var(--gray); font-size: 12px; font-weight: 800; }
+    .md-head small { color: var(--gray); font-size: 12px; font-weight: 600; }
     .md-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
-    .md-stat { padding: 10px 12px; border-radius: 13px; background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
-    .md-stat span { display: block; color: var(--gray); font-size: 11px; font-weight: 900; }
-    .md-stat strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
+    .md-stat { padding: 10px 12px; border-radius: 13px; background: var(--offwhite); }
+    .md-stat span { display: block; color: var(--gray); font-size: 11px; font-weight: 700; }
+    .md-stat strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 700; letter-spacing: -0.03em; color: var(--deep-1); }
     .md-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
     .md-spark { margin-top: 10px; }
-    .md-spark .spark-cap { color: var(--gray-2); font-size: 11px; font-weight: 800; margin-top: 4px; }
+    .md-spark .spark-cap { color: var(--gray-2); font-size: 11px; font-weight: 600; margin-top: 4px; }
 
     /* ── 리캡 카드 ── */
     .recap-stage { display: grid; gap: 14px; justify-items: center; }
@@ -347,32 +337,29 @@
       position: relative; overflow: hidden;
       width: min(640px, 100%); border-radius: 28px;
       color: #fff; padding: clamp(24px, 4vw, 40px);
-      background:
-        radial-gradient(30rem 18rem at 85% -10%, rgba(185, 128, 217, 0.35), transparent 62%),
-        radial-gradient(24rem 16rem at 0% 108%, rgba(122, 31, 181, 0.4), transparent 64%),
-        linear-gradient(160deg, #3D005C 0%, #2A0140 55%, #1E0230 100%);
-      box-shadow: var(--shadow-3);
+      background: var(--brand);
     }
-    .recap-card::after { content: ""; position: absolute; inset: 0; background: var(--noise); opacity: 0.8; mix-blend-mode: overlay; pointer-events: none; }
     .recap-inner { position: relative; z-index: 1; display: grid; gap: 16px; }
     .recap-brand { display: flex; justify-content: space-between; align-items: center; }
-    .recap-brand .logo { font-size: 17px; font-weight: 900; letter-spacing: 0.06em; background: var(--grad-on-dark-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .recap-brand small { color: var(--on-dark-muted); font-size: 11px; font-weight: 800; }
-    .recap-title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.2; color: #fff; }
+    /* 어두운 카드 안에서는 브랜드색 글자가 사라진다 */
+    .recap-card .grad-text-hero, .recap-card .grad-text { color: #fff; }
+    .recap-brand .logo { font-size: 17px; font-weight: 700; letter-spacing: 0.06em; background: var(--grad-on-dark-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .recap-brand small { color: #fff; font-size: 12px; font-weight: 500; }
+    .recap-title { margin: 0; font-size: clamp(21px, 3vw, 27px); font-weight: 700; letter-spacing: -0.045em; line-height: 1.2; color: #fff; }
     .recap-title .grad-text-hero { display: inline; }
     .recap-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .recap-kpi { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.13); }
-    .recap-kpi span { display: block; color: var(--on-dark-muted); font-size: 11px; font-weight: 900; }
-    .recap-kpi strong { display: block; margin-top: 3px; font-size: clamp(16px, 2.2vw, 21px); font-weight: 900; letter-spacing: -0.03em; color: #fff; }
-    .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 800; }
+    .recap-kpi { padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); }
+    .recap-kpi span { display: block; color: var(--on-dark-muted); font-size: 11px; font-weight: 700; }
+    .recap-kpi strong { display: block; margin-top: 3px; font-size: clamp(16px, 2.2vw, 21px); font-weight: 700; letter-spacing: -0.03em; color: #fff; }
+    .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 600; }
     .recap-rows { display: grid; gap: 7px; }
-    .recap-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10); font-size: 13px; font-weight: 800; }
+    .recap-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); font-size: 13px; font-weight: 600; }
     .recap-row .tile-ic { flex: none; display: grid; place-items: center; color: var(--primary); }
     .recap-row .tile-ic .ic { width: 17px; height: 17px; }
     .recap-row .who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
-    .recap-row .what { flex: none; margin-left: auto; color: var(--on-dark-muted); font-size: 11px; font-weight: 800; }
+    .recap-row .what { flex: none; margin-left: auto; color: var(--on-dark-muted); font-size: 11px; font-weight: 600; }
     .recap-kws { display: flex; flex-wrap: wrap; gap: 6px; }
-    .recap-kw { padding: 5px 12px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); color: var(--on-dark-body); font-size: 12px; font-weight: 800; }
+    .recap-kw { padding: 5px 12px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); color: var(--on-dark-body); font-size: 12px; font-weight: 600; }
     .recap-foot { display: flex; justify-content: space-between; gap: 10px; color: rgba(188, 161, 214, 0.85); font-size: 11px; font-weight: 700; }
     .recap-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
@@ -389,7 +376,6 @@
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/art.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -408,13 +394,7 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
-        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
-        <span class="tv-sep" aria-hidden="true"></span>
-        <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
-      </div>
-      <span class="topnav-page" aria-hidden="true">운영 대시보드</span>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
     </div>
   </header>
 
@@ -422,7 +402,7 @@
     <div class="container">
       <!-- 글과 조작부를 왼쪽에, 그림을 오른쪽에. 기간 필터를 밖으로 빼 두었더니
            그림 칸이 더 높아서 그 사이가 텅 비었다 — 같은 칸 안으로 들인다. -->
-      <div class="hero-split">
+      <div>
         <div class="hero-copy">
           <div class="hero-toprow">
             <span class="hero-kicker" id="sourceBadge"><i></i><span id="sourceBadgeText">리포트 불러오는 중…</span></span>
@@ -456,12 +436,6 @@
             <span class="stat-pill"><i></i>기준일 <strong id="pillBase">-</strong></span>
             <span class="stat-pill" id="pillGenWrap" hidden><i></i>발행 <strong id="pillGen">-</strong></span>
           </div>
-        </div>
-        <div class="hero-art-wrap">
-          <svg class="hero-art" viewBox="0 0 440 360" role="img"
-               aria-label="막대 그래프 판 위로 추세선이 그려진 카드가 겹쳐 있고 오름폭 배지가 붙은 그림">
-            <use href="#art-report" />
-          </svg>
         </div>
       </div>
     </div>
@@ -780,6 +754,7 @@
         </nav>
       </div>
       <div class="footer-bottom">
+        <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
         <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
@@ -1255,14 +1230,14 @@
       }
 
       /* 차트 팔레트 (스펙 고정) */
-      const PALETTE = ["#7B2BB0", "#1E8E68", "#A8861D", "#2F6FB0", "#C43D63"];
-      const RAMP = ["#F3E8FF", "#D9B3EC", "#B980D9", "#8F3FBF", "#5F0080"];
-      const ZERO_COLOR = "#F5F3F7";
-      // 네 색은 검증기로 확인했다(대비·채도·색약 분리 모두 통과).
-      // 정보의 파랑이 예전엔 #2F6FB0 이었는데, 적록색약에서 벙의 보라와 ΔE 6.8 로
-      // 겨우 갈렸다. 조금 청록 쪽으로 민 #2A7FA8 이면 8 을 넘긴다.
-      const CAT_COLOR = { "나들이": "#1E8E68", "맛집": "#A8861D", "벙": "#7B2BB0", "정보": "#2A7FA8" };
-      const CAT_SOFT = { "나들이": "rgba(30,142,104,0.13)", "맛집": "rgba(168,134,29,0.13)", "벙": "rgba(123,43,176,0.11)", "정보": "rgba(42,127,168,0.12)" };
+      /* 차트 색은 브랜드 녹색 하나와 중립색 몇 개로 묶는다.
+         순서 팔레트: 녹색 → 갈색 → 청회색 → 벽돌색 → 회색 (계열이 같은 것끼리 이웃하지 않게)
+         순차 램프: 같은 녹색 한 가지의 밝기 다섯 단계 (히트맵·막대) */
+      const PALETTE = ["#285244", "#8A6A3A", "#4E6E86", "#A63A2B", "#626B63"];
+      const RAMP = ["#DCE7DF", "#B7CDBF", "#86AA96", "#557F6C", "#285244"];
+      const ZERO_COLOR = "#F1EFE8";
+      const CAT_COLOR = { "나들이": "#6B8F7E", "맛집": "#8A6A3A", "벙": "#285244", "정보": "#4E6E86" };
+      const CAT_SOFT = { "나들이": "rgba(107,143,126,0.14)", "맛집": "rgba(138,106,58,0.13)", "벙": "rgba(40,82,68,0.12)", "정보": "rgba(78,110,134,0.13)" };
       function rampColor(v, max) {
         if (!v) return ZERO_COLOR;
         const r = v / (max || 1);
@@ -1456,10 +1431,10 @@
         };
         const pct = Math.max(0.02, Math.min(1, gauge / 100));
         return `<svg class="temp-gauge" viewBox="0 0 220 116" role="img" aria-label="동네친구들 온도 게이지 ${gauge}점 (100점 만점)">
-          <path d="${arc(1)}" fill="none" stroke="#F3E8FF" stroke-width="${sw}" stroke-linecap="round"/>
+          <path d="${arc(1)}" fill="none" stroke="var(--brand-soft)" stroke-width="${sw}" stroke-linecap="round"/>
           <path d="${arc(pct)}" fill="none" stroke="url(#tempGrad)" stroke-width="${sw}" stroke-linecap="round"/>
           <defs><linearGradient id="tempGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#B980D9"/><stop offset="1" stop-color="#5F0080"/>
+            <stop offset="0" stop-color="var(--brand)"/><stop offset="1" stop-color="var(--brand)"/>
           </linearGradient></defs>
         </svg>`;
       }
@@ -1632,7 +1607,7 @@
           const w = Math.max(2, (Math.abs(x.value) / maxAbs) * 100);
           const medal = i < 3 ? `<span class="rank-no is-medal" aria-label="${i + 1}위">${MEDALS[i]}</span>` : `<span class="rank-no">${i + 1}</span>`;
           const isRise = state.rankMetric === "rise";
-          const barColor = isRise ? (x.value >= 0 ? "#1E8E68" : "#C43D63") : "";
+          const barColor = isRise ? (x.value >= 0 ? "var(--brand)" : "var(--danger)") : "";
           const valTxt = isRise ? (x.value >= 0 ? "+" + nf(x.value) : "−" + nf(Math.abs(x.value)))
             : state.rankMetric === "steady" ? nf(x.value) + "일" : nf(x.value);
           return `
@@ -1702,21 +1677,21 @@
           const a1 = (((h + 1) * 15 - 90 - 2.2) * Math.PI) / 180;
           const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
           const d = `M ${p(r0, a0)} A ${r0} ${r0} 0 0 1 ${p(r0, a1)} L ${p(r1, a1)} A ${r1} ${r1} 0 0 0 ${p(r1, a0)} Z`;
-          const color = h === pk.i ? "#5F0080" : rampColor(v, max);
+          const color = h === pk.i ? "var(--brand)" : rampColor(v, max);
           paths += `<path d="${d}" fill="${color}" data-h="${h}" data-v="${v}" tabindex="0" role="img" aria-label="${h}시 ${nf(v)}건"><title>${h}시에 ${nf(v)}건</title></path>`;
         }
         let labels = "";
         [0, 3, 6, 9, 12, 15, 18, 21].forEach((h) => {
           const a = ((h * 15 - 90 + 7.5) * Math.PI) / 180;
           const lx = cx + 160 * Math.cos(a), ly = cy + 160 * Math.sin(a);
-          labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="#756D85">${h}시</text>`;
+          labels += `<text x="${lx.toFixed(1)}" y="${(ly + 3.5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">${h}시</text>`;
         });
         $("clockWrap").innerHTML = `
           <svg class="chart-svg" viewBox="0 0 340 340" aria-label="24시간대별 메시지 분포 방사형 차트">
-            <circle cx="${cx}" cy="${cy}" r="${r0 - 6}" fill="#FBF8FE"/>
+            <circle cx="${cx}" cy="${cy}" r="${r0 - 6}" fill="var(--surface-2)"/>
             ${paths}${labels}
-            <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="26" font-weight="900" fill="#3D005C" letter-spacing="-1">${pk.i}시</text>
-            <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="11" font-weight="800" fill="#6B6180">피크 시간</text>
+            <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="26" font-weight="700" fill="var(--ink)" letter-spacing="-1">${pk.i}시</text>
+            <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink-2)">피크 시간</text>
           </svg>`;
         animateIn($("clockWrap"));
 
@@ -1827,14 +1802,14 @@
           if (idxs.length) {
             const half = weeks.length > 1 ? pw / (weeks.length - 1) / 2 : pw / 2;
             const x0 = Math.max(L, x(idxs[0]) - half), x1 = Math.min(W - R, x(idxs[idxs.length - 1]) + half);
-            shade = `<rect x="${x0.toFixed(1)}" y="${T}" width="${(x1 - x0).toFixed(1)}" height="${ph}" fill="#F3E8FF" opacity="0.75" rx="8"/>`;
+            shade = `<rect x="${x0.toFixed(1)}" y="${T}" width="${(x1 - x0).toFixed(1)}" height="${ph}" fill="var(--brand-soft)" opacity="0.75" rx="8"/>`;
           }
         }
         let gridL = "", yt = "";
         for (let g = 0; g <= 4; g++) {
           const gv = (ymax / 4) * g, gy = y(gv);
-          gridL += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(95,0,128,0.08)" stroke-width="1"/>`;
-          yt += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="#756D85">${nf(gv)}</text>`;
+          gridL += `<line x1="${L}" y1="${gy.toFixed(1)}" x2="${W - R}" y2="${gy.toFixed(1)}" stroke="rgba(40, 82, 68,0.08)" stroke-width="1"/>`;
+          yt += `<text x="${L - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="10.5" font-weight="700" fill="var(--ink-2)">${nf(gv)}</text>`;
         }
         let lineP = "", areaP = `M ${x(0).toFixed(1)} ${(T + ph).toFixed(1)}`;
         weeks.forEach((w, i) => {
@@ -1847,18 +1822,18 @@
         const step = weeks.length > 10 ? 2 : 1;
         weeks.forEach((w, i) => {
           if (i % step !== 0 && i !== weeks.length - 1) return;
-          xLabels += `<text x="${x(i).toFixed(1)}" y="${H - 14}" text-anchor="middle" font-size="10.5" font-weight="750" fill="#756D85">${fmtDateK(w.from)}</text>`;
+          xLabels += `<text x="${x(i).toFixed(1)}" y="${H - 14}" text-anchor="middle" font-size="10.5" font-weight="750" fill="var(--ink-2)">${fmtDateK(w.from)}</text>`;
         });
         const last = weeks[weeks.length - 1];
-        const endDot = `<circle cx="${x(weeks.length - 1).toFixed(1)}" cy="${y(last.total).toFixed(1)}" r="5" fill="#7B2BB0" stroke="#fff" stroke-width="2.5"/>
-          <text x="${(x(weeks.length - 1) - 8).toFixed(1)}" y="${(y(last.total) - 10).toFixed(1)}" text-anchor="end" font-size="11.5" font-weight="900" fill="#3D005C">${nf(last.total)}</text>`;
+        const endDot = `<circle cx="${x(weeks.length - 1).toFixed(1)}" cy="${y(last.total).toFixed(1)}" r="5" fill="var(--brand)" stroke="#fff" stroke-width="2.5"/>
+          <text x="${(x(weeks.length - 1) - 8).toFixed(1)}" y="${(y(last.total) - 10).toFixed(1)}" text-anchor="end" font-size="11.5" font-weight="700" fill="var(--ink)">${nf(last.total)}</text>`;
         wrap.innerHTML = `
           <svg class="chart-svg" viewBox="0 0 ${W} ${H}" aria-label="주 단위 메시지 추이 라인 차트">
             ${shade}${gridL}${yt}
-            <path d="${areaP}" fill="rgba(123,43,176,0.09)"/>
-            <path d="${lineP}" fill="none" stroke="#7B2BB0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-            <line id="trendHair" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(95,0,128,0.28)" stroke-width="1" opacity="0"/>
-            ${weeks.map((w, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(w.total).toFixed(1)}" r="3.4" fill="#7B2BB0" stroke="#fff" stroke-width="2"/>`).join("")}
+            <path d="${areaP}" fill="rgba(40, 82, 68,0.09)"/>
+            <path d="${lineP}" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <line id="trendHair" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="rgba(40, 82, 68,0.28)" stroke-width="1" opacity="0"/>
+            ${weeks.map((w, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(w.total).toFixed(1)}" r="3.4" fill="var(--brand)" stroke="#fff" stroke-width="2"/>`).join("")}
             ${endDot}${xLabels}
           </svg>`;
         animateIn(wrap);
@@ -1929,7 +1904,7 @@
           const fs = Math.max(11, Math.min(17, Math.round(size / 5.2)));
           const cat = k.cat && CAT_COLOR[k.cat] ? k.cat : null;
           const bg = cat ? CAT_SOFT[cat] : "rgba(141,132,160,0.12)";
-          const ring = cat ? CAT_COLOR[cat] : "#8D84A0";
+          const ring = cat ? CAT_COLOR[cat] : "var(--ink-2)";
           const dim = state.kwCat !== "all" && k.cat !== state.kwCat;
           return `<span class="kw-bubble${dim ? " is-dim" : ""}" style="width:${size}px; height:${size}px; background:${bg}; box-shadow:inset 0 0 0 1.5px ${ring}44; font-size:${fs}px" title="${escapeHTML(k.w)} ${nf(k.c)}회${cat ? ", " + cat + " 이야기" : ""}">
             <span class="kw">${escapeHTML(k.w)}</span><span class="kc">${nf(k.c)}</span>
@@ -1956,9 +1931,9 @@
         if (es && (es.laugh || es.cheer || es.heart)) {
           const totalE = (es.laugh || 0) + (es.cheer || 0) + (es.heart || 0) || 1;
           const rows = [
-            { lb: "웃음", v: es.laugh || 0, c: "#7B2BB0" },
-            { lb: "응원", v: es.cheer || 0, c: "#1E8E68" },
-            { lb: "하트", v: es.heart || 0, c: "#C43D63" }
+            { lb: "웃음", v: es.laugh || 0, c: "var(--brand)" },
+            { lb: "응원", v: es.cheer || 0, c: "var(--brand)" },
+            { lb: "하트", v: es.heart || 0, c: "var(--danger)" }
           ];
           $("moodEmoji").innerHTML = `<h3>이모지와 리액션 분위기</h3><p class="mood-cap">발행 기간 전체에서 웃음과 응원, 하트가 차지한 비율이에요.</p>` +
             rows.map((r) => `<div class="mood-bar-row"><span>${r.lb}</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((r.v / totalE) * 100)}" style="background:${r.c}"></span></span><em>${nf(r.v)}</em></div>`).join("");
@@ -1978,9 +1953,9 @@
           const mid = sums.slice(3, 10).reduce((s, x) => s + x, 0);
           const rest = totalS - top3 - mid;
           const segs = [
-            { lb: "상위 1~3위", v: top3, c: "#7B2BB0" },
-            { lb: "4~10위", v: mid, c: "#B980D9" },
-            { lb: "그 외", v: rest, c: "#F3E8FF" }
+            { lb: "상위 1~3위", v: top3, c: "var(--brand)" },
+            { lb: "4~10위", v: mid, c: "var(--brand)" },
+            { lb: "그 외", v: rest, c: "var(--brand-soft)" }
           ].filter((x) => x.v > 0);
           const R = 40, CC = 2 * Math.PI * R;
           let off = 0;
@@ -1996,8 +1971,8 @@
             <div class="gini-wrap">
               <svg class="gini-donut" viewBox="0 0 96 96" role="img" aria-label="대화 점유율 도넛 차트">
                 ${circles}
-                <text x="48" y="46" text-anchor="middle" font-size="15" font-weight="900" fill="#3D005C">${conc.gini.toFixed(2)}</text>
-                <text x="48" y="60" text-anchor="middle" font-size="8" font-weight="800" fill="#6B6180">지니계수</text>
+                <text x="48" y="46" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">${conc.gini.toFixed(2)}</text>
+                <text x="48" y="60" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--ink)">지니계수</text>
               </svg>
               <div class="gini-side">
                 <span class="badge-soft ${conc.even ? "is-mint" : "is-cream"}">${conc.even ? "골고루 수다" : "일부 집중"}</span>
@@ -2014,8 +1989,8 @@
           const maxQa = Math.max(qa.q, qa.a, 1);
           $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><p class="mood-cap">발행 기간 전체에서 질문에 답이 얼마나 돌아왔는지예요.</p>
             <div class="mood-big">${qa.ratio == null ? "아직 없어요" : "질문 1개당 " + nf1(qa.ratio) + "개"}<small> 답변과 반응</small></div>
-            <div class="mood-bar-row"><span>질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#2F6FB0"></span></span><em>${nf(qa.q)}</em></div>
-            <div class="mood-bar-row"><span>답변</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}" style="background:#7B2BB0"></span></span><em>${nf(qa.a)}</em></div>`;
+            <div class="mood-bar-row"><span>질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#4E6E86"></span></span><em>${nf(qa.q)}</em></div>
+            <div class="mood-bar-row"><span>답변</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}" style="background:var(--brand)"></span></span><em>${nf(qa.a)}</em></div>`;
           requestAnimationFrame(() => {
             $("moodQa").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
           });
@@ -2071,9 +2046,9 @@
         areaP += ` L ${x(series.length - 1).toFixed(1)} ${(T + ph).toFixed(1)} Z`;
         const li = series.length - 1;
         return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="일별 활동 스파크라인 (${labelFrom}~${labelTo})">
-          <path d="${areaP}" fill="rgba(123,43,176,0.10)"/>
-          <path d="${lineP}" fill="none" stroke="#7B2BB0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="${x(li).toFixed(1)}" cy="${y(series[li]).toFixed(1)}" r="4" fill="#7B2BB0" stroke="#fff" stroke-width="2"/>
+          <path d="${areaP}" fill="rgba(40, 82, 68,0.10)"/>
+          <path d="${lineP}" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="${x(li).toFixed(1)}" cy="${y(series[li]).toFixed(1)}" r="4" fill="var(--brand)" stroke="#fff" stroke-width="2"/>
         </svg>`;
       }
 
