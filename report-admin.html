@@ -23,6 +23,23 @@
     .admin-layout > * { min-width: 0; }
     .stack { display: grid; gap: 16px; min-width: 0; }
     .step-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+
+    /* 발행 화면 맨 위 점검 한 줄 — 운영진이 어차피 여는 자리에 얹는다 */
+    .check-strip {
+      margin-bottom: 14px; padding: 11px 15px; border-radius: var(--r-sm);
+      font-size: 13.5px; font-weight: 750; line-height: 1.55;
+    }
+    .check-strip.is-ok   { background: var(--pastel-mint);     color: #0D5940; }
+    .check-strip.is-mid  { background: var(--pastel-lavender); color: var(--ink-2); }
+    .check-strip.is-warn { background: var(--pastel-cream);    color: #856410; }
+
+    /* 지난번 설정을 불러왔다는 안내 */
+    .preset-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 14px; padding: 10px 14px; border-radius: var(--r-sm);
+      background: var(--offwhite); border: 1px solid var(--line);
+      color: var(--gray); font-size: 12.5px; font-weight: 650;
+    }
     .step-title { margin: 0; font-size: 16.5px; letter-spacing: -0.04em; font-weight: 870; color: var(--deep-1); display: flex; align-items: center; gap: 10px; }
     .step-no {
       display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px;
@@ -306,6 +323,14 @@
         <div class="admin-layout" aria-label="리포트 작성 도구">
           <div class="stack">
             <!-- 1) 업로드 + 중복 감지 -->
+            <!-- 발행 화면에 들어오자마자 보이는 한 줄. 목록을 불러오면 채워진다. -->
+            <div id="checkStrip" class="check-strip" hidden></div>
+
+            <div id="presetBar" class="preset-bar" hidden>
+              <span id="presetText"></span>
+              <button id="presetClear" class="mini-btn" type="button">저장된 설정 지우기</button>
+            </div>
+
             <section class="card is-lg reveal" aria-labelledby="stepUpload">
               <div class="step-head"><h2 class="step-title" id="stepUpload"><span class="step-no">1</span>대화 파일 올리기</h2></div>
               <p class="step-note">카카오톡 채팅방 → 메뉴 → 대화 내용 내보내기(.txt). 여러 파일을 함께 올려도 돼요. 겹치는 날짜는 자동으로 알려드려요.</p>
@@ -649,6 +674,7 @@
       let labelDirty = false;
       let currentStats = null;      // 발행/미리보기 대상 (v2)
       let lastMembers = [];         // 최근 집계된 전체 멤버(제외 판단용)
+      let rosterAutoApplied = false; // 저장된 명단 자동 적용은 세션당 한 번만
       let detectedLeft = new Set(); // 채팅 분석으로 '나간 것으로 감지된' 닉네임
       const manualOff = new Set();  // 운영진이 직접 '제외'한 닉네임(파일 추가·재집계에도 유지)
       const manualOn = new Set();   // 운영진이 직접 '다시 포함'한 닉네임(자동 제외 무시)
@@ -904,6 +930,13 @@
           from, to, format: mergedMeta.format, files: mergedMeta.files
         });
         lastMembers = baseAgg.members || [];
+        // 저장된 명단이 있으면 첫 집계 직후 한 번 자동 적용한다.
+        // 매달 같은 명단을 다시 붙여넣던 단계가 이걸로 사라진다.
+        if (!rosterAutoApplied && lastMembers.length && ($("rosterInput").value || "").trim()) {
+          rosterAutoApplied = true;
+          applyRoster();
+          return;   // applyRoster 가 recompute 를 다시 부른다
+        }
         renderMemberTable(baseAgg.members, baseAgg.meta.totalMessages);
 
         currentStats = ChatParser.aggregate(merged, {
@@ -1039,7 +1072,8 @@
             body: JSON.stringify({ p_pass: pass, p_period: st.periodLabel, p_stats: st })
           });
           EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 리포트를 발행했어요.`);
-          loadReportList();
+          loadPreset();
+      loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요해요. 안내를 확인해주세요."); }
           else EXCER.toast(rpcErrorText(e, "발행에 실패했어요. 잠시 후 다시 시도해주세요."));
@@ -1059,12 +1093,92 @@
         setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       }
 
+      /* ── 발행 프리셋 ──────────────────────────────────────────
+         발행은 매달 반복되는데, 매번 같은 결정을 처음부터 다시 내리고 있었다.
+         멤버 명단을 다시 붙여넣고, 같은 단어를 또 빼고, 마스킹을 또 켜는 식이다.
+         그 '매번 같은 결정'만 이 브라우저에 기억시킨다.
+
+         비밀번호는 저장하지 않는다. 한 번 새면 공지 작성·발행·글 강제삭제가
+         전부 열리는 열쇠라, 편의를 위해 브라우저에 둘 값이 아니다.            */
+      const PRESET_KEY = "excer_report_preset";
+
+      function savePreset() {
+        try {
+          localStorage.setItem(PRESET_KEY, JSON.stringify({
+            roster: $("rosterInput").value || "",
+            dropped: [...dropped],
+            mask: !!$("maskChk").checked,
+            at: new Date().toISOString()
+          }));
+        } catch (e) { /* 저장소를 못 쓰면 그냥 기억하지 않는다 */ }
+      }
+
+      function loadPreset() {
+        let p = null;
+        try { p = JSON.parse(localStorage.getItem(PRESET_KEY) || "null"); } catch (e) {}
+        if (!p || typeof p !== "object") return;
+
+        if (p.roster) $("rosterInput").value = p.roster;
+        if (p.mask) $("maskChk").checked = true;
+        // 뺀 키워드는 집계가 끝난 뒤에 적용해야 의미가 있으므로 여기서는 담아만 둔다
+        if (Array.isArray(p.dropped)) p.dropped.forEach((k) => dropped.add(k));
+
+        const bar = $("presetBar");
+        const bits = [];
+        if (p.roster) bits.push("멤버 명단");
+        if (Array.isArray(p.dropped) && p.dropped.length) bits.push("뺀 단어 " + p.dropped.length + "개");
+        if (p.mask) bits.push("닉네임 가리기");
+        if (!bits.length) return;
+        $("presetText").textContent = "지난번 설정을 불러왔어요 — " + bits.join(" · ") +
+          ". 파일을 올리면 명단이 자동으로 적용돼요.";
+        bar.hidden = false;
+      }
+
+      /* ── 점검 스트립 ──────────────────────────────────────────
+         운영진이 어차피 여는 화면 맨 위에 '지금 손봐야 할 것'을 한 줄로 얹는다.
+         새 페이지를 따로 만들지 않은 이유: 링크 없는 주소를 기억해서 여는 습관은
+         생기지 않는다. 이미 오는 자리에 붙이는 편이 실제로 읽힌다.
+         ※ 여기 적는 숫자는 지금 실제로 셀 수 있는 것만 쓴다. '마감 지난 벙'과
+           '미정산 링크'는 아직 그 데이터가 없어서 넣지 않는다 — 없는 걸 0으로
+           보여주면 '확인했다'는 착각만 준다.                                     */
+      function renderCheckStrip(rows) {
+        const el = $("checkStrip");
+        if (!el) return;
+        if (!rows || !rows.length) {
+          el.className = "check-strip is-warn";
+          el.textContent = "아직 발행된 리포트가 없어요 — 첫 리포트를 올리면 홈과 대시보드가 함께 열려요";
+          el.hidden = false;
+          return;
+        }
+        // updated_at 이 가장 최근인 것을 찾는다(목록 정렬을 믿지 않는다)
+        let newest = 0, label = "";
+        rows.forEach((r) => {
+          const t = new Date(r.updated_at || 0).getTime();
+          if (t > newest) { newest = t; label = r.period_label || ""; }
+        });
+        if (!newest) { el.hidden = true; return; }
+        const kst = (ms) => {
+          try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+          catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+        };
+        const days = Math.max(0, Math.round(
+          (Date.parse(kst(Date.now()) + "T00:00:00Z") - Date.parse(kst(newest) + "T00:00:00Z")) / 86400000));
+        const when = days === 0 ? "오늘" : (days === 1 ? "어제" : days + "일 전");
+        // 홈의 신선도 배지와 같은 경계(7일/14일)를 쓴다 — 두 화면이 다른 말을 하면 안 된다
+        el.className = "check-strip " + (days <= 7 ? "is-ok" : (days <= 14 ? "is-mid" : "is-warn"));
+        el.textContent = "마지막 발행 " + when + " · " + (label || "기간 미상") +
+          " · 전체 " + rows.length + "건" +
+          (days > 14 ? "  — 홈에 '지난 기준'으로 표시되고 있어요" : "");
+        el.hidden = false;
+      }
+
       /* ── 발행된 리포트 목록 ── */
       async function loadReportList() {
         const host = $("reportList");
         try {
           const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,updated_at");
           $("setupBox").hidden = true;
+          renderCheckStrip(rows);
           host.innerHTML = (rows && rows.length)
             ? rows.map((r) => `
               <div class="report-item">
@@ -1093,7 +1207,8 @@
             body: JSON.stringify({ p_pass: pass, p_id: Number(id) })
           });
           EXCER.toast("삭제했어요.");
-          loadReportList();
+          loadPreset();
+      loadReportList();
         } catch (e) {
           btn.disabled = false;
           if (isMissingTable(e)) { $("setupBox").hidden = false; }
@@ -1129,7 +1244,7 @@
         });
 
         $("autoMergeChk").addEventListener("change", rebuild);
-        $("maskChk").addEventListener("change", recompute);
+        $("maskChk").addEventListener("change", () => { recompute(); savePreset(); });
 
         $("fromDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
         $("toDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
@@ -1156,18 +1271,20 @@
           recompute();
         });
 
-        $("rosterApply").addEventListener("click", applyRoster);
-        $("rosterClear").addEventListener("click", clearRoster);
+        $("rosterApply").addEventListener("click", () => { applyRoster(); savePreset(); });
+        $("rosterClear").addEventListener("click", () => { clearRoster(); savePreset(); });
 
         $("kwEdit").addEventListener("click", (e) => {
           const b = e.target.closest("[data-drop]");
           if (!b) return;
           dropped.add(b.dataset.drop);
           recompute();
+          savePreset();
         });
         $("kwRestoreBtn").addEventListener("click", () => {
           dropped.clear();
           recompute();
+          savePreset();
         });
 
         $("labelInput").addEventListener("input", () => {
@@ -1178,6 +1295,11 @@
         $("previewBtn").addEventListener("click", doPreview);
         $("publishBtn").addEventListener("click", doPublish);
         $("downloadBtn").addEventListener("click", doDownload);
+        $("presetClear").addEventListener("click", () => {
+          try { localStorage.removeItem(PRESET_KEY); } catch (e) {}
+          $("presetBar").hidden = true;
+          EXCER.toast("저장된 설정을 지웠어요 다음 발행부터는 처음부터 정해요");
+        });
         $("reloadListBtn").addEventListener("click", loadReportList);
         $("reportList").addEventListener("click", (e) => {
           const b = e.target.closest("[data-del]");
@@ -1186,6 +1308,7 @@
       }
 
       bindEvents();
+      loadPreset();
       loadReportList();
     })();
   </script>
