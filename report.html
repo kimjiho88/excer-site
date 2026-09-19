@@ -177,7 +177,9 @@
     .rank-foot { display: flex; justify-content: center; margin-top: 12px; }
     /* 넓은 화면에서 설명 줄이 한 줄에 90자 넘게 늘어져 눈이 다음 줄을 놓쳤다.
    한글 본문은 한 줄 40자 안팎이 읽기 편하다. */
-    .chart-note { margin: 12px 2px 0; max-width: 42em; color: var(--gray-2); font-size: 12px; font-weight: 700; line-height: 1.6; }
+    /* --gray-2 는 흰 바탕에서는 4.9:1 이지만 이 자리는 옅은 라벤더 위라 4.49:1 로
+       기준을 아슬하게 못 넘겼다. 한 단계 진한 캡션 색을 쓴다. */
+    .chart-note { margin: 12px 2px 0; max-width: 42em; color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
 
     /* ── 배지 그리드 ── */
     .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
@@ -375,18 +377,19 @@
     .recap-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
     /* ── CTA ── */
-    .cta-card { text-align: center; display: grid; justify-items: center; gap: 8px; }
-    .cta-card h2 { margin: 4px 0 0; font-size: clamp(20px, 2.4vw, 27px); letter-spacing: -0.045em; color: var(--deep-1); }
-    .cta-card p { margin: 0; color: var(--gray); font-size: 14px; max-width: 460px; }
-    .cta-card .hero-actions { justify-content: center; margin-top: 14px; }
 
     /* 스켈레톤 채움 */
     .skeleton-stack { display: grid; gap: 12px; }
 
     [hidden] { display: none !important; }
+
+    /* 맺음 밴드부터 푸터까지 어두운 꼬리 하나로 잇는다. */
+    .page-main { padding-bottom: 0; }
+    .site-footer { margin-top: 0; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
+  <script src="assets/art.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -417,38 +420,49 @@
 
   <section class="hero-band" aria-labelledby="heroTitle">
     <div class="container">
-      <div class="hero-toprow">
-        <span class="hero-kicker" id="sourceBadge"><i></i><span id="sourceBadgeText">리포트 불러오는 중…</span></span>
-        <label class="sr-only" for="reportSelect">발행된 리포트 선택</label>
-        <select id="reportSelect" class="report-select" hidden></select>
-      </div>
-      <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 동네친구들,<br /><span class="grad-text-hero">이만큼 도란도란했어요</span></h1>
-      <p class="hero-sub">
-        누가 활약했고 어느 시간대가 뜨거웠는지 가볍게 둘러봐요.
-        집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
-        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임을 한 글자만 남긴</strong> 버전이에요.</span>
-      </p>
+      <!-- 글과 조작부를 왼쪽에, 그림을 오른쪽에. 기간 필터를 밖으로 빼 두었더니
+           그림 칸이 더 높아서 그 사이가 텅 비었다 — 같은 칸 안으로 들인다. -->
+      <div class="hero-split">
+        <div class="hero-copy">
+          <div class="hero-toprow">
+            <span class="hero-kicker" id="sourceBadge"><i></i><span id="sourceBadgeText">리포트 불러오는 중…</span></span>
+            <label class="sr-only" for="reportSelect">발행된 리포트 선택</label>
+            <select id="reportSelect" class="report-select" hidden></select>
+          </div>
+          <h1 class="hero-title" id="heroTitle"><span id="heroPeriodWord">이번 주</span> 동네친구들,<br /><span class="grad-text-hero">이만큼 도란도란했어요</span></h1>
+          <p class="hero-sub">
+            누가 활약했고 어느 시간대가 뜨거웠는지 가볍게 둘러봐요.
+            집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
+            <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임을 한 글자만 남긴</strong> 버전이에요.</span>
+          </p>
+          <div class="range-filter" role="group" aria-label="기간 필터" id="rangeFilter">
+            <button class="range-chip" type="button" data-range="today" aria-pressed="false">오늘</button>
+            <button class="range-chip" type="button" data-range="week" aria-pressed="true">이번 주</button>
+            <button class="range-chip" type="button" data-range="month" aria-pressed="false">이번 달</button>
+            <button class="range-chip" type="button" data-range="all" aria-pressed="false">전체</button>
+            <button class="range-chip" type="button" data-range="custom" aria-pressed="false">직접 선택</button>
+          </div>
+          <div class="range-custom" id="rangeCustom" hidden>
+            <label class="sr-only" for="customFrom">시작일</label>
+            <input type="date" id="customFrom" />
+            <span class="tilde" aria-hidden="true">~</span>
+            <label class="sr-only" for="customTo">종료일</label>
+            <input type="date" id="customTo" />
+            <button class="mini-btn" type="button" id="customApply">적용</button>
+          </div>
 
-      <div class="range-filter" role="group" aria-label="기간 필터" id="rangeFilter">
-        <button class="range-chip" type="button" data-range="today" aria-pressed="false">오늘</button>
-        <button class="range-chip" type="button" data-range="week" aria-pressed="true">이번 주</button>
-        <button class="range-chip" type="button" data-range="month" aria-pressed="false">이번 달</button>
-        <button class="range-chip" type="button" data-range="all" aria-pressed="false">전체</button>
-        <button class="range-chip" type="button" data-range="custom" aria-pressed="false">직접 선택</button>
-      </div>
-      <div class="range-custom" id="rangeCustom" hidden>
-        <label class="sr-only" for="customFrom">시작일</label>
-        <input type="date" id="customFrom" />
-        <span class="tilde" aria-hidden="true">~</span>
-        <label class="sr-only" for="customTo">종료일</label>
-        <input type="date" id="customTo" />
-        <button class="mini-btn" type="button" id="customApply">적용</button>
-      </div>
-
-      <div class="hero-meta">
-        <span class="stat-pill"><i></i>기간 <strong id="pillRange">-</strong></span>
-        <span class="stat-pill"><i></i>기준일 <strong id="pillBase">-</strong></span>
-        <span class="stat-pill" id="pillGenWrap" hidden><i></i>발행 <strong id="pillGen">-</strong></span>
+          <div class="hero-meta">
+            <span class="stat-pill"><i></i>기간 <strong id="pillRange">-</strong></span>
+            <span class="stat-pill"><i></i>기준일 <strong id="pillBase">-</strong></span>
+            <span class="stat-pill" id="pillGenWrap" hidden><i></i>발행 <strong id="pillGen">-</strong></span>
+          </div>
+        </div>
+        <div class="hero-art-wrap">
+          <svg class="hero-art" viewBox="0 0 440 360" role="img"
+               aria-label="막대 그래프 판 위로 추세선이 그려진 카드가 겹쳐 있고 오름폭 배지가 붙은 그림">
+            <use href="#art-report" />
+          </svg>
+        </div>
       </div>
     </div>
   </section>
@@ -721,21 +735,23 @@
         </div>
       </section>
 
-      <!-- 11. CTA -->
-      <section class="section" id="secCta">
-        <div class="container">
-          <div class="card is-lg is-soft cta-card reveal">
-            <span class="badge-soft">다음 리포트</span>
-            <h2>오늘 한 마디가 다음 주 순위를 바꿔요</h2>
-            <p>벙 소식이랑 정산은 아래에서 바로 확인할 수 있어요.</p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="news.html">소식 보러 가기</a>
-              <a class="btn btn-secondary" href="calculator.html">벙비 정산하기</a>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
+
+    <!-- 11. 맺음 밴드 — 옅은 라벤더 카드 한 장이었는데, 밝은 본문 끝에 밝은 카드를
+         하나 더 두는 셈이라 페이지가 흐지부지 끝났다. 어두운 밴드로 맺고 푸터까지 잇는다. -->
+    <section class="band cta-band" id="secCta" aria-labelledby="ctaTitle">
+      <div class="container">
+        <span class="cta-rule" aria-hidden="true"></span>
+        <h2 id="ctaTitle">오늘 한 마디가<br />다음 주 순위를 바꿔요</h2>
+        <!-- 이 밴드는 #dashBody 밖에 있어서 리포트가 없을 때도 남는다.
+             그래서 '이 숫자는' 처럼 화면 위를 가리키는 말은 쓰지 않는다. -->
+        <p>대시보드 숫자는 전부 카톡방 대화에서 나와요. 벙 소식이랑 정산은 여기서 바로 볼 수 있어요.</p>
+        <div class="hero-actions">
+          <a class="btn btn-hero is-lg" href="news.html">소식 보러 가기</a>
+          <a class="btn btn-glass is-lg" href="calculator.html">벙비 정산하기</a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">

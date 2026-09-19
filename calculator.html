@@ -500,9 +500,15 @@
       .receipt-total { text-align: left; }
       .save-status { width: 100%; margin-left: 0; justify-content: flex-end; }
     }
+
+    /* 맺음 밴드부터 푸터까지 어두운 꼬리 하나로 잇는다.
+       그 사이에 흰 띠가 한 줄 끼면 실수처럼 보인다. */
+    .page-main { padding-bottom: 0; }
+    .site-footer { margin-top: 0; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
+  <script src="assets/art.js?v=1"></script>
 </head>
 
 <body>
@@ -534,17 +540,27 @@
 
   <section class="hero-band is-compact" aria-labelledby="heroTitle">
     <i class="glow-orb" style="--orb-size:420px; --orb-color:rgba(200,162,232,0.30); right:-150px; top:-170px" aria-hidden="true"></i>
-    <div class="container">
-      <span class="hero-kicker"><i></i>벙비 정산기</span>
-      <h1 class="hero-title" id="heroTitle">벙 끝나고 1분,<br /><span class="grad-text-hero">정산은 여기서 끝내요</span></h1>
-      <p class="hero-sub">
-        멤버와 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
-        카톡에 붙일 메시지, 정산 이미지, 입금 체크 링크까지 한 번에 만들어요.
-      </p>
-      <div class="hero-meta">
-        <span class="stat-pill"><i></i>이번 정산 <strong id="heroTotal">0원</strong></span>
-        <span class="stat-pill"><i></i>참여 <strong id="heroCount">0명</strong></span>
-        <span class="stat-pill"><i></i><span id="heroPerLabel">1인</span> <strong id="heroPer">0원</strong></span>
+    <div class="container hero-split">
+      <div class="hero-copy">
+        <span class="hero-kicker"><i></i>벙비 정산기</span>
+        <h1 class="hero-title" id="heroTitle">벙 끝나고 1분,<br /><span class="grad-text-hero">정산은 여기서 끝내요</span></h1>
+        <p class="hero-sub">
+          멤버와 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
+          카톡에 붙일 메시지, 정산 이미지, 입금 체크 링크까지 한 번에 만들어요.
+        </p>
+        <!-- pill 세 개를 나란히 두면 그것도 결국 작은 카드 격자다.
+             구분선만 두고 숫자를 세운다. id 는 그대로 둬서 JS 는 건드리지 않는다. -->
+        <div class="hero-signal">
+          <span class="hs"><span class="hs-k">이번 정산</span><span class="hs-v"><span id="heroTotal">0원</span></span></span>
+          <span class="hs"><span class="hs-k">참여</span><span class="hs-v"><span id="heroCount">0명</span></span></span>
+          <span class="hs"><span class="hs-k" id="heroPerLabel">1인</span><span class="hs-v"><span id="heroPer">0원</span></span></span>
+        </div>
+      </div>
+      <div class="hero-art-wrap">
+        <svg class="hero-art" viewBox="0 0 440 360" role="img"
+             aria-label="영수증 한 장이 세 사람 몫으로 갈라지고, 그중 하나에 입금 완료 표시가 붙은 그림">
+          <use href="#art-calc" />
+        </svg>
       </div>
     </div>
   </section>
@@ -773,6 +789,19 @@
               <button id="copyLinkBtn" class="mini-btn" type="button">정산기 주소 복사</button>
             </div>
           </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 맺음 밴드 ── -->
+    <section class="band cta-band" aria-labelledby="ctaTitle">
+      <div class="container">
+        <span class="cta-rule" aria-hidden="true"></span>
+        <h2 id="ctaTitle">정산이 끝났으면<br />이제 다음 벙이에요</h2>
+        <p>만든 링크를 카톡방에 붙이면 각자 입금하고 체크까지 해요. 다음 벙은 소식에서 찾아봐요.</p>
+        <div class="hero-actions">
+          <a class="btn btn-hero is-lg" href="news.html">벙 소식 보기</a>
+          <a class="btn btn-glass is-lg" href="guide.html">정산 규칙 다시 보기</a>
         </div>
       </div>
     </section>

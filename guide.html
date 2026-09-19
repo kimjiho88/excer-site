@@ -28,12 +28,10 @@
        필독(guide) 전용 스타일 — v3 (site.css 수정 금지)
        ============================================================ */
 
-    /* ── 컴팩트 히어로(가운데 정렬) ── */
-    .hero-band.is-compact .container { text-align: center; }
-    .hero-band.is-compact .hero-title { font-size: clamp(28px, 4vw, 48px); line-height: 1.12; }
-    .hero-band.is-compact .hero-sub { margin-inline: auto; }
-    .hero-band.is-compact .hero-actions,
-    .hero-band.is-compact .hero-meta { justify-content: center; }
+    /* ── 컴팩트 히어로 ──
+       가운데 정렬은 안전하지만 아무 성격이 없다. 글을 왼쪽으로 몰고
+       오른쪽에 그림 한 장을 둔다(.hero-split · .hero-art 는 site.css). */
+    .hero-band.is-compact { padding-bottom: clamp(40px, 5.2vw, 70px); }
 
     /* ── 점프 내비 + 검색 (스티키 바) ── */
     .guide-nav {
@@ -304,24 +302,13 @@
     .sum-list .sl-ic svg { width: 15px; height: 15px; }
     .sum-list b { color: var(--ink); font-weight: 800; }
 
-    /* ── 하단 CTA 밴드 (다크) ── */
-    .cta-band {
-      position: relative; overflow: hidden; text-align: center;
-      padding: clamp(38px, 5vw, 66px) clamp(22px, 4vw, 56px);
-      border-radius: var(--r-xl);
-      background: var(--grad-aurora), var(--grad-hero);
-      background-color: var(--deep-2);
-      color: var(--on-dark-ink);
-      box-shadow: var(--shadow-3);
-    }
-    .cta-band::after {
-      content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-      background: var(--noise); opacity: 0.9; mix-blend-mode: overlay;
-    }
-    .cta-band > * { position: relative; z-index: 1; }
-    .cta-band h2 { margin: 14px 0 0; font-size: clamp(25px, 3.3vw, 40px); font-weight: 900; letter-spacing: -0.05em; color: #fff; }
-    .cta-band p { max-width: 560px; margin: 12px auto 0; color: var(--on-dark-body); font-size: 15px; line-height: 1.72; }
+    /* ── 하단 CTA 밴드 ──
+       둥근 카드 한 장으로 띄워 두었는데, 어두운 카드 아래에 흰 띠가 한 줄 끼고
+       그 아래 또 어두운 푸터가 오면서 가운데만 밝아 실수처럼 보였다.
+       화면 끝까지 차는 밴드(.cta-band 는 site.css)로 바꾸고 푸터까지 이어 붙인다. */
     .cta-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 26px; }
+    .page-main { padding-bottom: 0; }
+    .site-footer { margin-top: 0; }
 
     #noResults { margin-block: clamp(36px, 4.6vw, 60px); }
 
@@ -342,6 +329,7 @@
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
+  <script src="assets/art.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -374,24 +362,34 @@
   <!-- ════════ 다크 컴팩트 히어로 ════════ -->
   <section class="hero-band is-compact" aria-labelledby="heroTitle">
     <i class="glow-orb" style="--orb-size:440px; --orb-color:rgba(185,128,217,0.32); right:-130px; top:-150px" aria-hidden="true"></i>
-    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(255,184,209,0.20); left:-120px; bottom:-170px" aria-hidden="true"></i>
-    <div class="container">
-      <span class="hero-kicker"><i></i>함께 보는 안내</span>
-      <h1 class="hero-title" id="heroTitle">
-        동네친구들과 편하게<br /><span class="grad-text-hero">함께하기 위한 가이드</span>
-      </h1>
-      <p class="hero-sub">
-        처음 오신 분도, 오래 함께한 멤버도 같이 보는 안내예요.
-        벙 참여와 벙비 정산, 대화 매너를 한 번만 훑어 두면 지내기 훨씬 편해요.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-hero is-lg" href="#cat-must">약속부터 보기</a>
-        <a class="btn btn-glass is-lg" href="report.html">요즘 분위기 보기</a>
+    <i class="glow-orb" style="--orb-size:360px; --orb-color:rgba(167,139,206,0.22); left:-120px; bottom:-170px" aria-hidden="true"></i>
+    <div class="container hero-split">
+      <div class="hero-copy">
+        <span class="hero-kicker"><i></i>함께 보는 안내</span>
+        <h1 class="hero-title" id="heroTitle">
+          동네친구들과 편하게<br /><span class="grad-text-hero">함께하기 위한 가이드</span>
+        </h1>
+        <p class="hero-sub">
+          처음 오신 분도, 오래 함께한 멤버도 같이 보는 안내예요.
+          한 번만 훑어 두면 지내기 훨씬 편해요.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-hero is-lg" href="#cat-must">약속부터 보기</a>
+          <a class="btn btn-glass is-lg" href="report.html">요즘 분위기 보기</a>
+        </div>
+        <!-- pill 세 개를 나란히 두면 그것도 결국 작은 카드 격자다.
+             구분선만 두고 숫자를 세운다. -->
+        <div class="hero-signal">
+          <span class="hs"><span class="hs-k">카테고리</span><span class="hs-v">7<small>개</small></span></span>
+          <span class="hs"><span class="hs-k">맨 위 요약</span><span class="hs-v">1<small>분</small></span></span>
+          <span class="hs"><span class="hs-k">전체 읽기</span><span class="hs-v">7<small>분</small></span></span>
+        </div>
       </div>
-      <div class="hero-meta">
-        <span class="stat-pill"><i></i>카테고리 <strong>7개</strong></span>
-        <span class="stat-pill"><i></i>요약 <strong>1분</strong></span>
-        <span class="stat-pill"><i></i>전체 <strong>약 7분</strong></span>
+      <div class="hero-art-wrap">
+        <svg class="hero-art" viewBox="0 0 440 360" role="img"
+             aria-label="약속 카드 세 장이 쌓여 있고 맨 앞 장은 항목이 모두 체크되어 있는 그림">
+          <use href="#art-guide" />
+        </svg>
       </div>
     </div>
   </section>
@@ -470,19 +468,16 @@
     </section>
 
     <!-- ── 하단 CTA 밴드 (운영진 문의) ── -->
-    <section class="section" aria-labelledby="ctaTitle">
+    <section class="band cta-band" aria-labelledby="ctaTitle">
       <div class="container">
-        <div class="cta-band reveal">
-          <i class="glow-orb" style="--orb-size:320px; --orb-color:rgba(185,128,217,0.35); right:-90px; top:-120px" aria-hidden="true"></i>
-          <span class="hero-kicker"><i></i>다 봤다면</span>
-          <h2 id="ctaTitle">궁금한 건 편하게 물어봐요</h2>
-          <p>여기 없는 상황이나 애매한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.
-            요즘 분위기는 대시보드에서, 공지는 소식에서 볼 수 있어요.</p>
-          <div class="cta-actions">
-            <a class="btn btn-hero" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅에서 물어보기</a>
-            <a class="btn btn-glass" href="report.html">요즘 분위기 보기</a>
-            <a class="btn btn-glass" href="calculator.html">벙비 정산기 열기</a>
-          </div>
+        <span class="cta-rule" aria-hidden="true"></span>
+        <h2 id="ctaTitle">궁금한 건 편하게<br />물어봐요</h2>
+        <p>여기 없는 상황이나 애매한 건 오픈채팅에서 운영진에게 물어봐 주세요.
+          요즘 분위기는 대시보드에서, 공지는 소식에서 볼 수 있어요.</p>
+        <div class="cta-actions">
+          <a class="btn btn-hero" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅에서 물어보기</a>
+          <a class="btn btn-glass" href="report.html">요즘 분위기 보기</a>
+          <a class="btn btn-glass" href="calculator.html">벙비 정산기 열기</a>
         </div>
       </div>
     </section>
