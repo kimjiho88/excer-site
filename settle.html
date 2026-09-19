@@ -22,6 +22,7 @@
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css" />
+  <script src="assets/icons.js?v=1"></script>
 
   <style>
     /* ============================================================
@@ -56,7 +57,7 @@
       display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
       margin-top: 18px; padding: 14px 16px; border-radius: var(--r-sm);
       background: linear-gradient(135deg, var(--pastel-lavender), rgba(252, 233, 241, 0.55));
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.10);
+      box-shadow: inset 0 0 0 1px rgba(75, 42, 130, 0.10);
     }
     .s-total span { color: var(--ink-2); font-size: 13px; font-weight: 800; }
     .s-total strong { color: var(--deep-1); font-size: 23px; font-weight: 900; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
@@ -86,7 +87,8 @@
       background: linear-gradient(160deg, #F0FBF6 0%, #FFFFFF 55%, #F6EDFC 100%);
       border-color: rgba(18, 147, 106, 0.28);
     }
-    .celebrate .cel-emoji { font-size: 40px; line-height: 1; display: block; }
+    .celebrate .cel-emoji { display: grid; place-items: center; line-height: 1; color: #0D7A55; }
+    .celebrate .cel-emoji .ic { width: 40px; height: 40px; }
     .celebrate strong { display: block; margin-top: 10px; font-size: 19px; letter-spacing: -0.04em; font-weight: 900; color: #0D5940; }
     .celebrate p { margin: 8px auto 0; max-width: 360px; color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 700; }
 
@@ -326,7 +328,7 @@
             오픈채팅에서 만난 동네 사람들이에요.<br />
             필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -678,7 +680,7 @@
       const isNetwork = kind === "network";
       app.innerHTML = `
         <section class="s-status card is-lg">
-          <div class="emoji" aria-hidden="true">${isNetwork ? "📡" : "🔍"}</div>
+          <div class="emoji ic-tile" aria-hidden="true"><svg class="ic is-lg"><use href="#i-${isNetwork ? "alert" : "search"}"/></svg></div>
           <h2>${isNetwork ? "연결이 잠깐 불안정해요" : "정산을 찾을 수 없어요"}</h2>
           <p>${isNetwork
             ? "네트워크 상태를 확인하고 다시 시도해주세요."
@@ -712,6 +714,9 @@
       return out;
     }
 
+    /* 아이콘 한 벌(assets/icons.js)에서 하나 꺼내 쓴다 */
+    function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
+
     function memberRow(r) {
       const isPaid = !!paid[r.name];
       const isMe = myName && r.name === myName;
@@ -737,7 +742,7 @@
         <div class="m-actions">
           ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
           <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}"
-            aria-pressed="${isPaid ? "true" : "false"}">${isPaid ? "✓ 입금 완료" : "입금 완료"}</button>
+            aria-pressed="${isPaid ? "true" : "false"}">${isPaid ? '<svg class="ic is-sm" aria-hidden="true"><use href="#i-check"/></svg> 입금 완료' : "입금 완료"}</button>
         </div>
       </div>`;
     }
@@ -776,7 +781,7 @@
           <i class="glow-orb" style="--orb-size:280px; right:-100px; top:-120px" aria-hidden="true"></i>
           <div class="s-head-inner">
             <div class="s-head-top">
-              <span class="kicker">💸 정산 안내</span>
+              <span class="kicker"><svg class="ic is-sm" aria-hidden="true"><use href="#i-send"/></svg> 정산 안내</span>
               ${mode === "local" ? `<span class="local-badge">이 폰에서만 보여요</span>` : ""}
             </div>
             <h2 class="s-title">${escapeHTML(payload.title)}</h2>
@@ -792,7 +797,7 @@
 
         ${complete ? `
         <section class="s-card card celebrate" aria-label="정산 완료">
-          <span class="cel-emoji" aria-hidden="true">🎉</span>
+          <span class="cel-emoji ic-tile" aria-hidden="true"><svg class="ic is-lg"><use href="#i-party"/></svg></span>
           <strong>전원 입금 완료, 정산이 끝났어요</strong>
           <p>${rows.length}명 모두 입금을 마쳤어요. 벙주님 수고하셨어요. 다음 벙에서 만나요.</p>
         </section>` : ""}
@@ -819,7 +824,7 @@
             ${pay.account.trim() ? `<div class="deposit-row"><span>계좌번호</span><b>${escapeHTML(pay.account.trim())}</b></div>` : ""}
             ${pay.holder.trim() ? `<div class="deposit-row"><span>예금주</span><b>${escapeHTML(pay.holder.trim())}</b></div>` : ""}
           </div>
-          ${pay.kakao ? `<span class="kakao-badge">💛 카카오페이 송금도 가능해요</span>` : ""}
+          ${pay.kakao ? `<span class="kakao-badge"><svg class="ic is-sm" aria-hidden="true"><use href="#i-wallet"/></svg> 카카오페이 송금도 가능해요</span>` : ""}
           ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
           ${otherPayers.length ? `<p class="s-note">여기 적힌 계좌는 <b>${escapeHTML(accountOwner)}</b> 님 것이에요.
             <b>${escapeHTML(otherPayers.join(", "))}</b> 님께 보낼 금액은 계좌를 따로 물어봐 주세요.</p>` : ""}
@@ -829,7 +834,7 @@
           <h2>입금 명단</h2>
           ${waiting.length ? `<div class="m-group-head is-wait">대기 중 <b>${waiting.length}명</b><i></i></div>
           <div class="m-list">${waiting.map(memberRow).join("")}</div>` : ""}
-          ${done.length ? `<div class="m-group-head is-done">✅ 입금 완료 <b>${done.length}명</b><i></i></div>
+          ${done.length ? `<div class="m-group-head is-done">${icon("checkCircle","is-sm")} 입금 완료 <b>${done.length}명</b><i></i></div>
           <div class="m-list">${done.map(memberRow).join("")}</div>` : ""}
           <p class="m-hint">입금을 마쳤다면 내 이름 옆 <b>입금 완료</b>를 눌러주세요.${mode === "live" ? " 벙주와 멤버 모두의 화면에 반영돼요." : ""}</p>
         </section>

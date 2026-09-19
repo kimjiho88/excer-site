@@ -182,14 +182,17 @@
     /* 카테고리 아이콘 타일 (후기·정보 등 썸네일 자리) */
     .pc-thumb {
       width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
-      font-size: 22px; line-height: 1; user-select: none;
+      line-height: 1; user-select: none;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55), var(--shadow-1);
     }
-    .pc-thumb.cat-notice { background: linear-gradient(135deg, #FCEFC9, #F4DB98); }
-    .pc-thumb.cat-bung   { background: linear-gradient(135deg, #DEECFF, #B7D3FA); }
-    .pc-thumb.cat-review { background: linear-gradient(135deg, #D8F5E8, #ADEACF); }
-    .pc-thumb.cat-info   { background: linear-gradient(135deg, #EEE3FB, #D6BDF2); }
-    .pc-thumb.cat-free   { background: linear-gradient(135deg, #FCE1EC, #F6C2D7); }
+    .pc-thumb .ic { width: 23px; height: 23px; }
+    /* 타일 바탕과 같은 계열의 짙은 색을 아이콘에 준다.
+       한 가지 색으로 통일하는 것보다 카테고리가 한눈에 갈린다. */
+    .pc-thumb.cat-notice { background: linear-gradient(135deg, #FCEFC9, #F4DB98); color: #7A5B12; }
+    .pc-thumb.cat-bung   { background: linear-gradient(135deg, #DEECFF, #B7D3FA); color: #1E4F8A; }
+    .pc-thumb.cat-review { background: linear-gradient(135deg, #D8F5E8, #ADEACF); color: #0D5940; }
+    .pc-thumb.cat-info   { background: linear-gradient(135deg, #EEE3FB, #D6BDF2); color: #4B2A82; }
+    .pc-thumb.cat-free   { background: linear-gradient(135deg, #FCE1EC, #F6C2D7); color: #8E2A4E; }
 
     .pc-body { min-width: 0; display: grid; gap: 7px; }
     .post-topline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -309,6 +312,7 @@
     }
   </style>
   <script src="assets/site-core.js?v=2"></script>
+  <script src="assets/icons.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -386,17 +390,17 @@
               <button type="button" class="is-active" data-sort="latest" aria-pressed="true">최신순</button>
               <button type="button" data-sort="popular" aria-pressed="false">인기순</button>
             </div>
-            <button id="writeOpenBtn" class="btn btn-primary" type="button">✏️ 소식 쓰기</button>
+            <button id="writeOpenBtn" class="btn btn-primary" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-pencil"/></svg> 소식 쓰기</button>
           </div>
           <div class="toolbar-row" style="gap:6px">
             <span class="toolbar-label" aria-hidden="true">카테고리</span>
             <div id="filterChips" class="filter-chips" role="group" aria-label="카테고리 필터">
               <button class="chip is-active" type="button" data-cat="전체">전체</button>
-              <button class="chip" type="button" data-cat="공지">📢 공지</button>
-              <button class="chip" type="button" data-cat="벙 소식">🎉 벙 소식</button>
-              <button class="chip" type="button" data-cat="후기">✨ 후기</button>
-              <button class="chip" type="button" data-cat="정보">💡 정보</button>
-              <button class="chip" type="button" data-cat="자유">💬 자유</button>
+              <button class="chip" type="button" data-cat="공지"><svg class="ic is-sm" aria-hidden="true"><use href="#i-megaphone"/></svg> 공지</button>
+              <button class="chip" type="button" data-cat="벙 소식"><svg class="ic is-sm" aria-hidden="true"><use href="#i-party"/></svg> 벙 소식</button>
+              <button class="chip" type="button" data-cat="후기"><svg class="ic is-sm" aria-hidden="true"><use href="#i-sparkle"/></svg> 후기</button>
+              <button class="chip" type="button" data-cat="정보"><svg class="ic is-sm" aria-hidden="true"><use href="#i-bulb"/></svg> 정보</button>
+              <button class="chip" type="button" data-cat="자유"><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg> 자유</button>
             </div>
           </div>
         </div>
@@ -419,7 +423,7 @@
             오픈채팅에서 만난 동네 사람들이에요.<br />
             필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -457,7 +461,7 @@
     <div class="modal write-modal" role="dialog" aria-modal="true" aria-labelledby="writeTitle">
       <div class="modal-head">
         <h3 id="writeTitle">새 소식 쓰기</h3>
-        <button id="writeCloseBtn" class="modal-close" type="button" aria-label="글쓰기 닫기">✕</button>
+        <button id="writeCloseBtn" class="modal-close" type="button" aria-label="글쓰기 닫기"><svg class="ic " aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <div class="field-grid">
         <div class="field">
@@ -530,7 +534,7 @@
     <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
       <div class="modal-head">
         <h3 id="passTitle">비밀번호 확인</h3>
-        <button id="passClose" class="modal-close" type="button" aria-label="닫기">✕</button>
+        <button id="passClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic " aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <p id="passDesc" style="margin:0 0 14px; color:var(--gray); font-size:13px; line-height:1.55"></p>
       <input id="passInput" class="input" type="password" placeholder="비밀번호" autocomplete="off" />
@@ -663,13 +667,15 @@
     const CATS = ["공지", "벙 소식", "후기", "정보", "자유"];
     // 카테고리별 배지 색 + 아이콘 타일(썸네일 자리) 키
     const CAT_META = {
-      "공지":   { key: "notice", icon: "📢", badge: "is-cream" },
-      "벙 소식": { key: "bung",   icon: "🎉", badge: "is-sky" },
-      "후기":   { key: "review", icon: "✨", badge: "is-mint" },
-      "정보":   { key: "info",   icon: "💡", badge: "" },
-      "자유":   { key: "free",   icon: "💬", badge: "is-blush" }
+      "공지":   { key: "notice", icon: "megaphone", badge: "is-cream" },
+      "벙 소식": { key: "bung",   icon: "party", badge: "is-sky" },
+      "후기":   { key: "review", icon: "sparkle", badge: "is-mint" },
+      "정보":   { key: "info",   icon: "bulb", badge: "" },
+      "자유":   { key: "free",   icon: "chat", badge: "is-blush" }
     };
-    function catMeta(cat) { return CAT_META[cat] || { key: "free", icon: "💬", badge: "" }; }
+    function catMeta(cat) { return CAT_META[cat] || { key: "free", icon: "chat", badge: "" }; }
+    /* 아이콘 한 벌(assets/icons.js)에서 하나 꺼내 쓴다 */
+    function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name || "chat"}"/></svg>`; }
     const ERROR_MAP = {
       BAD_PASS: "비밀번호가 맞지 않아요",
       ADMIN_ONLY: "운영진 비밀번호가 필요해요",
@@ -907,7 +913,7 @@
     function catBadges(post) {
       const parts = [];
       if (post.pinned) {
-        parts.push(`<span class="badge-soft pin-badge">📌 ${post.category === "공지" ? "운영진 공지" : "고정"}</span>`);
+        parts.push(`<span class="badge-soft pin-badge">${icon("pin", "is-sm")} ${post.category === "공지" ? "운영진 공지" : "고정"}</span>`);
       }
       if (!(post.pinned && post.category === "공지")) {
         const cls = catMeta(post.category).badge;
@@ -985,10 +991,10 @@
         <div class="post-body-text">${renderBody(post.body)}</div>
         ${bungOf(post) ? `<a class="btn btn-primary btn-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">카톡방에서 신청하기</a>` : ""}
         <div class="post-actions">
-          <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">🔗 링크 복사</button>
-          <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">✏️ 수정</button>
-          <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">🗑 삭제</button>
-          <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">📌 ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
+          <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">${icon("link","is-sm")} 링크 복사</button>
+          <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">${icon("pencil","is-sm")} 수정</button>
+          <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">${icon("trash","is-sm")} 삭제</button>
+          <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">${icon("pin","is-sm")} ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
           <!-- v3 확장 자리: 신고/숨김 버튼 (site_post_reports 계약 확정 후 구현) -->
         </div>
         <div class="comment-sec">
@@ -1018,7 +1024,7 @@
         <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}" id="post-${post.id}" data-cat="${meta.key}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
-              <span class="pc-thumb cat-${meta.key}" aria-hidden="true">${meta.icon}</span>
+              <span class="pc-thumb ic-tile cat-${meta.key}" aria-hidden="true">${icon(meta.icon)}</span>
               <span class="pc-body">
                 <span class="post-topline">${catBadges(post)}</span>
                 <span class="post-title-text">${escapeHTML(post.title)}</span>
@@ -1027,8 +1033,8 @@
                   <span class="pc-ava" aria-hidden="true">${initial}</span>
                   <span class="pc-author">${escapeHTML(author || "익명")}</span>
                   <span>${relTime(post.created_at)}</span>
-                  <span class="pc-stat" title="댓글 ${cc}개">💬 ${cc}</span>
-                  <span class="pc-stat" title="리액션 ${rc}개">🙌 ${rc}</span>
+                  <span class="pc-stat" title="댓글 ${cc}개">${icon("chat","is-sm")} ${cc}</span>
+                  <span class="pc-stat" title="리액션 ${rc}개">${icon("heart","is-sm")} ${rc}</span>
                 </span>
               </span>
             </button>
@@ -1231,7 +1237,7 @@
         });
         saveNick(nick);
         savePass(pass, cat);
-        showToast("소식을 남겼어요 🎉");
+        showToast("소식을 남겼어요.");
         $("wTitle").value = ""; $("wBody").value = "";
         clearBungFields();
         $("wCount").textContent = "0 / 4000";
