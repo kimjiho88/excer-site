@@ -119,6 +119,19 @@
       transition: box-shadow 0.22s var(--ease), transform 0.22s var(--ease), border-color 0.22s var(--ease);
     }
     .post-card.card-lift:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); border-color: var(--line-strong); }
+    /* 링크를 타고 들어왔을 때 "이 글이에요" 하고 짚어 주는 표시.
+       목록 한가운데로 스크롤되면 어느 카드 때문에 왔는지 알 수 없다. */
+    .post-card.is-linked {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(95, 0, 128, 0.14), var(--shadow-2);
+      animation: linked-pulse 2.4s var(--ease-out) both;
+    }
+    @keyframes linked-pulse {
+      0%, 62% { box-shadow: 0 0 0 3px rgba(95, 0, 128, 0.18), var(--shadow-2); }
+      100%    { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0), var(--shadow-1); }
+    }
+    @media (prefers-reduced-motion: reduce) { .post-card.is-linked { animation: none; } }
+    .mini-btn.mini-link { color: var(--primary); }
     .post-card.is-pinned {
       background: linear-gradient(135deg, rgba(243, 232, 255, 0.72), #fff 56%);
       border-color: rgba(95, 0, 128, 0.22);
@@ -579,6 +592,9 @@
 
     // ── 상수 / 상태 ─────────────────────────────────────────────
     const PAGE_SIZE = 20;
+    // 목록 조회와 딥링크 단건 조회가 같은 컬럼을 쓰도록 한 곳에 둔다
+    // (한쪽만 고치면 링크로 연 글의 리액션·댓글 수가 비는 식으로 조용히 어긋난다)
+    const POST_SELECT = "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count,reactions,reaction_count";
     const NICK_KEY = "excer_news_nick";
     const DEVICE_STORE_KEY = "excer_device_key";
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
@@ -613,6 +629,7 @@
       loading: false,
       busy: false,
       expandedId: null,
+      linkedId: null,          // 링크를 타고 들어온 글 — 강조 표시가 켜져 있는 동안만 값이 있다
       editingId: null,
       commentsCache: {},
       myReactions: {},         // postId -> Set(emoji)
@@ -775,7 +792,7 @@
       if (reset) state.offset = 0;
       updateMoreBtn();
       const params = [
-        "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count,reactions,reaction_count",
+        POST_SELECT,
         orderParam(),
         "limit=" + PAGE_SIZE,
         "offset=" + state.offset
@@ -946,6 +963,7 @@
       return `
         <div class="post-body-text">${renderBody(post.body)}</div>
         <div class="post-actions">
+          <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">🔗 링크 복사</button>
           <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">✏️ 수정</button>
           <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">🗑 삭제</button>
           <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">📌 ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
@@ -975,7 +993,7 @@
       const author = String(post.author == null ? "" : post.author);
       const initial = escapeHTML((author.trim().charAt(0) || "?").toUpperCase());
       return `
-        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}" data-cat="${meta.key}">
+        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}" id="post-${post.id}" data-cat="${meta.key}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
               <span class="pc-thumb cat-${meta.key}" aria-hidden="true">${meta.icon}</span>
@@ -1027,6 +1045,7 @@
       const listEl = $("postList");
       listEl.innerHTML = posts.length ? posts.map(cardHTML).join("") : emptyStateHTML();
       listEl.removeAttribute("aria-busy");
+      applyLinkedMark();   // 다시 그려도 링크 강조는 유지한다
       updateMoreBtn();
     }
 
@@ -1293,13 +1312,121 @@
     }
 
     // ── 아코디언 ────────────────────────────────────────────────
+    /* ── 글 단위 링크 ───────────────────────────────────────────
+       카톡방에 "이 벙 봐주세요"를 던질 수 있게 하는 장치다.
+       주소의 #post-123 이 곧 그 글이고, 반대로 글을 열면 주소가 따라 바뀐다.
+       예전에는 어떤 글을 눌러도 목록 맨 위로만 갈 수 있어서,
+       홈 미리보기에서 제목을 보고 들어와도 그 글을 다시 찾아야 했다.
+       ────────────────────────────────────────────────────────── */
+    function hashPostId() {
+      const m = /^#post-(\d+)$/.exec(location.hash || "");
+      return m ? Number(m[1]) : null;
+    }
+
+    function postUrl(id) {
+      return location.origin + location.pathname + "#post-" + id;
+    }
+
+    // 주소창을 현재 열린 글에 맞춘다.
+    // pushState 가 아니라 replaceState 를 쓴다 — 카드를 여닫을 때마다 기록이 쌓이면
+    // 뒤로가기가 '이전 화면'이 아니라 '방금 닫은 카드'로 가서 오히려 헷갈린다.
+    function syncHash(id) {
+      try {
+        const clean = location.pathname + location.search;
+        history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : clean);
+      } catch (e) { /* history 를 못 쓰는 환경(파일 열기 등)은 그냥 넘어간다 */ }
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) { /* 아래 폴백으로 */ }
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    async function copyPostLink(id) {
+      const post = findPost(id);
+      if (post && post._sample) { showToast("맛보기 소식이라 링크를 만들 수 없어요"); return; }
+      const ok = await copyText(postUrl(id));
+      showToast(ok ? "링크를 복사했어요 카톡에 붙여넣어 주세요" : "복사가 안 됐어요 주소창을 길게 눌러 복사해 주세요");
+    }
+
+    // 링크를 타고 들어온 글을 화면에서 찾아 준다.
+    function focusPostCard(id) {
+      const el = document.getElementById("post-" + id);
+      if (!el) return;
+      let smooth = true;
+      try { smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+      el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+      // 강조는 state 로 들고 있는다. 댓글을 다 불러오면 목록을 통째로 다시 그리는데,
+      // DOM 에만 클래스를 붙여 두면 그때 강조가 조용히 지워진다.
+      state.linkedId = id;
+      applyLinkedMark();
+      setTimeout(() => {
+        if (state.linkedId !== id) return;
+        state.linkedId = null;
+        applyLinkedMark();
+      }, 2400);
+    }
+
+    function applyLinkedMark() {
+      const prev = document.querySelector(".post-card.is-linked");
+      if (prev) prev.classList.remove("is-linked");
+      if (!state.linkedId) return;
+      const el = document.getElementById("post-" + state.linkedId);
+      if (el) el.classList.add("is-linked");
+    }
+
+    async function openFromHash() {
+      const id = hashPostId();
+      if (!id || state.degraded) return;
+      let post = findPost(id);
+      if (!post) {
+        // 첫 페이지에 없는 글일 수 있다(오래된 글, 또는 필터가 걸린 상태).
+        // 그 글만 따로 가져와 목록 맨 위에 붙인다 — 링크가 끊긴 것처럼 보이면 안 된다.
+        try {
+          const rows = await supaFetch("/rest/v1/site_posts_v?" + POST_SELECT + "&id=eq." + id + "&limit=1");
+          if (rows && rows.length) {
+            rows[0].reactions = rows[0].reactions || {};
+            state.posts.unshift(rows[0]);
+            post = rows[0];
+            loadMyReactions([id]);
+          }
+        } catch (e) { /* 아래 안내로 떨어진다 */ }
+      }
+      if (!post) {
+        showToast("링크가 가리키는 소식을 찾지 못했어요 지워졌을 수 있어요");
+        syncHash(null);
+        return;
+      }
+      state.expandedId = id; state.editingId = null;
+      renderList();
+      if (state.commentsCache[id] === undefined) loadComments(id);
+      focusPostCard(id);
+    }
+
     function toggleExpand(id) {
       if (state.expandedId === id) {
         state.expandedId = null; state.editingId = null;
+        syncHash(null);
         renderList();
         return;
       }
       state.expandedId = id; state.editingId = null;
+      syncHash(id);
       renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
     }
@@ -1307,6 +1434,9 @@
     // ── 목록 재조회 공통 (필터/정렬/검색 변경 시) ───────────────
     function refetchList() {
       state.expandedId = null; state.editingId = null;
+      // 필터·정렬·검색을 바꾸면 열려 있던 글이 닫히므로 주소도 같이 비운다.
+      // 안 그러면 주소는 특정 글을 가리키는데 화면엔 목록만 있는 상태가 된다.
+      syncHash(null);
       if (state.degraded) {
         renderList();
       } else {
@@ -1379,6 +1509,7 @@
         const id = Number(el.dataset.id);
         const card = el.closest(".post-card");
         if (act === "toggle") { toggleExpand(id); return; }
+        if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
         if (act === "open-write") { openWriteModal(); return; }
         if (state.degraded) { showToast(DEMO_MSG); return; }
@@ -1426,7 +1557,12 @@
     $("wNick").value = savedNick();
     bindEvents();
     renderListLoading();
-    loadPosts(true);
+    // 목록을 먼저 받고, 그다음 링크가 가리키는 글을 연다.
+    // loadPosts(true) 가 expandedId 를 초기화하므로 순서가 바뀌면 안 된다.
+    loadPosts(true).then(openFromHash);
+
+    // 이미 페이지를 보고 있는데 다른 글 링크를 받은 경우
+    window.addEventListener("hashchange", openFromHash);
   </script>
 </body>
 </html>

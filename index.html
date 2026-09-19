@@ -311,7 +311,7 @@
     <section class="section" aria-labelledby="newsTitle">
       <div class="container">
         <div class="section-head reveal">
-          <span class="eyebrow">방금 올라온</span>
+          <span class="eyebrow" id="newsEyebrow">최근 올라온</span>
           <h2 id="newsTitle">동네친구들 소식</h2>
           <p>공지랑 벙 모집, 다녀온 후기까지. 새 소식은 여기서 먼저 확인해요.</p>
         </div>
@@ -320,27 +320,34 @@
             <h3>최근 소식</h3>
             <a class="news-more" href="news.html">소식 전체 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
-          <div class="news-list" id="newsList">
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">📢</span>
-              <span class="news-body"><span class="news-title">소식 피드 이용 안내</span><span class="news-meta"><span class="news-cat">공지</span> · 운영진</span></span>
-              <span class="news-react">👍 7</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">🎉</span>
-              <span class="news-body"><span class="news-title">이번 주 금요일 강남 저녁 벙 모집해요</span><span class="news-meta"><span class="news-cat">벙 소식</span> · 준호</span></span>
-              <span class="news-react">🔥 9</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">✨</span>
-              <span class="news-body"><span class="news-title">일요일 보드게임 벙 다녀왔어요</span><span class="news-meta"><span class="news-cat">후기</span> · 서아</span></span>
-              <span class="news-react">❤️ 8</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">💡</span>
-              <span class="news-body"><span class="news-title">강남역 근처 단체석 잘 잡히는 집 정리</span><span class="news-meta"><span class="news-cat">정보</span> · 민지</span></span>
-              <span class="news-react">👍 8</span>
-            </a>
+          <div class="news-list" id="newsList" aria-busy="true">
+            <!-- 스켈레톤 4줄 — 실데이터가 오면 통째로 교체된다.
+                 예전에는 여기에 실존하지 않는 글 4건이 박혀 있었다. 작성자도 반응 수도
+                 지어낸 값이었고, 서버 조회가 실패하면 그 가짜 글이 그대로 남았다. -->
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:72%"></span>
+              <span class="skeleton skeleton-line" style="width:38%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:60%"></span>
+              <span class="skeleton skeleton-line" style="width:32%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:80%"></span>
+              <span class="skeleton skeleton-line" style="width:35%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:66%"></span>
+              <span class="skeleton skeleton-line" style="width:30%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -591,30 +598,81 @@
         Object.keys(reactions).forEach(function (k) { if ((reactions[k] || 0) > bestV) { bestV = reactions[k]; bestK = k; } });
         return bestV > 0 ? (bestK + " " + bestV) : "";
       }
+      // 상대시간 — 소식 페이지와 같은 단계를 쓴다(방금 전 / N분 전 / N시간 전 / N일 전 / 날짜)
+      function relTime(iso) {
+        if (!iso) return "";
+        var t = new Date(iso).getTime();
+        if (!t) return "";
+        var s = Math.floor((Date.now() - t) / 1000);
+        if (s < 60) return "방금 전";
+        if (s < 3600) return Math.floor(s / 60) + "분 전";
+        if (s < 86400) return Math.floor(s / 3600) + "시간 전";
+        if (s < 604800) return Math.floor(s / 86400) + "일 전";
+        var d = new Date(t);
+        return (d.getMonth() + 1) + "월 " + d.getDate() + "일";
+      }
+
+      // 소식 자리의 빈 상태·실패 상태. 어느 경우에도 없는 글을 남겨두지 않는다.
+      function newsNotice(title, sub, linkText, href) {
+        var host = document.getElementById("newsList");
+        if (!host) return;
+        host.removeAttribute("aria-busy");
+        host.innerHTML =
+          '<div class="card news-empty"><div class="empty-state">' +
+          "<strong>" + esc(title) + "</strong><p>" + esc(sub) + "</p>" +
+          '<a class="btn btn-secondary is-sm" href="' + href + '">' + esc(linkText) + "</a>" +
+          "</div></div>";
+      }
+
       function renderNews(posts) {
         var host = document.getElementById("newsList");
-        if (!host || !Array.isArray(posts) || !posts.length) return;
+        if (!host) return;
+        host.removeAttribute("aria-busy");
+        if (!Array.isArray(posts) || !posts.length) {
+          newsNotice("아직 올라온 소식이 없어요", "공지, 벙 소식, 후기까지 — 첫 소식을 남겨볼까요?", "첫 소식 쓰기", "news.html");
+          return;
+        }
         // 고정(공지) 우선 + 최신순 상위 4개
         var list = posts.slice().sort(function (a, b) {
           if ((b.pinned ? 1 : 0) !== (a.pinned ? 1 : 0)) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
           return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         }).slice(0, 4);
+
+        // eyebrow 를 근거 있는 말로 바꾼다. 예전엔 무조건 '방금 올라온'이었는데,
+        // 두 달 전 글만 있어도 그렇게 적혀 있었다. 이 한 줄도 작은 라이브 신호가 된다.
+        var newest = list.reduce(function (t, p) {
+          var v = new Date(p.created_at || 0).getTime();
+          return v > t ? v : t;
+        }, 0);
+        var eb = document.getElementById("newsEyebrow");
+        if (eb && newest) eb.textContent = (Date.now() - newest < 86400000) ? "방금 올라온" : "최근 올라온";
+
         host.innerHTML = list.map(function (p) {
           var cat = p.category || "자유";
           var emoji = CAT_EMOJI[cat] || "💬";
           var react = topReaction(p.reactions);
-          return '<a class="news-item" href="news.html">' +
+          // 글 단위 링크 — 제목을 보고 누른 사람이 그 글로 바로 가야 한다.
+          // 예전에는 전부 목록 맨 위로만 보내서, 누른 글을 다시 찾아야 했다.
+          var href = p.id ? "news.html#post-" + p.id : "news.html";
+          // 반응이 아직 없는 글일수록 오른쪽 칸이 비어 허전해 보이는 역설이 있었다.
+          // 반응이 없으면 그 자리에 올라온 시각을 넣는다 — 항상 채워진다.
+          var tail = react ? esc(react) : relTime(p.created_at);
+          return '<a class="news-item" href="' + href + '">' +
             '<span class="news-emoji" aria-hidden="true">' + emoji + "</span>" +
             '<span class="news-body"><span class="news-title">' + esc(p.title || "제목 없음") + "</span>" +
             '<span class="news-meta"><span class="news-cat">' + esc(cat) + "</span> · " + esc(p.author || "동네친구") + "</span></span>" +
-            (react ? '<span class="news-react">' + esc(react) + "</span>" : "<span></span>") +
+            (tail ? '<span class="news-react">' + tail + "</span>" : "<span></span>") +
             "</a>";
         }).join("");
       }
 
       supaGet("/rest/v1/site_posts_v?select=id,category,title,author,pinned,created_at,reactions&order=pinned.desc,created_at.desc&limit=8")
-        .then(function (rows) { if (Array.isArray(rows) && rows.length) renderNews(rows); })
-        .catch(function () { /* 예시 소식(HTML 정적)이 그대로 남아 화면이 비지 않음 */ });
+        .then(renderNews)
+        .catch(function () {
+          // 예전에는 여기서 아무것도 하지 않아, HTML 에 박힌 가짜 소식 4건이 그대로 남았다.
+          // 실패를 숨기려다 실존하지 않는 글을 계속 보여주는 쪽이 더 나빴다.
+          newsNotice("소식을 불러오지 못했어요", "잠시 뒤 다시 확인해 주세요.", "소식 페이지 열기", "news.html");
+        });
     })();
   </script>
 
