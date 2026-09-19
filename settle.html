@@ -182,6 +182,11 @@
     .adjline { display: flex; justify-content: space-between; gap: 10px; padding: 10px 13px; border-radius: 12px; background: var(--offwhite); border: 1px solid var(--line); font-size: 13px; }
     .adjline b { color: var(--ink); font-weight: 800; }
     .adjline small { color: var(--gray-2); font-size: 12px; font-weight: 700; }
+    /* 어느 차수 것인지는 사유와 헷갈리면 안 되므로 따로 칸을 만들어 띄운다 */
+    .adjline .adj-scope {
+      display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: var(--r-pill);
+      background: var(--pastel-lavender); color: var(--primary-700); font-size: 11px; font-weight: 800;
+    }
     .adjline strong { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 900; }
     .adjline strong.is-plus { color: #0D7A55; }
     .adjline strong.is-minus { color: #A6335C; }
@@ -232,7 +237,7 @@
       box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.07), var(--shadow-1);
       font-size: 38px; line-height: 1;
     }
-    .s-status h1 { margin: 18px 0 0; font-size: 20px; letter-spacing: -0.04em; font-weight: 900; color: var(--ink); }
+    .s-status h2 { margin: 18px 0 0; font-size: 20px; letter-spacing: -0.04em; font-weight: 900; color: var(--ink); }
     .s-status p { margin: 10px auto 0; max-width: 380px; color: var(--gray); font-size: 14px; line-height: 1.65; font-weight: 600; }
     .s-status .actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
     .s-status small { display: block; margin-top: 16px; color: var(--gray-2); font-size: 12px; font-weight: 600; }
@@ -499,6 +504,7 @@
     let detailsOpen = false;   // 폴링 재렌더 시 접기 상태 유지
     let lastLiveSig = "";      // 변화 없으면 재렌더 생략
     let wasComplete = null;    // 완료 전환 감지(축하 연출)
+    let accountOwner = "";     // 이 페이지에 실린 계좌의 주인 — 송금 버튼이 이 사람에게만 보낸다
     try { myName = localStorage.getItem(MYNAME_KEY) || ""; } catch (e) {}
 
     function b64urlDecode(s) {
@@ -578,6 +584,8 @@
                 name: String(a.name).trim().slice(0, 30),
                 amount: Math.max(-100000000, Math.min(100000000, Math.round(Number(a.amount) || 0))),
                 reason: String(a.reason || "").slice(0, 60),
+                // 어느 차수에서 오간 돈인지 — 이게 없으면 받는 사람이 금액을 확인할 수 없다
+                roundLabel: String(a.roundLabel || "").slice(0, 40),
                 applied: a.applied !== false
               })).slice(0, 30)
           : [],
@@ -655,7 +663,7 @@
       app.innerHTML = `
         <section class="s-status card is-lg">
           <div class="spinner" aria-hidden="true"></div>
-          <h1>정산을 불러오고 있어요</h1>
+          <h2>정산을 불러오고 있어요</h2>
           <p>잠시만 기다려주세요.</p>
         </section>`;
     }
@@ -666,7 +674,7 @@
       app.innerHTML = `
         <section class="s-status card is-lg">
           <div class="emoji" aria-hidden="true">${isNetwork ? "📡" : "🔍"}</div>
-          <h1>${isNetwork ? "연결이 잠깐 불안정해요" : "정산을 찾을 수 없어요"}</h1>
+          <h2>${isNetwork ? "연결이 잠깐 불안정해요" : "정산을 찾을 수 없어요"}</h2>
           <p>${isNetwork
             ? "네트워크 상태를 확인하고 다시 시도해주세요."
             : "링크가 만료됐거나 주소가 잘못됐을 수 있어요.<br />벙주에게 새 링크를 요청해주세요."}</p>
@@ -677,20 +685,43 @@
         </section>`;
     }
 
-    function transferButton(amount) {
+    /* owner 가 있으면 '그 사람에게 보낼 몫만'이라는 뜻이다 — 버튼에도 그렇게 적는다 */
+    function transferButton(amount, owner) {
       const bank = payload.pay.bank.trim();
       const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
       if (!bank || !digits) return "";
+      const label = owner ? `${escapeHTML(owner)}에게 송금` : "송금";
       return `<button class="m-btn m-send" type="button" data-send-amount="${amount}"
-        title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>`;
+        title="${owner ? escapeHTML(owner) + " 님 계좌로 " + formatWon(amount) + " — " : ""}${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">${label}</button>`;
+    }
+
+    /* 이 사람이 누구에게 보내야 하는지.
+       parts 는 받을 사람이 둘 이상일 때만 실려 오고, 예전에 만든 링크에는 아예 없다.
+       groups(결제자별 명단)에서 찾으면 두 경우 모두 답이 나온다. */
+    function recipientsOf(name) {
+      const groups = Array.isArray(payload.groups) ? payload.groups : [];
+      const out = [];
+      groups.forEach((g) => {
+        (g.rows || []).forEach((r) => { if (r.name === name) out.push({ payer: g.payer, amount: r.amount }); });
+      });
+      return out;
     }
 
     function memberRow(r) {
       const isPaid = !!paid[r.name];
       const isMe = myName && r.name === myName;
-      const partsLine = (r.parts && r.parts.length > 1)
-        ? `<span class="m-parts">${r.parts.map((x) => `${escapeHTML(x.payer)}에게 ${formatWon(x.amount)}`).join(" · ")}</span>`
+      /* 결제자가 여럿이면 금액만 봐서는 누구에게 보낼지 알 수 없다.
+         예전에는 '두 사람에게 나눠 보내는 경우'에만 적어 줘서,
+         한 사람에게 몰아 보내는 멤버는 받을 사람이 누군지 못 봤다. */
+      const to = (payload.groups && payload.groups.length > 1) ? recipientsOf(r.name) : [];
+      const partsLine = to.length
+        ? `<span class="m-parts">${to.map((x) => `${escapeHTML(x.payer)}에게 ${formatWon(x.amount)}`).join(" · ")}</span>`
         : "";
+      /* 송금 버튼은 이 페이지에 실린 계좌(한 사람 것)로만 보낸다.
+         결제자가 여럿일 때 합계를 그대로 물리면 다른 결제자 몫까지 그 계좌로 가 버린다 —
+         계좌 주인에게 갈 몫만 넘기고, 그런 몫이 없으면 버튼을 빼고 안내만 남긴다. */
+      const mine = to.length ? to.find((x) => x.payer === accountOwner) : null;
+      const sendAmount = to.length ? (mine ? mine.amount : 0) : r.amount;
       return `
       <div class="m-row${isPaid ? " is-paid" : " is-wait"}${isMe ? " is-me" : ""}">
         <div class="m-left">
@@ -699,7 +730,7 @@
           ${partsLine}
         </div>
         <div class="m-actions">
-          ${isPaid ? "" : transferButton(r.amount)}
+          ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
           <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}"
             aria-pressed="${isPaid ? "true" : "false"}">${isPaid ? "✓ 입금 완료" : "입금 완료"}</button>
         </div>
@@ -719,6 +750,13 @@
         + (pay.holder.trim() ? ` (${pay.holder.trim()})` : "");
       const per = payload.perPerson;
       const multiGroups = payload.groups.length > 1;
+      /* 계좌는 한 사람 것만 실려 온다. 결제자가 여럿이면 나머지 사람에게 보낼 돈은
+         여기 적힌 계좌로 보내면 안 된다 — 누구 계좌인지, 누구 것을 따로 물어야 하는지 밝힌다.
+         (memberRow 에서도 써야 해서 바깥에 둔 값이다) */
+      accountOwner = pay.holder.trim() || (payload.groups[0] ? payload.groups[0].payer : "");
+      const otherPayers = multiGroups
+        ? payload.groups.map((g) => g.payer).filter((n) => n && n !== accountOwner)
+        : [];
 
       setHeroStats(payload.total, paidCount, rows.length);
 
@@ -736,7 +774,7 @@
               <span class="kicker">💸 정산 안내</span>
               ${mode === "local" ? `<span class="local-badge">이 폰에서만 보여요</span>` : ""}
             </div>
-            <h1 class="s-title">${escapeHTML(payload.title)}</h1>
+            <h2 class="s-title">${escapeHTML(payload.title)}</h2>
             <p class="s-meta">${payload.date ? `${escapeHTML(payload.date)} · ` : ""}벙주 ${escapeHTML(payload.host || "-")}${payload.hostBurden ? ` · ${payload.payerCount > 1 ? "결제자" : "벙주"} 부담 ${formatWon(payload.hostBurden)}` : ""}</p>
             <div class="s-total"><span>총 벙비</span><strong>${formatWon(payload.total)}</strong></div>
             ${per && per.count ? `
@@ -778,6 +816,8 @@
           </div>
           ${pay.kakao ? `<span class="kakao-badge">💛 카카오페이 송금도 가능해요</span>` : ""}
           ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
+          ${otherPayers.length ? `<p class="s-note">여기 적힌 계좌는 <b>${escapeHTML(accountOwner)}</b> 님 것이에요.
+            <b>${escapeHTML(otherPayers.join(" · "))}</b> 님께 보낼 금액은 계좌를 따로 물어봐 주세요.</p>` : ""}
         </section>` : ""}
 
         <section class="s-card card" aria-label="입금 명단">
@@ -807,7 +847,7 @@
           <div class="adjlines">
             ${payload.adjustments.map((a) => `
             <div class="adjline">
-              <span><b>${escapeHTML(a.name)}</b>${a.reason ? ` <small>${escapeHTML(a.reason)}</small>` : ""}${a.applied ? "" : ` <small>(미반영)</small>`}</span>
+              <span><b>${escapeHTML(a.name)}</b>${a.reason ? ` <small>${escapeHTML(a.reason)}</small>` : ""}<small class="adj-scope">${escapeHTML(a.roundLabel || "전체 차수")}</small>${a.applied ? "" : ` <small>(미반영)</small>`}</span>
               <strong class="${a.amount > 0 ? "is-plus" : "is-minus"}">${a.amount > 0 ? "+" : "−"}${Math.abs(a.amount).toLocaleString("ko-KR")}원</strong>
             </div>`).join("")}
           </div>

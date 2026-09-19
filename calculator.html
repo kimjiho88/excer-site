@@ -330,6 +330,7 @@
       background: #F5EDFA; border: 1px solid #E7D8F3; border-left: 4px solid #B57EDC;
       color: #473A58; font-size: 13px; line-height: 1.55; font-weight: 700;
     }
+    .deposit-warn { display: block; margin-top: 5px; color: #856410; font-size: 12px; font-style: normal; font-weight: 800; }
 
     .receipt-section { margin-top: 18px; }
     .receipt-section h3 {
@@ -1651,7 +1652,15 @@
         return r ? r.payer : globalAdjTarget;
       };
 
+      /* 송금 버튼은 입금 정보에 적은 계좌 하나로만 보낸다.
+         결제자가 여럿일 때 "→ 준호에게" 줄에도 버튼을 달면, 준호에게 갈 돈이
+         벙주 계좌로 가 버린다. 계좌 주인 쪽 줄에만 버튼을 둔다. */
+      const accountOwner = state.pay.holder.trim() || c.host;
+      const otherPayers = multiPayer
+        ? activePayers.map((p) => p.name).filter((n) => !sameName(n, accountOwner))
+        : [];
       const rowHTML = (row, payerName) => {
+        const sendable = canSend && (!multiPayer || sameName(payerName, accountOwner));
         const mine = c.adjustments.filter((a) => a.applied && a.name === row.name && sameName(payerName, targetOfAdj(a)));
         const adjNote = mine.map((adj) =>
           `<span class="adj-note">${adj.roundLabel ? escapeHTML(adj.roundLabel) + " " : ""}${adj.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(adj.amount))}원${adj.reason ? ` ${escapeHTML(adj.reason)}` : ""} 반영</span>`
@@ -1661,7 +1670,7 @@
             <span>${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}${adjNote}</span>
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
-              ${canSend ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
+              ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
               <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="${escapeHTML(row.name)} 님 금액만 복사해요">금액 복사</button>
             </div>
           </div>`;
@@ -1719,7 +1728,10 @@
           <span>${c.perPerson.uniform ? "1인" : "1인 평균"} <b>${formatWon(c.perPerson.value)}</b></span>
           ${state.rounding.unit > 1 ? `<span>${UNIT_LABEL[state.rounding.unit]} 단위 <b>${MODE_LABEL[state.rounding.mode]}</b></span>` : ""}
         </div>
-        ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}</div>` : ""}
+        ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}${
+          /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
+          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(" · "))} 님께 보낼 금액은 계좌를 따로 알려주세요</em>` : ""
+        }</div>` : ""}
         <div class="receipt-section">
           <h3>입금 명단</h3>
           <div class="pay-list">${payHTML}
@@ -1820,7 +1832,15 @@
 
       /* ── 입금 계좌 ── */
       const pt = payText();
-      if (pt) { L.push(""); L.push(`🏦 입금계좌  ${pt}`); }
+      if (pt) {
+        L.push(""); L.push(`🏦 입금계좌  ${pt}`);
+        /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
+        const owner = state.pay.holder.trim() || c.host;
+        const others = activePayers.map((p) => p.name).filter((n) => !sameName(n, owner));
+        if (activePayers.length > 1 && others.length) {
+          L.push(`※ ${others.map((n) => at(n)).join(" · ")} 님께 보낼 금액은 계좌를 따로 알려드릴게요`);
+        }
+      }
 
       /* ── 공유 링크 ── */
       const shareUrl = currentShareUrl();
