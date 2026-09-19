@@ -694,6 +694,19 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 }
 .btn-glass:hover { background: rgba(255, 255, 255, 0.17); }
 
+/* 카드 전체를 누르게 만드는 유틸.
+   카드가 hover 에 들어올려지는데 정작 눌리는 건 안쪽 링크 한 줄뿐인 자리가 있었다.
+   링크를 <a> 로 감싸 겹치는 대신, 그 링크의 그림자를 카드 크기만큼 펴서 덮는다.
+
+   맞바꾼 것 — 덮개가 카드를 가리므로 카드 안 글자는 끌어서 선택할 수 없다.
+   처음엔 형제 요소를 전부 덮개 위로 올려 선택을 살리려 했는데, 그러면
+   덮개가 통째로 가려져 카드 어디를 눌러도 아무 일이 없었다(실제로 그랬다).
+   여기 카드들은 읽고 넘어가는 안내문이라 눌리는 쪽을 택했다.
+   안쪽에 따로 눌러야 할 링크·버튼이 있으면 그것만 위로 올린다. */
+.has-stretch { position: relative; }
+.has-stretch .stretch::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.has-stretch a:not(.stretch), .has-stretch button { position: relative; z-index: 2; }
+
 /* 소형 버튼 (구 페이지 호환 + 신규 툴바용) */
 .mini-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
