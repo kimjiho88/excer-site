@@ -279,8 +279,8 @@ end $$;
 -- PostgreSQL 은 새 함수의 EXECUTE 를 PUBLIC 에 기본 부여하고 anon 이 이를 상속한다.
 -- 목록에 없다고 비공개인 것이 아니므로, 내부 전용 함수는 명시적으로 회수한다.
 -- site_is_admin 은 비밀번호 참/거짓을 그대로 돌려주므로 노출되면 대입 창구가 된다.
-revoke execute on function site_hash(text) from public;
-revoke execute on function site_is_admin(text) from public;
+revoke execute on function site_hash(text)     from public, anon, authenticated;
+revoke execute on function site_is_admin(text) from public, anon, authenticated;
 
 grant execute on function
   report_publish(text, text, jsonb), report_delete(text, bigint),

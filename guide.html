@@ -332,6 +332,7 @@
       .cta-card { flex-direction: column; align-items: flex-start; }
     }
   </style>
+  <script src="assets/site-core.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -1106,53 +1107,6 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 ── */
-      (function () {
-        var box = document.getElementById("visitBox");
-        if (!box) return;
-        var elToday = document.getElementById("visitToday");
-        var elTotal = document.getElementById("visitTotal");
-        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
-        function devKey() {
-          var k = null;
-          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
-          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
-          }
-          return k;
-        }
-        function show(today, total) {
-          box.hidden = false;
-          countUp(elToday, today || 0, { duration: 700 });
-          countUp(elTotal, total || 0, { duration: 700 });
-        }
-        function localFallback() {
-          var total = 1, today = 1;
-          try {
-            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
-            var d = new Date().toISOString().slice(0, 10);
-            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
-            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
-            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
-            total = raw.total; today = raw.today;
-          } catch (e) {}
-          show(today, total);
-        }
-        var counted = false;
-        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
-        fetch(U + "/rest/v1/rpc/visit_ping", {
-          method: "POST",
-          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
-        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
-          .then(function (d) {
-            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
-            show(d.today, d.total);
-          }).catch(function () { localFallback(); });
-      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();

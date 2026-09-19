@@ -288,9 +288,13 @@ end $$;
 -- 이 둘은 다른 함수 안에서만 불리고, SECURITY DEFINER 함수 내부 호출은
 -- 소유자 권한으로 돌기 때문에 회수해도 기능은 그대로 동작한다.
 --
+-- ★ from public 만으로는 부족하다. Supabase 는 기본 권한 설정으로 public 스키마의
+--   함수를 anon·authenticated 에게 '직접' 부여하므로, PUBLIC 상속분만 회수하면
+--   직접 부여분이 그대로 남는다(has_function_privilege 로 확인하면 여전히 true).
+--
 -- 규칙: 함수를 새로 만들면 '노출할지 말지'를 같은 커밋에서 정한다. 기본값은 비노출.
-revoke execute on function site_hash(text) from public;
-revoke execute on function site_is_admin(text) from public;
+revoke execute on function site_hash(text)     from public, anon, authenticated;
+revoke execute on function site_is_admin(text) from public, anon, authenticated;
 
 grant execute on function
   report_publish(text, text, jsonb), report_delete(text, bigint),
