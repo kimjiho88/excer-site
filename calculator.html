@@ -583,8 +583,8 @@
                 </div>
               </div>
               <div class="field card-sub">
-                <label for="membersText">참여 멤버 (쉼표 또는 줄바꿈 · 벙주는 자동 포함)</label>
-                <textarea id="membersText" class="textarea" placeholder="예:&#10;민지&#10;준호&#10;서아&#10;도윤"></textarea>
+                <label for="membersText">참여 멤버 (줄바꿈 · 쉼표 · @ 로 구분 · 벙주는 자동 포함)</label>
+                <textarea id="membersText" class="textarea" placeholder="예:&#10;민지, 준호, 서아, 도윤&#10;또는 @민지 @준호 @서아 @도윤"></textarea>
                 <div id="memberChips" class="pchips"></div>
               </div>
               <div class="card-sub">
@@ -1314,12 +1314,21 @@
       const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
       return String(value).replace(/[&<>"']/g, (char) => entities[char]);
     }
+    /* 이름 목록 읽기.
+       "@민지 @준호" 처럼 오픈채팅에서 쓰던 대로 한 줄에 이어 붙이는 사람이 많다.
+       줄바꿈·쉼표로만 끊으면 이 줄이 통째로 "민지 @준호" 한 사람이 된다.
+       그래서 @ 가 섞여 있으면 @ 도 경계로 쓴다. @ 가 없을 때는 손대지 않는다 —
+       "김 철수" 처럼 이름 사이에 공백이 있는 닉네임을 쪼개면 안 되기 때문이다. */
     function parseNames(text) {
-      return [...new Set(String(text || "").split(/[\n,]+/).map((n) => n.replace(/^@/, "").trim()).filter(Boolean))];
+      const raw = String(text || "");
+      const parts = raw.indexOf("@") >= 0 ? raw.split(/[\n,@]+/) : raw.split(/[\n,]+/);
+      return [...new Set(parts.map((n) => n.trim()).filter(Boolean))];
     }
+    // 벙주 칸에 "@엑서" 로 적으면 멤버 목록의 "엑서" 와 다른 사람이 돼 칩이 두 번 뜬다
+    function cleanName(value) { return String(value || "").replace(/^\s*@/, "").trim(); }
     function memberPool() {
       const list = parseNames(state.membersText);
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       if (host && !list.includes(host)) list.unshift(host);
       return list;
     }
@@ -1346,7 +1355,7 @@
     function calc() {
       return window.CalcCore.computeSettlement({
         members: memberPool(),
-        host: state.hostName.trim(),
+        host: cleanName(state.hostName),
         rounds: state.rounds,
         adjustments: state.adjustments.map((a) => ({
           name: a.name, amount: (a.sign === -1 ? -1 : 1) * Math.abs(Number(a.amount) || 0),
@@ -1389,7 +1398,7 @@
 
     function renderMembers() {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       const count = members.length ? `<span class="pchip is-count">총 ${members.length}명</span>` : "";
       $("memberChips").innerHTML = members.length
         ? members.map((n) => {
@@ -1401,7 +1410,7 @@
 
     function payerOptions(selected) {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       let opts = `<option value=""${!selected ? " selected" : ""}>벙주${host ? ` (${escapeHTML(host)})` : " 자동"}</option>`;
       members.forEach((n) => {
         opts += `<option value="${escapeHTML(n)}"${sameName(n, selected) ? " selected" : ""}>${escapeHTML(n)}${sameName(n, host) ? " ·벙주" : ""}</option>`;
@@ -1425,7 +1434,7 @@
 
     function renderRounds() {
       const members = memberPool();
-      const host = state.hostName.trim();
+      const host = cleanName(state.hostName);
       $("roundsHost").innerHTML = state.rounds.map((r, idx) => {
         const ex = new Set(r.excluded);
         return `
@@ -1574,6 +1583,11 @@
         } else if (!c.totalAmount) {
           hintEl.hidden = false; hintEl.className = "calc-hint is-info";
           hintEl.innerHTML = "<b>차수 금액</b>을 넣어주세요. 총 금액은 0원보다 커야 정산이 만들어져요.";
+        } else if (c.rows.length && !(state.pay.bank.trim() && accountDigits())) {
+          /* 계좌가 비면 복사 글에 입금계좌 줄이 통째로 빠지고 송금 버튼도 안 생긴다.
+             다 됐다고 알려 놓고 계좌 없는 메시지를 보내게 두면 안 된다. */
+          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
+          hintEl.innerHTML = "금액은 다 나눴어요. <b>3 입금 정보</b>에 은행·계좌번호를 넣으면 메시지에 계좌가 같이 담겨요.";
         } else if (c.rows.length) {
           hintEl.hidden = false; hintEl.className = "calc-hint is-done";
           hintEl.innerHTML = "정산 끝났어요. 바로 <b>복사</b>하거나 <b>공유 링크</b>로 보내세요.";
@@ -1888,7 +1902,7 @@
       const suggested = state.eventTitle.trim() || "자주 보는 멤버";
       const name = (window.prompt("이 멤버 구성의 이름을 지어주세요.", suggested) || "").trim().slice(0, 20);
       if (!name) return;
-      const group = { id: uid(), name, host: state.hostName.trim(), membersText: state.membersText };
+      const group = { id: uid(), name, host: cleanName(state.hostName), membersText: state.membersText };
       const idx = memberGroups.findIndex((g) => g.name === name);
       if (idx >= 0) {
         group.id = memberGroups[idx].id;
@@ -2277,6 +2291,11 @@
       $("eventTitle").addEventListener("input", (e) => { state.eventTitle = e.target.value; renderAndSave(); });
       $("eventDate").addEventListener("input", (e) => { state.eventDate = e.target.value; renderAndSave(); });
       $("hostName").addEventListener("input", (e) => { state.hostName = e.target.value; renderMembers(); renderRounds(); renderAdjustments(); renderAndSave(); });
+      // 칸에서 손을 떼면 보이는 것과 쓰이는 것을 맞춘다 — 속으로만 @ 를 떼면 왜 다른지 알 수 없다
+      $("hostName").addEventListener("focusout", (e) => {
+        const clean = cleanName(e.target.value);
+        if (clean !== e.target.value) { e.target.value = clean; state.hostName = clean; renderAll(); saveState(); }
+      });
       $("membersText").addEventListener("input", (e) => { state.membersText = e.target.value; renderMembers(); renderRounds(); renderAdjustments(); renderAndSave(); });
 
       $("payBank").addEventListener("input", (e) => { state.pay.bank = e.target.value; renderAndSave(); });
