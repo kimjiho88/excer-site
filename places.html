@@ -493,11 +493,11 @@
       var $ = function (id) { return document.getElementById(id); };
       var SUPA = window.SUPA;
 
-      var AREAS = ["논현·신사", "역삼·선릉", "강남역", "압구정·청담", "삼성·대치", "서초·교대", "도곡·양재", "잠실·송파", "그 외"];
-      var CATS  = ["고기", "한식", "일식", "중식", "양식·퓨전", "술집·포차", "카페·디저트", "분식·면"];
+      var AREAS = ["논현/신사", "역삼/선릉", "강남역", "압구정/청담", "삼성/대치", "서초/교대", "도곡/양재", "잠실/송파", "그 외"];
+      var CATS  = ["고기", "한식", "일식", "중식", "양식/퓨전", "술집/포차", "카페/디저트", "분식/면"];
       var CAT_ICON = {
         "고기": "🥩", "한식": "🍲", "일식": "🍣", "중식": "🥟",
-        "양식·퓨전": "🍝", "술집·포차": "🍻", "카페·디저트": "☕", "분식·면": "🍜"
+        "양식/퓨전": "🍝", "술집/포차": "🍻", "카페/디저트": "☕", "분식/면": "🍜"
       };
       /* 필터를 켜는 문턱. 이보다 적으면 한 줄 목록이 더 읽기 쉽다. */
       var FILTER_MIN = 15;
@@ -590,7 +590,7 @@
          동명 이점포를 피하려고 지역명을 반드시 앞에 붙인다. */
       function mapUrl(p) {
         if (p.map_url) return p.map_url;
-        var q = (p.area && p.area !== "그 외" ? p.area.split("·")[0] + " " : "") + (p.name || "");
+        var q = (p.area && p.area !== "그 외" ? p.area.split("/")[0] + " " : "") + (p.name || "");
         return "https://map.kakao.com/?q=" + encodeURIComponent(q.trim());
       }
 
@@ -724,10 +724,19 @@
         renderFilters();
       }
 
+      /* 지역·종류 이름의 가운뎃점을 빗금으로 바꿨다(sql/2026-09-23-places-slash.sql).
+         서버 쪽을 아직 옮기지 않았어도 화면은 새 이름으로 보이게, 받을 때 한 번 맞춰 둔다.
+         맞춰 두지 않으면 칩은 '서초/교대'인데 기록은 '서초·교대'라서 걸러지지 않는다. */
+      function slashName(v) { return String(v == null ? "" : v).replace(/·/g, "/"); }
+
       function load() {
         return api("/rest/v1/site_places_v?select=*")
           .then(function (rows) {
-            state.all = Array.isArray(rows) ? rows : [];
+            state.all = (Array.isArray(rows) ? rows : []).map(function (r) {
+              r.area = slashName(r.area);
+              r.category = slashName(r.category);
+              return r;
+            });
             render();
           })
           .catch(function () {

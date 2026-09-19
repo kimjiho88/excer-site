@@ -29,11 +29,14 @@
 create table if not exists site_places (
   id          bigint generated always as identity primary key,
   name        text not null check (length(trim(name)) between 1 and 40),
+  -- 이름 안의 구분은 빗금으로 쓴다(2026-09-23-places-slash.sql 에서 옮겼다).
+  -- 이미 만들어 둔 표에는 이 정의가 다시 적용되지 않으니, 옛 이름이 남아 있으면
+  -- 그 파일을 한 번 실행해야 한다.
   area        text not null check (area in (
-                '논현·신사','역삼·선릉','강남역','압구정·청담','삼성·대치',
-                '서초·교대','도곡·양재','잠실·송파','그 외')),
+                '논현/신사','역삼/선릉','강남역','압구정/청담','삼성/대치',
+                '서초/교대','도곡/양재','잠실/송파','그 외')),
   category    text not null check (category in (
-                '고기','한식','일식','중식','양식·퓨전','술집·포차','카페·디저트','분식·면')),
+                '고기','한식','일식','중식','양식/퓨전','술집/포차','카페/디저트','분식/면')),
   area_detail text check (length(area_detail) <= 30),
   map_url     text check (length(map_url) <= 400),
   price_level int  check (price_level between 1 and 4),
