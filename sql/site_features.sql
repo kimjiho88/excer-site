@@ -5,10 +5,12 @@
 --   · 정산 공유(입금 체크)          → site_settlements
 -- ------------------------------------------------------------
 -- 적용법: Supabase 대시보드 → SQL Editor → 이 파일 전체를 붙여넣고 Run
--- ★ 실행 전 딱 한 곳: 아래 'CHANGE_ME' 를 운영진 비밀번호로 바꾸세요.
+-- 이 파일은 재실행해도 안전합니다(idempotent).
+-- 구조(테이블·뷰·함수·권한)만 다루며, 운영진 비밀번호는 덮어쓰지 않습니다.
+--
+-- ★ 운영진 비밀번호는 이 파일에서 정하지 않습니다.
+--   설치가 끝나면 sql/set_admin_password.sql 을 한 번 실행하세요.
 --   (공지 작성·고정, 리포트 발행, 글 강제 삭제에 쓰입니다)
--- 이 파일은 재실행해도 안전합니다(idempotent). 운영진 비밀번호를
--- 바꾸고 싶으면 CHANGE_ME 자리만 새 값으로 바꿔 다시 실행하세요.
 -- ============================================================
 
 create extension if not exists pgcrypto;
@@ -31,15 +33,19 @@ set search_path = extensions, public as $$
   select encode(digest(coalesce(p_pass, ''), 'sha256'), 'hex');
 $$;
 
+-- 비밀번호는 여기서 정하지 않는다. 'UNSET' 은 어떤 입력으로도 일치하지 않는 표식이고,
+-- 이미 값이 있으면 그대로 둔다 — 재실행이 비밀번호를 되돌리지 않게 하는 핵심이다.
 insert into site_config (key, value)
-values ('admin_pass_hash', site_hash('CHANGE_ME'))
-on conflict (key) do update set value = excluded.value;
+values ('admin_pass_hash', 'UNSET')
+on conflict (key) do nothing;
 
 create or replace function site_is_admin(p_pass text)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from site_config
-    where key = 'admin_pass_hash' and value = site_hash(p_pass)
+    where key = 'admin_pass_hash'
+      and value <> 'UNSET'          -- 비밀번호 미설정 상태에서는 무엇을 넣어도 거짓
+      and value = site_hash(p_pass)
   );
 $$;
 
@@ -270,6 +276,12 @@ end $$;
 -- ────────────────────────────────────────────────────────────
 -- 함수 실행 권한 (Supabase 기본값으로도 열려 있지만 명시)
 -- ────────────────────────────────────────────────────────────
+-- PostgreSQL 은 새 함수의 EXECUTE 를 PUBLIC 에 기본 부여하고 anon 이 이를 상속한다.
+-- 목록에 없다고 비공개인 것이 아니므로, 내부 전용 함수는 명시적으로 회수한다.
+-- site_is_admin 은 비밀번호 참/거짓을 그대로 돌려주므로 노출되면 대입 창구가 된다.
+revoke execute on function site_hash(text) from public;
+revoke execute on function site_is_admin(text) from public;
+
 grant execute on function
   report_publish(text, text, jsonb), report_delete(text, bigint),
   post_create(text, text, text, text, text),

@@ -6,11 +6,14 @@
   <meta name="theme-color" content="#1E0230" />
   <title>동네친구들 — 벙비 정산기</title>
   <meta name="description" content="벙 끝나고 1분이면 정산 끝. 멤버·차수·결제자만 넣으면 1원 단위까지 나눠서 카톡 메시지·정산 이미지·입금 체크 링크를 만들어요." />
+  <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 — 벙비 정산기" />
   <meta property="og:description" content="벙 끝나고 1분이면 정산 끝. 카톡에 붙일 메시지랑 입금 체크 링크까지 한 번에." />
-  <meta property="og:image" content="assets/og.png" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
 
@@ -1210,7 +1213,7 @@
     const showToast = (msg) => window.EXCER.toast(msg);
     let cachedFontCSS = null;
     let receipts = [];            // 영수증 {id, dataUrl} — 메모리 보관(용량 문제로 저장 안 함)
-    let fallbackShareUrl = null;  // 서버 없이 만든 #d= 공유 링크(세션 한정)
+    let fallbackShareUrl = null;  // 항상 null. 개인정보를 링크에 담던 #d= 폴백은 폐기했다(createShareLink 주석 참고)
 
     let saveTimer = null;
     function saveState() {
@@ -1968,13 +1971,6 @@
       };
     }
 
-    function b64urlEncode(obj) {
-      const bytes = new TextEncoder().encode(JSON.stringify(obj));
-      let bin = "";
-      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    }
-
     function settleSave(id, manage, payload) {
       return supaFetch("/rest/v1/rpc/settle_save", {
         method: "POST",
@@ -2023,14 +2019,13 @@
             showToast(ok ? "공유 링크를 복사했어요. 카톡에 붙여넣어 주세요!" : "링크가 준비됐어요. 전체 복사에 함께 담겨요.");
           }
         } else {
-          // 우아한 성능 저하: 테이블 미설치·오프라인 → 링크 자체에 데이터를 담은 폴백.
-          // 영수증(이미지)은 URL 길이 폭증을 막기 위해 링크 데이터에서 제외한다.
-          const slim = Object.assign({}, payload); delete slim.receipts;
-          fallbackShareUrl = new URL("settle.html", window.location.href).href + "#d=" + b64urlEncode(slim);
+          // 저장에 실패하면 링크를 만들지 않는다.
+          // 예전에는 계좌번호·예금주·참여자 실명·금액을 통째로 담은 #d= 링크를 대신 복사했는데,
+          // 그 링크는 카톡 대화에 영구히 남고 회수할 방법이 없어서 폐기했다.
+          // 서버에 저장된 정산은 120일 뒤 자동으로 사라지지만, 링크에 담긴 내용은 사라지지 않는다.
+          fallbackShareUrl = null;
           saveHistorySnapshot(true);
-          const ok = await copyToClipboard(fallbackShareUrl);
-          const extra = receipts.length ? " 영수증은 '이미지 저장'으로 함께 보내주세요." : "";
-          showToast((ok ? "공유 링크를 복사했어요. " : "") + "입금 체크 실시간 공유는 서버 설정 후 가능해요." + extra);
+          showToast("지금은 공유 링크를 만들 수 없어요. '전체 복사'로 정산 내용을 보내주세요.");
         }
       } finally {
         btn.disabled = false; btn.textContent = prevLabel;
