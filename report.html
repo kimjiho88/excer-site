@@ -155,7 +155,11 @@
     .rank-no.is-medal { background: transparent; font-size: 22px; }
     .rank-main { min-width: 0; display: grid; gap: 4px; }
     .rank-top-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-    .rank-name { font-weight: 850; font-size: 13.5px; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-name {
+      display: inline-flex; align-items: center; min-height: 40px;
+      font-weight: 850; font-size: 13.5px; letter-spacing: -0.02em; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .rank-name mark { background: var(--pastel-cream); color: #6B510D; border-radius: 4px; padding: 0 2px; }
     .rank-extra { flex: none; color: var(--gray); font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .rank-bar-line { display: grid; grid-template-columns: minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
@@ -403,7 +407,7 @@
       <p class="hero-sub">
         누가 활약했고 어느 시간대가 뜨거웠는지 가볍게 둘러봐요.
         집계 숫자와 키워드만 다루고 <strong>대화 원문은 저장하지 않아요.</strong>
-        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임을 가린</strong> 버전이에요.</span>
+        <span id="maskNote" hidden>지금 보는 리포트는 <strong>닉네임을 한 글자만 남긴</strong> 버전이에요.</span>
       </p>
 
       <div class="range-filter" role="group" aria-label="기간 필터" id="rangeFilter">
@@ -1314,24 +1318,47 @@
         };
       }
 
+      /* 이미 발행된 리포트에는 줄이기 전의 이름이 들어 있다.
+         앞으로 발행되는 것은 chat-parser 가 집계 단계에서 줄이지만(그쪽이 정본),
+         지난 발행본까지 되돌릴 수는 없으므로 화면에 그릴 때 한 번 더 줄인다.
+         들어오는 모든 경로(미리보기·발행본·샘플)가 여기를 지난다. */
+      function trimNames(stats) {
+        if (stats && Array.isArray(stats.members)) {
+          var used = Object.create(null);
+          stats.members.forEach(function (m) {
+            if (!m || m.name == null) return;
+            var head = String(m.name).trim().split(/[\s/·|,]+/)[0] || "?";
+            if (head.length > 12) head = head.slice(0, 12);
+            var out = head, n = 2;
+            while (used[out]) { out = head + n; n += 1; }
+            used[out] = 1;
+            m.name = out;
+          });
+        }
+        return stats;
+      }
+
       /* ── 데이터 로드: preview → 발행본 → 샘플 ── */
       async function loadData() {
         const params = new URLSearchParams(location.search);
         if (params.get("preview") === "1") {
           try {
             const draft = JSON.parse(localStorage.getItem("excer_report_draft") || "null");
-            if (isV2(draft) || isV1(draft)) return { stats: draft, source: "preview" };
+            if (isV2(draft) || isV1(draft)) return { stats: trimNames(draft), source: "preview" };
           } catch (e) { /* 파손 → 다음 소스 */ }
         }
         try {
           const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
           liveRows = (rows || []).filter((r) => isV2(r.stats) || isV1(r.stats));
+          // 첫 행만 줄이면 안 된다. 발행본이 둘 이상이면 고르기 상자로 지난 것을
+          // 불러올 수 있고, 그때 줄이지 않은 이름이 그대로 나온다.
+          liveRows.forEach((r) => trimNames(r.stats));
           if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
         } catch (e) { /* 미설치/네트워크 → 샘플 */ }
         try {
           const res = await fetch("data/report-sample.json");
           if (!res.ok) throw new Error("HTTP " + res.status);
-          return { stats: await res.json(), source: "sample" };
+          return { stats: trimNames(await res.json()), source: "sample" };
         } catch (e) {
           return { stats: null, source: "none" };
         }
