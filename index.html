@@ -25,198 +25,347 @@
 
   <style>
     /* ============================================================
-       홈(허브) 전용 스타일 — v3 (site.css 수정 금지)
-       대시보드와 겹치지 않는 "커뮤니티 홈"만의 콘텐츠 중심
+       홈 — v4 구조 개편 (site.css 수정 금지)
+
+       v3 의 문제는 색이 아니라 리듬이었다. 섹션 다섯 개가 전부
+       "작은 라벨 → 제목 → 한 줄 설명 → 똑같은 흰 카드 격자" 였다.
+       같은 틀을 다섯 번 반복하면 색을 무엇으로 바꾸든 같아 보인다.
+
+       v4 는 섹션마다 골격을 다르게 준다.
+         1 히어로    좌우 비대칭 + 오른쪽에 손으로 그린 제품 장면
+         2 티커      화면 끝에서 끝까지, 가로로 흐르는 띠
+         3 도해      왼쪽 제목 고정 + 오른쪽 세로 흐름도(연결선 + 스팟 그림)
+         4 소식      카드 격자 대신 머리글 하나 + 헤어라인 목록
+         5 숫자 밴드 화면 전체를 덮는 어두운 띠, 아주 큰 숫자
+         6 목적지    세로로 긴 패널 다섯 (가로 카드가 아니라)
+         7 맺음      어두운 밴드
        ============================================================ */
 
-    /* ── 히어로 (가운데 정렬 랜딩) ── */
-    .hero-home .container { text-align: center; }
-    .hero-home .hero-sub { margin-inline: auto; }
-    .hero-home .hero-actions, .hero-home .hero-meta { justify-content: center; }
-    /* 단일 브랜드 타이틀 — 크게, 넉넉한 여백으로 중앙 배치 */
-    .hero-home .hero-title.is-single {
-      margin-top: 22px; font-size: clamp(52px, 9vw, 108px); line-height: 1.0; letter-spacing: -0.06em;
+    /* ══════════ 공통 ══════════ */
+    .lead-h {
+      margin: 12px 0 0;
+      font-size: clamp(30px, 4.4vw, 54px); font-weight: 900;
+      line-height: 1.12; letter-spacing: -0.052em; color: var(--deep-1);
     }
-    .hero-home .hero-title.is-single .grad-text-hero { display: inline-block; padding-bottom: 0.06em; }
-
-    /* 숫자 pill 이 아직 열리지 않았을 때 그 자리를 대신하는 한 줄 */
-    .hero-note { margin-top: 18px; color: var(--on-dark-muted); font-size: 14px; font-weight: 700; }
-
-    /* ── 소개 스트립 (우리는 이런 사이) — 히어로 위로 겹침 ── */
-    .intro-strip { display: grid; gap: clamp(12px, 1.6vw, 18px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .intro-card { display: flex; align-items: flex-start; gap: 14px; padding: clamp(18px, 2.2vw, 24px); }
-    .intro-card .ic-ic {
-      display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; flex: none;
-      background: var(--pastel-lavender); color: var(--primary);
-      box-shadow: inset 0 0 0 1px rgba(75, 42, 130, 0.09);
+    .lead-p { margin: 14px 0 0; color: var(--ink-2); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.78; }
+    .link-arrow {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 20px;
+      color: var(--primary); font-size: 14px; font-weight: 900; letter-spacing: -0.02em;
     }
-    .intro-card .ic-ic .ic { width: 23px; height: 23px; }
-    .intro-card b { display: block; font-size: 15px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
-    .intro-card span { display: block; margin-top: 4px; color: var(--gray); font-size: var(--fs-sm); line-height: 1.55; font-weight: 600; }
+    .link-arrow .ic { transition: transform 0.24s var(--ease); }
+    .link-arrow:hover .ic { transform: translateX(4px); }
+    /* 화면 끝까지 차는 띠. 100vw 는 스크롤바 폭만큼 넘쳐서 가로 스크롤을 만든다.
+       .container 바깥의 section 으로 두고 배경만 깔면 그 문제가 아예 없다. */
+    .band { position: relative; isolation: isolate; overflow: hidden; }
 
-    /* ── 활동 소개 (요즘 이런 걸 같이 해요) ──
-       카드 8장을 4×2 로 깔고 hover 에 들어올림까지 걸어 뒀었다.
-       그런데 누를 수 있는 게 아니다 — 눌릴 것처럼 굴다가 아무 일도 안 일어난다.
-       부제도 대부분 제목을 다시 말할 뿐이었다("영화 / 개봉작 같이 보기").
-       눌리지 않는 것은 눌릴 것처럼 보이지 않아야 하므로 칩으로 낮췄다.
-       세로 300px → 110px. 어떤 벙을 하는지는 한눈에 더 잘 들어온다. */
-    .act-row { display: flex; flex-wrap: wrap; gap: 9px; }
-    .act-chip {
+    /* ══════════ 1. 히어로 — 좌우 비대칭 ══════════ */
+    .hero-home { padding-bottom: clamp(56px, 7vw, 104px); }
+    .hero-split {
+      display: grid; align-items: center;
+      gap: clamp(30px, 4vw, 60px);
+      grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+    }
+    .hero-copy { min-width: 0; }
+    .hero-home .hero-title {
+      margin-top: 20px;
+      font-size: clamp(38px, 6.4vw, 78px); line-height: 1.06; letter-spacing: -0.058em;
+    }
+    .hero-home .hero-title .grad-text-hero { display: inline-block; padding-bottom: 0.05em; }
+    .hero-home .hero-sub { max-width: 30em; }
+
+    /* 히어로 아래 신호 줄. pill 세 개를 나란히 두면 그것도 결국 작은 카드 격자라,
+       얇은 세로 구분선만 두고 숫자를 세운다. */
+    .hero-signal { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0; margin-top: 30px; }
+    .hero-signal .hs { padding-right: clamp(18px, 2.4vw, 30px); }
+    .hero-signal .hs + .hs {
+      padding-left: clamp(18px, 2.4vw, 30px);
+      border-left: 1px solid var(--on-dark-line);
+    }
+    .hero-signal .hs-k { display: block; color: var(--on-dark-muted); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; }
+    .hero-signal .hs-v {
+      display: block; margin-top: 5px; color: #fff;
+      font-size: clamp(22px, 2.6vw, 30px); font-weight: 900; letter-spacing: -0.05em;
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .hero-signal .hs-v small { font-size: 0.5em; font-weight: 900; color: var(--on-dark-muted); margin-left: 3px; letter-spacing: 0; }
+    .hero-note { margin-top: 26px; color: var(--on-dark-muted); font-size: 13.5px; font-weight: 700; }
+
+    /* 히어로 아트 — 손으로 그린 장면 하나 */
+    .hero-art { display: block; width: 100%; height: auto; max-width: 560px; margin-left: auto; overflow: visible; }
+    .hero-art-wrap { min-width: 0; }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-art .ha-float { animation: haFloat 7s ease-in-out infinite; }
+      .hero-art .ha-float-2 { animation: haFloat 8.4s ease-in-out infinite -2.2s; }
+    }
+    @keyframes haFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+    /* ══════════ 2. 티커 — 화면을 가로지르는 띠 ══════════ */
+    .ticker-band { border-block: 1px solid var(--line); background: var(--white); }
+    .ticker { overflow: hidden; padding: 16px 0; --tick-fade: 72px; }
+    /* 양 끝을 흐리게 지운다. 띠가 화면 밖으로 이어진다는 느낌이 여기서 나온다. */
+    .ticker::before, .ticker::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: var(--tick-fade); z-index: 2; pointer-events: none;
+    }
+    .ticker::before { left: 0; background: linear-gradient(90deg, var(--white), rgba(255, 255, 255, 0)); }
+    .ticker::after { right: 0; background: linear-gradient(270deg, var(--white), rgba(255, 255, 255, 0)); }
+    .ticker-track { display: flex; width: max-content; will-change: transform; }
+    @media (prefers-reduced-motion: no-preference) {
+      .ticker-track { animation: tickerRun 46s linear infinite; }
+    }
+    @keyframes tickerRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .ticker-set { display: flex; align-items: center; }
+    .tick-item {
       display: inline-flex; align-items: center; gap: 9px;
-      min-height: 46px; padding: 0 17px 0 13px; border-radius: var(--r-pill);
+      padding: 0 clamp(18px, 2.2vw, 30px);
+      color: var(--deep-1); font-size: clamp(15px, 1.5vw, 19px); font-weight: 900; letter-spacing: -0.035em;
+      white-space: nowrap;
+    }
+    .tick-item .ic { color: var(--primary); width: 20px; height: 20px; }
+    .tick-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--brass); opacity: 0.5; flex: none; }
+
+    /* ══════════ 3. 도해 — 왼쪽 제목 + 오른쪽 세로 흐름 ══════════ */
+    .flow-wrap {
+      display: grid; gap: clamp(28px, 3.6vw, 64px);
+      grid-template-columns: minmax(0, 0.76fr) minmax(0, 1.24fr);
+      align-items: start;
+    }
+    .flow-lead { position: sticky; top: calc(var(--nav-h) + 26px); }
+    .flow-steps { list-style: none; margin: 0; padding: 0; position: relative; }
+    /* 단계를 잇는 선. 첫 노드 가운데에서 마지막 노드 가운데까지만 긋는다. */
+    .flow-steps::before {
+      content: ""; position: absolute; left: 31px; top: 32px; bottom: 32px; width: 2px;
+      background: linear-gradient(180deg, rgba(75, 42, 130, 0.22), rgba(138, 109, 51, 0.30), rgba(18, 147, 106, 0.28));
+      border-radius: 2px;
+    }
+    .flow-step { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: clamp(16px, 2vw, 24px); }
+    .flow-step + .flow-step { margin-top: clamp(26px, 3.2vw, 42px); }
+    .fs-art {
+      position: relative; z-index: 1; display: grid; place-items: center;
+      width: 64px; height: 64px; border-radius: 22px; flex: none;
+      background: var(--white); color: var(--primary);
+      box-shadow: 0 2px 0 rgba(26, 21, 36, 0.04), inset 0 0 0 1px var(--line-strong);
+    }
+    .fs-art svg { width: 36px; height: 36px; }
+    .fs-body { min-width: 0; padding-top: 4px; }
+    .fs-num {
+      display: block; color: var(--brass); font-size: 12px; font-weight: 900;
+      letter-spacing: 0.1em; font-variant-numeric: tabular-nums;
+    }
+    .fs-body h3 { margin: 6px 0 0; font-size: clamp(17px, 1.8vw, 21px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1); }
+    .fs-body p { margin: 7px 0 0; color: var(--gray); font-size: 14.5px; line-height: 1.72; }
+
+    /* 정산기가 뱉는 메시지 — 말로 설명하는 대신 결과물을 그대로 보여준다 */
+    .chat-proof {
+      margin-top: 16px; border-radius: 18px; overflow: hidden;
       border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
-      font-size: var(--fs-body); font-weight: 800; letter-spacing: -0.02em; color: var(--deep-1);
     }
-    .act-chip .ic { width: 19px; height: 19px; color: var(--primary); }
-
-    /* ── 온보딩 3단계 (처음이라면 이렇게) ── */
-    .step-grid { display: grid; gap: clamp(14px, 1.8vw, 20px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .step-card { display: flex; flex-direction: column; padding: clamp(22px, 2.6vw, 30px); }
-    .step-num {
-      display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; margin-bottom: 16px;
-      background: var(--grad-brand); color: #fff; font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums;
-      box-shadow: var(--shadow-brand);
+    .cp-head {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+      background: var(--soft-lavender); color: var(--primary);
+      font-size: 12px; font-weight: 900; letter-spacing: -0.02em;
+      border-bottom: 1px solid var(--line);
     }
-    .step-card h3 { margin: 0; font-size: var(--fs-h3); font-weight: 900; letter-spacing: -0.035em; color: var(--deep-1); }
-    .step-card p { margin: 8px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.66; }
-    .step-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: -0.02em; }
-    .step-link svg { width: 15px; height: 15px; transition: transform 0.22s var(--ease); }
-    .step-card:hover .step-link svg { transform: translateX(3px); }
+    .cp-head .ic { width: 15px; height: 15px; }
+    /* 연보라 바탕 위라 --gray-2 는 4.28:1 로 모자랐다. 한 단계 진한 캡션 색을 쓴다. */
+    .cp-head em { margin-left: auto; font-style: normal; color: var(--gray); font-weight: 800; }
+    .cp-body {
+      margin: 0; padding: 14px 16px 16px;
+      font-family: inherit; font-size: 13px; line-height: 1.85; color: var(--ink);
+      white-space: pre-wrap; word-break: break-word; font-variant-numeric: tabular-nums;
+    }
+    .cp-body b { color: var(--primary); font-weight: 900; }
+    .cp-body i { font-style: normal; color: var(--gray-2); }
 
-    /* ── 최근 소식 ── */
-    .news-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .news-head h3 { margin: 0; font-size: var(--fs-h3); font-weight: 900; letter-spacing: -0.035em; color: var(--deep-1); }
-    .news-more { display: inline-flex; align-items: center; gap: 5px; color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: -0.02em; }
-    .news-more svg { width: 15px; height: 15px; }
-    .news-list { display: grid; gap: 10px; }
+    /* ══════════ 4. 소식 — 헤어라인 목록 ══════════ */
+    .sec-bar {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: clamp(20px, 2.4vw, 30px);
+      padding-bottom: 16px; border-bottom: 2px solid var(--deep-1);
+    }
+    .sec-bar .sb-l { min-width: 0; }
+    .sec-bar .lead-h { font-size: clamp(25px, 3.2vw, 38px); }
+    .sec-bar .link-arrow { margin-top: 0; }
+
+    /* 다가오는 벙 — 목록 위에 크게 한 장. 크림 바탕이라 아래 흰 목록과 구분된다. */
+    .next-bung {
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center;
+      gap: clamp(14px, 2vw, 24px); margin-bottom: clamp(18px, 2.2vw, 26px);
+      padding: clamp(18px, 2.4vw, 26px) clamp(18px, 2.4vw, 28px);
+      border-radius: var(--r-lg); text-decoration: none;
+      background: linear-gradient(120deg, var(--cream), var(--warm-white));
+      box-shadow: inset 0 0 0 1px rgba(138, 109, 51, 0.22), var(--shadow-1);
+      transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease);
+    }
+    .next-bung:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px rgba(138, 109, 51, 0.38), var(--shadow-2); }
+    .nb-dday {
+      display: grid; place-items: center; flex: none;
+      min-width: 74px; padding: 10px 12px; border-radius: 16px;
+      background: var(--grad-brand); color: #fff;
+      font-size: clamp(15px, 1.8vw, 19px); font-weight: 900; letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums; box-shadow: var(--shadow-brand);
+    }
+    .nb-body { min-width: 0; display: grid; gap: 5px; }
+    .nb-title {
+      font-size: clamp(16px, 1.9vw, 21px); font-weight: 900; letter-spacing: -0.04em; color: var(--deep-1);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .nb-when { color: var(--ink-2); font-size: 13.5px; font-weight: 700; }
+    .nb-go { color: var(--brass); font-size: 20px; font-weight: 900; }
+
+    .news-list { display: grid; }
     .news-item {
-      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 13px; align-items: center;
-      padding: 13px 15px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--white);
-      text-decoration: none; transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
+      display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 15px; align-items: center;
+      padding: 15px 4px; border-top: 1px solid var(--line); text-decoration: none;
+      transition: background 0.18s var(--ease), padding 0.18s var(--ease);
     }
-    .news-item:hover { transform: translateX(3px); box-shadow: var(--shadow-2); border-color: var(--line-strong); }
-    .news-emoji { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; flex: none; background: var(--pastel-lavender); color: var(--primary); }
-    .news-emoji .ic { width: 20px; height: 20px; }
+    .news-list .news-item:last-child { border-bottom: 1px solid var(--line); }
+    .news-item:hover { background: var(--soft-lavender); padding-inline: 12px; border-radius: 12px; }
+    .news-emoji { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; flex: none; background: var(--pastel-lavender); color: var(--primary); }
+    .news-emoji .ic { width: 21px; height: 21px; }
     .news-body { min-width: 0; }
-    .news-title { font-size: 15px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .news-meta { margin-top: 3px; color: var(--gray); font-size: 12px; font-weight: 700; }
+    .news-title { font-size: 15.5px; font-weight: 900; letter-spacing: -0.032em; color: var(--deep-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .news-meta { margin-top: 4px; color: var(--gray); font-size: 12.5px; font-weight: 700; }
     .news-cat { color: var(--primary); font-weight: 900; }
     .news-react { color: var(--ink-2); font-size: 13px; font-weight: 900; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .news-empty { padding: 8px 0 4px; }
-    /* 다가오는 벙 */
-    .next-bung {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
-      padding: 14px 16px; border-radius: var(--r-sm); text-decoration: none;
-      background: linear-gradient(135deg, var(--pastel-lavender), rgba(230, 240, 252, 0.6));
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.12);
-      transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
-    }
-    .next-bung:hover { transform: translateX(3px); box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow-2); }
-    .nb-dday {
-      flex: none; padding: 5px 11px; border-radius: var(--r-pill);
-      background: var(--grad-brand); color: #fff; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums;
-    }
-    .nb-body { min-width: 0; display: grid; gap: 2px; }
-    .nb-title { font-size: 15px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .nb-when { color: var(--gray); font-size: 13px; font-weight: 700; }
-    .nb-go { margin-left: auto; color: var(--primary); font-size: 17px; font-weight: 900; }
+    .news-empty { padding: 26px 0 8px; border-top: 1px solid var(--line); }
 
-    /* ── 이번 주 분위기 teaser (대시보드 맛보기 · 실제 인물) ── */
-    .vibe-card { display: flex; flex-direction: column; text-decoration: none; }
-    .vibe-top { display: flex; align-items: center; gap: 15px; }
-    .vibe-ava {
-      display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; flex: none;
-      background: var(--grad-gold); color: #5a4506; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 20px -8px rgba(165, 130, 30, 0.5);
+    /* ══════════ 5. 숫자 밴드 — 화면을 덮는 어두운 띠 ══════════ */
+    .num-band {
+      margin-top: var(--section-gap);
+      padding: clamp(44px, 6vw, 92px) 0;
+      color: var(--on-dark-ink);
+      background: var(--grad-aurora), var(--grad-hero);
+      background-color: var(--deep-3);
     }
-    .vibe-ava .ic { width: 27px; height: 27px; }
-    .vibe-name { font-size: clamp(19px, 2.2vw, 24px); font-weight: 900; letter-spacing: -0.04em; color: #fff; line-height: 1.1; }
-    .vibe-line { margin-top: 4px; color: rgba(255, 255, 255, 0.94); font-size: 14px; font-weight: 800; }
-    /* 브랜드 그라데이션 위의 흰 글자는 알파를 조금만 낮춰도 금방 4.5:1 아래로 떨어진다.
-       0.62 로는 3.25:1 이었다 — 순서(이름 > 설명 > 출처)는 두고 밝기만 끌어올린다. */
-    .vibe-src { margin-top: 16px; color: rgba(255, 255, 255, 0.84); font-size: 12px; font-weight: 700; line-height: 1.7; }
-    /* 신선도 배지 — 어두운 카드 위에 얹히므로 밝은 계열로 대비를 잡는다 */
-    .fresh-badge {
-      display: inline-block; padding: 2px 8px; border-radius: 999px; margin-right: 2px;
-      font-size: 11px; font-weight: 900; letter-spacing: -0.01em;
-    }
-    .fresh-badge.is-fresh  { background: rgba(120, 236, 186, 0.20); color: #9DF3CC; }
-    .fresh-badge.is-ok     { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.86); }
-    .fresh-badge.is-stale  { background: rgba(255, 214, 128, 0.20); color: #FFDFA1; }
-    .fresh-next { color: rgba(255, 255, 255, 0.78); font-weight: 700; }
-    .vibe-go { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; color: #fff; font-size: 13px; font-weight: 900; }
-    .vibe-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
-    .vibe-card:hover .vibe-go svg { transform: translateX(4px); }
-    .vibe-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .vibe-stat { display: flex; flex-direction: column; justify-content: center; padding: clamp(16px, 2vw, 22px); border-radius: var(--r-md); border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1); }
-    .vibe-stat .vs-top { display: flex; align-items: center; gap: 8px; color: var(--gray); font-size: 13px; font-weight: 800; }
-    .vibe-stat .vs-ic { display: inline-flex; width: 28px; height: 28px; border-radius: 9px; place-items: center; background: var(--pastel-lavender); color: var(--primary); }
-    .vibe-stat .vs-ic.is-mint { background: var(--pastel-mint); color: #0D7A55; }
-    .vibe-stat .vs-ic svg { width: 16px; height: 16px; }
-    .vibe-stat .vs-value { margin-top: 12px; font-size: clamp(26px, 3vw, 34px); font-weight: 900; letter-spacing: -0.045em; color: var(--deep-1); font-variant-numeric: tabular-nums; }
-    .vibe-stat .vs-value small { font-size: 15px; font-weight: 900; color: var(--gray); margin-left: 2px; }
-    /* 아직 발행된 리포트가 없을 때. 숫자 자리에 줄표만 덩그러니 두면 무슨 뜻인지 알 수 없다. */
-    .vibe-stat .vs-value.is-empty { font-size: 17px; letter-spacing: -0.02em; color: var(--gray); }
-    .vibe-stat .vs-value.is-empty small { display: none; }
-    .vibe-stat .vs-foot { margin-top: 4px; color: var(--gray); font-size: 12px; font-weight: 700; }
-
-    /* ── Bento 기능 카드 (링크형) ── */
-    .feature-card { text-decoration: none; }
-    .feature-card .fc-ic {
-      display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px;
-      background: var(--pastel-lavender); color: var(--primary); margin-bottom: 14px;
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
-    }
-    .feature-card .fc-ic svg { width: 24px; height: 24px; }
-    .feature-card h3 { margin: 0; font-size: var(--fs-h3); font-weight: 900; letter-spacing: -0.035em; color: var(--deep-1); }
-    .feature-card p { margin: 8px 0 0; color: var(--gray); font-size: 14px; line-height: 1.62; }
-    .feature-card .fc-go {
-      display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 16px;
-      color: var(--primary); font-size: 13px; font-weight: 900; letter-spacing: -0.02em;
-    }
-    .feature-card .fc-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
-    .feature-card:hover .fc-go svg { transform: translateX(4px); }
-    /* 허브의 으뜸 카드. 바로 윗 섹션의 활약왕 카드가 같은 보라 그라데이션이라,
-       둘을 나란히 두면 서로를 깎아먹는다. 활약왕은 사람 이야기라 이 페이지의
-       감정적 정점이고, 이쪽은 길 안내다 — 크기로 이미 으뜸인 걸 보여 주므로
-       색까지 세우지 않는다. 옅은 라벤더 바탕에 테두리 한 겹으로만 구분한다. */
-    .feature-card.is-lead {
-      background: linear-gradient(160deg, var(--pastel-lavender), rgba(255, 255, 255, 0.9));
-      border-color: rgba(95, 0, 128, 0.16);
-    }
-    .feature-card.is-lead .fc-ic { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-brand); }
-
-    .feature-card.is-brand h3 { color: #fff; }
-    .feature-card.is-brand p { color: rgba(255, 255, 255, 0.86); }
-    .feature-card.is-brand .fc-ic { background: rgba(255, 255, 255, 0.16); color: #fff; box-shadow: none; }
-    .feature-card.is-brand .fc-go { color: #fff; }
-
-    /* ── 마무리 CTA 밴드 ── */
-    .cta-band {
-      position: relative; overflow: hidden; border-radius: var(--r-xl); text-align: center; isolation: isolate;
-      padding: clamp(34px, 5vw, 62px) clamp(22px, 4vw, 48px);
-      background:
-        radial-gradient(32rem 22rem at 50% -25%, rgba(150, 80, 220, 0.55), transparent 62%),
-        radial-gradient(26rem 18rem at 12% 120%, rgba(110, 165, 255, 0.18), transparent 62%),
-        var(--grad-hero);
-      color: #fff; box-shadow: var(--shadow-3);
-    }
-    .cta-band::before {
+    .num-band::after {
       content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-      background: var(--stars); opacity: 0.8; animation: starTwinkle 7s ease-in-out infinite;
+      background: var(--noise); opacity: 0.85; mix-blend-mode: overlay;
     }
-    .cta-band > * { position: relative; z-index: 1; }
-    .cta-band h2 { margin: 0; font-size: var(--fs-title); font-weight: 900; letter-spacing: -0.05em; color: #fff; }
-    .cta-band p { margin: 12px auto 0; max-width: 520px; color: rgba(255, 255, 255, 0.84); font-size: 15px; line-height: 1.72; }
-    .cta-band .hero-actions { margin-top: 26px; justify-content: center; }
+    .num-band > .container { position: relative; z-index: 1; }
+    .num-grid {
+      display: grid; gap: clamp(28px, 4vw, 56px);
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      align-items: center;
+    }
+    .num-lead .eyebrow { color: var(--brass-bright); }
+    .num-lead .eyebrow::before { background: var(--brass-bright); }
+    .mvp-name {
+      margin: 14px 0 0; font-size: clamp(34px, 5.2vw, 64px); font-weight: 900;
+      line-height: 1.04; letter-spacing: -0.058em; color: #fff;
+    }
+    .mvp-line { margin-top: 12px; color: var(--on-dark-body); font-size: clamp(14px, 1.3vw, 16.5px); font-weight: 700; line-height: 1.7; }
+    .mvp-src { margin-top: 20px; color: var(--on-dark-muted); font-size: 12.5px; font-weight: 700; line-height: 1.8; }
+    .fresh-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; margin-right: 4px; font-size: 11px; font-weight: 900; }
+    .fresh-badge.is-fresh { background: rgba(120, 236, 186, 0.18); color: #9DF3CC; }
+    .fresh-badge.is-ok    { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.88); }
+    .fresh-badge.is-stale { background: rgba(255, 214, 128, 0.18); color: #FFDFA1; }
+    .fresh-next { color: rgba(255, 255, 255, 0.74); font-weight: 700; }
+    .num-lead .link-arrow { color: #fff; }
 
-    /* ── 반응형 ── */
-    @media (max-width: 860px) {
-      .hero-home .hero-actions .btn { flex: 1 1 100%; }
-      .intro-strip { grid-template-columns: 1fr; }
-      .step-grid { grid-template-columns: 1fr; }
+    /* 숫자 셋 — 헤어라인으로만 나눈다. 카드로 감싸면 또 격자가 된다. */
+    .num-stats { display: grid; gap: 0; }
+    .num-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 14px; padding: clamp(14px, 1.8vw, 20px) 0; }
+    .num-stat + .num-stat { border-top: 1px solid var(--on-dark-line); }
+    .num-stat .ns-k { display: flex; align-items: flex-start; gap: 9px; color: var(--on-dark-body); font-size: 13.5px; font-weight: 800; }
+    .num-stat .ns-k .ic { width: 17px; height: 17px; margin-top: 1px; color: var(--brass-bright); }
+    .num-stat .ns-foot { display: block; margin-top: 5px; color: var(--on-dark-muted); font-size: 12px; font-weight: 700; }
+    .vs-value {
+      justify-self: end; text-align: right; color: #fff;
+      font-size: clamp(30px, 4.6vw, 54px); font-weight: 900; letter-spacing: -0.058em;
+      line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap;
     }
-    @media (max-width: 620px) {
-      .vibe-stats { grid-template-columns: 1fr; }
+    .vs-value small { font-size: 0.42em; color: var(--on-dark-muted); margin-left: 3px; letter-spacing: 0; }
+    .vs-value.is-empty { font-size: clamp(14px, 1.5vw, 16px); letter-spacing: -0.02em; color: var(--on-dark-muted); font-weight: 800; }
+    .vs-value.is-empty small { display: none; }
+
+    /* ══════════ 6. 목적지 — 세로로 긴 패널 ══════════ */
+    .dest-rail {
+      display: grid; gap: clamp(10px, 1.2vw, 16px);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .dest {
+      position: relative; display: flex; flex-direction: column; overflow: hidden;
+      min-height: clamp(238px, 26vw, 292px);
+      padding: 0 clamp(16px, 1.8vw, 22px) clamp(18px, 2vw, 22px); border-radius: var(--r-lg); text-decoration: none;
+      border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
+      transition: transform 0.24s var(--ease), box-shadow 0.24s var(--ease), border-color 0.24s var(--ease);
+    }
+    .dest:hover { transform: translateY(-5px); box-shadow: var(--shadow-3); border-color: var(--line-strong); }
+    /* 다섯 장 모두 같은 어두운 바탕을 쓴다. 카드마다 파스텔을 달리 깔았더니
+       띠 전체가 사탕 상자처럼 보였다. 바탕을 하나로 묶고 그림만 다르게 둔다. */
+    .dest-cap {
+      position: relative; margin-inline: calc(-1 * clamp(16px, 1.8vw, 22px)); height: 104px; overflow: hidden;
+      color: #BCA4DE;
+      background: radial-gradient(90% 120% at 76% 10%, rgba(140, 95, 206, 0.34), transparent 64%),
+                  linear-gradient(140deg, #33204F, #1F1333);
+    }
+    .dest-cap svg { display: block; width: 100%; height: 100%; }
+    .dest-ic {
+      position: relative; z-index: 1; display: grid; place-items: center;
+      width: 44px; height: 44px; border-radius: 14px; margin: -22px 0 13px;
+      background: var(--white); color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow-2);
+    }
+    .dest-ic svg { width: 22px; height: 22px; }
+    .dest h3 { margin: 0; font-size: clamp(15px, 1.5vw, 17.5px); font-weight: 900; letter-spacing: -0.038em; color: var(--deep-1); }
+    .dest p { margin: 8px 0 0; color: var(--gray); font-size: 13.5px; line-height: 1.66; }
+    .dest .d-go { display: inline-flex; align-items: center; gap: 5px; margin-top: auto; padding-top: 16px; color: var(--primary); font-size: 12.5px; font-weight: 900; }
+    .dest .d-go .ic { transition: transform 0.24s var(--ease); }
+    .dest:hover .d-go .ic { transform: translateX(4px); }
+    .dest.is-lead { border-color: rgba(75, 42, 130, 0.22); }
+    .dest.is-lead .dest-ic { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-brand); }
+
+    /* ══════════ 7. 맺음 ══════════ */
+    .cta-band {
+      padding: clamp(52px, 7vw, 104px) 0;
+      color: #fff; text-align: center;
+      background: radial-gradient(38rem 24rem at 50% -14%, rgba(109, 74, 174, 0.42), transparent 64%), var(--grad-hero);
+      background-color: var(--deep-3);
+    }
+    .cta-band::after {
+      content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background: var(--noise); opacity: 0.85; mix-blend-mode: overlay;
+    }
+    .cta-band > .container { position: relative; z-index: 1; }
+    .cta-rule { display: block; width: 52px; height: 2px; margin: 0 auto 22px; border-radius: 2px; background: var(--brass-bright); }
+    .cta-band h2 { margin: 0; font-size: clamp(27px, 4.2vw, 50px); font-weight: 900; letter-spacing: -0.055em; color: #fff; line-height: 1.12; }
+    .cta-band p { margin: 16px auto 0; max-width: 30em; color: var(--on-dark-body); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.74; }
+    .cta-band .hero-actions { margin-top: 30px; justify-content: center; }
+    /* 맺음 밴드와 푸터 사이에 흰 띠가 한 줄 끼어 있었다. 둘 다 어두운데 그 사이만
+       밝으니 실수처럼 보인다. 여백을 없애 어두운 꼬리 하나로 이어 붙인다. */
+    .page-main { padding-bottom: 0; }
+    .site-footer { margin-top: 0; }
+
+    /* ══════════ 반응형 ══════════ */
+    @media (max-width: 1080px) {
+      .dest-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dest { min-height: 250px; }
+    }
+    @media (max-width: 940px) {
+      .hero-split { grid-template-columns: 1fr; gap: 34px; }
+      .hero-art { max-width: 460px; margin-inline: auto; }
+      .flow-wrap { grid-template-columns: 1fr; }
+      .flow-lead { position: static; }
+      .num-grid { grid-template-columns: 1fr; gap: 32px; }
+    }
+    @media (max-width: 680px) {
+      .hero-home .hero-actions .btn { flex: 1 1 100%; }
+      .dest-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .next-bung { grid-template-columns: auto minmax(0, 1fr); row-gap: 10px; }
+      .next-bung .nb-go { display: none; }
+      .ticker { --tick-fade: 32px; }
+      .flow-step { grid-template-columns: 52px minmax(0, 1fr); }
+      .fs-art { width: 52px; height: 52px; border-radius: 18px; }
+      .fs-art svg { width: 29px; height: 29px; }
+      .flow-steps::before { left: 25px; }
+      /* 좁은 화면에서 한 줄에 한 장씩 깔았더니, 화면 폭을 꽉 채운 어두운 띠가
+         다섯 개 쌓여 페이지가 무거워졌다. 두 칸을 유지하고 그림띠만 낮춘다. */
+      .dest { min-height: 0; padding-inline: 14px; }
+      .dest-cap { height: 82px; margin-inline: -14px; }
+      .dest h3 { font-size: 14.5px; }
+      .dest p { font-size: 12.5px; }
+      .dest-ic { width: 38px; height: 38px; border-radius: 12px; margin: -19px 0 11px; }
+      .dest-ic svg { width: 19px; height: 19px; }
     }
   </style>
   <script src="assets/site-core.js?v=2"></script>
@@ -250,276 +399,479 @@
     </div>
   </header>
 
-  <!-- ════════ 메인 히어로 (오로라 리치) ════════ -->
+  <!-- ════════ 1. 히어로 — 좌우 비대칭 + 손으로 그린 장면 ════════ -->
   <section class="hero-band hero-home" aria-labelledby="heroTitle">
-    <i class="glow-orb" style="--orb-size:480px; --orb-color:rgba(200,162,232,0.36); right:-150px; top:-170px" aria-hidden="true"></i>
-    <i class="glow-orb" style="--orb-size:400px; --orb-color:rgba(255,184,209,0.20); left:-140px; bottom:-200px" aria-hidden="true"></i>
-    <div class="container">
-      <!-- 기본값은 기존 문구. 기기 시계를 읽을 수 있으면 시간대 인사말로 교체된다.
-           키커는 히어로의 고정 구성요소라 비우면 구멍이 보이므로, 판정이 안 되면 이 문구로 남는다. -->
-      <span class="hero-kicker" id="heroKicker"><i></i>오픈채팅에서 만난 사이</span>
-      <h1 class="hero-title is-single" id="heroTitle">
-        <span class="grad-text-hero">동네친구들</span>
-      </h1>
-      <p class="hero-sub">
-        <!-- 문장 경계에서 끊는다. 그냥 두면 균형 맞추기가 '같이'를 앞 줄로 끌어올려
-             "…만나요. 같이 / 운동하고…" 처럼 한 어절만 얹힌 줄이 생긴다. -->
-        채팅에서 시작해 동네에서 만나요.<br />
-        같이 운동하고 밥 먹고, 벙비는 <strong>깔끔하게 나눠요</strong>.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-hero is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
-        <a class="btn btn-glass is-lg" href="guide.html">필독부터 보기</a>
+    <i class="glow-orb" style="--orb-size:520px; --orb-color:rgba(167,139,206,0.26); right:-180px; top:-200px" aria-hidden="true"></i>
+    <div class="container hero-split">
+      <div class="hero-copy">
+        <!-- 기본값은 기존 문구. 기기 시계를 읽을 수 있으면 시간대 인사말로 교체된다. -->
+        <span class="hero-kicker" id="heroKicker"><i></i>오픈채팅에서 만난 사이</span>
+        <h1 class="hero-title" id="heroTitle">
+          채팅으로 시작해<br />
+          <span class="grad-text-hero">동네에서 만나요</span>
+        </h1>
+        <!-- 줄을 문장 경계에서 끊는다. 그냥 두면 '정산기가 / 알아서 나눠요' 처럼
+             굵은 글자 하나가 두 줄에 걸쳐 쪼개진다. -->
+        <p class="hero-sub">
+          같이 걷고, 먹고, 보고.<br />
+          놀고 나면 벙비는 <strong>정산기가 알아서 나눠요</strong>.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-hero is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
+          <a class="btn btn-glass is-lg" href="guide.html">필독부터 보기</a>
+        </div>
+        <!-- 숫자는 발행된 리포트가 있을 때만 보여준다. 없는 동안은 아래 한 줄이 자리를 지킨다. -->
+        <div class="hero-signal" id="heroStats" hidden>
+          <span class="hs"><span class="hs-k">함께한 친구</span><span class="hs-v"><span id="heroMembers">0</span><small>명</small></span></span>
+          <span class="hs"><span class="hs-k" id="heroMsgWord">최근 대화</span><span class="hs-v"><span id="heroMsg">0</span><small>건</small></span></span>
+          <span class="hs"><span class="hs-k">동네친구들 온도</span><span class="hs-v"><span id="heroTemp">0</span></span></span>
+        </div>
+        <p class="hero-note" id="heroStatsNote">첫 리포트를 준비 중이에요</p>
       </div>
-      <!-- 숫자는 발행된 리포트가 있을 때만 보여준다.
-           예전에는 data/report-sample.json 의 값(16명·7,100건·37.7°)이 HTML 에 그대로
-           박혀 있어서, 서버가 죽거나 발행분이 없어도 방문자는 그 숫자를 실제 규모로 읽었다.
-           게다가 로드 직후 샘플값으로 한 번, 실데이터가 오면 또 한 번 세면서 숫자가 뒤집혔다. -->
-      <div class="hero-meta" id="heroStats" hidden>
-        <span class="stat-pill"><i></i>함께한 친구 <strong id="heroMembers">0</strong>명</span>
-        <span class="stat-pill"><i></i><span id="heroMsgWord">최근 대화</span> <strong id="heroMsg">0</strong>건</span>
-        <span class="stat-pill"><i></i>동네친구들 온도 <strong id="heroTemp">0</strong></span>
+
+      <div class="hero-art-wrap">
+        <!-- 손으로 그린 장면 하나. 카톡방에 벙이 올라오고 → 정산기가 나눈 결과가 나오고 →
+             입금이 끝난다는 이 사이트의 전부를, 글자 없이 형태로만 보여준다. -->
+        <svg class="hero-art" viewBox="0 0 560 500" role="img"
+             aria-label="카톡방에 올라온 벙 공지 위로, 정산기가 만든 정산 결과 카드와 입금 완료 표시가 겹쳐 있는 그림">
+          <defs>
+            <!-- 한 번에 0 으로 떨어뜨리면 원 테두리가 눈에 보인다. 네 단계로 나눠 흘린다. -->
+            <radialGradient id="haGlow" cx="0.48" cy="0.4" r="0.7">
+              <stop offset="0" stop-color="#9A6FD6" stop-opacity="0.38" />
+              <stop offset="0.42" stop-color="#8C5FCE" stop-opacity="0.21" />
+              <stop offset="0.72" stop-color="#7A50BE" stop-opacity="0.07" />
+              <stop offset="1" stop-color="#7A50BE" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="haPaper" x1="0" y1="0" x2="0.6" y2="1">
+              <stop offset="0" stop-color="#FFFDFA" />
+              <stop offset="1" stop-color="#F3EDE3" />
+            </linearGradient>
+            <linearGradient id="haHead" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#3A2068" />
+              <stop offset="1" stop-color="#4B2A82" />
+            </linearGradient>
+            <linearGradient id="haBrass" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#E4CB92" />
+              <stop offset="1" stop-color="#C08F3F" />
+            </linearGradient>
+            <clipPath id="haCardClip"><rect x="206" y="188" width="322" height="278" rx="28" /></clipPath>
+            <filter id="haDrop" x="-40%" y="-30%" width="180%" height="190%">
+              <feDropShadow dx="0" dy="26" stdDeviation="30" flood-color="#0A0514" flood-opacity="0.55" />
+            </filter>
+          </defs>
+
+          <ellipse cx="272" cy="214" rx="300" ry="268" fill="url(#haGlow)" />
+
+          <!-- 뒤: 카톡방 스레드 -->
+          <g class="ha-float" transform="rotate(-3.4 196 156)">
+            <rect x="34" y="34" width="308" height="250" rx="28" fill="#FFFFFF" fill-opacity="0.07" />
+            <rect x="34" y="34" width="308" height="250" rx="28" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" />
+            <!-- 방 머리 -->
+            <circle cx="62" cy="64" r="11" fill="#A78BCE" fill-opacity="0.55" />
+            <rect x="82" y="58" width="92" height="9" rx="4.5" fill="#FFFFFF" fill-opacity="0.5" />
+            <rect x="82" y="72" width="54" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.26" />
+            <line x1="34" y1="96" x2="342" y2="96" stroke="#FFFFFF" stroke-opacity="0.12" />
+            <!-- 받은 말풍선 -->
+            <rect x="56" y="114" width="176" height="48" rx="15" fill="#FFFFFF" fill-opacity="0.12" />
+            <rect x="72" y="129" width="118" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.5" />
+            <rect x="72" y="143" width="76" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.3" />
+            <!-- 보낸 말풍선 (벙 공지) -->
+            <rect x="140" y="174" width="182" height="62" rx="15" fill="url(#haBrass)" fill-opacity="0.9" />
+            <rect x="156" y="189" width="122" height="8" rx="4" fill="#2A1A0A" fill-opacity="0.58" />
+            <rect x="156" y="203" width="150" height="8" rx="4" fill="#2A1A0A" fill-opacity="0.4" />
+            <rect x="156" y="217" width="84" height="8" rx="4" fill="#2A1A0A" fill-opacity="0.28" />
+            <!-- 핀 -->
+            <g transform="translate(296 128)" stroke="#E9DAF5" stroke-opacity="0.8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20c0 0 7-6.2 7-11.4A7 7 0 0 0 4 8.6C4 13.8 11 20 11 20z" />
+              <circle cx="11" cy="8.6" r="2.6" />
+            </g>
+          </g>
+
+          <!-- 앞: 정산 결과 카드 -->
+          <g filter="url(#haDrop)">
+            <g clip-path="url(#haCardClip)">
+              <rect x="206" y="188" width="322" height="278" fill="url(#haPaper)" />
+              <rect x="206" y="188" width="322" height="62" fill="url(#haHead)" />
+              <rect x="230" y="211" width="104" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.92" />
+              <rect x="230" y="227" width="62" height="7" rx="3.5" fill="#E9DAF5" fill-opacity="0.6" />
+              <rect x="466" y="210" width="38" height="12" rx="6" fill="#C9A86A" />
+
+              <!-- 사람별 줄 -->
+              <g>
+                <circle cx="232" cy="288" r="11" fill="#E6DCF4" />
+                <rect x="252" y="283" width="88" height="9" rx="4.5" fill="#2E1B45" fill-opacity="0.34" />
+                <rect x="434" y="282" width="70" height="11" rx="5.5" fill="#2E1B45" fill-opacity="0.46" />
+              </g>
+              <g>
+                <circle cx="232" cy="326" r="11" fill="#F0E4D2" />
+                <rect x="252" y="321" width="64" height="9" rx="4.5" fill="#2E1B45" fill-opacity="0.34" />
+                <rect x="448" y="320" width="56" height="11" rx="5.5" fill="#2E1B45" fill-opacity="0.46" />
+              </g>
+              <g>
+                <circle cx="232" cy="364" r="11" fill="#DCEDE6" />
+                <rect x="252" y="359" width="102" height="9" rx="4.5" fill="#2E1B45" fill-opacity="0.34" />
+                <rect x="440" y="358" width="64" height="11" rx="5.5" fill="#2E1B45" fill-opacity="0.46" />
+              </g>
+
+              <line x1="228" y1="398" x2="506" y2="398" stroke="#2E1B45" stroke-opacity="0.14" stroke-dasharray="4 5" />
+              <!-- 합계 -->
+              <rect x="228" y="420" width="54" height="10" rx="5" fill="#2E1B45" fill-opacity="0.3" />
+              <rect x="414" y="414" width="92" height="16" rx="8" fill="url(#haBrass)" />
+            </g>
+            <rect x="206" y="188" width="322" height="278" rx="28" fill="none" stroke="#1A1024" stroke-opacity="0.16" />
+          </g>
+
+          <!-- 떠 있는 입금 완료 배지 -->
+          <g class="ha-float-2" transform="translate(396 116)">
+            <rect width="138" height="50" rx="25" fill="#0D7A55" />
+            <rect width="138" height="50" rx="25" fill="none" stroke="#9DF3CC" stroke-opacity="0.34" />
+            <circle cx="28" cy="25" r="12" fill="#FFFFFF" fill-opacity="0.2" />
+            <path d="m22.4 25 3.8 3.8 7.4-7.6" stroke="#EBFFF6" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            <rect x="52" y="19" width="66" height="12" rx="6" fill="#FFFFFF" fill-opacity="0.86" />
+          </g>
+
+          <!-- 미세한 점 몇 개 -->
+          <circle cx="42" cy="330" r="4" fill="#A78BCE" fill-opacity="0.6" />
+          <circle cx="86" cy="392" r="2.6" fill="#C9A86A" fill-opacity="0.66" />
+          <circle cx="540" cy="92" r="3" fill="#A78BCE" fill-opacity="0.5" />
+        </svg>
       </div>
-      <p class="hero-note" id="heroStatsNote">첫 리포트를 준비 중이에요</p>
     </div>
   </section>
 
   <main id="main" class="page-main">
-    <!-- ── 소개 스트립: 우리는 이런 사이 (히어로 위로 겹침) ── -->
-    <section class="container hero-overlap" aria-label="동네친구들 소개">
-      <div class="intro-strip">
-        <article class="card intro-card reveal">
-          <span class="ic-ic ic-tile" aria-hidden="true"><svg class="ic"><use href="#i-walk"/></svg></span>
-          <div>
-            <b>동네에서 진짜로 만나요</b>
-            <span>채팅에서 끝나지 않아요. 산책 가고 전시 보고 맛집도 같이 가요.</span>
+    <!-- ════════ 2. 티커 — 화면 끝에서 끝까지 흐르는 띠 ════════ -->
+    <section class="band ticker-band" aria-label="함께하는 활동">
+      <div class="ticker">
+        <div class="ticker-track">
+          <div class="ticker-set">
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>산책</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-glass"/></svg>동네에서 한잔</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-film"/></svg>영화</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-frame"/></svg>전시</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg>공연</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-utensils"/></svg>맛집 회식</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg>보드게임</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-cup"/></svg>카페 수다</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-sprout"/></svg>나들이</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg>불금 벙</span><span class="tick-dot"></span>
           </div>
-        </article>
-        <article class="card intro-card reveal d1">
-          <span class="ic-ic ic-tile" aria-hidden="true"><svg class="ic"><use href="#i-shield"/></svg></span>
-          <div>
-            <b>매너가 먼저예요</b>
-            <span>처음 오신 분도 어색하지 않아요. 서로 존중하는 분위기라 편하게 어울릴 수 있어요.</span>
-          </div>
-        </article>
-        <article class="card intro-card reveal d2">
-          <span class="ic-ic ic-tile" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span>
-          <div>
-            <b>벙비는 깔끔하게</b>
-            <span>1/N로 자동 정산해서 계산할 일이 없어요. 놀고 나서 돈 이야기로 어색해지지 않아요.</span>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- ── 활동 소개: 요즘 이런 걸 같이 해요 ── -->
-    <section class="section" aria-labelledby="actTitle">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">벙 종류</span>
-          <h2 id="actTitle">요즘 이런 걸 같이 해요</h2>
-          <p>운동부터 소소한 모임까지. 관심 가는 벙에 편하게 참여하면 돼요.</p>
-        </div>
-        <div class="act-row reveal">
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-walk"/></svg>산책</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-glass"/></svg>동네에서 한잔</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-film"/></svg>영화</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-frame"/></svg>전시</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-mic"/></svg>공연</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-utensils"/></svg>맛집 회식</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg>보드게임</span>
-          <span class="act-chip"><svg class="ic" aria-hidden="true"><use href="#i-cup"/></svg>카페 수다</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 온보딩: 처음이라면 이렇게 시작해요 ── -->
-    <section class="section is-tight" aria-labelledby="stepTitle">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">처음이신가요</span>
-          <h2 id="stepTitle">오늘 바로 시작해도 돼요</h2>
-          <p>순서대로 따라오면 오늘 올라온 벙에 바로 신청할 수 있어요.</p>
-        </div>
-        <div class="step-grid">
-          <div class="card is-lg step-card card-lift has-stretch reveal">
-            <span class="step-num" aria-hidden="true">1</span>
-            <h3>오픈채팅 입장</h3>
-            <p>동네친구들 오픈채팅에 들어와 닉네임을 양식에 맞춰 바꿔요. (예: 엑서 논현 남 88)</p>
-            <a class="step-link stretch" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          </div>
-          <div class="card is-lg step-card card-lift has-stretch reveal d1">
-            <span class="step-num" aria-hidden="true">2</span>
-            <h3>필독 1분 요약</h3>
-            <p>벙 참여와 정산, 매너 같은 기본만 훑어보면 준비가 끝나요.</p>
-            <a class="step-link stretch" href="guide.html">필독 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          </div>
-          <div class="card is-lg step-card card-lift has-stretch reveal d2">
-            <span class="step-num" aria-hidden="true">3</span>
-            <h3>첫 벙 참여</h3>
-            <p>관심 가는 벙을 찾았으면 카톡방에서 신청해요. 첫 벙은 편한 마음으로 오시면 돼요.</p>
-            <a class="step-link stretch" href="news.html">벙 소식 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <!-- 끊김 없이 이어지도록 같은 벌을 하나 더 둔다. 읽는 장치에는 감춘다. -->
+          <div class="ticker-set" aria-hidden="true">
+            <span class="tick-item"><svg class="ic"><use href="#i-walk"/></svg>산책</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-glass"/></svg>동네에서 한잔</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-film"/></svg>영화</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-frame"/></svg>전시</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-mic"/></svg>공연</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-utensils"/></svg>맛집 회식</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-dice"/></svg>보드게임</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-cup"/></svg>카페 수다</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-sprout"/></svg>나들이</span><span class="tick-dot"></span>
+            <span class="tick-item"><svg class="ic"><use href="#i-flame"/></svg>불금 벙</span><span class="tick-dot"></span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ── 최근 소식 (site_posts_v 실데이터 → 예시 폴백) ── -->
+    <!-- ════════ 3. 도해 — 벙 한 번이 굴러가는 순서 ════════ -->
+    <section class="section" aria-labelledby="flowTitle">
+      <div class="container flow-wrap">
+        <div class="flow-lead reveal">
+          <span class="eyebrow">어떻게 굴러가요</span>
+          <h2 class="lead-h" id="flowTitle">벙 한 번은<br />이렇게 끝나요</h2>
+          <p class="lead-p">
+            처음이어도 외울 게 없어요. 네 단계뿐이고, 마지막 계산은 사람이 하지 않아요.
+            닉네임만 양식에 맞추면 오늘 올라온 벙에 바로 신청할 수 있어요.
+          </p>
+          <a class="link-arrow" href="guide.html">필독에서 자세히 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+        </div>
+
+        <ol class="flow-steps">
+          <li class="flow-step reveal">
+            <span class="fs-art" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 10.5A3.5 3.5 0 0 1 9.5 7h21a3.5 3.5 0 0 1 3.5 3.5v13a3.5 3.5 0 0 1-3.5 3.5H17l-7 5.6V27H9.5A3.5 3.5 0 0 1 6 23.5z"/>
+                <path d="M20 12.4c-2.7 0-4.8 2.1-4.8 4.7 0 3.4 4.8 7.2 4.8 7.2s4.8-3.8 4.8-7.2c0-2.6-2.1-4.7-4.8-4.7z" stroke="#8A6D33"/>
+                <circle cx="20" cy="17" r="1.7" stroke="#8A6D33"/>
+              </svg>
+            </span>
+            <div class="fs-body">
+              <span class="fs-num">01</span>
+              <h3>카톡방에 벙이 올라와요</h3>
+              <p>날짜, 장소, 인원이 적힌 공지가 올라오면 댓글로 신청하면 끝이에요. 신입은 2주 안에 첫 벙에 한 번 나와 주세요.</p>
+            </div>
+          </li>
+
+          <li class="flow-step reveal d1">
+            <span class="fs-art" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="13" cy="13" r="4.2"/>
+                <path d="M5.5 29c.9-4.2 3.9-6.6 7.5-6.6s6.6 2.4 7.5 6.6"/>
+                <circle cx="26.5" cy="15" r="3.4"/>
+                <path d="M23.6 24.4c2.9-.6 5.9 1.2 7 5" stroke="#8A6D33"/>
+                <path d="M27 31.5h7M30.5 28v7" stroke="#8A6D33"/>
+              </svg>
+            </span>
+            <div class="fs-body">
+              <span class="fs-num">02</span>
+              <h3>동네에서 만나서 놀아요</h3>
+              <p>산책이든 한잔이든 전시든, 그날 정해진 대로 모여요. 처음 오신 분은 벙주가 먼저 챙겨 드려요.</p>
+            </div>
+          </li>
+
+          <li class="flow-step reveal d2">
+            <span class="fs-art" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 6h18v26l-3-2.2-3 2.2-3-2.2-3 2.2-3-2.2L11 34z"/>
+                <path d="M15.5 13h9M15.5 18.5h9"/>
+                <path d="M15.5 24h5" stroke="#8A6D33"/>
+                <path d="M28.5 21.5h5.5M31.2 18.8v5.4" stroke="#8A6D33"/>
+              </svg>
+            </span>
+            <div class="fs-body">
+              <span class="fs-num">03</span>
+              <h3>영수증만 넣으면 정산돼요</h3>
+              <p>차수별 금액과 참석자만 넣으면 누가 얼마를 보낼지 계산까지 끝나요. 아래 메시지가 그대로 만들어져서 카톡에 붙이기만 하면 돼요.</p>
+
+              <div class="chat-proof">
+                <div class="cp-head">
+                  <svg class="ic" aria-hidden="true"><use href="#i-receipt"/></svg>
+                  정산기가 만들어 주는 메시지
+                  <em>예시</em>
+                </div>
+                <p class="cp-body">9/19 논현 벙 정산 🧾
+1차 고깃집 168,000 · 6명
+2차 맥주 72,000 · 4명
+
+<b>@가온</b> 46,000
+<b>@도윤</b> 28,000
+<b>@서아</b> 46,000
+
+<i>카카오뱅크 3333-01-****567 엑서</i></p>
+              </div>
+            </div>
+          </li>
+
+          <li class="flow-step reveal d3">
+            <span class="fs-art" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="20" cy="20" r="13.5"/>
+                <path d="m13.8 20.4 4.4 4.4 8.2-9" stroke="#0D7A55" stroke-width="2.2"/>
+              </svg>
+            </span>
+            <div class="fs-body">
+              <span class="fs-num">04</span>
+              <h3>보내고 나면 끝이에요</h3>
+              <p>받은 사람이 체크하면 누가 아직 안 보냈는지 한눈에 보여요. 놀고 나서 돈 이야기로 어색해질 일이 없어요.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ════════ 4. 소식 — 카드 격자 대신 헤어라인 목록 ════════ -->
     <section class="section" aria-labelledby="newsTitle">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow" id="newsEyebrow">최근 올라온</span>
-          <h2 id="newsTitle">동네친구들 소식</h2>
-          <p>공지와 벙 모집, 다녀온 후기가 모이는 곳이에요. 새 소식은 여기서 먼저 확인해요.</p>
-        </div>
-        <div class="card is-lg reveal">
-          <!-- 다가오는 벙 — 소식 중 벙 모집 글에서 날짜가 지나지 않은 가장 가까운 하나.
-               없으면 아예 그리지 않는다(빈 카드도 띄우지 않는다). -->
-          <a class="next-bung" id="nextBung" hidden></a>
-          <div class="news-head">
-            <h3>최근 소식</h3>
-            <a class="news-more" href="news.html">소식 전체 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <div class="sec-bar reveal">
+          <div class="sb-l">
+            <span class="eyebrow" id="newsEyebrow">최근 올라온</span>
+            <h2 class="lead-h" id="newsTitle">동네친구들 소식</h2>
           </div>
-          <div class="news-list" id="newsList" aria-busy="true">
-            <!-- 스켈레톤 4줄 — 실데이터가 오면 통째로 교체된다.
-                 예전에는 여기에 실존하지 않는 글 4건이 박혀 있었다. 작성자도 반응 수도
-                 지어낸 값이었고, 서버 조회가 실패하면 그 가짜 글이 그대로 남았다. -->
-            <div class="news-item" aria-hidden="true">
-              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
-              <span class="news-body"><span class="skeleton skeleton-line" style="width:72%"></span>
-              <span class="skeleton skeleton-line" style="width:38%;margin-top:8px;height:11px"></span></span>
-              <span></span>
-            </div>
-            <div class="news-item" aria-hidden="true">
-              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
-              <span class="news-body"><span class="skeleton skeleton-line" style="width:60%"></span>
-              <span class="skeleton skeleton-line" style="width:32%;margin-top:8px;height:11px"></span></span>
-              <span></span>
-            </div>
-            <div class="news-item" aria-hidden="true">
-              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
-              <span class="news-body"><span class="skeleton skeleton-line" style="width:80%"></span>
-              <span class="skeleton skeleton-line" style="width:35%;margin-top:8px;height:11px"></span></span>
-              <span></span>
-            </div>
-            <div class="news-item" aria-hidden="true">
-              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
-              <span class="news-body"><span class="skeleton skeleton-line" style="width:66%"></span>
-              <span class="skeleton skeleton-line" style="width:30%;margin-top:8px;height:11px"></span></span>
-              <span></span>
-            </div>
+          <a class="link-arrow" href="news.html">소식 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+        </div>
+
+        <!-- 다가오는 벙 — 벙 모집 글 중 날짜가 지나지 않은 가장 가까운 하나.
+             없으면 아예 그리지 않는다(빈 카드도 띄우지 않는다). -->
+        <a class="next-bung reveal" id="nextBung" hidden></a>
+
+        <div class="news-list reveal" id="newsList" aria-busy="true">
+          <!-- 스켈레톤 4줄 — 실데이터가 오면 통째로 교체된다.
+               예전에는 여기에 실존하지 않는 글 4건이 박혀 있었다. -->
+          <div class="news-item" aria-hidden="true">
+            <span class="skeleton skeleton-block" style="width:44px;height:44px;border-radius:14px"></span>
+            <span class="news-body"><span class="skeleton skeleton-line" style="width:72%"></span>
+            <span class="skeleton skeleton-line" style="width:38%;margin-top:8px;height:11px"></span></span>
+            <span></span>
+          </div>
+          <div class="news-item" aria-hidden="true">
+            <span class="skeleton skeleton-block" style="width:44px;height:44px;border-radius:14px"></span>
+            <span class="news-body"><span class="skeleton skeleton-line" style="width:60%"></span>
+            <span class="skeleton skeleton-line" style="width:32%;margin-top:8px;height:11px"></span></span>
+            <span></span>
+          </div>
+          <div class="news-item" aria-hidden="true">
+            <span class="skeleton skeleton-block" style="width:44px;height:44px;border-radius:14px"></span>
+            <span class="news-body"><span class="skeleton skeleton-line" style="width:80%"></span>
+            <span class="skeleton skeleton-line" style="width:35%;margin-top:8px;height:11px"></span></span>
+            <span></span>
+          </div>
+          <div class="news-item" aria-hidden="true">
+            <span class="skeleton skeleton-block" style="width:44px;height:44px;border-radius:14px"></span>
+            <span class="news-body"><span class="skeleton skeleton-line" style="width:66%"></span>
+            <span class="skeleton skeleton-line" style="width:30%;margin-top:8px;height:11px"></span></span>
+            <span></span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ── 이번 주 분위기 (대시보드 맛보기 · 실제 인물) ── -->
-    <section class="section is-tight" aria-labelledby="vibeTitle">
-      <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">숫자로 보는</span>
-          <h2 id="vibeTitle">이번 주 우리 분위기</h2>
-          <p>발행된 리포트에서 딱 세 가지만 뽑았어요. 자세한 내용은 대시보드에서 볼 수 있어요.</p>
+    <!-- ════════ 5. 숫자 밴드 — 화면을 덮는 어두운 띠 ════════ -->
+    <section class="band num-band" aria-label="이번 주 우리 분위기">
+      <div class="container num-grid">
+        <div class="num-lead">
+          <span class="eyebrow"><svg class="ic is-sm" aria-hidden="true"><use href="#i-crown"/></svg> 이번 활약왕</span>
+          <!-- 기본값은 사람 이름이 아니다. 리포트를 한 번도 못 불러와도 실존 인물처럼 보이면 안 된다. -->
+          <h2 class="mvp-name" id="mvpName">아직 없어요</h2>
+          <p class="mvp-line" id="mvpLine">리포트가 올라오면 여기에 이번 주 가장 많이 떠든 친구가 뜹니다.</p>
+          <p class="mvp-src" id="mvpSrc">아직 발행된 리포트가 없어요</p>
+          <a class="link-arrow" href="report.html">대시보드에서 자세히 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
-        <div class="bento">
-          <a class="bento-card vibe-card is-brand bento-2x reveal" href="report.html" aria-label="이번 활약왕, 운영 대시보드로 이동">
-            <span class="badge-soft is-cream" style="align-self:flex-start;margin-bottom:16px"><svg class="ic is-sm" aria-hidden="true"><use href="#i-crown"/></svg> 이번 활약왕</span>
-            <div class="vibe-top">
-              <span class="vibe-ava ic-tile" aria-hidden="true"><svg class="ic"><use href="#i-trophy"/></svg></span>
-              <div>
-                <!-- 기본값은 사람 이름이 아니다. 예전에는 맛보기 데이터의 '민지 · 1,046마디'가
-                     그대로 박혀 있어서, 리포트를 한 번도 못 불러와도 실존 인물처럼 보였다. -->
-                <div class="vibe-name" id="mvpName">아직 없어요</div>
-                <div class="vibe-line" id="mvpLine">리포트가 올라오면 보여요</div>
-              </div>
-            </div>
-            <div class="vibe-src" id="mvpSrc">아직 발행된 리포트가 없어요</div>
-            <span class="vibe-go">대시보드에서 자세히 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-          </a>
 
-          <!-- 여기는 카드가 아니라 통계 카드 두 장을 담는 칸이다. 예전에는 .bento-card 를 쓰고
-               인라인으로 배경·테두리·그림자를 전부 지웠는데, :hover 의 들어올림까지는 못 지워서
-               누를 수도 없는 자리가 마우스만 올려도 5px 씩 튀었다. 칸 역할만 남긴다. -->
-          <div class="bento-2x reveal d1">
-            <div class="vibe-stats" style="height:100%">
-              <div class="vibe-stat">
-                <span class="vs-top"><span class="vs-ic is-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>동네친구들 온도</span>
-                <div class="vs-value is-empty"><span id="stTemp">아직 없어요</span><small>°</small></div>
-                <span class="vs-foot">대화가 따뜻할수록 올라가요</span>
-              </div>
-              <div class="vibe-stat">
-                <span class="vs-top"><span class="vs-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg></span>함께한 친구</span>
-                <div class="vs-value is-empty"><span id="stMembers">아직 없어요</span><small>명</small></div>
-                <span class="vs-foot" id="stNewFoot">요즘 함께하는 친구들</span>
-              </div>
-            </div>
+        <dl class="num-stats">
+          <div class="num-stat">
+            <dt class="ns-k">
+              <svg class="ic is-sm" aria-hidden="true"><use href="#i-flame"/></svg>
+              <span>동네친구들 온도
+                <span class="ns-foot">대화가 따뜻할수록 올라가요</span>
+              </span>
+            </dt>
+            <dd class="vs-value is-empty"><span id="stTemp">아직 없어요</span><small>°</small></dd>
           </div>
-        </div>
+          <div class="num-stat">
+            <dt class="ns-k">
+              <svg class="ic is-sm" aria-hidden="true"><use href="#i-users"/></svg>
+              <span>함께한 친구
+                <span class="ns-foot" id="stNewFoot">요즘 함께하는 친구들</span>
+              </span>
+            </dt>
+            <dd class="vs-value is-empty"><span id="stMembers">아직 없어요</span><small>명</small></dd>
+          </div>
+          <div class="num-stat">
+            <dt class="ns-k">
+              <svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg>
+              <span><span id="vibeTitle">주고받은 대화</span>
+                <span class="ns-foot">발행된 리포트 기간 기준</span>
+              </span>
+            </dt>
+            <dd class="vs-value is-empty"><span id="stMsg">아직 없어요</span><small>건</small></dd>
+          </div>
+        </dl>
       </div>
     </section>
 
-    <!-- ── 기능 허브 (Bento · 6개) ── -->
+    <!-- ════════ 6. 목적지 — 세로로 긴 패널 ════════ -->
     <section class="section" aria-labelledby="hubTitle">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">둘러보기</span>
-          <h2 id="hubTitle">필요한 건 여기서 다 돼요</h2>
-          <p>로그인도 앱 설치도 없어요. 누르면 바로 열려요.</p>
+        <div class="sec-bar reveal">
+          <div class="sb-l">
+            <span class="eyebrow">둘러보기</span>
+            <h2 class="lead-h" id="hubTitle">필요한 건 여기서 다 돼요</h2>
+          </div>
+          <a class="link-arrow" href="guide.html">처음이면 필독부터 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
 
-        <div class="bento">
-          <a class="bento-card feature-card is-lead bento-2x reveal" href="report.html" aria-label="운영 대시보드로 이동">
-            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
+        <div class="dest-rail">
+          <a class="dest is-lead reveal" href="report.html">
+            <span class="dest-cap" aria-hidden="true">
+              <!-- 막대 다섯에 추세선 하나. 대시보드가 무엇을 보여주는지 형태로만 말한다. -->
+              <svg viewBox="0 0 220 104" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M44 84h132" stroke-opacity="0.3"/>
+                <rect x="54" y="58" width="16" height="26" rx="4.5" stroke-opacity="0.55"/>
+                <rect x="82" y="50" width="16" height="34" rx="4.5" stroke-opacity="0.55"/>
+                <rect x="110" y="54" width="16" height="30" rx="4.5" stroke-opacity="0.55"/>
+                <rect x="138" y="44" width="16" height="40" rx="4.5" stroke="#D8B87C"/>
+                <path d="M62 38 90 28l28 4 28-12" stroke="#D8B87C" stroke-opacity="0.65"/>
+                <circle cx="146" cy="20" r="3.4" fill="#D8B87C" stroke="none"/>
+              </svg>
+            </span>
+            <span class="dest-ic" aria-hidden="true"><svg class="ic"><use href="#i-chart"/></svg></span>
             <h3>운영 대시보드</h3>
-            <p>활약왕, 온도, 인기 화제까지 지난 리포트를 모두 볼 수 있어요.</p>
-            <span class="fc-go">요즘 분위기 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <p>활약왕, 온도, 인기 화제까지 지난 리포트를 모두 봐요.</p>
+            <span class="d-go">요즘 분위기 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></span>
           </a>
 
-          <a class="bento-card feature-card bento-2x reveal d1" href="guide.html" aria-label="필독으로 이동">
-            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
+          <a class="dest reveal d1" href="guide.html">
+            <span class="dest-cap" aria-hidden="true">
+              <!-- 펼친 책과 책갈피 -->
+              <svg viewBox="0 0 220 104" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M110 34c-9.5-6.5-21-8.5-34-7.5v48c13-1 24.5 1 34 7.5 9.5-6.5 21-8.5 34-7.5v-48c-13-1-24.5 1-34 7.5z"/>
+                <path d="M110 34v48" stroke-opacity="0.6"/>
+                <path d="M86 44h15M86 54h15M124 44h15M124 54h12" stroke-opacity="0.4"/>
+                <path d="M152 22v26l7-6 7 6V22" stroke="#D8B87C"/>
+              </svg>
+            </span>
+            <span class="dest-ic" aria-hidden="true"><svg class="ic"><use href="#i-book"/></svg></span>
             <h3>필독</h3>
-            <p>맨 위 1분 요약만 봐도 충분해요. 궁금한 건 검색해서 찾아봐요.</p>
-            <span class="fc-go">가이드 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <p>맨 위 1분 요약만 봐도 충분해요. 궁금한 건 검색해서 찾아요.</p>
+            <span class="d-go">가이드 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></span>
           </a>
 
-          <a class="bento-card feature-card reveal d2" href="calculator.html" aria-label="벙비 정산기로 이동">
-            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg></span>
+          <a class="dest reveal d2" href="calculator.html">
+            <span class="dest-cap" aria-hidden="true">
+              <!-- 영수증 한 장이 세 몫으로 갈라진다 -->
+              <svg viewBox="0 0 220 104" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M58 24a4 4 0 0 1 4-4h38a4 4 0 0 1 4 4v58l-7-5-7 5-7-5-7 5-7-5-7 5z"/>
+                <path d="M69 38h24M69 48h24M69 58h15" stroke-opacity="0.4"/>
+                <path d="M112 52h10M122 52V36h6M122 52v16h6M122 52h6" stroke="#D8B87C"/>
+                <circle cx="142" cy="36" r="7.5" stroke="#D8B87C" stroke-opacity="0.85"/>
+                <circle cx="142" cy="52" r="7.5" stroke="#D8B87C" stroke-opacity="0.85"/>
+                <circle cx="142" cy="68" r="7.5" stroke="#D8B87C" stroke-opacity="0.85"/>
+              </svg>
+            </span>
+            <span class="dest-ic" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span>
             <h3>벙비 정산기</h3>
             <p>차수별 1/N을 넣으면 카톡에 붙일 수 있게 정리돼요.</p>
-            <span class="fc-go">정산 시작 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <span class="d-go">정산 시작 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></span>
           </a>
 
-          <a class="bento-card feature-card reveal d3" href="news.html" aria-label="소식으로 이동">
-            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <a class="dest reveal d3" href="news.html">
+            <span class="dest-cap" aria-hidden="true">
+              <!-- 확성기와 퍼져 나가는 소리 -->
+              <svg viewBox="0 0 220 104" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M68 42 106 26v52L68 62z"/>
+                <path d="M68 42h-8a7 7 0 0 0-7 7v6a7 7 0 0 0 7 7h8z"/>
+                <path d="M80 64v12a7 7 0 0 0 14 0v-7" stroke-opacity="0.6"/>
+                <path d="M120 42a16 16 0 0 1 0 20" stroke="#D8B87C"/>
+                <path d="M132 33a30 30 0 0 1 0 38" stroke="#D8B87C" stroke-opacity="0.55"/>
+                <path d="M144 24a44 44 0 0 1 0 56" stroke="#D8B87C" stroke-opacity="0.28"/>
+              </svg>
+            </span>
+            <span class="dest-ic" aria-hidden="true"><svg class="ic"><use href="#i-megaphone"/></svg></span>
             <h3>소식</h3>
-            <p>댓글도 달고 리액션도 눌러요. 로그인 없이 바로 써요.</p>
-            <span class="fc-go">소식 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <p>댓글도 달고 반응도 눌러요. 로그인 없이 바로 써요.</p>
+            <span class="d-go">소식 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></span>
           </a>
 
-          <!-- 게임 자리였다. 탭에서는 내려놓고 홈에서만 홍보하고 있었는데,
-               곧 정리할 것을 권하는 셈이라 뺐다. 반대로 맛집은 탭까지 올려 두고
-               허브에는 없어서, 홈에서 찾아갈 길이 없었다. -->
-          <a class="bento-card feature-card reveal d4" href="places.html" aria-label="맛집으로 이동">
-            <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg></span>
+          <a class="dest reveal d4" href="places.html">
+            <span class="dest-cap" aria-hidden="true">
+              <!-- 접시 한 벌과, 다녀온 자리를 가리키는 핀 -->
+              <svg viewBox="0 0 220 104" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="112" cy="56" r="25"/>
+                <circle cx="112" cy="56" r="16" stroke-opacity="0.4"/>
+                <path d="M72 28v15a5.5 5.5 0 0 0 11 0V28M77.5 48.5V84"/>
+                <path d="M150 28c-4.5 3.5-7 8.5-7 14.5s2.8 9 7 9V84"/>
+                <path d="M172 20c-5.5 0-10 4.4-10 9.9 0 7 10 14.9 10 14.9s10-7.9 10-14.9c0-5.5-4.5-9.9-10-9.9z" stroke="#D8B87C"/>
+                <circle cx="172" cy="29.6" r="3.3" stroke="#D8B87C"/>
+              </svg>
+            </span>
+            <span class="dest-ic" aria-hidden="true"><svg class="ic"><use href="#i-utensils"/></svg></span>
             <h3>맛집</h3>
-            <p>벙에서 다녀온 곳만 모았어요. 다녀오신 곳은 누구나 올릴 수 있어요.</p>
-            <span class="fc-go">맛집 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <p>벙에서 다녀온 곳만 모았어요. 누구나 올릴 수 있어요.</p>
+            <span class="d-go">맛집 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></span>
           </a>
         </div>
       </div>
     </section>
 
-    <!-- ── 마무리 CTA ── -->
-    <section class="section" aria-labelledby="ctaTitle">
+    <!-- ════════ 7. 맺음 ════════ -->
+    <section class="band cta-band" aria-labelledby="ctaTitle">
       <div class="container">
-        <div class="cta-band reveal">
-          <i class="glow-orb" style="--orb-size:340px; --orb-color:rgba(185,128,217,0.5); right:-80px; top:-140px" aria-hidden="true"></i>
-          <h2 id="ctaTitle">오늘, 동네친구 한 명 만들어볼까요?</h2>
-          <p>한 번 얼굴 보고 나면 그다음은 훨씬 편해져요.</p>
-          <div class="hero-actions">
-            <a class="btn btn-hero is-lg" href="guide.html">필독부터 보기</a>
-            <a class="btn btn-glass is-lg" href="news.html">벙 소식 보기</a>
-          </div>
+        <span class="cta-rule" aria-hidden="true"></span>
+        <h2 id="ctaTitle">오늘, 동네친구 한 명<br />만들어 볼까요?</h2>
+        <p>한 번 얼굴 보고 나면 그다음은 훨씬 편해져요. 오픈채팅은 열려 있어요.</p>
+        <div class="hero-actions">
+          <a class="btn btn-hero is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
+          <a class="btn btn-glass is-lg" href="news.html">벙 소식 보기</a>
         </div>
       </div>
     </section>
@@ -570,7 +922,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ════════ 홈 데이터 — 발행 리포트(활약왕·온도) + 최근 소식, 실데이터 → 예시 폴백 ════════ -->
+  <!-- ════════ 홈 데이터 — 발행 리포트(활약왕·온도) + 최근 소식 ════════ -->
   <script>
     (function () {
       "use strict";
@@ -616,7 +968,6 @@
          되지만, 인사말은 한 시간쯤 어긋나도 깨지지 않는다.                                   */
       var LAST_VISIT_KEY = "excer_last_visit";
 
-      // 한국 시각 기준 구간. 대시보드가 쓰는 5구간에 포개지도록 '낮'만 둘로 쪼갰다.
       function kstHour() {
         try {
           var h = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul", hour: "2-digit", hour12: false });
@@ -653,14 +1004,12 @@
         var last = null;
         try { last = localStorage.getItem(LAST_VISIT_KEY); } catch (e) {}
         // 저장소를 못 쓰면 재방문 판정을 포기하고 시간대 인사말만 쓴다.
-        // 첫 방문으로 단정하면 매일 오는 멤버에게 매일 처음이라고 인사하게 된다.
         var text;
         if (last === null) {
           text = "처음 오셨네요, 반가워요";
         } else {
           var set = GREETINGS[bandOf(h)] || GREETINGS.morning;
           // 같은 날 다시 와도 같은 문장이 나오도록 날짜를 씨앗으로 쓴다.
-          // 새로고침할 때마다 문장이 춤추면 신뢰가 아니라 산만함이 된다.
           var seed = parseInt(String(today).replace(/-/g, ""), 10) || 0;
           text = set[seed % set.length];
           if (last && last !== today) text = "또 오셨네요";
@@ -672,8 +1021,7 @@
       applyGreeting();
 
       /* 기간 문구에서 화면에 쓸 단어를 뽑는다.
-         '2026년 6월' → '6월' / '6/1~6/7' 처럼 구간이면 '이 기간' / 못 읽으면 '최근'.
-         대시보드도 같은 방식으로 기간 단어를 바꾸는데 홈만 고정이라 서로 어긋나 있었다. */
+         '2026년 6월' → '6월' / '6/1~6/7' 처럼 구간이면 '이 기간' / 못 읽으면 '최근'. */
       function periodWord(period, bare) {
         var p = String(period || "").trim();
         var m = /(\d{1,2})\s*월/.exec(p);
@@ -681,15 +1029,11 @@
         return bare ? word : (word + " 대화");
       }
 
-      /* ══════════ 리포트 신선도 (라이브 신호) ══════════
-         updated_at 을 받아만 놓고 한 번도 쓰지 않고 있었다. 그래서 방문자는 이 숫자가
-         어제 것인지 석 달 전 것인지 알 수 없었다. 신선도 표시는 숫자를 믿게 만들 뿐 아니라,
-         그 자체가 '이 사이트는 주기적으로 갱신된다'는 신호로 작동한다.                       */
+      /* ══════════ 리포트 신선도 ══════════ */
       function daysSinceKST(iso) {
         if (!iso) return null;
         var t = new Date(iso).getTime();
         if (!t) return null;
-        // 시·분을 섞으면 '0.8일 전' 같은 값이 나온다. 한국 날짜끼리의 차이로만 센다.
         function kstDate(ms) {
           try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
           catch (e) { return new Date(ms).toISOString().slice(0, 10); }
@@ -713,8 +1057,7 @@
         var label = n === 0 ? "오늘 발행" : (n === 1 ? "어제 업데이트" : n + "일 전 업데이트");
         var html = '<span class="fresh-badge ' + tone + '">' + label + "</span>";
         if (period) html += " " + esc(period) + " 리포트";
-        // 오래됐다고 사과하지 않는다. 사과는 문제를 더 크게 보이게 만든다.
-        // 사실을 적고 다음을 안내하면, 오래된 날짜가 오히려 '관리되고 있다'는 신호로 뒤집힌다.
+        // 오래됐다고 사과하지 않는다. 사실을 적고 다음을 안내한다.
         if (n > 14) html += '<br /><span class="fresh-next">새 리포트가 올라오면 여기부터 바뀌어요</span>';
         el.innerHTML = html;
       }
@@ -736,15 +1079,11 @@
 
         // 여기서부터는 '발행된 리포트'일 때만 채운다.
         // 맛보기 데이터로 규모를 말하지 않는다 — 숫자도, 사람 이름도.
-        // 이름이 숫자보다 나쁘다. 방문자는 '민지'를 이 방의 실제 멤버로 읽는다.
-        // 발행 전에는 HTML 에 적어 둔 빈 상태를 그대로 둔다.
-        // 맛보기라는 사실은 renderFreshness 가 배지로 이미 말했다.
         if (source !== "live") return;
 
-        // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있어서,
-        // '이번 달 대화'처럼 고정해 두면 어느 쪽이든 한쪽은 반드시 거짓이 된다.
+        // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있다.
         setText("heroMsgWord", periodWord(period));
-        setText("vibeTitle", periodWord(period, true) + " 우리 분위기");
+        setText("vibeTitle", periodWord(period, true) + " 대화");
         var box = document.getElementById("heroStats");
         var note = document.getElementById("heroStatsNote");
         if (box) box.hidden = false;
@@ -755,6 +1094,7 @@
 
         reCount("stTemp", temp, { decimals: 1 });
         if (members.length) reCount("stMembers", members.length, {});
+        if (total) reCount("stMsg", total, {});
         setText("stNewFoot", newCnt ? ("최근 새로 온 친구 " + newCnt + "명") : "요즘 함께하는 친구들");
 
         if (members.length) {
@@ -767,28 +1107,23 @@
         }
       }
 
-      // 명시적으로 최신 1건만 받는다. 예전에는 order 도 limit 도 없이 전체 발행분을 받아
-      // 뷰 내부 정렬에 기대고 있었고, stats 는 리포트 하나가 수십 KB라 쌓일수록 첫 화면이 무거워졌다.
+      // 명시적으로 최신 1건만 받는다. stats 는 리포트 하나가 수십 KB라 쌓일수록 첫 화면이 무거워진다.
       supaGet("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at&order=updated_at.desc&limit=1")
         .then(function (rows) {
           var live = (rows || []).filter(function (x) { return isV2(x.stats) || isV1(x.stats); });
-          // 기간 문구는 컬럼을 1순위로 쓴다. 관리자가 직접 입력한 값이자 발행의 고유 키라
-          // stats 안에 든 값보다 믿을 만하다(둘이 어긋나면 화면이 조용히 퇴화했다).
           if (live.length) return { stats: live[0].stats, source: "live", updatedAt: live[0].updated_at, period: live[0].period_label };
           return { source: "none" };
         })
         .catch(function () { return { source: "offline" }; })
         .then(function (res) {
           if (res && res.source === "live") { renderReport(res); return; }
-          // 맛보기 데이터는 더 이상 받지 않는다. 어차피 화면에 쓰지 않으므로
-          // 받아 봐야 첫 화면만 무거워진다. 대신 왜 비어 있는지를 말한다 —
-          // '아직 안 올렸다'와 '지금 못 불러왔다'는 방문자가 할 일이 다르다.
+          // 왜 비어 있는지를 말한다 — '아직 안 올렸다'와 '지금 못 불러왔다'는 할 일이 다르다.
           var el = document.getElementById("mvpSrc");
           if (el) el.textContent = res && res.source === "offline"
             ? "지금은 불러오지 못했어요" : "아직 발행된 리포트가 없어요";
         });
 
-      /* ══════════ 2) 최근 소식 (site_posts_v → 예시 폴백) ══════════ */
+      /* ══════════ 2) 최근 소식 ══════════ */
       var CAT_ICON = { "공지": "megaphone", "벙 소식": "party", "후기": "sparkle", "정보": "bulb", "자유": "chat" };
       function topReaction(reactions) {
         if (!reactions || typeof reactions !== "object") return "";
@@ -796,7 +1131,7 @@
         Object.keys(reactions).forEach(function (k) { if ((reactions[k] || 0) > bestV) { bestV = reactions[k]; bestK = k; } });
         return bestV > 0 ? (bestK + " " + bestV) : "";
       }
-      // 상대시간 — 소식 페이지와 같은 단계를 쓴다(방금 전 / N분 전 / N시간 전 / N일 전 / 날짜)
+      // 상대시간 — 소식 페이지와 같은 단계를 쓴다
       function relTime(iso) {
         if (!iso) return "";
         var t = new Date(iso).getTime();
@@ -815,8 +1150,6 @@
         var host = document.getElementById("newsList");
         if (!host) return;
         host.removeAttribute("aria-busy");
-        // 바깥이 이미 카드다. 여기에 또 카드를 넣으면 테두리가 두 겹으로 겹쳐
-        // 빈 자리가 더 허전해 보인다. 안쪽은 테두리 없이 글만 둔다.
         host.innerHTML =
           '<div class="news-empty"><div class="empty-state">' +
           "<strong>" + esc(title) + "</strong><p>" + esc(sub) + "</p>" +
@@ -824,8 +1157,7 @@
           "</div></div>";
       }
 
-      /* 다가오는 벙 — 벙 모집 글의 meta 에서 오늘 이후 가장 가까운 날짜를 고른다.
-         홈에서 "다음에 뭐 하지"에 답하는 유일한 자리다. */
+      /* 다가오는 벙 — 벙 모집 글의 meta 에서 오늘 이후 가장 가까운 날짜를 고른다. */
       function renderNextBung(posts) {
         var el = document.getElementById("nextBung");
         if (!el) return;
@@ -861,14 +1193,13 @@
           newsNotice("아직 올라온 소식이 없어요", "공지도 좋고 벙 소식도 좋아요. 첫 소식을 남겨볼까요?", "첫 소식 쓰기", "news.html");
           return;
         }
-        // 고정(공지) 우선 + 최신순 상위 4개
+        // 고정(공지) 우선 + 최신순 상위 5개
         var list = posts.slice().sort(function (a, b) {
           if ((b.pinned ? 1 : 0) !== (a.pinned ? 1 : 0)) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
           return String(b.created_at || "").localeCompare(String(a.created_at || ""));
-        }).slice(0, 4);
+        }).slice(0, 5);
 
-        // eyebrow 를 근거 있는 말로 바꾼다. 예전엔 무조건 '방금 올라온'이었는데,
-        // 두 달 전 글만 있어도 그렇게 적혀 있었다. 이 한 줄도 작은 라이브 신호가 된다.
+        // eyebrow 를 근거 있는 말로 바꾼다. 예전엔 두 달 전 글만 있어도 '방금 올라온'이었다.
         var newest = list.reduce(function (t, p) {
           var v = new Date(p.created_at || 0).getTime();
           return v > t ? v : t;
@@ -883,9 +1214,7 @@
           var icon = CAT_ICON[cat] || "chat";
           var react = topReaction(p.reactions);
           // 글 단위 링크 — 제목을 보고 누른 사람이 그 글로 바로 가야 한다.
-          // 예전에는 전부 목록 맨 위로만 보내서, 누른 글을 다시 찾아야 했다.
           var href = p.id ? "news.html#post-" + p.id : "news.html";
-          // 반응이 아직 없는 글일수록 오른쪽 칸이 비어 허전해 보이는 역설이 있었다.
           // 반응이 없으면 그 자리에 올라온 시각을 넣는다 — 항상 채워진다.
           var tail = react ? esc(react) : relTime(p.created_at);
           return '<a class="news-item" href="' + href + '">' +
@@ -900,8 +1229,7 @@
       supaGet("/rest/v1/site_posts_v?select=id,category,title,author,pinned,meta,created_at,reactions&order=pinned.desc,created_at.desc&limit=12")
         .then(renderNews)
         .catch(function () {
-          // 예전에는 여기서 아무것도 하지 않아, HTML 에 박힌 가짜 소식 4건이 그대로 남았다.
-          // 실패를 숨기려다 실존하지 않는 글을 계속 보여주는 쪽이 더 나빴다.
+          // 실패를 숨기려다 실존하지 않는 글을 계속 보여주는 쪽이 더 나쁘다.
           newsNotice("소식을 불러오지 못했어요", "잠시 뒤 다시 확인해 주세요.", "소식 페이지 열기", "news.html");
         });
     })();
@@ -987,7 +1315,6 @@
         }, { threshold: 0.4 });
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
