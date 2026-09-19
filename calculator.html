@@ -1053,7 +1053,7 @@
               if (String(roundsOut[ri].id) === wantRound) { R = roundsOut[ri]; break; }
             }
             if (!R) {
-              warnings.push("추가·차감: \"" + name + "\" 항목이 가리키는 차수를 찾지 못해 전체 기준으로 계산했어요.");
+              warnings.push("추가·차감: " + name + " 님 항목이 가리킨 차수가 지금은 계산에 없어요(금액이 비었거나 지워졌어요). 전체 참여자 기준으로 나눴어요.");
             } else if (R.active.indexOf(name) < 0) {
               warnings.push("추가·차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았어요.");
               adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
@@ -1483,11 +1483,21 @@
         /* 차수 고르기. 비우면 '전체 차수' — 택시비처럼 한 차수에 매이지 않는 항목이다.
            차수를 고르면 그 차수에 있던 사람끼리만 나눠 갖는다. */
         let rOpts = `<option value=""${!a.round ? " selected" : ""}>전체 차수</option>`;
+        let roundListed = false;
         state.rounds.forEach((r, i) => {
           if (!Number(r.amount)) return;                       // 금액 없는 차수는 계산에 안 들어간다
           const label = `${i + 1}차${r.name ? " " + r.name : ""}`;
+          if (a.round === r.id) roundListed = true;
           rOpts += `<option value="${escapeHTML(r.id)}"${a.round === r.id ? " selected" : ""}>${escapeHTML(label)}</option>`;
         });
+        /* 고른 차수의 금액을 지우면 그 항목이 목록에서 사라진다.
+           그대로 두면 칸에는 '전체 차수'가 찍히는데 속으로는 그 차수를 가리키고 있어,
+           금액이 왜 달라졌는지 알 길이 없다. 남겨 두고 이유를 적는다. */
+        if (a.round && !roundListed) {
+          const idx = state.rounds.findIndex((r) => r.id === a.round);
+          const lost = idx >= 0 ? `${idx + 1}차 (금액 없음)` : "지워진 차수";
+          rOpts += `<option value="${escapeHTML(a.round)}" selected>${escapeHTML(lost)}</option>`;
+        }
 
         return `
         <div class="adj-row" data-adj-id="${escapeHTML(a.id)}">
@@ -1752,7 +1762,12 @@
         if (c.adjustments.length) {
           L.push("");
           L.push("➕ 추가 · 차감");
-          c.adjustments.forEach((a) => L.push(`• ${at(a.name)} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원${a.reason ? ` (${a.reason})` : ""}${a.applied ? "" : " — 미반영"}`));
+          c.adjustments.forEach((a) => L.push(
+            `• ${at(a.name)} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원` +
+            `${a.reason ? ` (${a.reason})` : ""}` +
+            // 어느 차수에서 오간 돈인지가 빠지면 받는 사람이 확인할 방법이 없다
+            `${a.roundLabel ? ` · ${a.roundLabel}` : " · 전체 차수"}` +
+            `${a.applied ? "" : " — 미반영"}`));
         }
         if (c.totalAmount) {
           L.push("");
@@ -2300,7 +2315,7 @@
       /* 차수 */
       $("addRoundBtn").addEventListener("click", () => {
         state.rounds.push(createRound());
-        renderRounds(); renderAndSave();
+        renderRounds(); renderAdjustments(); renderAndSave();
       });
 
       $("roundsHost").addEventListener("input", (e) => {
@@ -2309,8 +2324,21 @@
         const round = findRound(id);
         if (!round) return;
         if (field === "round-name") round.name = t.value;
-        if (field === "round-amount") { round.amount = toAmount(t.value); updateRoundMeta(id); }
+        if (field === "round-amount") {
+          const counted = Number(round.amount) > 0;
+          round.amount = toAmount(t.value);
+          updateRoundMeta(id);
+          /* 금액이 0이 되면 이 차수는 계산에서 빠지고, 추가·차감의 차수 목록에서도 사라진다.
+             그 순간에만 목록을 다시 만든다 — 글자 칠 때마다 다시 그리면 낭비다. */
+          if (counted !== (round.amount > 0)) renderAdjustments();
+        }
         renderAndSave();
+      });
+
+      /* 차수 이름을 바꾸면 추가·차감의 차수 목록에 적힌 이름도 따라가야 한다.
+         치는 동안 다시 그리면 낭비라 칸에서 손을 뗄 때 한 번만 맞춘다. */
+      $("roundsHost").addEventListener("focusout", (e) => {
+        if (e.target.dataset.field === "round-name") renderAdjustments();
       });
 
       $("roundsHost").addEventListener("change", (e) => {
@@ -2362,7 +2390,7 @@
           // 금액이 왜 달라졌는지 알 수 없다.
           let moved = 0;
           state.adjustments.forEach((a) => { if (a.round === goneId) { a.round = ""; moved++; } });
-          renderRounds(); renderAndSave();
+          renderRounds(); renderAdjustments(); renderAndSave();
           if (moved) showToast(`지운 차수에 달려 있던 추가·차감 ${moved}건을 '전체 차수'로 옮겼어요.`);
         }
       });
@@ -2377,7 +2405,21 @@
         if (!field || !id) return;
         const adj = findAdj(id);
         if (!adj) return;
-        if (field === "adj-amount") adj.amount = toAmount(t.value);
+        if (field === "adj-amount") {
+          // "-3000" 처럼 빼기표를 같이 치는 사람이 많다. ± 버튼을 못 보고 +로 들어가면
+          // 금액이 반대로 움직이므로, 앞에 붙은 빼기표는 차감으로 읽는다.
+          if (/^\s*[-−]/.test(t.value) && adj.sign !== -1) {
+            adj.sign = -1;
+            // 여기서 다시 그리면 글자를 치는 중에 커서가 튄다 — 버튼만 손으로 바꾼다
+            const btn = t.closest(".adj-row").querySelector("[data-action='adj-sign']");
+            if (btn) {
+              btn.classList.remove("is-plus"); btn.classList.add("is-minus");
+              btn.textContent = "−";
+              btn.setAttribute("aria-label", "차감(−) — 누르면 추가(+)로");
+            }
+          }
+          adj.amount = toAmount(t.value);
+        }
         if (field === "adj-reason") adj.reason = t.value;
         renderAndSave();
       });
