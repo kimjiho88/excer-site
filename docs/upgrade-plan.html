@@ -406,11 +406,14 @@ footer{
       </p>
 
       <div class="card sev low">
-        <div class="card-h"><span class="tag">결정 1</span>게임 저장은 완전 로컬. 대안을 병기하지 않습니다</div>
-        <p>익명 인증·서버 랭킹까지 전부 끊습니다. "랭킹은 아까우니 계정만 화면에서 숨기자"는 절충안을
-        각주로라도 남기지 않습니다. 남겨 두면 실행 단계에서 되살아나고, 그러면 이번 정비의
-        <strong>보안 성과 대부분이 사라집니다.</strong></p>
-        <p><strong>번복 조건</strong> — 없음. 이미 확정된 방향입니다.</p>
+        <div class="card-h"><span class="tag">결정 1</span>현재 게임은 고치지 않습니다. 서버만 끕니다</div>
+        <p>현재 게임 3종은 <strong>더 손대지 않습니다.</strong> 안정화 이후 완전히 새로운 게임을 하나 만들고,
+        그때 기존 게임을 함께 정리합니다. 따라서 '로컬 저장 전용으로 전환'하는 작업은 하지 않습니다 —
+        <strong>없앨 것을 전환하는 건 헛일입니다.</strong></p>
+        <p>지금 하는 일은 <strong>서버 쪽 하나뿐</strong>입니다 — 쌓인 명부 데이터를 지우고 인증을 끕니다.
+        나중에 HTML을 지워도 <strong>데이터베이스 행은 저절로 사라지지 않기 때문에</strong> 이것만은 지금 해야 합니다.
+        그리고 인증을 끄면 <strong>로그인 화면이 저절로 사라집니다</strong>(6장).</p>
+        <p><strong>번복 조건</strong> — 없음.</p>
       </div>
 
       <div class="card sev low">
@@ -420,6 +423,8 @@ footer{
         푸터는 96px 한 줄치만 비워 둬서, 8개 페이지에서 동시에 하단이 가려집니다.
         게임을 내리고 맛집을 올리면 <strong>CSS 변경이 0</strong>입니다. "더보기 시트" 신설안은 폐기합니다 —
         새 컴포넌트를 8벌 복제해야 하는데 그건 전제 4와 정면으로 부딪칩니다.</p>
+        <p>게임 페이지를 안정화 후에 정리하기로 했으므로(결정 1), <strong>맛집 탭 출시 시점과 게임 탭 회수 시점을
+        하나로 묶습니다.</strong> 두 작업이 같은 칸을 놓고 다투지 않게 되고, 탭 교체가 한 번에 끝납니다.</p>
         <p><strong>번복 조건</strong> — 맛집 탭 출시 2주 뒤 맛집 유입이 직전 게임 탭 유입의 절반에 못 미치면 되돌립니다.</p>
         <div class="ev"><b>근거</b> assets/site.css:1163 (repeat(6,1fr)) · assets/site.css:1150 (푸터 padding-bottom 96px)</div>
       </div>
@@ -550,6 +555,21 @@ footer{
         다음에 누가 "링크 안 걸었으니 괜찮다"고 말할 때 근거가 되게 합니다.</p>
       </div>
 
+      <div class="card sev hi">
+        <div class="pills"><span class="pill hi">개인정보</span><span class="pill n">5분</span></div>
+        <div class="card-h"><span class="tag">2.6</span>게임 랭킹 명부를 지우고 인증을 끕니다</div>
+        <p>게임 랭킹에는 <strong>이름·동네·성별·나이가 한 줄로 묶인 명부</strong>가 쌓여 있고,
+        그 테이블의 읽기 정책이 사실상 전면 허용입니다. <strong>공개 키만 있으면 통째로 내려받을 수 있습니다.</strong>
+        닉네임 입력 안내가 직접 그 형식을 권했기 때문에(<code>닉/지역/성별/년</code>) 실제로 그렇게 쌓였습니다.</p>
+        <p>게임을 더 고치지 않기로 했어도(결정 1) <strong>이것만은 지금 해야 합니다</strong> —
+        나중에 게임 파일을 지워도 데이터베이스 행은 그대로 남기 때문입니다.
+        <strong>인증을 끄면 로그인 화면도 함께 사라집니다</strong>(6장).</p>
+        <p class="dek"><strong>사이트 본체는 영향이 없습니다.</strong> 인증을 쓰는 파일은 게임 4개와 연동 스크립트뿐이고,
+        멤버 페이지 7개는 인증 호출이 0건입니다.</p>
+        <div class="ev"><b>근거</b> stage2/schema_v2_ranking.sql:41-42 (읽기 전면 허용) · game_v2.html:704 (닉네임 형식 안내)
+          · 멤버 페이지 7개 auth 호출 0건</div>
+      </div>
+
       <div class="note risk">
         <b>이 절이 끝나기 전에는 다음 단계로 넘어가지 않습니다</b>
         2.1과 2.2는 각각 실제 금전 피해와 권한 탈취로 이어지는 경로입니다.
@@ -574,30 +594,17 @@ footer{
           <li><b>설치 파일의 비밀번호 덮어쓰기 차단</b> + 안내 문구 정정 + 비밀번호 재설정</li>
           <li><b>공유 미리보기 이미지 생성</b> + 절대 주소 전환 + 정산 링크 예외 규칙</li>
           <li><b>robots.txt 작성</b> + 배포 화이트리스트</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <div class="card-h"><span class="tag">1단계</span>게임 축소를 '삭제'로 실행 — 1주</div>
-        <p class="dek">계정 화면을 걷어내되, 그 자리를 새 기능으로 메우지 않습니다. 표면을 실제로 줄입니다.</p>
-        <ul class="chk">
-          <li><b>게임 랭킹 탭 통째 제거</b> — 구글·카카오 버튼, 인앱 브라우저 경고, 내부 설정 안내 블록</li>
-          <li><b>첫 진입 닉네임 모달 폐지</b> — 가입처럼 읽히는 유일한 강제 절차</li>
-          <li><b>홈·게임의 로그인 오류 팝업 제거</b></li>
-          <li><b>이미 쌓인 닉네임·지역·성별·출생년 데이터 삭제</b> → 이번 정비 최대의 보안 성과</li>
-          <li><b>인증 공급자 비활성화</b> + 리다이렉트 주소 제거 + 연동 스크립트 배포 제외</li>
-          <li><b>게임 허브 문구 재작성</b> — '자동 저장·실시간 랭킹' → '이 브라우저에 저장'</li>
-          <li><b>큰 게임 파일 3종의 존치 여부 결정</b> (게임 v1 543KB · 스프라이트 468KB · 빵집 156KB)</li>
+          <li><b>게임 랭킹 명부 삭제 + 인증 끄기</b> — 이것만으로 로그인 노출 11곳 중 8곳이 함께 닫힙니다</li>
+          <li><b>빵집 문구 한 줄 수정</b> — 인증을 끄면 파일 경로가 화면에 드러납니다(6장)</li>
         </ul>
         <div class="note">
-          <b>하지 않을 일</b>
-          새 '기록 탭', 신기록 연출, 업적 증설, 자랑 텍스트 생성기. <strong>축소를 내걸고 기능을 늘리지 않습니다.</strong>
-          기존 화면에 최고 기록 한 줄만 남깁니다.
+          <b>게임은 여기까지입니다</b>
+          현재 게임은 더 고치지 않습니다(결정 1). 페이지 정리는 안정화 후 새 게임을 만들 때 함께 합니다.
         </div>
       </div>
 
       <div class="card">
-        <div class="card-h"><span class="tag">2단계</span>이미 만든 것을 끝까지 쓰기 — 1~2주</div>
+        <div class="card-h"><span class="tag">1단계</span>이미 만든 것을 끝까지 쓰기 — 1~2주</div>
         <p class="dek">새 화면 0개. 배포는 됐는데 완성되지 않은 것을 완성합니다. <strong>활성화 효과가 가장 큰 구간입니다.</strong></p>
         <ul class="chk">
           <li><b>소식 글마다 고유 링크</b> — 지금은 홈 미리보기 4건이 전부 목록 맨 위로만 갑니다. 카톡방에 "이 벙 봐주세요"를 던질 수 없는 것이 이 사이트 최대의 병목입니다</li>
@@ -609,7 +616,7 @@ footer{
       </div>
 
       <div class="card">
-        <div class="card-h"><span class="tag">3단계</span>벙을 사이트에서 '보이게'만 하기 — 2~3주</div>
+        <div class="card-h"><span class="tag">2단계</span>벙을 사이트에서 '보이게'만 하기 — 2~3주</div>
         <p class="dek">카톡의 일을 뺏지 않습니다. 사이트는 벙을 기록하고 링크로 던질 수 있게만 합니다.</p>
         <ul class="chk">
           <li><b>벙 모집 글에 4개 필드만 구조화</b> — 날짜·시각·장소·정원</li>
@@ -626,18 +633,23 @@ footer{
       </div>
 
       <div class="card">
-        <div class="card-h"><span class="tag">4단계</span>맛집 탭, 최소 버전 — 여유가 생기면</div>
-        <p class="dek">새 탭 하나를 가장 싼 방식으로 엽니다. 자동화는 약속하지 않습니다.</p>
+        <div class="card-h"><span class="tag">3단계</span>맛집 탭 + 게임 정리 — 안정화 이후</div>
+        <p class="dek">
+          새 탭 하나를 가장 싼 방식으로 엽니다. <strong>게임 탭을 회수하는 작업과 한 번에 처리합니다</strong>(결정 2).
+          자동화는 약속하지 않습니다.
+        </p>
         <ul class="chk">
           <li><b>하단·상단 6번째 탭 '게임'을 '맛집'으로 교체</b> (CSS 변경 0)</li>
           <li><b>5곳으로 출시</b> — 필수 항목은 이름 / 지역·카테고리 / 지도 링크 세 개뿐</li>
           <li><b>필터는 15곳을 넘을 때 켜기</b> — 5곳 위의 필터는 기능이 아니라 잡음입니다</li>
           <li><b>정적 JSON 한 파일로 시작</b></li>
+          <li><b>게임 파일 배포 제외</b> — 약 1.29MB. <strong>이 사이트의 성능 과제가 여기서 끝납니다</strong></li>
+          <li><b>게임 테이블 제거</b> + stage2·운영자 콘솔 정리</li>
         </ul>
       </div>
 
       <div class="card">
-        <div class="card-h"><span class="tag">5단계</span>규칙은 새 화면에만 — 상시</div>
+        <div class="card-h"><span class="tag">4단계</span>규칙은 새 화면에만 — 상시</div>
         <p class="dek">소급 정리를 포기하고, 지켜질 수 있는 최소 규칙만 남깁니다.</p>
         <ul class="chk">
           <li><b>디자인 규칙 10줄을 새 화면에만 적용</b> — 기존 8페이지 약 1,993줄의 인라인 스타일은 소급 정리하지 않습니다</li>
@@ -667,7 +679,7 @@ footer{
       <p class="dek">
         <strong>되돌리기 기준 3건</strong> — ① 탭 교체 2주 뒤 맛집 유입이 직전 게임 탭의 절반 미만이면 되돌립니다.
         ② 소식 유형 개편 2주 뒤 새 글 수가 개편 전보다 줄면 유형을 3종으로 줄입니다.
-        ③ 게임 기록 문의가 반복되면 안내 문구를 가장 친절한 안으로 올립니다.
+        ③ 랭킹이 사라진 데 대한 문의가 반복되면, 게임 정리를 안정화 이후가 아니라 <strong>앞당깁니다.</strong>
       </p>
     </section>
 
@@ -681,29 +693,36 @@ footer{
       </p>
 
       <h3>노출 지점 전수 — 처리 방침</h3>
-      <p>저장소 전체를 훑어 구성원 눈에 닿을 수 있는 지점을 모두 찾았습니다. 처리는 세 가지뿐입니다 —
-      <strong>제거</strong>, <strong>문구 교체</strong>, <strong>배포 제외</strong>.</p>
+      <p>
+        저장소 전체를 훑어 구성원 눈에 닿을 수 있는 지점을 모두 찾았습니다. 14곳 중 <strong>11곳이 게임 파일 안</strong>에 있고,
+        그중 <strong>8곳은 인증을 끄는 것만으로 코드 수정 없이 닫힙니다</strong> — 서버 연결이 살아 있을 때만 그려지기 때문입니다(6장).
+      </p>
       <div class="tw">
         <table>
           <thead><tr><th>위치</th><th>무엇이 보이나</th><th>처리</th></tr></thead>
           <tbody>
-            <tr><td class="mono">game_v2 랭킹 탭</td><td>구글 로그인 버튼 · 카카오 로그인 버튼(비동작) · 연결됨 배지 · 로그아웃</td><td>제거</td></tr>
-            <tr><td class="mono">game_v2 랭킹 탭</td><td>인앱 브라우저 경고 — 카톡에서 들어오는 게 기본이라 <strong>대부분이 보는 문구</strong></td><td>제거</td></tr>
-            <tr><td class="mono">game_v2 랭킹 탭</td><td>'로그인이 안 되나요?' 접힘 안에 내부 설정 지시문과 현재 주소</td><td>제거</td></tr>
-            <tr><td class="mono">game_v2 첫 진입</td><td>닉네임 설정 모달 자동 노출 — 가입 절차처럼 읽힘</td><td>제거</td></tr>
-            <tr><td class="mono">game_v2 토스트</td><td>로그인 관련 문구 9종 + 내부 대시보드 지시문</td><td>제거</td></tr>
-            <tr><td class="mono">game_v2 상태등</td><td>툴팁이 '오프라인(봇 랭킹)' — <strong>상대가 봇이라는 사실이 새어 나감</strong></td><td>제거</td></tr>
-            <tr><td class="mono">index.html:750-765</td><td>홈 진입 직후 '로그인 처리 중 오류' 팝업</td><td>제거</td></tr>
-            <tr><td class="mono">games.html:173</td><td>'카카오 로그인을 해두면 진행도가 계속 남고…'</td><td>문구 교체</td></tr>
-            <tr><td class="mono">games.html:143·151·168·177</td><td>'자동 저장' · '실시간 랭킹 1종' · 랭킹 배지 · 'PvP 랭킹' 태그</td><td>문구 교체</td></tr>
-            <tr><td class="mono">bakery.html:1618</td><td>'운영자 Supabase 설정 대기 중 — stage2/schema_bakery_social.sql'</td><td>문구 교체</td></tr>
-            <tr><td class="mono">settle.html:715</td><td>'운영진이라면 sql/site_features.sql 이 적용됐는지…' — <strong>벙 참여자 전원이 받는 화면</strong></td><td>문구 교체</td></tr>
-            <tr><td class="mono">report.html:459·711</td><td>'🛠️ 운영진: 리포트 발행하기' 링크 2곳 — 누구나 이동 가능</td><td>제거</td></tr>
-            <tr><td class="mono">stage2/login.html</td><td>카카오 로그인 테스트 페이지 전체가 배포돼 있음</td><td>배포 제외</td></tr>
-            <tr><td class="mono">game_admin.html</td><td>게임 운영자 콘솔이 링크 없이 배포돼 있음</td><td>배포 제외</td></tr>
+            <tr><td class="mono">game_v2 랭킹 탭</td><td>구글 로그인 버튼 · 카카오 로그인 버튼(비동작) · 연결됨 배지 · 로그아웃</td><td><span class="pill low">인증 차단으로 자동</span></td></tr>
+            <tr><td class="mono">game_v2 랭킹 탭</td><td>인앱 브라우저 경고 — 카톡에서 들어오는 게 기본이라 <strong>대부분이 보는 문구</strong></td><td><span class="pill low">인증 차단으로 자동</span></td></tr>
+            <tr><td class="mono">game_v2 랭킹 탭</td><td>'로그인이 안 되나요?' 접힘 안에 내부 설정 지시문과 현재 주소</td><td><span class="pill low">인증 차단으로 자동</span></td></tr>
+            <tr><td class="mono">game_v2 첫 진입</td><td>닉네임 설정 모달 자동 노출 — 가입 절차처럼 읽힘</td><td><span class="pill low">인증 차단으로 자동</span></td></tr>
+            <tr><td class="mono">game_v2 랭킹 탭</td><td>랭킹 참가하기 · 닉네임 변경 버튼</td><td><span class="pill low">인증 차단으로 자동</span></td></tr>
+            <tr><td class="mono">game_v2 토스트</td><td>로그인 관련 문구 9종 + 내부 대시보드 지시문</td><td><span class="pill low">호출 경로 소멸</span></td></tr>
+            <tr><td class="mono">index.html:750-765</td><td>홈 진입 직후 '로그인 처리 중 오류' 팝업</td><td><span class="pill low">호출 경로 소멸</span></td></tr>
+            <tr><td class="mono">bakery.html:1618</td><td><strong>인증을 끄면 새로 드러남</strong> — 'Supabase 설정 대기 중 — stage2/schema_bakery_social.sql'</td><td><span class="pill mid">문구 1줄 수정</span></td></tr>
+            <tr><td class="mono">settle.html:715</td><td>'운영진이라면 sql/site_features.sql 이 적용됐는지…' — <strong>벙 참여자 전원이 받는 화면</strong></td><td><span class="pill mid">문구 교체</span></td></tr>
+            <tr><td class="mono">report.html:459·711</td><td>'🛠️ 운영진: 리포트 발행하기' 링크 2곳 — 누구나 이동 가능</td><td><span class="pill mid">제거</span></td></tr>
+            <tr><td class="mono">stage2/login.html</td><td>카카오 로그인 테스트 페이지 전체가 배포돼 있음</td><td><span class="pill mid">배포 제외</span></td></tr>
+            <tr><td class="mono">game_admin.html</td><td>게임 운영자 콘솔이 링크 없이 배포돼 있음</td><td><span class="pill mid">배포 제외</span></td></tr>
+            <tr><td class="mono">games.html:143·151·168·173·177</td><td>'카카오 로그인' · '자동 저장' · '실시간 랭킹' 배지 · 'PvP 랭킹' 태그</td><td><span class="pill n">안정화 후 함께 정리</span></td></tr>
+            <tr><td class="mono">game_v2 상태등</td><td>툴팁 '오프라인(봇 랭킹)' — 터치 기기에선 보이지 않음</td><td><span class="pill n">안정화 후 함께 정리</span></td></tr>
           </tbody>
         </table>
       </div>
+      <p class="dek">
+        즉 <strong>0단계에서 실제로 손대는 화면은 네 곳뿐</strong>입니다 — 빵집 문구 한 줄, 정산 확인 문구 하나,
+        리포트의 운영진 링크 둘, 그리고 배포 제외 설정.
+        나머지는 인증을 끄면 사라지거나, 안정화 후 게임을 정리할 때 파일째 없어집니다.
+      </p>
 
       <h3>건드리지 않는 것 — 기능은 유지, 표현은 바꿀 수 있음</h3>
       <p>
@@ -735,21 +754,21 @@ footer{
         그리고 운영용 페이지 목록은 한 곳에서만 관리하고, <strong>새로 만들 때마다 그 목록에 줄을 추가합니다.</strong>
       </p>
 
-      <h3>잃는 것을 알리는 문구 — 3안</h3>
-      <p>로컬 저장 전환으로 기기 간 이어하기가 사라집니다. 불안을 주지 않으면서 정직하게 알리는 것이 목표입니다.</p>
-      <div class="grid two">
-        <div class="card"><div class="card-h"><span class="tag">A · 담백</span></div>
-          <p>기록은 <strong>이 브라우저에 저장돼요.</strong></p></div>
-        <div class="card"><div class="card-h"><span class="tag">B · 설명형</span></div>
-          <p>기록은 이 브라우저에 저장돼요. <strong>다른 기기에서는 처음부터 시작해요.</strong></p></div>
+      <h3>멤버에게 알릴 것 — 공지 한 번</h3>
+      <p>
+        인증을 끄면 멤버 입장에서 달라지는 것은 하나뿐입니다 — <strong>게임 랭킹이 사라집니다.</strong>
+        진행도는 원래도 이 브라우저에 남아 있어서 그대로 이어집니다.
+        조용히 바꾸면 문의가 생기므로 오픈채팅에 한 번만 알립니다.
+      </p>
+      <div class="card">
+        <div class="card-h"><span class="tag">공지 문안</span></div>
+        <p>게임 랭킹은 이제 쉬어요. 하던 기록은 그대로 남아 있으니 계속 하셔도 돼요.
+        <strong>나중에 새 게임으로 다시 찾아올게요.</strong></p>
       </div>
-      <div class="card"><div class="card-h"><span class="tag">C · 가장 친절 (문의가 반복되면 이걸로)</span></div>
-        <p>기록은 이 브라우저에만 저장돼요. 다른 기기에서는 처음부터 시작하고,
-        <strong>브라우저 기록을 지우면 기록도 함께 사라져요.</strong> 오래 남기고 싶으면 기록 내려받기를 눌러 두세요.</p></div>
       <p class="dek">
-        백업이 필요하다면 <strong>파일 내려받기·불러오기 버튼 두 개</strong>로 끝냅니다.
-        긴 문자열을 복사해 카톡에 붙여넣는 방식은 쓰지 않습니다 — 카톡이 긴 문자열을 접고
-        복사 과정에서 줄바꿈이 섞여 <strong>깨진 코드를 붙여넣고 기록을 잃는 일</strong>이 실제로 생깁니다.
+        <strong>'계정' · '클라우드' · '로그인'이라는 말을 공지에 쓰지 않습니다.</strong>
+        지금까지도 멤버 화면에 거의 드러나지 않던 개념이라, 없애는 마당에 굳이 알릴 이유가 없습니다.
+        "무엇이 사라지는지"와 "지금 하던 건 괜찮은지" 두 가지만 말하면 충분합니다.
       </p>
     </section>
 
@@ -894,98 +913,110 @@ footer{
     </section>
 
     <section id="s6">
-      <h2><span class="num">6</span>게임 — 로컬 저장 전용</h2>
+      <h2><span class="num">6</span>게임 — 서버만 끕니다</h2>
       <hr class="rule" />
       <p class="dek">
-        축소는 <strong>기능 정리가 아니라 보안 조치</strong>입니다. 심각도가 높은 문제 셋이 게임 계정·랭킹 경로에 몰려 있고,
-        이 결정 하나로 셋이 코드를 고치지 않고 함께 사라집니다.
+        현재 게임 3종은 더 고치지 않고, 안정화 이후 <strong>새 게임을 만들 때 함께 정리</strong>합니다(결정 1).
+        그래서 이 장은 <strong>지금 하는 일 하나</strong>와 <strong>나중을 위한 메모</strong>로만 이루어집니다.
+        앞선 분석이 제안한 '로컬 저장 전용 전환'은 전부 폐기했습니다 — <strong>없앨 것을 전환하는 건 헛일입니다.</strong>
       </p>
 
-      <div class="card sev hi">
-        <div class="card-h"><span class="tag">함께 사라지는 것 1</span>랭킹 닉네임을 통한 스크립트 삽입</div>
-        <p>랭킹 화면이 다른 플레이어의 닉네임을 <strong>아무 처리 없이 그대로 그립니다.</strong>
-        닉네임은 본인이 자유롭게 바꿀 수 있고 랭킹은 전원에게 보이므로,
-        한 명이 스크립트를 닉네임에 넣으면 <strong>랭킹 탭을 연 모든 멤버의 브라우저에서 실행됩니다.</strong></p>
-        <div class="ev"><b>근거</b> game_v2.html:1509·1513·1521 (이스케이프 헬퍼 자체가 파일에 없음)</div>
-      </div>
-      <div class="card sev hi">
-        <div class="card-h"><span class="tag">함께 사라지는 것 2</span>운영자 콘솔을 통한 권한 탈취</div>
-        <p>게임 운영자 콘솔도 같은 닉네임을 그대로 표에 넣습니다. 이 화면을 여는 사람은
-        <strong>제재·해제 권한을 가진 운영진</strong>이라 등급이 한 단계 높습니다.</p>
-        <div class="ev"><b>근거</b> game_admin.html:188</div>
-      </div>
-      <div class="card sev hi">
-        <div class="card-h"><span class="tag">함께 사라지는 것 3</span>커뮤니티 명부의 전면 공개</div>
-        <p>게임 닉네임 안내가 <code>닉/지역/성별/년</code> 형식을 권합니다. 그 값이 들어가는 테이블의 읽기 정책이
-        사실상 전면 허용이라, <strong>공개 키만 있으면 이름·동네·성별·나이가 한 줄로 묶인 명부를 통째로 내려받을 수 있습니다.</strong></p>
-        <div class="ev"><b>근거</b> game_v2.html:704 · stage2/schema_v2_ranking.sql:41-42</div>
+      <div class="note ok">
+        <b>인증을 끄면 로그인 화면이 저절로 사라집니다</b>
+        게임 v2의 구글·카카오 로그인 버튼, 인앱 브라우저 경고, 내부 설정 안내 접힘, 연결됨 배지, 로그아웃,
+        랭킹 참가·닉네임 변경 버튼은 <strong>전부 서버 연결이 살아 있을 때만 그려집니다.</strong>
+        첫 진입 닉네임 모달도 서버 연결에 성공한 뒤에만 뜹니다.
+        즉 <strong>인증을 끄는 것만으로 로그인 노출 11곳 중 8곳이 코드 수정 0으로 닫힙니다.</strong>
+        <div class="ev"><b>근거</b> game_v2.html:1489-1500 (로그인 블록 전체가 <code>if(NET.cloudReady)</code> 안) · :660 (연결 성공 후에만 닉 모달)</div>
       </div>
 
-      <div class="note risk">
-        <b>화면만 내리면 데이터는 그대로 남습니다</b>
-        순서가 중요합니다 — <strong>화면 배포 → 데이터 삭제 → 테이블 제거.</strong>
-        데이터를 먼저 지우면 살아 있는 페이지에서 오류가 납니다.
-        그리고 <strong>이미 쌓인 닉네임 행 삭제를 빠뜨리면</strong> 위 세 번째 문제는 해결되지 않습니다.
+      <div class="note ok">
+        <b>사이트 본체는 영향을 받지 않습니다</b>
+        Supabase 인증을 쓰는 파일은 <strong>게임 4개와 연동 스크립트 하나뿐</strong>입니다.
+        홈·필독·대시보드·정산·소식·정산확인·발행 화면은 인증을 전혀 쓰지 않고 주소 호출로만 동작합니다
+        (7개 페이지 인증 호출 <strong>0건</strong>). <strong>인증을 꺼도 게시판·정산·방문자 카운터는 그대로 돕니다.</strong>
       </div>
 
-      <h3>전환 절차 — 3구간</h3>
-      <p>전환일에 서버 기록을 지우면 기존 플레이어의 진행도가 통째로 사라집니다. 삭제와 이행은 다른 문제입니다.</p>
-      <div class="tw">
-        <table>
-          <thead><tr><th>구간</th><th>기간</th><th>하는 일</th></tr></thead>
-          <tbody>
-            <tr><td>① 예고</td><td>최소 2주</td><td>게임 첫 화면과 오픈채팅 공지에 고지. <strong>이 기간에는 서버 기록을 로컬로 내려받는 경로를 남겨 둡니다.</strong></td></tr>
-            <tr><td>② 전환일</td><td>하루</td><td>계정 화면 철거, 신규 서버 저장 중단, 파일 내려받기·불러오기 제공</td></tr>
-            <tr><td>③ 정리</td><td>전환 +2주</td><td>랭킹 테이블과 명부 데이터 삭제. 삭제 전 스냅샷은 운영진 기기에만, 보관 기한을 정해서</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="dek">
-        조용히 지우면 기록을 잃은 멤버의 문의가 생깁니다. 소식 게시판에 공지를 한 번 올립니다 —
-        <em>"게임 기록이 이 기기에만 저장되도록 바뀌었어요. 기존 랭킹 기록은 정리했어요."</em>
-      </p>
-
-      <h3>저장 정책</h3>
-      <ul>
-        <li><strong>원칙 하나</strong> — 이 브라우저에 저장. 다른 문장을 쓰지 않습니다.</li>
-        <li><strong>용량 한계를 인정합니다.</strong> 지금도 저장이 실패하면 보관 개수를 줄여 다시 시도하는 구조입니다.
-        한계에 닿았을 때 무엇을 먼저 버리는지 규칙을 적어 둡니다.</li>
-        <li><strong>백업은 파일 방식</strong> — 내려받기·불러오기 버튼 두 개. 문자열 복사는 쓰지 않습니다(4장 참조).</li>
+      <h3>지금 하는 일 — 한 번, 5분</h3>
+      <ul class="chk">
+        <li><b>랭킹 명부 데이터 삭제</b> — 이름·동네·성별·나이가 한 줄로 묶인 행 전부. <strong>이것이 이 장의 진짜 목적입니다</strong></li>
+        <li><b>인증 공급자 비활성화</b> — 구글·카카오·익명 전부. 이것만으로 로그인 UI 8곳이 사라집니다</li>
+        <li><b>리다이렉트 주소 제거</b></li>
+        <li><b>빵집 문구 한 줄 수정</b> — 아래 주의사항</li>
       </ul>
 
-      <h3>허브 문구 교체</h3>
-      <div class="fix">
-        <div class="fix-where">games.html:173</div>
-        <div class="fix-row b"><span class="mk">✗</span><span>카카오 로그인을 해두면 진행도가 계속 남고, 멤버들끼리 전투력 랭킹으로 겨뤄요.</span></div>
-        <div class="fix-row a"><span class="mk">✓</span><span>진행도는 이 브라우저에 저장돼요. 틈날 때 이어서 키우면 돼요.</span></div>
-        <div class="fix-why">계정과 랭킹을 전제한 유일한 문장. 둘 다 사라지므로 문장 전체를 바꿉니다.</div>
-      </div>
-      <div class="fix">
-        <div class="fix-where">games.html:143 · 151 · 168 · 177</div>
-        <div class="fix-row b"><span class="mk">✗</span><span>진행도는 자동 저장되니까 아무 때나 이어서 하면 돼요 / 실시간 랭킹 1종 / ● 실시간 랭킹 / PvP 랭킹</span></div>
-        <div class="fix-row a"><span class="mk">✓</span><span>이 브라우저에 저장돼요 / (랭킹 표기 전부 삭제)</span></div>
-        <div class="fix-why">'자동 저장'은 클라우드를 연상시킵니다. 랭킹 배지·태그는 가리킬 대상이 없어집니다.</div>
+      <div class="note warn">
+        <b>주의 — 서버를 끄면 새로 드러나는 문구가 하나 있습니다</b>
+        빵집의 주간 랭킹 자리는 서버 연결이 실패했을 때
+        <em>"🌐 주간 랭킹은 커뮤니티 서버 연결 후 열려요 (운영자 Supabase 설정 대기 중 — stage2/schema_bakery_social.sql)"</em>를 그립니다.
+        지금은 연결돼 있어 안 보이지만, <strong>인증을 끄면 이 문장이 멤버 화면에 뜹니다</strong> —
+        저장소 파일 경로가 그대로 인쇄됩니다. 인증을 끄는 작업과 <strong>같은 날 함께</strong> 처리해야 합니다.
       </div>
 
-      <h3>큰 파일 3종의 처분을 먼저 결정합니다</h3>
-      <p>
-        저장소 용량의 절반 이상이 게임 자산입니다. <strong>게임 v1은 이미 어느 페이지에서도 링크되지 않는 고아 파일</strong>인데
-        배포만 되고 있습니다. 허브 카드 규격을 정하기 전에 카드가 몇 장인지부터 정해야 합니다.
-      </p>
+      <div class="fix">
+        <div class="fix-where">bakery.html:1618</div>
+        <div class="fix-row b"><span class="mk">✗</span><span>🌐 주간 랭킹은 커뮤니티 서버 연결 후 열려요 (운영자 Supabase 설정 대기 중 — stage2/schema_bakery_social.sql)</span></div>
+        <div class="fix-row a"><span class="mk">✓</span><span>주간 랭킹은 지금 쉬고 있어요</span></div>
+        <div class="fix-why">파일 경로와 내부 설정 상태가 멤버 화면에 인쇄됩니다. 곧 정리할 게임이므로 짧게만 적습니다.</div>
+      </div>
+
+      <h3>하지 않는 일</h3>
+      <p class="dek">앞선 분석이 게임 영역에서 12건을 제안했지만 <strong>전부 뺐습니다.</strong> 근거를 남겨 두어 나중에 되살아나지 않게 합니다.</p>
       <div class="tw">
         <table>
-          <thead><tr><th>파일</th><th class="num">크기</th><th>현재 상태</th><th>결정 필요</th></tr></thead>
+          <thead><tr><th>제안됐던 것</th><th>왜 하지 않나</th></tr></thead>
           <tbody>
-            <tr><td class="mono">game.html (v1)</td><td class="num">543KB</td><td>링크 없는 고아. 주소 직접 입력으로만 열림</td><td>배포 제외 권장</td></tr>
-            <tr><td class="mono">sprites.js</td><td class="num">468KB</td><td>v1 전용 자산</td><td>v1과 함께</td></tr>
-            <tr><td class="mono">bakery.html</td><td class="num">156KB</td><td>허브에 노출</td><td>존치 여부</td></tr>
+            <tr><td>로컬 저장 전용으로 전환</td><td>없앨 것을 전환하는 헛일입니다</td></tr>
+            <tr><td>3구간 전환 절차 (예고 2주 → 전환일 → 정리일)</td><td>진행도 보존이 목적이었는데, 게임 자체가 정리 대상입니다</td></tr>
+            <tr><td>기록 내보내기·불러오기</td><td>동네 산책 모임에서 방치형 게임 진행도를 백업하는 의식은 일어나지 않습니다</td></tr>
+            <tr><td>랭킹 탭 재편 · 신기록 연출 · 업적 증설</td><td><strong>축소를 내걸고 기능을 늘리는 일</strong>입니다</td></tr>
+            <tr><td>게임 허브 카드 규격 통일</td><td>카드가 곧 사라집니다</td></tr>
+            <tr><td>로그인 관련 코드 제거</td><td>인증을 끄면 화면에 안 뜨고, 나중에 파일째 사라집니다</td></tr>
+            <tr><td>거대 자산 로딩 UX 개선</td><td>자산 자체가 사라집니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>안정화 후 — 게임을 정리할 때</h3>
+      <p>새 게임을 만들 시점에 <strong>한 번에</strong> 처리합니다. 3단계에 묶어 뒀습니다.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>파일</th><th class="num">크기</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">game.html (v1)</td><td class="num">543KB</td><td>이미 어느 페이지에서도 링크되지 않는 고아 파일</td></tr>
+            <tr><td class="mono">sprites.js</td><td class="num">468KB</td><td>v1 전용 자산</td></tr>
+            <tr><td class="mono">bakery.html</td><td class="num">156KB</td><td>빵집</td></tr>
+            <tr><td class="mono">game_v2.html</td><td class="num">121KB</td><td>좀비 RPG v2</td></tr>
+            <tr><td><strong>합계</strong></td><td class="num"><strong>약 1.29MB</strong></td><td><strong>배포 용량의 60% 이상</strong></td></tr>
           </tbody>
         </table>
       </div>
       <p class="dek">
-        이 셋의 처분이 <strong>사실상 이 사이트의 유일한 성능 과제</strong>입니다.
-        게시판 인덱스 튜닝 같은 항목은 16명 규모에서 체감 차이를 만들지 않습니다 — 무게가 없는 곳을 재는 일입니다.
+        함께 처리할 것 — 게임 탭을 맛집으로 교체(결정 2), 게임 테이블 제거,
+        <code>stage2/</code>와 운영자 콘솔 정리, 홈·푸터의 게임 링크 제거.
+        <strong>이 시점에 이 사이트의 성능 과제가 끝납니다.</strong> 게시판 인덱스 같은 항목은 16명 규모에서 무게가 없습니다.
       </p>
+
+      <h3>새 게임을 만들 때 가져갈 것 넷</h3>
+      <p class="dek">
+        이번 게임에서 나온 심각도 높음 3건은 <strong>전부 같은 뿌리</strong>에서 나왔습니다 —
+        계정을 만들고, 준식별 닉네임을 권하고, 그 값을 공개 테이블에 담아 화면에 그대로 그렸습니다.
+        새 게임에서 반복하지 않으려면 이 넷을 처음에 정해 두면 됩니다.
+      </p>
+      <div class="card">
+        <ol class="tight">
+          <li><strong>계정을 만들지 않습니다.</strong> 기록은 브라우저에 둡니다.
+          경쟁이 필요하면 <em>카톡방에 붙여넣는 결과 텍스트</em>로 합니다 — 서버 없이도 경쟁은 성립하고,
+          이 커뮤니티에서는 그쪽이 더 자연스럽습니다(전제 1).</li>
+          <li><strong>닉네임에 지역·성별·나이를 권하지 않습니다.</strong> 이번 게임은 입력 안내가 직접
+          <code>닉/지역/성별/년</code> 형식을 권해서 실제로 그렇게 쌓였고, 그 테이블이 전면 공개 읽기였습니다.
+          <strong>표시 이름은 앞머리 한 토막이면 충분합니다</strong>(결정 3).</li>
+          <li><strong>사용자가 쓴 글자를 화면에 그대로 그리지 않습니다.</strong> 이번 랭킹과 운영자 콘솔이 정확히 이 문제였습니다.
+          닉네임 하나로 그 화면을 연 <strong>모든 사람의 브라우저에서 코드가 돌 수 있었습니다.</strong></li>
+          <li><strong>자산 크기 예산을 처음에 정합니다.</strong> 지금 게임 자산이 배포 용량의 60%를 넘습니다.
+          '첫 화면까지 몇 KB'를 시작할 때 정해 두면 나중에 통째로 들어낼 일이 없습니다.</li>
+        </ol>
+      </div>
     </section>
 
     <section id="s7">
@@ -1602,7 +1633,8 @@ footer{
             <tr><td>방문 집계</td><td>서버</td><td class="mono">무기한 (개인 식별 불가)</td><td>누구나 (합계만)</td></tr>
             <tr><td>게임 기록</td><td class="mono">브라우저</td><td class="mono">지울 때까지</td><td>본인만</td></tr>
             <tr><td>참석 기록 <span class="pill n">도입 시</span></td><td>서버</td><td class="mono">90일</td><td>목록은 공개 · 이력은 운영진</td></tr>
-            <tr><td>게임 랭킹 명부</td><td>서버</td><td class="mono"><strong>삭제 예정</strong></td><td>—</td></tr>
+            <tr><td>게임 랭킹 명부</td><td>서버</td><td class="mono"><strong>0단계에서 삭제</strong></td><td>—</td></tr>
+            <tr><td>게임 파일·테이블</td><td>배포·서버</td><td class="mono">안정화 후 정리</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
