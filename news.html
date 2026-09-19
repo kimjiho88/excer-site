@@ -163,7 +163,6 @@
     .pc-body { min-width: 0; display: grid; gap: 7px; }
     .post-topline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .badge-soft.pin-badge { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
-    .badge-soft.sample-badge { background: rgba(141, 132, 160, 0.13); color: var(--gray); box-shadow: inset 0 0 0 1px rgba(141, 132, 160, 0.16); }
     .post-title-text { display: block; font-size: 16px; font-weight: 850; letter-spacing: -0.025em; line-height: 1.42; color: var(--ink); word-break: break-word; overflow-wrap: anywhere; }
     .post-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 1px; color: var(--gray); font-size: 12px; font-weight: 700; }
     .pc-ava {
@@ -331,7 +330,7 @@
         </div>
 
         <div id="setupBanner" class="setup-banner" hidden>
-          <span><b>소식 피드 준비 중이에요</b> — 운영진이 서버 설정을 마치면 열려요. 지금 보이는 건 <b>예시 소식</b>이에요.</span>
+          <span><b>소식을 불러오지 못했어요</b> — 연결이 잠깐 끊겼을 수 있어요. 잠시 뒤 다시 확인해 주세요.</span>
           <button id="retryBtn" class="mini-btn" type="button">다시 확인</button>
         </div>
 
@@ -616,7 +615,7 @@
       NOT_FOUND: "이미 지워진 소식이에요",
       BAD_KEY: "이 글을 수정할 권한이 없어요"
     };
-    const DEMO_MSG = "소식 피드가 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.";
+    const OFFLINE_MSG = "지금은 소식을 불러올 수 없어요 잠시 뒤 다시 시도해 주세요";
 
     const state = {
       category: "전체",
@@ -684,7 +683,7 @@
       for (const code of Object.keys(ERROR_MAP)) {
         if (msg.includes(code)) return ERROR_MAP[code];
       }
-      if (err && err.status === 404) return DEMO_MSG;
+      if (err && err.status === 404) return OFFLINE_MSG;
       return "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
     }
 
@@ -724,59 +723,6 @@
       return EMOJIS.reduce((s, e) => s + (Number((reactions || {})[e]) || 0), 0);
     }
 
-    // ── 예시 소식 (우아한 저하 / 데모 모드) ──────────────────────
-    function samplePosts() {
-      const now = Date.now();
-      const iso = (msAgo) => new Date(now - msAgo).toISOString();
-      const mk = (p) => ({ ...p, _sample: true, reaction_count: sumReactions(p.reactions) });
-      return [
-        mk({
-          id: -1, category: "공지", pinned: true,
-          title: "소식 피드 이용 안내 (예시)", author: "운영진",
-          created_at: iso(3 * 86400000), updated_at: iso(3 * 86400000), comment_count: 2,
-          reactions: { "👍": 5, "🔥": 2 },
-          body: "동네친구들 소식 피드가 새 단장했어요.\n\n· 공지: 운영진이 방 소식을 올려요 (자동 고정)\n· 벙 소식: 새 벙 모집·일정 공유\n· 후기: 다녀온 벙 이야기\n· 정보: 맛집·꿀팁 등 쓸모 있는 정보\n· 자유: 편한 수다\n\n소식마다 👍❤️😂👏🔥 리액션을 남길 수 있어요. 서버 설정이 끝나면 실제 소식을 쓸 수 있어요.",
-          _comments: [
-            { id: -11, post_id: -1, author: "엑서", body: "리액션 기능 너무 좋아요!", created_at: iso(3 * 86400000 - 3600000) },
-            { id: -12, post_id: -1, author: "민지", body: "카테고리 정리된 거 깔끔하네요 👍", created_at: iso(2 * 86400000) }
-          ]
-        }),
-        mk({
-          id: -2, category: "벙 소식", pinned: false,
-          title: "이번 주 금요일 강남 저녁 벙 모집해요 (예시)", author: "준호",
-          created_at: iso(30 * 3600000), updated_at: iso(30 * 3600000), comment_count: 1,
-          reactions: { "👍": 4, "❤️": 2, "🔥": 3 },
-          body: "금요일 7시 강남역에서 저녁 벙 열어요!\n고기집 → 카페 코스, 6명 정원.\n참여는 오픈채팅에서 댓글로 받아요 🙌",
-          _comments: [
-            { id: -21, post_id: -2, author: "서아", body: "참여할게요! 금요일에 봬요~", created_at: iso(20 * 3600000) }
-          ]
-        }),
-        mk({
-          id: -3, category: "후기", pinned: false,
-          title: "일요일 보드게임 벙 다녀왔어요 (예시)", author: "서아",
-          created_at: iso(22 * 3600000), updated_at: iso(22 * 3600000), comment_count: 0,
-          reactions: { "❤️": 6, "👏": 2 },
-          body: "처음 오신 분들도 금방 친해져서 너무 즐거웠어요.\n다음엔 마피아 게임도 해봐요!",
-          _comments: []
-        }),
-        mk({
-          id: -4, category: "정보", pinned: false,
-          title: "강남역 근처 단체석 잘 잡히는 집 정리 (예시)", author: "민지",
-          created_at: iso(9 * 3600000), updated_at: iso(9 * 3600000), comment_count: 0,
-          reactions: { "👍": 7, "👏": 1 },
-          body: "벙주분들 참고하세요!\n\n1. ○○식당 — 10명까지 룸 예약 가능\n2. △△포차 — 당일 예약도 잘 돼요\n3. □□카페 — 2차로 넓고 조용해요",
-          _comments: []
-        }),
-        mk({
-          id: -5, category: "자유", pinned: false,
-          title: "장마철엔 다들 뭐하고 노시나요 (예시)", author: "도윤",
-          created_at: iso(2 * 3600000), updated_at: iso(2 * 3600000), comment_count: 0,
-          reactions: { "😂": 3 },
-          body: "비가 계속 오니까 벙이 뜸하네요.\n실내에서 할 만한 벙 아이디어 있으면 댓글로 달아주세요 ☔",
-          _comments: []
-        })
-      ];
-    }
 
     // ── 데이터 로드 ─────────────────────────────────────────────
     function orderParam() {
@@ -826,7 +772,7 @@
 
     function enterDegraded() {
       state.degraded = true;
-      state.posts = samplePosts();
+      state.posts = [];   // 지어낸 글로 자리를 채우지 않는다
       state.hasMore = false;
       state.expandedId = null; state.editingId = null; state.commentsCache = {};
       $("setupBanner").hidden = false;
@@ -849,12 +795,6 @@
     }
 
     async function loadComments(postId) {
-      const post = findPost(postId);
-      if (post && post._sample) {
-        state.commentsCache[postId] = post._comments || [];
-        renderList();
-        return;
-      }
       try {
         const rows = await supaFetch(
           "/rest/v1/site_comments_v?select=id,post_id,author,body,created_at" +
@@ -867,20 +807,9 @@
     }
 
     // ── 렌더링 ──────────────────────────────────────────────────
-    function visiblePosts() {
-      if (!state.degraded) return state.posts;
-      // 데모 모드: 클라이언트 필터(카테고리+검색) + 정렬
-      let list = state.posts;
-      if (state.category !== "전체") list = list.filter((p) => p.category === state.category);
-      if (state.search) {
-        const q = state.search.toLowerCase();
-        list = list.filter((p) => (p.title + "\n" + p.body).toLowerCase().includes(q));
-      }
-      return list.slice().sort((a, b) =>
-        (Number(b.pinned) - Number(a.pinned)) ||
-        (state.sort === "popular" ? (Number(b.reaction_count) || 0) - (Number(a.reaction_count) || 0) : 0) ||
-        (new Date(b.created_at) - new Date(a.created_at)));
-    }
+    // 정렬·필터·페이지는 서버가 한다(order/limit/offset). 화면은 받은 순서를 그대로 쓴다.
+    // 예전에는 데모 모드 전용 클라이언트 필터가 따로 있었는데, 지어낸 글을 걷어내면서 같이 없앴다.
+    function visiblePosts() { return state.posts; }
 
     function catBadges(post) {
       const parts = [];
@@ -891,7 +820,6 @@
         const cls = catMeta(post.category).badge;
         parts.push(`<span class="badge-soft${cls ? " " + cls : ""}">${escapeHTML(post.category)}</span>`);
       }
-      if (post._sample) parts.push(`<span class="badge-soft sample-badge">예시</span>`);
       return parts.join("");
     }
 
@@ -1017,6 +945,15 @@
     }
 
     function emptyStateHTML() {
+      // 불러오지 못한 것과 글이 없는 것은 다른 상태다.
+      // 예전에는 여기서 지어낸 예시 글 5건을 보여줘 둘을 구분할 수 없었다.
+      if (state.degraded) {
+        return `<div class="card empty-card"><div class="empty-state">
+          <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <strong>소식을 불러오지 못했어요</strong>
+          <p>연결이 잠깐 끊겼을 수 있어요. 위의 다시 확인을 눌러 주세요.</p>
+        </div></div>`;
+      }
       if (state.search) {
         return `<div class="card empty-card"><div class="empty-state">
           <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
@@ -1099,7 +1036,7 @@
       const on = !(mine && mine.has(emoji));
       applyReactLocal(post, emoji, on);   // 낙관적 반영
       updateReactBar(id);
-      if (state.degraded || post._sample || post.id < 0) return; // 데모: 로컬 카운트만
+      if (state.degraded) return;
       state.reactBusy[busyKey] = true;
       try {
         const res = await supaFetch("/rest/v1/rpc/post_react", {
@@ -1151,7 +1088,7 @@
 
     async function submitPost() {
       if (state.busy) return;
-      if (state.degraded) { showToast(DEMO_MSG); return; }
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }
       const nick = $("wNick").value.trim();
       const pass = $("wPass").value;
       const cat = $("wCat").value;
@@ -1262,7 +1199,7 @@
     // ── 댓글 ────────────────────────────────────────────────────
     async function addComment(card, postId) {
       if (state.busy) return;
-      if (state.degraded) { showToast(DEMO_MSG); return; }
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }
       const nick = card.querySelector(".c-nick").value.trim();
       const pass = card.querySelector(".c-pass").value;
       const body = card.querySelector(".c-body").value;
@@ -1358,8 +1295,6 @@
     }
 
     async function copyPostLink(id) {
-      const post = findPost(id);
-      if (post && post._sample) { showToast("맛보기 소식이라 링크를 만들 수 없어요"); return; }
       const ok = await copyText(postUrl(id));
       showToast(ok ? "링크를 복사했어요 카톡에 붙여넣어 주세요" : "복사가 안 됐어요 주소창을 길게 눌러 복사해 주세요");
     }
@@ -1512,7 +1447,7 @@
         if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
         if (act === "open-write") { openWriteModal(); return; }
-        if (state.degraded) { showToast(DEMO_MSG); return; }
+        if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "edit") { state.editingId = id; renderList(); return; }
         if (act === "cancel-edit") { state.editingId = null; renderList(); return; }
         if (act === "save-edit") { saveEdit(card, id); return; }

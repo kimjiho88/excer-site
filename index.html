@@ -39,6 +39,9 @@
     }
     .hero-home .hero-title.is-single .grad-text-hero { display: inline-block; padding-bottom: 0.06em; }
 
+    /* 숫자 pill 이 아직 열리지 않았을 때 그 자리를 대신하는 한 줄 */
+    .hero-note { margin-top: 18px; color: var(--on-dark-muted); font-size: 13.5px; font-weight: 650; }
+
     /* ── 소개 스트립 (우리는 이런 사이) — 히어로 위로 겹침 ── */
     .intro-strip { display: grid; gap: clamp(12px, 1.6vw, 18px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .intro-card { display: flex; align-items: flex-start; gap: 14px; padding: clamp(18px, 2.2vw, 24px); }
@@ -108,7 +111,17 @@
     }
     .vibe-name { font-size: clamp(19px, 2.2vw, 24px); font-weight: 940; letter-spacing: -0.04em; color: #fff; line-height: 1.1; }
     .vibe-line { margin-top: 4px; color: rgba(255, 255, 255, 0.82); font-size: 13.5px; font-weight: 750; }
-    .vibe-src { margin-top: 16px; color: rgba(255, 255, 255, 0.62); font-size: 12px; font-weight: 700; }
+    .vibe-src { margin-top: 16px; color: rgba(255, 255, 255, 0.62); font-size: 12px; font-weight: 700; line-height: 1.7; }
+    /* 신선도 배지 — 어두운 카드 위에 얹히므로 밝은 계열로 대비를 잡는다 */
+    .fresh-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; margin-right: 2px;
+      font-size: 11px; font-weight: 850; letter-spacing: -0.01em;
+    }
+    .fresh-badge.is-fresh  { background: rgba(120, 236, 186, 0.20); color: #9DF3CC; }
+    .fresh-badge.is-ok     { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.86); }
+    .fresh-badge.is-stale  { background: rgba(255, 214, 128, 0.20); color: #FFDFA1; }
+    .fresh-badge.is-sample { background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.78); }
+    .fresh-next { color: rgba(255, 255, 255, 0.52); font-weight: 650; }
     .vibe-go { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; color: #fff; font-size: 13px; font-weight: 850; }
     .vibe-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
     .vibe-card:hover .vibe-go svg { transform: translateX(4px); }
@@ -208,7 +221,9 @@
     <i class="glow-orb" style="--orb-size:480px; --orb-color:rgba(200,162,232,0.36); right:-150px; top:-170px" aria-hidden="true"></i>
     <i class="glow-orb" style="--orb-size:400px; --orb-color:rgba(255,184,209,0.20); left:-140px; bottom:-200px" aria-hidden="true"></i>
     <div class="container">
-      <span class="hero-kicker"><i></i>오픈채팅에서 만난 사이</span>
+      <!-- 기본값은 기존 문구. 기기 시계를 읽을 수 있으면 시간대 인사말로 교체된다.
+           키커는 히어로의 고정 구성요소라 비우면 구멍이 보이므로, 판정이 안 되면 이 문구로 남는다. -->
+      <span class="hero-kicker" id="heroKicker"><i></i>오픈채팅에서 만난 사이</span>
       <h1 class="hero-title is-single" id="heroTitle">
         <span class="grad-text-hero">동네친구들</span>
       </h1>
@@ -220,11 +235,16 @@
         <a class="btn btn-hero is-lg" href="guide.html">필독부터 보기</a>
         <a class="btn btn-glass is-lg" href="news.html">소식 둘러보기</a>
       </div>
-      <div class="hero-meta">
-        <span class="stat-pill"><i></i>함께한 친구 <strong id="heroMembers" data-countup="16">0</strong>명</span>
-        <span class="stat-pill"><i></i>이번 달 대화 <strong id="heroMsg" data-countup="7100">0</strong>건</span>
-        <span class="stat-pill"><i></i>동네친구들 온도 <strong id="heroTemp" data-countup="37.7" data-countup-decimals="1" data-countup-suffix="°">0</strong></span>
+      <!-- 숫자는 발행된 리포트가 있을 때만 보여준다.
+           예전에는 data/report-sample.json 의 값(16명·7,100건·37.7°)이 HTML 에 그대로
+           박혀 있어서, 서버가 죽거나 발행분이 없어도 방문자는 그 숫자를 실제 규모로 읽었다.
+           게다가 로드 직후 샘플값으로 한 번, 실데이터가 오면 또 한 번 세면서 숫자가 뒤집혔다. -->
+      <div class="hero-meta" id="heroStats" hidden>
+        <span class="stat-pill"><i></i>함께한 친구 <strong id="heroMembers">—</strong>명</span>
+        <span class="stat-pill"><i></i><span id="heroMsgWord">최근 대화</span> <strong id="heroMsg">—</strong>건</span>
+        <span class="stat-pill"><i></i>동네친구들 온도 <strong id="heroTemp">—</strong></span>
       </div>
+      <p class="hero-note" id="heroStatsNote">첫 리포트를 준비 중이에요</p>
     </div>
   </section>
 
@@ -367,11 +387,13 @@
             <div class="vibe-top">
               <span class="vibe-ava" aria-hidden="true">🏆</span>
               <div>
-                <div class="vibe-name" id="mvpName">민지</div>
-                <div class="vibe-line" id="mvpLine">이 기간 1,046마디 · 개근 58일</div>
+                <!-- 기본값은 사람 이름이 아니다. 예전에는 맛보기 데이터의 '민지 · 1,046마디'가
+                     그대로 박혀 있어서, 리포트를 한 번도 못 불러와도 실존 인물처럼 보였다. -->
+                <div class="vibe-name" id="mvpName">—</div>
+                <div class="vibe-line" id="mvpLine">리포트가 올라오면 보여요</div>
               </div>
             </div>
-            <div class="vibe-src" id="mvpSrc">예시 데이터 기준</div>
+            <div class="vibe-src" id="mvpSrc">아직 발행된 리포트가 없어요</div>
             <span class="vibe-go">대시보드에서 자세히 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
@@ -379,12 +401,12 @@
             <div class="vibe-stats" style="height:100%">
               <div class="vibe-stat">
                 <span class="vs-top"><span class="vs-ic is-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>동네친구들 온도</span>
-                <div class="vs-value"><span id="stTemp" data-countup="37.7" data-countup-decimals="1">0</span><small>°</small></div>
+                <div class="vs-value"><span id="stTemp">—</span><small>°</small></div>
                 <span class="vs-foot">대화가 따뜻할수록 올라가요</span>
               </div>
               <div class="vibe-stat">
                 <span class="vs-top"><span class="vs-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg></span>함께한 친구</span>
-                <div class="vs-value"><span id="stMembers" data-countup="16">0</span><small>명</small></div>
+                <div class="vs-value"><span id="stMembers">—</span><small>명</small></div>
                 <span class="vs-foot" id="stNewFoot">요즘 함께하는 친구들</span>
               </div>
             </div>
@@ -543,7 +565,125 @@
       function isV2(s) { return s && s.v === 2 && Array.isArray(s.days) && Array.isArray(s.members); }
       function isV1(s) { return s && s.totals && !isV2(s); }
 
-      function renderReport(d, source) {
+      /* ══════════ 0) 시간대 인사말 (라이브 신호) ══════════
+         서버를 전혀 쓰지 않는다. 필요한 건 기기 시계와, 마지막 방문 날짜 한 칸뿐이다.
+         원칙: 시각 숫자를 쓰지 않는다. '지금 19시입니다'는 기기 시계가 틀리면 그대로 거짓이
+         되지만, 인사말은 한 시간쯤 어긋나도 깨지지 않는다.                                   */
+      var LAST_VISIT_KEY = "excer_last_visit";
+
+      // 한국 시각 기준 구간. 대시보드가 쓰는 5구간에 포개지도록 '낮'만 둘로 쪼갰다.
+      function kstHour() {
+        try {
+          var h = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul", hour: "2-digit", hour12: false });
+          var n = parseInt(h, 10);
+          return (n >= 0 && n <= 23) ? n : null;
+        } catch (e) { return null; }
+      }
+      function kstToday() {
+        try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); } catch (e) { return ""; }
+      }
+      function bandOf(h) {
+        if (h <= 5) return "dawn";
+        if (h <= 10) return "morning";
+        if (h <= 13) return "lunch";
+        if (h <= 16) return "afternoon";
+        if (h <= 21) return "evening";
+        return "night";
+      }
+      var GREETINGS = {
+        dawn:      ["늦은 시간까지 고생 많아요", "아직 안 주무셨네요"],
+        morning:   ["좋은 아침이에요", "오늘도 잘 시작해요"],
+        lunch:     ["점심 맛있게 드세요", "점심은 드셨어요?"],
+        afternoon: ["오후도 잘 보내고 있나요", "조금만 더 힘내요"],
+        evening:   ["오늘 하루 수고했어요", "퇴근하셨어요?"],
+        night:     ["오늘도 잘 마무리했나요", "푹 쉬어요"]
+      };
+
+      function applyGreeting() {
+        var el = document.getElementById("heroKicker");
+        var h = kstHour();
+        if (!el || h === null) return;   // 시계가 이상하면 기존 문구를 그대로 둔다
+
+        var today = kstToday();
+        var last = null;
+        try { last = localStorage.getItem(LAST_VISIT_KEY); } catch (e) {}
+        // 저장소를 못 쓰면 재방문 판정을 포기하고 시간대 인사말만 쓴다.
+        // 첫 방문으로 단정하면 매일 오는 멤버에게 매일 처음이라고 인사하게 된다.
+        var text;
+        if (last === null) {
+          text = "처음 오셨네요, 반가워요";
+        } else {
+          var set = GREETINGS[bandOf(h)] || GREETINGS.morning;
+          // 같은 날 다시 와도 같은 문장이 나오도록 날짜를 씨앗으로 쓴다.
+          // 새로고침할 때마다 문장이 춤추면 신뢰가 아니라 산만함이 된다.
+          var seed = parseInt(String(today).replace(/-/g, ""), 10) || 0;
+          text = set[seed % set.length];
+          if (last && last !== today) text = "또 오셨네요";
+        }
+        el.textContent = text;
+        el.insertAdjacentHTML("afterbegin", "<i></i>");
+        try { localStorage.setItem(LAST_VISIT_KEY, today); } catch (e) {}
+      }
+      applyGreeting();
+
+      /* 기간 문구에서 화면에 쓸 단어를 뽑는다.
+         '2026년 6월' → '6월' / '6/1~6/7' 처럼 구간이면 '이 기간' / 못 읽으면 '최근'.
+         대시보드도 같은 방식으로 기간 단어를 바꾸는데 홈만 고정이라 서로 어긋나 있었다. */
+      function periodWord(period, bare) {
+        var p = String(period || "").trim();
+        var m = /(\d{1,2})\s*월/.exec(p);
+        var word = m ? (m[1] + "월") : (/[~–-]/.test(p) && p ? "이 기간" : "최근");
+        return bare ? word : (word + " 대화");
+      }
+
+      /* ══════════ 리포트 신선도 (라이브 신호) ══════════
+         updated_at 을 받아만 놓고 한 번도 쓰지 않고 있었다. 그래서 방문자는 이 숫자가
+         어제 것인지 석 달 전 것인지 알 수 없었다. 신선도 표시는 숫자를 믿게 만들 뿐 아니라,
+         그 자체가 '이 사이트는 주기적으로 갱신된다'는 신호로 작동한다.                       */
+      function daysSinceKST(iso) {
+        if (!iso) return null;
+        var t = new Date(iso).getTime();
+        if (!t) return null;
+        // 시·분을 섞으면 '0.8일 전' 같은 값이 나온다. 한국 날짜끼리의 차이로만 센다.
+        function kstDate(ms) {
+          try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+          catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+        }
+        var a = Date.parse(kstDate(t) + "T00:00:00Z");
+        var b = Date.parse(kstDate(Date.now()) + "T00:00:00Z");
+        if (isNaN(a) || isNaN(b)) return null;
+        return Math.max(0, Math.round((b - a) / 86400000));
+      }
+
+      function renderFreshness(source, period, updatedAt) {
+        var el = document.getElementById("mvpSrc");
+        if (!el) return;
+
+        // 맛보기 데이터에는 '발행 시점'이라는 개념이 없다.
+        // 여기에 'N일 전'을 붙이면 그 자리에서 숫자를 지어내는 셈이 된다.
+        if (source !== "live") {
+          el.innerHTML = '<span class="fresh-badge is-sample">맛보기</span>' +
+            (period ? " " + esc(period) + " 예시 데이터" : " 예시 데이터");
+          return;
+        }
+
+        var n = daysSinceKST(updatedAt);
+        if (n === null) {
+          el.textContent = period ? period + " 발행 리포트 기준" : "발행 리포트 기준";
+          return;
+        }
+        var tone = n <= 7 ? "is-fresh" : (n <= 14 ? "is-ok" : "is-stale");
+        var label = n === 0 ? "오늘 발행" : (n === 1 ? "어제 업데이트" : n + "일 전 업데이트");
+        var html = '<span class="fresh-badge ' + tone + '">' + label + "</span>";
+        if (period) html += " " + esc(period) + " 리포트";
+        // 오래됐다고 사과하지 않는다. 사과는 문제를 더 크게 보이게 만든다.
+        // 사실을 적고 다음을 안내하면, 오래된 날짜가 오히려 '관리되고 있다'는 신호로 뒤집힌다.
+        if (n > 14) html += '<br /><span class="fresh-next">새 리포트가 올라오면 여기부터 바뀌어요</span>';
+        el.innerHTML = html;
+      }
+
+      function renderReport(res) {
+        var d = res && res.stats, source = res && res.source;
         if (!d || typeof d !== "object") return;
         var total = (d.meta && d.meta.totalMessages) || (d.totals && d.totals.messages) || 0;
         var members = Array.isArray(d.members) ? d.members.slice() : [];
@@ -551,17 +691,26 @@
         var newCnt = (d.newMembers && d.newMembers.count) || 0;
         var emoji = d.emojiStats || {};
         var laugh = emoji.laugh || 0;
-        var period = d.periodLabel || "";
+        var period = (res && res.period) || d.periodLabel || "";
         var warmth = (laugh + (emoji.cheer || 0) + (emoji.heart || 0));
         var temp = Math.round((36.5 + Math.min(2.4, warmth / 1500)) * 10) / 10;
 
-        setText("mvpSrc", source === "live"
-          ? (period ? period + " 발행 리포트 기준" : "발행 리포트 기준")
-          : (period ? period + " 예시 데이터" : "예시 데이터"));
+        renderFreshness(source, period, res && res.updatedAt);
 
-        if (total) reCount("heroMsg", total, {});
-        if (members.length) reCount("heroMembers", members.length, {});
-        reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+        // 히어로 숫자는 '발행된 리포트'일 때만 연다. 맛보기 데이터로 규모를 말하지 않는다.
+        if (source === "live") {
+          // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있어서,
+          // '이번 달 대화'처럼 고정해 두면 어느 쪽이든 한쪽은 반드시 거짓이 된다.
+          setText("heroMsgWord", periodWord(period));
+          setText("vibeTitle", periodWord(period, true) + " 우리 분위기");
+          var box = document.getElementById("heroStats");
+          var note = document.getElementById("heroStatsNote");
+          if (box) box.hidden = false;
+          if (note) note.hidden = true;
+          if (total) reCount("heroMsg", total, {});
+          if (members.length) reCount("heroMembers", members.length, {});
+          reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+        }
         reCount("stTemp", temp, { decimals: 1 });
         if (members.length) reCount("stMembers", members.length, {});
         setText("stNewFoot", newCnt ? ("최근 새로 온 친구 " + newCnt + "명") : "요즘 함께하는 친구들");
@@ -576,10 +725,14 @@
         }
       }
 
-      supaGet("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at")
+      // 명시적으로 최신 1건만 받는다. 예전에는 order 도 limit 도 없이 전체 발행분을 받아
+      // 뷰 내부 정렬에 기대고 있었고, stats 는 리포트 하나가 수십 KB라 쌓일수록 첫 화면이 무거워졌다.
+      supaGet("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at&order=updated_at.desc&limit=1")
         .then(function (rows) {
           var live = (rows || []).filter(function (x) { return isV2(x.stats) || isV1(x.stats); });
-          if (live.length) return { stats: live[0].stats, source: "live" };
+          // 기간 문구는 컬럼을 1순위로 쓴다. 관리자가 직접 입력한 값이자 발행의 고유 키라
+          // stats 안에 든 값보다 믿을 만하다(둘이 어긋나면 화면이 조용히 퇴화했다).
+          if (live.length) return { stats: live[0].stats, source: "live", updatedAt: live[0].updated_at, period: live[0].period_label };
           throw new Error("empty");
         })
         .catch(function () {
@@ -587,7 +740,7 @@
             .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
             .then(function (s) { return { stats: s, source: "sample" }; });
         })
-        .then(function (res) { if (res && res.stats) renderReport(res.stats, res.source); })
+        .then(function (res) { if (res && res.stats) renderReport(res); })
         .catch(function () { /* 정적 폴백 유지 */ });
 
       /* ══════════ 2) 최근 소식 (site_posts_v → 예시 폴백) ══════════ */
