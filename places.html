@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1E0230" />
+
+  <title>동네친구들 — 맛집</title>
+  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역·종류로 찾고, 지도로 바로 열어요." />
+  <meta property="og:url" content="https://excer-site.vercel.app/places.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="동네친구들" />
+  <meta property="og:title" content="동네친구들 — 맛집" />
+  <meta property="og:description" content="벙에서 진짜 가봤던 곳만 모았어요." />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="assets/site.css" />
+  <script src="assets/site-core.js?v=1"></script>
+  <style>
+    /* ============================================================
+       맛집 목록 v1 — 페이지 전용 (site.css 수정 금지)
+       ============================================================ */
+    .places-toolbar { display: grid; gap: 10px; margin-bottom: 18px; }
+    .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      display: inline-flex; align-items: center; gap: 6px; flex: none;
+      min-height: 36px; padding: 0 13px; border-radius: var(--r-pill);
+      border: 1px solid var(--line); background: var(--white);
+      color: var(--ink-2); font-size: 13px; font-weight: 800; letter-spacing: -0.02em; cursor: pointer;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
+    }
+    .filter-chip:hover { border-color: var(--line-strong); }
+    .filter-chip.is-active { background: var(--grad-brand); color: #fff; border-color: transparent; }
+    .filter-chip.is-empty { opacity: 0.45; }
+    .fc-count { font-size: 11px; font-weight: 900; opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+    .places-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .places-count { color: var(--gray); font-size: 13px; font-weight: 750; }
+    .sort-row { display: flex; gap: 4px; }
+    .sort-btn {
+      padding: 6px 11px; border-radius: var(--r-pill); border: 0; background: none; cursor: pointer;
+      color: var(--gray); font-size: 12.5px; font-weight: 800;
+    }
+    .sort-btn.is-active { background: var(--lavender); color: var(--primary); }
+    .price-legend { color: var(--gray-2); font-size: 12px; font-weight: 650; line-height: 1.6; }
+
+    /* ── 목록 ── */
+    .place-list { display: grid; gap: 12px; }
+    @media (min-width: 700px)  { .place-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1080px) { .place-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+    .place-card {
+      display: flex; flex-direction: column; padding: 16px 17px; border-radius: var(--r-md);
+      border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
+    }
+    .place-card.is-closed { opacity: 0.66; }
+    .pc-top { display: flex; align-items: flex-start; gap: 11px; }
+    .pc-ic {
+      display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; flex: none; font-size: 20px;
+      background: var(--pastel-lavender);
+    }
+    .pc-name { font-size: 15.5px; font-weight: 870; letter-spacing: -0.03em; color: var(--deep-1); overflow-wrap: anywhere; }
+    .pc-again {
+      margin-left: auto; flex: none; padding: 3px 9px; border-radius: var(--r-pill);
+      background: var(--grad-brand); color: #fff; font-size: 11px; font-weight: 900; white-space: nowrap;
+    }
+    .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 12.5px; font-weight: 700; }
+    .pc-area { color: var(--primary); font-weight: 850; }
+    .pc-note {
+      margin-top: 11px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite);
+      color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 600;
+    }
+    .pc-note b { color: var(--gray); font-weight: 750; font-size: 12px; }
+    .pc-foot { margin-top: auto; padding-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pc-last { color: var(--gray-2); font-size: 12px; font-weight: 700; margin-right: auto; }
+    .pc-map {
+      display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px;
+      border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--white);
+      color: var(--primary); font-size: 12.5px; font-weight: 850; text-decoration: none;
+    }
+    .pc-map:hover { background: var(--lavender); }
+    .pc-more {
+      min-height: 34px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line);
+      background: none; color: var(--gray); font-size: 12.5px; font-weight: 800; cursor: pointer;
+    }
+    .pc-detail { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+    .visit-row { display: grid; gap: 5px; }
+    .visit-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 12.5px; font-weight: 800; }
+    .visit-head small { color: var(--gray-2); font-weight: 650; }
+    .visit-note { color: var(--ink-2); font-size: 13px; line-height: 1.6; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--lavender-2); }
+    .visit-note b { color: var(--gray); font-weight: 750; font-size: 12px; }
+    .closed-tag { padding: 2px 8px; border-radius: var(--r-pill); background: var(--card-2, var(--offwhite)); color: var(--gray-2); font-size: 11px; font-weight: 850; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="topnav" id="topnav">
+    <div class="container topnav-inner">
+      <a class="topnav-brand" href="index.html" aria-label="동네친구들 홈으로 이동">
+        <span class="topnav-logo">동네친구들</span>
+        <span class="topnav-sub">오픈채팅 커뮤니티</span>
+      </a>
+      <nav class="topnav-tabs" aria-label="주요 메뉴">
+        <a class="topnav-tab" href="index.html">홈</a>
+        <a class="topnav-tab" href="guide.html">필독</a>
+        <a class="topnav-tab" href="report.html">대시보드</a>
+        <a class="topnav-tab" href="calculator.html">정산</a>
+        <a class="topnav-tab" href="news.html">소식</a>
+        <a class="topnav-tab is-active" href="places.html" aria-current="page">맛집</a>
+      </nav>
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
+        <span class="tv-sep" aria-hidden="true"></span>
+        <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
+      </div>
+      <span class="topnav-page" aria-hidden="true">게임</span>
+    </div>
+  </header>
+  <section class="hero-band is-compact" aria-labelledby="heroTitle">
+    <div class="container">
+      <span class="hero-kicker"><i></i>벙에서 진짜 가봤던 곳</span>
+      <h1 class="hero-title" id="heroTitle">우리가 다녀온 맛집</h1>
+      <p class="hero-sub">추천 목록이에요. 가보지 않은 곳은 올리지 않아요.</p>
+      <div class="hero-actions">
+        <a class="btn btn-glass is-lg" href="news.html">후기 보러 가기</a>
+      </div>
+    </div>
+  </section>
+
+  <main id="main" class="page-main">
+    <section class="section">
+      <div class="container">
+
+        <div class="places-toolbar">
+          <!-- 필터는 등록된 곳이 15곳을 넘을 때만 켜진다.
+               5곳짜리 목록 위의 필터는 기능이 아니라 잡음이다. -->
+          <div id="filterWrap" hidden>
+            <div class="filter-row" id="areaRow" role="group" aria-label="지역으로 거르기"></div>
+            <div class="filter-row" id="catRow" role="group" aria-label="종류로 거르기" style="margin-top:6px"></div>
+          </div>
+          <div class="places-meta">
+            <span class="places-count" id="placesCount" aria-live="polite">불러오는 중…</span>
+            <div class="sort-row" id="sortRow" role="group" aria-label="정렬">
+              <button class="sort-btn is-active" type="button" data-sort="recent">최근 다녀온 순</button>
+              <button class="sort-btn" type="button" data-sort="again">또 간 순</button>
+              <button class="sort-btn" type="button" data-sort="price">가격 낮은 순</button>
+            </div>
+          </div>
+          <p class="price-legend">가격대는 1인 기준이에요 · ₩ 1만원 이하 · ₩₩ 1~2만원 · ₩₩₩ 2~3만원 · ₩₩₩₩ 3만원 이상 (술값은 뺀 기준)</p>
+        </div>
+
+        <div class="place-list" id="placeList"></div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="footer-logo">동네친구들</span>
+          <p class="footer-tagline">
+            오픈채팅에서 만난 동네친구들 —<br />
+            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+          </p>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+        </div>
+        <nav class="footer-col" aria-label="푸터 메뉴">
+          <h4>바로가기</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">홈</a></li>
+            <li><a href="guide.html">필독</a></li>
+            <li><a href="report.html">운영 대시보드</a></li>
+            <li><a href="calculator.html">벙비 정산기</a></li>
+            <li><a href="news.html">소식</a></li>
+            <li><a href="places.html">🍽️ 맛집</a></li>
+            <li><a href="games.html">🎮 게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
+          </ul>
+        </nav>
+        <div class="footer-col">
+          <h4>안내</h4>
+          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
+          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+      </div>
+    </div>
+  </footer>
+  <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
+    <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
+    <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
+    <a class="tab-item is-active" href="places.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ── 공통 셸 JS — v3-shell 그대로 ── -->
+  <script>
+    (function () {
+      "use strict";
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ── 1. topnav 스크롤 상태 ── */
+      var topnav = document.getElementById("topnav");
+      function syncNav() {
+        if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8);
+      }
+      window.addEventListener("scroll", syncNav, { passive: true });
+      syncNav();
+
+      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
+      var revealEls = document.querySelectorAll(".reveal");
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+        revealEls.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ── 3. 토스트 ── */
+      var toastEl = document.getElementById("toast");
+      var toastTimer = null;
+      function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400);
+      }
+
+      /* ── 4. 숫자 포맷 + 카운트업 ── */
+      function fmt(n, decimals) {
+        return Number(n).toLocaleString("ko-KR", {
+          minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
+        });
+      }
+      function countUp(el, to, opts) {
+        if (!el) return;
+        opts = opts || {};
+        var dur = opts.duration || 900;
+        var dec = opts.decimals || 0;
+        var suffix = opts.suffix || "";
+        if (reduceMotion || dur <= 0) { el.textContent = fmt(to, dec) + suffix; return; }
+        var start = null;
+        function step(ts) {
+          if (start === null) start = ts;
+          var p = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - p, 3); /* easeOutCubic */
+          el.textContent = fmt(to * eased, dec) + suffix;
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      /* ── 5. data-countup 자동 실행 (뷰포트 진입 시 1회) ── */
+      var cuEls = document.querySelectorAll("[data-countup]");
+      function fire(el) {
+        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
+          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
+          suffix: el.getAttribute("data-countup-suffix") || ""
+        });
+      }
+      if (!("IntersectionObserver" in window) || reduceMotion) {
+        cuEls.forEach(fire);
+      } else {
+        var cuIo = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
+          });
+        }, { threshold: 0.4 });
+        cuEls.forEach(function (el) { cuIo.observe(el); });
+      }
+
+
+      window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
+    })();
+  </script>
+
+  <!-- ── 페이지 로직: 맛집 목록 ── -->
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+
+      /* 지역·종류는 data/places.json 의 값과 같은 집합을 쓴다.
+         목록에 없는 값이 들어와도 버리지 않고 '그 외'로 묶는다 —
+         칩에 없는 동네 때문에 등록이 막히면 안 된다. */
+      var AREAS = ["논현·신사", "역삼·선릉", "강남역", "압구정·청담", "삼성·대치", "서초·교대", "잠실·송파", "그 외"];
+      var CATS  = ["고기", "한식", "일식", "중식", "양식·퓨전", "술집·포차", "카페·디저트", "분식·면"];
+      var CAT_ICON = {
+        "고기": "🥩", "한식": "🍲", "일식": "🍣", "중식": "🥟",
+        "양식·퓨전": "🍝", "술집·포차": "🍻", "카페·디저트": "☕", "분식·면": "🍜"
+      };
+      /* 필터를 켜는 문턱. 이보다 적으면 한 줄 목록이 더 읽기 쉽다. */
+      var FILTER_MIN = 15;
+
+      var state = { all: [], area: "전체", cat: "전체", sort: "recent", openId: null };
+
+      function esc(v) {
+        return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c];
+        });
+      }
+      function areaOf(p) { return AREAS.indexOf(p.area) >= 0 ? p.area : "그 외"; }
+      function catOf(p) { return CATS.indexOf(p.category) >= 0 ? p.category : ""; }
+
+      /* 지도 링크. 운영진이 실제 장소 주소를 넣었으면 그걸 쓰고,
+         없으면 '지역 + 상호명'으로 카카오맵 검색을 연다.
+         주소 기반이 아니라 장소명 검색인 이유는 관리 비용이다 —
+         도로명 주소는 한 글자만 틀려도 엉뚱한 곳이 뜨지만,
+         '역삼 ○○'은 기억나는 대로 적어도 검색이 맞춰 준다.
+         동명 이점포를 피하려고 지역명을 반드시 앞에 붙인다. */
+      function mapUrl(p) {
+        if (p.map_url) return p.map_url;
+        var q = (p.area && p.area !== "그 외" ? p.area.split("·")[0] + " " : "") + (p.name || "");
+        return "https://map.kakao.com/?q=" + encodeURIComponent(q.trim());
+      }
+
+      function visits(p) { return Array.isArray(p.visits) ? p.visits.slice() : []; }
+      function lastVisit(p) {
+        return visits(p).map(function (v) { return v && v.date; }).filter(Boolean).sort().pop() || "";
+      }
+      /* '또 갔어요'는 사람이 판단하지 않고 방문 기록에서 파생된다 — 조작 여지가 없다.
+         이 탭에는 별점이 없다. 표본이 서너 명인 커뮤니티에서 5점 척도는 변별력이 없고
+         낮은 점수를 남기는 부담이 커서 전부 4~5점으로 수렴한다. '또 갔다'가 더 정직하다. */
+      function visitCount(p) { return visits(p).length; }
+
+      function priceLevel(p) {
+        if (p.price_level >= 1 && p.price_level <= 4) return p.price_level;
+        // 금액 기록이 있으면 중앙값으로 정한다. 평균이 아니라 중앙값인 이유는
+        // 한 번의 단체 회식이 전체 인상을 왜곡하기 때문이다.
+        var nums = visits(p).map(function (v) { return Number(v && v.per_person) || 0; })
+          .filter(function (n) { return n > 0; }).sort(function (a, b) { return a - b; });
+        if (!nums.length) return 0;
+        var mid = nums[Math.floor((nums.length - 1) / 2)];
+        if (mid <= 10000) return 1;
+        if (mid <= 20000) return 2;
+        if (mid <= 30000) return 3;
+        return 4;
+      }
+      function priceText(lv) {
+        if (!lv) return "";
+        var mark = ["", "₩", "₩₩", "₩₩₩", "₩₩₩₩"][lv];
+        var word = ["", "1인 1만원 이하", "1인 1만원대", "1인 2만원대", "1인 3만원 이상"][lv];
+        return mark + " " + word;
+      }
+
+      function allNotes(p) {
+        var out = [];
+        // 방문 날짜순으로 훑는다. 배열에 적힌 순서를 믿으면 운영진이 과거 방문을
+        // 뒤에 덧붙였을 때 '가장 최근 한줄평'이 엉뚱한 것으로 바뀐다.
+        visits(p).sort(function (a, b) {
+          return String((a && a.date) || "").localeCompare(String((b && b.date) || ""));
+        }).forEach(function (v) {
+          (Array.isArray(v && v.notes) ? v.notes : []).forEach(function (n) {
+            if (n && n.text) out.push({ date: v.date || "", by: n.by || "", text: n.text, again: !!n.again });
+          });
+        });
+        return out;
+      }
+      function againVote(p) {
+        var n = allNotes(p);
+        if (n.length < 2) return null;   // 표본이 너무 적으면 비율을 말하지 않는다
+        return { yes: n.filter(function (x) { return x.again; }).length, all: n.length };
+      }
+
+      function dateText(d) {
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+        return m ? (m[2] + "월 " + Number(m[3]) + "일") : (d || "");
+      }
+
+      /* ── 목록 고르기·정렬 ── */
+      function visible() {
+        var list = state.all.filter(function (p) {
+          if (state.area !== "전체" && areaOf(p) !== state.area) return false;
+          if (state.cat !== "전체" && catOf(p) !== state.cat) return false;
+          return true;
+        });
+        list.sort(function (a, b) {
+          // 문 닫은 곳은 지우지 않고 맨 뒤로 보낸다 — 다녀온 기록은 남을 가치가 있다
+          if (!!a.closed !== !!b.closed) return a.closed ? 1 : -1;
+          if (state.sort === "again") {
+            var d = visitCount(b) - visitCount(a);
+            if (d) return d;
+          } else if (state.sort === "price") {
+            var pa = priceLevel(a) || 9, pb = priceLevel(b) || 9;   // 미기입은 맨 뒤
+            if (pa !== pb) return pa - pb;
+          }
+          return String(lastVisit(b)).localeCompare(String(lastVisit(a)));
+        });
+        return list;
+      }
+
+      /* ── 필터 칩 ── */
+      function countFor(kind, value) {
+        return state.all.filter(function (p) {
+          if (kind === "area") return value === "전체" || areaOf(p) === value;
+          return value === "전체" || catOf(p) === value;
+        }).length;
+      }
+      function chipHTML(kind, value, label) {
+        var n = countFor(kind, value);
+        var on = (kind === "area" ? state.area : state.cat) === value;
+        // 0인 칩은 숨기지 않고 흐리게 둔다. 숨기면 '우리 동네가 아예 없네'라는
+        // 정보 자체가 사라지고, 데이터가 늘 때마다 칩이 나타났다 사라져 들썩인다.
+        return '<button type="button" class="filter-chip' + (on ? " is-active" : "") + (n ? "" : " is-empty") +
+          '" data-kind="' + kind + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' +
+          esc(label) + '<span class="fc-count">' + n + "</span></button>";
+      }
+      function renderFilters() {
+        if (state.all.length < FILTER_MIN) { $("filterWrap").hidden = true; return; }
+        $("filterWrap").hidden = false;
+        $("areaRow").innerHTML = ['<button type="button" class="filter-chip' + (state.area === "전체" ? " is-active" : "") +
+          '" data-kind="area" data-value="전체">전체<span class="fc-count">' + state.all.length + "</span></button>"]
+          .concat(AREAS.map(function (a) { return chipHTML("area", a, a); })).join("");
+        $("catRow").innerHTML = ['<button type="button" class="filter-chip' + (state.cat === "전체" ? " is-active" : "") +
+          '" data-kind="cat" data-value="전체">전체<span class="fc-count">' + state.all.length + "</span></button>"]
+          .concat(CATS.map(function (c) { return chipHTML("cat", c, CAT_ICON[c] + " " + c); })).join("");
+      }
+
+      /* ── 카드 ── */
+      function cardHTML(p) {
+        var open = state.openId === p.id;
+        var lv = priceLevel(p);
+        var vc = visitCount(p);
+        var notes = allNotes(p);
+        var latest = notes.length ? notes[notes.length - 1] : null;
+        var vote = againVote(p);
+        var meta = [];
+        meta.push('<span class="pc-area">' + esc(areaOf(p)) + "</span>");
+        if (catOf(p)) meta.push(esc(catOf(p)));
+        if (lv) meta.push(esc(priceText(lv)) + (p.price_note ? " (" + esc(p.price_note) + ")" : ""));
+        if (p.closed) meta.push('<span class="closed-tag">지금은 문 닫았어요</span>');
+
+        var detail = "";
+        if (open) {
+          var rows = visits(p).slice().sort(function (a, b) {
+            return String(b.date || "").localeCompare(String(a.date || ""));
+          }).map(function (v) {
+            var head = ['<span>' + esc(dateText(v.date)) + "</span>"];
+            if (v.bung) head.push("<small>" + esc(v.bung) + "</small>");
+            if (v.per_person) head.push("<small>1인 " + Number(v.per_person).toLocaleString("ko-KR") + "원</small>");
+            var ns = (Array.isArray(v.notes) ? v.notes : []).filter(function (n) { return n && n.text; })
+              .map(function (n) {
+                return '<div class="visit-note">' + esc(n.text) +
+                  (n.by ? ' <b>— ' + esc(n.by) + (n.again ? " · 또 가고 싶어요" : "") + "</b>" : "") + "</div>";
+              }).join("");
+            return '<div class="visit-row"><div class="visit-head">' + head.join("") + "</div>" + ns + "</div>";
+          }).join("");
+          detail = '<div class="pc-detail">' +
+            (rows || '<div class="visit-note">아직 방문 기록이 없어요</div>') +
+            (vote ? '<div class="visit-head"><span>또 가고 싶어요 ' + vote.yes + "/" + vote.all + "</span></div>" : "") +
+            "</div>";
+        }
+
+        return '<article class="place-card' + (p.closed ? " is-closed" : "") + '" id="place-' + esc(p.id) + '">' +
+          '<div class="pc-top"><span class="pc-ic" aria-hidden="true">' + (CAT_ICON[catOf(p)] || "🍽️") + "</span>" +
+          '<div style="min-width:0"><div class="pc-name">' + esc(p.name) + "</div></div>" +
+          (vc >= 2 ? '<span class="pc-again">또 갔어요 ' + vc + "번</span>" : "") + "</div>" +
+          '<div class="pc-metaline">' + meta.join('<span aria-hidden="true">·</span>') + "</div>" +
+          (latest ? '<div class="pc-note">' + esc(latest.text) +
+            (latest.by ? " <b>— " + esc(latest.by) + "</b>" : "") + "</div>" : "") +
+          '<div class="pc-foot">' +
+          (lastVisit(p) ? '<span class="pc-last">마지막 방문 ' + esc(dateText(lastVisit(p))) + "</span>" : '<span class="pc-last"></span>') +
+          '<a class="pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">🗺 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
+          (visits(p).length ? '<button type="button" class="pc-more" data-open="' + esc(p.id) + '" aria-expanded="' + open + '">' + (open ? "접기" : "자세히") + "</button>" : "") +
+          "</div>" + detail + "</article>";
+      }
+
+      function emptyHTML() {
+        // 필터 때문에 빈 것과 원래 비어 있는 것은 다른 상태다.
+        if (state.all.length && (state.area !== "전체" || state.cat !== "전체")) {
+          var bits = [];
+          if (state.area !== "전체") bits.push(state.area);
+          if (state.cat !== "전체") bits.push(state.cat);
+          return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
+            "<strong>" + esc(bits.join(" · ")) + "에는 아직 기록이 없어요</strong>" +
+            "<p>지역이나 종류를 바꿔볼까요?</p>" +
+            '<button type="button" class="btn btn-secondary is-sm" data-reset="1">필터 풀기 (' + state.all.length + "곳)</button>" +
+            "</div></div>";
+        }
+        return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
+          "<strong>아직 다녀온 곳 기록이 없어요</strong>" +
+          "<p>벙에서 다녀온 곳을 하나씩 모으는 자리예요. 후기에 남겨 주시면 여기에 쌓여요.</p>" +
+          '<a class="btn btn-primary is-sm" href="news.html">후기 보러 가기</a>' +
+          "</div></div>";
+      }
+
+      function render() {
+        var list = visible();
+        $("placeList").innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
+        var label = state.all.length
+          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? " · 지금 " + list.length + "곳" : ""))
+          : "아직 등록된 곳이 없어요";
+        $("placesCount").textContent = label;
+        renderFilters();
+      }
+
+      function fail(msg) {
+        $("placeList").innerHTML = '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
+          "<strong>" + esc(msg) + "</strong><p>잠시 뒤 다시 열어봐 주세요.</p></div></div>";
+        $("placesCount").textContent = "";
+      }
+
+      /* ── 이벤트 ── */
+      $("placeList").addEventListener("click", function (e) {
+        var more = e.target.closest("[data-open]");
+        if (more) {
+          var id = more.getAttribute("data-open");
+          state.openId = state.openId === id ? null : id;
+          render();
+          return;
+        }
+        if (e.target.closest("[data-reset]")) { state.area = "전체"; state.cat = "전체"; render(); }
+      });
+      $("filterWrap").addEventListener("click", function (e) {
+        var chip = e.target.closest(".filter-chip");
+        if (!chip) return;
+        var kind = chip.getAttribute("data-kind"), value = chip.getAttribute("data-value");
+        if (kind === "area") state.area = value; else state.cat = value;
+        render();
+      });
+      $("sortRow").addEventListener("click", function (e) {
+        var b = e.target.closest("[data-sort]");
+        if (!b) return;
+        state.sort = b.getAttribute("data-sort");
+        [].forEach.call($("sortRow").children, function (el) { el.classList.toggle("is-active", el === b); });
+        render();
+      });
+
+      /* ── 불러오기 ──
+         1단계 저장소는 정적 JSON 한 파일이다. 서버로 올리는 건
+         멤버가 직접 등록하고 싶다는 요청이 실제로 들어오면 그때 한다.
+         필드 이름을 처음부터 서버와 같게 잡아 두었으므로 옮기기만 하면 된다. */
+      fetch("data/places.json", { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
+        .then(function (d) {
+          var rows = (d && Array.isArray(d.places)) ? d.places : [];
+          state.all = rows.filter(function (p) { return p && p.name; }).map(function (p, i) {
+            if (!p.id) p.id = "p" + i;
+            return p;
+          });
+          render();
+        })
+        .catch(function () { fail("맛집 목록을 불러오지 못했어요"); });
+    })();
+  </script>
+
+</body>
+</html>

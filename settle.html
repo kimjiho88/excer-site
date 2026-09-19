@@ -7,7 +7,17 @@
   <title>동네친구들 — 정산 확인</title>
   <meta name="description" content="벙주가 보낸 정산 링크예요. 내 벙비를 확인하고 입금 완료를 바로 체크할 수 있어요." />
   <meta name="robots" content="noindex" />
+  <!-- 공유 미리보기는 정산 '내용'을 말하지 않는다.
+       이 주소는 단톡방에 그대로 붙여넣는 링크이고 금액·이름·계좌를 담고 있으므로,
+       미리보기에는 고정 문구만 쓰고 페이지 내용을 반영하지 않는다. -->
   <meta property="og:site_name" content="동네친구들" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="동네친구들 정산 확인" />
+  <meta property="og:description" content="벙주가 보낸 정산 링크예요. 열어서 내 몫을 확인해 주세요." />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -239,6 +249,7 @@
       .m-actions { width: 100%; justify-content: flex-end; }
     }
   </style>
+  <script src="assets/site-core.js?v=1"></script>
 </head>
 
 <body>
@@ -256,7 +267,7 @@
         <a class="topnav-tab" href="report.html">대시보드</a>
         <a class="topnav-tab is-active" href="calculator.html" aria-current="page">정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
-        <a class="topnav-tab" href="games.html">게임</a>
+        <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -311,6 +322,7 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
+            <li><a href="places.html">🍽️ 맛집</a></li>
             <li><a href="games.html">🎮 게임</a></li>
           </ul>
         </nav>
@@ -333,7 +345,7 @@
     <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
     <a class="tab-item is-active" href="calculator.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg>게임</a>
+    <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -414,53 +426,6 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 (우측 상단) ── */
-      (function () {
-        var box = document.getElementById("visitBox");
-        if (!box) return;
-        var elToday = document.getElementById("visitToday");
-        var elTotal = document.getElementById("visitTotal");
-        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
-        function devKey() {
-          var k = null;
-          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
-          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
-          }
-          return k;
-        }
-        function show(today, total) {
-          box.hidden = false;
-          countUp(elToday, today || 0, { duration: 700 });
-          countUp(elTotal, total || 0, { duration: 700 });
-        }
-        function localFallback() {
-          var total = 1, today = 1;
-          try {
-            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
-            var d = new Date().toISOString().slice(0, 10);
-            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
-            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
-            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
-            total = raw.total; today = raw.today;
-          } catch (e) {}
-          show(today, total);
-        }
-        var counted = false;
-        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
-        fetch(U + "/rest/v1/rpc/visit_ping", {
-          method: "POST",
-          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
-        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
-          .then(function (d) {
-            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
-            show(d.today, d.total);
-          }).catch(function () { localFallback(); });
-      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -473,10 +438,7 @@
        - #d=…   : 링크 자체에 담긴 데이터 디코드 (체크는 이 기기에서만)
        - v2 payload: 결제자별 그룹 · 개인별 추가/차감 · 1인 금액 · 합계 검증
        ============================================================ */
-    const SUPA = {
-      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
-      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
-    };
+    const SUPA = window.SUPA;   // assets/site-core.js
     async function supaFetch(path, opts = {}) {
       const res = await fetch(SUPA.url + path, {
         ...opts,
@@ -712,7 +674,6 @@
             ${isNetwork ? `<button id="retryBtn" class="btn btn-primary" type="button">다시 시도</button>` : ""}
             <a class="btn btn-secondary" href="calculator.html">벙비 정산기 열기</a>
           </div>
-          ${isNetwork ? "" : `<small>운영진이라면 sql/site_features.sql 이 적용됐는지 확인해주세요.</small>`}
         </section>`;
     }
 

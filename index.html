@@ -7,11 +7,14 @@
 
   <title>동네친구들 — 오픈채팅 커뮤니티</title>
   <meta name="description" content="오픈채팅에서 만나 동네에서 진짜로 만나는 동네친구들. 벙 잡고, 같이 운동하고, 끝나면 깔끔하게 정산해요." />
+  <meta property="og:url" content="https://excer-site.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 — 오픈채팅 커뮤니티" />
   <meta property="og:description" content="같이 뛰고, 먹고, 노는 동네친구들. 필독부터 운영 대시보드까지 한곳에서." />
-  <meta property="og:image" content="assets/og.png" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
@@ -35,6 +38,9 @@
       margin-top: 22px; font-size: clamp(52px, 9vw, 108px); line-height: 1.0; letter-spacing: -0.06em;
     }
     .hero-home .hero-title.is-single .grad-text-hero { display: inline-block; padding-bottom: 0.06em; }
+
+    /* 숫자 pill 이 아직 열리지 않았을 때 그 자리를 대신하는 한 줄 */
+    .hero-note { margin-top: 18px; color: var(--on-dark-muted); font-size: 13.5px; font-weight: 650; }
 
     /* ── 소개 스트립 (우리는 이런 사이) — 히어로 위로 겹침 ── */
     .intro-strip { display: grid; gap: clamp(12px, 1.6vw, 18px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -105,7 +111,17 @@
     }
     .vibe-name { font-size: clamp(19px, 2.2vw, 24px); font-weight: 940; letter-spacing: -0.04em; color: #fff; line-height: 1.1; }
     .vibe-line { margin-top: 4px; color: rgba(255, 255, 255, 0.82); font-size: 13.5px; font-weight: 750; }
-    .vibe-src { margin-top: 16px; color: rgba(255, 255, 255, 0.62); font-size: 12px; font-weight: 700; }
+    .vibe-src { margin-top: 16px; color: rgba(255, 255, 255, 0.62); font-size: 12px; font-weight: 700; line-height: 1.7; }
+    /* 신선도 배지 — 어두운 카드 위에 얹히므로 밝은 계열로 대비를 잡는다 */
+    .fresh-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; margin-right: 2px;
+      font-size: 11px; font-weight: 850; letter-spacing: -0.01em;
+    }
+    .fresh-badge.is-fresh  { background: rgba(120, 236, 186, 0.20); color: #9DF3CC; }
+    .fresh-badge.is-ok     { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.86); }
+    .fresh-badge.is-stale  { background: rgba(255, 214, 128, 0.20); color: #FFDFA1; }
+    .fresh-badge.is-sample { background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.78); }
+    .fresh-next { color: rgba(255, 255, 255, 0.52); font-weight: 650; }
     .vibe-go { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; color: #fff; font-size: 13px; font-weight: 850; }
     .vibe-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
     .vibe-card:hover .vibe-go svg { transform: translateX(4px); }
@@ -170,6 +186,7 @@
       .vibe-stats { grid-template-columns: 1fr; }
     }
   </style>
+  <script src="assets/site-core.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -187,7 +204,7 @@
         <a class="topnav-tab" href="report.html">대시보드</a>
         <a class="topnav-tab" href="calculator.html">정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
-        <a class="topnav-tab" href="games.html">게임</a>
+        <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -204,7 +221,9 @@
     <i class="glow-orb" style="--orb-size:480px; --orb-color:rgba(200,162,232,0.36); right:-150px; top:-170px" aria-hidden="true"></i>
     <i class="glow-orb" style="--orb-size:400px; --orb-color:rgba(255,184,209,0.20); left:-140px; bottom:-200px" aria-hidden="true"></i>
     <div class="container">
-      <span class="hero-kicker"><i></i>오픈채팅에서 만난 사이</span>
+      <!-- 기본값은 기존 문구. 기기 시계를 읽을 수 있으면 시간대 인사말로 교체된다.
+           키커는 히어로의 고정 구성요소라 비우면 구멍이 보이므로, 판정이 안 되면 이 문구로 남는다. -->
+      <span class="hero-kicker" id="heroKicker"><i></i>오픈채팅에서 만난 사이</span>
       <h1 class="hero-title is-single" id="heroTitle">
         <span class="grad-text-hero">동네친구들</span>
       </h1>
@@ -213,14 +232,19 @@
         같이 운동하고 밥 먹고, 끝나면 벙비는 <strong>깔끔하게 나눠요</strong>.
       </p>
       <div class="hero-actions">
-        <a class="btn btn-hero is-lg" href="guide.html">필독부터 보기</a>
-        <a class="btn btn-glass is-lg" href="news.html">소식 둘러보기</a>
+        <a class="btn btn-hero is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
+        <a class="btn btn-glass is-lg" href="guide.html">필독부터 보기</a>
       </div>
-      <div class="hero-meta">
-        <span class="stat-pill"><i></i>함께한 친구 <strong id="heroMembers" data-countup="16">0</strong>명</span>
-        <span class="stat-pill"><i></i>이번 달 대화 <strong id="heroMsg" data-countup="7100">0</strong>건</span>
-        <span class="stat-pill"><i></i>동네친구들 온도 <strong id="heroTemp" data-countup="37.7" data-countup-decimals="1" data-countup-suffix="°">0</strong></span>
+      <!-- 숫자는 발행된 리포트가 있을 때만 보여준다.
+           예전에는 data/report-sample.json 의 값(16명·7,100건·37.7°)이 HTML 에 그대로
+           박혀 있어서, 서버가 죽거나 발행분이 없어도 방문자는 그 숫자를 실제 규모로 읽었다.
+           게다가 로드 직후 샘플값으로 한 번, 실데이터가 오면 또 한 번 세면서 숫자가 뒤집혔다. -->
+      <div class="hero-meta" id="heroStats" hidden>
+        <span class="stat-pill"><i></i>함께한 친구 <strong id="heroMembers">—</strong>명</span>
+        <span class="stat-pill"><i></i><span id="heroMsgWord">최근 대화</span> <strong id="heroMsg">—</strong>건</span>
+        <span class="stat-pill"><i></i>동네친구들 온도 <strong id="heroTemp">—</strong></span>
       </div>
+      <p class="hero-note" id="heroStatsNote">첫 리포트를 준비 중이에요</p>
     </div>
   </section>
 
@@ -286,10 +310,11 @@
             <span class="step-num" aria-hidden="true">1</span>
             <h3>오픈채팅 입장</h3>
             <p>동네친구들 오픈채팅에 들어와 닉네임을 양식에 맞춰 바꿔요. (예: 엑서 논현 남 88)</p>
+            <a class="step-link" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
           <div class="card is-lg step-card card-lift reveal d1">
             <span class="step-num" aria-hidden="true">2</span>
-            <h3>필독 3분 훑기</h3>
+            <h3>필독 1분 요약</h3>
             <p>벙 참여랑 정산, 매너 같은 기본만 가볍게 확인하면 준비 끝이에요.</p>
             <a class="step-link" href="guide.html">필독 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
@@ -307,7 +332,7 @@
     <section class="section" aria-labelledby="newsTitle">
       <div class="container">
         <div class="section-head reveal">
-          <span class="eyebrow">방금 올라온</span>
+          <span class="eyebrow" id="newsEyebrow">최근 올라온</span>
           <h2 id="newsTitle">동네친구들 소식</h2>
           <p>공지랑 벙 모집, 다녀온 후기까지. 새 소식은 여기서 먼저 확인해요.</p>
         </div>
@@ -316,27 +341,34 @@
             <h3>최근 소식</h3>
             <a class="news-more" href="news.html">소식 전체 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
-          <div class="news-list" id="newsList">
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">📢</span>
-              <span class="news-body"><span class="news-title">소식 피드 이용 안내</span><span class="news-meta"><span class="news-cat">공지</span> · 운영진</span></span>
-              <span class="news-react">👍 7</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">🎉</span>
-              <span class="news-body"><span class="news-title">이번 주 금요일 강남 저녁 벙 모집해요</span><span class="news-meta"><span class="news-cat">벙 소식</span> · 준호</span></span>
-              <span class="news-react">🔥 9</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">✨</span>
-              <span class="news-body"><span class="news-title">일요일 보드게임 벙 다녀왔어요</span><span class="news-meta"><span class="news-cat">후기</span> · 서아</span></span>
-              <span class="news-react">❤️ 8</span>
-            </a>
-            <a class="news-item" href="news.html">
-              <span class="news-emoji" aria-hidden="true">💡</span>
-              <span class="news-body"><span class="news-title">강남역 근처 단체석 잘 잡히는 집 정리</span><span class="news-meta"><span class="news-cat">정보</span> · 민지</span></span>
-              <span class="news-react">👍 8</span>
-            </a>
+          <div class="news-list" id="newsList" aria-busy="true">
+            <!-- 스켈레톤 4줄 — 실데이터가 오면 통째로 교체된다.
+                 예전에는 여기에 실존하지 않는 글 4건이 박혀 있었다. 작성자도 반응 수도
+                 지어낸 값이었고, 서버 조회가 실패하면 그 가짜 글이 그대로 남았다. -->
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:72%"></span>
+              <span class="skeleton skeleton-line" style="width:38%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:60%"></span>
+              <span class="skeleton skeleton-line" style="width:32%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:80%"></span>
+              <span class="skeleton skeleton-line" style="width:35%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
+            <div class="news-item" aria-hidden="true">
+              <span class="skeleton skeleton-block" style="width:40px;height:40px;border-radius:12px"></span>
+              <span class="news-body"><span class="skeleton skeleton-line" style="width:66%"></span>
+              <span class="skeleton skeleton-line" style="width:30%;margin-top:8px;height:11px"></span></span>
+              <span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -356,11 +388,13 @@
             <div class="vibe-top">
               <span class="vibe-ava" aria-hidden="true">🏆</span>
               <div>
-                <div class="vibe-name" id="mvpName">민지</div>
-                <div class="vibe-line" id="mvpLine">이 기간 1,046마디 · 개근 58일</div>
+                <!-- 기본값은 사람 이름이 아니다. 예전에는 맛보기 데이터의 '민지 · 1,046마디'가
+                     그대로 박혀 있어서, 리포트를 한 번도 못 불러와도 실존 인물처럼 보였다. -->
+                <div class="vibe-name" id="mvpName">—</div>
+                <div class="vibe-line" id="mvpLine">리포트가 올라오면 보여요</div>
               </div>
             </div>
-            <div class="vibe-src" id="mvpSrc">예시 데이터 기준</div>
+            <div class="vibe-src" id="mvpSrc">아직 발행된 리포트가 없어요</div>
             <span class="vibe-go">대시보드에서 자세히 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
@@ -368,12 +402,12 @@
             <div class="vibe-stats" style="height:100%">
               <div class="vibe-stat">
                 <span class="vs-top"><span class="vs-ic is-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>동네친구들 온도</span>
-                <div class="vs-value"><span id="stTemp" data-countup="37.7" data-countup-decimals="1">0</span><small>°</small></div>
+                <div class="vs-value"><span id="stTemp">—</span><small>°</small></div>
                 <span class="vs-foot">대화가 따뜻할수록 올라가요</span>
               </div>
               <div class="vibe-stat">
                 <span class="vs-top"><span class="vs-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c.8-3.2 3.3-5 6.4-5s5.6 1.8 6.4 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.7c2.5.4 4.4 1.9 5.2 4.3"/></svg></span>함께한 친구</span>
-                <div class="vs-value"><span id="stMembers" data-countup="16">0</span><small>명</small></div>
+                <div class="vs-value"><span id="stMembers">—</span><small>명</small></div>
                 <span class="vs-foot" id="stNewFoot">요즘 함께하는 친구들</span>
               </div>
             </div>
@@ -402,7 +436,7 @@
           <a class="bento-card feature-card bento-2x reveal d1" href="guide.html" aria-label="필독으로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg></span>
             <h3>필독</h3>
-            <p>벙 참여랑 정산, 매너 같은 기본을 3분이면 훑어요. 처음 온 분도 오래 함께한 멤버도 같이 봐요.</p>
+            <p>벙 참여랑 정산, 매너 같은 기본. 맨 위 1분 요약만 봐도 충분해요. 처음 온 분도 오래 함께한 멤버도 같이 봐요.</p>
             <span class="fc-go">가이드 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
@@ -466,7 +500,9 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
+            <li><a href="places.html">🍽️ 맛집</a></li>
             <li><a href="games.html">🎮 게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
           </ul>
         </nav>
         <div class="footer-col">
@@ -489,7 +525,7 @@
     <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
     <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg>게임</a>
+    <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -498,8 +534,8 @@
   <script>
     (function () {
       "use strict";
-      var SUPA_URL = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-      var SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
+      var SUPA_URL = window.SUPA.url;    // assets/site-core.js
+      var SUPA_ANON = window.SUPA.anon;
 
       function esc(v) {
         var e = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
@@ -532,7 +568,125 @@
       function isV2(s) { return s && s.v === 2 && Array.isArray(s.days) && Array.isArray(s.members); }
       function isV1(s) { return s && s.totals && !isV2(s); }
 
-      function renderReport(d, source) {
+      /* ══════════ 0) 시간대 인사말 (라이브 신호) ══════════
+         서버를 전혀 쓰지 않는다. 필요한 건 기기 시계와, 마지막 방문 날짜 한 칸뿐이다.
+         원칙: 시각 숫자를 쓰지 않는다. '지금 19시입니다'는 기기 시계가 틀리면 그대로 거짓이
+         되지만, 인사말은 한 시간쯤 어긋나도 깨지지 않는다.                                   */
+      var LAST_VISIT_KEY = "excer_last_visit";
+
+      // 한국 시각 기준 구간. 대시보드가 쓰는 5구간에 포개지도록 '낮'만 둘로 쪼갰다.
+      function kstHour() {
+        try {
+          var h = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul", hour: "2-digit", hour12: false });
+          var n = parseInt(h, 10);
+          return (n >= 0 && n <= 23) ? n : null;
+        } catch (e) { return null; }
+      }
+      function kstToday() {
+        try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); } catch (e) { return ""; }
+      }
+      function bandOf(h) {
+        if (h <= 5) return "dawn";
+        if (h <= 10) return "morning";
+        if (h <= 13) return "lunch";
+        if (h <= 16) return "afternoon";
+        if (h <= 21) return "evening";
+        return "night";
+      }
+      var GREETINGS = {
+        dawn:      ["늦은 시간까지 고생 많아요", "아직 안 주무셨네요"],
+        morning:   ["좋은 아침이에요", "오늘도 잘 시작해요"],
+        lunch:     ["점심 맛있게 드세요", "점심은 드셨어요?"],
+        afternoon: ["오후도 잘 보내고 있나요", "조금만 더 힘내요"],
+        evening:   ["오늘 하루 수고했어요", "퇴근하셨어요?"],
+        night:     ["오늘도 잘 마무리했나요", "푹 쉬어요"]
+      };
+
+      function applyGreeting() {
+        var el = document.getElementById("heroKicker");
+        var h = kstHour();
+        if (!el || h === null) return;   // 시계가 이상하면 기존 문구를 그대로 둔다
+
+        var today = kstToday();
+        var last = null;
+        try { last = localStorage.getItem(LAST_VISIT_KEY); } catch (e) {}
+        // 저장소를 못 쓰면 재방문 판정을 포기하고 시간대 인사말만 쓴다.
+        // 첫 방문으로 단정하면 매일 오는 멤버에게 매일 처음이라고 인사하게 된다.
+        var text;
+        if (last === null) {
+          text = "처음 오셨네요, 반가워요";
+        } else {
+          var set = GREETINGS[bandOf(h)] || GREETINGS.morning;
+          // 같은 날 다시 와도 같은 문장이 나오도록 날짜를 씨앗으로 쓴다.
+          // 새로고침할 때마다 문장이 춤추면 신뢰가 아니라 산만함이 된다.
+          var seed = parseInt(String(today).replace(/-/g, ""), 10) || 0;
+          text = set[seed % set.length];
+          if (last && last !== today) text = "또 오셨네요";
+        }
+        el.textContent = text;
+        el.insertAdjacentHTML("afterbegin", "<i></i>");
+        try { localStorage.setItem(LAST_VISIT_KEY, today); } catch (e) {}
+      }
+      applyGreeting();
+
+      /* 기간 문구에서 화면에 쓸 단어를 뽑는다.
+         '2026년 6월' → '6월' / '6/1~6/7' 처럼 구간이면 '이 기간' / 못 읽으면 '최근'.
+         대시보드도 같은 방식으로 기간 단어를 바꾸는데 홈만 고정이라 서로 어긋나 있었다. */
+      function periodWord(period, bare) {
+        var p = String(period || "").trim();
+        var m = /(\d{1,2})\s*월/.exec(p);
+        var word = m ? (m[1] + "월") : (/[~–-]/.test(p) && p ? "이 기간" : "최근");
+        return bare ? word : (word + " 대화");
+      }
+
+      /* ══════════ 리포트 신선도 (라이브 신호) ══════════
+         updated_at 을 받아만 놓고 한 번도 쓰지 않고 있었다. 그래서 방문자는 이 숫자가
+         어제 것인지 석 달 전 것인지 알 수 없었다. 신선도 표시는 숫자를 믿게 만들 뿐 아니라,
+         그 자체가 '이 사이트는 주기적으로 갱신된다'는 신호로 작동한다.                       */
+      function daysSinceKST(iso) {
+        if (!iso) return null;
+        var t = new Date(iso).getTime();
+        if (!t) return null;
+        // 시·분을 섞으면 '0.8일 전' 같은 값이 나온다. 한국 날짜끼리의 차이로만 센다.
+        function kstDate(ms) {
+          try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+          catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+        }
+        var a = Date.parse(kstDate(t) + "T00:00:00Z");
+        var b = Date.parse(kstDate(Date.now()) + "T00:00:00Z");
+        if (isNaN(a) || isNaN(b)) return null;
+        return Math.max(0, Math.round((b - a) / 86400000));
+      }
+
+      function renderFreshness(source, period, updatedAt) {
+        var el = document.getElementById("mvpSrc");
+        if (!el) return;
+
+        // 맛보기 데이터에는 '발행 시점'이라는 개념이 없다.
+        // 여기에 'N일 전'을 붙이면 그 자리에서 숫자를 지어내는 셈이 된다.
+        if (source !== "live") {
+          el.innerHTML = '<span class="fresh-badge is-sample">맛보기</span>' +
+            (period ? " " + esc(period) + " 예시 데이터" : " 예시 데이터");
+          return;
+        }
+
+        var n = daysSinceKST(updatedAt);
+        if (n === null) {
+          el.textContent = period ? period + " 발행 리포트 기준" : "발행 리포트 기준";
+          return;
+        }
+        var tone = n <= 7 ? "is-fresh" : (n <= 14 ? "is-ok" : "is-stale");
+        var label = n === 0 ? "오늘 발행" : (n === 1 ? "어제 업데이트" : n + "일 전 업데이트");
+        var html = '<span class="fresh-badge ' + tone + '">' + label + "</span>";
+        if (period) html += " " + esc(period) + " 리포트";
+        // 오래됐다고 사과하지 않는다. 사과는 문제를 더 크게 보이게 만든다.
+        // 사실을 적고 다음을 안내하면, 오래된 날짜가 오히려 '관리되고 있다'는 신호로 뒤집힌다.
+        if (n > 14) html += '<br /><span class="fresh-next">새 리포트가 올라오면 여기부터 바뀌어요</span>';
+        el.innerHTML = html;
+      }
+
+      function renderReport(res) {
+        var d = res && res.stats, source = res && res.source;
         if (!d || typeof d !== "object") return;
         var total = (d.meta && d.meta.totalMessages) || (d.totals && d.totals.messages) || 0;
         var members = Array.isArray(d.members) ? d.members.slice() : [];
@@ -540,17 +694,26 @@
         var newCnt = (d.newMembers && d.newMembers.count) || 0;
         var emoji = d.emojiStats || {};
         var laugh = emoji.laugh || 0;
-        var period = d.periodLabel || "";
+        var period = (res && res.period) || d.periodLabel || "";
         var warmth = (laugh + (emoji.cheer || 0) + (emoji.heart || 0));
         var temp = Math.round((36.5 + Math.min(2.4, warmth / 1500)) * 10) / 10;
 
-        setText("mvpSrc", source === "live"
-          ? (period ? period + " 발행 리포트 기준" : "발행 리포트 기준")
-          : (period ? period + " 예시 데이터" : "예시 데이터"));
+        renderFreshness(source, period, res && res.updatedAt);
 
-        if (total) reCount("heroMsg", total, {});
-        if (members.length) reCount("heroMembers", members.length, {});
-        reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+        // 히어로 숫자는 '발행된 리포트'일 때만 연다. 맛보기 데이터로 규모를 말하지 않는다.
+        if (source === "live") {
+          // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있어서,
+          // '이번 달 대화'처럼 고정해 두면 어느 쪽이든 한쪽은 반드시 거짓이 된다.
+          setText("heroMsgWord", periodWord(period));
+          setText("vibeTitle", periodWord(period, true) + " 우리 분위기");
+          var box = document.getElementById("heroStats");
+          var note = document.getElementById("heroStatsNote");
+          if (box) box.hidden = false;
+          if (note) note.hidden = true;
+          if (total) reCount("heroMsg", total, {});
+          if (members.length) reCount("heroMembers", members.length, {});
+          reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+        }
         reCount("stTemp", temp, { decimals: 1 });
         if (members.length) reCount("stMembers", members.length, {});
         setText("stNewFoot", newCnt ? ("최근 새로 온 친구 " + newCnt + "명") : "요즘 함께하는 친구들");
@@ -565,10 +728,14 @@
         }
       }
 
-      supaGet("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at")
+      // 명시적으로 최신 1건만 받는다. 예전에는 order 도 limit 도 없이 전체 발행분을 받아
+      // 뷰 내부 정렬에 기대고 있었고, stats 는 리포트 하나가 수십 KB라 쌓일수록 첫 화면이 무거워졌다.
+      supaGet("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at&order=updated_at.desc&limit=1")
         .then(function (rows) {
           var live = (rows || []).filter(function (x) { return isV2(x.stats) || isV1(x.stats); });
-          if (live.length) return { stats: live[0].stats, source: "live" };
+          // 기간 문구는 컬럼을 1순위로 쓴다. 관리자가 직접 입력한 값이자 발행의 고유 키라
+          // stats 안에 든 값보다 믿을 만하다(둘이 어긋나면 화면이 조용히 퇴화했다).
+          if (live.length) return { stats: live[0].stats, source: "live", updatedAt: live[0].updated_at, period: live[0].period_label };
           throw new Error("empty");
         })
         .catch(function () {
@@ -576,7 +743,7 @@
             .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
             .then(function (s) { return { stats: s, source: "sample" }; });
         })
-        .then(function (res) { if (res && res.stats) renderReport(res.stats, res.source); })
+        .then(function (res) { if (res && res.stats) renderReport(res); })
         .catch(function () { /* 정적 폴백 유지 */ });
 
       /* ══════════ 2) 최근 소식 (site_posts_v → 예시 폴백) ══════════ */
@@ -587,30 +754,81 @@
         Object.keys(reactions).forEach(function (k) { if ((reactions[k] || 0) > bestV) { bestV = reactions[k]; bestK = k; } });
         return bestV > 0 ? (bestK + " " + bestV) : "";
       }
+      // 상대시간 — 소식 페이지와 같은 단계를 쓴다(방금 전 / N분 전 / N시간 전 / N일 전 / 날짜)
+      function relTime(iso) {
+        if (!iso) return "";
+        var t = new Date(iso).getTime();
+        if (!t) return "";
+        var s = Math.floor((Date.now() - t) / 1000);
+        if (s < 60) return "방금 전";
+        if (s < 3600) return Math.floor(s / 60) + "분 전";
+        if (s < 86400) return Math.floor(s / 3600) + "시간 전";
+        if (s < 604800) return Math.floor(s / 86400) + "일 전";
+        var d = new Date(t);
+        return (d.getMonth() + 1) + "월 " + d.getDate() + "일";
+      }
+
+      // 소식 자리의 빈 상태·실패 상태. 어느 경우에도 없는 글을 남겨두지 않는다.
+      function newsNotice(title, sub, linkText, href) {
+        var host = document.getElementById("newsList");
+        if (!host) return;
+        host.removeAttribute("aria-busy");
+        host.innerHTML =
+          '<div class="card news-empty"><div class="empty-state">' +
+          "<strong>" + esc(title) + "</strong><p>" + esc(sub) + "</p>" +
+          '<a class="btn btn-secondary is-sm" href="' + href + '">' + esc(linkText) + "</a>" +
+          "</div></div>";
+      }
+
       function renderNews(posts) {
         var host = document.getElementById("newsList");
-        if (!host || !Array.isArray(posts) || !posts.length) return;
+        if (!host) return;
+        host.removeAttribute("aria-busy");
+        if (!Array.isArray(posts) || !posts.length) {
+          newsNotice("아직 올라온 소식이 없어요", "공지, 벙 소식, 후기까지 — 첫 소식을 남겨볼까요?", "첫 소식 쓰기", "news.html");
+          return;
+        }
         // 고정(공지) 우선 + 최신순 상위 4개
         var list = posts.slice().sort(function (a, b) {
           if ((b.pinned ? 1 : 0) !== (a.pinned ? 1 : 0)) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
           return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         }).slice(0, 4);
+
+        // eyebrow 를 근거 있는 말로 바꾼다. 예전엔 무조건 '방금 올라온'이었는데,
+        // 두 달 전 글만 있어도 그렇게 적혀 있었다. 이 한 줄도 작은 라이브 신호가 된다.
+        var newest = list.reduce(function (t, p) {
+          var v = new Date(p.created_at || 0).getTime();
+          return v > t ? v : t;
+        }, 0);
+        var eb = document.getElementById("newsEyebrow");
+        if (eb && newest) eb.textContent = (Date.now() - newest < 86400000) ? "방금 올라온" : "최근 올라온";
+
         host.innerHTML = list.map(function (p) {
           var cat = p.category || "자유";
           var emoji = CAT_EMOJI[cat] || "💬";
           var react = topReaction(p.reactions);
-          return '<a class="news-item" href="news.html">' +
+          // 글 단위 링크 — 제목을 보고 누른 사람이 그 글로 바로 가야 한다.
+          // 예전에는 전부 목록 맨 위로만 보내서, 누른 글을 다시 찾아야 했다.
+          var href = p.id ? "news.html#post-" + p.id : "news.html";
+          // 반응이 아직 없는 글일수록 오른쪽 칸이 비어 허전해 보이는 역설이 있었다.
+          // 반응이 없으면 그 자리에 올라온 시각을 넣는다 — 항상 채워진다.
+          var tail = react ? esc(react) : relTime(p.created_at);
+          return '<a class="news-item" href="' + href + '">' +
             '<span class="news-emoji" aria-hidden="true">' + emoji + "</span>" +
             '<span class="news-body"><span class="news-title">' + esc(p.title || "제목 없음") + "</span>" +
             '<span class="news-meta"><span class="news-cat">' + esc(cat) + "</span> · " + esc(p.author || "동네친구") + "</span></span>" +
-            (react ? '<span class="news-react">' + esc(react) + "</span>" : "<span></span>") +
+            (tail ? '<span class="news-react">' + tail + "</span>" : "<span></span>") +
             "</a>";
         }).join("");
       }
 
       supaGet("/rest/v1/site_posts_v?select=id,category,title,author,pinned,created_at,reactions&order=pinned.desc,created_at.desc&limit=8")
-        .then(function (rows) { if (Array.isArray(rows) && rows.length) renderNews(rows); })
-        .catch(function () { /* 예시 소식(HTML 정적)이 그대로 남아 화면이 비지 않음 */ });
+        .then(renderNews)
+        .catch(function () {
+          // 예전에는 여기서 아무것도 하지 않아, HTML 에 박힌 가짜 소식 4건이 그대로 남았다.
+          // 실패를 숨기려다 실존하지 않는 글을 계속 보여주는 쪽이 더 나빴다.
+          newsNotice("소식을 불러오지 못했어요", "잠시 뒤 다시 확인해 주세요.", "소식 페이지 열기", "news.html");
+        });
     })();
   </script>
 
@@ -695,53 +913,6 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 ── */
-      (function () {
-        var box = document.getElementById("visitBox");
-        if (!box) return;
-        var elToday = document.getElementById("visitToday");
-        var elTotal = document.getElementById("visitTotal");
-        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
-        function devKey() {
-          var k = null;
-          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
-          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
-          }
-          return k;
-        }
-        function show(today, total) {
-          box.hidden = false;
-          countUp(elToday, today || 0, { duration: 700 });
-          countUp(elTotal, total || 0, { duration: 700 });
-        }
-        function localFallback() {
-          var total = 1, today = 1;
-          try {
-            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
-            var d = new Date().toISOString().slice(0, 10);
-            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
-            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
-            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
-            total = raw.total; today = raw.today;
-          } catch (e) {}
-          show(today, total);
-        }
-        var counted = false;
-        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
-        fetch(U + "/rest/v1/rpc/visit_ping", {
-          method: "POST",
-          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
-        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
-          .then(function (d) {
-            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
-            show(d.today, d.total);
-          }).catch(function () { localFallback(); });
-      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();

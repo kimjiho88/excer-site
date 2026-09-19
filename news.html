@@ -7,11 +7,14 @@
 
   <title>동네친구들 — 소식</title>
   <meta name="description" content="공지부터 벙 소식, 후기, 정보, 자유 수다까지. 동네친구들 소식을 카드 피드로 편하게 나눠요." />
+  <meta property="og:url" content="https://excer-site.vercel.app/news.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 — 소식" />
   <meta property="og:description" content="공지부터 후기·정보까지, 동네친구들 소식을 한곳에서." />
-  <meta property="og:image" content="assets/og.png" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
@@ -116,6 +119,50 @@
       transition: box-shadow 0.22s var(--ease), transform 0.22s var(--ease), border-color 0.22s var(--ease);
     }
     .post-card.card-lift:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); border-color: var(--line-strong); }
+    /* 링크를 타고 들어왔을 때 "이 글이에요" 하고 짚어 주는 표시.
+       목록 한가운데로 스크롤되면 어느 카드 때문에 왔는지 알 수 없다. */
+    .post-card.is-linked {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(95, 0, 128, 0.14), var(--shadow-2);
+      animation: linked-pulse 2.4s var(--ease-out) both;
+    }
+    @keyframes linked-pulse {
+      0%, 62% { box-shadow: 0 0 0 3px rgba(95, 0, 128, 0.18), var(--shadow-2); }
+      100%    { box-shadow: 0 0 0 0 rgba(95, 0, 128, 0), var(--shadow-1); }
+    }
+    @media (prefers-reduced-motion: reduce) { .post-card.is-linked { animation: none; } }
+    .mini-btn.mini-link { color: var(--primary); }
+    .pass-hint { color: var(--gray-2); }
+    .linkish {
+      background: none; border: 0; padding: 0; cursor: pointer;
+      color: var(--primary); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 2px;
+    }
+
+    /* ── 벙 정보 줄 ── */
+    .bung-strip {
+      display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+      margin: 0 18px 12px; padding: 10px 13px; border-radius: var(--r-sm);
+      background: var(--pastel-sky); font-size: 13px; font-weight: 750; color: var(--ink-2);
+    }
+    .bung-strip.is-past { background: var(--offwhite); color: var(--gray); }
+    .bung-dday {
+      padding: 2px 9px; border-radius: var(--r-pill); flex: none;
+      background: var(--grad-brand); color: #fff; font-size: 11.5px; font-weight: 900;
+    }
+    .bung-strip.is-past .bung-dday { background: var(--gray-2); }
+    .bung-when { min-width: 0; }
+    .bung-state { margin-left: auto; font-size: 11.5px; font-weight: 850; color: var(--primary); }
+    .bung-strip.is-past .bung-state { color: var(--gray-2); }
+    .bung-cta { display: inline-flex; margin-bottom: 12px; }
+
+    /* 글쓰기 모달의 벙 칸 */
+    .bung-fields {
+      padding: 13px; border-radius: var(--r-sm);
+      background: var(--offwhite); border: 1px solid var(--line);
+    }
+    .bung-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bung-fields label small { color: var(--gray-2); font-weight: 650; }
+    @media (max-width: 460px) { .bung-grid { grid-template-columns: 1fr; } }
     .post-card.is-pinned {
       background: linear-gradient(135deg, rgba(243, 232, 255, 0.72), #fff 56%);
       border-color: rgba(95, 0, 128, 0.22);
@@ -147,7 +194,6 @@
     .pc-body { min-width: 0; display: grid; gap: 7px; }
     .post-topline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .badge-soft.pin-badge { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.22); }
-    .badge-soft.sample-badge { background: rgba(141, 132, 160, 0.13); color: var(--gray); box-shadow: inset 0 0 0 1px rgba(141, 132, 160, 0.16); }
     .post-title-text { display: block; font-size: 16px; font-weight: 850; letter-spacing: -0.025em; line-height: 1.42; color: var(--ink); word-break: break-word; overflow-wrap: anywhere; }
     .post-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 1px; color: var(--gray); font-size: 12px; font-weight: 700; }
     .pc-ava {
@@ -253,6 +299,7 @@
       .pc-author { max-width: 32vw; }
     }
   </style>
+  <script src="assets/site-core.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -270,7 +317,7 @@
         <a class="topnav-tab" href="report.html">대시보드</a>
         <a class="topnav-tab" href="calculator.html">정산</a>
         <a class="topnav-tab is-active" href="news.html" aria-current="page">소식</a>
-        <a class="topnav-tab" href="games.html">게임</a>
+        <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -295,7 +342,7 @@
       </p>
       <div class="hero-actions">
         <button class="btn btn-hero" id="heroWriteBtn" type="button">소식 쓰기</button>
-        <a class="btn btn-glass" href="#board">목록 보기</a>
+        <a class="btn btn-glass" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">카톡방 열기</a>
       </div>
       <div class="hero-meta">
         <span class="stat-pill"><i></i>카테고리 <strong>5</strong>종</span>
@@ -314,7 +361,7 @@
         </div>
 
         <div id="setupBanner" class="setup-banner" hidden>
-          <span><b>소식 피드 준비 중이에요</b> — 운영진이 서버 설정을 마치면 열려요. 지금 보이는 건 <b>예시 소식</b>이에요.</span>
+          <span><b>소식을 불러오지 못했어요</b> — 연결이 잠깐 끊겼을 수 있어요. 잠시 뒤 다시 확인해 주세요.</span>
           <button id="retryBtn" class="mini-btn" type="button">다시 확인</button>
         </div>
 
@@ -373,7 +420,9 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
+            <li><a href="places.html">🍽️ 맛집</a></li>
             <li><a href="games.html">🎮 게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
           </ul>
         </nav>
         <div class="footer-col">
@@ -396,7 +445,7 @@
     <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
     <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
     <a class="tab-item is-active" href="news.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg>게임</a>
+    <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
 
   <!-- ── 글쓰기 모달 (모바일: 풀시트) ── -->
@@ -425,11 +474,36 @@
           <label for="wPass">비밀번호</label>
           <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
           <span class="field-hint">나중에 수정·삭제할 때 필요해요</span>
+          <span class="field-hint pass-hint" id="passHint" hidden>이 브라우저에 기억해 뒀어요 ·
+            <button type="button" class="linkish" id="passForget">지우기</button></span>
         </div>
         <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 올라가고, 자동으로 맨 위에 고정돼요.</p>
         <div class="field is-wide">
           <label for="wTitle">제목</label>
           <input id="wTitle" class="input" type="text" maxlength="100" placeholder="한 줄로 요약해 주세요 (100자)" />
+        </div>
+        <!-- 벙 모집일 때만 열리는 칸. 4개뿐이고, 이 중 필수는 날짜 하나다.
+             참석 버튼·참석자 명단은 만들지 않는다 — 참석의 정본은 오픈채팅이다. -->
+        <div id="bungFields" class="bung-fields is-wide" hidden>
+          <div class="bung-grid">
+            <div class="field">
+              <label for="wBungDate">벙 날짜</label>
+              <input id="wBungDate" class="input" type="date" />
+            </div>
+            <div class="field">
+              <label for="wBungTime">시각 <small>선택</small></label>
+              <input id="wBungTime" class="input" type="time" />
+            </div>
+            <div class="field">
+              <label for="wBungPlace">장소 <small>선택</small></label>
+              <input id="wBungPlace" class="input" type="text" maxlength="60" placeholder="예: 강남역 3번 출구" />
+            </div>
+            <div class="field">
+              <label for="wBungCap">정원 <small>선택</small></label>
+              <input id="wBungCap" class="input" type="number" min="1" max="200" placeholder="예: 8" />
+            </div>
+          </div>
+          <span class="field-hint">날짜만 넣어도 돼요. 신청은 카톡방에서 받아요 — 정원은 표시만 하고 자동으로 마감하지 않아요.</span>
         </div>
         <div class="field is-wide">
           <label for="wBody">내용</label>
@@ -549,53 +623,6 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 (우측 상단, visit_ping) ── */
-      (function () {
-        var box = document.getElementById("visitBox");
-        if (!box) return;
-        var elToday = document.getElementById("visitToday");
-        var elTotal = document.getElementById("visitTotal");
-        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
-        function devKey() {
-          var k = null;
-          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
-          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
-          }
-          return k;
-        }
-        function show(today, total) {
-          box.hidden = false;
-          countUp(elToday, today || 0, { duration: 700 });
-          countUp(elTotal, total || 0, { duration: 700 });
-        }
-        function localFallback() {
-          var total = 1, today = 1;
-          try {
-            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
-            var d = new Date().toISOString().slice(0, 10);
-            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
-            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
-            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
-            total = raw.total; today = raw.today;
-          } catch (e) {}
-          show(today, total);
-        }
-        var counted = false;
-        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
-        fetch(U + "/rest/v1/rpc/visit_ping", {
-          method: "POST",
-          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
-        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
-          .then(function (d) {
-            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
-            show(d.today, d.total);
-          }).catch(function () { localFallback(); });
-      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -604,10 +631,7 @@
   <!-- ── 페이지 로직: 소식 커뮤니티 피드 v3 (RPC/뷰 계약은 sql/setup_all.sql 그대로) ── -->
   <script>
     // ── Supabase (plain fetch REST) ─────────────────────────────
-    const SUPA = {
-      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
-      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
-    };
+    const SUPA = window.SUPA;   // assets/site-core.js
     async function supaFetch(path, opts = {}) {
       const res = await fetch(SUPA.url + path, {
         ...opts,
@@ -625,7 +649,11 @@
 
     // ── 상수 / 상태 ─────────────────────────────────────────────
     const PAGE_SIZE = 20;
+    // 목록 조회와 딥링크 단건 조회가 같은 컬럼을 쓰도록 한 곳에 둔다
+    // (한쪽만 고치면 링크로 연 글의 리액션·댓글 수가 비는 식으로 조용히 어긋난다)
+    const POST_SELECT = "select=id,category,title,body,author,pinned,meta,created_at,updated_at,comment_count,reactions,reaction_count";
     const NICK_KEY = "excer_news_nick";
+    const PASS_KEY = "excer_news_pass";
     const DEVICE_STORE_KEY = "excer_device_key";
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
     // 카테고리 — sql/setup_all.sql 체크 제약과 동일 집합 (순서·문자열 유지)
@@ -646,7 +674,7 @@
       NOT_FOUND: "이미 지워진 소식이에요",
       BAD_KEY: "이 글을 수정할 권한이 없어요"
     };
-    const DEMO_MSG = "소식 피드가 아직 준비 중이에요 — 운영진이 서버 설정을 마치면 열려요.";
+    const OFFLINE_MSG = "지금은 소식을 불러올 수 없어요 잠시 뒤 다시 시도해 주세요";
 
     const state = {
       category: "전체",
@@ -659,6 +687,7 @@
       loading: false,
       busy: false,
       expandedId: null,
+      linkedId: null,          // 링크를 타고 들어온 글 — 강조 표시가 켜져 있는 동안만 값이 있다
       editingId: null,
       commentsCache: {},
       myReactions: {},         // postId -> Set(emoji)
@@ -713,12 +742,35 @@
       for (const code of Object.keys(ERROR_MAP)) {
         if (msg.includes(code)) return ERROR_MAP[code];
       }
-      if (err && err.status === 404) return DEMO_MSG;
+      if (err && err.status === 404) return OFFLINE_MSG;
       return "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
     }
 
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) { /* 무시 */ } }
+
+    /* 글 비밀번호는 '가입'이 아니라 '내 글 열쇠'다. 계정이 없으니 이게 유일한 소유 증명이라
+       쓸 때 받는 것 자체는 없앨 수 없다(서버가 그 값으로만 수정·삭제 권한을 판정한다).
+       대신 이 브라우저에 기억해 두 번째 글부터는 실질 입력이 0회가 되게 한다.
+
+       공지는 저장하지 않는다. 공지에 들어가는 건 운영진 비밀번호이고,
+       그건 한 번 새면 발행·강제삭제까지 열리는 열쇠라 편의를 위해 둘 값이 아니다. */
+    function savedPass() { try { return localStorage.getItem(PASS_KEY) || ""; } catch (e) { return ""; } }
+    function savePass(pass, category) {
+      if (category === "공지") return;
+      try { localStorage.setItem(PASS_KEY, pass); } catch (e) { /* 무시 */ }
+    }
+    function forgetPass() {
+      try { localStorage.removeItem(PASS_KEY); } catch (e) {}
+      const w = document.getElementById("wPass"); if (w) w.value = "";
+      document.querySelectorAll(".c-pass").forEach((el) => { el.value = ""; });
+      syncPassHint();
+      showToast("기억해 둔 비밀번호를 지웠어요");
+    }
+    function syncPassHint() {
+      const hint = document.getElementById("passHint");
+      if (hint) hint.hidden = !savedPass();
+    }
     function findPost(id) { return state.posts.find((p) => p.id === id); }
 
     // 기기 키 — localStorage "excer_device_key" (영숫자 24자 난수)
@@ -753,59 +805,6 @@
       return EMOJIS.reduce((s, e) => s + (Number((reactions || {})[e]) || 0), 0);
     }
 
-    // ── 예시 소식 (우아한 저하 / 데모 모드) ──────────────────────
-    function samplePosts() {
-      const now = Date.now();
-      const iso = (msAgo) => new Date(now - msAgo).toISOString();
-      const mk = (p) => ({ ...p, _sample: true, reaction_count: sumReactions(p.reactions) });
-      return [
-        mk({
-          id: -1, category: "공지", pinned: true,
-          title: "소식 피드 이용 안내 (예시)", author: "운영진",
-          created_at: iso(3 * 86400000), updated_at: iso(3 * 86400000), comment_count: 2,
-          reactions: { "👍": 5, "🔥": 2 },
-          body: "동네친구들 소식 피드가 새 단장했어요.\n\n· 공지: 운영진이 방 소식을 올려요 (자동 고정)\n· 벙 소식: 새 벙 모집·일정 공유\n· 후기: 다녀온 벙 이야기\n· 정보: 맛집·꿀팁 등 쓸모 있는 정보\n· 자유: 편한 수다\n\n소식마다 👍❤️😂👏🔥 리액션을 남길 수 있어요. 서버 설정이 끝나면 실제 소식을 쓸 수 있어요.",
-          _comments: [
-            { id: -11, post_id: -1, author: "엑서", body: "리액션 기능 너무 좋아요!", created_at: iso(3 * 86400000 - 3600000) },
-            { id: -12, post_id: -1, author: "민지", body: "카테고리 정리된 거 깔끔하네요 👍", created_at: iso(2 * 86400000) }
-          ]
-        }),
-        mk({
-          id: -2, category: "벙 소식", pinned: false,
-          title: "이번 주 금요일 강남 저녁 벙 모집해요 (예시)", author: "준호",
-          created_at: iso(30 * 3600000), updated_at: iso(30 * 3600000), comment_count: 1,
-          reactions: { "👍": 4, "❤️": 2, "🔥": 3 },
-          body: "금요일 7시 강남역에서 저녁 벙 열어요!\n고기집 → 카페 코스, 6명 정원.\n참여는 오픈채팅에서 댓글로 받아요 🙌",
-          _comments: [
-            { id: -21, post_id: -2, author: "서아", body: "참여할게요! 금요일에 봬요~", created_at: iso(20 * 3600000) }
-          ]
-        }),
-        mk({
-          id: -3, category: "후기", pinned: false,
-          title: "일요일 보드게임 벙 다녀왔어요 (예시)", author: "서아",
-          created_at: iso(22 * 3600000), updated_at: iso(22 * 3600000), comment_count: 0,
-          reactions: { "❤️": 6, "👏": 2 },
-          body: "처음 오신 분들도 금방 친해져서 너무 즐거웠어요.\n다음엔 마피아 게임도 해봐요!",
-          _comments: []
-        }),
-        mk({
-          id: -4, category: "정보", pinned: false,
-          title: "강남역 근처 단체석 잘 잡히는 집 정리 (예시)", author: "민지",
-          created_at: iso(9 * 3600000), updated_at: iso(9 * 3600000), comment_count: 0,
-          reactions: { "👍": 7, "👏": 1 },
-          body: "벙주분들 참고하세요!\n\n1. ○○식당 — 10명까지 룸 예약 가능\n2. △△포차 — 당일 예약도 잘 돼요\n3. □□카페 — 2차로 넓고 조용해요",
-          _comments: []
-        }),
-        mk({
-          id: -5, category: "자유", pinned: false,
-          title: "장마철엔 다들 뭐하고 노시나요 (예시)", author: "도윤",
-          created_at: iso(2 * 3600000), updated_at: iso(2 * 3600000), comment_count: 0,
-          reactions: { "😂": 3 },
-          body: "비가 계속 오니까 벙이 뜸하네요.\n실내에서 할 만한 벙 아이디어 있으면 댓글로 달아주세요 ☔",
-          _comments: []
-        })
-      ];
-    }
 
     // ── 데이터 로드 ─────────────────────────────────────────────
     function orderParam() {
@@ -821,7 +820,7 @@
       if (reset) state.offset = 0;
       updateMoreBtn();
       const params = [
-        "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count,reactions,reaction_count",
+        POST_SELECT,
         orderParam(),
         "limit=" + PAGE_SIZE,
         "offset=" + state.offset
@@ -855,7 +854,7 @@
 
     function enterDegraded() {
       state.degraded = true;
-      state.posts = samplePosts();
+      state.posts = [];   // 지어낸 글로 자리를 채우지 않는다
       state.hasMore = false;
       state.expandedId = null; state.editingId = null; state.commentsCache = {};
       $("setupBanner").hidden = false;
@@ -878,12 +877,6 @@
     }
 
     async function loadComments(postId) {
-      const post = findPost(postId);
-      if (post && post._sample) {
-        state.commentsCache[postId] = post._comments || [];
-        renderList();
-        return;
-      }
       try {
         const rows = await supaFetch(
           "/rest/v1/site_comments_v?select=id,post_id,author,body,created_at" +
@@ -896,20 +889,9 @@
     }
 
     // ── 렌더링 ──────────────────────────────────────────────────
-    function visiblePosts() {
-      if (!state.degraded) return state.posts;
-      // 데모 모드: 클라이언트 필터(카테고리+검색) + 정렬
-      let list = state.posts;
-      if (state.category !== "전체") list = list.filter((p) => p.category === state.category);
-      if (state.search) {
-        const q = state.search.toLowerCase();
-        list = list.filter((p) => (p.title + "\n" + p.body).toLowerCase().includes(q));
-      }
-      return list.slice().sort((a, b) =>
-        (Number(b.pinned) - Number(a.pinned)) ||
-        (state.sort === "popular" ? (Number(b.reaction_count) || 0) - (Number(a.reaction_count) || 0) : 0) ||
-        (new Date(b.created_at) - new Date(a.created_at)));
-    }
+    // 정렬·필터·페이지는 서버가 한다(order/limit/offset). 화면은 받은 순서를 그대로 쓴다.
+    // 예전에는 데모 모드 전용 클라이언트 필터가 따로 있었는데, 지어낸 글을 걷어내면서 같이 없앴다.
+    function visiblePosts() { return state.posts; }
 
     function catBadges(post) {
       const parts = [];
@@ -920,7 +902,6 @@
         const cls = catMeta(post.category).badge;
         parts.push(`<span class="badge-soft${cls ? " " + cls : ""}">${escapeHTML(post.category)}</span>`);
       }
-      if (post._sample) parts.push(`<span class="badge-soft sample-badge">예시</span>`);
       return parts.join("");
     }
 
@@ -991,7 +972,9 @@
       else commentsHTML = comments.map(commentHTML).join("");
       return `
         <div class="post-body-text">${renderBody(post.body)}</div>
+        ${bungOf(post) ? `<a class="btn btn-primary btn-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">카톡방에서 신청하기</a>` : ""}
         <div class="post-actions">
+          <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">🔗 링크 복사</button>
           <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">✏️ 수정</button>
           <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">🗑 삭제</button>
           <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">📌 ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
@@ -1003,7 +986,7 @@
           <div class="comment-form">
             <div class="row2">
               <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" value="${escapeHTML(savedNick())}" />
-              <input class="input c-pass" type="password" placeholder="비밀번호 (4자+)" autocomplete="new-password" />
+              <input class="input c-pass" type="password" placeholder="비밀번호 (4자+)" autocomplete="new-password" value="${escapeHTML(savedPass())}" />
             </div>
             <textarea class="textarea c-body" maxlength="1000" placeholder="댓글을 남겨보세요 (1000자)"></textarea>
             <div class="comment-form-actions">
@@ -1021,7 +1004,7 @@
       const author = String(post.author == null ? "" : post.author);
       const initial = escapeHTML((author.trim().charAt(0) || "?").toUpperCase());
       return `
-        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}" data-cat="${meta.key}">
+        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}" id="post-${post.id}" data-cat="${meta.key}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
               <span class="pc-thumb cat-${meta.key}" aria-hidden="true">${meta.icon}</span>
@@ -1039,12 +1022,22 @@
               </span>
             </button>
           </h3>
+          ${bungStripHTML(post)}
           ${reactBarHTML(post)}
           ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
         </article>`;
     }
 
     function emptyStateHTML() {
+      // 불러오지 못한 것과 글이 없는 것은 다른 상태다.
+      // 예전에는 여기서 지어낸 예시 글 5건을 보여줘 둘을 구분할 수 없었다.
+      if (state.degraded) {
+        return `<div class="card empty-card"><div class="empty-state">
+          <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+          <strong>소식을 불러오지 못했어요</strong>
+          <p>연결이 잠깐 끊겼을 수 있어요. 위의 다시 확인을 눌러 주세요.</p>
+        </div></div>`;
+      }
       if (state.search) {
         return `<div class="card empty-card"><div class="empty-state">
           <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
@@ -1073,6 +1066,7 @@
       const listEl = $("postList");
       listEl.innerHTML = posts.length ? posts.map(cardHTML).join("") : emptyStateHTML();
       listEl.removeAttribute("aria-busy");
+      applyLinkedMark();   // 다시 그려도 링크 강조는 유지한다
       updateMoreBtn();
     }
 
@@ -1126,7 +1120,7 @@
       const on = !(mine && mine.has(emoji));
       applyReactLocal(post, emoji, on);   // 낙관적 반영
       updateReactBar(id);
-      if (state.degraded || post._sample || post.id < 0) return; // 데모: 로컬 카운트만
+      if (state.degraded) return;
       state.reactBusy[busyKey] = true;
       try {
         const res = await supaFetch("/rest/v1/rpc/post_react", {
@@ -1170,15 +1164,41 @@
     function openWriteModal() {
       $("writeBackdrop").hidden = false;
       $("wNick").value = $("wNick").value || savedNick();
+      $("wPass").value = $("wPass").value || savedPass();
+      syncPassHint();
       setTimeout(() => $("wTitle").focus(), 60);
     }
     function closeWriteModal() {
       $("writeBackdrop").hidden = true;
     }
 
+    // 카테고리가 '벙 소식'일 때만 벙 칸을 연다
+    function syncBungFields() {
+      const box = document.getElementById("bungFields");
+      if (box) box.hidden = $("wCat").value !== "벙 소식";
+    }
+
+    // 폼에서 meta 를 만든다. 날짜가 없으면 null — 날짜가 상태 판정의 유일한 근거다.
+    function readBungMeta() {
+      if ($("wCat").value !== "벙 소식") return null;
+      const date = ($("wBungDate").value || "").trim();
+      if (!date) return null;
+      const m = { kind: "bung", date: date };
+      const t = ($("wBungTime").value || "").trim(); if (t) m.time = t;
+      const p = ($("wBungPlace").value || "").trim(); if (p) m.place = p;
+      const c = parseInt($("wBungCap").value, 10); if (c > 0) m.cap = c;
+      return m;
+    }
+
+    function clearBungFields() {
+      ["wBungDate", "wBungTime", "wBungPlace", "wBungCap"].forEach((id) => {
+        const el = document.getElementById(id); if (el) el.value = "";
+      });
+    }
+
     async function submitPost() {
       if (state.busy) return;
-      if (state.degraded) { showToast(DEMO_MSG); return; }
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }
       const nick = $("wNick").value.trim();
       const pass = $("wPass").value;
       const cat = $("wCat").value;
@@ -1194,11 +1214,15 @@
       try {
         await supaFetch("/rest/v1/rpc/post_create", {
           method: "POST",
-          body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body })
+          // p_meta 를 항상 함께 보낸다 — 6개 키를 보내야 meta 를 받는 함수로 연결된다.
+          // (마이그레이션 전이면 이 호출이 실패하므로, sql/2026-09-20-bung-fields.sql 을 먼저 실행해야 한다)
+          body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: readBungMeta() })
         });
         saveNick(nick);
+        savePass(pass, cat);
         showToast("소식을 남겼어요 🎉");
-        $("wTitle").value = ""; $("wBody").value = ""; $("wPass").value = "";
+        $("wTitle").value = ""; $("wBody").value = "";
+        clearBungFields();
         $("wCount").textContent = "0 / 4000";
         closeWriteModal();
         renderListLoading();
@@ -1227,9 +1251,12 @@
       try {
         await supaFetch("/rest/v1/rpc/post_update", {
           method: "POST",
-          body: JSON.stringify({ p_id: id, p_pass: pass, p_title: title, p_body: body, p_category: cat })
+          // 기존 벙 정보를 그대로 실어 보낸다. 서버가 카테고리를 보고 판단하므로,
+          // 벙이 아닌 유형으로 바꾸면 벙 정보도 함께 정리된다.
+          body: JSON.stringify({ p_id: id, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: post.meta || null })
         });
         post.title = title; post.body = body; post.category = cat;
+        if (cat !== "벙 소식") post.meta = null;
         post.updated_at = new Date().toISOString();
         state.editingId = null;
         renderList();
@@ -1289,7 +1316,7 @@
     // ── 댓글 ────────────────────────────────────────────────────
     async function addComment(card, postId) {
       if (state.busy) return;
-      if (state.degraded) { showToast(DEMO_MSG); return; }
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }
       const nick = card.querySelector(".c-nick").value.trim();
       const pass = card.querySelector(".c-pass").value;
       const body = card.querySelector(".c-body").value;
@@ -1303,6 +1330,7 @@
           body: JSON.stringify({ p_post_id: postId, p_author: nick, p_pass: pass, p_body: body })
         });
         saveNick(nick);
+        savePass(pass, "");
         const post = findPost(postId);
         if (post) post.comment_count = (Number(post.comment_count) || 0) + 1;
         showToast("댓글을 남겼어요.");
@@ -1339,13 +1367,173 @@
     }
 
     // ── 아코디언 ────────────────────────────────────────────────
+    /* ── 글 단위 링크 ───────────────────────────────────────────
+       카톡방에 "이 벙 봐주세요"를 던질 수 있게 하는 장치다.
+       주소의 #post-123 이 곧 그 글이고, 반대로 글을 열면 주소가 따라 바뀐다.
+       예전에는 어떤 글을 눌러도 목록 맨 위로만 갈 수 있어서,
+       홈 미리보기에서 제목을 보고 들어와도 그 글을 다시 찾아야 했다.
+       ────────────────────────────────────────────────────────── */
+    function hashPostId() {
+      const m = /^#post-(\d+)$/.exec(location.hash || "");
+      return m ? Number(m[1]) : null;
+    }
+
+    function postUrl(id) {
+      return location.origin + location.pathname + "#post-" + id;
+    }
+
+    // 주소창을 현재 열린 글에 맞춘다.
+    // pushState 가 아니라 replaceState 를 쓴다 — 카드를 여닫을 때마다 기록이 쌓이면
+    // 뒤로가기가 '이전 화면'이 아니라 '방금 닫은 카드'로 가서 오히려 헷갈린다.
+    function syncHash(id) {
+      try {
+        const clean = location.pathname + location.search;
+        history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : clean);
+      } catch (e) { /* history 를 못 쓰는 환경(파일 열기 등)은 그냥 넘어간다 */ }
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) { /* 아래 폴백으로 */ }
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    async function copyPostLink(id) {
+      const ok = await copyText(postUrl(id));
+      showToast(ok ? "링크를 복사했어요 카톡에 붙여넣어 주세요" : "복사가 안 됐어요 주소창을 길게 눌러 복사해 주세요");
+    }
+
+    // 링크를 타고 들어온 글을 화면에서 찾아 준다.
+    function focusPostCard(id) {
+      const el = document.getElementById("post-" + id);
+      if (!el) return;
+      let smooth = true;
+      try { smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+      el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+      // 강조는 state 로 들고 있는다. 댓글을 다 불러오면 목록을 통째로 다시 그리는데,
+      // DOM 에만 클래스를 붙여 두면 그때 강조가 조용히 지워진다.
+      state.linkedId = id;
+      applyLinkedMark();
+      setTimeout(() => {
+        if (state.linkedId !== id) return;
+        state.linkedId = null;
+        applyLinkedMark();
+      }, 2400);
+    }
+
+    function applyLinkedMark() {
+      const prev = document.querySelector(".post-card.is-linked");
+      if (prev) prev.classList.remove("is-linked");
+      if (!state.linkedId) return;
+      const el = document.getElementById("post-" + state.linkedId);
+      if (el) el.classList.add("is-linked");
+    }
+
+    async function openFromHash() {
+      const id = hashPostId();
+      if (!id || state.degraded) return;
+      let post = findPost(id);
+      if (!post) {
+        // 첫 페이지에 없는 글일 수 있다(오래된 글, 또는 필터가 걸린 상태).
+        // 그 글만 따로 가져와 목록 맨 위에 붙인다 — 링크가 끊긴 것처럼 보이면 안 된다.
+        try {
+          const rows = await supaFetch("/rest/v1/site_posts_v?" + POST_SELECT + "&id=eq." + id + "&limit=1");
+          if (rows && rows.length) {
+            rows[0].reactions = rows[0].reactions || {};
+            state.posts.unshift(rows[0]);
+            post = rows[0];
+            loadMyReactions([id]);
+          }
+        } catch (e) { /* 아래 안내로 떨어진다 */ }
+      }
+      if (!post) {
+        showToast("링크가 가리키는 소식을 찾지 못했어요 지워졌을 수 있어요");
+        syncHash(null);
+        return;
+      }
+      state.expandedId = id; state.editingId = null;
+      renderList();
+      if (state.commentsCache[id] === undefined) loadComments(id);
+      focusPostCard(id);
+    }
+
+
+    /* ── 벙 정보 ───────────────────────────────────────────────
+       필드는 날짜·시각·장소·정원 네 개뿐이고, 상태는 시간만으로 두 단계다.
+       인원으로 자동 마감하지 않는 이유: 참석은 오픈채팅에서 일어난다.
+       사이트가 인원을 세기 시작하면 정원의 진실이 두 곳으로 갈라지고,
+       벙주는 결국 카톡 쪽을 믿게 된다. 그래서 정원은 표시만 한다.
+       ────────────────────────────────────────────────────────── */
+    const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
+
+    function bungOf(post) {
+      const m = post && post.meta;
+      return (m && typeof m === "object" && m.kind === "bung" && m.date) ? m : null;
+    }
+
+    // 한국 날짜 기준 D-day. 시·분을 섞지 않는다('0.8일 남음' 같은 값이 나오지 않게).
+    function bungDays(b) {
+      let today;
+      try { today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+      catch (e) { today = new Date().toISOString().slice(0, 10); }
+      const a = Date.parse(b.date + "T00:00:00Z"), n = Date.parse(today + "T00:00:00Z");
+      if (isNaN(a) || isNaN(n)) return null;
+      return Math.round((a - n) / 86400000);
+    }
+
+    function bungLabel(d) {
+      if (d === null) return "";
+      if (d === 0) return "오늘";
+      if (d === 1) return "내일";
+      if (d > 1) return "D-" + d;
+      return "지난 벙";
+    }
+
+    function bungLine(b) {
+      const bits = [];
+      const dt = String(b.date).split("-");
+      bits.push(dt[1] + "월 " + Number(dt[2]) + "일");
+      if (b.time) bits.push(b.time);
+      if (b.place) bits.push(escapeHTML(b.place));
+      if (b.cap) bits.push("정원 " + b.cap + "명");
+      return bits.join(" · ");
+    }
+
+    function bungStripHTML(post) {
+      const b = bungOf(post);
+      if (!b) return "";
+      const d = bungDays(b);
+      const past = d !== null && d < 0;
+      return `<div class="bung-strip${past ? " is-past" : ""}">
+        <span class="bung-dday">${bungLabel(d)}</span>
+        <span class="bung-when">${bungLine(b)}</span>
+        <span class="bung-state">${past ? "마감 지남" : "모집 중"}</span>
+      </div>`;
+    }
+
     function toggleExpand(id) {
       if (state.expandedId === id) {
         state.expandedId = null; state.editingId = null;
+        syncHash(null);
         renderList();
         return;
       }
       state.expandedId = id; state.editingId = null;
+      syncHash(id);
       renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
     }
@@ -1353,6 +1541,9 @@
     // ── 목록 재조회 공통 (필터/정렬/검색 변경 시) ───────────────
     function refetchList() {
       state.expandedId = null; state.editingId = null;
+      // 필터·정렬·검색을 바꾸면 열려 있던 글이 닫히므로 주소도 같이 비운다.
+      // 안 그러면 주소는 특정 글을 가리키는데 화면엔 목록만 있는 상태가 된다.
+      syncHash(null);
       if (state.degraded) {
         renderList();
       } else {
@@ -1369,6 +1560,9 @@
       $("writeCloseBtn").addEventListener("click", closeWriteModal);
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitPost);
+      $("wCat").addEventListener("change", syncBungFields);
+      $("passForget").addEventListener("click", forgetPass);
+      syncBungFields();
       $("writeBackdrop").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) closeWriteModal();
       });
@@ -1425,9 +1619,10 @@
         const id = Number(el.dataset.id);
         const card = el.closest(".post-card");
         if (act === "toggle") { toggleExpand(id); return; }
+        if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
         if (act === "open-write") { openWriteModal(); return; }
-        if (state.degraded) { showToast(DEMO_MSG); return; }
+        if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "edit") { state.editingId = id; renderList(); return; }
         if (act === "cancel-edit") { state.editingId = null; renderList(); return; }
         if (act === "save-edit") { saveEdit(card, id); return; }
@@ -1472,7 +1667,12 @@
     $("wNick").value = savedNick();
     bindEvents();
     renderListLoading();
-    loadPosts(true);
+    // 목록을 먼저 받고, 그다음 링크가 가리키는 글을 연다.
+    // loadPosts(true) 가 expandedId 를 초기화하므로 순서가 바뀌면 안 된다.
+    loadPosts(true).then(openFromHash);
+
+    // 이미 페이지를 보고 있는데 다른 글 링크를 받은 경우
+    window.addEventListener("hashchange", openFromHash);
   </script>
 </body>
 </html>

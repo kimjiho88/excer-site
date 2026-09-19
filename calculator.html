@@ -6,11 +6,14 @@
   <meta name="theme-color" content="#1E0230" />
   <title>동네친구들 — 벙비 정산기</title>
   <meta name="description" content="벙 끝나고 1분이면 정산 끝. 멤버·차수·결제자만 넣으면 1원 단위까지 나눠서 카톡 메시지·정산 이미지·입금 체크 링크를 만들어요." />
+  <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 — 벙비 정산기" />
   <meta property="og:description" content="벙 끝나고 1분이면 정산 끝. 카톡에 붙일 메시지랑 입금 체크 링크까지 한 번에." />
-  <meta property="og:image" content="assets/og.png" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
 
@@ -446,6 +449,7 @@
       .save-status { width: 100%; margin-left: 0; justify-content: flex-end; }
     }
   </style>
+  <script src="assets/site-core.js?v=1"></script>
 </head>
 
 <body>
@@ -463,7 +467,7 @@
         <a class="topnav-tab" href="report.html">대시보드</a>
         <a class="topnav-tab is-active" href="calculator.html" aria-current="page">정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
-        <a class="topnav-tab" href="games.html">게임</a>
+        <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
       <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -700,6 +704,7 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
+            <li><a href="places.html">🍽️ 맛집</a></li>
             <li><a href="games.html">🎮 게임</a></li>
           </ul>
         </nav>
@@ -722,7 +727,7 @@
     <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
     <a class="tab-item is-active" href="calculator.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
-    <a class="tab-item" href="games.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M7 12h3M8.5 10.5v3"/><path d="M15.5 11.5h.01M18 13.5h.01"/></svg>게임</a>
+    <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
 
   <div class="mobile-bar" id="mobileBar" role="region" aria-label="정산 요약">
@@ -811,53 +816,6 @@
         cuEls.forEach(function (el) { cuIo.observe(el); });
       }
 
-      /* ── 6. 방문자 카운터 (우측 상단) ── */
-      (function () {
-        var box = document.getElementById("visitBox");
-        if (!box) return;
-        var elToday = document.getElementById("visitToday");
-        var elTotal = document.getElementById("visitTotal");
-        var U = "https://drggzlnzwvkhtalvkqyo.supabase.co";
-        var K = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E";
-        function devKey() {
-          var k = null;
-          try { k = localStorage.getItem("excer_device_key"); } catch (e) {}
-          if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-            k = ""; var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-            for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-            try { localStorage.setItem("excer_device_key", k); } catch (e) {}
-          }
-          return k;
-        }
-        function show(today, total) {
-          box.hidden = false;
-          countUp(elToday, today || 0, { duration: 700 });
-          countUp(elTotal, total || 0, { duration: 700 });
-        }
-        function localFallback() {
-          var total = 1, today = 1;
-          try {
-            var raw = JSON.parse(localStorage.getItem("excer_visits_local") || "{}");
-            var d = new Date().toISOString().slice(0, 10);
-            if (raw.lastDay !== d) { raw.total = (raw.total || 0) + 1; raw.today = 1; raw.lastDay = d; raw.sess = 1; }
-            else if (!raw.sess) { raw.total = (raw.total || 0) + 1; raw.today = (raw.today || 0) + 1; raw.sess = 1; }
-            localStorage.setItem("excer_visits_local", JSON.stringify(raw));
-            total = raw.total; today = raw.today;
-          } catch (e) {}
-          show(today, total);
-        }
-        var counted = false;
-        try { counted = sessionStorage.getItem("excer_visit_counted") === "1"; } catch (e) {}
-        fetch(U + "/rest/v1/rpc/visit_ping", {
-          method: "POST",
-          headers: { apikey: K, Authorization: "Bearer " + K, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_device: devKey(), p_count: !counted })
-        }).then(function (r) { if (!r.ok) throw new Error("x"); return r.json(); })
-          .then(function (d) {
-            try { sessionStorage.setItem("excer_visit_counted", "1"); } catch (e) {}
-            show(d.today, d.total);
-          }).catch(function () { localFallback(); });
-      })();
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -1119,10 +1077,7 @@
     const HISTORY_KEY = "excer_calc_history_v1";
     const MAX_RECEIPTS = 10;
     const MAX_HISTORY = 30;
-    const SUPA = {
-      url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
-      anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E"
-    };
+    const SUPA = window.SUPA;   // assets/site-core.js
     async function supaFetch(path, opts = {}) {
       const res = await fetch(SUPA.url + path, {
         ...opts,
@@ -1210,7 +1165,7 @@
     const showToast = (msg) => window.EXCER.toast(msg);
     let cachedFontCSS = null;
     let receipts = [];            // 영수증 {id, dataUrl} — 메모리 보관(용량 문제로 저장 안 함)
-    let fallbackShareUrl = null;  // 서버 없이 만든 #d= 공유 링크(세션 한정)
+    let fallbackShareUrl = null;  // 항상 null. 개인정보를 링크에 담던 #d= 폴백은 폐기했다(createShareLink 주석 참고)
 
     let saveTimer = null;
     function saveState() {
@@ -1968,13 +1923,6 @@
       };
     }
 
-    function b64urlEncode(obj) {
-      const bytes = new TextEncoder().encode(JSON.stringify(obj));
-      let bin = "";
-      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    }
-
     function settleSave(id, manage, payload) {
       return supaFetch("/rest/v1/rpc/settle_save", {
         method: "POST",
@@ -2023,14 +1971,13 @@
             showToast(ok ? "공유 링크를 복사했어요. 카톡에 붙여넣어 주세요!" : "링크가 준비됐어요. 전체 복사에 함께 담겨요.");
           }
         } else {
-          // 우아한 성능 저하: 테이블 미설치·오프라인 → 링크 자체에 데이터를 담은 폴백.
-          // 영수증(이미지)은 URL 길이 폭증을 막기 위해 링크 데이터에서 제외한다.
-          const slim = Object.assign({}, payload); delete slim.receipts;
-          fallbackShareUrl = new URL("settle.html", window.location.href).href + "#d=" + b64urlEncode(slim);
+          // 저장에 실패하면 링크를 만들지 않는다.
+          // 예전에는 계좌번호·예금주·참여자 실명·금액을 통째로 담은 #d= 링크를 대신 복사했는데,
+          // 그 링크는 카톡 대화에 영구히 남고 회수할 방법이 없어서 폐기했다.
+          // 서버에 저장된 정산은 120일 뒤 자동으로 사라지지만, 링크에 담긴 내용은 사라지지 않는다.
+          fallbackShareUrl = null;
           saveHistorySnapshot(true);
-          const ok = await copyToClipboard(fallbackShareUrl);
-          const extra = receipts.length ? " 영수증은 '이미지 저장'으로 함께 보내주세요." : "";
-          showToast((ok ? "공유 링크를 복사했어요. " : "") + "입금 체크 실시간 공유는 서버 설정 후 가능해요." + extra);
+          showToast("지금은 공유 링크를 만들 수 없어요. '전체 복사'로 정산 내용을 보내주세요.");
         }
       } finally {
         btn.disabled = false; btn.textContent = prevLabel;

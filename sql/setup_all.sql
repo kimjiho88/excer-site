@@ -1,11 +1,16 @@
 -- ============================================================
 -- excer-site 커뮤니티 기능 — 통합 설치 (이 파일 하나만 실행)
 -- ------------------------------------------------------------
--- ★ 실행 전 딱 한 곳: 아래 'CHANGE_ME' 를 운영진 비밀번호로 바꾸세요.
---   (작은따옴표 ' 는 그대로 두고 CHANGE_ME 글자만 교체)
 -- 이 파일 전체를 Supabase SQL Editor 에 붙여넣고 Run 하면
 -- 게시판·대시보드 발행·정산 공유·방문자 카운터가 한 번에 켜집니다.
--- 순서 신경 쓸 필요 없이 이 하나만 실행하면 되고, 재실행해도 안전합니다.
+-- 순서 신경 쓸 필요 없이 이 하나만 실행하면 됩니다.
+--
+-- 재실행에 대하여: 구조(테이블·뷰·함수·권한)는 몇 번을 실행해도 안전하며,
+--   운영진 비밀번호는 덮어쓰지 않습니다.
+--
+-- ★ 운영진 비밀번호는 이 파일에서 정하지 않습니다.
+--   설치가 끝나면 sql/set_admin_password.sql 을 한 번 실행하세요.
+--   그 전까지는 발행·공지 작성·글 강제삭제가 모두 막힌 상태입니다.
 -- ============================================================
 create extension if not exists pgcrypto;
 
@@ -25,13 +30,23 @@ $$;
 
 create table if not exists site_config (key text primary key, value text not null);
 alter table site_config enable row level security;
+-- 비밀번호는 여기서 정하지 않는다.
+-- 'UNSET' 은 어떤 입력으로도 일치하지 않는 표식이다(해시는 항상 64자 16진수).
+-- 이미 값이 있으면 그대로 둔다(do nothing) — 재실행이 비밀번호를 되돌리지 않게 하는 핵심이다.
+-- 예전에는 do update 였고, 그 탓에 이 파일을 그냥 다시 Run 하면 운영진 비밀번호가
+-- 공개 저장소에 적힌 문자열로 되돌아갔다.
 insert into site_config (key, value)
-values ('admin_pass_hash', site_hash('CHANGE_ME'))
-on conflict (key) do update set value = excluded.value;
+values ('admin_pass_hash', 'UNSET')
+on conflict (key) do nothing;
 
 create or replace function site_is_admin(p_pass text)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from site_config where key = 'admin_pass_hash' and value = site_hash(p_pass));
+  select exists (
+    select 1 from site_config
+    where key = 'admin_pass_hash'
+      and value <> 'UNSET'          -- 비밀번호 미설정 상태에서는 무엇을 넣어도 거짓
+      and value = site_hash(p_pass)
+  );
 $$;
 
 -- ── 대시보드 리포트 ──
@@ -264,6 +279,23 @@ begin
 end $$;
 
 -- ── 함수 실행 권한 ──
+-- PostgreSQL 은 새로 만든 함수의 EXECUTE 를 PUBLIC 에 기본으로 부여하고,
+-- anon·authenticated 는 PUBLIC 을 상속한다. 따라서 grant 목록에 이름이 없다고 해서
+-- 비공개인 것이 아니다 — 명시적으로 회수해야 닫힌다.
+--
+-- site_is_admin 은 비밀번호의 참/거짓을 그대로 돌려주므로, 열려 있으면
+-- 공개 키만으로 후보를 던져 보는 무제한 대입 창구가 된다. site_hash 도 같은 이유다.
+-- 이 둘은 다른 함수 안에서만 불리고, SECURITY DEFINER 함수 내부 호출은
+-- 소유자 권한으로 돌기 때문에 회수해도 기능은 그대로 동작한다.
+--
+-- ★ from public 만으로는 부족하다. Supabase 는 기본 권한 설정으로 public 스키마의
+--   함수를 anon·authenticated 에게 '직접' 부여하므로, PUBLIC 상속분만 회수하면
+--   직접 부여분이 그대로 남는다(has_function_privilege 로 확인하면 여전히 true).
+--
+-- 규칙: 함수를 새로 만들면 '노출할지 말지'를 같은 커밋에서 정한다. 기본값은 비노출.
+revoke execute on function site_hash(text)     from public, anon, authenticated;
+revoke execute on function site_is_admin(text) from public, anon, authenticated;
+
 grant execute on function
   report_publish(text, text, jsonb), report_delete(text, bigint),
   post_create(text, text, text, text, text), post_update(bigint, text, text, text, text),
