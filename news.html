@@ -132,6 +132,32 @@
     }
     @media (prefers-reduced-motion: reduce) { .post-card.is-linked { animation: none; } }
     .mini-btn.mini-link { color: var(--primary); }
+
+    /* ── 벙 정보 줄 ── */
+    .bung-strip {
+      display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+      margin: 0 18px 12px; padding: 10px 13px; border-radius: var(--r-sm);
+      background: var(--pastel-sky); font-size: 13px; font-weight: 750; color: var(--ink-2);
+    }
+    .bung-strip.is-past { background: var(--offwhite); color: var(--gray); }
+    .bung-dday {
+      padding: 2px 9px; border-radius: var(--r-pill); flex: none;
+      background: var(--grad-brand); color: #fff; font-size: 11.5px; font-weight: 900;
+    }
+    .bung-strip.is-past .bung-dday { background: var(--gray-2); }
+    .bung-when { min-width: 0; }
+    .bung-state { margin-left: auto; font-size: 11.5px; font-weight: 850; color: var(--primary); }
+    .bung-strip.is-past .bung-state { color: var(--gray-2); }
+    .bung-cta { display: inline-flex; margin-bottom: 12px; }
+
+    /* 글쓰기 모달의 벙 칸 */
+    .bung-fields {
+      padding: 13px; border-radius: var(--r-sm);
+      background: var(--offwhite); border: 1px solid var(--line);
+    }
+    .bung-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bung-fields label small { color: var(--gray-2); font-weight: 650; }
+    @media (max-width: 460px) { .bung-grid { grid-template-columns: 1fr; } }
     .post-card.is-pinned {
       background: linear-gradient(135deg, rgba(243, 232, 255, 0.72), #fff 56%);
       border-color: rgba(95, 0, 128, 0.22);
@@ -311,7 +337,7 @@
       </p>
       <div class="hero-actions">
         <button class="btn btn-hero" id="heroWriteBtn" type="button">소식 쓰기</button>
-        <a class="btn btn-glass" href="#board">목록 보기</a>
+        <a class="btn btn-glass" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">카톡방 열기</a>
       </div>
       <div class="hero-meta">
         <span class="stat-pill"><i></i>카테고리 <strong>5</strong>종</span>
@@ -390,6 +416,7 @@
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
             <li><a href="games.html">🎮 게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
           </ul>
         </nav>
         <div class="footer-col">
@@ -446,6 +473,29 @@
         <div class="field is-wide">
           <label for="wTitle">제목</label>
           <input id="wTitle" class="input" type="text" maxlength="100" placeholder="한 줄로 요약해 주세요 (100자)" />
+        </div>
+        <!-- 벙 모집일 때만 열리는 칸. 4개뿐이고, 이 중 필수는 날짜 하나다.
+             참석 버튼·참석자 명단은 만들지 않는다 — 참석의 정본은 오픈채팅이다. -->
+        <div id="bungFields" class="bung-fields is-wide" hidden>
+          <div class="bung-grid">
+            <div class="field">
+              <label for="wBungDate">벙 날짜</label>
+              <input id="wBungDate" class="input" type="date" />
+            </div>
+            <div class="field">
+              <label for="wBungTime">시각 <small>선택</small></label>
+              <input id="wBungTime" class="input" type="time" />
+            </div>
+            <div class="field">
+              <label for="wBungPlace">장소 <small>선택</small></label>
+              <input id="wBungPlace" class="input" type="text" maxlength="60" placeholder="예: 강남역 3번 출구" />
+            </div>
+            <div class="field">
+              <label for="wBungCap">정원 <small>선택</small></label>
+              <input id="wBungCap" class="input" type="number" min="1" max="200" placeholder="예: 8" />
+            </div>
+          </div>
+          <span class="field-hint">날짜만 넣어도 돼요. 신청은 카톡방에서 받아요 — 정원은 표시만 하고 자동으로 마감하지 않아요.</span>
         </div>
         <div class="field is-wide">
           <label for="wBody">내용</label>
@@ -593,7 +643,7 @@
     const PAGE_SIZE = 20;
     // 목록 조회와 딥링크 단건 조회가 같은 컬럼을 쓰도록 한 곳에 둔다
     // (한쪽만 고치면 링크로 연 글의 리액션·댓글 수가 비는 식으로 조용히 어긋난다)
-    const POST_SELECT = "select=id,category,title,body,author,pinned,created_at,updated_at,comment_count,reactions,reaction_count";
+    const POST_SELECT = "select=id,category,title,body,author,pinned,meta,created_at,updated_at,comment_count,reactions,reaction_count";
     const NICK_KEY = "excer_news_nick";
     const DEVICE_STORE_KEY = "excer_device_key";
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
@@ -890,6 +940,7 @@
       else commentsHTML = comments.map(commentHTML).join("");
       return `
         <div class="post-body-text">${renderBody(post.body)}</div>
+        ${bungOf(post) ? `<a class="btn btn-primary btn-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">카톡방에서 신청하기</a>` : ""}
         <div class="post-actions">
           <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">🔗 링크 복사</button>
           <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">✏️ 수정</button>
@@ -939,6 +990,7 @@
               </span>
             </button>
           </h3>
+          ${bungStripHTML(post)}
           ${reactBarHTML(post)}
           ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
         </article>`;
@@ -1086,6 +1138,30 @@
       $("writeBackdrop").hidden = true;
     }
 
+    // 카테고리가 '벙 소식'일 때만 벙 칸을 연다
+    function syncBungFields() {
+      const box = document.getElementById("bungFields");
+      if (box) box.hidden = $("wCat").value !== "벙 소식";
+    }
+
+    // 폼에서 meta 를 만든다. 날짜가 없으면 null — 날짜가 상태 판정의 유일한 근거다.
+    function readBungMeta() {
+      if ($("wCat").value !== "벙 소식") return null;
+      const date = ($("wBungDate").value || "").trim();
+      if (!date) return null;
+      const m = { kind: "bung", date: date };
+      const t = ($("wBungTime").value || "").trim(); if (t) m.time = t;
+      const p = ($("wBungPlace").value || "").trim(); if (p) m.place = p;
+      const c = parseInt($("wBungCap").value, 10); if (c > 0) m.cap = c;
+      return m;
+    }
+
+    function clearBungFields() {
+      ["wBungDate", "wBungTime", "wBungPlace", "wBungCap"].forEach((id) => {
+        const el = document.getElementById(id); if (el) el.value = "";
+      });
+    }
+
     async function submitPost() {
       if (state.busy) return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
@@ -1104,11 +1180,14 @@
       try {
         await supaFetch("/rest/v1/rpc/post_create", {
           method: "POST",
-          body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body })
+          // p_meta 를 항상 함께 보낸다 — 6개 키를 보내야 meta 를 받는 함수로 연결된다.
+          // (마이그레이션 전이면 이 호출이 실패하므로, sql/2026-09-20-bung-fields.sql 을 먼저 실행해야 한다)
+          body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: readBungMeta() })
         });
         saveNick(nick);
         showToast("소식을 남겼어요 🎉");
         $("wTitle").value = ""; $("wBody").value = ""; $("wPass").value = "";
+        clearBungFields();
         $("wCount").textContent = "0 / 4000";
         closeWriteModal();
         renderListLoading();
@@ -1137,9 +1216,12 @@
       try {
         await supaFetch("/rest/v1/rpc/post_update", {
           method: "POST",
-          body: JSON.stringify({ p_id: id, p_pass: pass, p_title: title, p_body: body, p_category: cat })
+          // 기존 벙 정보를 그대로 실어 보낸다. 서버가 카테고리를 보고 판단하므로,
+          // 벙이 아닌 유형으로 바꾸면 벙 정보도 함께 정리된다.
+          body: JSON.stringify({ p_id: id, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: post.meta || null })
         });
         post.title = title; post.body = body; post.category = cat;
+        if (cat !== "벙 소식") post.meta = null;
         post.updated_at = new Date().toISOString();
         state.editingId = null;
         renderList();
@@ -1353,6 +1435,60 @@
       focusPostCard(id);
     }
 
+
+    /* ── 벙 정보 ───────────────────────────────────────────────
+       필드는 날짜·시각·장소·정원 네 개뿐이고, 상태는 시간만으로 두 단계다.
+       인원으로 자동 마감하지 않는 이유: 참석은 오픈채팅에서 일어난다.
+       사이트가 인원을 세기 시작하면 정원의 진실이 두 곳으로 갈라지고,
+       벙주는 결국 카톡 쪽을 믿게 된다. 그래서 정원은 표시만 한다.
+       ────────────────────────────────────────────────────────── */
+    const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
+
+    function bungOf(post) {
+      const m = post && post.meta;
+      return (m && typeof m === "object" && m.kind === "bung" && m.date) ? m : null;
+    }
+
+    // 한국 날짜 기준 D-day. 시·분을 섞지 않는다('0.8일 남음' 같은 값이 나오지 않게).
+    function bungDays(b) {
+      let today;
+      try { today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+      catch (e) { today = new Date().toISOString().slice(0, 10); }
+      const a = Date.parse(b.date + "T00:00:00Z"), n = Date.parse(today + "T00:00:00Z");
+      if (isNaN(a) || isNaN(n)) return null;
+      return Math.round((a - n) / 86400000);
+    }
+
+    function bungLabel(d) {
+      if (d === null) return "";
+      if (d === 0) return "오늘";
+      if (d === 1) return "내일";
+      if (d > 1) return "D-" + d;
+      return "지난 벙";
+    }
+
+    function bungLine(b) {
+      const bits = [];
+      const dt = String(b.date).split("-");
+      bits.push(dt[1] + "월 " + Number(dt[2]) + "일");
+      if (b.time) bits.push(b.time);
+      if (b.place) bits.push(escapeHTML(b.place));
+      if (b.cap) bits.push("정원 " + b.cap + "명");
+      return bits.join(" · ");
+    }
+
+    function bungStripHTML(post) {
+      const b = bungOf(post);
+      if (!b) return "";
+      const d = bungDays(b);
+      const past = d !== null && d < 0;
+      return `<div class="bung-strip${past ? " is-past" : ""}">
+        <span class="bung-dday">${bungLabel(d)}</span>
+        <span class="bung-when">${bungLine(b)}</span>
+        <span class="bung-state">${past ? "마감 지남" : "모집 중"}</span>
+      </div>`;
+    }
+
     function toggleExpand(id) {
       if (state.expandedId === id) {
         state.expandedId = null; state.editingId = null;
@@ -1388,6 +1524,8 @@
       $("writeCloseBtn").addEventListener("click", closeWriteModal);
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitPost);
+      $("wCat").addEventListener("change", syncBungFields);
+      syncBungFields();
       $("writeBackdrop").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) closeWriteModal();
       });
