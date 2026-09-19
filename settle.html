@@ -157,10 +157,15 @@
     .m-send:hover { background: #D3F0E3; }
     .m-toggle { background: #fff; color: var(--primary); border: 1px solid var(--line-strong); }
     .m-toggle:hover { border-color: rgba(95, 0, 128, 0.34); }
-    .m-row.is-paid { opacity: 0.62; background: rgba(18, 147, 106, 0.05); border-color: rgba(18, 147, 106, 0.22); box-shadow: none; }
-    .m-row.is-paid .m-name b { text-decoration: line-through; }
+    /* 끝난 줄을 흐리게(opacity 0.62) 처리하고 있었는데, 그 안의 글자 대비까지 같이
+       내려가서 '✓ 입금 완료' 배지가 2.26:1 까지 떨어졌다. 칠한 픽셀에서 잰 값이다.
+       흐리게 하는 대신 초록 바탕과 취소선으로 끝났음을 보이고, 글자색은 또렷이 둔다. */
+    .m-row.is-paid { background: rgba(18, 147, 106, 0.05); border-color: rgba(18, 147, 106, 0.22); box-shadow: none; }
+    .m-row.is-paid .m-name b { text-decoration: line-through; color: var(--gray); }
+    .m-row.is-paid .m-amt { color: var(--gray); }
+    /* --mint(#12936A)에 흰 글자는 3.88:1 로 모자란다 — 한 단계 짙은 초록을 쓴다 */
     .m-row.is-paid .m-toggle {
-      background: var(--mint); color: #fff; border-color: var(--mint);
+      background: #0D7A55; color: #fff; border-color: #0D7A55;
       box-shadow: 0 5px 12px -6px rgba(18, 147, 106, 0.55);
     }
     .m-row.is-me { border-color: rgba(95, 0, 128, 0.38); box-shadow: 0 0 0 3px rgba(95, 0, 128, 0.08), var(--shadow-1); background: #fff; }

@@ -365,7 +365,10 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 .topnav-visits .tv-ic svg { width: 15px; height: 15px; display: block; }
 .topnav-visits .tv-cell { display: inline-flex; align-items: baseline; gap: 5px; }
 .topnav-visits .tv-cell i {
-  color: var(--on-dark-muted); font-size: 10px; font-weight: 800; font-style: normal;
+  /* 네비 바탕이 반투명이라 뒤에 깔린 히어로 그림에 따라 대비가 달라진다.
+     밝은 자주색 위에서 --on-dark-muted 는 4.33:1 로 모자랐다(칠한 픽셀에서 잰 값).
+     가장 밝은 자리에서도 넘도록 한 단계 밝게 둔다. */
+  color: #CDB8E2; font-size: 10px; font-weight: 800; font-style: normal;
   letter-spacing: 0.06em; text-transform: uppercase;
 }
 .topnav-visits .tv-cell b { color: #fff; font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -739,10 +742,13 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
   box-shadow: 0 4px 10px rgba(95, 0, 128, 0.16), 0 12px 24px -10px rgba(95, 0, 128, 0.4),
               inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
+/* 개수는 이름보다 한 발 물러나야 하지만, 흐리게(opacity 0.7) 두면 대비가 같이
+   떨어진다 — 켜진 칩(브랜드 그라데이션) 위에서 4.25:1 이었다. 색으로 물린다. */
 .filter-chip .fc-count {
-  font-size: 11px; font-weight: 900; opacity: 0.7;
+  font-size: 11px; font-weight: 900; color: var(--gray);
   font-variant-numeric: tabular-nums;
 }
+.filter-chip.is-active .fc-count { color: rgba(255, 255, 255, 0.88); }
 
 /* 파스텔 배지 5종 — 기본 라벤더, 변형 .is-* */
 .badge-soft {

@@ -226,7 +226,8 @@
     .opt-row > label { color: var(--ink-2); font-size: 13px; font-weight: 800; }
     .opt-chips { display: flex; flex-wrap: wrap; gap: 7px; }
     .opt-chips .chip { min-height: 40px; padding: 4px 14px; font-size: 13px; }
-    .opt-chips.is-dim { opacity: 0.45; pointer-events: none; }
+    .opt-chips.is-dim .chip { background: var(--offwhite); border-style: dashed; color: var(--gray-2); }
+    .opt-chips.is-dim .chip.is-active { background: var(--offwhite); color: var(--gray-2); box-shadow: none; }
     .msg-toggle { display: inline-flex; }
     .notice-options { display: grid; gap: 8px; }
     .notice-option {
@@ -1551,9 +1552,15 @@
         b.classList.toggle("is-active", Number(b.dataset.unit) === state.rounding.unit);
       });
       const modeWrap = $("modeChips");
-      modeWrap.classList.toggle("is-dim", state.rounding.unit === 1);
+      /* 1원 단위면 맞출 것이 없어 이 칸은 쓸 수 없다.
+         예전에는 흐리게(opacity) + pointer-events 로만 막아서, 글자 대비가 같이
+         떨어지고 화면 읽는 사람에게는 '못 쓰는 칸'이라는 사실이 전해지지 않았다.
+         disabled 로 두면 둘 다 해결되고, 꺼진 컨트롤은 대비 기준에서도 빠진다. */
+      const dim = state.rounding.unit === 1;
+      modeWrap.classList.toggle("is-dim", dim);
       modeWrap.querySelectorAll(".chip").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.mode === state.rounding.mode);
+        b.disabled = dim;
       });
       $("msgToggle").querySelectorAll("button").forEach((b) => {
         b.classList.toggle("is-active", b.dataset.msg === state.msgStyle);
