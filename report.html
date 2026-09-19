@@ -117,17 +117,19 @@
       transition: background 0.16s var(--ease);
     }
     .sec-toggle:hover { background: var(--lavender-2); }
-    .sec-toggle .chev { transition: transform 0.2s var(--ease); font-size: 10px; }
+    .sec-toggle .chev { display: inline-grid; place-items: center; transition: transform 0.2s var(--ease); }
+    .sec-toggle .chev .ic { width: 13px; height: 13px; }
     .sec-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
     .sec-body[hidden] { display: none; }
 
     /* ── 하이라이트 KPI 줄 ── */
     .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
     .kpi-mini { display: grid; gap: 5px; align-content: start; padding: clamp(15px, 1.8vw, 20px); }
-    .kpi-mini .ic {
+    .kpi-mini .tile-ic {
       display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px;
-      background: var(--pastel-lavender); font-size: 17px; margin-bottom: 3px;
+      background: var(--pastel-lavender); color: var(--primary); margin-bottom: 3px;
     }
+    .kpi-mini .tile-ic .ic { width: 18px; height: 18px; }
     .kpi-mini .lb { color: var(--gray); font-size: 12px; font-weight: 900; }
     .kpi-mini .vl { color: var(--deep-1); font-size: clamp(19px, 1.9vw, 24px); font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
     .kpi-mini .vl small { font-size: 0.62em; color: var(--gray); font-weight: 800; }
@@ -186,10 +188,11 @@
     }
     .badge-emoji {
       display: grid; place-items: center; flex: none;
-      width: 46px; height: 46px; border-radius: 15px; font-size: 23px;
+      width: 46px; height: 46px; border-radius: 15px; color: var(--primary);
       background: linear-gradient(135deg, var(--pastel-lavender), var(--pastel-blush));
-      box-shadow: inset 0 0 0 1px rgba(95, 0, 128, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(75, 42, 130, 0.09);
     }
+    .badge-emoji .ic { width: 23px; height: 23px; }
     .badge-body { min-width: 0; display: grid; gap: 1px; }
     .badge-title {
       font-size: 12px; font-weight: 900; letter-spacing: 0.01em;
@@ -198,10 +201,15 @@
     }
     .badge-name { font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .badge-desc { font-size: 12px; color: var(--gray); font-weight: 700; }
-    /* 이모지를 tb-ic 에 넣을 때(멤버 카드 칭호) 폭 자동 */
-    .md-badges .title-badge .tb-ic { width: auto; height: auto; font-size: 13px; line-height: 1; }
+    .md-badges .title-badge .tb-ic { display: inline-grid; place-items: center; width: auto; height: auto; line-height: 1; }
+    .md-badges .title-badge .tb-ic .ic { width: 14px; height: 14px; }
 
     /* ── 차트 공통 ── */
+    /* 1·2·3 위는 같은 그림에 색만 달리해 가른다 */
+    .rank-1 { color: #9A7B1E; }
+    .rank-2 { color: #6F6B78; }
+    .rank-3 { color: #8A5A34; }
+
     .chart-svg { width: 100%; height: auto; display: block; }
     .chart-anim { opacity: 0; transform: translateY(10px) scale(0.985); transition: opacity 0.55s var(--ease-out), transform 0.55s var(--ease-out); }
     .chart-anim.is-in { opacity: 1; transform: none; }
@@ -229,7 +237,8 @@
     @media (max-width: 860px) { .clock-layout { grid-template-columns: 1fr; } }
     .clock-side { display: grid; gap: 12px; align-content: start; }
     .clock-fact { display: flex; gap: 12px; align-items: center; padding: 13px 15px; border-radius: var(--r-sm); background: var(--offwhite); box-shadow: inset 0 0 0 1px var(--line); }
-    .clock-fact .ic { font-size: 20px; flex: none; }
+    .clock-fact .tile-ic { flex: none; display: grid; place-items: center; color: var(--primary); }
+    .clock-fact .tile-ic .ic { width: 21px; height: 21px; }
     .clock-fact b { display: block; font-size: 15px; letter-spacing: -0.02em; color: var(--deep-1); }
     .clock-fact small { color: var(--gray); font-size: 12px; font-weight: 700; }
     .hour-seg { display: grid; gap: 7px; }
@@ -356,7 +365,8 @@
     .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 800; }
     .recap-rows { display: grid; gap: 7px; }
     .recap-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10); font-size: 13px; font-weight: 800; }
-    .recap-row .ic { flex: none; font-size: 17px; }
+    .recap-row .tile-ic { flex: none; display: grid; place-items: center; color: var(--primary); }
+    .recap-row .tile-ic .ic { width: 17px; height: 17px; }
     .recap-row .who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
     .recap-row .what { flex: none; margin-left: auto; color: var(--on-dark-muted); font-size: 11px; font-weight: 800; }
     .recap-kws { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -376,6 +386,7 @@
     [hidden] { display: none !important; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
+  <script src="assets/icons.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -457,7 +468,7 @@
         </div>
       </div>
       <div class="legacy-note" id="legacyNote" hidden>
-        <span aria-hidden="true">🗂️</span>
+        <span class="ic-tile" aria-hidden="true"><svg class="ic is-sm"><use href="#i-folder"/></svg></span>
         <span><b>지난번에 만든 리포트예요.</b> 지금 보이는 지표까지만 나와요. 운영진이 다음 리포트를 올리면 기간 필터와 배지, 온도 같은 지표가 함께 열려요.</span>
       </div>
     </div>
@@ -466,7 +477,7 @@
     <div class="container" id="emptyWrap" hidden>
       <div class="card is-lg">
         <div class="empty-state">
-          <span class="empty-ic" aria-hidden="true">📊</span>
+          <span class="empty-ic ic-tile" aria-hidden="true"><svg class="ic is-lg"><use href="#i-chart"/></svg></span>
           <strong>아직 보여줄 리포트가 없어요</strong>
           <p>발행된 리포트가 없고 예시 데이터도 불러오지 못했어요. 잠깐 네트워크를 확인하고 다시 열어봐 주세요.</p>
           <a class="btn btn-secondary is-sm" href="report.html">다시 불러오기</a>
@@ -484,7 +495,7 @@
               <h2 id="hlTitle">이번 주 동네친구들 활동 요약</h2>
               <p>선택한 기간을 한눈에 정리했어요. 위 기간 필터를 바꾸면 아래 숫자도 같이 움직여요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHighlights">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHighlights">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyHighlights">
             <div class="kpi-row" id="kpiRow" aria-busy="true">
@@ -506,7 +517,7 @@
               <h2>이번 주 활약한 친구들</h2>
               <p>기준을 바꾸면 다른 관점의 순위도 볼 수 있어요. 이름을 검색하면 내 자리를 바로 찾아요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyRank">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyRank">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyRank">
             <div class="card is-lg reveal">
@@ -521,7 +532,7 @@
                 </select>
                 <span class="spacer"></span>
                 <label class="sr-only" for="memberSearch">멤버 검색</label>
-                <input class="search-input" id="memberSearch" type="search" placeholder="🔍 닉네임으로 내 자리 찾기" autocomplete="off" />
+                <input class="search-input" id="memberSearch" type="search" placeholder="닉네임으로 내 자리 찾기" autocomplete="off" />
               </div>
               <div class="rank-list" id="rankList" aria-live="polite" aria-busy="true">
                 <div class="skeleton skeleton-line is-lg" style="width:88%"></div>
@@ -544,7 +555,7 @@
               <h2>하루 중 언제 가장 북적일까요?</h2>
               <p>맨 위가 0시예요. 시계 방향으로 한 바퀴가 하루고, 바깥으로 뻗을수록 그 시간대에 대화가 많았어요. 조각을 짚으면 정확한 수가 떠요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyClock">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyClock">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyClock">
             <div class="clock-layout">
@@ -573,7 +584,7 @@
               <h2>대화가 몰리는 요일과 시간</h2>
               <p>진한 칸일수록 대화가 몰린 때예요. 벙 잡기 좋은 시간을 고를 때 참고해요. 셀을 짚으면 정확한 수가 떠요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyHeatmap">
             <div class="card is-lg reveal">
@@ -596,7 +607,7 @@
               <h2>요즘 동네친구들 이야깃거리</h2>
               <p>발행 기간 전체에서 자주 나온 단어예요. 원문 문장이 아니라 단어 빈도만 세요. 카테고리를 누르면 그 주제만 볼 수 있어요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyKeywords">
             <div class="card is-lg reveal">
@@ -621,7 +632,7 @@
               <h2>요즘 분위기는 어땠나요?</h2>
               <p>웃음과 응원, 하트가 얼마나 오갔는지 봐요. 대화가 몇몇에게 쏠렸는지도 같이 볼 수 있어요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMood">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMood">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyMood">
             <div class="mood-grid">
@@ -643,7 +654,7 @@
               <h2>주마다 이어진 대화 흐름</h2>
               <p>발행 기간 전체를 주 단위로 묶었어요. 보라 음영이 지금 보고 있는 기간이에요. 벙 소식이 있던 주엔 대화가 늘곤 해요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyTrend">
             <div class="card is-lg reveal">
@@ -664,7 +675,7 @@
               <h2>이번 기간, 이런 친구들이 빛났어요</h2>
               <p>조건을 채운 칭호만 보여요. 좋은 활약을 담은 배지라 표본이 적으면 살짝 잠겨 있어요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyBadges">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyBadges">
             <div class="badge-grid reveal" id="badgeGrid"></div>
@@ -682,7 +693,7 @@
               <h2>한 명씩 자세히 보기</h2>
               <p>멤버를 누르면 미니 프로필이 열려요. 위 랭킹의 검색창과도 이어져 있어요.</p>
             </div>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMembers">접기 <span class="chev" aria-hidden="true">▼</span></button>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMembers">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
           </div>
           <div class="sec-body" id="bodyMembers">
             <div class="member-layout">
@@ -704,7 +715,7 @@
           <div class="recap-stage reveal">
             <div class="recap-card" id="recapCard"></div>
             <div class="recap-actions">
-              <button class="btn btn-primary" type="button" id="recapSaveBtn">🖼️ 이미지로 저장</button>
+              <button class="btn btn-primary" type="button" id="recapSaveBtn"><svg class="ic is-sm" aria-hidden="true"><use href="#i-frame"/></svg> 이미지로 저장</button>
             </div>
           </div>
         </div>
@@ -736,7 +747,7 @@
             오픈채팅에서 만난 동네 사람들이에요.<br />
             필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -1052,10 +1063,10 @@
       /* 시간대 유형: hours 분포 최빈 구간 — 새벽 0~5 / 아침 6~10 / 점심 11~14 / 저녁 17~21.
          전체 메시지 30개 미만이면 판정 보류(null). */
       var TIME_BUCKETS = [
-        { key: "dawn", label: "새벽형", icon: "🌙", a: 0, b: 5 },
-        { key: "morning", label: "아침형", icon: "🌅", a: 6, b: 10 },
-        { key: "lunch", label: "점심형", icon: "🥪", a: 11, b: 14 },
-        { key: "evening", label: "저녁형", icon: "🌆", a: 17, b: 21 }
+        { key: "dawn", label: "새벽형", icon: "moon", a: 0, b: 5 },
+        { key: "morning", label: "아침형", icon: "sunrise", a: 6, b: 10 },
+        { key: "lunch", label: "점심형", icon: "sun", a: 11, b: 14 },
+        { key: "evening", label: "저녁형", icon: "sunset", a: 17, b: 21 }
       ];
       function timeType(member) {
         if (!member || (member.count || 0) < 30 || !member.hours) return null;
@@ -1168,19 +1179,19 @@
           return t;
         };
         var t;
-        if ((t = top(function (m, i) { return sums[i]; }, 20))) out.push({ icon: "🏆", title: "활약왕", idx: t.idx, name: t.name, desc: "이 기간 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m, i) { return sums[i]; }, 20))) out.push({ icon: "trophy", title: "활약왕", idx: t.idx, name: t.name, desc: "이 기간 " + t.v.toLocaleString("ko-KR") + "마디" });
         var rs = risers(data, s, prev);
-        if (rs && rs.length && rs[0].delta >= 10) out.push({ icon: "🚀", title: "성장왕", idx: rs[0].idx, name: rs[0].name, desc: "직전 기간보다 +" + rs[0].delta.toLocaleString("ko-KR") });
-        if ((t = top(function (m) { return sumH(m, 0, 5); }, 30))) out.push({ icon: "🌙", title: "새벽반", idx: t.idx, name: t.name, desc: "새벽 0~5시 " + t.v.toLocaleString("ko-KR") + "마디" });
-        if ((t = top(function (m) { return sumH(m, 6, 10); }, 30))) out.push({ icon: "🌅", title: "아침반", idx: t.idx, name: t.name, desc: "아침 6~10시 " + t.v.toLocaleString("ko-KR") + "마디" });
-        if ((t = top(function (m) { return sumH(m, 17, 21); }, 30))) out.push({ icon: "🌆", title: "퇴근반", idx: t.idx, name: t.name, desc: "저녁 17~21시 " + t.v.toLocaleString("ko-KR") + "마디" });
-        if ((t = top(function (m) { return (m.kw || {})["나들이"]; }, 10))) out.push({ icon: "🚶", title: "나들이 대장", idx: t.idx, name: t.name, desc: "나들이 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
-        if ((t = top(function (m) { return (m.kw || {})["맛집"]; }, 10))) out.push({ icon: "🍽️", title: "맛집 탐험가", idx: t.idx, name: t.name, desc: "맛집 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
-        if ((t = top(function (m) { return (m.kw || {})["벙"]; }, 10))) out.push({ icon: "🍻", title: "벙 지킴이", idx: t.idx, name: t.name, desc: "벙 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
-        if ((t = top(function (m) { return m.streak; }, 5))) out.push({ icon: "🔥", title: "꾸준함", idx: t.idx, name: t.name, desc: t.v.toLocaleString("ko-KR") + "일 연속 활동" });
-        if ((t = top(function (m) { return m.welcome; }, 2))) out.push({ icon: "🧚", title: "환영요정", idx: t.idx, name: t.name, desc: "새 멤버 환영 " + t.v.toLocaleString("ko-KR") + "번" });
-        if ((t = top(function (m) { return ((m.media || {}).link || 0) + ((m.kw || {})["정보"] || 0); }, 10))) out.push({ icon: "🔗", title: "정보공유왕", idx: t.idx, name: t.name, desc: "링크와 정보 " + t.v.toLocaleString("ko-KR") + "건" });
-        if ((t = top(function (m) { return m.a; }, 30))) out.push({ icon: "⚡", title: "리액션왕", idx: t.idx, name: t.name, desc: "답변과 리액션 " + t.v.toLocaleString("ko-KR") + "번" });
+        if (rs && rs.length && rs[0].delta >= 10) out.push({ icon: "trendUp", title: "성장왕", idx: rs[0].idx, name: rs[0].name, desc: "직전 기간보다 +" + rs[0].delta.toLocaleString("ko-KR") });
+        if ((t = top(function (m) { return sumH(m, 0, 5); }, 30))) out.push({ icon: "moon", title: "새벽반", idx: t.idx, name: t.name, desc: "새벽 0~5시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return sumH(m, 6, 10); }, 30))) out.push({ icon: "sunrise", title: "아침반", idx: t.idx, name: t.name, desc: "아침 6~10시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return sumH(m, 17, 21); }, 30))) out.push({ icon: "sunset", title: "퇴근반", idx: t.idx, name: t.name, desc: "저녁 17~21시 " + t.v.toLocaleString("ko-KR") + "마디" });
+        if ((t = top(function (m) { return (m.kw || {})["나들이"]; }, 10))) out.push({ icon: "walk", title: "나들이 대장", idx: t.idx, name: t.name, desc: "나들이 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return (m.kw || {})["맛집"]; }, 10))) out.push({ icon: "utensils", title: "맛집 탐험가", idx: t.idx, name: t.name, desc: "맛집 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return (m.kw || {})["벙"]; }, 10))) out.push({ icon: "glass", title: "벙 지킴이", idx: t.idx, name: t.name, desc: "벙 이야기 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return m.streak; }, 5))) out.push({ icon: "flame", title: "꾸준함", idx: t.idx, name: t.name, desc: t.v.toLocaleString("ko-KR") + "일 연속 활동" });
+        if ((t = top(function (m) { return m.welcome; }, 2))) out.push({ icon: "sparkle", title: "환영요정", idx: t.idx, name: t.name, desc: "새 멤버 환영 " + t.v.toLocaleString("ko-KR") + "번" });
+        if ((t = top(function (m) { return ((m.media || {}).link || 0) + ((m.kw || {})["정보"] || 0); }, 10))) out.push({ icon: "link", title: "정보공유왕", idx: t.idx, name: t.name, desc: "링크와 정보 " + t.v.toLocaleString("ko-KR") + "건" });
+        if ((t = top(function (m) { return m.a; }, 30))) out.push({ icon: "bolt", title: "리액션왕", idx: t.idx, name: t.name, desc: "답변과 리액션 " + t.v.toLocaleString("ko-KR") + "번" });
         return out;
       }
 
@@ -1379,9 +1390,9 @@
         const st = state.data;
         document.title = "동네친구들 운영 대시보드 " + (st.periodLabel || "");
         const badge = $("sourceBadgeText");
-        if (state.source === "sample") badge.textContent = "📎 예시 데이터 " + (st.periodLabel || "");
-        else if (state.source === "preview") badge.textContent = "👀 미리보기 초안 " + (st.periodLabel || "");
-        else badge.textContent = "✅ " + (st.periodLabel || "리포트");
+        if (state.source === "sample") badge.innerHTML = '<svg class="ic is-sm" aria-hidden="true"><use href="#i-tag"/></svg> 예시 데이터 ' + escapeHTML(st.periodLabel || "");
+        else if (state.source === "preview") badge.innerHTML = '<svg class="ic is-sm" aria-hidden="true"><use href="#i-eye"/></svg> 미리보기 초안 ' + escapeHTML(st.periodLabel || "");
+        else badge.innerHTML = '<svg class="ic is-sm" aria-hidden="true"><use href="#i-checkCircle"/></svg> ' + escapeHTML(st.periodLabel || "리포트");
         $("maskNote").hidden = !st.maskNames;
         $("pillBase").textContent = fmtDateK(st.range.to);
         const gen = String(st.generatedAt || "").slice(0, 10);
@@ -1403,11 +1414,11 @@
       }
 
       function tempDescOf(ratio) {
-        if (ratio >= 1.4) return "펄펄 끓었어요 🔥";
-        if (ratio >= 1.12) return "평소보다 뜨거웠어요 🔥";
-        if (ratio >= 0.88) return "평소만큼 도란도란 ☕";
-        if (ratio >= 0.6) return "조금 차분했어요 🍃";
-        return "조용한 휴식기였어요 😴";
+        if (ratio >= 1.4) return "펄펄 끓었어요";
+        if (ratio >= 1.12) return "평소보다 뜨거웠어요";
+        if (ratio >= 0.88) return "평소만큼 도란도란했어요";
+        if (ratio >= 0.6) return "조금 차분했어요";
+        return "조용한 휴식기였어요";
       }
       /* 상단 감성 요약용 한 줄 분위기 카피 (강조 구절은 grad-text 로) */
       function moodCopyOf(ratio) {
@@ -1452,7 +1463,7 @@
             </div>
             <div class="pulse-side">
               <div class="pulse-lead">
-                <span class="badge-soft is-cream">🗂️ 지난번 리포트</span>
+                <span class="badge-soft is-cream"><svg class="ic is-sm" aria-hidden="true"><use href="#i-folder"/></svg> 지난번 리포트</span>
                 <p class="pulse-mood">동네친구들 <span class="grad-text">활동 기록</span></p>
                 <p class="pulse-mood-sub">다음 리포트가 올라오면 온도와 분위기까지 함께 보여요.</p>
               </div>
@@ -1510,7 +1521,7 @@
       }
 
       function kpiMiniCard(ic, lb, vl, unit, sub) {
-        return `<div class="card kpi-mini"><span class="ic" aria-hidden="true">${ic}</span><span class="lb">${lb}</span><span class="vl">${vl}<small>${unit}</small></span><span class="sub">${sub}</span></div>`;
+        return `<div class="card kpi-mini"><span class="tile-ic" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-${ic}"/></svg></span><span class="lb">${lb}</span><span class="vl">${vl}<small>${unit}</small></span><span class="sub">${sub}</span></div>`;
       }
       function renderHighlights() {
         const st = state.data, s = state.slice;
@@ -1523,12 +1534,12 @@
           const wt = st.heatmap ? st.heatmap.map((r) => r.reduce((x, y) => x + y, 0)) : null;
           const pw = wt ? RM.peakOf(wt) : null;
           row.innerHTML = [
-            kpiMiniCard("🌱", "신규 참여자", nf(st.newMembers.count), "명", "발행 기간 전체"),
-            kpiMiniCard("👋", "복귀 참여자", "아직", "", "새 리포트에서 열려요"),
-            kpiMiniCard("📅", "가장 활발한 요일", pw ? WEEK_KO[pw.i] + "요일" : "아직", "", pw ? nf(pw.v) + "건" : ""),
-            kpiMiniCard("⏰", "가장 활발한 시간대", hourly.length ? pk.i + "시" : "아직", "", hourly.length ? nf(pk.v) + "건" : ""),
-            kpiMiniCard("🤫", "조용했던 시간대", hourly.length ? qt.i + "시" : "아직", "", hourly.length ? nf(qt.v) + "건" : ""),
-            kpiMiniCard("💬", "일평균 채팅", nf(st.totalsV1.avgPerDay || 0), "건", "쉬는 날 포함")
+            kpiMiniCard("sprout", "신규 참여자", nf(st.newMembers.count), "명", "발행 기간 전체"),
+            kpiMiniCard("users", "복귀 참여자", "아직", "", "새 리포트에서 열려요"),
+            kpiMiniCard("calendar", "가장 활발한 요일", pw ? WEEK_KO[pw.i] + "요일" : "아직", "", pw ? nf(pw.v) + "건" : ""),
+            kpiMiniCard("clock", "가장 활발한 시간대", hourly.length ? pk.i + "시" : "아직", "", hourly.length ? nf(pk.v) + "건" : ""),
+            kpiMiniCard("moon", "조용했던 시간대", hourly.length ? qt.i + "시" : "아직", "", hourly.length ? nf(qt.v) + "건" : ""),
+            kpiMiniCard("chat", "일평균 채팅", nf(st.totalsV1.avgPerDay || 0), "건", "쉬는 날 포함")
           ].join("");
           return;
         }
@@ -1539,17 +1550,19 @@
         const wt = RM.weekdayTotals(st, s);
         const pkH = RM.peakOf(hourly), qtH = RM.quietOf(hourly), pkW = RM.peakOf(wt);
         row.innerHTML = [
-          kpiMiniCard("🌱", "신규 참여자", nf(newIdx.length), "명", kpi.joins ? "입장 이벤트 " + nf(kpi.joins) + "번" : "첫 등장 기준"),
-          kpiMiniCard("👋", "복귀 참여자", state.prev ? nf(retIdx.length) : "아직", state.prev ? "명" : "", state.prev ? "직전 기간엔 조용했어요" : "비교 기간이 없어요"),
-          kpiMiniCard("📅", "가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건"),
-          kpiMiniCard("⏰", "가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건"),
-          kpiMiniCard("🤫", "조용했던 시간대", qtH.i + "시", "", nf(qtH.v) + "건"),
-          kpiMiniCard("💬", "일평균 채팅", nf1(kpi.avgPerDay), "건", "쉬는 날 포함 평균")
+          kpiMiniCard("sprout", "신규 참여자", nf(newIdx.length), "명", kpi.joins ? "입장 이벤트 " + nf(kpi.joins) + "번" : "첫 등장 기준"),
+          kpiMiniCard("users", "복귀 참여자", state.prev ? nf(retIdx.length) : "아직", state.prev ? "명" : "", state.prev ? "직전 기간엔 조용했어요" : "비교 기간이 없어요"),
+          kpiMiniCard("calendar", "가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건"),
+          kpiMiniCard("clock", "가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건"),
+          kpiMiniCard("moon", "조용했던 시간대", qtH.i + "시", "", nf(qtH.v) + "건"),
+          kpiMiniCard("chat", "일평균 채팅", nf1(kpi.avgPerDay), "건", "쉬는 날 포함 평균")
         ].join("");
       }
 
       /* ── 랭킹 ── */
-      const MEDALS = ["🥇", "🥈", "🥉"];
+      const MEDALS = ['<svg class="ic rank-1" aria-hidden="true"><use href="#i-medal"/></svg>',
+                      '<svg class="ic rank-2" aria-hidden="true"><use href="#i-medal"/></svg>',
+                      '<svg class="ic rank-3" aria-hidden="true"><use href="#i-medal"/></svg>'];
       const RANK_NOTES = {
         total: "막대는 기간 내 메시지 수, 오른쪽 %는 전체 대화에서의 점유율이에요.",
         rise: "직전 같은 길이 기간 대비 증감이에요. (직전 → 이번, 직전이 짧으면 같은 길이로 환산)",
@@ -1572,7 +1585,7 @@
         let list;
         if (state.legacy) {
           if (state.rankMetric === "rise" || state.rankMetric === "steady") {
-            host.innerHTML = `<div class="empty-state"><span class="empty-ic">🗂️</span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 상승·꾸준 랭킹도 함께 열려요.</p></div>`;
+            host.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-folder"/></svg></span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 상승·꾸준 랭킹도 함께 열려요.</p></div>`;
             $("rankToggle").hidden = true; $("rankNote").textContent = "";
             return;
           }
@@ -1586,13 +1599,13 @@
           list = RM.rankBy(st, state.slice, state.prev, state.rankMetric);
         }
         if (list === null) {
-          host.innerHTML = `<div class="empty-state"><span class="empty-ic">📉</span><strong>비교할 직전 기간이 없어요</strong><p>기간을 조금 뒤로 옮기거나 다른 기준을 골라보세요.</p></div>`;
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-trendUp"/></svg></span><strong>비교할 직전 기간이 없어요</strong><p>기간을 조금 뒤로 옮기거나 다른 기준을 골라보세요.</p></div>`;
           $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
           return;
         }
         const q = state.search.trim().toLowerCase();
         if (!list.length) {
-          host.innerHTML = `<div class="empty-state"><span class="empty-ic">💤</span><strong>이 기간에는 기록이 없어요</strong><p>다른 기간을 선택해보세요.</p></div>`;
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-moon"/></svg></span><strong>이 기간에는 기록이 없어요</strong><p>다른 기간을 선택해보세요.</p></div>`;
           $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
           return;
         }
@@ -1639,7 +1652,7 @@
         const host = $("badgeGrid");
         if (state.legacy) {
           state.badgeList = [];
-          host.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 명예의 전당도 함께 열려요.</p></div></div>`;
+          host.innerHTML = `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-medal"/></svg></span><strong>지난번 리포트에는 이 항목이 없어요</strong><p>운영진이 다음 리포트를 올리면 명예의 전당도 함께 열려요.</p></div></div>`;
           return;
         }
         const badges = RM.badges(state.data, state.slice, state.prev);
@@ -1647,14 +1660,14 @@
         host.innerHTML = badges.length
           ? badges.map((b) => `
             <div class="badge-card">
-              <span class="badge-emoji" aria-hidden="true">${b.icon}</span>
+              <span class="badge-emoji" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-${b.icon}"/></svg></span>
               <span class="badge-body">
                 <span class="badge-title">${escapeHTML(b.title)}</span>
                 <span class="badge-name">${highlightName(b.name)}</span>
                 <span class="badge-desc">${escapeHTML(b.desc)}</span>
               </span>
             </div>`).join("")
-          : `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic">🏅</span><strong>조건을 채운 배지가 아직 없어요</strong><p>기간을 넓히면 배지가 열릴 수 있어요.</p></div></div>`;
+          : `<div class="card" style="grid-column:1/-1"><div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-medal"/></svg></span><strong>조건을 채운 배지가 아직 없어요</strong><p>기간을 넓히면 배지가 열릴 수 있어요.</p></div></div>`;
       }
 
       /* ── 24시간 활동 시계 (방사형 SVG) ── */
@@ -1711,8 +1724,8 @@
         $("clockFacts").innerHTML = `
           <h3 style="margin:0 0 12px; font-size:15px; letter-spacing:-0.03em; color:var(--deep-1)">시간대 요약</h3>
           <div style="display:grid; gap:8px">
-            <div class="clock-fact"><span class="ic" aria-hidden="true">🔥</span><span><b>${pk.i}시가 피크</b><small>${nf(pk.v)}건으로 하루 중 제일 붐벼요</small></span></div>
-            <div class="clock-fact"><span class="ic" aria-hidden="true">🤫</span><span><b>${qt.i}시가 제일 조용</b><small>${nf(qt.v)}건, 다들 쉬는 시간이에요</small></span></div>
+            <div class="clock-fact"><span class="tile-ic" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-flame"/></svg></span><span><b>${pk.i}시가 피크</b><small>${nf(pk.v)}건으로 하루 중 제일 붐벼요</small></span></div>
+            <div class="clock-fact"><span class="tile-ic" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span><span><b>${qt.i}시가 제일 조용</b><small>${nf(qt.v)}건, 다들 쉬는 시간이에요</small></span></div>
           </div>`;
         const segs = [
           { lb: "새벽 0~5", a: 0, b: 5 }, { lb: "아침 6~10", a: 6, b: 10 },
@@ -1735,7 +1748,7 @@
         const host = $("hmGrid");
         if (!grid) {
           host.innerHTML = "";
-          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic">🗓️</span><strong>아직 요일과 시간을 그릴 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          host.parentElement.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-calendar"/></svg></span><strong>아직 요일과 시간을 그릴 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
           return;
         }
         let max = 0;
@@ -1778,7 +1791,7 @@
         const wrap = $("trendWrap");
         const weeks = RM.weeklySeries(st);
         if (weeks.length < 2) {
-          wrap.innerHTML = `<div class="empty-state"><span class="empty-ic">📈</span><strong>추이를 그릴 주가 부족해요</strong><p>2주 이상 데이터가 쌓이면 라인이 생겨요.</p></div>`;
+          wrap.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-chart"/></svg></span><strong>추이를 그릴 주가 부족해요</strong><p>2주 이상 데이터가 쌓이면 라인이 생겨요.</p></div>`;
           $("trendCallout").innerHTML = ""; $("trendTable").innerHTML = "";
           return;
         }
@@ -1890,7 +1903,7 @@
 
         const field = $("kwField");
         if (!kws.length) {
-          field.innerHTML = `<div class="empty-state"><span class="empty-ic">💬</span><strong>키워드가 없어요</strong><p>발행 시 키워드가 모두 제외됐거나 데이터가 부족해요.</p></div>`;
+          field.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span><strong>키워드가 없어요</strong><p>발행 시 키워드가 모두 제외됐거나 데이터가 부족해요.</p></div>`;
           return;
         }
         const top = kws.slice(0, 28);
@@ -1916,7 +1929,7 @@
               <b>${escapeHTML(w.week)}</b>
               <ol>${(w.top || []).map((t, j) => `<li><i>${j + 1}</i>${escapeHTML(t)}</li>`).join("")}</ol>
             </div>`).join("")
-          : `<div class="empty-state" style="grid-auto-flow:row"><span class="empty-ic">🗓️</span><strong>아직 주차별 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          : `<div class="empty-state" style="grid-auto-flow:row"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-calendar"/></svg></span><strong>아직 주차별 기록이 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
       }
 
       /* ── 분위기 리포트 ── */
@@ -1927,9 +1940,9 @@
         if (es && (es.laugh || es.cheer || es.heart)) {
           const totalE = (es.laugh || 0) + (es.cheer || 0) + (es.heart || 0) || 1;
           const rows = [
-            { lb: "😂 웃음", v: es.laugh || 0, c: "#7B2BB0" },
-            { lb: "📣 응원", v: es.cheer || 0, c: "#1E8E68" },
-            { lb: "💜 하트", v: es.heart || 0, c: "#C43D63" }
+            { lb: "웃음", v: es.laugh || 0, c: "#7B2BB0" },
+            { lb: "응원", v: es.cheer || 0, c: "#1E8E68" },
+            { lb: "하트", v: es.heart || 0, c: "#C43D63" }
           ];
           $("moodEmoji").innerHTML = `<h3>이모지와 리액션 분위기</h3><p class="mood-cap">발행 기간 전체에서 웃음과 응원, 하트가 차지한 비율이에요.</p>` +
             rows.map((r) => `<div class="mood-bar-row"><span>${r.lb}</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((r.v / totalE) * 100)}" style="background:${r.c}"></span></span><em>${nf(r.v)}</em></div>`).join("");
@@ -1937,7 +1950,7 @@
             $("moodEmoji").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
           });
         } else {
-          $("moodEmoji").innerHTML = `<h3>이모지와 리액션 분위기</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">😶</span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          $("moodEmoji").innerHTML = `<h3>이모지와 리액션 분위기</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 2) 대화 집중도 (지니 → 도넛)
@@ -1971,12 +1984,12 @@
                 <text x="48" y="60" text-anchor="middle" font-size="8" font-weight="800" fill="#6B6180">지니계수</text>
               </svg>
               <div class="gini-side">
-                <span class="badge-soft ${conc.even ? "is-mint" : "is-cream"}">${conc.even ? "🗣️ 골고루 수다" : "🎯 일부 집중"}</span>
+                <span class="badge-soft ${conc.even ? "is-mint" : "is-cream"}">${conc.even ? "골고루 수다" : "일부 집중"}</span>
                 <div class="legend-dots">${segs.map((sg) => `<span><i style="background:${sg.c}"></i>${sg.lb} ${Math.round((sg.v / totalS) * 100)}%</span>`).join("")}</div>
               </div>
             </div>`;
         } else {
-          $("moodGini").innerHTML = `<h3>대화 집중도</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">🗂️</span><strong>지난번 리포트</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          $("moodGini").innerHTML = `<h3>대화 집중도</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-folder"/></svg></span><strong>지난번 리포트</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 3) 질문 대비 답변
@@ -1985,13 +1998,13 @@
           const maxQa = Math.max(qa.q, qa.a, 1);
           $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><p class="mood-cap">발행 기간 전체에서 질문에 답이 얼마나 돌아왔는지예요.</p>
             <div class="mood-big">${qa.ratio == null ? "아직 없어요" : "질문 1개당 " + nf1(qa.ratio) + "개"}<small> 답변과 반응</small></div>
-            <div class="mood-bar-row"><span>❓ 질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#2F6FB0"></span></span><em>${nf(qa.q)}</em></div>
-            <div class="mood-bar-row"><span>💬 답변</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}" style="background:#7B2BB0"></span></span><em>${nf(qa.a)}</em></div>`;
+            <div class="mood-bar-row"><span>질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#2F6FB0"></span></span><em>${nf(qa.q)}</em></div>
+            <div class="mood-bar-row"><span>답변</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}" style="background:#7B2BB0"></span></span><em>${nf(qa.a)}</em></div>`;
           requestAnimationFrame(() => {
             $("moodQa").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; });
           });
         } else {
-          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic">❓</span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
+          $("moodQa").innerHTML = `<h3>질문에 답이 돌아오나요?</h3><div class="empty-state" style="padding:22px 8px"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span><strong>아직 모인 숫자가 적어요</strong><p>다음 리포트가 올라오면 채워져요.</p></div>`;
         }
 
         // 4) 신규 멤버 적응
@@ -2010,8 +2023,8 @@
         const st = state.data;
         const grid = $("memberGrid");
         if (state.legacy || !st.members || !st.members.length) {
-          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic">👥</span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "지난번 리포트예요. 다음 리포트가 올라오면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
-          $("memberDetail").innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
+          grid.innerHTML = `<div class="empty-state" style="width:100%"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-users"/></svg></span><strong>멤버 카드를 만들 수 없어요</strong><p>${state.legacy ? "지난번 리포트예요. 다음 리포트가 올라오면 열려요." : "이 기간에는 멤버 기록이 없어요."}</p></div>`;
+          $("memberDetail").innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-users"/></svg></span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
           return;
         }
         const sums = RM.memberSums(st, state.slice);
@@ -2022,7 +2035,7 @@
           .sort((a, b) => b.v - a.v);
         grid.innerHTML = items.length
           ? items.map((x) => `<button class="member-pill" type="button" data-open-member="${x.i}" aria-pressed="${state.selectedMember === x.i}">${highlightName(x.m.name)} <b>${nf(x.v)}</b></button>`).join("")
-          : `<div class="empty-state" style="width:100%"><span class="empty-ic">🔍</span><strong>검색 결과가 없어요</strong><p>다른 이름으로 찾아보세요.</p></div>`;
+          : `<div class="empty-state" style="width:100%"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-search"/></svg></span><strong>검색 결과가 없어요</strong><p>다른 이름으로 찾아보세요.</p></div>`;
         if (state.selectedMember < 0 && items.length) state.selectedMember = items[0].i;
         renderMemberDetail();
       }
@@ -2053,7 +2066,7 @@
         const host = $("memberDetail");
         const i = state.selectedMember;
         if (state.legacy || i < 0 || !st.members[i]) {
-          host.innerHTML = `<div class="empty-state"><span class="empty-ic">👤</span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
+          host.innerHTML = `<div class="empty-state"><span class="empty-ic" aria-hidden="true"><svg class="ic"><use href="#i-users"/></svg></span><strong>멤버를 선택해주세요</strong><p>왼쪽 목록에서 멤버를 탭하면 미니 프로필이 열려요.</p></div>`;
           return;
         }
         const m = st.members[i];
@@ -2071,14 +2084,14 @@
         host.innerHTML = `
           <div class="md-head">
             <span class="md-avatar" aria-hidden="true">${escapeHTML(String(m.name || "?").trim().charAt(0) || "?")}</span>
-            <span><b>${escapeHTML(m.name)}</b><small>${tt ? tt.icon + " " + tt.label + " 멤버, " : "유형 판정 대기 (30마디 이상부터), "}평균 ${nf1(m.avgLen || 0)}자</small></span>
+            <span><b>${escapeHTML(m.name)}</b><small>${tt ? '<svg class="ic is-sm" aria-hidden="true"><use href="#i-' + tt.icon + '"/></svg> ' + tt.label + " 멤버, " : "유형 판정 대기 (30마디 이상부터), "}평균 ${nf1(m.avgLen || 0)}자</small></span>
           </div>
           <div class="md-stats">
             <div class="md-stat"><span>기간 채팅</span><strong>${nf(periodCount)}</strong></div>
             <div class="md-stat"><span>기간 활동일</span><strong>${nf(actDays)}일</strong></div>
             <div class="md-stat"><span>최장 연속</span><strong>${nf(m.streak || 0)}일</strong></div>
           </div>
-          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true">${b.icon}</span>${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">이 기간에 받은 칭호는 아직 없어요.</p>`}
+          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-${b.icon}"/></svg></span>${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">이 기간에 받은 칭호는 아직 없어요.</p>`}
           <div class="md-spark">${sparkSVG(series, fmtDateK(st.days[s0].d), fmtDateK(st.days[s1].d))}<div class="spark-cap">${sparkNote} (${fmtDateK(st.days[s0].d)}~${fmtDateK(st.days[s1].d)})</div></div>`;
         // 그리드 선택 상태 갱신
         $("memberGrid").querySelectorAll("[data-open-member]").forEach((b) => {
@@ -2102,7 +2115,7 @@
                 <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(t.activeMembers || 0)}<small>명</small></strong></div>
                 <div class="recap-kpi"><span>하루 평균</span><strong>${nf(t.avgPerDay || 0)}<small>건</small></strong></div>
               </div>
-              <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>동네친구들</span></div>
+              <div class="recap-foot"><span><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 집계 숫자와 키워드만 담았어요</span><span>동네친구들</span></div>
             </div>`;
           return;
         }
@@ -2119,9 +2132,9 @@
               <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(kpi.activeMembers)}<small>명</small></strong></div>
               <div class="recap-kpi"><span>하루 평균</span><strong>${nf1(kpi.avgPerDay)}<small>건</small></strong></div>
             </div>
-            ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="ic" aria-hidden="true">${b.icon}</span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)}, ${escapeHTML(b.desc)}</span></div>`).join("")}</div>` : ""}
+            ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="tile-ic" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-${b.icon}"/></svg></span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)}, ${escapeHTML(b.desc)}</span></div>`).join("")}</div>` : ""}
             ${kws.length ? `<div class="recap-kws">${kws.map((k) => `<span class="recap-kw">#${escapeHTML(k.w)}</span>`).join("")}</div>` : ""}
-            <div class="recap-foot"><span>🔒 집계 숫자와 키워드만 담았어요</span><span>동네친구들 운영 대시보드</span></div>
+            <div class="recap-foot"><span><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 집계 숫자와 키워드만 담았어요</span><span>동네친구들 운영 대시보드</span></div>
           </div>`;
       }
 
@@ -2148,7 +2161,7 @@
         } catch (e) {
           EXCER.toast("이미지 저장에 실패했어요. 다시 시도해주세요.");
         } finally {
-          btn.disabled = false; btn.textContent = "🖼️ 이미지 저장";
+          btn.disabled = false; btn.innerHTML = '<svg class="ic is-sm" aria-hidden="true"><use href="#i-frame"/></svg> 이미지 저장';
         }
       }
 
@@ -2255,7 +2268,7 @@
             const open = body.hidden;
             body.hidden = !open;
             btn.setAttribute("aria-expanded", String(open));
-            btn.innerHTML = (open ? "접기 " : "펼치기 ") + '<span class="chev" aria-hidden="true">▼</span>';
+            btn.innerHTML = (open ? "접기 " : "펼치기 ") + '<span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span>';
           });
         });
       }
@@ -2299,7 +2312,7 @@
           $("dashBody").hidden = true;
           $("pulseCard").hidden = true;
           $("emptyWrap").hidden = false;
-          $("sourceBadgeText").textContent = "😴 리포트 없음";
+          $("sourceBadgeText").textContent = "리포트 없음";
           return;
         }
         bootWith(stats, source, row);
