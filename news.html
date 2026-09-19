@@ -132,6 +132,11 @@
     }
     @media (prefers-reduced-motion: reduce) { .post-card.is-linked { animation: none; } }
     .mini-btn.mini-link { color: var(--primary); }
+    .pass-hint { color: var(--gray-2); }
+    .linkish {
+      background: none; border: 0; padding: 0; cursor: pointer;
+      color: var(--primary); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 2px;
+    }
 
     /* ── 벙 정보 줄 ── */
     .bung-strip {
@@ -468,6 +473,8 @@
           <label for="wPass">비밀번호</label>
           <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
           <span class="field-hint">나중에 수정·삭제할 때 필요해요</span>
+          <span class="field-hint pass-hint" id="passHint" hidden>이 브라우저에 기억해 뒀어요 ·
+            <button type="button" class="linkish" id="passForget">지우기</button></span>
         </div>
         <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 올라가고, 자동으로 맨 위에 고정돼요.</p>
         <div class="field is-wide">
@@ -645,6 +652,7 @@
     // (한쪽만 고치면 링크로 연 글의 리액션·댓글 수가 비는 식으로 조용히 어긋난다)
     const POST_SELECT = "select=id,category,title,body,author,pinned,meta,created_at,updated_at,comment_count,reactions,reaction_count";
     const NICK_KEY = "excer_news_nick";
+    const PASS_KEY = "excer_news_pass";
     const DEVICE_STORE_KEY = "excer_device_key";
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
     // 카테고리 — sql/setup_all.sql 체크 제약과 동일 집합 (순서·문자열 유지)
@@ -739,6 +747,29 @@
 
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) { /* 무시 */ } }
+
+    /* 글 비밀번호는 '가입'이 아니라 '내 글 열쇠'다. 계정이 없으니 이게 유일한 소유 증명이라
+       쓸 때 받는 것 자체는 없앨 수 없다(서버가 그 값으로만 수정·삭제 권한을 판정한다).
+       대신 이 브라우저에 기억해 두 번째 글부터는 실질 입력이 0회가 되게 한다.
+
+       공지는 저장하지 않는다. 공지에 들어가는 건 운영진 비밀번호이고,
+       그건 한 번 새면 발행·강제삭제까지 열리는 열쇠라 편의를 위해 둘 값이 아니다. */
+    function savedPass() { try { return localStorage.getItem(PASS_KEY) || ""; } catch (e) { return ""; } }
+    function savePass(pass, category) {
+      if (category === "공지") return;
+      try { localStorage.setItem(PASS_KEY, pass); } catch (e) { /* 무시 */ }
+    }
+    function forgetPass() {
+      try { localStorage.removeItem(PASS_KEY); } catch (e) {}
+      const w = document.getElementById("wPass"); if (w) w.value = "";
+      document.querySelectorAll(".c-pass").forEach((el) => { el.value = ""; });
+      syncPassHint();
+      showToast("기억해 둔 비밀번호를 지웠어요");
+    }
+    function syncPassHint() {
+      const hint = document.getElementById("passHint");
+      if (hint) hint.hidden = !savedPass();
+    }
     function findPost(id) { return state.posts.find((p) => p.id === id); }
 
     // 기기 키 — localStorage "excer_device_key" (영숫자 24자 난수)
@@ -954,7 +985,7 @@
           <div class="comment-form">
             <div class="row2">
               <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" value="${escapeHTML(savedNick())}" />
-              <input class="input c-pass" type="password" placeholder="비밀번호 (4자+)" autocomplete="new-password" />
+              <input class="input c-pass" type="password" placeholder="비밀번호 (4자+)" autocomplete="new-password" value="${escapeHTML(savedPass())}" />
             </div>
             <textarea class="textarea c-body" maxlength="1000" placeholder="댓글을 남겨보세요 (1000자)"></textarea>
             <div class="comment-form-actions">
@@ -1132,6 +1163,8 @@
     function openWriteModal() {
       $("writeBackdrop").hidden = false;
       $("wNick").value = $("wNick").value || savedNick();
+      $("wPass").value = $("wPass").value || savedPass();
+      syncPassHint();
       setTimeout(() => $("wTitle").focus(), 60);
     }
     function closeWriteModal() {
@@ -1185,8 +1218,9 @@
           body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: readBungMeta() })
         });
         saveNick(nick);
+        savePass(pass, cat);
         showToast("소식을 남겼어요 🎉");
-        $("wTitle").value = ""; $("wBody").value = ""; $("wPass").value = "";
+        $("wTitle").value = ""; $("wBody").value = "";
         clearBungFields();
         $("wCount").textContent = "0 / 4000";
         closeWriteModal();
@@ -1295,6 +1329,7 @@
           body: JSON.stringify({ p_post_id: postId, p_author: nick, p_pass: pass, p_body: body })
         });
         saveNick(nick);
+        savePass(pass, "");
         const post = findPost(postId);
         if (post) post.comment_count = (Number(post.comment_count) || 0) + 1;
         showToast("댓글을 남겼어요.");
@@ -1525,6 +1560,7 @@
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitPost);
       $("wCat").addEventListener("change", syncBungFields);
+      $("passForget").addEventListener("click", forgetPass);
       syncBungFields();
       $("writeBackdrop").addEventListener("click", (e) => {
         if (e.target === e.currentTarget) closeWriteModal();
