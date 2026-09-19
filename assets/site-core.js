@@ -7,6 +7,7 @@
    담는 것
      ① 서버 접속 정보 (window.SUPA)
      ② 방문자 카운터
+     ③ 모달 포커스 가두기
 
    이 파일은 <head> 에서 defer 없이 불러야 한다.
    페이지 안의 인라인 스크립트가 window.SUPA 를 바로 쓰기 때문이다.
@@ -116,9 +117,92 @@
       });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startVisitCounter);
-  } else {
+  /* ──────────────────────────────────────────────────────────
+     ③ 모달 포커스 가두기
+     모달이 열려 있어도 탭이 뒤쪽 페이지로 빠져나가고 있었다(25번 중 15~22번).
+     키보드로 쓰는 사람은 모달이 떠 있는데 보이지 않는 곳을 더듬게 된다.
+
+     페이지마다 고치지 않고 여기서 한 번에 처리한다 — 모든 모달이
+     .modal-backdrop + [hidden] 이라는 같은 약속을 쓰고 있어서 가능하다.
+     페이지 쪽 코드는 손대지 않는다.
+     ────────────────────────────────────────────────────────── */
+  var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]),' +
+                  'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  var beforeModal = null;   // 모달을 열기 직전에 포커스가 있던 곳
+
+  function openModals() {
+    var all = document.querySelectorAll(".modal-backdrop");
+    var out = [];
+    for (var i = 0; i < all.length; i++) if (!all[i].hidden) out.push(all[i]);
+    return out;
+  }
+
+  function itemsIn(box) {
+    var all = box.querySelectorAll(FOCUSABLE);
+    var out = [];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      // 숨겨진 칸(예: 수정할 때 감추는 닉네임 칸)은 건너뛴다
+      if (el.offsetWidth || el.offsetHeight || el.getClientRects().length) out.push(el);
+    }
+    return out;
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Tab") return;
+    var open = openModals();
+    if (!open.length) return;
+    var box = open[open.length - 1];        // 겹쳐 있으면 가장 위에 열린 것
+    var items = itemsIn(box);
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    var here = document.activeElement;
+    var inside = box.contains(here);
+    if (e.shiftKey ? (here === first || !inside) : (here === last || !inside)) {
+      e.preventDefault();
+      (e.shiftKey ? last : first).focus();
+    }
+  });
+
+  /* 열리고 닫히는 것을 hidden 속성 변화로 안다.
+     페이지들이 backdrop.hidden = true/false 로만 여닫기 때문에,
+     여는 함수를 일일이 고치지 않아도 여기서 잡힌다. */
+  function watchModals() {
+    var boxes = document.querySelectorAll(".modal-backdrop");
+    if (!boxes.length || !window.MutationObserver) return;
+    var ob = new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        var box = list[i].target;
+        if (!box.classList || !box.classList.contains("modal-backdrop")) continue;
+        if (!box.hidden) {
+          if (!box.contains(document.activeElement)) {
+            beforeModal = document.activeElement;
+            var items = itemsIn(box);
+            // 페이지가 이미 특정 칸에 포커스를 주는 경우가 많아 조금 기다린다
+            if (items.length) setTimeout(function (f, b) {
+              return function () { if (!b.contains(document.activeElement)) f.focus(); };
+            }(items[0], box), 80);
+          }
+        } else if (beforeModal && document.body.contains(beforeModal)) {
+          // 닫으면 열기 전 자리로 돌려준다. 안 그러면 포커스가 문서 맨 앞으로 튄다.
+          beforeModal.focus();
+          beforeModal = null;
+        }
+      }
+    });
+    for (var i = 0; i < boxes.length; i++) {
+      ob.observe(boxes[i], { attributes: true, attributeFilter: ["hidden"] });
+    }
+  }
+
+  function start() {
     startVisitCounter();
+    watchModals();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
   }
 })();

@@ -370,7 +370,7 @@
 
     [hidden] { display: none !important; }
   </style>
-  <script src="assets/site-core.js?v=1"></script>
+  <script src="assets/site-core.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -537,7 +537,7 @@
             <div>
               <span class="eyebrow">시간대 리듬</span>
               <h2>하루 중 언제 가장 북적일까요?</h2>
-              <p>바깥으로 뻗을수록 그 시간대에 대화가 많았어요. 12시가 위쪽 정오예요. 조각을 짚으면 정확한 수가 떠요.</p>
+              <p>맨 위가 0시예요. 시계 방향으로 한 바퀴가 하루고, 바깥으로 뻗을수록 그 시간대에 대화가 많았어요. 조각을 짚으면 정확한 수가 떠요.</p>
             </div>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyClock">접기 <span class="chev" aria-hidden="true">▼</span></button>
           </div>
@@ -1230,8 +1230,11 @@
       const PALETTE = ["#7B2BB0", "#1E8E68", "#A8861D", "#2F6FB0", "#C43D63"];
       const RAMP = ["#F3E8FF", "#D9B3EC", "#B980D9", "#8F3FBF", "#5F0080"];
       const ZERO_COLOR = "#F5F3F7";
-      const CAT_COLOR = { "나들이": "#1E8E68", "맛집": "#A8861D", "벙": "#7B2BB0", "정보": "#2F6FB0" };
-      const CAT_SOFT = { "나들이": "rgba(30,142,104,0.13)", "맛집": "rgba(168,134,29,0.13)", "벙": "rgba(123,43,176,0.11)", "정보": "rgba(47,111,176,0.12)" };
+      // 네 색은 검증기로 확인했다(대비·채도·색약 분리 모두 통과).
+      // 정보의 파랑이 예전엔 #2F6FB0 이었는데, 적록색약에서 벙의 보라와 ΔE 6.8 로
+      // 겨우 갈렸다. 조금 청록 쪽으로 민 #2A7FA8 이면 8 을 넘긴다.
+      const CAT_COLOR = { "나들이": "#1E8E68", "맛집": "#A8861D", "벙": "#7B2BB0", "정보": "#2A7FA8" };
+      const CAT_SOFT = { "나들이": "rgba(30,142,104,0.13)", "맛집": "rgba(168,134,29,0.13)", "벙": "rgba(123,43,176,0.11)", "정보": "rgba(42,127,168,0.12)" };
       function rampColor(v, max) {
         if (!v) return ZERO_COLOR;
         const r = v / (max || 1);
@@ -1506,7 +1509,7 @@
       }
 
       function kpiMiniCard(ic, lb, vl, unit, sub) {
-        return `<div class="card kpi-mini card-lift"><span class="ic" aria-hidden="true">${ic}</span><span class="lb">${lb}</span><span class="vl">${vl}<small>${unit}</small></span><span class="sub">${sub}</span></div>`;
+        return `<div class="card kpi-mini"><span class="ic" aria-hidden="true">${ic}</span><span class="lb">${lb}</span><span class="vl">${vl}<small>${unit}</small></span><span class="sub">${sub}</span></div>`;
       }
       function renderHighlights() {
         const st = state.data, s = state.slice;
@@ -1642,7 +1645,7 @@
         state.badgeList = badges;
         host.innerHTML = badges.length
           ? badges.map((b) => `
-            <div class="badge-card card-lift">
+            <div class="badge-card">
               <span class="badge-emoji" aria-hidden="true">${b.icon}</span>
               <span class="badge-body">
                 <span class="badge-title">${escapeHTML(b.title)}</span>

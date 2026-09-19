@@ -52,21 +52,20 @@
     .intro-card b { display: block; font-size: 15px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
     .intro-card span { display: block; margin-top: 4px; color: var(--gray); font-size: var(--fs-sm); line-height: 1.55; font-weight: 600; }
 
-    /* ── 활동 소개 (요즘 이런 걸 같이 해요) ── */
-    .act-grid { display: grid; gap: clamp(10px, 1.4vw, 14px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .act-tile {
-      display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
-      padding: clamp(16px, 2vw, 20px); border-radius: var(--r-md);
+    /* ── 활동 소개 (요즘 이런 걸 같이 해요) ──
+       카드 8장을 4×2 로 깔고 hover 에 들어올림까지 걸어 뒀었다.
+       그런데 누를 수 있는 게 아니다 — 눌릴 것처럼 굴다가 아무 일도 안 일어난다.
+       부제도 대부분 제목을 다시 말할 뿐이었다("영화 / 개봉작 같이 보기").
+       눌리지 않는 것은 눌릴 것처럼 보이지 않아야 하므로 칩으로 낮췄다.
+       세로 300px → 110px. 어떤 벙을 하는지는 한눈에 더 잘 들어온다. */
+    .act-row { display: flex; flex-wrap: wrap; gap: 9px; }
+    .act-chip {
+      display: inline-flex; align-items: center; gap: 9px;
+      min-height: 46px; padding: 0 17px 0 13px; border-radius: var(--r-pill);
       border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
-      transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease), border-color 0.28s var(--ease);
+      font-size: var(--fs-body); font-weight: 800; letter-spacing: -0.02em; color: var(--deep-1);
     }
-    .act-tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-3); border-color: var(--line-strong); }
-    .act-emoji {
-      display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; font-size: 23px; line-height: 1;
-      background: linear-gradient(160deg, var(--pastel-lavender), rgba(252, 233, 241, 0.5));
-    }
-    .act-tile b { font-size: 15px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); }
-    .act-tile span { color: var(--gray); font-size: 13px; line-height: 1.5; font-weight: 600; }
+    .act-chip i { font-size: 19px; line-height: 1; font-style: normal; }
 
     /* ── 온보딩 3단계 (처음이라면 이렇게) ── */
     .step-grid { display: grid; gap: clamp(14px, 1.8vw, 20px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -137,7 +136,6 @@
     .fresh-badge.is-fresh  { background: rgba(120, 236, 186, 0.20); color: #9DF3CC; }
     .fresh-badge.is-ok     { background: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.86); }
     .fresh-badge.is-stale  { background: rgba(255, 214, 128, 0.20); color: #FFDFA1; }
-    .fresh-badge.is-sample { background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.78); }
     .fresh-next { color: rgba(255, 255, 255, 0.52); font-weight: 700; }
     .vibe-go { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; color: #fff; font-size: 13px; font-weight: 900; }
     .vibe-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
@@ -168,6 +166,16 @@
     }
     .feature-card .fc-go svg { width: 16px; height: 16px; transition: transform 0.24s var(--ease); }
     .feature-card:hover .fc-go svg { transform: translateX(4px); }
+    /* 허브의 으뜸 카드. 바로 윗 섹션의 활약왕 카드가 같은 보라 그라데이션이라,
+       둘을 나란히 두면 서로를 깎아먹는다. 활약왕은 사람 이야기라 이 페이지의
+       감정적 정점이고, 이쪽은 길 안내다 — 크기로 이미 으뜸인 걸 보여 주므로
+       색까지 세우지 않는다. 옅은 라벤더 바탕에 테두리 한 겹으로만 구분한다. */
+    .feature-card.is-lead {
+      background: linear-gradient(160deg, var(--pastel-lavender), rgba(255, 255, 255, 0.9));
+      border-color: rgba(95, 0, 128, 0.16);
+    }
+    .feature-card.is-lead .fc-ic { background: var(--grad-brand); color: #fff; box-shadow: var(--shadow-brand); }
+
     .feature-card.is-brand h3 { color: #fff; }
     .feature-card.is-brand p { color: rgba(255, 255, 255, 0.86); }
     .feature-card.is-brand .fc-ic { background: rgba(255, 255, 255, 0.16); color: #fff; box-shadow: none; }
@@ -196,14 +204,13 @@
     @media (max-width: 860px) {
       .hero-home .hero-actions .btn { flex: 1 1 100%; }
       .intro-strip { grid-template-columns: 1fr; }
-      .act-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .step-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 620px) {
       .vibe-stats { grid-template-columns: 1fr; }
     }
   </style>
-  <script src="assets/site-core.js?v=1"></script>
+  <script src="assets/site-core.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -303,15 +310,15 @@
           <h2 id="actTitle">요즘 이런 걸 같이 해요</h2>
           <p>운동부터 소소한 모임까지. 관심 가는 벙에 편하게 참여하면 돼요.</p>
         </div>
-        <div class="act-grid">
-          <article class="act-tile reveal"><span class="act-emoji" aria-hidden="true">🚶</span><b>산책</b><span>동네 한 바퀴</span></article>
-          <article class="act-tile reveal d1"><span class="act-emoji" aria-hidden="true">🍻</span><b>동네에서 한잔</b><span>부담 없는 술벙</span></article>
-          <article class="act-tile reveal d2"><span class="act-emoji" aria-hidden="true">🎬</span><b>영화</b><span>개봉작 같이 보기</span></article>
-          <article class="act-tile reveal d3"><span class="act-emoji" aria-hidden="true">🖼️</span><b>전시</b><span>미술관·전시회</span></article>
-          <article class="act-tile reveal"><span class="act-emoji" aria-hidden="true">🎭</span><b>공연</b><span>연극·뮤지컬</span></article>
-          <article class="act-tile reveal d1"><span class="act-emoji" aria-hidden="true">🍽️</span><b>맛집·회식</b><span>동네 밥벙·저녁</span></article>
-          <article class="act-tile reveal d2"><span class="act-emoji" aria-hidden="true">🎲</span><b>보드게임</b><span>비 오는 날 실내 모임</span></article>
-          <article class="act-tile reveal d3"><span class="act-emoji" aria-hidden="true">☕</span><b>카페·수다</b><span>느긋한 브런치</span></article>
+        <div class="act-row reveal">
+          <span class="act-chip"><i aria-hidden="true">🚶</i>산책</span>
+          <span class="act-chip"><i aria-hidden="true">🍻</i>동네에서 한잔</span>
+          <span class="act-chip"><i aria-hidden="true">🎬</i>영화</span>
+          <span class="act-chip"><i aria-hidden="true">🖼️</i>전시</span>
+          <span class="act-chip"><i aria-hidden="true">🎭</i>공연</span>
+          <span class="act-chip"><i aria-hidden="true">🍽️</i>맛집·회식</span>
+          <span class="act-chip"><i aria-hidden="true">🎲</i>보드게임</span>
+          <span class="act-chip"><i aria-hidden="true">☕</i>카페·수다</span>
         </div>
       </div>
     </section>
@@ -325,23 +332,23 @@
           <p>어렵지 않아요. 순서대로만 따라오면 첫 벙까지 금방이에요.</p>
         </div>
         <div class="step-grid">
-          <div class="card is-lg step-card card-lift reveal">
+          <div class="card is-lg step-card card-lift has-stretch reveal">
             <span class="step-num" aria-hidden="true">1</span>
             <h3>오픈채팅 입장</h3>
             <p>동네친구들 오픈채팅에 들어와 닉네임을 양식에 맞춰 바꿔요. (예: 엑서 논현 남 88)</p>
-            <a class="step-link" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="step-link stretch" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
-          <div class="card is-lg step-card card-lift reveal d1">
+          <div class="card is-lg step-card card-lift has-stretch reveal d1">
             <span class="step-num" aria-hidden="true">2</span>
             <h3>필독 1분 요약</h3>
             <p>벙 참여와 정산, 매너 같은 기본만 훑어보면 준비가 끝나요.</p>
-            <a class="step-link" href="guide.html">필독 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="step-link stretch" href="guide.html">필독 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
-          <div class="card is-lg step-card card-lift reveal d2">
+          <div class="card is-lg step-card card-lift has-stretch reveal d2">
             <span class="step-num" aria-hidden="true">3</span>
             <h3>첫 벙 참여</h3>
             <p>관심 가는 벙을 찾았으면 카톡방에서 신청해요. 첫 벙은 편한 마음으로 오시면 돼요.</p>
-            <a class="step-link" href="news.html">벙 소식 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a class="step-link stretch" href="news.html">벙 소식 보기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           </div>
         </div>
       </div>
@@ -420,7 +427,10 @@
             <span class="vibe-go">대시보드에서 자세히 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </a>
 
-          <div class="bento-card is-glass bento-2x reveal d1" style="padding:0;background:none;box-shadow:none;border:none;backdrop-filter:none">
+          <!-- 여기는 카드가 아니라 통계 카드 두 장을 담는 칸이다. 예전에는 .bento-card 를 쓰고
+               인라인으로 배경·테두리·그림자를 전부 지웠는데, :hover 의 들어올림까지는 못 지워서
+               누를 수도 없는 자리가 마우스만 올려도 5px 씩 튀었다. 칸 역할만 남긴다. -->
+          <div class="bento-2x reveal d1">
             <div class="vibe-stats" style="height:100%">
               <div class="vibe-stat">
                 <span class="vs-top"><span class="vs-ic is-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a2 2 0 0 0-4 0v9.76a4 4 0 1 0 4 0z"/></svg></span>동네친구들 온도</span>
@@ -448,7 +458,7 @@
         </div>
 
         <div class="bento">
-          <a class="bento-card feature-card is-brand bento-2x reveal" href="report.html" aria-label="운영 대시보드로 이동">
+          <a class="bento-card feature-card is-lead bento-2x reveal" href="report.html" aria-label="운영 대시보드로 이동">
             <span class="fc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg></span>
             <h3>운영 대시보드</h3>
             <p>이번 주 분위기를 숫자와 키워드로 봐요. 활약왕과 온도, 인기 화제가 한 화면에 모여 있어요.</p>
@@ -687,14 +697,6 @@
         var el = document.getElementById("mvpSrc");
         if (!el) return;
 
-        // 맛보기 데이터에는 '발행 시점'이라는 개념이 없다.
-        // 여기에 'N일 전'을 붙이면 그 자리에서 숫자를 지어내는 셈이 된다.
-        if (source !== "live") {
-          el.innerHTML = '<span class="fresh-badge is-sample">맛보기</span>' +
-            (period ? " " + esc(period) + " 예시 데이터" : " 예시 데이터");
-          return;
-        }
-
         var n = daysSinceKST(updatedAt);
         if (n === null) {
           el.textContent = period ? period + " 발행 리포트 기준" : "발행 리포트 기준";
@@ -725,20 +727,25 @@
 
         renderFreshness(source, period, res && res.updatedAt);
 
-        // 히어로 숫자는 '발행된 리포트'일 때만 연다. 맛보기 데이터로 규모를 말하지 않는다.
-        if (source === "live") {
-          // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있어서,
-          // '이번 달 대화'처럼 고정해 두면 어느 쪽이든 한쪽은 반드시 거짓이 된다.
-          setText("heroMsgWord", periodWord(period));
-          setText("vibeTitle", periodWord(period, true) + " 우리 분위기");
-          var box = document.getElementById("heroStats");
-          var note = document.getElementById("heroStatsNote");
-          if (box) box.hidden = false;
-          if (note) note.hidden = true;
-          if (total) reCount("heroMsg", total, {});
-          if (members.length) reCount("heroMembers", members.length, {});
-          reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
-        }
+        // 여기서부터는 '발행된 리포트'일 때만 채운다.
+        // 맛보기 데이터로 규모를 말하지 않는다 — 숫자도, 사람 이름도.
+        // 이름이 숫자보다 나쁘다. 방문자는 '민지'를 이 방의 실제 멤버로 읽는다.
+        // 발행 전에는 HTML 에 적어 둔 빈 상태('—' · '리포트가 올라오면 보여요')를 그대로 둔다.
+        // 맛보기라는 사실은 renderFreshness 가 배지로 이미 말했다.
+        if (source !== "live") return;
+
+        // 기간 단어를 데이터에 맞춘다. 발행 기간은 자유 입력이라 주간일 수도 월간일 수도 있어서,
+        // '이번 달 대화'처럼 고정해 두면 어느 쪽이든 한쪽은 반드시 거짓이 된다.
+        setText("heroMsgWord", periodWord(period));
+        setText("vibeTitle", periodWord(period, true) + " 우리 분위기");
+        var box = document.getElementById("heroStats");
+        var note = document.getElementById("heroStatsNote");
+        if (box) box.hidden = false;
+        if (note) note.hidden = true;
+        if (total) reCount("heroMsg", total, {});
+        if (members.length) reCount("heroMembers", members.length, {});
+        reCount("heroTemp", temp, { decimals: 1, suffix: "°" });
+
         reCount("stTemp", temp, { decimals: 1 });
         if (members.length) reCount("stMembers", members.length, {});
         setText("stNewFoot", newCnt ? ("최근 새로 온 친구 " + newCnt + "명") : "요즘 함께하는 친구들");
@@ -761,15 +768,18 @@
           // 기간 문구는 컬럼을 1순위로 쓴다. 관리자가 직접 입력한 값이자 발행의 고유 키라
           // stats 안에 든 값보다 믿을 만하다(둘이 어긋나면 화면이 조용히 퇴화했다).
           if (live.length) return { stats: live[0].stats, source: "live", updatedAt: live[0].updated_at, period: live[0].period_label };
-          throw new Error("empty");
+          return { source: "none" };
         })
-        .catch(function () {
-          return fetch("data/report-sample.json", { cache: "no-store" })
-            .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
-            .then(function (s) { return { stats: s, source: "sample" }; });
-        })
-        .then(function (res) { if (res && res.stats) renderReport(res); })
-        .catch(function () { /* 정적 폴백 유지 */ });
+        .catch(function () { return { source: "offline" }; })
+        .then(function (res) {
+          if (res && res.source === "live") { renderReport(res); return; }
+          // 맛보기 데이터는 더 이상 받지 않는다. 어차피 화면에 쓰지 않으므로
+          // 받아 봐야 첫 화면만 무거워진다. 대신 왜 비어 있는지를 말한다 —
+          // '아직 안 올렸다'와 '지금 못 불러왔다'는 방문자가 할 일이 다르다.
+          var el = document.getElementById("mvpSrc");
+          if (el) el.textContent = res && res.source === "offline"
+            ? "지금은 불러오지 못했어요" : "아직 발행된 리포트가 없어요";
+        });
 
       /* ══════════ 2) 최근 소식 (site_posts_v → 예시 폴백) ══════════ */
       var CAT_EMOJI = { "공지": "📢", "벙 소식": "🎉", "후기": "✨", "정보": "💡", "자유": "💬" };
@@ -798,8 +808,10 @@
         var host = document.getElementById("newsList");
         if (!host) return;
         host.removeAttribute("aria-busy");
+        // 바깥이 이미 카드다. 여기에 또 카드를 넣으면 테두리가 두 겹으로 겹쳐
+        // 빈 자리가 더 허전해 보인다. 안쪽은 테두리 없이 글만 둔다.
         host.innerHTML =
-          '<div class="card news-empty"><div class="empty-state">' +
+          '<div class="news-empty"><div class="empty-state">' +
           "<strong>" + esc(title) + "</strong><p>" + esc(sub) + "</p>" +
           '<a class="btn btn-secondary is-sm" href="' + href + '">' + esc(linkText) + "</a>" +
           "</div></div>";
