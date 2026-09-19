@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1E0230" />
 
-  <title>동네친구들 — 맛집</title>
-  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역·종류로 찾고, 지도로 바로 열어요." />
+  <title>동네친구들 맛집</title>
+  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역이나 종류로 찾고, 지도로 바로 열어요." />
   <meta property="og:url" content="https://excer-site.vercel.app/places.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 — 맛집" />
+  <meta property="og:title" content="동네친구들 맛집" />
   <meta property="og:description" content="벙에서 진짜 가봤던 곳만 모았어요." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -97,6 +97,8 @@
       color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; font-weight: 600;
     }
     .pc-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
+    /* 이름 앞에 줄표를 찍던 자리. 글자가 아니라 여백과 색으로 구분한다. */
+    .pc-by, .visit-note .pc-by { display: block; margin-top: 4px; }
     .pc-note.is-empty { background: transparent; border: 1px dashed var(--line-strong); color: var(--gray); }
     .pc-foot { margin-top: auto; padding-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .pc-last { color: var(--gray-2); font-size: 12px; font-weight: 700; margin-right: auto; }
@@ -191,7 +193,7 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab is-active" href="places.html" aria-current="page">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 · 오늘 / 누적">
+      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
         <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
         <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
         <span class="tv-sep" aria-hidden="true"></span>
@@ -233,7 +235,8 @@
             <button class="btn btn-primary is-sm" type="button" id="addBtn">＋ 맛집 올리기</button>
           </div>
           <!-- 올릴 때 고르는 말(1만원대)과 여기 적힌 말(1~2만원)이 서로 달라서 같은 칸인지 헷갈렸다 -->
-          <p class="price-legend">가격대는 1인 기준이에요 · ₩ 1만원 이하 · ₩₩ 1만원대 · ₩₩₩ 2만원대 · ₩₩₩₩ 3만원 이상 (술값은 빼고 봐요)</p>
+          <p class="price-legend">가격대는 1인 기준이고 술값은 빼고 봐요.<br />
+            <span class="sep-row"><span>₩ 1만원 이하</span><span>₩₩ 1만원대</span><span>₩₩₩ 2만원대</span><span>₩₩₩₩ 3만원 이상</span></span></p>
         </div>
 
         <div class="place-list" id="placeList"></div>
@@ -246,10 +249,10 @@
         <div>
           <span class="footer-logo">동네친구들</span>
           <p class="footer-tagline">
-            오픈채팅에서 만난 동네친구들 —<br />
-            필독 가이드부터 운영 대시보드, 벙비 정산까지 한곳에서 해요.
+            오픈채팅에서 만난 동네 사람들이에요.<br />
+            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
           </p>
-          <span class="footer-note">🔒 대화 원문은 저장하지 않아요 · 집계 숫자와 키워드만 다뤄요</span>
+          <span class="footer-note">🔒 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
           <h4>바로가기</h4>
@@ -259,20 +262,15 @@
             <li><a href="report.html">운영 대시보드</a></li>
             <li><a href="calculator.html">벙비 정산기</a></li>
             <li><a href="news.html">소식</a></li>
-            <li><a href="places.html">🍽️ 맛집</a></li>
-            <li><a href="games.html">🎮 게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">💬 오픈채팅 들어가기</a></li>
+            <li><a href="places.html">맛집</a></li>
+            <li><a href="games.html">게임</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
           </ul>
         </nav>
-        <div class="footer-col">
-          <h4>안내</h4>
-          <p>벙 참여·정산·매너 기준은 필독에서 확인할 수 있어요. 궁금한 건 오픈채팅에서 운영진에게 편하게 물어봐 주세요.</p>
-          <p>닉네임은 발행할 때 마스킹을 선택할 수 있어요.</p>
-        </div>
       </div>
       <div class="footer-bottom">
-        <small>© 2026 동네친구들 · 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해 · 매너가 먼저예요</small>
+        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
+        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
     </div>
   </footer>
@@ -313,7 +311,7 @@
         </div>
         <div class="field is-wide">
           <label for="pMap">지도 링크 <small>선택</small></label>
-          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵·네이버지도 공유 링크를 붙여넣어 주세요" />
+          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵이나 네이버지도 공유 링크를 붙여넣어 주세요" />
           <span class="field-hint">비워 두면 '지역 + 가게 이름'으로 카카오맵 검색을 열어 줘요.</span>
         </div>
         <div class="field">
@@ -666,7 +664,7 @@
             return '<div class="visit-row">' +
               (head.length ? '<div class="visit-head">' + head.join("") + "</div>" : "") +
               '<div class="visit-note">' + esc(n.text) +
-              (n.by ? " <b>— " + esc(n.by) + "</b>" : "") +
+              (n.by ? ' <b class="pc-by">' + esc(n.by) + "</b>" : "") +
               ' <button type="button" class="note-del" data-delnote="' + n.id + '">지우기</button></div></div>';
           }).join("");
           detail = '<div class="pc-detail">' +
@@ -689,8 +687,8 @@
           /* 한줄평이 없으면 그 자리가 통째로 비어 카드가 망가진 것처럼 보였다.
              비워 두는 대신 남겨 달라고 청한다. */
           (latest ? '<div class="pc-note">' + esc(latest.text) +
-            (latest.by ? " <b>— " + esc(latest.by) + "</b>" : "") + "</div>"
-                  : '<div class="pc-note is-empty">아직 한줄평이 없어요 — 다녀오셨다면 한 줄 남겨 주세요</div>') +
+            (latest.by ? ' <b class="pc-by">' + esc(latest.by) + "</b>" : "") + "</div>"
+                  : '<div class="pc-note is-empty">아직 한줄평이 없어요. 다녀오셨다면 한 줄 남겨 주세요</div>') +
           '<div class="pc-foot">' +
           (p.last_visit ? '<span class="pc-last">마지막 방문 ' + esc(dateText(p.last_visit)) + "</span>" : '<span class="pc-last"></span>') +
           '<a class="pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">🗺 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
