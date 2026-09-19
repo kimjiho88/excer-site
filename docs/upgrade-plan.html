@@ -451,11 +451,20 @@ footer{
       </div>
 
       <div class="card sev low">
-        <div class="card-h"><span class="tag">결정 5</span>맛집 1단계 저장소는 정적 JSON 한 파일입니다</div>
-        <p><code>data/places.json</code> 하나로 시작합니다. 리포트·빵집이 이미 쓰는 검증된 방식이라 추가 인프라가 0입니다.
-        서버 승격은 <strong>"멤버가 직접 등록하고 싶다는 요청이 실제로 들어오면"</strong>으로 조건을 겁니다.
-        필드 명세를 처음부터 서버와 같게 잡아 두면 승격은 데이터 옮기기로 끝납니다.</p>
-        <p><strong>번복 조건</strong> — 멤버 등록 요청이 한 달에 3건 이상 들어오면 승격합니다.</p>
+        <div class="card-h"><span class="tag">결정 5</span><s>맛집 1단계 저장소는 정적 JSON 한 파일입니다</s> → 번복됨</div>
+        <p><strong>처음 결정</strong> — <code>data/places.json</code> 하나로 시작하고, 서버 승격은
+        "멤버가 직접 등록하고 싶다는 요청이 실제로 들어오면"으로 조건을 걸었습니다.
+        번복 조건은 "한 달에 3건 이상"이었습니다.</p>
+        <p><strong>실제</strong> — 첫 데이터를 옮기는 그 자리에서 조건이 충족됐습니다. 29곳을 구글 지도에서
+        옮기는 동안 등록 경로 자체가 운영진 한 사람을 거친다는 게 드러났고, 요청이 그대로 들어왔습니다.
+        "해당 페이지에서 구성원들이 직접 업로드하는 구조." 한 달을 기다릴 이유가 없어 바로 승격했습니다.</p>
+        <p><strong>지금</strong> — 소식 게시판과 같은 방식입니다. 계정 없이 닉네임 + 글 비밀번호,
+        테이블은 RLS로 잠그고 쓰기는 <code>SECURITY DEFINER</code> 함수로만 엽니다.
+        읽기는 비밀번호 해시를 뺀 뷰 하나(<code>site_places_v</code>)로 나갑니다.
+        필드 이름을 처음부터 서버와 같게 잡아 둔 덕에 옮기기는 하루 안에 끝났고,
+        <code>data/places.json</code>은 지웠습니다 — 화면이 더는 읽지 않는 파일을 남겨 두면
+        "JSON을 고쳤는데 왜 반영이 안 되지"가 됩니다.</p>
+        <div class="ev"><b>남긴 것</b> sql/2026-09-21-places.sql (테이블·뷰·함수 5개 + 29곳 시드)</div>
       </div>
 
       <div class="card sev mid">
