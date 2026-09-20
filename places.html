@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#285244" />
+  <meta name="theme-color" content="#4B2A82" />
 
   <title>맛집 · 동네친구들</title>
   <meta name="description" content="동네친구들이 모임에서 다녀온 식당 목록입니다. 지역, 종류, 가격으로 찾고 멤버의 한줄평과 추천 메뉴, 방문 팁을 봅니다." />
@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -43,7 +43,7 @@
       min-height: 44px; padding: 0 34px 0 12px; border-radius: var(--r-btn);
       border: 1px solid var(--line-strong); background: var(--surface) no-repeat right 10px center; color: var(--ink);
       font-size: 15px; -webkit-appearance: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626B63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23625A6C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-size: 16px;
     }
     .select.is-on { border-color: var(--brand); color: var(--brand); font-weight: 600; }
@@ -76,10 +76,12 @@
     .place-row.is-closed .pr-name a, .place-row.is-closed .pr-text { color: var(--ink-2); }
     .pr-name { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0; font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; }
     .pr-name a { color: var(--ink); overflow-wrap: anywhere; }
-    .pr-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .pr-name a { transition: color var(--dur-2) var(--ease); }
+    .pr-name a:hover { color: var(--brand); }
     .pr-meta { margin: 2px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
     .pr-meta b { color: var(--ink); font-weight: 500; }
     .pr-price { color: var(--ink); font-size: var(--fs-sm); font-weight: 500; line-height: 1.5; padding-top: 3px; font-variant-numeric: tabular-nums; }
+    .pr-price::first-line { font-weight: 600; }
     .pr-price.is-none { color: var(--ink-2); font-weight: 500; }
     .pr-price small { display: block; color: var(--ink-2); font-size: var(--fs-micro); font-weight: 400; }
     .pr-review { min-width: 0; }
@@ -104,7 +106,7 @@
     }
 
     /* ── 펼친 상세: 행 아래 흰 면 하나. 옆 행의 읽기 흐름은 그대로 ── */
-    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); }
     .pd-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0 40px; align-items: start; }
     .pd-col { min-width: 0; }
     .pd-h { margin: 0 0 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
@@ -649,7 +651,7 @@
         var tags = "";
         if (v.closed) tags += '<span class="type-tag is-closed">영업 종료</span>';
         else if (v.visitCount >= 2) tags += '<span class="type-tag">방문 ' + v.visitCount + "회</span>";
-        var by = [line.by, line.date ? C.dateText(line.date) + " 방문" : ""].filter(Boolean).join(" · ");
+        var by = [line.by ? '<span class="who" data-initial="' + esc(line.by.slice(0, 1)) + '">' + esc(line.by) + "</span>" : "", line.date ? esc(C.dateText(line.date)) + " 방문" : ""].filter(Boolean).join(" · ");
         var priceHTML = v.priceLevel
           ? '<div class="pr-price">' + esc(v.priceText.replace(/^1인 /, "")) + (v.priceNote ? "<small>" + esc(v.priceNote) + "</small>" : "") + "</div>"
           : '<div class="pr-price is-none">가격 미등록</div>';
@@ -660,7 +662,7 @@
           '<div class="pr-review">' +
             (line.menuLine ? '<p class="pr-menu">추천 메뉴 <b>' + esc(line.menuLine) + "</b></p>" : "") +
             '<p class="pr-text' + (line.kind === "empty" ? " is-empty" : "") + '">' + esc(line.text) + "</p>" +
-            (by ? '<p class="pr-by">' + esc(by) + "</p>" : "") +
+            (by ? '<p class="pr-by">' + by + "</p>" : "") +
           "</div>" +
           '<div class="pr-acts">' +
             '<button type="button" class="text-btn" data-open="' + v.id + '" aria-expanded="' + open + '" aria-controls="place-detail-' + v.id + '">' + (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
@@ -675,7 +677,7 @@
          후기 글에 없는 메뉴를 적었을 때만(누가 무엇을 추천했는지 남기려고) */
       function noteHTML(n, v) {
         var meta = [];
-        if (n.by) meta.push("<b>" + esc(n.by) + "</b>");
+        if (n.by) meta.push('<b class="who" data-initial="' + esc(n.by.slice(0, 1)) + '">' + esc(n.by) + "</b>");
         if (n.date) meta.push("<span>" + esc(C.dateText(n.date)) + " 방문</span>");
         if (n.per_person) meta.push("<span>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</span>");
         if (n.again) meta.push("<span>다시 가고 싶음</span>");

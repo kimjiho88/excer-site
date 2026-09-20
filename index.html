@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#285244" />
+  <meta name="theme-color" content="#4B2A82" />
 
   <title>동네친구들 오픈채팅 커뮤니티</title>
   <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 밥 한 끼부터 주말 나들이까지 함께합니다. 모임 정산, 소식, 맛집." />
@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -35,18 +35,28 @@
     .home-hero { padding: var(--sp-6) 0 var(--sp-7); }
     .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px 0; align-items: center; }
     .hero-text { min-width: 0; }
-    .home-title { margin: 0; max-width: 12em; font-size: var(--fs-display); font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; color: var(--ink); }
+    /* 계절 표시 — 라벤더 알약 하나 */
+    .hero-kicker-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 12px 0 10px; border-radius: 999px; background: linear-gradient(135deg, #F1ECF8, #E4DBF1); color: var(--brand); font-size: 13px; font-weight: 700; letter-spacing: 0.01em; box-shadow: inset 0 0 0 1px rgba(75, 42, 130, 0.12); }
+    .hero-kicker-chip .ic { width: 14px; height: 14px; }
+    .home-title { margin: 14px 0 0; max-width: 12em; font-size: var(--fs-display); font-weight: 800; line-height: 1.15; letter-spacing: -0.03em; color: var(--ink); }
+    /* 제목은 검정에서 보라로 흐른다 — 두 색 다 짙어 읽기에 지장 없음 */
+    @supports (background-clip: text) or (-webkit-background-clip: text) {
+      .home-title { background: linear-gradient(100deg, var(--ink) 10%, var(--brand) 85%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    }
     .home-sub { margin: 14px 0 0; max-width: 30em; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
     .home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 24px; }
     .home-actions .link-arrow { margin-top: 0; }
-    .hero-media { margin: 0; min-width: 0; }
+    /* 그림: 모서리 16px, 아래로 떨어지는 부드러운 그림자, 뒤에 살구·보라 빛 한 점 (그림 자체는 손대지 않는다) */
+    .hero-media { position: relative; isolation: isolate; margin: 0; min-width: 0; }
+    .hero-media::before { content: ""; position: absolute; z-index: -1; inset: 10% -4% -8% 4%; border-radius: 32px; filter: blur(30px); pointer-events: none;
+      background: radial-gradient(55% 55% at 72% 28%, rgba(232, 173, 143, 0.55), transparent 72%), radial-gradient(60% 60% at 18% 78%, rgba(109, 74, 174, 0.38), transparent 72%); }
     /* 모바일: 세로형(4:5)을 화면 폭 전체로 늘리지 않고 340px 까지만, 가운데 정렬. 390px 화면에서 340 × 425 */
-    .hero-media img { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto; aspect-ratio: 4 / 5; border-radius: var(--r-md); background: var(--surface-2); }
+    .hero-media img { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto; aspect-ratio: 4 / 5; border-radius: 16px; background: var(--surface-2); box-shadow: 0 30px 60px -34px rgba(46, 27, 69, 0.6), 0 2px 6px rgba(36, 30, 44, 0.08); }
     @media (min-width: 768px) {
       .hero-grid { grid-template-columns: minmax(0, 38fr) minmax(0, 62fr); gap: 0 40px; }
       .hero-media img { max-width: none; margin: 0; aspect-ratio: 3 / 2; }
     }
-    @media (min-width: 1080px) { .hero-grid { gap: 0 56px; } }
+    @media (min-width: 1080px) { .hero-grid { gap: 0 56px; } .home-title { font-size: 50px; } }
     .home-hero.no-image .hero-grid { grid-template-columns: minmax(0, 1fr); }
     .home-hero.no-image .hero-media { display: none; }
     @media (max-width: 860px) {
@@ -65,18 +75,24 @@
       .home-side { grid-area: side; }
     }
 
-    /* 참여 경로: 짧은 안내 한 문단과 이용 안내 링크 */
+    /* 참여 경로: 짧은 안내 한 문단과 이용 안내 링크. 라벤더로 흐르는 면 */
+    .join-panel { background: linear-gradient(160deg, #FCFBFE 0%, #F1ECF8 100%); }
+    .join-panel > h2 { display: flex; align-items: center; gap: 8px; }
+    .join-panel > h2 .ic { width: 22px; height: 22px; color: var(--brand); }
     .join-panel > p { color: var(--ink); }
     .join-panel .panel-act { margin-top: 12px; }
     .join-panel .panel-act .link-arrow { min-height: 36px; }
 
-    /* 주요 기능: 이름과 한 줄 설명뿐인 바로가기 행 */
+    /* 주요 기능: 아이콘 하나, 이름과 한 줄 설명뿐인 바로가기 행 */
     .side-h { margin: 0 0 4px; font-size: var(--fs-h3); font-weight: 600; color: var(--ink); }
-    .feat-rows .row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 12px 0; }
+    .feat-rows .row { grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px 0; }
+    .feat-ic { grid-row: 1 / span 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F1ECF8, #E4DBF1); color: var(--brand); transition: transform var(--dur-2) var(--ease), background var(--dur-2) var(--ease); }
+    .feat-ic .ic { width: 20px; height: 20px; }
     .feat-rows .row-title { font-size: 15px; }
-    .feat-rows .row-meta { grid-column: 1; }
-    .feat-rows .row .ic { grid-column: 2; grid-row: 1 / span 2; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
-    .feat-rows .row:hover .ic { transform: translateX(3px); }
+    .feat-rows .row-meta { grid-column: 2; }
+    .feat-rows .row > .ic { grid-column: 3; grid-row: 1 / span 2; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
+    .feat-rows .row:hover > .ic { transform: translateX(3px); color: var(--brand); }
+    .feat-rows .row:hover .feat-ic { background: linear-gradient(135deg, #E4DBF1, #CFC1E6); }
 
     /* 공지·다가오는 모임: 제목 한 줄, 보조 한 줄 */
     .group-h { margin: 18px 0 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
@@ -128,6 +144,7 @@
     <section class="home-hero" id="homeHero" aria-labelledby="homeTitle">
       <div class="container hero-grid">
         <div class="hero-text">
+          <p class="hero-kicker-chip"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg>2026 가을</p>
           <h1 class="home-title" id="homeTitle">함께 보내는 가을</h1>
           <p class="home-sub">밥 한 끼부터 주말 나들이까지, 동네친구들과 함께합니다.</p>
           <div class="home-actions">
@@ -158,16 +175,16 @@
       <!-- B. 참여 경로와 주요 기능 -->
       <aside class="home-side" aria-label="참여 경로와 주요 기능">
         <section class="panel join-panel" aria-labelledby="joinTitle">
-          <h2 id="joinTitle">처음 참여한다면</h2>
+          <h2 id="joinTitle"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>처음 참여한다면</h2>
           <p>오픈채팅에 들어와 닉네임을 정하고, 모임 공지에서 참석을 누르면 됩니다. 참여 기준과 정산 방법, 대화 매너는 이용 안내에 있습니다.</p>
           <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
         </section>
         <section aria-labelledby="featTitle">
           <h2 class="side-h" id="featTitle">주요 기능</h2>
           <ul class="rows feat-rows">
-            <li><a class="row" href="calculator.html"><span class="row-title">모임 정산</span><span class="row-meta">차수별 1/N 금액과 입금 안내 메시지</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
-            <li><a class="row" href="news.html"><span class="row-title">소식</span><span class="row-meta">공지, 모임 모집, 후기, 정보</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
-            <li><a class="row" href="places.html"><span class="row-title">맛집</span><span class="row-meta">모임에서 다녀온 식당과 한줄평</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="calculator.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span><span class="row-title">모임 정산</span><span class="row-meta">차수별 1/N 금액과 입금 안내 메시지</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="news.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-megaphone"/></svg></span><span class="row-title">소식</span><span class="row-meta">공지, 모임 모집, 후기, 정보</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="places.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-utensils"/></svg></span><span class="row-title">맛집</span><span class="row-meta">모임에서 다녀온 식당과 한줄평</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
           </ul>
         </section>
       </aside>
@@ -254,13 +271,14 @@
       function rowHTML(v) {
         var tag = '<span class="type-tag' + (v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : "") + '">' + esc(v.label) + "</span>";
         var sub = v.subline.text || v.excerpt;
-        var who = [v.author || "익명", C.relTime(v.created_at)];
+        var author = v.author || "익명";
+        var who = ['<span class="who" data-initial="' + esc(author.slice(0, 1)) + '">' + esc(author) + "</span>", esc(C.relTime(v.created_at))];
         if (v.comment_count) who.push("댓글 " + v.comment_count);
         var state = v.subline.state ? '<span class="row-state' + (v.subline.past ? " is-past" : "") + '">' + esc(v.subline.state) + "</span>" : "";
         return '<a class="row news-row" href="news.html#post-' + v.id + '">' +
           '<span class="nr-line">' + tag + '<span class="row-title">' + esc(v.title || "제목 없음") + "</span></span>" +
           state +
-          '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.map(esc).join(" · ") + "</span></span></a>";
+          '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.join(" · ") + "</span></span></a>";
       }
       function render(rows) {
         var host = $("liveList");

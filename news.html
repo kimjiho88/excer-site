@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#285244" />
+  <meta name="theme-color" content="#4B2A82" />
 
   <title>소식 · 동네친구들</title>
   <meta name="description" content="동네친구들 소식 게시판입니다. 공지, 모임 모집, 모임 후기, 정보, 자유 글을 올리고 댓글을 남길 수 있습니다." />
@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -35,7 +35,7 @@
     .sort-select {
       min-height: 44px; padding: 0 32px 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line-strong);
       background: var(--surface) no-repeat right 10px center; color: var(--ink); font-size: 14px; -webkit-appearance: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626B63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23625A6C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       background-size: 16px;
     }
     .type-tabs { width: 100%; }
@@ -53,7 +53,7 @@
       display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; width: 100%;
       padding: 14px 0; text-align: left; color: var(--ink); cursor: pointer;
     }
-    .post-head:hover .row-title { text-decoration: underline; text-underline-offset: 3px; }
+    .post-head:hover .row-title { color: var(--brand); }
     .post-head .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .post-head .row-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .post-head .row-state { align-self: center; }
@@ -70,8 +70,8 @@
     .day-head:first-child { margin-top: 0; }
 
     /* ── 펼친 글 ── */
-    .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
-    .pd-lead { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 15px; line-height: 1.6; }
+    .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); }
+    .pd-lead { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-sm); background: linear-gradient(135deg, #F1ECF8, #E7DFF3); border-left: 3px solid var(--brand); color: var(--ink); font-size: 15px; line-height: 1.6; }
     .post-detail .kv { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
     .post-body { color: var(--ink); font-size: var(--fs-body); line-height: 1.75; overflow-wrap: anywhere; }
     .post-body a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
@@ -574,7 +574,8 @@
     function tagHTML(v) { return `<span class="type-tag${v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : ""}">${esc(v.label)}</span>`; }
     function metaLine(v) {
       const sub = v.subline.text || v.excerpt;
-      const who = ["<b>" + esc(v.author || "익명") + "</b>", esc(C.relTime(v.created_at))];
+      const author = v.author || "익명";
+      const who = ['<b class="who" data-initial="' + esc(author.slice(0, 1)) + '">' + esc(author) + "</b>", esc(C.relTime(v.created_at))];
       if (v.comment_count) who.push("댓글 " + v.comment_count);
       if (v.reaction_count) who.push("반응 " + v.reaction_count);
       return (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.join(" · ") + "</span>";
