@@ -160,7 +160,7 @@
   </style>
   <script src="assets/site-core.js?v=4"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=3"></script>
+  <script src="assets/content.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -469,23 +469,16 @@
     const SEEN_KEY = "excer_news_seen";
     let lastSeen = "";
     try { lastSeen = localStorage.getItem(SEEN_KEY) || ""; localStorage.setItem(SEEN_KEY, new Date().toISOString()); } catch (e) {}
-    /* 이번 주 글감 — ISO 주차로 돌아가며 하나씩. 글 종류와 제목만 미리 채우고 내용은 비운다 */
-    const PROMPTS = [
-      { cat: "자유", title: "요즘 자주 가는 동네 가게" },
-      { cat: "후기", title: "최근 다녀온 모임 한 줄 후기" },
-      { cat: "정보", title: "이번 주말 가 볼 만한 곳" },
-      { cat: "자유", title: "동네에서 발견한 산책 코스" },
-      { cat: "정보", title: "혼자 가기 좋은 밥집" },
-      { cat: "자유", title: "요즘 빠져 있는 취미" },
-      { cat: "벙 소식", title: "이런 모임 열어 볼까요?" },
-      { cat: "정보", title: "동네 행사와 축제 소식" },
-      { cat: "자유", title: "지난 모임에서 가장 웃겼던 순간" },
-      { cat: "정보", title: "요즘 볼만한 영화와 전시" },
-      { cat: "자유", title: "새로 온 멤버에게 해 주고 싶은 말" },
-      { cat: "후기", title: "이번 달 모임 정리" }
-    ];
-    function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7); }
-    function currentPrompt() { return PROMPTS[isoWeek(new Date()) % PROMPTS.length]; }
+    /* 이번 주 글감 — content.js 의 목록을 ISO 주차로 돌아가며 하나씩(홈의 글감 줄과 같은 것). 글 종류와 제목만 미리 채우고 내용은 비운다 */
+    function currentPrompt() { return C.weeklyPrompt(); }
+    /* 홈의 '글 쓰러 가기'(#write-prompt)로 들어오면 글감이 채워진 글쓰기 창을 바로 연다 */
+    function openPromptFromHash() {
+      if (location.hash !== "#write-prompt") return;
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      if (state.degraded) return;
+      const p = currentPrompt();
+      openWriteModal(null, { category: p.cat, title: p.title });
+    }
     function renderPrompt() { $("promptText").textContent = currentPrompt().title; $("promptCard").hidden = state.degraded || !!state.search || state.category !== "전체"; }
     /* 작성 중인 글은 이 브라우저에 임시로 남긴다 — 모달이 닫히거나 새로고침해도 사라지지 않게 */
     const DRAFT_KEY = "excer_news_draft";
@@ -1214,7 +1207,7 @@
     renderTypeFields("자유", null);
     C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, null); });
     renderListLoading();
-    loadPosts(true).then(openFromHash).then(loadPopular);
+    loadPosts(true).then(openFromHash).then(loadPopular).then(openPromptFromHash);
     window.addEventListener("hashchange", openFromHash);
   </script>
 </body>

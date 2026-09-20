@@ -117,6 +117,12 @@
     .group-h:first-child { margin-top: 0; }
     .group-h .ic { width: 16px; height: 16px; color: var(--brand); }
     .group-h small { color: var(--ink-2); font-weight: 500; }
+    /* 이번 주 글감 줄 — 목록 아래 한 줄, 라벤더 면 */
+    .prompt-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--brand-soft); color: var(--ink); font-size: var(--fs-sm); font-weight: 500; }
+    .prompt-line > .ic { width: 18px; height: 18px; color: var(--brand); flex: none; }
+    .prompt-line > span { flex: 1 1 200px; min-width: 0; }
+    .prompt-line b { font-weight: 700; }
+    .prompt-line .link-arrow { margin: 0; white-space: nowrap; }
     .news-row { grid-template-columns: minmax(0, 1fr) auto; margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: var(--r-sm); transition: background var(--dur-2) var(--ease); }
     .news-row:hover { background: rgba(75, 42, 130, 0.05); }
     .news-row .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -173,7 +179,7 @@
   </style>
   <script src="assets/site-core.js?v=4"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=3"></script>
+  <script src="assets/content.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -276,6 +282,12 @@
             <span class="skeleton skeleton-line" style="width:48%"></span>
           </div>
         </div>
+        <!-- 이번 주 글감 — 소식의 글감 카드와 같은 것. 누르면 소식의 글쓰기 창이 글감이 채워진 채로 열린다 -->
+        <p class="prompt-line" id="promptLine">
+          <svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>
+          <span>이번 주 글감 <b id="homePrompt"></b></span>
+          <a class="link-arrow" href="news.html#write-prompt">글 쓰러 가기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+        </p>
       </section>
     </div>
 
@@ -547,6 +559,8 @@
       loadLive();
       loadPlaces();
       loadReport();
+      // 이번 주 글감 — 데이터 없이도 보인다(소식 카드와 같은 계산)
+      try { $("homePrompt").textContent = C.weeklyPrompt().title; } catch (e) { $("promptLine").hidden = true; }
     })();
   </script>
 

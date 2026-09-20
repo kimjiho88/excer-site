@@ -399,8 +399,32 @@
     return capsPromise;
   }
 
+  /* ── 이번 주 글감 — ISO 주차로 돌아가며 하나씩. 소식(글감 카드)과 홈(글감 줄)이 같은 것을 보여 준다 ── */
+  var PROMPTS = [
+    { cat: "자유", title: "요즘 자주 가는 동네 가게" },
+    { cat: "후기", title: "최근 다녀온 모임 한 줄 후기" },
+    { cat: "정보", title: "이번 주말 가 볼 만한 곳" },
+    { cat: "자유", title: "동네에서 발견한 산책 코스" },
+    { cat: "정보", title: "혼자 가기 좋은 밥집" },
+    { cat: "자유", title: "요즘 빠져 있는 취미" },
+    { cat: "벙 소식", title: "이런 모임 열어 볼까요?" },
+    { cat: "정보", title: "동네 행사와 축제 소식" },
+    { cat: "자유", title: "지난 모임에서 가장 웃겼던 순간" },
+    { cat: "정보", title: "요즘 볼만한 영화와 전시" },
+    { cat: "자유", title: "새로 온 멤버에게 해 주고 싶은 말" },
+    { cat: "후기", title: "이번 달 모임 정리" }
+  ];
+  function isoWeek(d) {
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    var y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - y0) / 86400000 + 1) / 7);
+  }
+  function weeklyPrompt(date) { return PROMPTS[isoWeek(date || new Date()) % PROMPTS.length]; }
+
   window.EXCER_CONTENT = {
-    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR,
+    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR, PROMPTS: PROMPTS, weeklyPrompt: weeklyPrompt,
     catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery, nickSuggest: nickSuggest,
     esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
     dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
