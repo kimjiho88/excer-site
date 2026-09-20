@@ -189,19 +189,38 @@
 
     /* ── 개인별 추가·차감 ── */
     .adj-list { display: grid; gap: 9px; }
+    /* 한 항목 = 멤버 · 차수 · [＋ 추가 | − 차감] · 금액 · 사유 · 삭제.
+       예전 격자는 auto 열이 입력의 기본 너비만큼 벌어져 fr 열(멤버·부호)이 0폭으로 짜부라졌다.
+       영역 이름으로 자리를 못 박고, 사유는 항상 아랫줄에 둔다. */
     .adj-row {
-      display: grid; grid-template-columns: minmax(0, 1.1fr) auto minmax(0, 1fr) minmax(0, 1.2fr) auto;
-      gap: 8px; align-items: center;
+      display: grid; gap: 8px; align-items: center;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "name   round  sign   amount del"
+        "reason reason reason reason reason";
       padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--offwhite);
     }
-    .adj-row .input, .adj-row .select { min-height: 42px; border-radius: 11px; font-size: 14px; }
-    .adj-sign {
-      display: grid; place-items: center; width: 42px; height: 42px; border-radius: 11px;
-      font-size: 17px; font-weight: 700; cursor: pointer; flex: none;
-      transition: background 0.16s var(--ease), color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+    .adj-row .input, .adj-row .select { min-height: 42px; border-radius: 11px; font-size: 14px; min-width: 0; }
+    .adj-row .adj-name { grid-area: name; }
+    .adj-row .adj-round { grid-area: round; }
+    .adj-row .adj-signs { grid-area: sign; }
+    .adj-row .adj-amount { grid-area: amount; }
+    .adj-row .adj-reason { grid-area: reason; }
+    .adj-row .adj-del { grid-area: del; }
+    /* 추가/차감은 둘 다 보이는 두 칸짜리 선택이다. 고른 쪽에만 색이 들어간다 */
+    .adj-signs {
+      display: inline-grid; grid-template-columns: 1fr 1fr; min-height: 42px;
+      border: 1px solid var(--line-strong); border-radius: 11px; overflow: hidden; background: #fff;
     }
-    .adj-sign.is-plus { background: var(--pastel-mint); color: var(--brand); }
-    .adj-sign.is-minus { background: var(--pastel-blush); color: var(--danger); }
+    .adj-sign {
+      display: grid; place-items: center; min-height: 40px; padding: 0 10px;
+      font-size: 13px; font-weight: 700; color: var(--ink-2); white-space: nowrap; cursor: pointer;
+      transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    }
+    .adj-sign + .adj-sign { border-left: 1px solid var(--line-strong); }
+    .adj-sign:hover { background: var(--offwhite); }
+    .adj-sign.is-plus[aria-pressed="true"] { background: var(--pastel-mint); color: var(--brand); }
+    .adj-sign.is-minus[aria-pressed="true"] { background: var(--pastel-blush); color: var(--danger); }
     .adj-del {
       display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
       background: var(--lavender); color: var(--gray-2); font-size: 15px; font-weight: 600; cursor: pointer;
@@ -293,7 +312,9 @@
       background: var(--surface);
       border-top: 4px solid var(--brand);
     }
-    .receipt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 1px dashed var(--line-strong); }
+    /* 제목·총 비용은 나란히, 날짜·모임장 줄은 그 아래 전체 폭 — 좁은 결과 열에서 날짜가 두 줄로 꺾이지 않는다 */
+    .receipt-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: start; padding-bottom: 16px; border-bottom: 1px dashed var(--line-strong); }
+    .receipt-head > p { grid-column: 1 / -1; }
     .receipt-head small {
       display: inline-flex; margin-bottom: 9px; padding: 6px 11px; border-radius: 999px;
       background: var(--brand-soft); color: var(--brand); font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
@@ -327,7 +348,7 @@
       margin: 0 0 10px; color: var(--brand); font-size: 14px; letter-spacing: -0.01em; font-weight: 700;
     }
     .receipt-section h3::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: var(--brand); flex: none; }
-    .pay-list, .detail-list { display: grid; gap: 8px; }
+    .pay-list, .detail-list { display: grid; gap: 8px; min-width: 0; }
     .payer-group-head {
       display: flex; justify-content: space-between; align-items: center; gap: 10px;
       margin: 4px 0 0; padding: 8px 12px; border-radius: 12px;
@@ -340,9 +361,9 @@
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
       padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line);
     }
-    .pay-row > span { color: var(--ink); font-weight: 600; }
+    .pay-row > span { color: var(--ink); font-weight: 600; min-width: 0; }
     .pay-row .adj-note { display: block; color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; margin-top: 1px; }
-    .pay-right { display: flex; align-items: center; gap: 10px; }
+    .pay-right { display: flex; align-items: center; gap: 10px; flex: none; }
     .pay-right strong { color: var(--brand); font-size: 17px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
     .pay-copy {
       min-height: 38px; padding: 0 13px; border-radius: 999px;
@@ -350,8 +371,6 @@
       transition: background 0.16s var(--ease), transform 0.16s var(--ease);
     }
     .pay-copy:hover { transform: none; background: var(--line); }
-    .pay-send { background: var(--brand-soft); color: var(--brand); }
-    .pay-send:hover { background: var(--brand-soft); }
     .pay-row.is-host { background: var(--apricot-soft); border-color: var(--apricot-soft); }
     .pay-row.is-host strong { color: #7A4A32; }
 
@@ -393,12 +412,16 @@
       background: var(--pastel-cream); color: #7A4A32; font-size: 13px; line-height: 1.6; font-weight: 600;
     }
     .kakao-tip b { color: #7A4A32; }
+    .kakao-tip p { margin: 0 0 10px; }
+    .kakao-tip p.kakao-tip-title { margin-bottom: 4px; font-weight: 700; }
     .mention-option { background: rgba(255, 255, 255, 0.72); border-color: rgba(133, 100, 16, 0.18); }
     .mention-option span { color: #7A4A32; }
-    .mention-note { margin: 9px 2px 0; }
 
     .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .result-actions .btn { width: 100%; }
+    .result-actions .btn-wide { grid-column: 1 / -1; }
+    .act-hint { grid-column: 1 / -1; margin: -2px 2px 2px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
+    .act-hint[hidden] { display: none; }
     .btn-share { grid-column: 1 / -1; background: var(--pastel-lavender); color: var(--primary); border-color: var(--line); }
     .btn-share:hover { background: var(--lavender-2); }
     .link-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
@@ -444,17 +467,28 @@
       .page-main { padding-bottom: 120px; }
     }
 
+    /* 결과 열이 옆에 붙어 입력 열이 좁아지는 1024~1199 와 휴대폰에서는 세 줄로 */
+    @media (max-width: 767px), (min-width: 1024px) and (max-width: 1199px) {
+      .adj-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        grid-template-areas:
+          "name   round  del"
+          "sign   amount amount"
+          "reason reason reason";
+      }
+      .adj-sign { padding: 0 6px; }
+    }
+
     @media (max-width: 767px) {
       .field-grid, .result-actions, .round-grid2 { grid-template-columns: 1fr; }
       .field.is-wide { grid-column: auto; }
-      .adj-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; }
-      .adj-row .adj-reason { grid-column: 1 / -1; }
       .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
       .summary-card { padding: 12px 11px; }
       .summary-card strong { font-size: 15px; }
       .capture-target { padding: 24px 18px 20px; }
-      .receipt-head { flex-direction: column; }
-      .receipt-total { text-align: left; }
+      .receipt-head { grid-template-columns: 1fr; row-gap: 8px; }
+      .receipt-head > p { margin-top: 0; }
+      .receipt-total { text-align: left; order: 2; }
       .save-status { width: 100%; margin-left: 0; justify-content: flex-end; }
     }
   </style>
@@ -636,7 +670,7 @@
               </summary>
               <div class="fold-body">
               <div class="card-head">
-                <p class="card-note" style="margin:0">영수증 사진을 첨부하면 정산 이미지와 공유 링크에 함께 담깁니다.</p>
+                <p class="card-note" style="margin:0">영수증 사진을 첨부하면 정산 이미지와 입금 확인 링크에 함께 담기고, 결과 아래 영수증 보내기로 채팅방에 보낼 수 있습니다.</p>
                 <label class="mini-btn receipt-add-label" for="receiptInput">＋ 사진 추가</label>
               </div>
               <!-- hidden(=display:none) 이 아니라 sr-only 로 감춘다.
@@ -647,7 +681,7 @@
                    (발행 화면의 파일 입력이 이미 이 방식을 쓰고 있다). -->
               <input id="receiptInput" type="file" accept="image/*" multiple class="sr-only" />
               <div id="receiptThumbs" class="receipt-thumbs"></div>
-              <p class="card-note">영수증은 정산 이미지 맨 아래와 공유 링크(최대 2장)에 담깁니다. 페이지를 닫으면 첨부가 사라지므로 이미지 저장과 링크 생성까지 한 번에 진행해 주세요.</p>
+              <p class="card-note">메시지 복사에는 사진이 실리지 않습니다. 결과 아래 영수증 보내기를 누르면 휴대폰에서는 공유 창으로, PC에서는 사진 복사로 채팅방에 올릴 수 있습니다. 페이지를 닫으면 첨부가 사라지므로 한 번에 진행해 주세요.</p>
               </div>
             </details>
 
@@ -691,18 +725,21 @@
               <div id="captureTarget" class="capture-target"></div>
             </section>
 
-            <div class="kakao-tip">
-              <label class="notice-option mention-option">
-                <input id="mentionToggle" type="checkbox" />
-                <span><b>이름 앞에 @ 붙이기</b><br />메시지에서 이름을 찾기 쉽게 표시합니다.</span>
-              </label>
-              <p class="mention-note">붙여넣기만으로 멤버가 자동 태그되지는 않습니다. 태그가 필요하면 채팅에서 @를 입력해 직접 선택해 주세요.</p>
-            </div>
-
             <div class="result-actions">
               <button id="copyTextBtn" class="btn btn-primary" type="button">메시지 복사</button>
               <button id="saveImageBtn" class="btn btn-secondary" type="button">이미지 저장</button>
+              <button id="sendReceiptBtn" class="btn btn-secondary btn-wide" type="button" hidden>영수증 보내기</button>
+              <p id="receiptHint" class="act-hint" hidden>메시지에는 영수증 사진이 실리지 않습니다. 메시지를 붙여넣은 뒤 영수증 보내기로 사진을 따로 보내 주세요. 입금 확인 링크에는 영수증이 최대 2장 함께 담깁니다.</p>
               <button id="shareLinkBtn" class="btn btn-share" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-link"/></svg> 입금 확인 링크 만들기</button>
+            </div>
+
+            <div class="kakao-tip">
+              <p class="kakao-tip-title">카카오톡에 붙여넣을 때</p>
+              <p>붙여넣은 글의 @이름은 태그(멘션)로 바뀌지 않습니다. 멤버에게 알림을 보내려면 메시지를 보낸 뒤 채팅창에 @를 입력하고 목록에서 이름을 골라 주세요.</p>
+              <label class="notice-option mention-option">
+                <input id="mentionToggle" type="checkbox" />
+                <span><b>이름 앞에 @ 표시</b><br />보기 편하도록 표시만 합니다. 태그는 되지 않습니다.</span>
+              </label>
             </div>
             <div class="link-row">
               <button id="copyLinkBtn" class="mini-btn" type="button">이 페이지 주소 복사</button>
@@ -1204,7 +1241,7 @@
         adjustments: [],
         rounding: { unit: 1, mode: "round" },
         msgStyle: "summary",
-        mention: true,
+        atMark: false,
         pay: { bank: "카카오뱅크", account: "3333-00-000000", holder: "엑서", kakao: true },
         notices: { split: true, host: false, personal: true, fast: true }
       };
@@ -1236,8 +1273,10 @@
         mode: ["round", "ceil", "floor"].includes(rd.mode) ? rd.mode : "round"
       };
       parsed.msgStyle = parsed.msgStyle === "detail" ? "detail" : "summary";
-      // 오픈채팅에 붙여넣을 일이 대부분이라 켜 둔 상태가 기본이다
-      parsed.mention = parsed.mention !== false;
+      /* 이름 앞 @ 는 표시일 뿐이다. 카카오톡은 붙여넣은 글의 @이름을 태그로 바꾸지 않는다.
+         예전 설정(mention)은 '자동 태그'를 전제로 켜 둔 값이라 물려받지 않고, 직접 켠 경우만 유지한다. */
+      parsed.atMark = parsed.atMark === true;
+      delete parsed.mention;
       parsed.pay = Object.assign({ bank: "", account: "", holder: "", kakao: false }, parsed.pay || {});
       parsed.notices = Object.assign({ split: true, host: false, personal: false, fast: true }, parsed.notices || {});
       if (typeof parsed.shareId !== "string" || !/^[a-z0-9]{8,32}$/.test(parsed.shareId)) delete parsed.shareId;
@@ -1291,6 +1330,14 @@
       return list;
     }
     function toAmount(value) { return Number(String(value).replace(/[^\d]/g, "") || 0); }
+    /* 날짜 입력값(YYYY-MM-DD)을 채팅에서 읽기 쉬운 꼴로 — "2026년 9월 20일 (일)" */
+    function formatDateKo(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+      if (!m) return String(iso || "");
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const day = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
+      return `${Number(m[1])}년 ${Number(m[2])}월 ${Number(m[3])}일 (${day})`;
+    }
     function formatNumber(value) { return Math.round(Number(value) || 0).toLocaleString("ko-KR"); }
     function formatWon(value) { return `${formatNumber(value)}원`; }
     function sameName(a, b) { return String(a || "").trim() === String(b || "").trim(); }
@@ -1351,7 +1398,7 @@
       $("payAccount").value = state.pay.account;
       $("payHolder").value = state.pay.holder;
       $("payKakao").checked = state.pay.kakao;
-      $("mentionToggle").checked = state.mention !== false;
+      $("mentionToggle").checked = state.atMark === true;
     }
 
     function renderMembers() {
@@ -1468,11 +1515,13 @@
 
         return `
         <div class="adj-row" data-adj-id="${escapeHTML(a.id)}">
-          <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가와 차감 멤버">${opts}</select>
+          <select class="select adj-name" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가와 차감 멤버">${opts}</select>
           <select class="select adj-round" data-field="adj-round" data-adj-id="${escapeHTML(a.id)}" aria-label="적용할 차수">${rOpts}</select>
-          <button class="adj-sign ${plus ? "is-plus" : "is-minus"}" type="button" data-action="adj-sign" data-adj-id="${escapeHTML(a.id)}"
-            aria-label="${plus ? "현재 추가(+). 누르면 차감(−)으로 바뀝니다." : "현재 차감(−). 누르면 추가(+)로 바뀝니다."}">${plus ? "＋" : "−"}</button>
-          <input class="input" type="text" inputmode="numeric" placeholder="금액"
+          <div class="adj-signs" role="group" aria-label="추가 또는 차감">
+            <button class="adj-sign is-plus" type="button" data-action="adj-sign" data-sign="1" data-adj-id="${escapeHTML(a.id)}" aria-pressed="${plus}">＋ 추가</button>
+            <button class="adj-sign is-minus" type="button" data-action="adj-sign" data-sign="-1" data-adj-id="${escapeHTML(a.id)}" aria-pressed="${!plus}">− 차감</button>
+          </div>
+          <input class="input adj-amount" type="text" inputmode="numeric" placeholder="금액"
             value="${a.amount ? formatNumber(a.amount) : ""}" data-field="adj-amount" data-adj-id="${escapeHTML(a.id)}" aria-label="금액" />
           <input class="input adj-reason" type="text" placeholder="사유 (선택) 예: 택시"
             value="${escapeHTML(a.reason)}" data-field="adj-reason" data-adj-id="${escapeHTML(a.id)}" aria-label="사유" />
@@ -1609,19 +1658,23 @@
       const otherPayers = multiPayer
         ? activePayers.map((p) => p.name).filter((n) => !sameName(n, accountOwner))
         : [];
+      const pt = payText();
       const rowHTML = (row, payerName) => {
-        const sendable = canSend && (!multiPayer || sameName(payerName, accountOwner));
+        /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 줄에는 계좌를 붙이지 않는다. */
+        const withAccount = !!pt && canSend && (!multiPayer || sameName(payerName, accountOwner));
         const mine = c.adjustments.filter((a) => a.applied && a.name === row.name && sameName(payerName, targetOfAdj(a)));
         const adjNote = mine.map((adj) =>
           `<span class="adj-note">${adj.roundLabel ? escapeHTML(adj.roundLabel) + " " : ""}${adj.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(adj.amount))}원${adj.reason ? ` ${escapeHTML(adj.reason)}` : ""} 반영</span>`
         ).join("");
+        // 한 사람에게 따로 알릴 때 붙여넣는 한 줄: "민지님 46,267원 · 입금계좌 카카오뱅크 …"
+        const line = `${row.name}님 ${formatWon(row.amount)}${withAccount ? ` · 입금계좌 ${pt}` : ""}`;
         return `
           <div class="pay-row">
-            <span><span class="pay-name">${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}</span>${adjNote}</span>
+            <span><span class="pay-name">${state.atMark ? "@" : ""}${escapeHTML(row.name)}</span>${adjNote}</span>
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
-              ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱을 열어 이 금액을 송금합니다" : "계좌번호와 금액을 복사합니다"}">${isMobileUA() ? "송금 앱 열기" : "계좌·금액 복사"}</button>` : ""}
-              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="${escapeHTML(row.name)} 님 금액만 복사합니다">금액 복사</button>
+              <button class="pay-copy no-capture" type="button" data-copy="${escapeHTML(line)}" data-name="${escapeHTML(row.name)}"
+                title="${withAccount ? "이름, 금액, 입금 계좌를 복사합니다" : "이름과 금액을 복사합니다"}" aria-label="${escapeHTML(row.name)} 님 안내 복사">복사</button>
             </div>
           </div>`;
       };
@@ -1653,7 +1706,6 @@
           </div>`).join("")
         : `<div class="detail-line"><div><b>입력된 차수가 없습니다.</b><span>차수와 금액을 입력해 주세요.</span></div><strong>${formatWon(0)}</strong></div>`;
 
-      const pt = payText();
       const notices = checkedNotices();
       const roundingLine = state.rounding.unit > 1
         ? `, ${UNIT_LABEL[state.rounding.unit]} 단위 ${MODE_LABEL[state.rounding.mode]}`
@@ -1669,9 +1721,9 @@
           <div>
             <small>정산 안내</small>
             <h2>${escapeHTML(state.eventTitle || "모임 정산")}</h2>
-            <p class="sep-row">${state.eventDate ? `<span>${escapeHTML(state.eventDate)}</span>` : ""}<span>모임장 ${escapeHTML(c.host || "-")}</span></p>
           </div>
           <div class="receipt-total"><span>총 비용</span><strong>${formatWon(c.totalAmount)}</strong></div>
+          <p class="sep-row">${state.eventDate ? `<span>${escapeHTML(formatDateKo(state.eventDate))}</span>` : ""}<span>모임장 ${escapeHTML(c.host || "-")}</span></p>
         </div>
         <div class="receipt-summary-line">
           <span>참여 <b>${c.perPerson.count}명</b></span>
@@ -1706,17 +1758,17 @@
       const c = calc();
       const L = [];
       const detail = state.msgStyle === "detail";
-      /* 오픈채팅방은 보낸 글 안의 @닉네임을 멤버 목록과 맞춰 멘션으로 잡아 준다.
-         그래서 이름 뒤는 반드시 공백으로 끊는다 — "@엑서님에게" 로 붙이면
-         '엑서님에게' 를 닉네임으로 찾다가 아무도 못 찾는다. */
-      const on = state.mention !== false;
+      /* @ 는 표시일 뿐이다. 카카오톡은 붙여넣은 글의 @이름을 태그로 바꾸지 않으므로
+         태그가 필요하면 채팅창에서 @ 를 직접 입력해야 한다. 켜 두면 이름 뒤를 공백으로 끊어
+         "@엑서 님에게" 처럼 이름이 한 덩어리로 읽히게 한다. */
+      const on = state.atMark === true;
       const at = (name) => (on ? "@" + name : name);
       const atNim = (name) => (on ? `@${name} 님에게` : `${name}님에게`);
 
       /* ── 헤더 ── */
       L.push(`💰 ${state.eventTitle || "모임 정산"} 정산`);
       const sub = [];
-      if (state.eventDate) sub.push(state.eventDate);
+      if (state.eventDate) sub.push(formatDateKo(state.eventDate));
       sub.push(`모임장 ${c.host || "-"}`);
       L.push(sub.join(", "));
 
@@ -1747,7 +1799,7 @@
       /* ── 벙주(결제자) 부담: 요약형에서만 ── */
       if (!detail && c.totalAmount) {
         L.push("");
-        L.push(`🧑‍🍳 ${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
+        L.push(`💳 ${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
       }
 
       /* ── 상세형: 차수 · 추가차감 · 검증 · 안내 ── */
@@ -1788,7 +1840,7 @@
         const owner = state.pay.holder.trim() || c.host;
         const others = activePayers.map((p) => p.name).filter((n) => !sameName(n, owner));
         if (activePayers.length > 1 && others.length) {
-          L.push(`※ ${others.map((n) => at(n)).join(" · ")} 님에게 보낼 금액은 계좌를 따로 안내합니다`);
+          L.push(`※ ${others.map((n) => at(n)).join(" · ")}${on ? " " : ""}님에게 보낼 금액은 계좌를 따로 안내합니다`);
         }
       }
 
@@ -1821,7 +1873,10 @@
 
     async function copyResultText() {
       const ok = await copyToClipboard(buildCopyText());
-      showToast(ok ? "정산 메시지를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
+      if (!ok) { showToast("복사에 실패했습니다. 다시 시도해 주세요."); return; }
+      showToast(receipts.length
+        ? `정산 메시지를 복사했습니다. 영수증 ${receipts.length}장은 아래 영수증 보내기로 따로 보내 주세요.`
+        : "정산 메시지를 복사했습니다. 채팅창에 붙여넣어 주세요.");
     }
 
     async function saveResultImage() {
@@ -2065,25 +2120,86 @@
           <img src="${r.dataUrl}" alt="영수증 미리보기" />
           <button class="receipt-thumb-del" type="button" data-receipt-id="${escapeHTML(r.id)}" aria-label="영수증 삭제">×</button>
         </div>`).join("");
+      const n = receipts.length;
+      $("sendReceiptBtn").hidden = !n;
+      $("sendReceiptBtn").textContent = n ? `영수증 ${n}장 보내기` : "영수증 보내기";
+      $("receiptHint").hidden = !n;
       renderFoldNotes();
     }
 
-    /* ============================================================
-       송금 — 모바일: 토스 딥링크 / 데스크톱: 계좌+금액 복사
-       ============================================================ */
-    async function handleTransfer(amount) {
-      const bank = state.pay.bank.trim();
-      const digits = accountDigits();
-      if (!bank || !digits) { showToast("은행과 계좌번호를 먼저 입력해 주세요."); return; }
-      if (isMobileUA()) {
-        window.location.href = "supertoss://send?amount=" + amount + "&bank=" + encodeURIComponent(bank) + "&accountNo=" + digits;
-        showToast("토스 앱을 엽니다. 열리지 않으면 계좌·금액 복사를 이용해 주세요.");
-      } else {
-        const holder = state.pay.holder.trim();
-        const text = `${bank} ${state.pay.account.trim()}${holder ? ` (${holder})` : ""} ${formatWon(amount)}`;
-        const ok = await copyToClipboard(text);
-        showToast(ok ? "계좌와 금액을 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
-      }
+    /* ── 영수증을 메시지와 함께 보내기 ──
+       글 복사에는 사진이 실리지 않는다. 클립보드는 글과 사진을 한 번에 담지 못하고,
+       카카오톡도 붙여넣기에서 둘을 같이 받지 않는다. 그래서 사진은 따로 보낸다.
+       휴대폰: 공유 창(navigator.share)으로 카카오톡 채팅방에 바로.
+       PC: 클립보드에 사진으로 담아 채팅창에 붙여넣게 한다(한 장만 담기므로 여러 장은 세로로 이어 붙인다).
+       둘 다 안 되면 사진 파일로 내려 준다. */
+    function dataUrlToBlob(dataUrl) {
+      const [head, b64] = String(dataUrl).split(",");
+      const mime = (/data:([^;]+)/.exec(head) || [])[1] || "image/jpeg";
+      const bin = atob(b64 || "");
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
+    function receiptFileName(i) {
+      const stem = (state.eventTitle.trim() || "정산").replace(/[\\/:*?"<>|]/g, "_");
+      return `${stem}_영수증${i + 1}.jpg`;
+    }
+    function receiptFiles() {
+      return receipts.map((r, i) => new File([dataUrlToBlob(r.dataUrl)], receiptFileName(i), { type: "image/jpeg" }));
+    }
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error("decode fail"));
+        im.src = src;
+      });
+    }
+    async function composeReceiptsPng() {
+      const imgs = await Promise.all(receipts.map((r) => loadImage(r.dataUrl)));
+      const W = Math.max(...imgs.map((im) => im.naturalWidth)), GAP = 24;
+      const heights = imgs.map((im) => Math.round(im.naturalHeight * (W / im.naturalWidth)));
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = heights.reduce((sum, h) => sum + h, 0) + GAP * (imgs.length - 1);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      let y = 0;
+      imgs.forEach((im, i) => { ctx.drawImage(im, 0, y, W, heights[i]); y += heights[i] + GAP; });
+      return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob fail"))), "image/png"));
+    }
+    function downloadReceipts() {
+      receipts.forEach((r, i) => {
+        const a = document.createElement("a");
+        a.href = r.dataUrl; a.download = receiptFileName(i); a.click();
+      });
+    }
+    async function sendReceipts() {
+      if (!receipts.length) { showToast("첨부한 영수증이 없습니다."); return; }
+      const btn = $("sendReceiptBtn");
+      btn.disabled = true;
+      try {
+        const files = receiptFiles();
+        if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+          try {
+            await navigator.share({ files, title: `${state.eventTitle.trim() || "모임 정산"} 영수증` });
+            showToast("영수증 사진을 공유 창으로 보냈습니다.");
+            return;
+          } catch (e) {
+            if (e && e.name === "AbortError") return;   // 공유 창을 그냥 닫음
+            console.error(e);
+          }
+        }
+        if (!isMobileUA() && navigator.clipboard && navigator.clipboard.write && window.ClipboardItem && window.isSecureContext) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": composeReceiptsPng() })]);
+            showToast(`영수증 ${receipts.length}장을 사진으로 복사했습니다. 채팅창에 붙여넣으면 사진이 올라갑니다.`);
+            return;
+          } catch (e) { console.error(e); }
+        }
+        downloadReceipts();
+        showToast("이 브라우저는 사진 공유를 지원하지 않아 영수증을 사진 파일로 저장했습니다. 채팅방에서 사진 첨부로 올려 주세요.");
+      } finally { btn.disabled = false; }
     }
 
     /* ============================================================
@@ -2173,7 +2289,7 @@
           const ok = await copyToClipboard(settleURL(id));
           const droppedReceipts = receipts.length && (!payload.receipts || payload.receipts.length < receipts.length);
           if (droppedReceipts) {
-            showToast("링크를 복사했습니다. 영수증 일부는 링크에 담기지 않으므로 이미지 저장으로 함께 보내 주세요.");
+            showToast("링크를 복사했습니다. 영수증 일부는 링크에 담기지 않으므로 영수증 보내기로 따로 보내 주세요.");
           } else {
             showToast(ok ? "입금 확인 링크를 복사했습니다. 채팅에 붙여넣어 주세요." : "링크가 준비되었습니다. 메시지 복사에 함께 담깁니다.");
           }
@@ -2267,7 +2383,7 @@
         adjustments: [],
         rounding: { unit: 1, mode: "round" },
         msgStyle: "summary",
-        mention: state.mention !== false,   // 방 성격에 따른 설정이라 지워도 유지한다
+        atMark: state.atMark === true,      // 방 성격에 따른 설정이라 지워도 유지한다
         pay: { bank: "", account: "", holder: "", kakao: false },
         notices: { split: true, host: false, personal: false, fast: true }
       };
@@ -2283,6 +2399,12 @@
 
     function findRound(id) { return state.rounds.find((r) => r.id === id); }
     function findAdj(id) { return state.adjustments.find((a) => a.id === id); }
+    function setSignButtons(row, sign) {
+      if (!row) return;
+      row.querySelectorAll("[data-action='adj-sign']").forEach((b) => {
+        b.setAttribute("aria-pressed", String(Number(b.dataset.sign) === sign));
+      });
+    }
 
     // 차수 메타(1인당 금액·전체 토글 라벨)만 가볍게 갱신 — 칩 클릭/금액 입력 시 깜빡임 방지
     function updateRoundMeta(id) {
@@ -2436,13 +2558,8 @@
           // 금액이 반대로 움직이므로, 앞에 붙은 빼기표는 차감으로 읽는다.
           if (/^\s*[-−]/.test(t.value) && adj.sign !== -1) {
             adj.sign = -1;
-            // 여기서 다시 그리면 글자를 치는 중에 커서가 튄다 — 버튼만 손으로 바꾼다
-            const btn = t.closest(".adj-row").querySelector("[data-action='adj-sign']");
-            if (btn) {
-              btn.classList.remove("is-plus"); btn.classList.add("is-minus");
-              btn.textContent = "−";
-              btn.setAttribute("aria-label", "차감(−) — 누르면 추가(+)로");
-            }
+            // 여기서 다시 그리면 글자를 치는 중에 커서가 튄다 — 버튼 상태만 바꾼다
+            setSignButtons(t.closest(".adj-row"), -1);
           }
           adj.amount = toAmount(t.value);
         }
@@ -2468,8 +2585,15 @@
         if (sign) {
           const adj = findAdj(sign.dataset.adjId);
           if (!adj) return;
-          adj.sign = adj.sign === -1 ? 1 : -1;
-          renderAdjustments(); renderAndSave();
+          const next = Number(sign.dataset.sign) === -1 ? -1 : 1;
+          if (adj.sign === next) return;
+          adj.sign = next;
+          const row = sign.closest(".adj-row");
+          setSignButtons(row, next);                       // 다시 그리지 않으니 포커스가 버튼에 남는다
+          // "-3000" 처럼 빼기표를 친 채로 ＋ 추가를 누르면 칸의 빼기표가 다시 차감으로 읽힌다 — 숫자만 남긴다
+          const amt = row && row.querySelector(".adj-amount");
+          if (amt) amt.value = adj.amount ? formatNumber(adj.amount) : "";
+          renderAndSave();
           return;
         }
         const del = e.target.closest("[data-action='adj-del']");
@@ -2481,12 +2605,10 @@
 
       /* 결과 영역 */
       $("captureTarget").addEventListener("click", async (e) => {
-        const send = e.target.closest(".pay-send");
-        if (send) { handleTransfer(Number(send.dataset.sendAmount) || 0); return; }
         const button = e.target.closest(".pay-copy");
         if (!button) return;
         const ok = await copyToClipboard(button.dataset.copy);
-        showToast(ok ? "복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
+        showToast(ok ? `${button.dataset.name || ""} 님 안내를 복사했습니다. 개인 채팅에 붙여넣어 주세요.` : "복사에 실패했습니다. 다시 시도해 주세요.");
       });
 
       /* 즐겨찾기 그룹 */
@@ -2545,6 +2667,7 @@
       $("shareLinkBtn").addEventListener("click", createShareLink);
       $("copyTextBtn").addEventListener("click", copyResultText);
       $("saveImageBtn").addEventListener("click", saveResultImage);
+      $("sendReceiptBtn").addEventListener("click", sendReceipts);
       $("copyLinkBtn").addEventListener("click", async () => {
         const ok = await copyToClipboard(window.location.href);
         showToast(ok ? "페이지 주소를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
@@ -2561,9 +2684,9 @@
         if (window.confirm("입력한 내용을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?")) resetAll();
       });
       $("mentionToggle").addEventListener("change", (e) => {
-        state.mention = e.target.checked;
+        state.atMark = e.target.checked;
         renderAndSave();
-        showToast(state.mention ? "이름 앞에 @를 붙여 복사합니다." : "이름만 복사합니다.");
+        showToast(state.atMark ? "이름 앞에 @를 표시합니다. 카카오톡 태그는 따로 해 주세요." : "이름만 표시합니다.");
       });
 
       /* 모바일 요약 바 */
