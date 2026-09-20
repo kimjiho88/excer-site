@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#285244" />
 
   <title>동네친구들 오픈채팅 커뮤니티</title>
-  <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 함께 다녀온 식당과 모임 소식을 모았습니다." />
+  <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 밥 한 끼부터 주말 나들이까지 함께합니다. 모임 정산, 소식, 맛집." />
   <meta property="og:url" content="https://excer-site.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 오픈채팅 커뮤니티" />
-  <meta property="og:description" content="함께 다녀온 식당과 모임 소식을 모았습니다." />
+  <meta property="og:description" content="밥 한 끼부터 주말 나들이까지, 동네친구들과 함께합니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -25,62 +25,60 @@
 
   <style>
     /* ============================================================
-       홈 — 도입 한 덩이, 그 아래 넓은 주 영역(장소 기록·최근 소식)과 좁은 보조 영역(정산·참여 안내)
+       홈 — 계절 대표 소개(글 + 일러스트) → 참여 경로·주요 기능 → 공지와 다가오는 모임
        ============================================================ */
-    .home-intro { padding: var(--sp-7) 0 var(--sp-6); }
-    /* 대표 이미지는 선택 사항. assets/img/home-hero.(webp|jpg) 가 있을 때만 오른쪽 열이 생긴다.
-       파일이 없으면 열도, 빈 상자도 없다 — 아래 로더가 파일을 확인한 뒤에만 .has-image 를 붙인다 */
-    .intro-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 56px; align-items: center; }
-    .home-intro.has-image .intro-grid { grid-template-columns: minmax(0, 1fr) 420px; }
-    .intro-figure { margin: 0; }
-    /* width·height 속성은 원본 비율 힌트일 뿐이다. height 를 auto 로 돌려놓지 않으면 속성값 900px 이 그대로 높이가 된다 */
-    .intro-figure img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center; border-radius: var(--r-md); background: var(--surface-2); }
-    @media (max-width: 960px) {
-      .home-intro.has-image .intro-grid { grid-template-columns: 1fr; gap: 24px 0; }
-      .intro-figure { order: 2; }
-    }
-    .home-title { margin: 0; max-width: 15em; font-size: var(--fs-display); font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; color: var(--ink); }
-    .home-sub { margin: 14px 0 0; max-width: 34em; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
+
+    /* ── A. 계절 대표 소개 ──
+       PC(≥768px): 글 38% · 그림 62% 나란히. 모바일: 제목·설명·버튼 먼저, 그 아래 세로형 그림.
+       그림은 비율을 지키고(잘라내지 않음) width/height 속성과 aspect-ratio 로 자리를 먼저 잡아 로딩 중 화면이 밀리지 않는다.
+       파일을 못 읽으면 img 의 onerror 가 .no-image 를 붙여 글만 남긴다 — 빈 상자를 남기지 않는다 */
+    .home-hero { padding: var(--sp-6) 0 var(--sp-7); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px 0; align-items: center; }
+    .hero-text { min-width: 0; }
+    .home-title { margin: 0; max-width: 12em; font-size: var(--fs-display); font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; color: var(--ink); }
+    .home-sub { margin: 14px 0 0; max-width: 30em; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
     .home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 24px; }
     .home-actions .link-arrow { margin-top: 0; }
+    .hero-media { margin: 0; min-width: 0; }
+    /* 모바일: 세로형(4:5)을 화면 폭 전체로 늘리지 않고 340px 까지만, 가운데 정렬. 390px 화면에서 340 × 425 */
+    .hero-media img { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto; aspect-ratio: 4 / 5; border-radius: var(--r-md); background: var(--surface-2); }
+    @media (min-width: 768px) {
+      .hero-grid { grid-template-columns: minmax(0, 38fr) minmax(0, 62fr); gap: 0 40px; }
+      .hero-media img { max-width: none; margin: 0; aspect-ratio: 3 / 2; }
+    }
+    @media (min-width: 1080px) { .hero-grid { gap: 0 56px; } }
+    .home-hero.no-image .hero-grid { grid-template-columns: minmax(0, 1fr); }
+    .home-hero.no-image .hero-media { display: none; }
     @media (max-width: 860px) {
-      .home-intro { padding: var(--sp-6) 0 var(--sp-5); }
+      .home-hero { padding: var(--sp-5) 0 var(--sp-6); }
       .home-sub { font-size: 16px; }
     }
 
-    .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0 56px; align-items: start; }
-    .home-main { display: grid; gap: var(--sp-7); min-width: 0; }
-    .home-side { display: grid; gap: 16px; }
-    @media (max-width: 960px) {
-      .home-grid { grid-template-columns: 1fr; }
-      .home-side { margin-top: var(--sp-7); }
-    }
-    @media (max-width: 860px) { .home-main { gap: var(--sp-6); } .home-side { margin-top: var(--sp-6); } }
-
-    /* ── 장소 기록: 맨 앞 한 곳은 크게, 나머지는 두 열 행 ── */
-    .place-feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; border-bottom: 1px solid var(--line); }
-    .place-feed .row { align-content: start; }
-    .place-feed .row.is-lead { grid-column: 1 / -1; padding: 2px 0 18px; }
-    .place-feed .row:not(.is-lead) { border-bottom: 1px solid var(--line); margin-bottom: -1px; }
-    .pf-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0; color: var(--ink); font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; }
-    .row.is-lead .pf-name { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
-    .pf-meta { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    .pf-meta b { color: var(--ink); font-weight: 500; }
-    .pf-none { color: var(--ink-2); }
-    .pf-menu { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
-    .pf-menu b { color: var(--ink); font-weight: 600; }
-    .pf-review { margin: 6px 0 0; color: var(--ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
-    .row.is-lead .pf-review { font-size: 18px; max-width: 34em; }
-    .pf-by { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    .row.is-lead .pf-by { margin-top: 8px; }
-    .pf-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
-    @media (max-width: 640px) {
-      .place-feed { grid-template-columns: 1fr; }
-      .row.is-lead .pf-name { font-size: 22px; }
-      .row.is-lead .pf-review { font-size: 16px; }
+    /* ── B·C: 왼쪽 넓은 열은 공지와 다가오는 모임, 오른쪽 좁은 열은 참여 경로와 주요 기능 ──
+       HTML 순서는 참여 경로 → 주요 기능 → 공지·모임(명세의 B → C). 화면이 넓으면 grid-area 로 자리만 바꾼다 */
+    .home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6) 56px; align-items: start; }
+    .home-side { display: grid; gap: 20px; min-width: 0; }
+    .home-live { min-width: 0; }
+    @media (min-width: 961px) {
+      .home-grid { grid-template-columns: minmax(0, 1fr) 320px; grid-template-areas: "live side"; }
+      .home-live { grid-area: live; }
+      .home-side { grid-area: side; }
     }
 
-    /* ── 최근 소식: 제목 한 줄, 보조 한 줄 ── */
+    /* 참여 경로: 짧은 안내 한 문단과 이용 안내 링크 */
+    .join-panel > p { color: var(--ink); }
+    .join-panel .panel-act { margin-top: 12px; }
+    .join-panel .panel-act .link-arrow { min-height: 36px; }
+
+    /* 주요 기능: 이름과 한 줄 설명뿐인 바로가기 행 */
+    .side-h { margin: 0 0 4px; font-size: var(--fs-h3); font-weight: 600; color: var(--ink); }
+    .feat-rows .row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 12px 0; }
+    .feat-rows .row-title { font-size: 15px; }
+    .feat-rows .row-meta { grid-column: 1; }
+    .feat-rows .row .ic { grid-column: 2; grid-row: 1 / span 2; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
+    .feat-rows .row:hover .ic { transform: translateX(3px); }
+
+    /* 공지·다가오는 모임: 제목 한 줄, 보조 한 줄 */
     .group-h { margin: 18px 0 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .group-h:first-child { margin-top: 0; }
     .news-row { grid-template-columns: minmax(0, 1fr) auto; }
@@ -89,23 +87,16 @@
     .news-row .row-meta { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-row .row-state { align-self: center; }
     .rm-sub + .rm-who::before { content: "·"; margin: 0 5px; }
+    .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
     @media (max-width: 600px) {
       .news-row .row-title, .news-row .row-meta { white-space: normal; }
       .rm-sub { display: block; }
       .rm-sub + .rm-who::before { content: none; }
     }
-
-    /* ── 보조 영역 ── */
-    .join-steps { margin: 12px 0 0; padding: 0; list-style: none; }
-    .join-steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-    .join-steps b { display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; }
-    .join-steps strong { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
-    .join-steps span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
-    .panel .panel-act .link-arrow { margin-top: 0; min-height: 36px; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=1"></script>
+  <script src="assets/content.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -129,70 +120,71 @@
   </header>
 
   <main id="main" class="page-main">
-    <section class="home-intro" id="homeIntro" aria-labelledby="homeTitle">
-      <div class="container intro-grid">
-        <div class="intro-text">
-          <h1 class="home-title" id="homeTitle">동네에서 만나고, 함께 기록합니다.</h1>
-          <p class="home-sub">오픈채팅으로 만나는 동네 커뮤니티입니다. 모임에서 함께 다녀온 식당과 모임 소식을 모았습니다.</p>
+    <!-- ══════════════════════════════════════════════════════════════
+         A. 계절 대표 소개 — 계절이 바뀌면 이 블록만 고친다: 제목(h1) · 소개(p) · 그림 파일 경로(picture).
+            그림 원본은 assets/img/src/, 웹용 파일 규격은 docs/IMAGE_SPEC.md. 자동 전환 없음.
+            그림은 브랜드 일러스트다. 실제 멤버나 실제 현장 사진처럼 쓰지 않는다.
+         ══════════════════════════════════════════════════════════════ -->
+    <section class="home-hero" id="homeHero" aria-labelledby="homeTitle">
+      <div class="container hero-grid">
+        <div class="hero-text">
+          <h1 class="home-title" id="homeTitle">함께 보내는 가을</h1>
+          <p class="home-sub">밥 한 끼부터 주말 나들이까지, 동네친구들과 함께합니다.</p>
           <div class="home-actions">
             <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
-            <a class="link-arrow" href="guide.html">처음 참여하는 멤버 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+            <a class="link-arrow" href="guide.html">이용 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
           </div>
         </div>
-        <!-- 대표 이미지 자리(선택). 파일이 있을 때만 보인다. 규격은 docs/IMAGE_SPEC.md -->
-        <figure class="intro-figure" id="homeHeroFigure" hidden>
-          <img id="homeHero" alt="" width="1200" height="900" decoding="async" />
+        <figure class="hero-media">
+          <picture>
+            <!-- 모바일(≤767px): 세로형 4:5 -->
+            <source media="(max-width: 767px)" type="image/webp" width="800" height="1000"
+                    srcset="assets/img/autumn-mobile-400.webp 400w, assets/img/autumn-mobile-800.webp 800w"
+                    sizes="340px" />
+            <!-- PC·태블릿(≥768px): 가로형 3:2 -->
+            <img src="assets/img/autumn-desktop-720.webp"
+                 srcset="assets/img/autumn-desktop-720.webp 720w, assets/img/autumn-desktop-1440.webp 1440w"
+                 sizes="(min-width: 1168px) 640px, (min-width: 768px) 58vw, 340px"
+                 width="1440" height="960" decoding="async" fetchpriority="high"
+                 alt="가을 단풍과 호수를 배경으로 모닥불 곁에 둘러앉아 이야기를 나누는 다섯 사람을 그린 일러스트"
+                 onerror="this.closest('.home-hero').classList.add('no-image')" />
+          </picture>
         </figure>
       </div>
     </section>
+    <!-- ══ 계절 대표 소개 끝 ══ -->
 
     <div class="container home-grid">
-      <div class="home-main">
-        <!-- 장소 기록 — 한줄평이 있는 최근 기록. 근거 없는 '인기'·'추천' 표시는 없다 -->
-        <section aria-labelledby="placesTitle">
-          <div class="sec-bar">
-            <div class="sb-l"><h2 class="lead-h" id="placesTitle">장소 기록</h2><p class="sb-note" id="placesNote">한줄평이 있는 최근 기록</p></div>
-            <a class="link-arrow" href="places.html">맛집 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-          </div>
-          <div class="place-feed" id="homePlaces" aria-busy="true">
-            <div class="row is-lead" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:40%"></span><span class="skeleton skeleton-line" style="width:30%;margin-top:8px"></span><span class="skeleton skeleton-line" style="width:70%;margin-top:14px"></span></div>
-            <div class="row" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:50%"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:10px"></span></div>
-            <div class="row" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:56%"></span><span class="skeleton skeleton-line" style="width:72%;margin-top:10px"></span></div>
-          </div>
+      <!-- B. 참여 경로와 주요 기능 -->
+      <aside class="home-side" aria-label="참여 경로와 주요 기능">
+        <section class="panel join-panel" aria-labelledby="joinTitle">
+          <h2 id="joinTitle">처음 참여한다면</h2>
+          <p>오픈채팅에 들어와 닉네임을 정하고, 모임 공지에서 참석을 누르면 됩니다. 참여 기준과 정산 방법, 대화 매너는 이용 안내에 있습니다.</p>
+          <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
         </section>
-
-        <!-- 최근 소식 — 다가오는 모임이 있으면 그 묶음을 먼저 -->
-        <section aria-labelledby="newsTitle">
-          <div class="sec-bar">
-            <div class="sb-l"><h2 class="lead-h" id="newsTitle">최근 소식</h2></div>
-            <a class="link-arrow" href="news.html">소식 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-          </div>
-          <div id="newsList" aria-busy="true">
-            <div class="skel-rows" aria-hidden="true">
-              <span class="skeleton skeleton-line" style="width:70%"></span>
-              <span class="skeleton skeleton-line" style="width:55%"></span>
-              <span class="skeleton skeleton-line" style="width:64%"></span>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <aside class="home-side" aria-label="정산과 참여 안내">
-        <section class="panel is-brand" aria-labelledby="calcTitle">
-          <h2 id="calcTitle">모임 정산</h2>
-          <p>차수별 1/N 금액을 계산하고, 입금 안내 메시지와 입금 확인 링크를 만듭니다.</p>
-          <div class="panel-act"><a class="btn btn-secondary" href="calculator.html">정산 시작</a></div>
-        </section>
-        <section class="panel" aria-labelledby="joinTitle">
-          <h2 id="joinTitle">처음 참여하는 멤버</h2>
-          <ol class="join-steps">
-            <li><b>1</b><div><strong>오픈채팅 참여 후 닉네임 변경</strong><span>닉네임 · 지역 · 성별 · 출생년도 · 입장일 순서입니다. 예: 엑서 논현 남 88 0125</span></div></li>
-            <li><b>2</b><div><strong>이용 안내 확인</strong><span>모임 참여 절차, 정산 방법, 대화 매너를 확인합니다.</span></div></li>
-            <li><b>3</b><div><strong>2주 안에 첫 모임 참여</strong><span>참여할 모임 공지에서 참석 버튼을 누릅니다. 첫 모임은 음주 상태로 참여할 수 없습니다.</span></div></li>
-          </ol>
-          <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
+        <section aria-labelledby="featTitle">
+          <h2 class="side-h" id="featTitle">주요 기능</h2>
+          <ul class="rows feat-rows">
+            <li><a class="row" href="calculator.html"><span class="row-title">모임 정산</span><span class="row-meta">차수별 1/N 금액과 입금 안내 메시지</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="news.html"><span class="row-title">소식</span><span class="row-meta">공지, 모임 모집, 후기, 정보</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="places.html"><span class="row-title">맛집</span><span class="row-meta">모임에서 다녀온 식당과 한줄평</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+          </ul>
         </section>
       </aside>
+
+      <!-- C. 실제 공지 한 건과 다가오는 모임(최대 2건). 데이터가 없으면 한 줄만 -->
+      <section class="home-live" aria-labelledby="liveTitle">
+        <div class="sec-bar">
+          <div class="sb-l"><h2 class="lead-h" id="liveTitle">공지와 다가오는 모임</h2></div>
+          <a class="link-arrow" href="news.html">소식 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+        </div>
+        <div id="liveList" aria-busy="true">
+          <div class="skel-rows" aria-hidden="true">
+            <span class="skeleton skeleton-line" style="width:70%"></span>
+            <span class="skeleton skeleton-line" style="width:55%"></span>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -234,24 +226,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ════════ 대표 이미지(선택) — 파일이 있을 때만 자리를 만든다 ════════ -->
-  <script>
-    (function () {
-      "use strict";
-      var CANDIDATES = ["assets/img/home-hero.webp", "assets/img/home-hero.jpg"];
-      var fig = document.getElementById("homeHeroFigure"), img = document.getElementById("homeHero"), sec = document.getElementById("homeIntro");
-      function tryNext(i) {
-        if (i >= CANDIDATES.length) return;                 // 파일이 없으면 아무것도 바꾸지 않는다
-        var probe = new Image();
-        probe.onload = function () { img.src = CANDIDATES[i]; fig.hidden = false; sec.classList.add("has-image"); };
-        probe.onerror = function () { tryNext(i + 1); };
-        probe.src = CANDIDATES[i];
-      }
-      tryNext(0);
-    })();
-  </script>
-
-  <!-- ════════ 홈 데이터 — 장소 기록 6곳 + 최근 소식(다가오는 모임 먼저) ════════ -->
+  <!-- ════════ 홈 데이터 — 고정 공지 한 건 + 다가오는 모임 최대 2건 ════════ -->
   <script>
     (function () {
       "use strict";
@@ -263,8 +238,7 @@
         return fetch(SUPA_URL + path, { headers: { apikey: SUPA_ANON, Authorization: "Bearer " + SUPA_ANON } })
           .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); });
       }
-      function icon(name) { return '<svg class="ic is-sm" aria-hidden="true"><use href="#i-' + name + '"/></svg>'; }
-      /* 비어 있음·실패는 목록 자리에 한 줄로 */
+      /* 비어 있음·실패는 한 줄로 */
       function note(host, text, retryFn) {
         host.innerHTML = '<div class="status-line"><span>' + esc(text) + "</span>" +
           (retryFn ? '<button type="button" class="btn btn-secondary is-sm" data-retry>다시 시도</button>' : "") + "</div>";
@@ -277,8 +251,7 @@
         });
       }
 
-      /* ══════════ 1) 소식 ══════════ */
-      function newsRowHTML(v) {
+      function rowHTML(v) {
         var tag = '<span class="type-tag' + (v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : "") + '">' + esc(v.label) + "</span>";
         var sub = v.subline.text || v.excerpt;
         var who = [v.author || "익명", C.relTime(v.created_at)];
@@ -289,72 +262,31 @@
           state +
           '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.map(esc).join(" · ") + "</span></span></a>";
       }
-      function renderNews(rows) {
-        var host = $("newsList");
-        var posts = Array.isArray(rows) ? rows : [];
-        if (!posts.length) { note(host, "등록된 소식이 없습니다."); return; }
-        var today = C.kstToday();
-        var views = posts.map(function (p) { return C.postView(p, today); });
-        // 다가오는 모임: 날짜가 오늘 이후인 모집 글, 가까운 순, 최대 3건
-        var upcoming = views.filter(function (v) { return v.kind === "bung" && v.meta && v.meta.date && v.meta.date >= today && !v.bung.closed; })
+      function render(rows) {
+        var host = $("liveList");
+        var today = C.kstToday(), now = C.kstNowHM();
+        var views = (Array.isArray(rows) ? rows : []).map(function (p) { return C.postView(p, today); });
+        // 고정 공지: 운영진이 고정한 글 가운데 공지를 먼저, 최근 것 한 건
+        var pinned = views.filter(function (v) { return v.pinned; })
+          .sort(function (a, b) { return (a.kind === "notice" ? 0 : 1) - (b.kind === "notice" ? 0 : 1) || String(b.created_at || "").localeCompare(String(a.created_at || "")); });
+        var notice = pinned[0] || null;
+        // 다가오는 모임: 모임 모집 글 가운데 날짜가 오늘 이후·마감 아님·오늘이면 시간이 아직 안 지난 것. 가까운 순 2건 (조건은 content.js isUpcoming)
+        var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now); })
           .sort(function (a, b) { return String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
-          .slice(0, 3);
-        var shown = {};
-        upcoming.forEach(function (v) { shown[v.id] = true; });
-        var latest = views.slice().sort(function (a, b) {
-          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
-        }).filter(function (v) { return !shown[v.id]; }).slice(0, 5);
+          .slice(0, 2);
         var html = "";
-        if (upcoming.length) html += '<div class="group-h">다가오는 모임</div><div class="rows">' + upcoming.map(newsRowHTML).join("") + "</div>";
-        if (latest.length) html += (upcoming.length ? '<div class="group-h">최근 글</div>' : "") + '<div class="rows">' + latest.map(newsRowHTML).join("") + "</div>";
+        if (notice) html += '<div class="group-h">공지</div><div class="rows">' + rowHTML(notice) + "</div>";
+        if (upcoming.length) html += '<div class="group-h">다가오는 모임</div><div class="rows">' + upcoming.map(rowHTML).join("") + "</div>";
+        if (!html) html = '<p class="live-none">고정된 공지와 예정된 모임이 없습니다.</p>';
         host.innerHTML = html;
         host.removeAttribute("aria-busy");
       }
-      function loadPosts() {
-        supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=30")
-          .then(renderNews)
-          .catch(function () { note($("newsList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPosts); });
+      function load() {
+        supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=40")
+          .then(render)
+          .catch(function () { note($("liveList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", load); });
       }
-
-      /* ══════════ 2) 장소 기록 — 한줄평이 있는 최근 기록 6곳 ══════════ */
-      function recencyOf(v) {
-        var t = "";
-        v.notes.forEach(function (n) { var d = n.date || (n.created_at || "").slice(0, 10); if (d > t) t = d; });
-        return t || String(v.created_at || "").slice(0, 10);
-      }
-      function placeRowHTML(v, lead) {
-        var line = C.placeLine(v);
-        var meta = [v.areaLabel, v.category, v.priceText].filter(Boolean);
-        var by = [line.by, line.date ? C.dateText(line.date) + " 방문" : ""].filter(Boolean).join(" · ");
-        return '<article class="row' + (lead ? " is-lead" : "") + '">' +
-          '<h3 class="pf-name"><a href="places.html#place-' + v.id + '">' + esc(v.name) + "</a>" +
-            (v.visitCount >= 2 ? '<span class="type-tag">방문 ' + v.visitCount + "회</span>" : "") + "</h3>" +
-          '<p class="pf-meta"><b>' + esc(meta[0]) + "</b> · " + esc(v.category) + " · " + (v.priceLevel ? esc(v.priceText) : '<span class="pf-none">가격 미등록</span>') + "</p>" +
-          (v.menus.length && line.kind === "review" ? '<p class="pf-menu">추천 메뉴 <b>' + esc(v.menus.join(", ")) + "</b></p>" : "") +
-          '<p class="pf-review">' + esc(line.text) + "</p>" +
-          (by ? '<p class="pf-by">' + esc(by) + "</p>" : "") +
-          "</article>";
-      }
-      function renderPlaces(rows) {
-        var host = $("homePlaces");
-        var views = (Array.isArray(rows) ? rows : []).map(C.placeView)
-          .filter(function (v) { return !v.closed && C.placeLine(v).kind !== "empty"; })
-          .sort(function (a, b) { return recencyOf(b).localeCompare(recencyOf(a)) || (b.id - a.id); })
-          .slice(0, 6);
-        if (!views.length) { note(host, "한줄평이 있는 기록이 없습니다. 맛집 페이지에서 다녀온 식당을 등록해 주세요."); $("placesNote").textContent = ""; return; }
-        $("placesNote").textContent = "한줄평이 있는 최근 기록 " + views.length + "곳";
-        host.innerHTML = views.map(function (v, i) { return placeRowHTML(v, i === 0); }).join("");
-        host.removeAttribute("aria-busy");
-      }
-      function loadPlaces() {
-        Promise.all([C.loadCurated(), supaGet("/rest/v1/site_places_v?select=*&order=created_at.desc&limit=100")])
-          .then(function (r) { renderPlaces(r[1]); })
-          .catch(function () { $("placesNote").textContent = ""; note($("homePlaces"), "맛집을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPlaces); });
-      }
-
-      loadPosts();
-      loadPlaces();
+      load();
     })();
   </script>
 

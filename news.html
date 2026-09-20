@@ -116,7 +116,7 @@
     /* ── 글쓰기 / 수정 모달 ── */
     .write-modal { width: min(680px, 100%); }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
-    .field-grid > .is-wide { grid-column: span 2; }
+    .field-grid .is-wide { grid-column: span 2; }     /* 자손 선택자 — display: contents 묶음(.field-group/.type-fields) 안의 항목도 걸린다 */
     select.input { padding-right: 30px; }
     .textarea.is-body { min-height: 150px; }
     .type-fields { display: contents; }
@@ -129,12 +129,12 @@
     #passBackdrop { z-index: 240; }
     @media (max-width: 640px) {
       .field-grid { grid-template-columns: 1fr; }
-      .field-grid > .is-wide { grid-column: span 1; }
+      .field-grid .is-wide { grid-column: span 1; }
     }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=1"></script>
+  <script src="assets/content.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -161,7 +161,7 @@
     <div class="container is-narrow page-head-inner">
       <div>
         <h1 id="pageTitle">소식</h1>
-        <p class="page-lead">공지, 모임 모집, 모임 후기, 정보, 자유 글을 올리는 게시판입니다. 닉네임과 비밀번호만 있으면 글을 쓸 수 있습니다.</p>
+        <p class="page-lead">동네친구들의 공지와 모임 소식을 올리는 게시판입니다.</p>
       </div>
       <div class="page-actions">
         <button class="btn btn-primary" id="heroWriteBtn" type="button">글쓰기</button>
@@ -377,14 +377,21 @@
     };
     const OFFLINE_MSG = "지금은 소식을 불러올 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
-    /* 유형별 입력 항목 — docs/CONTENT_FORMAT.md 2.2 와 같은 키. 서버 정리기(post_meta_clean)가 아는 키만 저장된다 */
-    const TYPE_DESC = {
-      "자유": "제목과 내용만 있으면 됩니다.",
-      "벙 소식": "날짜·시간·장소·인원·비용을 항목으로 적으면 목록과 홈의 다가오는 모임에 그대로 보입니다. 참석 신청은 오픈채팅 공지에서 받습니다.",
-      "후기": "어떤 모임이었는지와 날짜·장소를 항목으로 적고, 후기는 내용에 씁니다.",
-      "정보": "핵심 내용 한 줄과 출처·링크·유효 기간을 항목으로 적습니다.",
-      "공지": "운영진 비밀번호가 필요합니다. 적용 대상·적용일·필요한 행동을 항목으로 적으면 목록 맨 위에 고정됩니다."
-    };
+    /* 유형별 입력 항목 — docs/CONTENT_FORMAT.md 2.2 와 같은 키. 서버 정리기(post_meta_clean)가 아는 키만 저장된다.
+       안내문은 실제로 열리는 항목만 말한다(서버가 이전 형식이면 모집 글의 비용·신청·준비물·상태 칸이 없다).
+       "홈의 다가오는 모임" 조건은 content.js isUpcoming 과 같은 말: 날짜가 오늘 이후, 마감 아님, 가까운 2건 */
+    function typeDesc(cat) {
+      if (cat === "벙 소식") {
+        const items = state.caps >= 2 ? "날짜·시간·장소·인원·비용" : "날짜·시간·장소·인원";
+        return items + "을 항목으로 적으면 목록에 그대로 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+      }
+      return {
+        "자유": "제목과 내용만 있으면 됩니다.",
+        "후기": "어떤 모임이었는지와 날짜·장소를 항목으로 적고, 후기는 내용에 씁니다.",
+        "정보": "핵심 내용 한 줄과 출처·링크·유효 기간을 항목으로 적습니다.",
+        "공지": "운영진 비밀번호가 필요합니다. 적용 대상·적용일·필요한 행동을 항목으로 적으면 목록 맨 위에 고정되고 홈에도 한 건 보입니다."
+      }[cat] || "";
+    }
     const TYPE_FIELDS = {
       "공지": [
         { key: "summary", label: "핵심 안내", type: "text", max: 120, wide: true, ph: "예: 2개월 1회 참여 기준과 정산 시한을 정리했습니다.", hint: "목록에서 제목 아래 한 줄로 보입니다." },
@@ -394,11 +401,11 @@
         { key: "to", label: "종료일", type: "date" }
       ],
       "벙 소식": [
-        { key: "date", label: "모임 날짜", type: "date", hint: "날짜가 있어야 홈의 다가오는 모임에 보입니다." },
+        { key: "date", label: "모임 날짜", type: "date", hint: "오늘 이후 날짜면 홈의 다가오는 모임에 보입니다. 지나면 '지난 모임'으로 표시됩니다." },
         { key: "time", label: "시간", type: "time" },
         { key: "place", label: "장소", type: "text", max: 60, ph: "예: 강남역 3번 출구" },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
-        { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", v2: true },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다. 참석 신청은 오픈채팅에서 받습니다." },
+        { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
         { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
         { key: "bring", label: "준비물 · 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
         { key: "status", label: "모집 상태", type: "select", options: [["", "표시 안 함"], ["recruiting", "모집 중"], ["closed", "마감"]], hint: "모임장이 직접 바꿉니다.", v2: true }
@@ -773,7 +780,7 @@
     function renderTypeFields(cat, meta) {
       const fields = (TYPE_FIELDS[cat] || []).filter((f) => state.caps >= 2 || (cat === "벙 소식" && !f.v2));
       $("typeFields").innerHTML = fields.map(fieldHTML).join("");
-      $("typeDesc").textContent = TYPE_DESC[cat] || "";
+      $("typeDesc").textContent = typeDesc(cat);
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
       $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
       $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
