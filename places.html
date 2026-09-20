@@ -26,151 +26,124 @@
   <script src="assets/icons.js?v=1"></script>
   <style>
     /* ============================================================
-       맛집 목록 v1 — 페이지 전용 (site.css 수정 금지)
+       맛집 — 검색과 비교가 빠른 탐색 화면
+       카드 안에 상자를 겹치지 않는다. 글자 크기와 간격으로 나눈다.
        ============================================================ */
-    .places-toolbar { display: grid; gap: 10px; margin-bottom: 18px; }
-    /* 그리드 칸은 기본값(min-width:auto)이라 속에 든 것이 크면 칸째로 늘어난다.
-       그래서 칩 줄에 overflow-x:auto 를 줘도 줄이 스크롤되는 대신 페이지가
-       통째로 옆으로 밀렸다 — 390px 화면에서 문서 폭이 750px 이 됐다. */
-    .places-toolbar > * { min-width: 0; }
-    .filter-row { display: flex; gap: 6px; min-width: 0; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-    .filter-row::-webkit-scrollbar { display: none; }
-    .filter-chip {
-      display: inline-flex; align-items: center; gap: 6px; flex: none;
-      min-height: 40px; padding: 0 14px; border-radius: var(--r-pill);
-      border: 1px solid var(--line); background: var(--white);
-      color: var(--ink-2); font-size: 13px; font-weight: 800; letter-spacing: -0.02em; cursor: pointer;
-      transition: background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease);
-    }
-    .filter-chip:hover { border-color: var(--line-strong); }
-    .filter-chip.is-active { background: var(--grad-brand); color: #fff; border-color: transparent; }
-    .filter-chip.is-empty {
-      background: var(--offwhite); border-style: dashed; border-color: var(--line-strong);
-      color: var(--gray-2); cursor: default;
-    }
-    /* 개수를 흐리게 두면 대비가 같이 떨어진다 — 색은 site.css 의 .filter-chip .fc-count 가 잡는다 */
-    .fc-count { font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; }
 
-    .places-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .places-count { color: var(--gray); font-size: 13px; font-weight: 800; margin-right: auto; }
-    .sort-row { display: flex; gap: 4px; }
-    .sort-btn {
-      display: inline-flex; align-items: center; min-height: 40px;
-      padding: 0 12px; border-radius: var(--r-pill); border: 0; background: none; cursor: pointer;
-      color: var(--gray); font-size: 13px; font-weight: 800;
-    }
-    .sort-btn.is-active { background: var(--lavender); color: var(--primary); }
-    /* 힌트가 아니라 읽으라고 둔 안내문이다. 캡션 색(--gray)을 쓴다 —
-       --gray-2 는 오프화이트 위에서 4.44:1 로 기준에 살짝 못 미친다. */
-    .price-legend { max-width: 44em; color: var(--gray); font-size: 12px; font-weight: 700; line-height: 1.6; }
+    /* ── 머리: 제목·한 줄·올리기 버튼. 큰 배너는 없다 ── */
+    .places-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 32px 0 20px; }
+    .places-head h1 { margin: 0; font-size: var(--fs-title); font-weight: 700; }
+    .places-head p { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-body); }
 
-    /* ── 목록 ── */
-    .place-list { display: grid; gap: 12px; }
+    /* ── 탐색: 검색 + 필터 + 정렬 + 개수 ── */
+    .explore { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .explore-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .search-box { position: relative; flex: 1 1 260px; min-width: 0; display: flex; align-items: center; }
+    .search-box .ic { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--ink-2); pointer-events: none; }
+    .search-box input {
+      width: 100%; min-height: 44px; padding: 0 14px 0 38px; border-radius: var(--r-btn);
+      border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 16px;
+    }
+    .search-box input::placeholder { color: var(--ink-2); }
+    .search-box input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+    .filter-toggle { display: none; }
+    .filter-panel { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .select {
+      min-height: 44px; padding: 0 34px 0 12px; border-radius: var(--r-btn);
+      border: 1px solid var(--line-strong); background: var(--surface) no-repeat right 10px center; color: var(--ink);
+      font-size: 15px; -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626B63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-size: 16px;
+    }
+    .select.is-on { border-color: var(--brand); color: var(--brand); font-weight: 600; }
+    .select-wrap { display: inline-flex; align-items: center; gap: 6px; }
+    .select-wrap > label { color: var(--ink-2); font-size: 13px; font-weight: 500; white-space: nowrap; }
+    .explore-foot { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+    .places-count { color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
+    .places-note { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
+    .reset-btn { margin-left: auto; }
+    /* 지금 걸린 조건. 누르면 그 조건만 푼다. 알약은 여기(필터)에만 쓴다 */
+    .cond-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .cond-row[hidden] { display: none; }
+    .cond { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px 0 12px; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600; }
+    .cond .ic { width: 14px; height: 14px; }
+
+    @media (max-width: 700px) {
+      .places-head { padding: 24px 0 16px; }
+      .places-head h1 { font-size: 24px; }
+      .places-head p { font-size: 14px; }
+      .places-head .btn { flex: none; }
+      .filter-toggle { display: inline-flex; }
+      .filter-panel { display: none; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+      .filter-panel.is-open { display: grid; grid-template-columns: 1fr; gap: 8px; }
+      .filter-panel .select-wrap { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; }
+      .filter-panel .select { width: 100%; }
+      .reset-btn { margin-left: 0; }
+    }
+
+    /* ── 목록: PC 3열, 중간 2열, 모바일 1열 ── */
+    .place-list { display: grid; gap: 12px; margin-top: 20px; align-items: start; }
     @media (min-width: 700px)  { .place-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 1080px) { .place-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    .place-card {
-      display: flex; flex-direction: column; padding: 16px 17px; border-radius: var(--r-md);
-      border: 1px solid var(--line); background: var(--white); box-shadow: var(--shadow-1);
-    }
-    /* 문 닫은 곳은 카드 전체를 흐리게(opacity) 두고 있었다. 보기에는 '지난 곳' 같았지만
-       그 안의 글자 대비까지 같이 내려가서, '지금은 문 닫았어요' 배지가 2.53:1 까지 떨어졌다.
-       칠한 픽셀에서 잰 값이다. 흐리게 하는 대신 바탕색을 바꾸고 배지를 또렷하게 둔다. */
-    .place-card.is-closed { background: var(--offwhite); border-color: var(--line-strong); }
-    .place-card.is-closed .pc-ic { filter: grayscale(1); opacity: 0.8; }
-    .pc-top { display: flex; align-items: flex-start; gap: 11px; }
-    .pc-ic {
-      display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; flex: none;
-      background: var(--pastel-lavender); color: var(--primary);
-    }
-    .pc-ic .ic { width: 21px; height: 21px; }
-    .pc-name { font-size: 16px; font-weight: 900; letter-spacing: -0.03em; color: var(--deep-1); overflow-wrap: anywhere; }
-    .pc-again {
-      margin-left: auto; flex: none; padding: 3px 9px; border-radius: var(--r-pill);
-      background: var(--grad-brand); color: #fff; font-size: 11px; font-weight: 900; white-space: nowrap;
-    }
-    .pc-metaline { margin-top: 9px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gray); font-size: 13px; font-weight: 700; }
-    /* 가운뎃점은 따로 떨어진 요소가 아니라 뒤따르는 항목에 붙어 있다.
-       별개의 <span>·</span> 으로 두면 줄이 바뀔 때 점만 앞 줄 끝에 남는다. */
-    .pc-m + .pc-m::before { content: ""; display: inline-block; width: 1px; height: 10px; margin-right: 7px; background: currentColor; opacity: 0.34; vertical-align: middle; }
-    .pc-area { color: var(--primary); font-weight: 900; }
-    .pc-note {
-      margin-top: 11px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite);
-      color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; font-weight: 600;
-    }
-    .pc-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
-    /* 이름 앞에 줄표를 찍던 자리. 글자가 아니라 여백과 색으로 구분한다. */
-    .pc-by, .visit-note .pc-by { display: block; margin-top: 4px; }
-    .pc-note.is-empty { background: transparent; border: 1px dashed var(--line-strong); color: var(--gray); }
-    .pc-foot { margin-top: auto; padding-top: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .pc-last { color: var(--gray-2); font-size: 12px; font-weight: 700; margin-right: auto; }
-    .pc-map {
-      display: inline-flex; align-items: center; gap: 5px; min-height: 40px; padding: 0 13px;
-      border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--white);
-      color: var(--primary); font-size: 13px; font-weight: 900; text-decoration: none;
-    }
-    .pc-map:hover { background: var(--lavender); }
-    .pc-more {
-      min-height: 40px; padding: 0 13px; border-radius: var(--r-pill); border: 1px solid var(--line);
-      background: none; color: var(--gray); font-size: 13px; font-weight: 800; cursor: pointer;
-    }
-    .pc-detail { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
-    .visit-row { display: grid; gap: 5px; }
-    .visit-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; font-weight: 800; }
-    .visit-head small { color: var(--gray-2); font-weight: 700; }
-    .visit-note { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.62; font-weight: 600; padding-left: 10px; border-left: 2px solid var(--lavender-2); }
-    .visit-note b { color: var(--gray); font-weight: 800; font-size: 12px; }
-    .closed-tag {
-      margin-left: auto; flex: none; padding: 3px 9px; border-radius: var(--r-pill); white-space: nowrap;
-      background: #fff; border: 1px solid var(--line-strong); color: var(--ink-2); font-size: 11px; font-weight: 900;
-    }
+    .place-card { display: flex; flex-direction: column; padding: 20px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); }
+    .place-card.is-closed { background: var(--surface-2); }
+    .pc-head { display: flex; align-items: flex-start; gap: 8px; }
+    .pc-name { margin: 0; min-width: 0; flex: 1 1 auto; font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+    .pc-tags { display: flex; gap: 4px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+    .pc-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .pc-tag.is-closed { background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink-2); }
+    .pc-meta { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.5; }
+    .pc-meta .m + .m::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: currentColor; opacity: 0.35; vertical-align: -1px; }
+    .pc-meta .m-area { color: var(--ink); font-weight: 500; }
+    .pc-note { margin: 14px 0 0; color: var(--ink); font-size: var(--fs-body); line-height: 1.6; overflow-wrap: anywhere; }
+    .pc-note.is-empty { color: var(--ink-2); }
+    .pc-by { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
+    .pc-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 16px; }
+    .pc-more { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 4px; color: var(--brand); font-size: var(--fs-sm); font-weight: 600; }
+    .pc-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .pc-more .ic { width: 16px; height: 16px; transition: transform var(--dur-2) var(--ease); }
+    .pc-more[aria-expanded="true"] .ic { transform: rotate(180deg); }
+    .pc-map { margin-left: auto; }
 
-    /* ── 펼친 카드 안의 행동 ── */
-    .pc-detail-actions { display: flex; gap: 7px; flex-wrap: wrap; padding-top: 3px; }
-    /* 지우기는 한줄평 줄 끝에 조용히 붙는다. 실수로 누르기엔 작고,
-       찾으려 보면 보이는 크기다 — 남의 글까지 지워지는 버튼이 아니라
-       비밀번호를 다시 묻기 때문에 눈에 띄게 둘 이유가 없다. */
-    .note-del {
-      margin-left: 4px; padding: 1px 6px; border: 0; border-radius: var(--r-pill);
-      background: none; color: var(--gray-2); font-size: 11px; font-weight: 800; cursor: pointer;
-    }
-    .note-del:hover { background: rgba(192, 57, 43, 0.08); color: var(--danger); }
+    /* 펼친 안쪽: 한줄평 목록은 선으로만 나눈다 */
+    .pc-detail { margin-top: 12px; border-top: 1px solid var(--line); }
+    .visit-row { padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .visit-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: var(--fs-caption); }
+    .visit-head b { color: var(--ink); font-weight: 600; }
+    .visit-note { margin: 4px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.6; overflow-wrap: anywhere; }
+    .visit-empty { padding: 12px 0; color: var(--ink-2); font-size: var(--fs-sm); }
+    .visit-vote { padding: 10px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .note-del { margin-left: 6px; padding: 2px 6px; border-radius: var(--r-xs); color: var(--ink-2); font-size: 12px; }
+    .note-del:hover { background: var(--danger-soft); color: var(--danger); }
+    .pc-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; }
 
-    /* ── 폼 공통 (소식과 같은 모양) ── */
+    /* 불러오는 중 */
+    .place-skel { min-height: 190px; }
+    .place-skel .skeleton { display: block; }
+
+    /* ── 폼 공통 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field { display: grid; gap: 7px; align-content: start; }
+    .field { display: grid; gap: 6px; align-content: start; }
     .field.is-wide { grid-column: span 2; }
-    .field label { color: var(--ink-2); font-size: 13px; font-weight: 800; }
-    .field label small { color: var(--gray-2); font-size: 11px; font-weight: 800; }
-    .field-hint { color: var(--gray-2); font-size: 12px; font-weight: 700; line-height: 1.55; }
-    .input, .textarea {
-      width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
-      box-shadow: inset 0 1px 2px rgba(61, 0, 85, 0.03);
-      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
-    }
-    .input { min-height: 46px; padding: 0 14px; border-radius: 13px; font-weight: 700; }
-    select.input { padding-right: 34px; }
-    .textarea { min-height: 84px; resize: vertical; padding: 13px 14px; border-radius: 15px; line-height: 1.6; font-weight: 600; }
-    .input:focus, .textarea:focus { border-color: rgba(95, 0, 128, 0.42); box-shadow: 0 0 0 4px rgba(95, 0, 128, 0.08); }
-    .check-line {
-      display: flex; align-items: center; gap: 9px; min-height: 46px; padding: 0 14px;
-      border: 1px solid var(--line); border-radius: 13px; background: var(--offwhite);
-      color: var(--ink-2); font-size: 13px; font-weight: 800; cursor: pointer;
-    }
-    .check-line input { width: 18px; height: 18px; accent-color: var(--primary); flex: none; }
+    .field label { color: var(--ink); font-size: 14px; font-weight: 600; }
+    .field label small { color: var(--ink-2); font-size: 12px; font-weight: 500; }
+    .field-hint { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+    .input, .textarea { width: 100%; border: 1px solid var(--line-strong); outline: none; background: var(--surface); color: var(--ink); font-size: 16px; }
+    .input { min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); }
+    select.input { padding-right: 30px; }
+    .textarea { min-height: 84px; resize: vertical; padding: 10px 12px; border-radius: var(--r-btn); line-height: 1.6; }
+    .input:focus, .textarea:focus { border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: 1px; }
+    .check-line { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--surface); color: var(--ink); font-size: 15px; cursor: pointer; }
 
-    /* ── 모달 (모바일: 풀시트) ── */
+    /* ── 모달 (모바일: 아래에서 올라오는 시트) ── */
     .place-modal { width: min(620px, 100%); }
     .note-modal { width: min(500px, 100%); }
     #noteBackdrop { z-index: 240; }
     .modal-danger { margin-right: auto; }
     @media (max-width: 640px) {
       .modal-backdrop { padding: 0; place-items: end stretch; }
-      .modal-backdrop .modal {
-        width: 100%; max-width: none; max-height: 92dvh;
-        border-radius: 26px 26px 0 0;
-        padding-bottom: calc(22px + env(safe-area-inset-bottom));
-      }
+      .modal-backdrop .modal { width: 100%; max-width: none; max-height: 92dvh; border-radius: 16px 16px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
       .field-grid { grid-template-columns: 1fr; }
       .field.is-wide { grid-column: span 1; }
       .modal-foot { flex-direction: column-reverse; }
@@ -195,53 +168,70 @@
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab is-active" href="places.html" aria-current="page">맛집</a>
       </nav>
-      <div class="topnav-visits" id="visitBox" hidden title="방문자 수, 오늘과 누적">
-        <span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        <span class="tv-cell"><i>TODAY</i><b id="visitToday">0</b></span>
-        <span class="tv-sep" aria-hidden="true"></span>
-        <span class="tv-cell"><i>TOTAL</i><b id="visitTotal">0</b></span>
-      </div>
-      <span class="topnav-page" aria-hidden="true">맛집</span>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
     </div>
   </header>
-  <section class="hero-band is-compact" aria-labelledby="heroTitle">
-    <div class="container">
-      <span class="hero-kicker"><i></i>벙에서 진짜 가봤던 곳</span>
-      <h1 class="hero-title" id="heroTitle">우리가 다녀온 맛집</h1>
-      <p class="hero-sub">다녀온 곳은 누구나 올릴 수 있어요. 가보지 않은 곳은 올리지 않아요.</p>
-      <div class="hero-actions">
-        <button class="btn btn-hero is-lg" type="button" id="heroAddBtn"><svg class="ic is-sm" aria-hidden="true"><use href="#i-utensils"/></svg> 맛집 올리기</button>
-        <a class="btn btn-glass is-lg" href="news.html">후기 보러 가기</a>
-      </div>
-    </div>
-  </section>
-
   <main id="main" class="page-main">
-    <section class="section">
-      <div class="container">
-
-        <div class="places-toolbar">
-          <!-- 필터는 등록된 곳이 15곳을 넘을 때만 켜진다.
-               5곳짜리 목록 위의 필터는 기능이 아니라 잡음이다. -->
-          <div id="filterWrap" hidden>
-            <div class="filter-row" id="areaRow" role="group" aria-label="지역으로 거르기"></div>
-            <div class="filter-row" id="catRow" role="group" aria-label="종류로 거르기" style="margin-top:6px"></div>
-          </div>
-          <div class="places-meta">
-            <span class="places-count" id="placesCount" aria-live="polite">불러오는 중…</span>
-            <div class="sort-row" id="sortRow" role="group" aria-label="정렬">
-              <button class="sort-btn is-active" type="button" data-sort="recent">최근 다녀온 순</button>
-              <button class="sort-btn" type="button" data-sort="again">또 간 순</button>
-              <button class="sort-btn" type="button" data-sort="price">가격 낮은 순</button>
-            </div>
-            <button class="btn btn-primary is-sm" type="button" id="addBtn">＋ 맛집 올리기</button>
-          </div>
-          <!-- 올릴 때 고르는 말(1만원대)과 여기 적힌 말(1~2만원)이 서로 달라서 같은 칸인지 헷갈렸다 -->
-          <p class="price-legend">가격대는 1인 기준이고 술값은 빼고 봐요.<br />
-            <span class="sep-row"><span>₩ 1만원 이하</span><span>₩₩ 1만원대</span><span>₩₩₩ 2만원대</span><span>₩₩₩₩ 3만원 이상</span></span></p>
+    <section class="container" aria-labelledby="heroTitle">
+      <div class="places-head">
+        <div>
+          <h1 id="heroTitle">우리가 다녀온 맛집</h1>
+          <p>함께 다녀온 곳과 친구들의 한줄평을 모았어요.</p>
         </div>
+        <button class="btn btn-primary" type="button" id="heroAddBtn">맛집 올리기</button>
+      </div>
 
-        <div class="place-list" id="placeList"></div>
+      <!-- 탐색. 모바일에서는 검색과 '필터' 버튼만 보이고, 고른 조건이 알약으로 남는다. -->
+      <div class="explore">
+        <div class="explore-row">
+          <label class="search-box">
+            <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+            <input id="placeSearch" type="search" placeholder="가게 이름이나 한줄평으로 찾기" aria-label="맛집 검색" autocomplete="off" />
+          </label>
+          <button class="btn btn-secondary filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
+            필터 <svg class="ic is-sm" aria-hidden="true"><use href="#i-chevDown"/></svg>
+          </button>
+          <div class="filter-panel" id="filterPanel">
+            <span class="select-wrap"><label for="fArea">지역</label><select id="fArea" class="select" aria-label="지역"></select></span>
+            <span class="select-wrap"><label for="fCat">종류</label><select id="fCat" class="select" aria-label="음식 종류"></select></span>
+            <span class="select-wrap"><label for="fPrice">가격</label>
+              <select id="fPrice" class="select" aria-label="1인 가격대">
+                <option value="전체">가격 전체</option>
+                <option value="1">1인 1만원 이하</option>
+                <option value="2">1인 1만원대</option>
+                <option value="3">1인 2만원대</option>
+                <option value="4">1인 3만원 이상</option>
+              </select></span>
+            <span class="select-wrap"><label for="fSort">정렬</label>
+              <select id="fSort" class="select" aria-label="정렬">
+                <option value="recent">최근 다녀온 순</option>
+                <option value="again">또 간 순</option>
+                <option value="price">가격 낮은 순</option>
+                <option value="name">이름순</option>
+              </select></span>
+          </div>
+        </div>
+        <div class="cond-row" id="condRow" hidden></div>
+        <div class="explore-foot">
+          <span class="places-count" id="placesCount" aria-live="polite">불러오는 중</span>
+          <span class="places-note">가격은 1인 기준, 술값은 뺐어요</span>
+          <button class="btn btn-secondary is-sm reset-btn" type="button" id="resetBtn" hidden>조건 초기화</button>
+        </div>
+      </div>
+
+      <div class="place-list" id="placeList" aria-live="polite" aria-busy="true"></div>
+    </section>
+
+    <!-- ── 맺음 밴드 ── -->
+    <section class="band cta-band" aria-labelledby="ctaTitle">
+      <div class="container">
+        <span class="cta-rule" aria-hidden="true"></span>
+        <h2 id="ctaTitle">다녀온 곳,<br />한 곳만 올려주세요</h2>
+        <p>가본 사람이 쓴 한 줄이 다음 벙 장소가 돼요. 가보지 않은 곳은 올리지 않아요.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" data-add="1">맛집 올리기</button>
+          <a class="btn btn-secondary" href="news.html">후기 보러 가기</a>
+        </div>
       </div>
     </section>
   </main>
@@ -271,6 +261,7 @@
         </nav>
       </div>
       <div class="footer-bottom">
+        <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
         <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
         <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
       </div>
@@ -320,10 +311,10 @@
           <label for="pPrice">가격대 <small>선택</small></label>
           <select id="pPrice" class="input">
             <option value="">모르겠어요</option>
-            <option value="1">₩ 1인 1만원 이하</option>
-            <option value="2">₩₩ 1인 1만원대</option>
-            <option value="3">₩₩₩ 1인 2만원대</option>
-            <option value="4">₩₩₩₩ 1인 3만원 이상</option>
+            <option value="1">1인 1만원 이하</option>
+            <option value="2">1인 1만원대</option>
+            <option value="3">1인 2만원대</option>
+            <option value="4">1인 3만원 이상</option>
           </select>
         </div>
         <div class="field">
@@ -506,12 +497,11 @@
         return '<svg class="ic' + (cls ? " " + cls : "") + '" aria-hidden="true"><use href="#i-' +
                (name || "utensils") + '"/></svg>';
       }
-      /* 필터를 켜는 문턱. 이보다 적으면 한 줄 목록이 더 읽기 쉽다. */
-      var FILTER_MIN = 15;
       var NICK_KEY = "excer_news_nick";      // 소식과 같은 닉네임을 쓴다
       var PASS_KEY = "excer_news_pass";      // 글 열쇠도 같은 것을 쓴다
 
-      var state = { all: [], area: "전체", cat: "전체", sort: "recent", openId: null, busy: false, editId: null };
+      var state = { all: [], q: "", area: "전체", cat: "전체", price: "전체", sort: "recent",
+                    openId: null, busy: false, editId: null, loaded: false };
 
       function esc(v) {
         return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
@@ -576,10 +566,9 @@
         if (mid <= 30000) return 3;
         return 4;
       }
+      // 기호(₩₩₩)는 읽는 사람이 해석해야 한다. 말로 적는다.
       function priceText(lv) {
-        if (!lv) return "";
-        return ["", "₩", "₩₩", "₩₩₩", "₩₩₩₩"][lv] + " " +
-               ["", "1인 1만원 이하", "1인 1만원대", "1인 2만원대", "1인 3만원 이상"][lv];
+        return ["가격 정보 없음", "1인 1만원 이하", "1인 1만원대", "1인 2만원대", "1인 3만원 이상"][lv] || "가격 정보 없음";
       }
       function againVote(p) {
         var n = notesOf(p);
@@ -602,11 +591,21 @@
       }
 
       /* ── 고르기·정렬 ── */
+      function norm(v) { return String(v == null ? "" : v).toLowerCase().replace(/\s+/g, ""); }
+      function matchesQuery(p, q) {
+        if (!q) return true;
+        var hay = [p.name, p.area, p.area_detail, p.category, p.price_note, p.author]
+          .concat(notesOf(p).map(function (n) { return (n.text || "") + " " + (n.by || ""); }))
+          .map(norm).join(" ");
+        return hay.indexOf(q) >= 0;
+      }
       function visible() {
+        var q = norm(state.q);
         var list = state.all.filter(function (p) {
           if (state.area !== "전체" && p.area !== state.area) return false;
           if (state.cat !== "전체" && p.category !== state.cat) return false;
-          return true;
+          if (state.price !== "전체" && String(priceLevel(p)) !== state.price) return false;
+          return matchesQuery(p, q);
         });
         list.sort(function (a, b) {
           // 문 닫은 곳은 지우지 않고 맨 뒤로 보낸다 — 다녀온 기록은 남을 가치가 있다
@@ -617,118 +616,151 @@
           } else if (state.sort === "price") {
             var pa = priceLevel(a) || 9, pb = priceLevel(b) || 9;   // 미기입은 맨 뒤
             if (pa !== pb) return pa - pb;
+          } else if (state.sort === "name") {
+            return String(a.name || "").localeCompare(String(b.name || ""), "ko");
           }
           return String(b.last_visit || b.created_at || "").localeCompare(String(a.last_visit || a.created_at || ""));
         });
         return list;
       }
+      function hasCondition() {
+        return !!state.q.trim() || state.area !== "전체" || state.cat !== "전체" || state.price !== "전체";
+      }
+      function conditionList() {
+        var out = [];
+        if (state.q.trim()) out.push({ k: "q", label: '"' + state.q.trim() + '"' });
+        if (state.area !== "전체") out.push({ k: "area", label: state.area });
+        if (state.cat !== "전체") out.push({ k: "cat", label: state.cat });
+        if (state.price !== "전체") out.push({ k: "price", label: priceText(Number(state.price)) });
+        return out;
+      }
+      function clearCondition(k) {
+        if (k === "q") { state.q = ""; $("placeSearch").value = ""; }
+        if (k === "area") { state.area = "전체"; $("fArea").value = "전체"; }
+        if (k === "cat") { state.cat = "전체"; $("fCat").value = "전체"; }
+        if (k === "price") { state.price = "전체"; $("fPrice").value = "전체"; }
+      }
+      function resetAll() { ["q", "area", "cat", "price"].forEach(clearCondition); render(); }
 
-      function countFor(kind, value) {
-        return state.all.filter(function (p) {
-          return value === "전체" || (kind === "area" ? p.area : p.category) === value;
-        }).length;
+      /* 셀렉트 채우기 — 지역·종류는 등록된 것과 상관없이 전부 보인다 */
+      function fillSelects() {
+        $("fArea").innerHTML = '<option value="전체">지역 전체</option>' +
+          AREAS.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("");
+        $("fCat").innerHTML = '<option value="전체">종류 전체</option>' +
+          CATS.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("");
       }
-      function chipHTML(kind, value, label, ic) {
-        var n = countFor(kind, value);
-        var on = (kind === "area" ? state.area : state.cat) === value;
-        // 0인 칩은 숨기지 않고 남겨 둔다. 숨기면 '우리 동네가 아예 없네'라는
-        // 정보 자체가 사라지고, 데이터가 늘 때마다 칩이 나타났다 사라져 들썩인다.
-        // 다만 눌러 봐야 빈 화면이라 끈 상태로 둔다 — 흐리게(opacity)만 하면
-        // 글자 대비가 같이 떨어지고, 읽는 사람에게 못 누른다는 것도 전해지지 않는다.
-        // 지금 켜져 있는 칩은 끄지 않는다. 끄면 다시 '전체'로 돌아올 방법이 없다.
-        var dead = !n && !on;
-        return '<button type="button" class="filter-chip' + (on ? " is-active" : "") + (dead ? " is-empty" : "") +
-          '"' + (dead ? " disabled" : "") + ' data-kind="' + kind + '" data-value="' + esc(value) + '" aria-pressed="' + on + '">' +
-          (ic ? icon(ic, "is-sm") + " " : "") + esc(label) + '<span class="fc-count">' + n + "</span></button>";
+      function syncSelectLook() {
+        [["fArea", state.area], ["fCat", state.cat], ["fPrice", state.price]].forEach(function (x) {
+          $(x[0]).classList.toggle("is-on", x[1] !== "전체");
+        });
       }
-      function renderFilters() {
-        if (state.all.length < FILTER_MIN) { $("filterWrap").hidden = true; return; }
-        $("filterWrap").hidden = false;
-        $("areaRow").innerHTML = [chipHTML("area", "전체", "전체")]
-          .concat(AREAS.map(function (a) { return chipHTML("area", a, a); })).join("");
-        $("catRow").innerHTML = [chipHTML("cat", "전체", "전체")]
-          .concat(CATS.map(function (c) { return chipHTML("cat", c, c, CAT_ICON[c]); })).join("");
+      /* 지금 걸린 조건을 알약으로. 모바일에서 패널이 닫혀 있어도 무엇이 걸렸는지 보인다. */
+      function renderConditions() {
+        var list = conditionList();
+        var row = $("condRow");
+        row.hidden = !list.length;
+        row.innerHTML = list.map(function (c) {
+          return '<button type="button" class="cond" data-clear="' + c.k + '" aria-label="' + esc(c.label) + ' 조건 풀기">' +
+            esc(c.label) + icon("close", "is-sm") + "</button>";
+        }).join("");
+        $("resetBtn").hidden = !list.length;
+        syncSelectLook();
       }
 
-      /* ── 카드 ── */
+      /* ── 카드 ──
+         위에서부터 이름 → 지역·종류·가격 → 한줄평 → 누가 언제. 상자는 겹치지 않는다. */
       function cardHTML(p) {
         var open = state.openId === p.id;
         var lv = priceLevel(p), vc = visitCount(p);
         var notes = notesOf(p), latest = notes[0] || null, vote = againVote(p);
-        var meta = ['<span class="pc-area">' + esc(p.area) + "</span>"];
-        if (p.area_detail) meta.push(esc(p.area_detail));
-        if (p.category) meta.push(esc(p.category));
-        if (lv) meta.push(esc(priceText(lv)) + (p.price_note ? " (" + esc(p.price_note) + ")" : ""));
-        meta = meta.map(function (m) { return '<span class="pc-m">' + m + "</span>"; });
+
+        var meta = ['<span class="m m-area">' + esc(p.area) + (p.area_detail ? " " + esc(p.area_detail) : "") + "</span>"];
+        if (p.category) meta.push('<span class="m">' + esc(p.category) + "</span>");
+        meta.push('<span class="m">' + esc(priceText(lv)) + (lv && p.price_note ? " (" + esc(p.price_note) + ")" : "") + "</span>");
+
+        var tags = [];
+        if (p.closed) tags.push('<span class="pc-tag is-closed">문 닫음</span>');
+        else if (vc >= 2) tags.push('<span class="pc-tag">또 갔어요 ' + vc + "번</span>");
+
+        var by = [];
+        if (latest && latest.by) by.push(esc(latest.by));
+        if (latest && latest.date) by.push(esc(dateText(latest.date)));
 
         var detail = "";
         if (open) {
           var rows = notes.map(function (n) {
             var head = [];
+            if (n.by) head.push("<b>" + esc(n.by) + "</b>");
             if (n.date) head.push("<span>" + esc(dateText(n.date)) + "</span>");
-            if (n.per_person) head.push("<small>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</small>");
-            if (n.again) head.push("<small>또 가고 싶어요</small>");
+            if (n.per_person) head.push("<span>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</span>");
+            if (n.again) head.push("<span>또 가고 싶어요</span>");
             return '<div class="visit-row">' +
-              (head.length ? '<div class="visit-head">' + head.join("") + "</div>" : "") +
-              '<div class="visit-note">' + esc(n.text) +
-              (n.by ? ' <b class="pc-by">' + esc(n.by) + "</b>" : "") +
-              ' <button type="button" class="note-del" data-delnote="' + n.id + '">지우기</button></div></div>';
+              '<div class="visit-head">' + head.join("") +
+              ' <button type="button" class="note-del" data-delnote="' + n.id + '">지우기</button></div>' +
+              '<p class="visit-note">' + esc(n.text) + "</p></div>";
           }).join("");
           detail = '<div class="pc-detail">' +
-            (rows || '<div class="visit-note">아직 한줄평이 없어요</div>') +
-            (vote ? '<div class="visit-head"><span>또 가고 싶어요 ' + vote.yes + "/" + vote.all + "</span></div>" : "") +
+            (rows || '<p class="visit-empty">아직 한줄평이 없어요</p>') +
+            (vote ? '<p class="visit-vote">또 가고 싶다는 사람 ' + vote.yes + "명 / " + vote.all + "명</p>" : "") +
             '<div class="pc-detail-actions">' +
             '<button type="button" class="btn btn-primary is-sm" data-note="' + p.id + '">한줄평 남기기</button>' +
-            '<button type="button" class="mini-btn" data-edit="' + p.id + '"><svg class="ic is-sm" aria-hidden="true"><use href="#i-pencil"/></svg> 정보 고치기</button>' +
+            '<button type="button" class="btn btn-secondary is-sm" data-edit="' + p.id + '">정보 고치기</button>' +
             "</div></div>";
         }
 
         return '<article class="place-card' + (p.closed ? " is-closed" : "") + '" id="place-' + p.id + '">' +
-          '<div class="pc-top"><span class="pc-ic ic-tile" aria-hidden="true">' + icon(CAT_ICON[p.category]) + "</span>" +
-          '<div style="min-width:0"><div class="pc-name">' + esc(p.name) + "</div></div>" +
-          /* 문 닫았다는 건 그 가게에 대해 가장 먼저 알아야 할 사실이다.
-             지역·종류·가격 사이에 섞어 두면 눈에 걸리지 않아 이름 옆으로 올렸다. */
-          (p.closed ? '<span class="closed-tag">지금은 문 닫았어요</span>'
-                    : (vc >= 2 ? '<span class="pc-again">또 갔어요 ' + vc + "번</span>" : "")) + "</div>" +
-          '<div class="pc-metaline">' + meta.join("") + "</div>" +
-          /* 한줄평이 없으면 그 자리가 통째로 비어 카드가 망가진 것처럼 보였다.
-             비워 두는 대신 남겨 달라고 청한다. */
-          (latest ? '<div class="pc-note">' + esc(latest.text) +
-            (latest.by ? ' <b class="pc-by">' + esc(latest.by) + "</b>" : "") + "</div>"
-                  : '<div class="pc-note is-empty">아직 한줄평이 없어요. 다녀오셨다면 한 줄 남겨 주세요</div>') +
+          '<div class="pc-head"><h3 class="pc-name">' + esc(p.name) + "</h3>" +
+          (tags.length ? '<span class="pc-tags">' + tags.join("") + "</span>" : "") + "</div>" +
+          '<p class="pc-meta">' + meta.join("") + "</p>" +
+          (latest ? '<p class="pc-note">' + esc(latest.text) + "</p>" : '<p class="pc-note is-empty">아직 한줄평이 없어요</p>') +
+          (by.length ? '<p class="pc-by">' + by.join(" · ") + "</p>" : "") +
           '<div class="pc-foot">' +
-          (p.last_visit ? '<span class="pc-last">마지막 방문 ' + esc(dateText(p.last_visit)) + "</span>" : '<span class="pc-last"></span>') +
-          '<a class="pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer"><svg class="ic is-sm" aria-hidden="true"><use href="#i-map"/></svg> 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
-          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '">' + (open ? "접기" : "자세히") + "</button>" +
+          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '" aria-controls="place-' + p.id + '">' +
+            (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
+          '<a class="btn btn-secondary is-sm pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">' +
+            icon("map", "is-sm") + ' 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
           "</div>" + detail + "</article>";
       }
 
       function emptyHTML() {
-        // 필터 때문에 빈 것과 원래 비어 있는 것은 다른 상태다.
-        if (state.all.length && (state.area !== "전체" || state.cat !== "전체")) {
-          var bits = [];
-          if (state.area !== "전체") bits.push(state.area);
-          if (state.cat !== "전체") bits.push(state.cat);
-          return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
-            "<strong>" + esc(bits.join(" ")) + "에는 아직 기록이 없어요</strong>" +
-            "<p>지역이나 종류를 바꿔볼까요?</p>" +
-            '<button type="button" class="btn btn-secondary is-sm" data-reset="1">필터 풀기 (' + state.all.length + "곳)</button>" +
+        // 조건 때문에 빈 것과 원래 비어 있는 것은 다른 상태다.
+        if (state.all.length && hasCondition()) {
+          var labels = conditionList().map(function (c) { return c.label; }).join(", ");
+          return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
+            "<strong>" + esc(labels) + " 조건에 맞는 곳이 없어요</strong>" +
+            "<p>조건을 바꾸거나 풀어 보세요. 전체 " + state.all.length + "곳이 있어요.</p>" +
+            '<button type="button" class="btn btn-secondary is-sm" data-reset="1">조건 초기화</button>' +
             "</div></div>";
         }
-        return '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
+        return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
           "<strong>아직 다녀온 곳 기록이 없어요</strong>" +
           "<p>벙에서 다녀온 곳을 하나씩 모으는 자리예요. 첫 곳을 올려볼까요?</p>" +
           '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 올리기</button>' +
           "</div></div>";
       }
+      function errorHTML() {
+        return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
+          "<strong>맛집 목록을 불러오지 못했어요</strong><p>연결이 잠깐 끊겼을 수 있어요.</p>" +
+          '<button type="button" class="btn btn-secondary is-sm" data-retry="1">다시 시도</button>' +
+          "</div></div>";
+      }
+      function skeletonHTML() {
+        var one = '<div class="card place-skel" aria-hidden="true">' +
+          '<span class="skeleton skeleton-line is-lg" style="width:56%"></span>' +
+          '<span class="skeleton skeleton-line" style="width:70%;margin-top:12px"></span>' +
+          '<span class="skeleton skeleton-line" style="width:92%;margin-top:18px"></span>' +
+          '<span class="skeleton skeleton-line" style="width:40%;margin-top:10px"></span></div>';
+        return one + one + one;
+      }
 
       function render() {
         var list = visible();
         $("placeList").innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
-        $("placesCount").textContent = state.all.length
-          ? ("전체 " + state.all.length + "곳" + (list.length !== state.all.length ? ", 지금 " + list.length + "곳" : ""))
-          : "아직 등록된 곳이 없어요";
-        renderFilters();
+        $("placeList").removeAttribute("aria-busy");
+        $("placesCount").textContent = !state.all.length
+          ? "아직 등록된 곳이 없어요"
+          : (hasCondition() ? list.length + "곳 (전체 " + state.all.length + "곳)" : "전체 " + state.all.length + "곳");
+        renderConditions();
       }
 
       /* 지역·종류 이름의 가운뎃점을 빗금으로 바꿨다(sql/2026-09-23-places-slash.sql).
@@ -737,6 +769,7 @@
       function slashName(v) { return String(v == null ? "" : v).replace(/·/g, "/"); }
 
       function load() {
+        if (!state.loaded) { $("placeList").innerHTML = skeletonHTML(); $("placeList").setAttribute("aria-busy", "true"); }
         return api("/rest/v1/site_places_v?select=*")
           .then(function (rows) {
             state.all = (Array.isArray(rows) ? rows : []).map(function (r) {
@@ -744,17 +777,17 @@
               r.category = slashName(r.category);
               return r;
             });
+            state.loaded = true;
             render();
           })
           .catch(function () {
-            $("placeList").innerHTML = '<div class="card empty-card" style="grid-column:1/-1"><div class="empty-state">' +
-              "<strong>맛집 목록을 불러오지 못했어요</strong><p>잠시 뒤 다시 열어봐 주세요.</p></div></div>";
-            $("placesCount").textContent = "";
-            $("filterWrap").hidden = true;
+            $("placeList").innerHTML = errorHTML();
+            $("placeList").removeAttribute("aria-busy");
+            $("placesCount").textContent = "불러오지 못했어요";
+            $("resetBtn").hidden = true;
           });
       }
 
-      /* ── 가게 등록·수정 ── */
       function openPlaceModal(id) {
         state.editId = id || null;
         var p = id ? state.all.filter(function (x) { return x.id === id; })[0] : null;
@@ -880,23 +913,35 @@
         if ((t = e.target.closest("[data-edit]")))   { openPlaceModal(Number(t.getAttribute("data-edit"))); return; }
         if ((t = e.target.closest("[data-delnote]"))){ deleteNote(t.getAttribute("data-delnote")); return; }
         if (e.target.closest("[data-add]"))          { openPlaceModal(null); return; }
-        if (e.target.closest("[data-reset]"))        { state.area = "전체"; state.cat = "전체"; render(); }
+        if (e.target.closest("[data-reset]"))        { resetAll(); return; }
+        if (e.target.closest("[data-retry]"))        { state.loaded = false; load(); return; }
       });
-      $("filterWrap").addEventListener("click", function (e) {
-        var chip = e.target.closest(".filter-chip");
-        if (!chip) return;
-        if (chip.getAttribute("data-kind") === "area") state.area = chip.getAttribute("data-value");
-        else state.cat = chip.getAttribute("data-value");
+      document.addEventListener("click", function (e) {
+        var t = e.target.closest("[data-add]");
+        if (t && !$("placeList").contains(t)) openPlaceModal(null);
+      });
+      $("condRow").addEventListener("click", function (e) {
+        var t = e.target.closest("[data-clear]");
+        if (!t) return;
+        clearCondition(t.getAttribute("data-clear"));
         render();
       });
-      $("sortRow").addEventListener("click", function (e) {
-        var b = e.target.closest("[data-sort]");
-        if (!b) return;
-        state.sort = b.getAttribute("data-sort");
-        [].forEach.call($("sortRow").children, function (el) { el.classList.toggle("is-active", el === b); });
-        render();
+      $("resetBtn").addEventListener("click", resetAll);
+      // 검색은 글자를 멈춘 뒤에 한 번만 거른다
+      var qTimer = null;
+      $("placeSearch").addEventListener("input", function () {
+        clearTimeout(qTimer);
+        qTimer = setTimeout(function () { state.q = $("placeSearch").value; render(); }, 160);
       });
-      $("addBtn").addEventListener("click", function () { openPlaceModal(null); });
+      $("placeSearch").addEventListener("search", function () { state.q = $("placeSearch").value; render(); });
+      $("fArea").addEventListener("change", function () { state.area = this.value; render(); });
+      $("fCat").addEventListener("change", function () { state.cat = this.value; render(); });
+      $("fPrice").addEventListener("change", function () { state.price = this.value; render(); });
+      $("fSort").addEventListener("change", function () { state.sort = this.value; render(); });
+      $("filterToggle").addEventListener("click", function () {
+        var open = $("filterPanel").classList.toggle("is-open");
+        this.setAttribute("aria-expanded", String(open));
+      });
       $("heroAddBtn").addEventListener("click", function () { openPlaceModal(null); });
       $("pClose").addEventListener("click", closePlaceModal);
       $("pCancel").addEventListener("click", closePlaceModal);
@@ -913,6 +958,7 @@
         if (!$("placeBackdrop").hidden) closePlaceModal();
       });
 
+      fillSelects();
       load();
     })();
   </script>
