@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=8" />
-  <script src="assets/chat-parser.js?v=2"></script>
+  <script src="assets/chat-parser.js?v=3"></script>
 
   <style>
     /* ============================================================
@@ -686,7 +686,7 @@
       /* 현재 방 멤버 명단으로 "그 사람만 남기기".
          닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. */
       function normName(s) { return String(s || "").trim().replace(/\s+/g, " "); }
-      function firstTok(s) { return normName(s).split(" ")[0].toLowerCase(); }
+      function firstTok(s) { return normName(s).split(/[\s/·|,]+/)[0].toLowerCase(); }   // 파서의 headOf 와 같은 구분자(공백·/·,)
       function applyRoster() {
         const raw = $("rosterInput").value || "";
         const lines = raw.split(/[\n,]+/).map(normName).filter(Boolean);

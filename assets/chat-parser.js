@@ -119,14 +119,22 @@
         if (lm) who = lm[1].trim();
       }
       if (kind && dateStr) {
+        // 시각이 없는 줄(PC 형식의 입장·퇴장)은 바로 앞 메시지의 시각을 이어받는다 — 정오(12시)로 꾸미면
+        // 같은 날 저녁 메시지보다 앞으로 정렬돼 '나감' 판정과 환영 창(60분)이 어긋난다
+        var h = hour == null ? (prevTime ? prevTime.hour : 12) : hour;
+        var mi = min == null ? (prevTime ? prevTime.min : 0) : +min;
         messages.push({
-          date: dateStr, hour: hour == null ? 12 : hour, min: min == null ? 0 : +min,
+          date: dateStr, hour: h, min: mi,
           weekday: weekdayOf(dateStr),
           name: who, kind: kind, len: 0, text: ""
         });
+      } else if (kind) {
+        // 날짜를 아직 모르는 줄(파일 맨 앞)은 사건으로 남길 수 없으니 개수도 세지 않는다 — meta 와 사건 수가 어긋나지 않게
+        if (kind === "join") meta.joins -= 1; else meta.leaves -= 1;
       }
       last = null; // 시스템 행 뒤의 프리픽스 없는 줄은 이어붙이지 않음
     }
+    var prevTime = null; // 마지막으로 읽은 메시지의 시각(PC 형식 시스템 줄에 물려줌)
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
@@ -149,7 +157,8 @@
       if (m) {
         var d1 = toDateStr(m[1], m[2], m[3]);
         curDate = d1; counts.android += 1;
-        pushMsg(d1, toHour24(m[4], m[5]), m[6], m[7], m[8]);
+        prevTime = { hour: toHour24(m[4], m[5]), min: +m[6] };
+        pushMsg(d1, prevTime.hour, m[6], m[7], m[8]);
         continue;
       }
 
@@ -158,7 +167,8 @@
       if (m) {
         var d2 = toDateStr(m[1], m[2], m[3]);
         curDate = d2; counts.ios += 1;
-        pushMsg(d2, toHour24(m[4], m[5]), m[6], m[7], m[8]);
+        prevTime = { hour: toHour24(m[4], m[5]), min: +m[6] };
+        pushMsg(d2, prevTime.hour, m[6], m[7], m[8]);
         continue;
       }
 
@@ -166,24 +176,30 @@
       m = line.match(RE_PC_MSG);
       if (m && curDate) {
         counts.pc += 1;
-        pushMsg(curDate, toHour24(m[2], m[3]), m[4], m[1], m[5]);
+        prevTime = { hour: toHour24(m[2], m[3]), min: +m[4] };
+        pushMsg(curDate, prevTime.hour, m[4], m[1], m[5]);
         continue;
       }
 
-      // 6) Android/iOS 시스템 행 (날짜+시각 프리픽스는 있지만 " : " 가 없는 행)
+      // 6) Android/iOS 시스템 행 (날짜+시각 프리픽스는 있지만 " : " 가 없는 행).
+      //    본문이 입장·퇴장·그 밖의 시스템 문구가 아니면(예: 공지 본문 둘째 줄이 날짜로 시작) 시스템 줄이 아니라 이어지는 본문이다
       m = t.match(RE_ANDROID_SYS) || t.match(RE_IOS_SYS);
       if (m) {
-        var d3 = toDateStr(m[1], m[2], m[3]);
-        curDate = d3;
-        pushSystem(d3, toHour24(m[4], m[5]), m[6], m[7] || "");
-        continue;
+        var sysBody = m[7] || "";
+        if (RE_JOIN.test(sysBody) || RE_LEAVE.test(sysBody) || RE_SYS_ETC.test(sysBody) || !last) {
+          var d3 = toDateStr(m[1], m[2], m[3]);
+          curDate = d3;
+          pushSystem(d3, toHour24(m[4], m[5]), m[6], sysBody);
+          continue;
+        }
+        // 아니면 아래 9) 로 흘러가 직전 메시지에 이어 붙는다
       }
 
       // 7) 날짜만 있는 행 (날짜 변경선)
       m = t.match(RE_DATE_ONLY);
       if (m) { curDate = toDateStr(m[1], m[2], m[3]); last = null; continue; }
 
-      // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등)
+      // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등) — 시각은 직전 메시지 것을 잇는다
       if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, null, t); continue; }
       if (RE_SYS_ETC.test(t)) { last = null; continue; }
 
@@ -452,6 +468,23 @@
       return true;
     };
 
+    /* 표시 이름 = 앞 토막, 동명이인은 숫자(민지, 민지2). 번호는 원본 이름의 사전순으로 정해 두어
+       같은 자료를 다시 집계해도 같은 사람에게 같은 번호가 붙는다 — 발행 화면의 체크(표시 이름으로 보냄)가 늘 그 사람을 가리키게 */
+    var display = Object.create(null);
+    (function () {
+      var byHead = Object.create(null);
+      (allMessages || []).forEach(function (m) {
+        if (!m || !m.name || m.kind === "join" || m.kind === "leave") return;
+        if (display[m.name] != null) return;
+        display[m.name] = "";
+        var h = headOf(m.name);
+        (byHead[h] = byHead[h] || []).push(m.name);
+      });
+      Object.keys(byHead).forEach(function (h) {
+        byHead[h].sort().forEach(function (raw, i) { display[raw] = i ? h + (i + 1) : h; });
+      });
+    })();
+
     var msgs = [];       // 일반 메시지(집계 대상)
     var joinEvents = []; // 범위 내 입장 이벤트 (이름은 welcome 판정에만 쓰고 미출력)
     var leaveCount = 0;  // 범위 내 퇴장·강퇴 수 (개수만 — 누가 나갔는지는 싣지 않는다)
@@ -459,7 +492,7 @@
       if (!m || !m.date || !inRange(m.date)) return;
       if (m.kind === "join") { joinEvents.push(m); return; }
       if (m.kind === "leave") { leaveCount += 1; return; } // 공개 통계 미포함(운영 민감 정보)
-      if (exclude[m.name] || exclude[headOf(m.name)]) return;
+      if (exclude[m.name] || exclude[display[m.name] || headOf(m.name)]) return;   // 원본 이름으로도, 표시 이름으로도
       msgs.push(m);
     });
 
@@ -479,8 +512,8 @@
         days: [], members: [], heatmap: grid7x24(),
         keywords: [], weeklyKeywords: [],
         emojiStats: { laugh: 0, cheer: 0, heart: 0 },
-        newMembers: { count: joinEvents.length, avgFirstWeekMsgs: 0 },
-        meta: { format: opts.format || "unknown", files: opts.files || 1, totalMessages: 0 }
+        newMembers: { count: joinEvents.length, avgFirstWeekMsgs: 0, newcomers: 0, leaves: leaveCount },
+        meta: { format: opts.format || "unknown", files: opts.files || 1, totalMessages: 0, truncated: { days: false, members: false } }
       };
     }
 
@@ -490,7 +523,14 @@
     var span = dayDiff(from, to) + 1;
     if (span < 1) span = 1;
     var truncatedDays = span > 800;
-    if (truncatedDays) span = 800; // 방어: 비정상 범위. 잘리면 meta.truncated.days 로 알린다(조용히 자르지 않는다)
+    if (truncatedDays) {
+      // 방어: 비정상 범위. 최근 800일만 남기고 앞부분을 버린다 — 잘린 메시지는 합계에서도 빠져 네 가지 합(메타·일별·멤버)이 늘 같다.
+      // 잘렸다는 사실은 meta.truncated.days 로 알린다(조용히 자르지 않는다)
+      span = 800;
+      from = addDays(to, -799);
+      msgs = msgs.filter(function (m) { return m.date >= from; });
+      joinEvents = joinEvents.filter(function (j) { return j.date >= from; });
+    }
 
     // ── 방 단위 일별 시계열 (빈 날도 0 으로 채움 — 기간 필터의 근간) ──
     var days = [], dayIdx = Object.create(null), cursor = from;
@@ -535,8 +575,8 @@
       var st = statOf(m);
       st.count += 1;
       var gapAny = prev ? epochMin(m) - epochMin(prev) : -1;
-      if (!prev || gapAny >= 60) st.starts += 1;                                   // 대화의 문을 연 사람
-      if (prev && prev.name !== m.name && gapAny >= 0 && gapAny <= 60) st.gaps.push(gapAny); // 60분 안의 답
+      if (!prev || gapAny >= 60) st.starts += 1;                                   // 대화의 문을 연 사람(60분 넘게 조용한 뒤)
+      else if (prev.name !== m.name && gapAny >= 0) st.gaps.push(gapAny);          // 60분 안의 답 — 시작과 겹치지 않게
       if (di != null) st.daily[di] += 1;
       st.hours[m.hour] += 1;
       st.weekdays[m.weekday] += 1;
@@ -600,7 +640,7 @@
         avgLen: st.textCount ? Math.round((st.textLen / st.textCount) * 10) / 10 : 0,
         textCount: st.textCount,          // avgLen 을 다시 계산하거나 발행본끼리 합칠 때 필요
         starts: st.starts,
-        replyMed: medianMin(st.gaps),     // 타인 말에 답하기까지 걸린 시간의 중앙값(분). 답이 없으면 0
+        replyMed: st.gaps.length ? medianMin(st.gaps) : null,   // 타인 말에 답하기까지 걸린 시간의 중앙값(분). 답한 적이 없으면 null(0분은 '같은 분에 답함')
         streak: longestStreak(st.dates),
         activeDays: Object.keys(st.dates).length,
         kw: st.kw,
@@ -628,8 +668,14 @@
     }
 
     // ── 키워드 (상위 40 기본, 발행 전 dropKeywords 로 편집 가능) ──
+    //    사람 이름은 단어 목록에 오르지 않게: 현재 멤버뿐 아니라 제외한(나간) 사람의 이름, 앞 토막, 부르는 꼴(○○야/○○아)까지 막는다
     var memberNames = memberList.map(function (m) { return m.name; });
-    var keywords = extractKeywords(msgs, memberNames, opts.keywordLimit || 40, opts.dropKeywords)
+    var stopNames = memberNames.slice();
+    memberNames.concat(Object.keys(exclude)).forEach(function (n) {
+      var h = headOf(n);
+      [n, h, h + "야", h + "아", h + "님", h + "씨"].forEach(function (x) { if (x && stopNames.indexOf(x) < 0) stopNames.push(x); });
+    });
+    var keywords = extractKeywords(msgs, stopNames, opts.keywordLimit || 40, opts.dropKeywords)
       .map(function (k) { return { w: k.w, c: k.c, cat: categorizeWord(k.w) }; });
 
     // ── 주차별 키워드 (월요일 경계 주 단위, 주당 상위 3) — 주제 변화 추이 ──
@@ -643,7 +689,7 @@
       if (weekMsgs.length) {
         weeklyKeywords.push({
           week: weekLabel(wStart, wEnd),
-          top: extractKeywords(weekMsgs, memberNames, 3, opts.dropKeywords)
+          top: extractKeywords(weekMsgs, stopNames, 3, opts.dropKeywords)
             .map(function (k) { return k.w; })
         });
       }
@@ -660,13 +706,12 @@
     //    집계는 이름이 아니라 순서로 하니 줄여도 숫자는 그대로다.
     //    이건 선택이 아니라 기본값이다. 마스킹 스위치는 이보다 한 단계 더 센 선택이다.
     (function () {
+      // 앞 토막이 겹치면(동명이인) 숫자로만 구분한다 — 뒤 정보를 되살리지 않는다.
+      // 번호는 위에서 원본 이름 사전순으로 정한 display 를 그대로 쓴다(제외 체크와 같은 이름)
       var used = Object.create(null);
       members.forEach(function (m) {
-        var head = String(m.name == null ? "" : m.name).trim().split(/[\s/·|,]+/)[0] || "?";
-        if (head.length > 12) head = head.slice(0, 12);
-        // 앞 토막이 겹치면(동명이인) 숫자로만 구분한다 — 뒤 정보를 되살리지 않는다
-        var out = head, n = 2;
-        while (used[out]) { out = head + n; n += 1; }
+        var out = display[m.name] || headOf(m.name), n = 2;
+        while (used[out]) { out = headOf(m.name) + n; n += 1; }
         used[out] = 1;
         m.name = out;
       });
@@ -697,7 +742,7 @@
       keywords: keywords,
       weeklyKeywords: weeklyKeywords,
       emojiStats: emojiStats,
-      newMembers: { count: joinsInRange, avgFirstWeekMsgs: avgFirstWeekMsgs, leaves: leaveCount },
+      newMembers: { count: joinsInRange, avgFirstWeekMsgs: avgFirstWeekMsgs, newcomers: newcomers.length, leaves: leaveCount },
       meta: {
         format: opts.format || "unknown",
         files: opts.files || 1,
@@ -743,13 +788,16 @@
       lists = lists[0]; // mergeMessages([listA, listB]) 형태도 허용
     }
     var sigOf = function (m) {
-      return m.date + "|" + m.hour + "|" + (m.name || "") + "|" + (m.len || 0) + "|" + m.kind;
+      // 분(min)까지 서명에 넣는다 — 같은 시간대의 짧은 말("ㅋㅋ"·"ㅇㅇ")이 다른 파일의 다른 말과 같은 것으로 묶이지 않게
+      return m.date + "|" + m.hour + "|" + (m.min || 0) + "|" + (m.name || "") + "|" + (m.len || 0) + "|" + m.kind;
     };
     var groups = Object.create(null); // 서명 → 채택된 메시지 배열
+    var ord = 0;
     lists.forEach(function (list) {
       var local = Object.create(null);
       (list || []).forEach(function (m) {
         if (!m || !m.date || !m.kind) return;
+        m._ord = ord++;   // 파일 등장 순서 — 같은 분 안의 순서(나감·재입장·발화)를 지키기 위해
         var s = sigOf(m);
         (local[s] = local[s] || []).push(m);
       });
@@ -761,7 +809,7 @@
     Object.keys(groups).forEach(function (s) {
       merged.push.apply(merged, groups[s]);
     });
-    merged.sort(function (a, b) { return epochMin(a) - epochMin(b); });
+    merged.sort(function (a, b) { return epochMin(a) - epochMin(b) || (a._ord || 0) - (b._ord || 0); });
     return merged;
   }
 

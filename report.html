@@ -1245,7 +1245,9 @@
         /* 며칠 지났는지 — 운영진 화면의 점검 줄과 같은 계산(발행일 기준 날짜 차이) */
         const genDays = genTxt ? Math.max(0, Math.round((Date.parse(kstToday() + "T00:00:00Z") - Date.parse(gen + "T00:00:00Z")) / 86400000)) : null;
         const ago = genDays === null ? "" : genDays === 0 ? " (오늘)" : genDays === 1 ? " (어제)" : " (" + genDays + "일 전)";
-        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행일 " + genTxt + ago : "");
+        const tr = st.meta && st.meta.truncated;
+        const trTxt = tr ? (tr.days ? " · 800일을 넘는 앞부분은 빠져 있습니다" : "") + (tr.members ? " · 활동 순위 120명 밖 멤버는 멤버 목록에 없습니다" : "") : "";
+        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행일 " + genTxt + ago : "") + trTxt;
 
         const sel = $("reportSelect");
         if (state.source === "live" && liveRows.length >= 2) {
@@ -1324,7 +1326,9 @@
         const nm = st.newMembers || {};
         if (nm.count) {
           const avg = Number(nm.avgFirstWeekMsgs) || 0;
-          line("sprout", `발행 기간에 <b>${nf(nm.count)}명</b>이 새로 들어왔고, 중간에 합류한 멤버는 첫 주에 평균 <b>${nf(avg)}건</b>을 남겼습니다.${avg < 5 ? " 첫 주 대화가 적습니다. 새 멤버에게 먼저 말을 걸어 주세요." : ""}${nm.leaves ? ` 같은 기간 나간 사람은 ${nf(nm.leaves)}명입니다.` : ""}`);
+          // 중간에 합류해 말을 꺼낸 사람이 있을 때만 '첫 주 평균'을 말한다(없는데 0건이라고 나무라지 않게). 옛 발행본(newcomers 없음)은 전처럼
+          const hasNew = nm.newcomers == null ? true : Number(nm.newcomers) > 0;
+          line("sprout", `발행 기간에 <b>${nf(nm.count)}명</b>이 새로 들어왔${hasNew ? `고, 중간에 합류한 멤버는 첫 주에 평균 <b>${nf(avg)}건</b>을 남겼습니다.${avg < 5 ? " 첫 주 대화가 적습니다. 새 멤버에게 먼저 말을 걸어 주세요." : ""}` : "습니다. 아직 첫 말을 꺼낸 새 멤버는 없습니다 — 먼저 말을 걸어 주세요."}${nm.leaves ? ` 같은 기간 나간 사람은 ${nf(nm.leaves)}명입니다.` : ""}`);
         }
         const cutoff = RM.addDays(st.range.to, -14);
         const quiet = M.filter((m) => (m.count || 0) > 0 && m.lastDate && m.lastDate < cutoff).length;
@@ -1332,7 +1336,7 @@
         const top3 = sums.slice().sort((a, b) => b - a).slice(0, 3).reduce((x, y) => x + y, 0);
         const sumAll = sums.reduce((x, y) => x + y, 0);
         if (sumAll > 0 && M.length >= 4) line("users", `상위 3명이 선택 기간 대화의 <b>${pctOf(top3, sumAll)}%</b>를 차지합니다. ${pctOf(top3, sumAll) >= 60 ? "몇 사람에게 쏠려 있습니다. 조용한 멤버가 끼어들 수 있는 가벼운 질문이 도움이 됩니다." : "여러 사람이 고르게 이야기합니다."}`);
-        const reps = M.map((m) => Number(m.replyMed)).filter((v) => v > 0);
+        const reps = M.filter((m) => m.replyMed != null && isFinite(Number(m.replyMed)) && Number(m.replyMed) >= 0 && (m.replyMed !== 0 || m.starts != null)).map((m) => Number(m.replyMed));   // null = 답한 적 없음. 옛 발행본의 0 은 뜻이 흐려 그대로 둔다
         if (reps.length) line("bolt", `다른 사람 말에 답이 오기까지 보통 <b>${nf(RM.medianOf(reps))}분</b> 걸립니다.`);
         $("insightLines").innerHTML = lines.join("");
 
