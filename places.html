@@ -209,6 +209,13 @@
     @media (max-width: 600px) { .pick-card { grid-template-columns: 44px minmax(0, 1fr); } .pick-acts { grid-column: 1 / -1; justify-content: flex-start; } }
     /* 가까운 순일 때 행에 거리 */
     .pr-dist { color: var(--brand); font-weight: 600; }
+    /* 고대비 모드: 색으로만 뜻을 전하는 점·띠는 색을 지키고, 켜진 칩·핀은 테두리로 */
+    @media (forced-colors: active) {
+      .cat-bar span, .cat-chip i, .kpin i, .kme, .pr-ic, .pick-ic { forced-color-adjust: none; }
+      .cat-bar { border: 1px solid CanvasText; }
+      .cat-chip, .kpin, .pick-card, .overview { border: 1px solid CanvasText; }
+      .cat-chip.is-on, .kpin.is-on { outline: 2px solid Highlight; outline-offset: 1px; }
+    }
 
     /* ── 상세 위 요약 칩 ── */
     .pd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
@@ -1881,6 +1888,12 @@
 
       /* 홈이나 공유 링크의 #place-N 으로 들어오면 그 식당을 펼치고 옮겨 간다 */
       function openFromHash() {
+        // 홈의 '오늘 뭐 먹지' 링크(#pick): 들어오자마자 하나 골라 보여 주고 해시는 지운다
+        if (location.hash === "#pick") {
+          try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+          if (state.loaded && state.views.length) pickPlace();
+          return;
+        }
         var m = /^#place-(\d+)$/.exec(location.hash || "");
         if (!m) return;
         var id = Number(m[1]);
