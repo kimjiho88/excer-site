@@ -111,6 +111,9 @@
     .feat-rows .row > .ic { grid-column: 3; grid-row: 1 / span 2; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
     .feat-rows .row:hover > .ic { transform: translateX(3px); color: var(--brand); }
     .feat-rows .row:hover .feat-ic { background: linear-gradient(135deg, #E4DBF1, #CFC1E6); }
+    /* 지난번 소식 방문 뒤 올라온 글 수 — 소식 바로가기 옆 작은 알약 */
+    .new-badge { display: inline-flex; align-items: center; min-height: 20px; margin-left: 8px; padding: 0 8px; border-radius: 999px; background: var(--rust-soft); color: var(--rust); font-size: 12px; font-weight: 700; vertical-align: middle; }
+    .new-badge[hidden] { display: none; }
 
     /* 공지·다가오는 모임·최근 후기: 제목 한 줄, 보조 한 줄. 행 전체가 짚힌다 */
     .group-h { display: flex; align-items: center; gap: 8px; margin: 20px 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
@@ -260,7 +263,7 @@
           <h2 class="side-h" id="featTitle">주요 기능</h2>
           <ul class="rows feat-rows">
             <li><a class="row" href="calculator.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span><span class="row-title">모임 정산</span><span class="row-meta">차수별 1/N 금액과 입금 확인 링크</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
-            <li><a class="row" href="news.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-megaphone"/></svg></span><span class="row-title">소식</span><span class="row-meta">공지, 모임 모집, 후기, 정보</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
+            <li><a class="row" href="news.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-megaphone"/></svg></span><span class="row-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="row-meta">공지, 모임 모집, 후기, 정보</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
             <li><a class="row" href="places.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-utensils"/></svg></span><span class="row-title">맛집</span><span class="row-meta">모임에서 다녀온 식당, 한줄평, 지도</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
             <li><a class="row" href="report.html"><span class="feat-ic" aria-hidden="true"><svg class="ic"><use href="#i-chart"/></svg></span><span class="row-title">활동 통계</span><span class="row-meta">우리 방이 언제, 무엇으로 이야기했는지</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></li>
           </ul>
@@ -416,6 +419,11 @@
         var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now); })
           .sort(function (a, b) { return String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
           .slice(0, 2);
+        // 지난번 소식 방문(소식 페이지가 남긴 시각) 뒤에 올라온 글 수 → 주요 기능의 소식 옆 알약. 방문 기록이 없으면 표시하지 않는다
+        var seen = ""; try { seen = localStorage.getItem("excer_news_seen") || ""; } catch (e) {}
+        var fresh = seen ? views.filter(function (v) { return String(v.created_at || "") > seen; }).length : 0;
+        $("newsBadge").hidden = !fresh;
+        $("newsBadge").textContent = fresh ? "새 글 " + fresh : "";
         // 최근 모임 후기 한 건 — 지난 모임이 어땠는지
         var review = views.filter(function (v) { return v.kind === "review"; })[0] || null;
         var html = "";
