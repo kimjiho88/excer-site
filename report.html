@@ -330,6 +330,7 @@
         <label class="sr-only" for="reportSelect">통계 선택</label>
         <select id="reportSelect" class="report-select" hidden></select>
         <span id="metaLine"></span>
+        <button type="button" class="btn btn-kakao is-sm" id="shareReportBtn" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg> 카카오톡 공유</button>
       </div>
     </div>
   </header>
@@ -1257,7 +1258,28 @@
         if (!$("customFrom").value) $("customFrom").value = st.range.from;
         if (!$("customTo").value) $("customTo").value = st.range.to;
         $("periodBar").hidden = false;
+        // 발행된 통계만 공유 버튼 — 예시·미리보기 초안은 채팅방에 보낼 것이 아니다
+        $("shareReportBtn").hidden = state.source !== "live";
       }
+      /* 카카오톡 공유: 기간·메시지 수·멤버 수·가장 활발한 시간 한 줄. SDK 를 못 열면 링크 복사 */
+      function shareSummary(st) {
+        const total = (st.meta && Number(st.meta.totalMessages)) || (st.days || []).reduce((a, d) => a + (Number(d.c) || 0), 0);
+        const members = (st.members || []).length;
+        let peak = null;
+        try { if (Array.isArray(st.days) && st.days.length) peak = RM.peakOf(RM.hourlyOf(st, { i0: 0, i1: st.days.length - 1 })); } catch (e) {}
+        return [total ? `메시지 ${nf(total)}건` : "", members ? `이야기한 멤버 ${members}명` : "", peak && peak.v ? `가장 활발한 시간 ${peak.i}시` : ""].filter(Boolean).join(" · ");
+      }
+      $("shareReportBtn").addEventListener("click", async () => {
+        const st = state.data; if (!st) return;
+        const btn = $("shareReportBtn"); btn.disabled = true;
+        const url = location.origin + location.pathname;
+        const say = (m) => { if (window.EXCER && EXCER.toast) EXCER.toast(m); };
+        try {
+          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계 · " + (st.periodLabel || ""), description: shareSummary(st), url, buttonTitle: "통계 보기" }) : "fail";
+          if (r === "copy") say("카카오톡 공유 창을 열지 못해 통계 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
+          else if (r === "fail") say("복사에 실패했습니다. 주소창에서 직접 복사해 주세요.");
+        } finally { btn.disabled = false; }
+      });
 
       /* ── 운영 인사이트: 발행 데이터에 이미 있는 값으로 방이 어떻게 굴러가는지 읽는다 ── */
       function pctOf(a, b) { return b ? Math.round((a / b) * 100) : 0; }
