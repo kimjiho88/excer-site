@@ -460,11 +460,24 @@
           .catch(function () { $("placesBand").hidden = true; });
       }
 
-      /* ── E. 지난달 활동 — 가장 최근 발행된 통계 한 건 ── */
+      /* ── E. 지난달 활동 — 가장 최근 발행된 통계 한 건 ──
+         통계 기간이 실제 지난달이면 "지난달", 아니면 그 달 이름("6월")으로 부른다. 못 읽으면 "최근" */
+      function periodWord(label) {
+        var m = /(\d{4})\s*년\s*(\d{1,2})\s*월/.exec(String(label || "")) || /^(\d{4})-(\d{2})/.exec(String(label || ""));
+        if (!m) return { k: "최근", at: "최근" };
+        var y = Number(m[1]), mo = Number(m[2]);
+        var t = C.kstToday(), ty = Number(t.slice(0, 4)), tm = Number(t.slice(5, 7));
+        var ly = tm === 1 ? ty - 1 : ty, lm = tm === 1 ? 12 : tm - 1;
+        if (y === ly && mo === lm) return { k: "지난달", at: "지난달" };
+        if (y === ty && mo === tm) return { k: "이번 달", at: "이번 달" };
+        var name = (y === ty ? "" : y + "년 ") + mo + "월";
+        return { k: name, at: name + "에" };
+      }
       function renderReport(row) {
         if (!row || !row.stats) { $("homeReport").hidden = true; return; }
         var s = row.stats;
-        stats.report = { label: row.period_label, stats: s };
+        stats.report = { label: row.period_label, stats: s, word: periodWord(row.period_label) };
+        $("reportTitle").textContent = stats.report.word.k + " 활동 한눈에";
         var total = Number((s.meta && s.meta.totalMessages) || 0) || (Array.isArray(s.days) ? s.days.reduce(function (a, d) { return a + (Number(d.c) || 0); }, 0) : 0);
         var members = Array.isArray(s.members) ? s.members.length : 0;
         var days = Array.isArray(s.days) ? s.days.length : 0;
@@ -520,8 +533,9 @@
           var s = stats.report.stats;
           var total = Number((s.meta && s.meta.totalMessages) || 0);
           var members = Array.isArray(s.members) ? s.members.length : 0;
-          if (total) tiles.push({ k: "지난달 대화", ic: "chat", v: num(total), u: "건", sub: stats.report.label || "", href: "report.html" });
-          if (members) tiles.push({ k: "활동 멤버", ic: "users", v: num(members), u: "명", sub: "지난달 이야기한 사람", href: "report.html", brand: true });
+          var pw = stats.report.word || { k: "지난달", at: "지난달" };
+          if (total) tiles.push({ k: pw.k + " 대화", ic: "chat", v: num(total), u: "건", sub: stats.report.label || "", href: "report.html" });
+          if (members) tiles.push({ k: "활동 멤버", ic: "users", v: num(members), u: "명", sub: pw.at + " 이야기한 사람", href: "report.html", brand: true });
         }
         $("homeStats").hidden = !tiles.length;
         if (!tiles.length) return;
