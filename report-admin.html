@@ -17,7 +17,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
   <script src="assets/chat-parser.js"></script>
 
   <style>
@@ -802,6 +802,8 @@
       /* 발행 플로우 1단계: 파일별 파싱 결과에서 겹침 감지 → (옵션) 병합 */
       function rebuild() {
         renderFileChips();
+        // 자료가 바뀌면 '발행했습니다' 줄은 더 이상 이 자료의 이야기가 아니다
+        $("afterPublish").hidden = true; lastPublished = null;
         if (!files.length) {
           merged = null; currentStats = null; dataMin = dataMax = null; overlapDates = [];
           $("parseInfo").hidden = true;
@@ -1087,7 +1089,6 @@
           lastPublished = st;
           $("afterPublishText").textContent = `"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다. 채팅방에 알릴까요?`;
           $("afterPublish").hidden = false;
-          loadPreset();
           loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요합니다. 아래 안내를 확인해 주세요."); }
@@ -1188,10 +1189,10 @@
           return;
         }
         // updated_at 이 가장 최근인 것을 찾는다(목록 정렬을 믿지 않는다)
-        let newest = 0, label = "";
+        let newest = 0, label = "", newestRow = null;
         rows.forEach((r) => {
           const t = new Date(r.updated_at || 0).getTime();
-          if (t > newest) { newest = t; label = r.period_label || ""; }
+          if (t > newest) { newest = t; label = r.period_label || ""; newestRow = r; }
         });
         const rb = $("reuseLabelBtn");
         if (rb) { rb.hidden = !label; rb.dataset.label = label || ""; }
@@ -1205,9 +1206,12 @@
         const when = days === 0 ? "오늘" : (days === 1 ? "어제" : days + "일 전");
         // 홈의 신선도 배지와 같은 경계(7일/14일)를 쓴다 — 두 화면이 다른 말을 하면 안 된다
         el.className = "check-strip " + (days <= 7 ? "is-ok" : (days <= 14 ? "is-mid" : "is-warn"));
+        // '기준 주' 안내는 통계 화면과 같은 기준(집계 마지막 날 range.to)으로 — 발행일이 아니라
+        const rangeTo = newestRow && newestRow.stats && newestRow.stats.range && /^\d{4}-\d{2}-\d{2}$/.test(String(newestRow.stats.range.to || "")) ? newestRow.stats.range.to : null;
+        const staleDays = rangeTo ? Math.max(0, Math.round((Date.parse(kst(Date.now()) + "T00:00:00Z") - Date.parse(rangeTo + "T00:00:00Z")) / 86400000)) : days;
         el.textContent = "마지막 발행 " + when + ", " + (label || "기간 미상") +
           ", 전체 " + rows.length + "건" +
-          (days > 1 ? ". 기준일이 지나 활동 통계에서는 '이번 주' 대신 '기준 주'로 표시됩니다" : "");
+          (staleDays > 1 ? ". 집계 마지막 날이 지나 활동 통계에서는 '이번 주' 대신 '기준 주'로 표시됩니다" : "");
         el.hidden = false;
       }
 

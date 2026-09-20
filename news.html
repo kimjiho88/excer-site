@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
 
   <style>
     /* ============================================================
@@ -119,6 +119,10 @@
     .more-wrap { display: flex; justify-content: center; margin-top: 18px; }
 
     /* ── 이번 주 글감 — 무엇을 쓸지 막막할 때 ── */
+    .draft-note { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 10px 12px; border-radius: 10px; background: var(--gold-soft, #F6EFD9); color: var(--ink); font-size: var(--fs-caption); line-height: 1.5; }
+    .draft-note .ic { width: 16px; height: 16px; color: var(--gold, #7E5F25); flex: none; }
+    .draft-note > span { flex: 1 1 200px; min-width: 0; }
+    .draft-note .text-btn { min-height: 30px; }
     .prompt-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
     .prompt-card .pc-ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--brand); box-shadow: var(--shadow-card); }
     .prompt-card .pc-ic .ic { width: 22px; height: 22px; }
@@ -286,6 +290,12 @@
         <button id="writeCloseBtn" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <div class="field-grid" id="writeForm">
+        <!-- 글감·후기 쓰기로 열었는데 작성 중이던 다른 글이 있을 때 -->
+        <div class="draft-note is-wide" id="draftNote" hidden>
+          <svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>
+          <span>작성 중이던 글 <b id="draftNoteTitle"></b>이 임시 저장되어 있습니다. 이 창의 내용은 임시 저장하지 않습니다.</span>
+          <button type="button" class="text-btn" id="draftNoteLoad">그 글 불러오기</button>
+        </div>
         <div class="field is-wide" data-field="wCat">
           <label for="wCat">글 종류</label>
           <select id="wCat" class="input">
@@ -417,7 +427,7 @@
     function typeDesc(cat) {
       if (cat === "벙 소식") {
         const items = state.caps >= 2 ? "날짜·시간·장소·인원·비용" : "날짜·시간·장소·인원";
-        return items + "을 항목으로 적으면 목록에 그대로 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+        return items + "을 항목으로 적으면 글을 펼쳤을 때 표로 보이고, 목록 줄에는 날짜·시간·장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       return {
         "자유": "제목과 내용만 있으면 됩니다.",
@@ -474,8 +484,8 @@
     /* 홈의 '글 쓰러 가기'(#write-prompt)로 들어오면 글감이 채워진 글쓰기 창을 바로 연다 */
     function openPromptFromHash() {
       if (location.hash !== "#write-prompt") return;
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }   // 해시는 남겨 두어 다시 시도 뒤에 열리게
       try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-      if (state.degraded) return;
       const p = currentPrompt();
       openWriteModal(null, { category: p.cat, title: p.title });
     }
@@ -484,7 +494,7 @@
     const DRAFT_KEY = "excer_news_draft";
     function loadDraft() { try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && (d.title || d.body) ? d : null; } catch (e) { return null; } }
     function saveDraft() {
-      if (state.editingId) return;
+      if (state.editingId || state.draftHold) return;
       const d = { category: $("wCat").value, title: $("wTitle").value, body: $("wBody").value, meta: readMeta() };
       try { if (d.title.trim() || d.body.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); else localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     }
@@ -915,8 +925,13 @@
       state.editingId = post ? post.id : null;
       clearErrors();
       $("writeTitle").textContent = post ? "글 수정" : "글쓰기";
-      const draft = !post && !prefill ? loadDraft() : null;
+      const existing = post ? null : loadDraft();
+      const draft = !post && !prefill ? existing : null;
       const init = post ? null : (prefill || draft || null);
+      /* 글감·후기 쓰기로 열었는데 작성 중이던 다른 글이 있으면 그 글을 덮어쓰지 않는다 — 이번 창은 임시 저장을 쉬고, 안내 줄로 알린다 */
+      state.draftHold = !!(prefill && existing);
+      $("draftNote").hidden = !state.draftHold;
+      if (state.draftHold) $("draftNoteTitle").textContent = existing.title ? "“" + existing.title.slice(0, 30) + "”" : "제목 없는 글";
       const cat = post ? post.category : (init && init.category && CATS.includes(init.category) ? init.category : "자유");
       $("wCat").value = cat;
       renderTypeFields(cat, post ? C.postMeta(post) : (init && init.meta) || null);
@@ -973,7 +988,7 @@
           showToast("글을 등록했습니다.");
         }
         closeWriteModal();
-        clearDraft();
+        if (!state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
         const keepId = state.editingId;
         renderListLoading();
@@ -1137,6 +1152,7 @@
       });
       $("fabWrite").addEventListener("click", () => openWriteModal(null));
       $("promptWrite").addEventListener("click", () => { const p = currentPrompt(); openWriteModal(null, { category: p.cat, title: p.title }); });
+      $("draftNoteLoad").addEventListener("click", () => { state.draftHold = false; openWriteModal(null); });
       $("popularWrap").addEventListener("click", (e) => { const a = e.target.closest("[data-act='goto']"); if (!a) return; e.preventDefault(); gotoPost(Number(a.dataset.id)); });
       $("writeForm").addEventListener("change", () => { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 60); });
 
@@ -1207,7 +1223,7 @@
     renderTypeFields("자유", null);
     C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, null); });
     renderListLoading();
-    loadPosts(true).then(openFromHash).then(loadPopular).then(openPromptFromHash);
+    loadPosts(true).then(openFromHash).then(openPromptFromHash).then(loadPopular);
     window.addEventListener("hashchange", openFromHash);
   </script>
 </body>

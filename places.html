@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
   <script src="assets/site-core.js?v=4"></script>
   <script src="assets/icons.js?v=1"></script>
   <script src="assets/content.js?v=4"></script>
@@ -934,7 +934,7 @@
             (by ? '<p class="pr-by">' + by + "</p>" : "") +
           "</div>" +
           '<div class="pr-acts">' +
-            '<button type="button" class="text-btn" data-open="' + v.id + '" aria-expanded="' + open + '" aria-controls="place-detail-' + v.id + '">' + (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
+            '<button type="button" class="text-btn" data-open="' + v.id + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="place-detail-' + v.id + '"' : "") + ">" + (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
             '<a class="text-btn is-quiet" href="' + esc(v.mapUrl) + '" target="_blank" rel="noopener noreferrer">' + icon("map", "is-sm") +
               (v.hasMapLink ? ' 지도<span class="sr-only">에서 보기 (새 창)</span>' : ' 지도 검색<span class="sr-only"> — 카카오맵에서 식당 이름으로 검색 (새 창)</span>') + "</a>" +
           "</div></article>" +
@@ -1068,7 +1068,7 @@
         $("nearBtn").setAttribute("aria-pressed", String(state.sort === "near"));
         var opt = $("fSort").querySelector('option[value="near"]');
         if (near && !opt) $("fSort").insertAdjacentHTML("beforeend", '<option value="near">가까운 순</option>');
-        else if (!near && opt) opt.remove();
+        else if (!near && opt) { opt.remove(); if (state.sort === "near") { state.sort = state.sortPrev || "area"; $("fSort").value = state.sort; } }
       }
 
       /* ── 종류 분포: 색 띠 + 칩. 전체 목록 기준이라 조건과 무관하게 같은 그림이다 ── */
@@ -1385,6 +1385,7 @@
       function openNoteModal(placeId, noteId) {
         state.noteFor = placeId; state.noteEdit = noteId || null;
         var v = viewOf(placeId);
+        if (!v) { toast("식당을 찾지 못했습니다. 목록을 다시 불러옵니다."); load(); return; }
         var n = noteId ? v.notes.filter(function (x) { return x.id === noteId; })[0] : null;
         clearErrors("noteForm");
         $("nmTitle").textContent = (v ? v.name : "") + (n ? " 한줄평 수정" : " 한줄평");
@@ -1615,8 +1616,13 @@
         var cats = {};
         withCoords.forEach(function (v) { cats[v.category] = v.catColor; });
         $("mapLegend").innerHTML = Object.keys(cats).map(function (c) { return '<span><i style="background:' + esc(cats[c]) + '"></i>' + esc(c) + "</span>"; }).join("");
-        if (withCoords.length > 1) MAP.map.setBounds(bounds, 40, 40, 40, 40);
-        else if (withCoords.length === 1) { MAP.map.setCenter(new kakao.maps.LatLng(withCoords[0].lat, withCoords[0].lng)); MAP.map.setLevel(4); }
+        // 지도를 다시 맞추는 것은 핀 구성이 바뀌었을 때만 — 행을 펼치거나 검색어를 한 글자 칠 때마다 지도가 튀지 않게
+        var key = withCoords.map(function (v) { return v.id; }).join(",");
+        var changed = key !== MAP.lastKey; MAP.lastKey = key;
+        if (changed) {
+          if (withCoords.length > 1) MAP.map.setBounds(bounds, 40, 40, 40, 40);
+          else if (withCoords.length === 1) { MAP.map.setCenter(new kakao.maps.LatLng(withCoords[0].lat, withCoords[0].lng)); MAP.map.setLevel(4); }
+        }
         if (!withCoords.length) $("mapNote").textContent = list.length ? "이 조건의 식당에는 아직 좌표가 없습니다. 운영진의 '위치 잡기'로 넣을 수 있습니다." : "표시할 식당이 없습니다.";
         else $("mapNote").textContent = "핀을 누르면 목록에서 그 식당이 펼쳐집니다.";
         layoutPins();
@@ -1804,7 +1810,7 @@
       $("nearBtn").addEventListener("click", sortNear);
       $("pickBtn").addEventListener("click", pickPlace);
       $("pickAgain").addEventListener("click", pickPlace);
-      $("pickClose").addEventListener("click", function () { $("pickCard").hidden = true; $("pickBtn").focus({ preventScroll: true }); });
+      $("pickClose").addEventListener("click", function () { $("pickCard").hidden = true; ($("pickBtn").hidden ? $("placeSearch") : $("pickBtn")).focus({ preventScroll: true }); });
       $("pickCard").addEventListener("click", function (e) {
         var t = e.target.closest("[data-pick-open]"); if (!t) return;
         e.preventDefault(); focusPlace(Number(t.getAttribute("data-pick-open")));
@@ -1890,8 +1896,11 @@
       function openFromHash() {
         // 홈의 '오늘 뭐 먹지' 링크(#pick): 들어오자마자 하나 골라 보여 주고 해시는 지운다
         if (location.hash === "#pick") {
-          try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-          if (state.loaded && state.views.length) pickPlace();
+          if (state.loaded && state.views.length) {
+            try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+            pickPlace();
+          } else if (state.loaded) toast("등록된 식당이 없어 고를 수 없습니다.");
+          // 불러오기에 실패했으면 해시를 남겨 두고, 다시 시도 뒤 다시 들어온다
           return;
         }
         var m = /^#place-(\d+)$/.exec(location.hash || "");

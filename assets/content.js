@@ -254,6 +254,7 @@
      menuLine: 한줄평 글에 안 들어 있는 추천 메뉴가 있을 때만 "추천 메뉴 …" 한 줄을 앞에 둔다 (겹치면 한쪽만) */
   function placeLine(v) {
     if (v.latest) {
+      // 규칙(CONTENT_FORMAT 1.2-5): 한줄평 글에 안 들어 있는 메뉴가 하나라도 있으면 추천 메뉴 전체를 한 줄로. 전부 들어 있으면(겹치면) 줄을 두지 않는다
       var extra = v.menus.some(function (m) { return !textHas(v.latest.review, m); });
       return { kind: "review", text: v.latest.review, by: v.latest.by, date: v.latest.date, menuLine: extra ? v.menus.join(", ") : "" };
     }
@@ -281,7 +282,7 @@
     return m;
   }
   function bungState(m, today) {
-    if (!m || !m.date) return { days: null, label: "날짜 미정", past: false, closed: m && m.status === "closed" };
+    if (!m || !m.date) { var c0 = !!(m && m.status === "closed"); return { days: null, label: c0 ? "모집 마감" : "날짜 미정", past: false, closed: c0 }; }
     var d = daysFromToday(m.date, today);
     var past = d !== null && d < 0;
     var closed = m.status === "closed";

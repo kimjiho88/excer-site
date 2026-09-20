@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
@@ -1198,9 +1198,13 @@
         }
         let liveFailed = false;
         try {
-          const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
+          const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at&order=updated_at.desc");
           liveRows = (rows || []).filter((r) => isV2(r.stats) || isV1(r.stats));
           liveRows.forEach((r) => trimNames(r.stats));
+          // 공유 링크의 ?report=ID 는 그 발행본을 연다(없으면 최신)
+          const want = params.get("report");
+          const picked = want ? liveRows.find((r) => String(r.id) === want) : null;
+          if (picked) return { stats: picked.stats, source: "live", row: picked };
           if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
         } catch (e) { liveFailed = true; }
         /* 연결 실패는 예시 데이터로 덮지 않는다 — 실패 화면과 다시 시도를 보여 준다 */
@@ -1272,7 +1276,9 @@
       $("shareReportBtn").addEventListener("click", async () => {
         const st = state.data; if (!st) return;
         const btn = $("shareReportBtn"); btn.disabled = true;
-        const url = location.origin + location.pathname;
+        // 최신이 아닌 발행본을 보고 있으면 그 발행본으로 가는 링크
+        const notNewest = state.row && liveRows.length > 1 && liveRows[0] && liveRows[0].id !== state.row.id;
+        const url = location.origin + location.pathname + (notNewest ? "?report=" + encodeURIComponent(state.row.id) : "");
         const say = (m) => { if (window.EXCER && EXCER.toast) EXCER.toast(m); };
         try {
           const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계 · " + (st.periodLabel || ""), description: shareSummary(st), url, buttonTitle: "통계 보기" }) : "fail";

@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
 
   <style>
     /* ============================================================
@@ -409,10 +409,9 @@
         var host = $("liveList");
         var today = C.kstToday(), now = C.kstNowHM();
         var views = (Array.isArray(rows) ? rows : []).map(function (p) { return C.postView(p, today); });
-        // 고정 공지: 운영진이 고정한 글 가운데 공지를 먼저, 최근 것 한 건
-        var pinned = views.filter(function (v) { return v.pinned; })
-          .sort(function (a, b) { return (a.kind === "notice" ? 0 : 1) - (b.kind === "notice" ? 0 : 1) || String(b.created_at || "").localeCompare(String(a.created_at || "")); });
-        var notice = pinned[0] || null;
+        // 고정 공지: 운영진이 고정한 '공지' 가운데 최근 것 한 건. 고정된 모임 글은 공지로 부르지 않고 다가오는 모임 쪽에서만 다룬다
+        var notice = views.filter(function (v) { return v.pinned && v.kind === "notice"; })
+          .sort(function (a, b) { return String(b.created_at || "").localeCompare(String(a.created_at || "")); })[0] || null;
         // 다가오는 모임: 날짜가 오늘 이후·마감 아님·오늘이면 시간이 아직 안 지난 것. 가까운 순 2건 (조건은 content.js isUpcoming)
         var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now); })
           .sort(function (a, b) { return String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
@@ -432,7 +431,7 @@
         host.removeAttribute("aria-busy");
       }
       function loadLive() {
-        return supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=40")
+        return supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=100")
           .then(function (rows) { stats.posts = rows; renderLive(rows); renderStats(); })
           .catch(function () { note($("liveList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadLive); });
       }
@@ -485,12 +484,17 @@
         var name = (y === ty ? "" : y + "년 ") + mo + "월";
         return { k: name, at: name + "에" };
       }
+      /* 총 메시지: meta 가 있으면 그것, 없으면 날짜별 합 — 띠와 섹션이 같은 수를 보여 준다 */
+      function totalOf(s) {
+        return Number((s.meta && s.meta.totalMessages) || 0) || (Array.isArray(s.days) ? s.days.reduce(function (a, d) { return a + (Number(d.c) || 0); }, 0) : 0);
+      }
       function renderReport(row) {
-        if (!row || !row.stats) { $("homeReport").hidden = true; return; }
+        // 날짜별 자료(v2)가 있는 발행본만 — 옛 형식(v1)은 통계 페이지에서만 본다
+        if (!row || !row.stats || !Array.isArray(row.stats.days)) { $("homeReport").hidden = true; return; }
         var s = row.stats;
         stats.report = { label: row.period_label, stats: s, word: periodWord(row.period_label) };
         $("reportTitle").textContent = stats.report.word.k + " 활동 한눈에";
-        var total = Number((s.meta && s.meta.totalMessages) || 0) || (Array.isArray(s.days) ? s.days.reduce(function (a, d) { return a + (Number(d.c) || 0); }, 0) : 0);
+        var total = totalOf(s);
         var members = Array.isArray(s.members) ? s.members.length : 0;
         var days = Array.isArray(s.days) ? s.days.length : 0;
         var activeDays = Array.isArray(s.days) ? s.days.filter(function (d) { return Number(d.c) > 0; }).length : 0;
@@ -523,7 +527,7 @@
         renderStats();
       }
       function loadReport() {
-        return supaGet("/rest/v1/site_reports_v?select=period_label,stats,updated_at&limit=1")
+        return supaGet("/rest/v1/site_reports_v?select=period_label,stats,updated_at&order=updated_at.desc&limit=1")
           .then(function (rows) { renderReport(rows && rows[0]); })
           .catch(function () { $("homeReport").hidden = true; });
       }
@@ -543,7 +547,7 @@
         }
         if (stats.report) {
           var s = stats.report.stats;
-          var total = Number((s.meta && s.meta.totalMessages) || 0);
+          var total = totalOf(s);
           var members = Array.isArray(s.members) ? s.members.length : 0;
           var pw = stats.report.word || { k: "지난달", at: "지난달" };
           if (total) tiles.push({ k: pw.k + " 대화", ic: "chat", v: num(total), u: "건", sub: stats.report.label || "", href: "report.html" });
