@@ -302,7 +302,7 @@
         <div class="report-side">
           <div id="hoursWrap">
             <div class="group-h"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>시간대별 대화 <small id="peakNote"></small></div>
-            <div class="hours" id="hoursBar" aria-hidden="true"></div>
+            <div class="hours" id="hoursBar" role="img" aria-label="시간대별 대화 분포"></div>
             <div class="hours-lab"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
           </div>
           <div id="kwWrap">
@@ -488,6 +488,7 @@
         if (max > 0) {
           $("hoursBar").innerHTML = hours.map(function (c, h) { return '<i style="height:' + Math.max(4, Math.round(c / max * 100)) + '%"' + (h === peak ? ' class="is-peak"' : "") + "></i>"; }).join("");
           $("peakNote").textContent = peak + "시에 가장 활발";
+          $("hoursBar").setAttribute("aria-label", "0시부터 23시까지 시간대별 대화 분포 — " + peak + "시에 가장 활발, 가장 조용한 시간 " + hours.indexOf(Math.min.apply(null, hours)) + "시");
         } else { $("hoursWrap").hidden = true; }
         var kws = Array.isArray(s.keywords) ? s.keywords.slice(0, 8) : [];
         if (kws.length) $("kwChips").innerHTML = kws.map(function (k) { return '<span class="kw">' + esc(k.w) + "<small>" + num(k.c) + "</small></span>"; }).join("");
