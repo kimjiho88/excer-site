@@ -86,6 +86,9 @@
     .auto-note summary { display: inline-block; cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 700; }
     .auto-note summary:hover { text-decoration: underline; }
     .auto-note .callout { font-size: 13px; }
+    /* 발행 직후 안내 줄 */
+    .after-publish { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-md); background: var(--brand-soft); color: var(--ink); font-size: 14px; font-weight: 600; }
+    .after-publish[hidden] { display: none; }
     .paste-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
     .paste-hint { font-size: 13px; font-weight: 700; }
     .paste-hint.ok { color: var(--brand); }
@@ -450,6 +453,12 @@
                 <button id="previewBtn" class="btn btn-secondary" type="button" disabled><svg class="ic is-sm" aria-hidden="true"><use href="#i-eye"/></svg> 미리보기</button>
                 <button id="publishBtn" class="btn btn-primary" type="button" disabled>발행하기</button>
                 <button id="downloadBtn" class="btn btn-ghost" type="button" disabled>JSON 내려받기</button>
+              </div>
+              <!-- 발행 직후: 채팅방에 알리는 다음 동작을 바로 내민다 -->
+              <div id="afterPublish" class="after-publish" hidden role="status" aria-live="polite">
+                <span id="afterPublishText">발행했습니다. 채팅방에 알릴까요?</span>
+                <button id="notifyBtn" class="btn btn-kakao is-sm" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg> 카카오톡으로 알리기</button>
+                <a class="btn btn-secondary is-sm" href="report.html" target="_blank" rel="noopener">발행된 통계 보기<span class="sr-only"> (새 창)</span></a>
               </div>
               <p class="hint" style="margin-top:10px">
                 미리보기는 이 브라우저에만 저장됩니다. 발행하면 같은 제목의 통계는 새 내용으로 교체됩니다.
@@ -1075,14 +1084,39 @@
             body: JSON.stringify({ p_pass: pass, p_period: st.periodLabel, p_stats: st })
           });
           EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다.`);
+          lastPublished = st;
+          $("afterPublishText").textContent = `"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다. 채팅방에 알릴까요?`;
+          $("afterPublish").hidden = false;
           loadPreset();
-      loadReportList();
+          loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요합니다. 아래 안내를 확인해 주세요."); }
           else EXCER.toast(rpcErrorText(e, "발행에 실패했습니다. 잠시 후 다시 시도해 주세요."));
         } finally {
           btn.disabled = false; btn.textContent = "발행하기"; updateActions();
         }
+      }
+
+      /* 발행 직후 채팅방에 알리기 — 기간·메시지·멤버·활발한 시간 한 줄과 통계 링크. SDK 를 못 열면 링크 복사 */
+      let lastPublished = null;
+      function publishedSummary(st) {
+        const days = Array.isArray(st.days) ? st.days : [];
+        const total = (st.meta && Number(st.meta.totalMessages)) || days.reduce((a, d) => a + (Number(d.c) || 0), 0);
+        const members = Array.isArray(st.members) ? st.members.length : 0;
+        const hourly = new Array(24).fill(0);
+        days.forEach((d) => (d.byHour || []).forEach((c, h) => { hourly[h] += Number(c) || 0; }));
+        const max = Math.max(...hourly), peak = hourly.indexOf(max);
+        return [total ? `메시지 ${total.toLocaleString("ko-KR")}건` : "", members ? `이야기한 멤버 ${members}명` : "", max > 0 ? `가장 활발한 시간 ${peak}시` : ""].filter(Boolean).join(" · ");
+      }
+      async function notifyChat() {
+        const st = lastPublished; if (!st) return;
+        const btn = $("notifyBtn"); btn.disabled = true;
+        const url = location.origin + "/report.html";
+        try {
+          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계 · " + (st.periodLabel || ""), description: publishedSummary(st), url, buttonTitle: "통계 보기" }) : "fail";
+          if (r === "copy") EXCER.toast("카카오톡 공유 창을 열지 못해 통계 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
+          else if (r === "fail") EXCER.toast("복사에 실패했습니다. 주소창의 report.html 링크를 직접 올려 주세요.");
+        } finally { btn.disabled = false; }
       }
 
       function doDownload() {
@@ -1305,6 +1339,7 @@
 
         $("previewBtn").addEventListener("click", doPreview);
         $("publishBtn").addEventListener("click", doPublish);
+        $("notifyBtn").addEventListener("click", notifyChat);
         $("downloadBtn").addEventListener("click", doDownload);
         $("presetClear").addEventListener("click", () => {
           try { localStorage.removeItem(PRESET_KEY); } catch (e) {}
