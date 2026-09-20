@@ -1195,7 +1195,7 @@
         $("maskNote").hidden = !st.maskNames;
         const gen = String(st.generatedAt || "").slice(0, 10);
         const genTxt = /^\d{4}-\d{2}-\d{2}$/.test(gen) ? fmtDateFull(gen) : "";
-        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행 " + genTxt : "");
+        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행일 " + genTxt : "");
 
         const sel = $("reportSelect");
         if (state.source === "live" && liveRows.length >= 2) {
@@ -1941,7 +1941,8 @@
           return;
         }
         bootWith(stats, source, row);
-        if (previewMissing) EXCER.toast("미리보기 초안이 없어 발행된 통계를 표시합니다.");
+        if (previewMissing && source === "live") EXCER.toast("미리보기 초안이 없어 발행된 통계를 표시합니다.");
+        if (previewMissing && source === "sample") EXCER.toast("미리보기 초안이 없어 예시 데이터를 표시합니다.");
       }
 
       boot();
