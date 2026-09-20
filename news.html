@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#285244" />
 
   <title>소식 · 동네친구들</title>
-  <meta name="description" content="동네친구들 소식 게시판입니다. 공지, 모임 소식, 후기, 정보, 자유 글을 올리고 댓글을 남길 수 있습니다." />
+  <meta name="description" content="동네친구들 소식 게시판입니다. 공지, 모임 모집, 모임 후기, 정보, 자유 글을 올리고 댓글을 남길 수 있습니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/news.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="소식 · 동네친구들" />
-  <meta property="og:description" content="공지, 모임 소식, 후기, 정보, 자유 글을 한곳에서 확인합니다." />
+  <meta property="og:description" content="공지, 모임 모집, 모임 후기, 정보, 자유 글을 한곳에서 확인합니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -25,264 +25,120 @@
 
   <style>
     /* ============================================================
-       소식 커뮤니티 피드 v3 — 페이지 전용 (site.css 수정 금지)
+       소식 — 제목 중심 게시판. 도구는 흰 패널 하나, 글은 선으로 나눈 행, 펼친 글은 흰 면.
        ============================================================ */
-    [hidden] { display: none !important; }
+    .board-tools { display: grid; gap: 10px; padding: 12px 14px; }
+    .tools-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .search-box { position: relative; flex: 1 1 220px; min-width: 0; display: flex; align-items: center; }
+    .search-box .ic { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--ink-2); pointer-events: none; }
+    .search-box input { padding-left: 38px; }
+    .sort-select {
+      min-height: 44px; padding: 0 32px 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line-strong);
+      background: var(--surface) no-repeat right 10px center; color: var(--ink); font-size: 14px; -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626B63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-size: 16px;
+    }
+    .type-tabs { width: 100%; }
+    .board-foot { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 12px; color: var(--ink-2); font-size: var(--fs-caption); }
+    .board-foot .btn { margin-left: auto; }
 
-    /* ── 데모(준비 중) 배너 ── */
-    .setup-banner {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-      margin-bottom: 16px; padding: 13px 16px; border-radius: var(--r-md);
-      border: 1px solid rgba(133, 100, 16, 0.18);
-      background: var(--pastel-cream);
-      color: #7A4A32; font-size: 13px; line-height: 1.55; font-weight: 700;
-    }
-    .setup-banner b { color: #7A4A32; }
-    .setup-banner .mini-btn { margin-left: auto; background: #fff; color: #7A4A32; }
-    .setup-banner .mini-btn:hover { background: #fff; }
+    .status-line.is-warn { color: var(--ink); }
 
-    /* ── 툴바: 검색 + 정렬 + 글쓰기 + 카테고리 칩 ── */
-    .board-toolbar {
-      display: grid; gap: 13px; margin-bottom: 18px; padding: 15px;
-      border-radius: var(--r-lg); background: var(--white);
-      border: 1px solid var(--line);
-    }
-    .toolbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .search-box { position: relative; flex: 1; min-width: 220px; display: flex; align-items: center; }
-    .search-box svg {
-      position: absolute; left: 15px; width: 16px; height: 16px;
-      color: var(--gray-2); pointer-events: none;
-    }
-    .search-box input {
-      width: 100%; min-height: 46px; padding: 0 16px 0 41px; border-radius: var(--r-pill);
-      border: 1px solid var(--line); background: var(--offwhite); color: var(--ink);
-      font-weight: 700; outline: none;
-      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease), background 0.18s var(--ease);
-    }
-    .search-box input::placeholder { color: var(--gray-2); font-weight: 700; }
-    .search-box input:focus { border-color: rgba(40, 82, 68, 0.42); background: #fff; }
-    .search-box input::-webkit-search-cancel-button { cursor: pointer; }
-    .filter-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .toolbar-label { color: var(--gray-2); font-size: 12px; font-weight: 700; letter-spacing: -0.01em; align-self: center; margin-right: 2px; }
-
-    /* ── 폼 공통 ── */
-    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field.is-wide { grid-column: span 2; }
-    .input, .textarea {
-      width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
-      transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
-    }
-    .input { min-height: 44px; padding: 0 12px; }
-    select.input { padding-right: 34px; }
-    .textarea { min-height: 130px; }
-    .input:focus, .textarea:focus { border-color: rgba(40, 82, 68, 0.42); }
-    .counter { justify-self: end; color: var(--gray); font-size: 12px; font-weight: 700; }
-    .admin-note {
-      grid-column: span 2; margin: 0; padding: 10px 13px; border-radius: 12px;
-      border: 1px solid rgba(133, 100, 16, 0.18); background: var(--pastel-cream);
-      color: #7A4A32; font-size: 13px; font-weight: 700;
-    }
-    /* v3 확장 자리: 이미지 첨부 훅(스토리지 계약 확정 전까지 비활성) */
-    .attach-hook { grid-column: span 2; }
-    .attach-hook .mini-btn { opacity: 0.55; cursor: not-allowed; }
-    .attach-hook .mini-btn:hover { transform: none; }
-    .attach-hook small { color: var(--gray-2); font-weight: 600; }
-
-    /* ── 글쓰기 모달 (모바일: 풀시트) ── */
-    .write-modal { width: min(640px, 100%); }
-    #passBackdrop { z-index: 240; }
-    .pass-modal { width: min(400px, 100%); }
-    @media (max-width: 640px) {
-      #writeBackdrop { padding: 0; place-items: end stretch; }
-      #writeBackdrop .write-modal {
-        width: 100%; max-width: none; max-height: 92dvh;
-        border-radius: 26px 26px 0 0;
-        padding-bottom: calc(22px + env(safe-area-inset-bottom));
-      }
-    }
-
-    /* ── 카드형 피드 ── */
-    .post-list { display: grid; gap: 14px; }
-    .post-skel { padding: 16px 18px; }
-
-    .post-card {
-      position: relative; overflow: hidden;
-      border: 1px solid var(--line); border-radius: var(--r-md);
-      background: var(--surface);
-      transition: box-shadow 0.22s var(--ease), transform 0.22s var(--ease), border-color 0.22s var(--ease);
-    }
-    .post-card.card-lift:hover { transform: none; border-color: var(--line-strong); }
-    /* 링크를 타고 들어왔을 때 "이 글이에요" 하고 짚어 주는 표시.
-       목록 한가운데로 스크롤되면 어느 카드 때문에 왔는지 알 수 없다. */
-    .post-card.is-linked {
-      border-color: var(--primary);
-      animation: linked-pulse 2.4s var(--ease-out) both;
-    }
-    @keyframes linked-pulse {
-      0%, 62% { }
-      100%    { }
-    }
-    @media (prefers-reduced-motion: reduce) { .post-card.is-linked { animation: none; } }
-    .mini-btn.mini-link { color: var(--primary); }
-    .pass-hint { color: var(--gray-2); }
-    .linkish {
-      background: none; border: 0; padding: 0; cursor: pointer;
-      color: var(--primary); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px;
-    }
-
-    /* ── 벙 정보 줄 ── */
-    .bung-strip {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      margin: 0 18px 12px; padding: 10px 0 0; border-top: 1px solid var(--line);
-      font-size: 14px; color: var(--ink-2);
-    }
-    .bung-strip.is-past { color: var(--ink-2); }
-    .bung-dday { flex: none; color: var(--brand); font-size: 13px; font-weight: 600; }
-    .bung-strip.is-past .bung-dday { color: var(--ink-2); }
-    .bung-when { min-width: 0; }
-    .bung-state { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--primary); }
-    .bung-strip.is-past .bung-state { color: var(--gray-2); }
-    .bung-cta { display: inline-flex; margin-bottom: 12px; }
-
-    /* 글쓰기 모달의 벙 칸 */
-    .bung-fields {
-      padding: 13px; border-radius: var(--r-sm);
-      background: var(--offwhite); border: 1px solid var(--line);
-    }
-    .bung-grid { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bung-fields label small { color: var(--gray-2); font-weight: 700; }
-    @media (max-width: 460px) { .bung-grid { grid-template-columns: 1fr; } }
-    /* 고정 공지: 배경을 바꾸지 않고 왼쪽에 선 하나 */
-    .post-card.is-pinned { border-left: 3px solid var(--brand); }
+    /* ── 목록 ── */
+    .post-list { border-bottom: 1px solid var(--line); }
+    .post-row { padding: 0; border-top: 1px solid var(--line); scroll-margin-top: calc(var(--nav-h) + 12px); }
+    .post-row.is-pinned .post-head { box-shadow: inset 3px 0 0 var(--brand); padding-left: 12px; }
     .post-h { margin: 0; }
     .post-head {
-      display: block; width: 100%; padding: 16px 18px 10px; text-align: left; cursor: pointer;
-      transition: background 0.16s var(--ease);
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; width: 100%;
+      padding: 14px 0; text-align: left; color: var(--ink); cursor: pointer;
     }
-    .post-head:hover { background: rgba(234, 240, 233, 0.4); }
+    .post-head:hover .row-title { text-decoration: underline; text-underline-offset: 3px; }
+    .post-head .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .post-head .row-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-head .row-state { align-self: center; }
+    .post-head .row-meta { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-head .row-meta b { color: var(--ink); font-weight: 500; }
+    .rm-sub + .rm-who::before { content: "·"; margin: 0 5px; }
+    @media (max-width: 600px) {
+      .post-head .row-title, .post-head .row-meta { white-space: normal; }
+      .rm-sub { display: block; }
+      .rm-sub + .rm-who::before { content: none; }
+    }
+    .post-row.is-linked .post-head { background: var(--brand-soft); }
+    .day-head { margin: 16px 0 0; padding-bottom: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+    .day-head:first-child { margin-top: 0; }
 
-    .pc-body { min-width: 0; display: grid; gap: 6px; }
-    .post-topline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 13px; }
-    .post-cat { font-weight: 600; }
-    .post-cat.is-notice { color: var(--brand); }
-    .badge-soft.pin-badge { background: var(--brand); color: #fff; }
-    .post-title-text { display: block; font-size: 18px; font-weight: 600; line-height: 1.4; color: var(--ink); word-break: break-word; overflow-wrap: anywhere; }
-    .post-excerpt {
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-      margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); font-weight: 400; line-height: 1.55;
-      word-break: break-word; overflow-wrap: anywhere;
-    }
-    .post-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; color: var(--ink-2); font-size: 13px; font-weight: 400; }
-    .pc-author { font-weight: 500; color: var(--ink); max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pc-stat { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
-    /* 글쓴이와 시각 사이를 나누는 자리. 가운뎃점을 글자로 찍는 대신 선으로 그린다. */
-    .post-meta .pc-author + span::before {
-      content: ""; display: inline-block; width: 1px; height: 10px; margin-right: 8px;
-      background: currentColor; opacity: 0.32; vertical-align: middle;
-    }
-
-    /* ── 리액션 바 (터치 타깃 44px) ── */
-    .react-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 14px; }
+    /* ── 펼친 글 ── */
+    .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+    .pd-lead { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 15px; line-height: 1.6; }
+    .post-detail .kv { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .post-body { color: var(--ink); font-size: var(--fs-body); line-height: 1.75; overflow-wrap: anywhere; }
+    .post-body a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+    .post-body.is-empty { color: var(--ink-2); }
+    .mention { color: var(--brand); font-weight: 600; }
+    .bung-cta { display: inline-flex; margin-top: 14px; }
+    .post-updated { margin: 10px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .react-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
     .react-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-      min-height: 44px; min-width: 52px; padding: 0 12px;
-      border-radius: var(--r-pill); border: 1px solid var(--line);
+      min-height: 40px; min-width: 48px; padding: 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
       background: var(--surface); font-size: 15px; line-height: 1; cursor: pointer;
-      transition: transform 0.15s var(--ease), background 0.15s var(--ease),
-                  border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
     }
-    .react-btn:hover { transform: none; border-color: var(--line-strong); background: #fff; }
-    .react-btn:active { transform: scale(0.94); }
-    .react-btn.is-on {
-      background: var(--soft-lavender); border-color: rgba(40, 82, 68, 0.32);
-    }
-    .react-n { font-size: 12px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+    .react-btn:hover { border-color: var(--ink-2); }
+    .react-btn.is-on { background: var(--brand-soft); border-color: var(--brand); }
+    .react-n { font-size: 12px; font-weight: 600; color: var(--brand); font-variant-numeric: tabular-nums; }
+    .post-actions { display: flex; gap: 2px 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .post-actions .text-btn small { margin-left: 2px; color: var(--ink-2); font-size: 11px; font-weight: 500; }
+    .post-actions .is-danger { color: var(--danger); }
 
-    /* ── 글 상세 (아코디언) ── */
-    .post-detail { padding: 16px 18px 18px; border-top: 1px solid var(--line); animation: detail-in 0.42s var(--ease-out) both; }
-    @keyframes detail-in {
-      from { opacity: 0; transform: none; }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @media (prefers-reduced-motion: reduce) { .post-detail { animation: none; } }
-    .post-body-text { color: var(--ink); font-size: var(--fs-body); line-height: 1.78; word-break: break-word; overflow-wrap: anywhere; }
-    .post-body-text a { color: var(--primary); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
-    .post-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
-    .mini-btn small { color: var(--gray-2); font-size: 11px; font-weight: 600; }
-    .mini-btn.mini-danger { background: rgba(192, 57, 43, 0.08); color: var(--danger); }
-    .mini-btn.mini-danger:hover { background: rgba(192, 57, 43, 0.14); }
-
-    /* ── 댓글 ── */
-    .comment-sec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-    .comment-head { margin-bottom: 10px; font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
-    .comment-head b { color: var(--primary); }
-    .comment-list { display: grid; gap: 8px; }
-    .comment-item {
-      padding: 11px 13px; border-radius: 14px;
-      background: var(--offwhite);
-      border: 1px solid var(--line);
-    }
-    .comment-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray); font-weight: 700; }
-    .comment-meta b { color: var(--primary-700); font-weight: 700; }
-    .comment-del {
-      margin-left: auto; min-height: 40px; padding: 2px 11px; border-radius: var(--r-pill);
-      border: 1px solid var(--line); background: transparent; color: var(--gray);
-      font-size: 11px; font-weight: 600; cursor: pointer;
-      transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
-    }
-    .comment-del:hover { color: var(--danger); border-color: rgba(192, 57, 43, 0.32); }
-    .comment-body { margin-top: 5px; color: var(--ink-2); font-size: var(--fs-body); line-height: 1.65; word-break: break-word; overflow-wrap: anywhere; }
-    .comment-body a { color: var(--primary); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
-    /* @멘션 칩 — 카톡식 태그 (본문·댓글 공통) */
-    .mention {
-      display: inline; padding: 1px 6px; border-radius: var(--r-pill);
-      background: var(--pastel-lavender); color: var(--primary);
-      font-weight: 600; text-decoration: none; white-space: nowrap;
-    }
-    .post-body-text .mention, .comment-body .mention { text-decoration: none; }
-    .comment-empty, .comment-loading { padding: 14px; border-radius: 13px; border: 1px dashed var(--line-strong); color: var(--gray); font-size: 13px; font-weight: 700; text-align: center; }
-    .comment-form { margin-top: 12px; display: grid; gap: 8px; }
+    /* 댓글: 선으로 나눈 행 */
+    .comment-sec { margin-top: 12px; }
+    .comment-head { margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
+    .comment { padding: 10px 0; border-top: 1px solid var(--line); }
+    .comment-meta { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: var(--fs-caption); }
+    .comment-meta b { color: var(--ink); font-weight: 600; }
+    .comment-meta .text-btn { margin-left: auto; min-height: 32px; font-size: var(--fs-caption); }
+    .comment-body { margin-top: 3px; color: var(--ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+    .comment-body a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+    .comment-empty { padding: 10px 0; border-top: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
+    .comment-form { display: grid; gap: 8px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
     .comment-form .row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    .comment-form .textarea { min-height: 84px; }
-    .comment-form-actions { display: flex; justify-content: flex-end; }
-    .btn-sm { min-height: 40px; padding: 0 17px; font-size: 14px; }
+    .comment-form .textarea { min-height: 72px; }
+    .comment-form-acts { display: flex; justify-content: flex-end; }
+    @media (max-width: 860px) {
+      .post-detail { padding: 16px 16px; }
+      .comment-form .row2 { grid-template-columns: 1fr; }
+    }
 
-    /* ── 수정 폼 ── */
-    .edit-form { display: grid; gap: 12px; }
-
-    /* ── 벙 소식만 볼 때 날짜별 묶음 머리 ── */
-    .day-head { margin: 8px 0 -4px; padding-bottom: 6px; border-bottom: 1px solid var(--ink); color: var(--ink); font-size: 14px; font-weight: 600; }
-    .day-head:first-child { margin-top: 0; }
-    /* 공지만 볼 때: 요약 없이 제목·날짜 한 줄 */
-    .post-card.is-compact .post-head { padding: 12px 18px; }
-    .post-card.is-compact .post-excerpt { display: none; }
-    .post-card.is-compact .post-title-text { font-size: 16px; }
-
-    /* ── 더 보기 / 빈 상태 ── */
     .more-wrap { display: flex; justify-content: center; margin-top: 18px; }
 
-    .empty-card .empty-state { padding: clamp(30px, 5vw, 46px) 20px; }
-    .empty-card .btn { margin-top: 4px; }
-
-    /* ── 모바일 ── */
-    @media (max-width: 767px) {
-      .search-box { flex-basis: 100%; min-width: 0; }
-      .comment-form .row2 { grid-template-columns: 1fr; }
-      .setup-banner .mini-btn { margin-left: 0; }
+    /* ── 글쓰기 / 수정 모달 ── */
+    .write-modal { width: min(680px, 100%); }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+    .field-grid > .is-wide { grid-column: span 2; }
+    select.input { padding-right: 30px; }
+    .textarea.is-body { min-height: 150px; }
+    .type-fields { display: contents; }
+    .type-desc { margin: -4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    .form-preview .post-row { border-top: 0; }
+    .form-preview .post-head { padding: 4px 0 6px; cursor: default; }
+    .form-preview .post-head:hover .row-title { text-decoration: none; }
+    .form-preview .kv { margin: 6px 0 4px; }
+    .pass-modal { width: min(420px, 100%); }
+    #passBackdrop { z-index: 240; }
+    @media (max-width: 640px) {
       .field-grid { grid-template-columns: 1fr; }
-      .field.is-wide, .admin-note, .attach-hook { grid-column: auto; }
-      .modal-foot { flex-direction: column-reverse; }
-      .modal-foot .btn { width: 100%; }
-      .pc-author { max-width: 32vw; }
+      .field-grid > .is-wide { grid-column: span 1; }
     }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
+  <script src="assets/content.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
-  <!-- ── 상단 글래스 내비 (IA 5탭 · 활성: 소식) ── -->
   <header class="topnav" id="topnav">
     <div class="container topnav-inner">
       <a class="topnav-brand" href="index.html" aria-label="동네친구들 홈으로 이동">
@@ -305,7 +161,7 @@
     <div class="container is-narrow page-head-inner">
       <div>
         <h1 id="pageTitle">소식</h1>
-        <p class="page-lead">공지, 모임(벙) 소식, 후기, 정보, 자유 글을 올리는 게시판입니다. 닉네임과 비밀번호만 있으면 글을 쓸 수 있습니다.</p>
+        <p class="page-lead">공지, 모임 모집, 모임 후기, 정보, 자유 글을 올리는 게시판입니다. 닉네임과 비밀번호만 있으면 글을 쓸 수 있습니다.</p>
       </div>
       <div class="page-actions">
         <button class="btn btn-primary" id="heroWriteBtn" type="button">글쓰기</button>
@@ -316,39 +172,35 @@
   <main id="main" class="page-main">
     <section class="section is-tight" id="board">
       <div class="container is-narrow">
-
-        <div id="setupBanner" class="setup-banner" hidden>
-          <span><b>소식을 불러오지 못했습니다.</b> 연결을 확인한 뒤 다시 시도해 주세요.</span>
-          <button id="retryBtn" class="mini-btn" type="button">다시 시도</button>
-        </div>
-
-        <!-- v3 확장 자리: 주간 베스트(이 주의 인기 소식) 스트립 — 집계 계약 확정 후 활성화 -->
-
-        <div class="board-toolbar">
-          <div class="toolbar-row">
+        <div class="panel board-tools" role="search">
+          <div class="tools-row">
             <label class="search-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input id="searchInput" type="search" placeholder="제목이나 내용 검색" aria-label="소식 검색" autocomplete="off" />
+              <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+              <input id="searchInput" class="input" type="search" placeholder="제목이나 내용 검색" aria-label="소식 검색" autocomplete="off" />
             </label>
-            <div class="tab-row" id="sortRow" role="group" aria-label="정렬 방식">
-              <button type="button" class="is-active" data-sort="latest" aria-pressed="true">최신순</button>
-              <button type="button" data-sort="popular" aria-pressed="false">인기순</button>
-            </div>
+            <label class="sr-only" for="sortSelect">정렬</label>
+            <select id="sortSelect" class="sort-select">
+              <option value="latest">최신순</option>
+              <option value="popular">반응 많은 순</option>
+            </select>
           </div>
-          <div class="toolbar-row" style="gap:6px">
-            <span class="toolbar-label" aria-hidden="true">카테고리</span>
-            <div id="filterChips" class="filter-chips" role="group" aria-label="카테고리 필터">
-              <button class="chip is-active" type="button" data-cat="전체" aria-pressed="true">전체</button>
-              <button class="chip" type="button" data-cat="공지" aria-pressed="false"><svg class="ic is-sm" aria-hidden="true"><use href="#i-megaphone"/></svg> 공지</button>
-              <button class="chip" type="button" data-cat="벙 소식" aria-pressed="false"><svg class="ic is-sm" aria-hidden="true"><use href="#i-party"/></svg> 모임 소식</button>
-              <button class="chip" type="button" data-cat="후기" aria-pressed="false"><svg class="ic is-sm" aria-hidden="true"><use href="#i-sparkle"/></svg> 후기</button>
-              <button class="chip" type="button" data-cat="정보" aria-pressed="false"><svg class="ic is-sm" aria-hidden="true"><use href="#i-bulb"/></svg> 정보</button>
-              <button class="chip" type="button" data-cat="자유" aria-pressed="false"><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg> 자유</button>
-            </div>
+          <div class="tab-row type-tabs" id="filterChips" role="group" aria-label="글 종류">
+            <button type="button" class="is-active" data-cat="전체" aria-pressed="true">전체</button>
+            <button type="button" data-cat="공지" aria-pressed="false">공지</button>
+            <button type="button" data-cat="벙 소식" aria-pressed="false">모임 모집</button>
+            <button type="button" data-cat="후기" aria-pressed="false">모임 후기</button>
+            <button type="button" data-cat="정보" aria-pressed="false">정보</button>
+            <button type="button" data-cat="자유" aria-pressed="false">자유</button>
           </div>
         </div>
+        <div class="board-foot"><span id="listNote" aria-live="polite"></span></div>
 
-        <div id="postList" class="post-list" aria-label="소식 목록" aria-live="polite"></div>
+        <div id="setupBanner" class="status-line is-warn" hidden>
+          <span>소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.</span>
+          <button id="retryBtn" class="btn btn-secondary is-sm" type="button">다시 시도</button>
+        </div>
+
+        <div id="postList" class="post-list" aria-label="소식 목록"></div>
 
         <div id="moreWrap" class="more-wrap" hidden>
           <button id="moreBtn" class="btn btn-secondary" type="button">더 보기</button>
@@ -384,7 +236,6 @@
     </div>
   </footer>
 
-  <!-- ── 모바일 하단 탭바 (IA 5탭 · 활성: 소식) ── -->
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
     <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>이용 안내</a>
@@ -394,71 +245,55 @@
     <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
 
-  <!-- ── 글쓰기 모달 (모바일: 풀시트) ── -->
-  <div id="writeBackdrop" class="modal-backdrop" hidden>
+  <!-- ── 글쓰기 / 수정 ── 유형을 먼저 고르면 그 유형의 항목만 보인다 -->
+  <div id="writeBackdrop" class="modal-backdrop is-sheet" hidden>
     <div class="modal write-modal" role="dialog" aria-modal="true" aria-labelledby="writeTitle">
       <div class="modal-head">
         <h3 id="writeTitle">글쓰기</h3>
-        <button id="writeCloseBtn" class="modal-close" type="button" aria-label="글쓰기 닫기"><svg class="ic " aria-hidden="true"><use href="#i-close"/></svg></button>
+        <button id="writeCloseBtn" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
-      <div class="field-grid">
-        <div class="field">
-          <label for="wCat">카테고리</label>
+      <div class="field-grid" id="writeForm">
+        <div class="field is-wide" data-field="wCat">
+          <label for="wCat">글 종류</label>
           <select id="wCat" class="input">
             <option value="자유" selected>자유</option>
-            <option value="벙 소식">모임 소식(벙)</option>
-            <option value="후기">후기</option>
+            <option value="벙 소식">모임 모집</option>
+            <option value="후기">모임 후기</option>
             <option value="정보">정보</option>
-            <option value="공지">공지(운영진)</option>
+            <option value="공지">공지 (운영진)</option>
           </select>
+          <p class="type-desc" id="typeDesc"></p>
         </div>
-        <div class="field">
+        <p class="form-note is-wide" id="capsNote" hidden>서버 업데이트 전이라 이 종류의 항목은 저장되지 않습니다. 날짜와 장소는 본문에 적어 주세요.</p>
+        <div class="field is-wide" data-field="wTitle">
+          <label for="wTitle" id="wTitleLabel">제목</label>
+          <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목" />
+          <span class="field-error" hidden></span>
+        </div>
+        <div class="type-fields" id="typeFields"></div>
+        <div class="field is-wide" data-field="wBody">
+          <label for="wBody" id="wBodyLabel">내용</label>
+          <textarea id="wBody" class="textarea is-body" maxlength="4000" placeholder="내용"></textarea>
+          <span class="field-count" id="wCount">0 / 4000</span>
+          <span class="field-error" hidden></span>
+        </div>
+        <div class="form-sec is-wide">작성 정보</div>
+        <div class="field" data-field="wNick" id="wNickWrap">
           <label for="wNick">닉네임</label>
           <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
+          <span class="field-error" hidden></span>
         </div>
-        <div class="field is-wide">
+        <div class="field" data-field="wPass">
           <label for="wPass">비밀번호</label>
           <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
-          <span class="field-hint">글을 수정하거나 삭제할 때 필요합니다.</span>
-          <span class="field-hint pass-hint" id="passHint" hidden>이 브라우저에 저장된 비밀번호를 사용합니다.
-            <button type="button" class="linkish" id="passForget">지우기</button></span>
+          <span class="field-hint" id="wPassHint">글을 수정하거나 삭제할 때 필요합니다.</span>
+          <span class="field-hint" id="passHint" hidden>이 브라우저에 저장된 비밀번호를 사용합니다. <button type="button" class="text-btn is-quiet" id="passForget" style="min-height:24px;padding:0">지우기</button></span>
+          <span class="field-error" hidden></span>
         </div>
-        <p id="adminNote" class="admin-note" hidden>공지는 운영진 비밀번호로만 올릴 수 있으며 목록 맨 위에 고정됩니다.</p>
-        <div class="field is-wide">
-          <label for="wTitle">제목</label>
-          <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목 (100자 이내)" />
+        <div class="form-preview is-wide" aria-live="polite">
+          <span class="fp-label">목록과 상세에 이렇게 보입니다</span>
+          <div id="writePreview"></div>
         </div>
-        <!-- 벙 모집일 때만 열리는 칸. 4개뿐이고, 이 중 필수는 날짜 하나다.
-             참석 버튼·참석자 명단은 만들지 않는다 — 참석의 정본은 오픈채팅이다. -->
-        <div id="bungFields" class="bung-fields is-wide" hidden>
-          <div class="bung-grid">
-            <div class="field">
-              <label for="wBungDate">모임 날짜</label>
-              <input id="wBungDate" class="input" type="date" />
-            </div>
-            <div class="field">
-              <label for="wBungTime">시각 <small>선택</small></label>
-              <input id="wBungTime" class="input" type="time" />
-            </div>
-            <div class="field">
-              <label for="wBungPlace">장소 <small>선택</small></label>
-              <input id="wBungPlace" class="input" type="text" maxlength="60" placeholder="예: 강남역 3번 출구" />
-            </div>
-            <div class="field">
-              <label for="wBungCap">정원 <small>선택</small></label>
-              <input id="wBungCap" class="input" type="number" min="1" max="200" placeholder="예: 8" />
-            </div>
-          </div>
-          <span class="field-hint">날짜만 입력해도 됩니다. 참석 신청은 오픈채팅 공지의 참석 버튼으로 받습니다. 정원은 표시만 하며 자동으로 마감하지 않습니다.</span>
-        </div>
-        <div class="field is-wide">
-          <label for="wBody">내용</label>
-          <textarea id="wBody" class="textarea" maxlength="4000" placeholder="내용 (4000자 이내)"></textarea>
-          <span id="wCount" class="counter">0 / 4000</span>
-        </div>
-        <!-- 이미지 첨부 자리였다. '준비 중' 칩을 눌러도 아무 일이 없었고,
-             사진은 카톡방에서 이미 잘 돌고 있어서 당분간 만들지 않기로 했다.
-             오지 않을 것을 기다리게 하는 편이 없는 것보다 나쁘다. -->
       </div>
       <div class="modal-foot">
         <button id="writeCancelBtn" class="btn btn-secondary" type="button">취소</button>
@@ -467,41 +302,33 @@
     </div>
   </div>
 
-  <!-- ── 비밀번호 확인 모달 ── -->
+  <!-- ── 비밀번호 확인 ── -->
   <div id="passBackdrop" class="modal-backdrop" hidden>
     <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
       <div class="modal-head">
         <h3 id="passTitle">비밀번호 확인</h3>
-        <button id="passClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic " aria-hidden="true"><use href="#i-close"/></svg></button>
+        <button id="passClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
-      <p id="passDesc" style="margin:0 0 14px; color:var(--gray); font-size:13px; line-height:1.55"></p>
+      <p id="passDesc" class="field-hint" style="margin:0 0 12px"></p>
+      <label class="sr-only" for="passInput">비밀번호</label>
       <input id="passInput" class="input" type="password" placeholder="비밀번호" autocomplete="off" />
       <div class="modal-foot">
-        <button id="passCancel" class="btn btn-secondary btn-sm" type="button">취소</button>
-        <button id="passOk" class="btn btn-primary btn-sm" type="button">확인</button>
+        <button id="passCancel" class="btn btn-secondary is-sm" type="button">취소</button>
+        <button id="passOk" class="btn btn-primary is-sm" type="button">확인</button>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ════════════════════════════════════════════════════════
-       공통 셸 JS — v3-shell 그대로. 제공: window.EXCER = { toast, countUp, fmt }
-       ════════════════════════════════════════════════════════ -->
+  <!-- 공통 셸 JS -->
   <script>
     (function () {
       "use strict";
-      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      /* ── 1. topnav 스크롤 상태 ── */
       var topnav = document.getElementById("topnav");
-      function syncNav() {
-        if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8);
-      }
+      function syncNav() { if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8); }
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
-
-      /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
       var toastTimer = null;
       function toast(msg) {
@@ -509,48 +336,22 @@
         toastEl.textContent = msg;
         toastEl.classList.add("is-visible");
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400);
+        toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2600);
       }
-
-      /* ── 4. 숫자 포맷 + 카운트업 ── */
-      function fmt(n, decimals) {
-        return Number(n).toLocaleString("ko-KR", {
-          minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0
-        });
-      }
-      function countUp(el, to, opts) {
-        if (!el) return;
-        opts = opts || {};
-        var dur = opts.duration || 900;
-        var dec = opts.decimals || 0;
-        var suffix = opts.suffix || "";
-        if (reduceMotion || dur <= 0) { el.textContent = fmt(to, dec) + suffix; return; }
-        var start = null;
-        function step(ts) {
-          if (start === null) start = ts;
-          var p = Math.min((ts - start) / dur, 1);
-          var eased = 1 - Math.pow(1 - p, 3); /* easeOutCubic */
-          el.textContent = fmt(to * eased, dec) + suffix;
-          if (p < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-      }
-
-      window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
+      function fmt(n, decimals) { return Number(n).toLocaleString("ko-KR", { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 }); }
+      window.EXCER = { toast: toast, countUp: function (el, to, o) { if (el) el.textContent = fmt(to, (o || {}).decimals || 0) + ((o || {}).suffix || ""); }, fmt: fmt };
     })();
   </script>
 
-  <!-- ── 페이지 로직: 소식 커뮤니티 피드 v3 (RPC/뷰 계약은 sql/setup_all.sql 그대로) ── -->
+  <!-- ── 페이지 로직: 소식 ── -->
   <script>
-    // ── Supabase (plain fetch REST) ─────────────────────────────
-    const SUPA = window.SUPA;   // assets/site-core.js
+    const SUPA = window.SUPA;
+    const C = window.EXCER_CONTENT;
+    const esc = C.esc;
     async function supaFetch(path, opts = {}) {
       const res = await fetch(SUPA.url + path, {
         ...opts,
-        headers: {
-          apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon,
-          "Content-Type": "application/json", ...(opts.headers || {})
-        }
+        headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon, "Content-Type": "application/json", ...(opts.headers || {}) }
       });
       if (!res.ok) {
         let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
@@ -559,143 +360,107 @@
       return res.status === 204 ? null : res.json();
     }
 
-    // ── 상수 / 상태 ─────────────────────────────────────────────
     const PAGE_SIZE = 20;
-    // 목록 조회와 딥링크 단건 조회가 같은 컬럼을 쓰도록 한 곳에 둔다
-    // (한쪽만 고치면 링크로 연 글의 리액션·댓글 수가 비는 식으로 조용히 어긋난다)
     const POST_SELECT = "select=id,category,title,body,author,pinned,meta,created_at,updated_at,comment_count,reactions,reaction_count";
     const NICK_KEY = "excer_news_nick";
     const PASS_KEY = "excer_news_pass";
     const DEVICE_STORE_KEY = "excer_device_key";
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
-    // 카테고리 — sql/setup_all.sql 체크 제약과 동일 집합 (순서·문자열 유지)
     const CATS = ["공지", "벙 소식", "후기", "정보", "자유"];
-    // 카테고리별 배지 색 + 아이콘 타일(썸네일 자리) 키
-    const CAT_META = {
-      "공지":   { key: "notice", icon: "megaphone", badge: "is-cream" },
-      "벙 소식": { key: "bung",   icon: "party", badge: "is-sky" },
-      "후기":   { key: "review", icon: "sparkle", badge: "is-mint" },
-      "정보":   { key: "info",   icon: "bulb", badge: "" },
-      "자유":   { key: "free",   icon: "chat", badge: "is-blush" }
-    };
-    function catMeta(cat) { return CAT_META[cat] || { key: "free", icon: "chat", badge: "" }; }
-    /* 아이콘 한 벌(assets/icons.js)에서 하나 꺼내 쓴다 */
-    function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name || "chat"}"/></svg>`; }
+    const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
     const ERROR_MAP = {
-      BAD_PASS: "비밀번호가 맞지 않습니다. 다시 입력해 주세요.",
-      ADMIN_ONLY: "운영진 비밀번호가 필요합니다.",
+      BAD_PASS: "비밀번호가 맞지 않습니다. 글을 쓸 때 입력한 비밀번호나 운영진 비밀번호를 입력해 주세요.",
+      ADMIN_ONLY: "공지는 운영진 비밀번호로만 올릴 수 있습니다.",
       PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
       NOT_FOUND: "이미 삭제된 글입니다.",
       BAD_KEY: "이 글을 수정할 권한이 없습니다."
     };
     const OFFLINE_MSG = "지금은 소식을 불러올 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
-    const state = {
-      category: "전체",
-      sort: "latest",          // latest | popular
-      search: "",
-      posts: [],
-      offset: 0,
-      hasMore: false,
-      degraded: false,
-      loading: false,
-      busy: false,
-      expandedId: null,
-      linkedId: null,          // 링크를 타고 들어온 글 — 강조 표시가 켜져 있는 동안만 값이 있다
-      editingId: null,
-      commentsCache: {},
-      myReactions: {},         // postId -> Set(emoji)
-      reactBusy: {}            // "postId|emoji" -> true (중복 탭 가드)
+    /* 유형별 입력 항목 — docs/CONTENT_FORMAT.md 2.2 와 같은 키. 서버 정리기(post_meta_clean)가 아는 키만 저장된다 */
+    const TYPE_DESC = {
+      "자유": "제목과 내용만 있으면 됩니다.",
+      "벙 소식": "날짜·시간·장소·인원·비용을 항목으로 적으면 목록과 홈의 다가오는 모임에 그대로 보입니다. 참석 신청은 오픈채팅 공지에서 받습니다.",
+      "후기": "어떤 모임이었는지와 날짜·장소를 항목으로 적고, 후기는 내용에 씁니다.",
+      "정보": "핵심 내용 한 줄과 출처·링크·유효 기간을 항목으로 적습니다.",
+      "공지": "운영진 비밀번호가 필요합니다. 적용 대상·적용일·필요한 행동을 항목으로 적으면 목록 맨 위에 고정됩니다."
+    };
+    const TYPE_FIELDS = {
+      "공지": [
+        { key: "summary", label: "핵심 안내", type: "text", max: 120, wide: true, ph: "예: 2개월 1회 참여 기준과 정산 시한을 정리했습니다.", hint: "목록에서 제목 아래 한 줄로 보입니다." },
+        { key: "audience", label: "적용 대상", type: "text", max: 40, ph: "예: 전체 멤버" },
+        { key: "action", label: "필요한 행동", type: "text", max: 80, ph: "예: 9월 30일까지 닉네임을 맞춰 주세요." },
+        { key: "from", label: "적용일", type: "date" },
+        { key: "to", label: "종료일", type: "date" }
+      ],
+      "벙 소식": [
+        { key: "date", label: "모임 날짜", type: "date", hint: "날짜가 있어야 홈의 다가오는 모임에 보입니다." },
+        { key: "time", label: "시간", type: "time" },
+        { key: "place", label: "장소", type: "text", max: 60, ph: "예: 강남역 3번 출구" },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", v2: true },
+        { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
+        { key: "bring", label: "준비물 · 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
+        { key: "status", label: "모집 상태", type: "select", options: [["", "표시 안 함"], ["recruiting", "모집 중"], ["closed", "마감"]], hint: "모임장이 직접 바꿉니다.", v2: true }
+      ],
+      "후기": [
+        { key: "activity", label: "모임 · 활동 종류", type: "text", max: 40, ph: "예: 산책, 고기 모임" },
+        { key: "date", label: "날짜", type: "date" },
+        { key: "place", label: "장소", type: "text", max: 60, ph: "예: 잠원 한강공원" },
+        { key: "link", label: "관련 링크", type: "url", max: 400, ph: "맛집이나 모임 글 주소" }
+      ],
+      "정보": [
+        { key: "summary", label: "핵심 내용", type: "text", max: 120, wide: true, ph: "예: 콘센트가 많아 노트북 작업에 좋습니다.", hint: "목록에서 제목 아래 한 줄로 보입니다." },
+        { key: "source", label: "출처", type: "text", max: 60, ph: "예: 직접 방문, 공식 안내" },
+        { key: "until", label: "유효 기간", type: "date", hint: "지나면 목록에 기간이 지났다고 표시합니다." },
+        { key: "link", label: "관련 링크", type: "url", max: 400, wide: true, ph: "https://" }
+      ],
+      "자유": []
     };
 
+    const state = {
+      category: "전체", sort: "latest", search: "",
+      posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
+      expandedId: null, linkedId: null, editingId: null, commentsCache: {},
+      myReactions: {}, reactBusy: {}, caps: 1
+    };
     const $ = (id) => document.getElementById(id);
     function showToast(message) { if (window.EXCER) EXCER.toast(message); }
+    function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name || "chat"}"/></svg>`; }
 
-    // ── 유틸 ────────────────────────────────────────────────────
-    function escapeHTML(value) {
-      const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-      return String(value).replace(/[&<>"']/g, (char) => entities[char]);
-    }
-
-    // @닉네임 → 카톡식 멘션 칩. 닉네임 = 영문/숫자/_ + 한글(호환 자모 U+3130–U+318F,
-    // 음절 U+AC00–U+D7A3), 1~24자. 경계(@ 앞) = 문자열/런 시작·공백·여는 괄호일 때만 매칭.
+    // ── 본문 렌더: escape → 링크 → @닉네임 → 줄바꿈 ──
     const MENTION_RE = /(^|[\s([{])@([0-9A-Za-z_㄰-㆏가-힣]{1,24})(?![0-9A-Za-z_㄰-㆏가-힣])/g;
-
-    // escape·링크화가 끝난 문자열에서만 동작. <a>…</a> 블록은 건너뛰고(하이퍼링크·href 보존)
-    // 순수 텍스트 런에서만 멘션을 태깅한다. escape 후 남는 '<' 는 링크 태그의 시작뿐이다.
     function linkifyMentions(html) {
       return html.replace(/<a\b[^>]*>[^<]*<\/a>|[^<]+/g, (seg) =>
-        seg[0] === "<"
-          ? seg
-          : seg.replace(MENTION_RE, (_m, b, nick) =>
-              `${b}<span class="mention">@${nick}</span>`));
+        seg[0] === "<" ? seg : seg.replace(MENTION_RE, (_m, b, nick) => `${b}<span class="mention">@${nick}</span>`));
     }
-
-    // escape 후 http(s) URL만 안전하게 링크화 → @멘션 태깅 → 줄바꿈 <br>
     function renderBody(text) {
-      const escaped = escapeHTML(text);
-      const linked = escaped.replace(/https?:\/\/[^\s<]+/g,
-        (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
-      const mentioned = linkifyMentions(linked);
-      return mentioned.replace(/\n/g, "<br>");
+      const escaped = esc(text);
+      const linked = escaped.replace(/https?:\/\/[^\s<]+/g, (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+      return linkifyMentions(linked).replace(/\n/g, "<br>");
     }
-
-    /* 접혀 있는 카드에는 제목만 보인다. '오늘 한잔?' 같은 제목만으로는
-       열어 보기 전에는 무슨 얘긴지 알 수 없어서, 첫 줄을 미리 보여 준다.
-       본문은 어차피 목록과 함께 받아 오므로 더 부르는 것은 없다. */
-    function excerptOf(body) {
-      const t = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
-      return t.length > 110 ? t.slice(0, 110) + "…" : t;
-    }
-
-    function relTime(iso) {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return "";
-      const diff = (Date.now() - d.getTime()) / 1000;
-      if (diff < 60) return "방금 전";
-      if (diff < 3600) return Math.floor(diff / 60) + "분 전";
-      if (diff < 86400) return Math.floor(diff / 3600) + "시간 전";
-      if (diff < 86400 * 7) return Math.floor(diff / 86400) + "일 전";
-      return d.getFullYear() + "." + (d.getMonth() + 1) + "." + d.getDate();
-    }
-
     function rpcErrorMessage(err) {
       const msg = String((err && err.message) || "");
-      for (const code of Object.keys(ERROR_MAP)) {
-        if (msg.includes(code)) return ERROR_MAP[code];
-      }
+      for (const code of Object.keys(ERROR_MAP)) if (msg.includes(code)) return ERROR_MAP[code];
       if (err && err.status === 404) return OFFLINE_MSG;
-      return "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      return "요청을 처리하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.";
     }
-
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
-    function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) { /* 무시 */ } }
-
-    /* 글 비밀번호는 '가입'이 아니라 '내 글 열쇠'다. 계정이 없으니 이게 유일한 소유 증명이라
-       쓸 때 받는 것 자체는 없앨 수 없다(서버가 그 값으로만 수정·삭제 권한을 판정한다).
-       대신 이 브라우저에 기억해 두 번째 글부터는 실질 입력이 0회가 되게 한다.
-
-       공지는 저장하지 않는다. 공지에 들어가는 건 운영진 비밀번호이고,
-       그건 한 번 새면 발행·강제삭제까지 열리는 열쇠라 편의를 위해 둘 값이 아니다. */
+    function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) {} }
+    /* 글 비밀번호는 '내 글 열쇠'다. 이 브라우저에 기억해 두 번째 글부터는 입력이 0회가 되게 한다.
+       공지(운영진 비밀번호)는 저장하지 않는다. */
     function savedPass() { try { return localStorage.getItem(PASS_KEY) || ""; } catch (e) { return ""; } }
-    function savePass(pass, category) {
-      if (category === "공지") return;
-      try { localStorage.setItem(PASS_KEY, pass); } catch (e) { /* 무시 */ }
-    }
+    function savePass(pass, category) { if (category === "공지") return; try { localStorage.setItem(PASS_KEY, pass); } catch (e) {} }
     function forgetPass() {
       try { localStorage.removeItem(PASS_KEY); } catch (e) {}
-      const w = document.getElementById("wPass"); if (w) w.value = "";
+      $("wPass").value = "";
       document.querySelectorAll(".c-pass").forEach((el) => { el.value = ""; });
       syncPassHint();
       showToast("저장된 비밀번호를 지웠습니다.");
     }
-    function syncPassHint() {
-      const hint = document.getElementById("passHint");
-      if (hint) hint.hidden = !savedPass();
-    }
+    function syncPassHint() { $("passHint").hidden = !savedPass(); }
     function findPost(id) { return state.posts.find((p) => p.id === id); }
 
-    // 기기 키 — localStorage "excer_device_key" (영숫자 24자 난수)
     let _deviceKey = null;
     function deviceKey() {
       if (_deviceKey) return _deviceKey;
@@ -708,62 +473,61 @@
         else for (let i = 0; i < 24; i++) buf[i] = Math.floor(Math.random() * 256);
         key = "";
         for (let i = 0; i < 24; i++) key += chars[buf[i] % 36];
-        try { localStorage.setItem(DEVICE_STORE_KEY, key); } catch (e) { /* 세션 한정 키 */ }
+        try { localStorage.setItem(DEVICE_STORE_KEY, key); } catch (e) {}
       }
       _deviceKey = key;
       return key;
     }
-
-    // PostgREST or= 검색 필터 — 값을 큰따옴표로 감싸 예약문자(, . ( ))를 보호.
-    // 따옴표/역슬래시는 제거해 문법 파손을 막고, * 만 와일드카드로 쓴다.
     function searchOrParam(term) {
       const safe = String(term).replace(/[\\"]/g, "").trim();
       if (!safe) return "";
       const pat = '"*' + safe + '*"';
       return "or=" + encodeURIComponent("(title.ilike." + pat + ",body.ilike." + pat + ")");
     }
+    function sumReactions(reactions) { return EMOJIS.reduce((s, e) => s + (Number((reactions || {})[e]) || 0), 0); }
 
-    function sumReactions(reactions) {
-      return EMOJIS.reduce((s, e) => s + (Number((reactions || {})[e]) || 0), 0);
+    /* ── 폼 오류 ── */
+    function setError(id, msg) {
+      const wrap = document.querySelector('[data-field="' + id + '"]');
+      if (!wrap) return;
+      const el = wrap.querySelector(".field-error");
+      wrap.classList.toggle("is-invalid", !!msg);
+      if (el) { el.textContent = msg || ""; el.hidden = !msg; }
+      const input = $(id);
+      if (input) { if (msg) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid"); }
     }
+    function clearErrors() {
+      document.querySelectorAll("#writeForm [data-field]").forEach((w) => {
+        w.classList.remove("is-invalid");
+        const e = w.querySelector(".field-error"); if (e) { e.hidden = true; e.textContent = ""; }
+        const i = w.querySelector(".input, .textarea"); if (i) i.removeAttribute("aria-invalid");
+      });
+    }
+    function firstInvalid() { const w = document.querySelector("#writeForm .is-invalid .input, #writeForm .is-invalid .textarea"); if (w) w.focus(); }
 
-
-    // ── 데이터 로드 ─────────────────────────────────────────────
+    // ── 데이터 로드 ──
     function orderParam() {
-      // 고정 공지는 어떤 정렬에서도 최상단 (pinned.desc 우선)
-      return state.sort === "popular"
-        ? "order=pinned.desc,reaction_count.desc,created_at.desc"
-        : "order=pinned.desc,created_at.desc";
+      return state.sort === "popular" ? "order=pinned.desc,reaction_count.desc,created_at.desc" : "order=pinned.desc,created_at.desc";
     }
-
-    let reqSeq = 0;   // 필터를 바꿔 다시 부르면 이전 요청의 응답은 버린다
+    let reqSeq = 0;
     async function loadPosts(reset) {
       if (state.loading && !reset) return;
       const seq = ++reqSeq;
       state.loading = true;
       if (reset) state.offset = 0;
       updateMoreBtn();
-      const params = [
-        POST_SELECT,
-        orderParam(),
-        "limit=" + PAGE_SIZE,
-        "offset=" + state.offset
-      ];
+      const params = [POST_SELECT, orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset];
       if (state.category !== "전체") params.push("category=eq." + encodeURIComponent(state.category));
       const orFilter = searchOrParam(state.search);
       if (orFilter) params.push(orFilter);
       try {
         const rows = (await supaFetch("/rest/v1/site_posts_v?" + params.join("&"))) || [];
-        if (seq !== reqSeq) return;   // 그 사이 다른 요청이 떠났다
+        if (seq !== reqSeq) return;
         rows.forEach((r) => { r.reactions = r.reactions || {}; });
         state.degraded = false;
         $("setupBanner").hidden = true;
-        if (reset) {
-          state.posts = rows;
-          state.expandedId = null; state.editingId = null; state.commentsCache = {};
-        } else {
-          state.posts = state.posts.concat(rows);
-        }
+        if (reset) { state.posts = rows; state.expandedId = null; state.commentsCache = {}; }
+        else state.posts = state.posts.concat(rows);
         state.offset += rows.length;
         state.hasMore = rows.length === PAGE_SIZE;
         state.loading = false;
@@ -777,296 +541,189 @@
       state.loading = false;
       renderList();
     }
-
     function enterDegraded() {
       state.degraded = true;
-      state.posts = [];   // 지어낸 글로 자리를 채우지 않는다
-      state.hasMore = false;
-      state.expandedId = null; state.editingId = null; state.commentsCache = {};
+      state.posts = []; state.hasMore = false; state.expandedId = null; state.commentsCache = {};
       $("setupBanner").hidden = false;
     }
-
-    // 내 기기가 누른 리액션 복원 — my_reactions(p_device, p_post_ids)
     async function loadMyReactions(ids) {
       const real = (ids || []).filter((id) => Number(id) > 0);
       if (!real.length || state.degraded) return;
       try {
-        const res = await supaFetch("/rest/v1/rpc/my_reactions", {
-          method: "POST",
-          body: JSON.stringify({ p_device: deviceKey(), p_post_ids: real })
-        });
-        Object.keys(res || {}).forEach((pid) => {
-          state.myReactions[Number(pid)] = new Set(res[pid] || []);
-        });
+        const res = await supaFetch("/rest/v1/rpc/my_reactions", { method: "POST", body: JSON.stringify({ p_device: deviceKey(), p_post_ids: real }) });
+        Object.keys(res || {}).forEach((pid) => { state.myReactions[Number(pid)] = new Set(res[pid] || []); });
         real.forEach((id) => updateReactBar(id));
-      } catch (err) { /* 복원 실패는 조용히 (리액션은 부가 기능) */ }
+      } catch (err) {}
     }
-
     async function loadComments(postId) {
       try {
-        const rows = await supaFetch(
-          "/rest/v1/site_comments_v?select=id,post_id,author,body,created_at" +
-          "&post_id=eq." + postId + "&order=created_at.asc");
+        const rows = await supaFetch("/rest/v1/site_comments_v?select=id,post_id,author,body,created_at&post_id=eq." + postId + "&order=created_at.asc");
         state.commentsCache[postId] = rows || [];
-      } catch (err) {
-        state.commentsCache[postId] = [];
-      }
+      } catch (err) { state.commentsCache[postId] = []; }
       renderList();
     }
 
-    // ── 렌더링 ──────────────────────────────────────────────────
-    // 정렬·필터·페이지는 서버가 한다(order/limit/offset). 화면은 받은 순서를 그대로 쓴다.
-    // 예전에는 데모 모드 전용 클라이언트 필터가 따로 있었는데, 지어낸 글을 걷어내면서 같이 없앴다.
-    function visiblePosts() { return state.posts; }
-
-    function catBadges(post) {
-      const parts = [];
-      parts.push(`<span class="post-cat${post.category === "공지" ? " is-notice" : ""}">${escapeHTML(post.category === "벙 소식" ? "모임 소식" : post.category)}</span>`);
-      if (post.pinned) parts.push(`<span class="badge-soft pin-badge">${post.category === "공지" ? "운영진" : "고정"}</span>`);
-      return parts.join("");
+    // ── 렌더 ──
+    function tagHTML(v) { return `<span class="type-tag${v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : ""}">${esc(v.label)}</span>`; }
+    function metaLine(v) {
+      const sub = v.subline.text || v.excerpt;
+      const who = ["<b>" + esc(v.author || "익명") + "</b>", esc(C.relTime(v.created_at))];
+      if (v.comment_count) who.push("댓글 " + v.comment_count);
+      if (v.reaction_count) who.push("반응 " + v.reaction_count);
+      return (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.join(" · ") + "</span>";
     }
-
-    // 리액션 바 — 👍❤️😂👏🔥 (터치 44px)
     function reactBarHTML(post) {
       const mine = state.myReactions[post.id];
       const btns = EMOJIS.map((emoji) => {
         const n = Number((post.reactions || {})[emoji]) || 0;
         const on = !!(mine && mine.has(emoji));
-        return `<button type="button" class="react-btn${on ? " is-on" : ""}" data-act="react" data-id="${post.id}" data-emoji="${emoji}"
-          aria-pressed="${on}" aria-label="${emoji} 리액션${n ? ", 현재 " + n + "개" : ""}">${emoji}${n ? `<span class="react-n">${n}</span>` : ""}</button>`;
+        return `<button type="button" class="react-btn${on ? " is-on" : ""}" data-act="react" data-id="${post.id}" data-emoji="${emoji}" aria-pressed="${on}" aria-label="${emoji} 반응${n ? ", 현재 " + n + "개" : ""}">${emoji}${n ? `<span class="react-n">${n}</span>` : ""}</button>`;
       }).join("");
-      return `<div class="react-bar" data-post="${post.id}" role="group" aria-label="리액션 남기기">${btns}</div>`;
+      return `<div class="react-bar" data-post="${post.id}" role="group" aria-label="반응 남기기">${btns}</div>`;
     }
-
     function updateReactBar(postId) {
       const post = findPost(postId);
       if (!post) return;
       const ae = document.activeElement;
       const emoji = ae && ae.dataset && ae.dataset.act === "react" && String(ae.dataset.id) === String(postId) ? ae.dataset.emoji : null;
-      document.querySelectorAll(`.react-bar[data-post="${postId}"]`).forEach((bar) => {
-        bar.outerHTML = reactBarHTML(post);
-      });
-      if (emoji) {
-        const b = document.querySelector(`.react-bar[data-post="${postId}"] [data-emoji="${emoji}"]`);
-        if (b) b.focus({ preventScroll: true });
-      }
+      document.querySelectorAll(`.react-bar[data-post="${postId}"]`).forEach((bar) => { bar.outerHTML = reactBarHTML(post); });
+      if (emoji) { const b = document.querySelector(`.react-bar[data-post="${postId}"] [data-emoji="${emoji}"]`); if (b) b.focus({ preventScroll: true }); }
     }
-
     function commentHTML(c) {
-      return `
-        <div class="comment-item">
-          <div class="comment-meta">
-            <b>${escapeHTML(c.author)}</b><span>${relTime(c.created_at)}</span>
-            <button type="button" class="comment-del" data-act="del-comment" data-id="${c.id}" data-post="${c.post_id}">삭제</button>
-          </div>
-          <div class="comment-body">${renderBody(c.body)}</div>
-        </div>`;
+      return `<div class="comment">
+        <div class="comment-meta"><b>${esc(c.author)}</b><span>${esc(C.relTime(c.created_at))}</span>
+          <button type="button" class="text-btn is-quiet" data-act="del-comment" data-id="${c.id}" data-post="${c.post_id}">삭제</button></div>
+        <div class="comment-body">${renderBody(c.body)}</div></div>`;
     }
-
-    function editFormHTML(post) {
-      const opts = CATS.map((c) => {
-        const label = c === "공지" ? "공지(운영진)" : (c === "벙 소식" ? "모임 소식(벙)" : c);
-        return `<option value="${escapeHTML(c)}"${post.category === c ? " selected" : ""}>${escapeHTML(label)}</option>`;
-      }).join("");
-      return `
-        <div class="edit-form">
-          <div class="field">
-            <label>카테고리</label>
-            <select class="input e-cat">${opts}</select>
-          </div>
-          <div class="field">
-            <label>제목</label>
-            <input class="input e-title" type="text" maxlength="100" value="${escapeHTML(post.title)}" />
-          </div>
-          <div class="field">
-            <label>내용</label>
-            <textarea class="textarea e-body" maxlength="4000">${escapeHTML(post.body)}</textarea>
-            <span class="counter">${post.body.length} / 4000</span>
-          </div>
-          <div class="post-actions">
-            <button type="button" class="mini-btn" data-act="cancel-edit" data-id="${post.id}">취소</button>
-            <button type="button" class="btn btn-primary btn-sm" data-act="save-edit" data-id="${post.id}">저장</button>
-          </div>
-        </div>`;
+    function factsHTML(facts) {
+      if (!facts.length) return "";
+      return '<dl class="kv">' + facts.map((f) => `<dt>${esc(f.label)}</dt><dd>${f.href ? `<a href="${esc(f.href)}" target="_blank" rel="noopener noreferrer">${esc(f.value)}</a>` : esc(f.value)}</dd>`).join("") + "</dl>";
     }
-
+    /* 상세: 유형별 항목 → 본문 → (모집) 오픈채팅 → 반응 → 동작 → 댓글 */
     function detailHTML(post) {
-      if (state.editingId === post.id) return editFormHTML(post);
+      const v = C.postView(post);
       const comments = state.commentsCache[post.id];
       let commentsHTML;
-      if (comments === undefined) commentsHTML = `<div class="comment-loading">댓글을 불러오는 중입니다.</div>`;
+      if (comments === undefined) commentsHTML = `<div class="comment-empty">댓글을 불러오는 중입니다.</div>`;
       else if (!comments.length) commentsHTML = `<div class="comment-empty">댓글이 없습니다.</div>`;
       else commentsHTML = comments.map(commentHTML).join("");
+      const lead = (v.kind === "notice" || v.kind === "info") && v.meta && v.meta.summary ? `<p class="pd-lead">${esc(v.meta.summary)}</p>` : "";
+      const body = v.body.trim() ? `<div class="post-body">${renderBody(v.body)}</div>` : `<div class="post-body is-empty">본문이 없습니다.</div>`;
+      const updated = post.updated_at && post.created_at && String(post.updated_at).slice(0, 16) !== String(post.created_at).slice(0, 16)
+        ? `<p class="post-updated">${esc(C.relTime(post.updated_at))} 수정</p>` : "";
       return `
-        <div class="post-body-text">${renderBody(post.body)}</div>
-        ${bungOf(post) ? `<a class="btn btn-primary btn-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
+        ${lead}
+        ${factsHTML(v.facts)}
+        ${body}
+        ${v.kind === "bung" && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
+        ${updated}
         ${reactBarHTML(post)}
         <div class="post-actions">
-          <button type="button" class="mini-btn mini-link" data-act="copy-link" data-id="${post.id}">${icon("link","is-sm")} 링크 복사</button>
-          <button type="button" class="mini-btn" data-act="edit" data-id="${post.id}">${icon("pencil","is-sm")} 수정</button>
-          <button type="button" class="mini-btn mini-danger" data-act="delete" data-id="${post.id}">${icon("trash","is-sm")} 삭제</button>
-          <button type="button" class="mini-btn" data-act="pin" data-id="${post.id}">${icon("pin","is-sm")} ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
-          <!-- v3 확장 자리: 신고/숨김 버튼 (site_post_reports 계약 확정 후 구현) -->
+          <button type="button" class="text-btn" data-act="copy-link" data-id="${post.id}">${icon("link", "is-sm")} 링크 복사</button>
+          <button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>
+          <button type="button" class="text-btn is-quiet is-danger" data-act="delete" data-id="${post.id}">${icon("trash", "is-sm")} 삭제</button>
+          <button type="button" class="text-btn is-quiet" data-act="pin" data-id="${post.id}">${icon("pin", "is-sm")} ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
         </div>
         <div class="comment-sec">
-          <div class="comment-head">댓글 <b>${Number(post.comment_count) || 0}</b></div>
+          <p class="comment-head">댓글 ${Number(post.comment_count) || 0}</p>
           <div class="comment-list">${commentsHTML}</div>
           <div class="comment-form">
             <div class="row2">
-              <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" value="${escapeHTML(savedNick())}" />
-              <input class="input c-pass" type="password" placeholder="비밀번호 (4자+)" autocomplete="new-password" value="${escapeHTML(savedPass())}" />
+              <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" aria-label="댓글 닉네임" value="${esc(savedNick())}" />
+              <input class="input c-pass" type="password" placeholder="비밀번호 (4자 이상)" aria-label="댓글 비밀번호" autocomplete="new-password" value="${esc(savedPass())}" />
             </div>
-            <textarea class="textarea c-body" maxlength="1000" placeholder="댓글 (1000자 이내)"></textarea>
-            <div class="comment-form-actions">
-              <button type="button" class="btn btn-primary btn-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button>
-            </div>
+            <textarea class="textarea c-body" maxlength="1000" placeholder="댓글" aria-label="댓글 내용"></textarea>
+            <div class="comment-form-acts"><button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
           </div>
         </div>`;
     }
-
-    function cardHTML(post) {
+    function rowHTML(post) {
+      const v = C.postView(post);
       const expanded = state.expandedId === post.id;
-      const meta = catMeta(post.category);
-      const rc = Number(post.reaction_count) || 0;
-      const cc = Number(post.comment_count) || 0;
-      const author = String(post.author == null ? "" : post.author);
+      const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
       return `
-        <article class="post-card card-lift${post.pinned ? " is-pinned" : ""}${state.category === "공지" && !expanded ? " is-compact" : ""}" id="post-${post.id}" data-cat="${meta.key}">
+        <article class="row post-row${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
-              <span class="pc-body">
-                <span class="post-topline">${catBadges(post)}</span>
-                <span class="post-title-text">${escapeHTML(post.title)}</span>
-                ${!expanded && excerptOf(post.body) ? `<span class="post-excerpt">${escapeHTML(excerptOf(post.body))}</span>` : ""}
-                <span class="post-meta">
-                  <span class="pc-author">${escapeHTML(author || "익명")}</span>
-                  <span>${relTime(post.created_at)}</span>
-                  <span class="pc-stat" title="댓글 ${cc}개">${icon("chat","is-sm")} ${cc}</span>
-                  <span class="pc-stat" title="리액션 ${rc}개">${icon("heart","is-sm")} ${rc}</span>
-                </span>
-              </span>
+              <span class="nr-line">${tagHTML(v)}<span class="row-title">${esc(v.title || "제목 없음")}</span></span>
+              ${st}
+              <span class="row-meta">${metaLine(v)}</span>
             </button>
           </h3>
-          ${bungStripHTML(post)}
           ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
         </article>`;
     }
-
     function emptyStateHTML() {
-      // 불러오지 못한 것과 글이 없는 것은 다른 상태다.
-      // 예전에는 여기서 지어낸 예시 글 5건을 보여줘 둘을 구분할 수 없었다.
-      if (state.degraded) return "";   // 안내와 다시 시도는 위 배너(#setupBanner) 하나로
+      if (state.degraded) return "";
       if (state.search) {
-        return `<div class="card empty-card"><div class="empty-state">
-          <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-          <strong>검색 결과가 없습니다.</strong>
-          <p>다른 검색어나 카테고리를 선택해 주세요.</p>
-        </div></div>`;
+        return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>검색 결과가 없습니다.</strong><p>"${esc(state.search)}"에 맞는 글이 없습니다. 다른 검색어나 글 종류를 골라 주세요.</p>
+          <button type="button" class="btn btn-secondary is-sm" data-act="clear-search">검색 지우기</button></div>`;
       }
       if (state.category !== "전체") {
-        return `<div class="card empty-card"><div class="empty-state">
-          <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5 6h14l2 6v6H3v-6z"/></svg></span>
-          <strong>${escapeHTML(state.category === "벙 소식" ? "모임 소식" : state.category)} 글이 없습니다.</strong>
-          <p>다른 카테고리를 선택하거나 새 글을 등록해 주세요.</p>
-          <button type="button" class="btn btn-primary" data-act="open-write">글쓰기</button>
-        </div></div>`;
+        return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
+          <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
       }
-      return `<div class="card empty-card"><div class="empty-state">
-        <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><path d="M12 8v6M9 11h6"/></svg></span>
-        <strong>등록된 글이 없습니다.</strong>
-        <p>첫 글을 등록해 주세요.</p>
-        <button type="button" class="btn btn-primary" data-act="open-write">글쓰기</button>
-      </div></div>`;
+      return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>등록된 글이 없습니다.</strong><p>첫 글을 등록해 주세요.</p>
+        <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
     }
-
     function renderList() {
-      const posts = visiblePosts();
+      const posts = state.posts;
       const listEl = $("postList");
       const ae = document.activeElement;
       const keep = ae && listEl.contains(ae) && ae.dataset && ae.dataset.act && ae.dataset.id ? [ae.dataset.act, ae.dataset.id] : null;
       listEl.innerHTML = posts.length ? groupedHTML(posts) : emptyStateHTML();
       listEl.removeAttribute("aria-busy");
-      if (keep) {
-        const b = listEl.querySelector(`[data-act="${keep[0]}"][data-id="${keep[1]}"]`);
-        if (b) b.focus({ preventScroll: true });
-      }
-      applyLinkedMark();   // 다시 그려도 링크 강조는 유지한다
+      $("listNote").textContent = state.degraded ? "" :
+        (posts.length ? `${posts.length}건${state.hasMore ? " 이상" : ""}${state.category !== "전체" ? " · " + C.catLabel(state.category) : ""}${state.search ? ' · "' + state.search + '"' : ""}` : "");
+      if (keep) { const b = listEl.querySelector(`[data-act="${keep[0]}"][data-id="${keep[1]}"]`); if (b) b.focus({ preventScroll: true }); }
+      applyLinkedMark();
       updateMoreBtn();
     }
-
-    /* 벙 소식만 보고 있으면 날짜 순으로 묶어 보여 준다.
-       모집 글은 "언제"가 제목보다 먼저 궁금하다. 날짜가 없는 모집 글은 맨 뒤에 '날짜 미정'. */
+    /* 모임 모집만 볼 때는 날짜 순으로 묶는다. 모집 글은 "언제"가 제목보다 먼저 궁금하다 */
     function groupedHTML(posts) {
-      if (state.category !== "벙 소식") return posts.map(cardHTML).join("");
-      const today = kstToday();
-      const withDate = posts.filter((p) => bungOf(p) && bungOf(p).date);
-      const without = posts.filter((p) => !(bungOf(p) && bungOf(p).date));
+      if (state.category !== "벙 소식") return posts.map(rowHTML).join("");
+      const today = C.kstToday();
+      const dateOf = (p) => { const m = C.postMeta(p); return m && m.date ? m.date : ""; };
+      const withDate = posts.filter((p) => dateOf(p));
+      const without = posts.filter((p) => !dateOf(p));
       withDate.sort((a, b) => {
-        const da = bungOf(a).date, db = bungOf(b).date;
-        const pa = da < today, pb = db < today;          // 지난 벙은 뒤로
+        const da = dateOf(a), db = dateOf(b);
+        const pa = da < today, pb = db < today;
         if (pa !== pb) return pa ? 1 : -1;
         return pa ? db.localeCompare(da) : da.localeCompare(db);
       });
       const groups = [];
-      withDate.forEach((p) => {
-        const d = bungOf(p).date;
-        const g = groups[groups.length - 1];
-        if (g && g.date === d) g.items.push(p); else groups.push({ date: d, items: [p] });
-      });
-      let html = groups.map((g) => `<div class="day-head">${escapeHTML(bungDateLabel(g.date, today))}</div>` + g.items.map(cardHTML).join("")).join("");
-      if (without.length) html += `<div class="day-head">날짜 미정</div>` + without.map(cardHTML).join("");
+      withDate.forEach((p) => { const d = dateOf(p); const g = groups[groups.length - 1]; if (g && g.date === d) g.items.push(p); else groups.push({ date: d, items: [p] }); });
+      let html = groups.map((g) => `<div class="day-head">${esc(dayLabel(g.date, today))}</div>` + g.items.map(rowHTML).join("")).join("");
+      if (without.length) html += `<div class="day-head">날짜 미정</div>` + without.map(rowHTML).join("");
       return html;
     }
-    function kstToday() {
-      try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
-      catch (e) { return new Date().toISOString().slice(0, 10); }
-    }
-    function bungDateLabel(ymd, today) {
-      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
-      if (!m) return ymd;
-      const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-      const base = `${+m[2]}월 ${+m[3]}일 (${"일월화수목금토"[d.getUTCDay()]})`;
+    function dayLabel(ymd, today) {
+      const base = C.dateText(ymd, { withDow: true });
       if (ymd === today) return "오늘, " + base;
-      if (ymd < today) return base + " · 지남";
+      if (ymd < today) return base + " · 지난 모임";
       return base;
     }
-
-    // 스켈레톤 로딩 (목록 fetch 동안)
     function renderListLoading() {
-      const skel = `
-        <div class="card post-skel" aria-hidden="true">
-          <div class="skeleton skeleton-line" style="width:88px"></div>
-          <div class="skeleton skeleton-line is-lg" style="width:70%; margin-top:10px"></div>
-          <div class="skeleton skeleton-line" style="width:44%; margin-top:9px"></div>
-        </div>`;
-      const listEl = $("postList");
-      listEl.innerHTML = skel + skel + skel;
-      listEl.setAttribute("aria-busy", "true");
+      const skel = `<div class="skel-rows" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:60%"></span><span class="skeleton skeleton-line" style="width:44%"></span></div>`;
+      $("postList").innerHTML = skel + skel + skel;
+      $("postList").setAttribute("aria-busy", "true");
       updateMoreBtn();
     }
-
     function updateMoreBtn() {
       $("moreWrap").hidden = state.degraded || !state.hasMore;
       $("moreBtn").disabled = state.loading;
       $("moreBtn").textContent = state.loading ? "불러오는 중" : "더 보기";
     }
 
-    // ── 리액션 토글 (낙관적 UI + 실패 롤백) ─────────────────────
+    // ── 반응 ──
     function applyReactLocal(post, emoji, on) {
       const mine = state.myReactions[post.id] || (state.myReactions[post.id] = new Set());
       const next = Object.assign({}, post.reactions || {});
-      if (on) {
-        mine.add(emoji);
-        next[emoji] = (Number(next[emoji]) || 0) + 1;
-      } else {
-        mine.delete(emoji);
-        const n = Math.max(0, (Number(next[emoji]) || 0) - 1);
-        if (n) next[emoji] = n; else delete next[emoji];
-      }
-      post.reactions = next;
-      post.reaction_count = sumReactions(next);
+      if (on) { mine.add(emoji); next[emoji] = (Number(next[emoji]) || 0) + 1; }
+      else { mine.delete(emoji); const n = Math.max(0, (Number(next[emoji]) || 0) - 1); if (n) next[emoji] = n; else delete next[emoji]; }
+      post.reactions = next; post.reaction_count = sumReactions(next);
     }
-
     async function toggleReact(id, emoji) {
       const post = findPost(id);
       if (!post || EMOJIS.indexOf(emoji) === -1) return;
@@ -1074,37 +731,24 @@
       if (state.reactBusy[busyKey]) return;
       const mine = state.myReactions[id];
       const on = !(mine && mine.has(emoji));
-      applyReactLocal(post, emoji, on);   // 낙관적 반영
+      applyReactLocal(post, emoji, on);
       updateReactBar(id);
       if (state.degraded) return;
       state.reactBusy[busyKey] = true;
       try {
-        const res = await supaFetch("/rest/v1/rpc/post_react", {
-          method: "POST",
-          body: JSON.stringify({ p_post_id: id, p_emoji: emoji, p_device: deviceKey(), p_on: on })
-        });
-        if (res && res.reactions) {       // 서버 집계로 보정
-          post.reactions = res.reactions;
-          post.reaction_count = sumReactions(res.reactions);
-          updateReactBar(id);
-        }
+        const res = await supaFetch("/rest/v1/rpc/post_react", { method: "POST", body: JSON.stringify({ p_post_id: id, p_emoji: emoji, p_device: deviceKey(), p_on: on }) });
+        if (res && res.reactions) { post.reactions = res.reactions; post.reaction_count = sumReactions(res.reactions); updateReactBar(id); }
       } catch (err) {
-        applyReactLocal(post, emoji, !on); // 실패 롤백
-        updateReactBar(id);
-        showToast(rpcErrorMessage(err));
-      } finally {
-        delete state.reactBusy[busyKey];
-      }
+        applyReactLocal(post, emoji, !on); updateReactBar(id); showToast(rpcErrorMessage(err));
+      } finally { delete state.reactBusy[busyKey]; }
     }
 
-    // ── 비밀번호 모달 ───────────────────────────────────────────
+    // ── 비밀번호 모달 ──
     let passResolve = null;
     function askPassword(title, desc) {
       return new Promise((resolve) => {
         passResolve = resolve;
-        $("passTitle").textContent = title;
-        $("passDesc").textContent = desc;
-        $("passInput").value = "";
+        $("passTitle").textContent = title; $("passDesc").textContent = desc; $("passInput").value = "";
         $("passBackdrop").hidden = false;
         setTimeout(() => $("passInput").focus(), 30);
       });
@@ -1116,135 +760,145 @@
       if (resolve) resolve(value);
     }
 
-    // ── 글쓰기 모달 ─────────────────────────────────────────────
-    function openWriteModal() {
-      $("writeBackdrop").hidden = false;
-      $("wNick").value = $("wNick").value || savedNick();
-      $("wPass").value = $("wPass").value || savedPass();
-      syncPassHint();
-      setTimeout(() => $("wTitle").focus(), 60);
+    // ── 글쓰기 / 수정 모달 ──
+    function fieldHTML(f) {
+      const id = "wf_" + f.key;
+      const label = `<label for="${id}">${esc(f.label)} <small>선택</small></label>`;
+      let input;
+      if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
+      else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
+      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && f.type !== "date" && f.type !== "time" ? ` maxlength="${f.max}"` : ""} placeholder="${esc(f.ph || "")}" />`;
+      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${f.hint ? `<span class="field-hint">${esc(f.hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
-    function closeWriteModal() {
-      $("writeBackdrop").hidden = true;
+    function renderTypeFields(cat, meta) {
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => state.caps >= 2 || (cat === "벙 소식" && !f.v2));
+      $("typeFields").innerHTML = fields.map(fieldHTML).join("");
+      $("typeDesc").textContent = TYPE_DESC[cat] || "";
+      $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
+      $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
+      $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
+      $("wBodyLabel").textContent = cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
+      $("wPassHint").textContent = cat === "공지" ? "공지는 운영진 비밀번호로만 올리며 목록 맨 위에 고정됩니다." : "글을 수정하거나 삭제할 때 필요합니다.";
+      if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
     }
-
-    // 카테고리가 '벙 소식'일 때만 벙 칸을 연다
-    function syncBungFields() {
-      const box = document.getElementById("bungFields");
-      if (box) box.hidden = $("wCat").value !== "벙 소식";
-    }
-
-    // 폼에서 meta 를 만든다. 날짜가 없으면 null — 날짜가 상태 판정의 유일한 근거다.
-    function readBungMeta() {
-      if ($("wCat").value !== "벙 소식") return null;
-      const date = ($("wBungDate").value || "").trim();
-      if (!date) return null;
-      const m = { kind: "bung", date: date };
-      const t = ($("wBungTime").value || "").trim(); if (t) m.time = t;
-      const p = ($("wBungPlace").value || "").trim(); if (p) m.place = p;
-      const c = parseInt($("wBungCap").value, 10); if (c > 0) m.cap = c;
+    function readMeta() {
+      const cat = $("wCat").value;
+      const m = {};
+      let any = false;
+      document.querySelectorAll("#typeFields [data-key]").forEach((el) => {
+        const v = String(el.value || "").trim();
+        if (!v) return;
+        m[el.dataset.key] = el.type === "number" ? Number(v) : v;
+        any = true;
+      });
+      if (!any) return null;
+      m.kind = C.postType(cat).kind;
       return m;
     }
-
-    function clearBungFields() {
-      ["wBungDate", "wBungTime", "wBungPlace", "wBungCap"].forEach((id) => {
-        const el = document.getElementById(id); if (el) el.value = "";
-      });
+    function draftPost() {
+      const cat = $("wCat").value;
+      return { id: state.editingId || 0, category: cat, title: $("wTitle").value.trim(), body: $("wBody").value,
+               author: $("wNick").value.trim() || savedNick() || "닉네임", pinned: cat === "공지", meta: readMeta(),
+               created_at: state.editingId ? (findPost(state.editingId) || {}).created_at : new Date().toISOString(), comment_count: 0, reaction_count: 0 };
     }
-
-    async function submitPost() {
+    function renderPreview() {
+      const d = draftPost();
+      if (!d.title && !d.body.trim() && !d.meta) { $("writePreview").innerHTML = '<p class="comment-empty" style="border:0;padding:4px 0">제목을 입력하면 여기에 보입니다.</p>'; return; }
+      const v = C.postView(d);
+      const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
+      $("writePreview").innerHTML = `<div class="post-row row"><div class="post-head">
+          <span class="nr-line">${tagHTML(v)}<span class="row-title">${esc(v.title || "제목")}</span></span>${st}
+          <span class="row-meta">${metaLine(v)}</span></div></div>` +
+        ((v.kind === "notice" || v.kind === "info") && v.meta && v.meta.summary ? `<p class="pd-lead" style="margin:6px 0 8px">${esc(v.meta.summary)}</p>` : "") +
+        factsHTML(v.facts);
+    }
+    function openWriteModal(post) {
+      state.editingId = post ? post.id : null;
+      clearErrors();
+      $("writeTitle").textContent = post ? "글 수정" : "글쓰기";
+      $("wCat").value = post ? post.category : "자유";
+      renderTypeFields($("wCat").value, post ? C.postMeta(post) : null);
+      $("wTitle").value = post ? post.title : "";
+      $("wBody").value = post ? post.body : "";
+      $("wCount").textContent = $("wBody").value.length + " / 4000";
+      $("wNick").value = post ? post.author : ($("wNick").value || savedNick());
+      $("wNickWrap").hidden = !!post;
+      $("wPass").value = post && post.category === "공지" ? "" : savedPass();
+      $("writeSubmitBtn").textContent = post ? "저장" : "등록";
+      syncPassHint();
+      renderPreview();
+      $("writeBackdrop").hidden = false;
+      setTimeout(() => $(post ? "wTitle" : "wCat").focus(), 60);
+    }
+    function closeWriteModal() { $("writeBackdrop").hidden = true; }
+    function validateWrite() {
+      clearErrors();
+      let ok = true;
+      const cat = $("wCat").value;
+      if (!state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 입력해 주세요."); ok = false; }
+      if ($("wPass").value.trim().length < 4) { setError("wPass", "비밀번호는 4자 이상 입력해 주세요."); ok = false; }
+      if (!$("wTitle").value.trim()) { setError("wTitle", cat === "벙 소식" ? "모임명을 입력해 주세요." : "제목을 입력해 주세요."); ok = false; }
+      if (!$("wBody").value.trim()) { setError("wBody", "내용을 입력해 주세요."); ok = false; }
+      document.querySelectorAll("#typeFields [data-key]").forEach((el) => {
+        const v = String(el.value || "").trim();
+        if (!v) return;
+        if (el.type === "url" && !/^https?:\/\//i.test(v)) { setError(el.id, "링크는 http 또는 https 로 시작해야 합니다."); ok = false; }
+        if (el.type === "number" && !(Number(v) >= Number(el.min) && Number(v) <= Number(el.max))) { setError(el.id, `${el.min}에서 ${el.max} 사이로 입력해 주세요.`); ok = false; }
+      });
+      const from = $("wf_from"), to = $("wf_to");
+      if (from && to && from.value && to.value && to.value < from.value) { setError("wf_to", "종료일은 적용일보다 뒤여야 합니다."); ok = false; }
+      if (!ok) firstInvalid();
+      return ok;
+    }
+    async function submitWrite() {
       if (state.busy) return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
-      const nick = $("wNick").value.trim();
-      const pass = $("wPass").value;
-      const cat = $("wCat").value;
-      const title = $("wTitle").value.trim();
-      const body = $("wBody").value;
-      if (!nick) { showToast("닉네임을 입력해 주세요."); $("wNick").focus(); return; }
-      if (pass.trim().length < 4) { showToast("비밀번호는 4자 이상 입력해 주세요."); $("wPass").focus(); return; }
-      if (!title) { showToast("제목을 입력해 주세요."); $("wTitle").focus(); return; }
-      if (!body.trim()) { showToast("내용을 입력해 주세요."); $("wBody").focus(); return; }
+      if (!validateWrite()) return;
+      const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
+      const title = $("wTitle").value.trim(), body = $("wBody").value, meta = readMeta();
       state.busy = true;
       const btn = $("writeSubmitBtn");
-      btn.disabled = true; btn.textContent = "올리는 중...";
+      const editing = !!state.editingId;
+      btn.disabled = true; btn.textContent = editing ? "저장 중" : "등록 중";
       try {
-        await supaFetch("/rest/v1/rpc/post_create", {
-          method: "POST",
-          // p_meta 를 항상 함께 보낸다 — 6개 키를 보내야 meta 를 받는 함수로 연결된다.
-          // (마이그레이션 전이면 이 호출이 실패하므로, sql/2026-09-20-bung-fields.sql 을 먼저 실행해야 한다)
-          body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: readBungMeta() })
-        });
-        saveNick(nick);
-        savePass(pass, cat);
-        showToast("글을 등록했습니다.");
-        $("wTitle").value = ""; $("wBody").value = "";
-        clearBungFields();
-        $("wCount").textContent = "0 / 4000";
+        if (editing) {
+          await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) });
+          showToast("글을 저장했습니다.");
+        } else {
+          await supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
+          saveNick(nick); savePass(pass, cat);
+          showToast("글을 등록했습니다.");
+        }
         closeWriteModal();
+        $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
+        const keepId = state.editingId;
         renderListLoading();
         await loadPosts(true);
+        if (keepId) { state.expandedId = keepId; renderList(); if (state.commentsCache[keepId] === undefined) loadComments(keepId); }
       } catch (err) {
-        showToast(rpcErrorMessage(err));
+        const msg = rpcErrorMessage(err);
+        if (/BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { setError("wPass", msg); firstInvalid(); }
+        else showToast(msg);
       } finally {
-        state.busy = false;
-        btn.disabled = false; btn.textContent = "등록";
+        state.busy = false; btn.disabled = false; btn.textContent = editing ? "저장" : "등록";
       }
     }
 
-    // ── 글 수정 / 삭제 / 고정 ───────────────────────────────────
-    async function saveEdit(card, id) {
-      if (state.busy) return;
-      const post = findPost(id);
-      if (!post) return;
-      const cat = card.querySelector(".e-cat").value;
-      const title = card.querySelector(".e-title").value.trim();
-      const body = card.querySelector(".e-body").value;
-      if (!title) { showToast("제목을 입력해 주세요."); return; }
-      if (!body.trim()) { showToast("내용을 입력해 주세요."); return; }
-      const pass = await askPassword("글 수정", "글을 쓸 때 입력한 비밀번호를 입력해 주세요. 공지로 바꿀 때는 운영진 비밀번호가 필요합니다.");
-      if (pass === null) return;
-      state.busy = true;
-      try {
-        await supaFetch("/rest/v1/rpc/post_update", {
-          method: "POST",
-          // 기존 벙 정보를 그대로 실어 보낸다. 서버가 카테고리를 보고 판단하므로,
-          // 벙이 아닌 유형으로 바꾸면 벙 정보도 함께 정리된다.
-          body: JSON.stringify({ p_id: id, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: post.meta || null })
-        });
-        post.title = title; post.body = body; post.category = cat;
-        if (cat !== "벙 소식") post.meta = null;
-        post.updated_at = new Date().toISOString();
-        state.editingId = null;
-        renderList();
-        showToast("글을 수정했습니다.");
-      } catch (err) {
-        showToast(rpcErrorMessage(err));
-      } finally {
-        state.busy = false;
-      }
-    }
-
+    // ── 삭제 / 고정 ──
     async function deletePost(id) {
       if (state.busy) return;
       const pass = await askPassword("글 삭제", "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.");
       if (pass === null) return;
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/post_delete", {
-          method: "POST",
-          body: JSON.stringify({ p_id: id, p_pass: pass })
-        });
+        await supaFetch("/rest/v1/rpc/post_delete", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass }) });
         state.posts = state.posts.filter((p) => p.id !== id);
         if (state.expandedId === id) state.expandedId = null;
         renderList();
         showToast("글을 삭제했습니다.");
-      } catch (err) {
-        showToast(rpcErrorMessage(err));
-      } finally {
-        state.busy = false;
-      }
+      } catch (err) { showToast(rpcErrorMessage(err)); }
+      finally { state.busy = false; }
     }
-
     async function togglePin(id) {
       if (state.busy) return;
       const post = findPost(id);
@@ -1254,366 +908,171 @@
       if (pass === null) return;
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/post_pin", {
-          method: "POST",
-          body: JSON.stringify({ p_id: id, p_pass: pass, p_pinned: next })
-        });
+        await supaFetch("/rest/v1/rpc/post_pin", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_pinned: next }) });
         showToast(next ? "글을 고정했습니다." : "고정을 해제했습니다.");
         state.busy = false;
         renderListLoading();
         await loadPosts(true);
         return;
-      } catch (err) {
-        showToast(rpcErrorMessage(err));
-      }
+      } catch (err) { showToast(rpcErrorMessage(err)); }
       state.busy = false;
     }
 
-    // ── 댓글 ────────────────────────────────────────────────────
+    // ── 댓글 ──
     async function addComment(card, postId) {
       if (state.busy) return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
       const nick = card.querySelector(".c-nick").value.trim();
       const pass = card.querySelector(".c-pass").value;
       const body = card.querySelector(".c-body").value;
-      if (!nick) { showToast("닉네임을 입력해 주세요."); return; }
-      if (pass.trim().length < 4) { showToast("비밀번호는 4자 이상 입력해 주세요."); return; }
-      if (!body.trim()) { showToast("댓글 내용을 입력해 주세요."); return; }
+      if (!nick) { showToast("닉네임을 입력해 주세요."); card.querySelector(".c-nick").focus(); return; }
+      if (pass.trim().length < 4) { showToast("비밀번호는 4자 이상 입력해 주세요."); card.querySelector(".c-pass").focus(); return; }
+      if (!body.trim()) { showToast("댓글 내용을 입력해 주세요."); card.querySelector(".c-body").focus(); return; }
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/comment_create", {
-          method: "POST",
-          body: JSON.stringify({ p_post_id: postId, p_author: nick, p_pass: pass, p_body: body })
-        });
-        saveNick(nick);
-        savePass(pass, "");
+        await supaFetch("/rest/v1/rpc/comment_create", { method: "POST", body: JSON.stringify({ p_post_id: postId, p_author: nick, p_pass: pass, p_body: body }) });
+        saveNick(nick); savePass(pass, "");
         const post = findPost(postId);
         if (post) post.comment_count = (Number(post.comment_count) || 0) + 1;
         showToast("댓글을 등록했습니다.");
         state.busy = false;
         await loadComments(postId);
         return;
-      } catch (err) {
-        showToast(rpcErrorMessage(err));
-      }
+      } catch (err) { showToast(rpcErrorMessage(err)); }
       state.busy = false;
     }
-
     async function deleteComment(commentId, postId) {
       if (state.busy) return;
       const pass = await askPassword("댓글 삭제", "댓글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요.");
       if (pass === null) return;
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/comment_delete", {
-          method: "POST",
-          body: JSON.stringify({ p_id: commentId, p_pass: pass })
-        });
+        await supaFetch("/rest/v1/rpc/comment_delete", { method: "POST", body: JSON.stringify({ p_id: commentId, p_pass: pass }) });
         const cache = state.commentsCache[postId];
         if (cache) state.commentsCache[postId] = cache.filter((c) => c.id !== commentId);
         const post = findPost(postId);
         if (post) post.comment_count = Math.max(0, (Number(post.comment_count) || 0) - 1);
         renderList();
         showToast("댓글을 삭제했습니다.");
-      } catch (err) {
-        showToast(rpcErrorMessage(err));
-      } finally {
-        state.busy = false;
-      }
+      } catch (err) { showToast(rpcErrorMessage(err)); }
+      finally { state.busy = false; }
     }
 
-    // ── 아코디언 ────────────────────────────────────────────────
-    /* ── 글 단위 링크 ───────────────────────────────────────────
-       카톡방에 "이 벙 봐주세요"를 던질 수 있게 하는 장치다.
-       주소의 #post-123 이 곧 그 글이고, 반대로 글을 열면 주소가 따라 바뀐다.
-       예전에는 어떤 글을 눌러도 목록 맨 위로만 갈 수 있어서,
-       홈 미리보기에서 제목을 보고 들어와도 그 글을 다시 찾아야 했다.
-       ────────────────────────────────────────────────────────── */
-    function hashPostId() {
-      const m = /^#post-(\d+)$/.exec(location.hash || "");
-      return m ? Number(m[1]) : null;
-    }
-
-    function postUrl(id) {
-      return location.origin + location.pathname + "#post-" + id;
-    }
-
-    // 주소창을 현재 열린 글에 맞춘다.
-    // pushState 가 아니라 replaceState 를 쓴다 — 카드를 여닫을 때마다 기록이 쌓이면
-    // 뒤로가기가 '이전 화면'이 아니라 '방금 닫은 카드'로 가서 오히려 헷갈린다.
-    function syncHash(id) {
-      try {
-        const clean = location.pathname + location.search;
-        history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : clean);
-      } catch (e) { /* history 를 못 쓰는 환경(파일 열기 등)은 그냥 넘어간다 */ }
-    }
-
+    // ── 글 단위 링크 (#post-N) ──
+    function hashPostId() { const m = /^#post-(\d+)$/.exec(location.hash || ""); return m ? Number(m[1]) : null; }
+    function postUrl(id) { return location.origin + location.pathname + "#post-" + id; }
+    function syncHash(id) { try { history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : location.pathname + location.search); } catch (e) {} }
     async function copyText(text) {
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-          return true;
-        }
-      } catch (e) { /* 아래 폴백으로 */ }
+      try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
       try {
         const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.setAttribute("readonly", "");
-        ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-        return ok;
+        ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+        document.body.appendChild(ta); ta.select();
+        const ok = document.execCommand("copy"); document.body.removeChild(ta); return ok;
       } catch (e) { return false; }
     }
-
     async function copyPostLink(id) {
       const ok = await copyText(postUrl(id));
-      showToast(ok ? "링크를 복사했습니다." : "복사에 실패했습니다. 주소창에서 직접 복사해 주세요.");
+      showToast(ok ? "글 링크를 복사했습니다." : "복사에 실패했습니다. 주소창에서 직접 복사해 주세요.");
     }
-
-    // 링크를 타고 들어온 글을 화면에서 찾아 준다.
     function focusPostCard(id) {
       const el = document.getElementById("post-" + id);
       if (!el) return;
       let smooth = true;
       try { smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
       el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-      // 강조는 state 로 들고 있는다. 댓글을 다 불러오면 목록을 통째로 다시 그리는데,
-      // DOM 에만 클래스를 붙여 두면 그때 강조가 조용히 지워진다.
-      state.linkedId = id;
-      applyLinkedMark();
-      setTimeout(() => {
-        if (state.linkedId !== id) return;
-        state.linkedId = null;
-        applyLinkedMark();
-      }, 2400);
+      state.linkedId = id; applyLinkedMark();
+      setTimeout(() => { if (state.linkedId !== id) return; state.linkedId = null; applyLinkedMark(); }, 2400);
     }
-
     function applyLinkedMark() {
-      const prev = document.querySelector(".post-card.is-linked");
-      if (prev) prev.classList.remove("is-linked");
+      const prev = document.querySelector(".post-row.is-linked"); if (prev) prev.classList.remove("is-linked");
       if (!state.linkedId) return;
-      const el = document.getElementById("post-" + state.linkedId);
-      if (el) el.classList.add("is-linked");
+      const el = document.getElementById("post-" + state.linkedId); if (el) el.classList.add("is-linked");
     }
-
     async function openFromHash() {
       const id = hashPostId();
       if (!id || state.degraded) return;
       let post = findPost(id);
       if (!post) {
-        // 첫 페이지에 없는 글일 수 있다(오래된 글, 또는 필터가 걸린 상태).
-        // 그 글만 따로 가져와 목록 맨 위에 붙인다 — 링크가 끊긴 것처럼 보이면 안 된다.
         try {
           const rows = await supaFetch("/rest/v1/site_posts_v?" + POST_SELECT + "&id=eq." + id + "&limit=1");
-          if (rows && rows.length) {
-            rows[0].reactions = rows[0].reactions || {};
-            state.posts.unshift(rows[0]);
-            post = rows[0];
-            loadMyReactions([id]);
-          }
-        } catch (e) { /* 아래 안내로 떨어진다 */ }
+          if (rows && rows.length) { rows[0].reactions = rows[0].reactions || {}; state.posts.unshift(rows[0]); post = rows[0]; loadMyReactions([id]); }
+        } catch (e) {}
       }
-      if (!post) {
-        showToast("링크의 글을 찾을 수 없습니다. 삭제된 글일 수 있습니다.");
-        syncHash(null);
-        return;
-      }
-      state.expandedId = id; state.editingId = null;
+      if (!post) { showToast("링크의 글을 찾을 수 없습니다. 삭제된 글일 수 있습니다."); syncHash(null); return; }
+      state.expandedId = id;
       renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
       focusPostCard(id);
     }
-
-
-    /* ── 벙 정보 ───────────────────────────────────────────────
-       필드는 날짜·시각·장소·정원 네 개뿐이고, 상태는 시간만으로 두 단계다.
-       인원으로 자동 마감하지 않는 이유: 참석은 오픈채팅에서 일어난다.
-       사이트가 인원을 세기 시작하면 정원의 진실이 두 곳으로 갈라지고,
-       벙주는 결국 카톡 쪽을 믿게 된다. 그래서 정원은 표시만 한다.
-       ────────────────────────────────────────────────────────── */
-    const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
-
-    function bungOf(post) {
-      const m = post && post.meta;
-      return (m && typeof m === "object" && m.kind === "bung" && m.date) ? m : null;
-    }
-
-    // 한국 날짜 기준 D-day. 시·분을 섞지 않는다('0.8일 남음' 같은 값이 나오지 않게).
-    function bungDays(b) {
-      let today;
-      try { today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
-      catch (e) { today = new Date().toISOString().slice(0, 10); }
-      const a = Date.parse(b.date + "T00:00:00Z"), n = Date.parse(today + "T00:00:00Z");
-      if (isNaN(a) || isNaN(n)) return null;
-      return Math.round((a - n) / 86400000);
-    }
-
-    function bungLabel(d) {
-      if (d === null) return "";
-      if (d === 0) return "오늘";
-      if (d === 1) return "내일";
-      if (d > 1) return "D-" + d;
-      return "";   // 지난 모임은 오른쪽 '마감 지남' 하나로 알린다
-    }
-
-    function bungLine(b) {
-      const bits = [];
-      const dt = String(b.date).split("-");
-      bits.push(Number(dt[1]) + "월 " + Number(dt[2]) + "일");
-      if (b.time) bits.push(b.time);
-      if (b.place) bits.push(escapeHTML(b.place));
-      if (b.cap) bits.push("정원 " + b.cap + "명");
-      return bits.map((t) => "<span>" + t + "</span>").join("");
-    }
-
-    function bungStripHTML(post) {
-      const b = bungOf(post);
-      if (!b) return "";
-      const d = bungDays(b);
-      const past = d !== null && d < 0;
-      return `<div class="bung-strip${past ? " is-past" : ""}">
-        ${bungLabel(d) ? `<span class="bung-dday">${bungLabel(d)}</span>` : ""}
-        <span class="bung-when sep-row">${bungLine(b)}</span>
-        <span class="bung-state">${past ? "마감 지남" : "모집 중"}</span>
-      </div>`;
-    }
-
     function toggleExpand(id) {
-      if (state.expandedId === id) {
-        state.expandedId = null; state.editingId = null;
-        syncHash(null);
-        renderList();
-        return;
-      }
-      state.expandedId = id; state.editingId = null;
-      syncHash(id);
-      renderList();
+      if (state.expandedId === id) { state.expandedId = null; syncHash(null); renderList(); return; }
+      state.expandedId = id; syncHash(id); renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
     }
-
-    // ── 목록 재조회 공통 (필터/정렬/검색 변경 시) ───────────────
     function refetchList() {
-      state.expandedId = null; state.editingId = null;
-      // 필터·정렬·검색을 바꾸면 열려 있던 글이 닫히므로 주소도 같이 비운다.
-      // 안 그러면 주소는 특정 글을 가리키는데 화면엔 목록만 있는 상태가 된다.
+      state.expandedId = null;
       syncHash(null);
-      if (state.degraded) {
-        renderList();
-      } else {
-        renderListLoading();
-        loadPosts(true);
-      }
+      if (state.degraded) renderList(); else { renderListLoading(); loadPosts(true); }
     }
 
-    // ── 이벤트 바인딩 ───────────────────────────────────────────
+    // ── 이벤트 ──
     function bindEvents() {
-      // 글쓰기 모달 열기/닫기
-      $("heroWriteBtn").addEventListener("click", openWriteModal);
+      $("heroWriteBtn").addEventListener("click", () => openWriteModal(null));
       $("writeCloseBtn").addEventListener("click", closeWriteModal);
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
-      $("writeSubmitBtn").addEventListener("click", submitPost);
-      $("wCat").addEventListener("change", syncBungFields);
+      $("writeSubmitBtn").addEventListener("click", submitWrite);
       $("passForget").addEventListener("click", forgetPass);
-      syncBungFields();
-      $("writeBackdrop").addEventListener("click", (e) => {
-        if (e.target === e.currentTarget) closeWriteModal();
+      $("writeBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeWriteModal(); });
+      $("wCat").addEventListener("change", () => { renderTypeFields($("wCat").value, null); renderPreview(); });
+      let pvTimer = null;
+      $("writeForm").addEventListener("input", (e) => {
+        if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
+        const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
+        clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 120);
       });
-      $("wBody").addEventListener("input", () => {
-        $("wCount").textContent = $("wBody").value.length + " / 4000";
-      });
-      $("wCat").addEventListener("change", () => {
-        $("adminNote").hidden = $("wCat").value !== "공지";
-      });
+      $("writeForm").addEventListener("change", () => { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 60); });
 
-      // 검색 (디바운스 300ms)
       let searchTimer = null;
       $("searchInput").addEventListener("input", () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          const term = $("searchInput").value.trim();
-          if (term === state.search) return;
-          state.search = term;
-          refetchList();
-        }, 300);
+        searchTimer = setTimeout(() => { const term = $("searchInput").value.trim(); if (term === state.search) return; state.search = term; refetchList(); }, 300);
       });
-
-      // 정렬 토글 (최신순/인기순)
-      $("sortRow").addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-sort]");
-        if (!btn || btn.dataset.sort === state.sort) return;
-        state.sort = btn.dataset.sort;
-        $("sortRow").querySelectorAll("button[data-sort]").forEach((b) => {
-          const on = b.dataset.sort === state.sort;
-          b.classList.toggle("is-active", on);
-          b.setAttribute("aria-pressed", String(on));
-        });
-        refetchList();
-      });
-
-      // 카테고리 필터
+      $("sortSelect").addEventListener("change", () => { state.sort = $("sortSelect").value; refetchList(); });
       $("filterChips").addEventListener("click", (e) => {
-        const chip = e.target.closest(".chip");
+        const chip = e.target.closest("button[data-cat]");
         if (!chip || chip.dataset.cat === state.category) return;
         state.category = chip.dataset.cat;
-        $("filterChips").querySelectorAll(".chip").forEach((c) => {
-          const on = c.dataset.cat === state.category;
-          c.classList.toggle("is-active", on);
-          c.setAttribute("aria-pressed", String(on));
-        });
+        $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); });
         refetchList();
       });
-
       $("moreBtn").addEventListener("click", () => loadPosts(false));
       $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true); });
 
-      // 소식 목록 위임 이벤트
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
         if (!el) return;
         const act = el.dataset.act;
         const id = Number(el.dataset.id);
-        const card = el.closest(".post-card");
+        const card = el.closest(".post-row");
         if (act === "toggle") { toggleExpand(id); return; }
         if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
-        if (act === "open-write") { openWriteModal(); return; }
+        if (act === "open-write") { openWriteModal(null); return; }
+        if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
-        if (act === "edit") { state.editingId = id; renderList(); return; }
-        if (act === "cancel-edit") { state.editingId = null; renderList(); return; }
-        if (act === "save-edit") { saveEdit(card, id); return; }
+        if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
         if (act === "delete") { deletePost(id); return; }
         if (act === "pin") { togglePin(id); return; }
         if (act === "add-comment") { addComment(card, id); return; }
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
 
-      // 수정 폼 글자수 카운터
-      $("postList").addEventListener("input", (e) => {
-        if (e.target.classList && e.target.classList.contains("e-body")) {
-          const counter = e.target.parentElement.querySelector(".counter");
-          if (counter) counter.textContent = e.target.value.length + " / 4000";
-        }
-      });
-
-      // 비밀번호 모달
-      $("passOk").addEventListener("click", () => {
-        const value = $("passInput").value;
-        if (!value) { $("passInput").focus(); return; }
-        closePassModal(value);
-      });
+      $("passOk").addEventListener("click", () => { const value = $("passInput").value; if (!value) { $("passInput").focus(); return; } closePassModal(value); });
       $("passCancel").addEventListener("click", () => closePassModal(null));
       $("passClose").addEventListener("click", () => closePassModal(null));
-      $("passBackdrop").addEventListener("click", (e) => {
-        if (e.target === e.currentTarget) closePassModal(null);
-      });
-      $("passInput").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); }
-      });
-
-      // ESC: 비밀번호 모달 → 글쓰기 모달 순으로 닫기
+      $("passBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closePassModal(null); });
+      $("passInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); } });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
@@ -1621,15 +1080,13 @@
       });
     }
 
-    // ── 초기화 ──────────────────────────────────────────────────
+    // ── 초기화 ──
     $("wNick").value = savedNick();
     bindEvents();
+    renderTypeFields("자유", null);
+    C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, null); });
     renderListLoading();
-    // 목록을 먼저 받고, 그다음 링크가 가리키는 글을 연다.
-    // loadPosts(true) 가 expandedId 를 초기화하므로 순서가 바뀌면 안 된다.
     loadPosts(true).then(openFromHash);
-
-    // 이미 페이지를 보고 있는데 다른 글 링크를 받은 경우
     window.addEventListener("hashchange", openFromHash);
   </script>
 </body>
