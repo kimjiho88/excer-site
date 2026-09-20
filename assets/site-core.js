@@ -40,6 +40,88 @@
   window.KAKAO = { jsKey: "e4503a6007811a4348ad6a777230cb5f" };
 
   /* ──────────────────────────────────────────────────────────
+     ①-3 카카오톡 공유 (window.KSHARE)
+     카카오 JavaScript SDK 는 공유 버튼을 처음 누를 때만 읽는다(지도 SDK 와 별개 파일).
+     같은 JavaScript 키·같은 도메인 등록으로 동작한다.
+     SDK 를 못 읽거나 키가 없으면 기기 공유 창(navigator.share) → 링크 복사 순으로 물러선다.
+     share(opts) → Promise<"kakao" | "share" | "copy" | "abort" | "fail">
+       opts: { title, description, url, imageUrl, buttonTitle }
+     ────────────────────────────────────────────────────────── */
+  var KSHARE = (function () {
+    var SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
+    var loading = null;
+    function loadSdk() {
+      if (window.Kakao && window.Kakao.Share) { init(); return Promise.resolve(window.Kakao); }
+      if (loading) return loading;
+      loading = new Promise(function (resolve, reject) {
+        if (!window.KAKAO || !window.KAKAO.jsKey) { reject(new Error("no key")); return; }
+        var s = document.createElement("script");
+        s.src = SDK; s.async = true;
+        var t = setTimeout(function () { reject(new Error("timeout")); }, 8000);
+        s.onload = function () { clearTimeout(t); try { init(); resolve(window.Kakao); } catch (e) { reject(e); } };
+        s.onerror = function () { clearTimeout(t); reject(new Error("load")); };
+        document.head.appendChild(s);
+      });
+      loading.catch(function () { loading = null; });
+      return loading;
+    }
+    function init() { if (window.Kakao && !window.Kakao.isInitialized()) window.Kakao.init(window.KAKAO.jsKey); }
+    function copy(text) {
+      var p = navigator.clipboard && window.isSecureContext ? navigator.clipboard.writeText(text) : Promise.reject();
+      return p.then(function () { return "copy"; }).catch(function () {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+          document.body.appendChild(ta); ta.select();
+          var ok = document.execCommand("copy"); document.body.removeChild(ta);
+          return ok ? "copy" : "fail";
+        } catch (e) { return "fail"; }
+      });
+    }
+    function share(opts) {
+      opts = opts || {};
+      var url = opts.url || location.href;
+      var image = opts.imageUrl || (location.origin + "/assets/og.jpg");
+      return loadSdk().then(function (Kakao) {
+        Kakao.Share.sendDefault({
+          objectType: "feed",
+          content: {
+            title: opts.title || document.title,
+            description: opts.description || "",
+            imageUrl: image,
+            link: { mobileWebUrl: url, webUrl: url }
+          },
+          buttons: [{ title: opts.buttonTitle || "자세히 보기", link: { mobileWebUrl: url, webUrl: url } }]
+        });
+        return "kakao";
+      }).catch(function () {
+        if (navigator.share) {
+          return navigator.share({ title: opts.title || document.title, text: opts.description || "", url: url })
+            .then(function () { return "share"; })
+            .catch(function (e) { return e && e.name === "AbortError" ? "abort" : copy(url); });
+        }
+        return copy(url);
+      });
+    }
+    /* 결과를 사람 말로 */
+    function message(result) {
+      return { kakao: "", share: "", abort: "", copy: "링크를 복사했습니다. 채팅창에 붙여넣어 주세요.", fail: "복사에 실패했습니다. 주소창에서 직접 복사해 주세요." }[result] || "";
+    }
+    return { share: share, message: message, available: function () { return !!(window.KAKAO && window.KAKAO.jsKey); } };
+  })();
+  window.KSHARE = KSHARE;
+
+  /* ──────────────────────────────────────────────────────────
+     ①-4 홈 화면에 추가(설치) — 매니페스트는 각 페이지 <head>, 서비스 워커는 /sw.js
+     로컬 검증(127.0.0.1·localhost)에서는 등록하지 않는다(요청 가로채기 검사와 겹치지 않게).
+     ────────────────────────────────────────────────────────── */
+  if ("serviceWorker" in navigator && !/^(127\.|localhost$|0\.0\.0\.0)/.test(location.hostname) && location.protocol === "https:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────
      ② 방문자 카운터
      서버는 (날짜, 기기키) 한 쌍을 하루에 하나만 남긴다.
      today = 오늘 찍힌 기기 수, total = 지금까지 쌓인 모든 (날짜,기기) 수.

@@ -39,6 +39,21 @@
   }
   function isChosungQuery(q) { return !!q && /^[ㄱ-ㅎ]+$/.test(q.replace(/\s+/g, "")); }
 
+  /* ── 닉네임 자동완성 ── 기존 작성자 이름을 <datalist> 로 붙인다.
+     같은 사람이 띄어쓰기·오타로 둘로 갈리는 일을 줄인다. 이름은 화면에 있는 것만(서버에 새로 묻지 않음) */
+  function nickSuggest(input, names) {
+    if (!input || !names || !names.length) return;
+    var id = (input.id || "nick") + "-list";
+    var dl = document.getElementById(id);
+    if (!dl) { dl = document.createElement("datalist"); dl.id = id; document.body.appendChild(dl); }
+    var seen = {};
+    dl.innerHTML = names.map(function (n) { return String(n || "").trim(); })
+      .filter(function (n) { if (!n || seen[n]) return false; seen[n] = true; return true; })
+      .slice(0, 80)
+      .map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join("");
+    input.setAttribute("list", id);
+  }
+
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c];
@@ -386,7 +401,7 @@
 
   window.EXCER_CONTENT = {
     AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR,
-    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery,
+    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery, nickSuggest: nickSuggest,
     esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
     dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
     loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, noteText: noteText, noteDate: noteDate,
