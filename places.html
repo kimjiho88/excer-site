@@ -76,10 +76,12 @@
     .place-row.is-closed .pr-name a, .place-row.is-closed .pr-text { color: var(--ink-2); }
     .pr-name { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0; font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; }
     .pr-name a { color: var(--ink); overflow-wrap: anywhere; }
-    .pr-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .pr-name a { transition: color var(--dur-2) var(--ease); }
+    .pr-name a:hover { color: var(--brand); }
     .pr-meta { margin: 2px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
     .pr-meta b { color: var(--ink); font-weight: 500; }
     .pr-price { color: var(--ink); font-size: var(--fs-sm); font-weight: 500; line-height: 1.5; padding-top: 3px; font-variant-numeric: tabular-nums; }
+    .pr-price::first-line { font-weight: 600; }
     .pr-price.is-none { color: var(--ink-2); font-weight: 500; }
     .pr-price small { display: block; color: var(--ink-2); font-size: var(--fs-micro); font-weight: 400; }
     .pr-review { min-width: 0; }
@@ -104,7 +106,7 @@
     }
 
     /* ── 펼친 상세: 행 아래 흰 면 하나. 옆 행의 읽기 흐름은 그대로 ── */
-    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); }
     .pd-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0 40px; align-items: start; }
     .pd-col { min-width: 0; }
     .pd-h { margin: 0 0 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
@@ -649,7 +651,7 @@
         var tags = "";
         if (v.closed) tags += '<span class="type-tag is-closed">영업 종료</span>';
         else if (v.visitCount >= 2) tags += '<span class="type-tag">방문 ' + v.visitCount + "회</span>";
-        var by = [line.by, line.date ? C.dateText(line.date) + " 방문" : ""].filter(Boolean).join(" · ");
+        var by = [line.by ? '<span class="who" data-initial="' + esc(line.by.slice(0, 1)) + '">' + esc(line.by) + "</span>" : "", line.date ? esc(C.dateText(line.date)) + " 방문" : ""].filter(Boolean).join(" · ");
         var priceHTML = v.priceLevel
           ? '<div class="pr-price">' + esc(v.priceText.replace(/^1인 /, "")) + (v.priceNote ? "<small>" + esc(v.priceNote) + "</small>" : "") + "</div>"
           : '<div class="pr-price is-none">가격 미등록</div>';
@@ -660,7 +662,7 @@
           '<div class="pr-review">' +
             (line.menuLine ? '<p class="pr-menu">추천 메뉴 <b>' + esc(line.menuLine) + "</b></p>" : "") +
             '<p class="pr-text' + (line.kind === "empty" ? " is-empty" : "") + '">' + esc(line.text) + "</p>" +
-            (by ? '<p class="pr-by">' + esc(by) + "</p>" : "") +
+            (by ? '<p class="pr-by">' + by + "</p>" : "") +
           "</div>" +
           '<div class="pr-acts">' +
             '<button type="button" class="text-btn" data-open="' + v.id + '" aria-expanded="' + open + '" aria-controls="place-detail-' + v.id + '">' + (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
@@ -675,7 +677,7 @@
          후기 글에 없는 메뉴를 적었을 때만(누가 무엇을 추천했는지 남기려고) */
       function noteHTML(n, v) {
         var meta = [];
-        if (n.by) meta.push("<b>" + esc(n.by) + "</b>");
+        if (n.by) meta.push('<b class="who" data-initial="' + esc(n.by.slice(0, 1)) + '">' + esc(n.by) + "</b>");
         if (n.date) meta.push("<span>" + esc(C.dateText(n.date)) + " 방문</span>");
         if (n.per_person) meta.push("<span>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</span>");
         if (n.again) meta.push("<span>다시 가고 싶음</span>");
