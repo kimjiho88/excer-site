@@ -523,11 +523,8 @@
         <h1 id="pageTitle">모임 정산</h1>
         <p class="page-lead">멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지를 만듭니다.</p>
       </div>
-      <div class="hero-signal" style="margin-top:0">
-        <span class="hs"><span class="hs-k">합계</span><span class="hs-v"><span id="heroTotal">0원</span></span></span>
-        <span class="hs"><span class="hs-k">참여</span><span class="hs-v"><span id="heroCount">0명</span></span></span>
-        <span class="hs"><span class="hs-k" id="heroPerLabel">1인</span><span class="hs-v"><span id="heroPer">0원</span></span></span>
-      </div>
+      <!-- 제목 옆의 합계·참여·1인 숫자는 뺐다. 같은 숫자가 결과 요약 카드(PC 는 고정)와 모바일 요약 바에 있고,
+           제목 옆 숫자는 스크롤하면 사라져 도움이 되지 않았다 -->
     </div>
   </header>
 
@@ -1625,12 +1622,6 @@
         <div class="summary-card"><span>총 비용</span><strong>${formatWon(c.totalAmount)}</strong></div>
         <div class="summary-card"><span>입금 합계</span><strong>${formatWon(c.totalReceivable)}</strong></div>
         <div class="summary-card"><span>${burdenLabel}</span><strong>${formatWon(c.burden)}</strong></div>`;
-
-      /* 히어로 라이브 스탯 */
-      $("heroTotal").textContent = formatWon(c.totalAmount);
-      $("heroCount").textContent = `${c.perPerson.count}명`;
-      $("heroPerLabel").textContent = c.perPerson.uniform ? "1인" : "1인 평균";
-      $("heroPer").textContent = formatWon(c.perPerson.value);
 
       /* 모바일 요약 바 */
       $("mbTotal").textContent = formatWon(c.totalAmount);

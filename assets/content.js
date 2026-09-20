@@ -29,7 +29,22 @@
   function slash(v) { return String(v == null ? "" : v).replace(/·/g, "/"); }
   function normName(v) { return String(v == null ? "" : v).toLowerCase().replace(/\s+/g, ""); }
   function trim(v) { return String(v == null ? "" : v).trim(); }
+  /* 필터·선택지에 쓰는 지역 이름. "그 외"는 분류일 뿐이라 "그 외 지역"으로 읽는다 */
   function areaLabel(a) { return a === "그 외" ? "그 외 지역" : (a || ""); }
+  /* 메뉴 이름이 글 안에 이미 있는가 — 공백·대소문자를 무시하고 본다 ("육회 한상" ⊂ "신선한 육회 한상.") */
+  function textHas(text, menu) {
+    var t = normName(text), m = normName(menu);
+    return !!m && !!t && t.indexOf(m) >= 0;
+  }
+  /* "생태탕, 오징어제육" → ["생태탕", "오징어제육"] */
+  function menuItems(menu) {
+    return String(menu == null ? "" : menu).split(/[,，·]/).map(trim).filter(Boolean);
+  }
+  /* 메뉴 칸의 메뉴가 전부 글 안에 있는가 — 있으면 글 아래에 메뉴를 다시 적지 않는다 */
+  function menusIn(text, menu) {
+    var items = menuItems(menu);
+    return items.length > 0 && items.every(function (m) { return textHas(text, m); });
+  }
 
   /* ── 날짜 ── */
   var DOW = ["일", "월", "화", "수", "목", "금", "토"];
@@ -40,6 +55,15 @@
   function kstToday() {
     try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
     catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  /* 지금 시각 "HH:MM" (한국 시간). 오늘 모임이 이미 시작했는지 볼 때 쓴다 */
+  function kstNowHM() {
+    var d = new Date();
+    try {
+      var s = d.toLocaleTimeString("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
+      if (/^\d{2}:\d{2}/.test(s)) return s.slice(0, 5) === "24:00" ? "00:00" : s.slice(0, 5);
+    } catch (e) {}
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
   }
   /* "9월 5일" / withYear → "2026년 9월 5일" / withDow → "9월 5일 (목)" */
   function dateText(v, opts) {
@@ -141,43 +165,62 @@
     return "https://map.kakao.com/?q=" + encodeURIComponent(q.trim());
   }
   function uniqPush(arr, v) { if (v && arr.indexOf(v) < 0) arr.push(v); }
+  /* 한줄평 하나가 화면에 내는 글: 한줄평이 있으면 그것, 메뉴만 있으면 "추천 메뉴 …" */
+  function noteText(n) { return n.review || (n.menu ? "추천 메뉴 " + n.menu : ""); }
+  /* 한줄평의 가장 최근 날짜 — 방문일이 있으면 방문일, 없으면 작성일. 정렬 "최근 한줄평순"의 기준 */
+  function noteDate(n) { return n.date || String(n.created_at || "").slice(0, 10); }
 
   /* ── 가게 하나의 표시용 객체 ── */
   function placeView(row) {
     var p = Object.assign({}, row);
     p.area = slash(p.area); p.category = slash(p.category);
     var notes = (Array.isArray(row.notes) ? row.notes : []).map(function (n) { return noteView(p, n); });
-    var menus = [], tips = [];
+    var menus = [], tips = [], menuNotes = 0;
     notes.forEach(function (n) {
-      String(n.menu || "").split(/[,，·]/).forEach(function (m) { uniqPush(menus, trim(m)); });
+      if (n.menu) menuNotes++;
+      menuItems(n.menu).forEach(function (m) { uniqPush(menus, m); });
       if (n.tip) tips.push({ text: n.tip, by: n.by });
     });
     var reviews = notes.filter(function (n) { return n.review; });
     var latest = reviews[0] || null;                    // 뷰가 방문일·작성일 내림차순으로 준다
     var lv = priceLevel(row);
     var detail = trim(p.area_detail);
+    var address = looksLikeAddress(detail) ? detail : "";
+    var locationNote = address ? "" : detail;
     var again = notes.length >= 2
       ? { yes: notes.filter(function (n) { return n.again; }).length, all: notes.length } : null;
+    // 어느 후기 글에도 안 나오는 메뉴 — 이런 메뉴가 있거나 메뉴를 적은 사람이 둘 이상일 때만 상세에 '추천 메뉴' 항목을 따로 둔다
+    var uncovered = menus.filter(function (m) { return !notes.some(function (n) { return textHas(noteText(n), m); }); });
+    var lastNoted = "";
+    notes.forEach(function (n) { var d = noteDate(n); if (d > lastNoted) lastNoted = d; });
     return {
       id: p.id, name: p.name, area: p.area, areaLabel: areaLabel(p.area), category: p.category,
-      address: looksLikeAddress(detail) ? detail : "",
-      locationNote: looksLikeAddress(detail) ? "" : detail,
+      /* 화면에 쓰는 지역: "그 외"에 실제 위치 메모가 있으면 그 위치("용산 이태원")만. "그 외 지역"은 필터에서만 쓴다 */
+      areaText: p.area === "그 외" && locationNote ? locationNote : areaLabel(p.area),
+      address: address,
+      locationNote: locationNote,
       priceLevel: lv, priceText: priceText(lv), priceNote: trim(p.price_note),
       closed: !!p.closed, author: trim(p.author), created_at: p.created_at || "",
       visitCount: Number(p.visit_count) || 0, lastVisit: p.last_visit || "",
       mapUrl: mapUrl(p), hasMapLink: !!p.map_url,
       notes: notes, reviews: reviews, latest: latest, menus: menus, tips: tips, again: again,
+      menuNotes: menuNotes, showMenuSection: uncovered.length > 0 || menuNotes >= 2,
+      lastNoted: lastNoted,
       curatedCount: notes.filter(function (n) { return n.source === "curated"; }).length,
       pendingCount: notes.filter(function (n) { return n.pending; }).length,
       raw: row
     };
   }
 
-  /* 목록 한 줄에 쓰는 한줄평 자리: 한줄평 → 없으면 추천 메뉴 → 없으면 '한줄평 없음' */
+  /* 목록 한 줄에 쓰는 한줄평 자리: 한줄평 → 없으면 추천 메뉴 → 없으면 '한줄평 없음'.
+     menuLine: 한줄평 글에 안 들어 있는 추천 메뉴가 있을 때만 "추천 메뉴 …" 한 줄을 앞에 둔다 (겹치면 한쪽만) */
   function placeLine(v) {
-    if (v.latest) return { kind: "review", text: v.latest.review, by: v.latest.by, date: v.latest.date };
-    if (v.menus.length) return { kind: "menu", text: "추천 메뉴 " + v.menus.join(", "), by: (v.notes[0] && v.notes[0].by) || "", date: (v.notes[0] && v.notes[0].date) || "" };
-    return { kind: "empty", text: "한줄평 없음", by: "", date: "" };
+    if (v.latest) {
+      var extra = v.menus.some(function (m) { return !textHas(v.latest.review, m); });
+      return { kind: "review", text: v.latest.review, by: v.latest.by, date: v.latest.date, menuLine: extra ? v.menus.join(", ") : "" };
+    }
+    if (v.menus.length) return { kind: "menu", text: "추천 메뉴 " + v.menus.join(", "), by: (v.notes[0] && v.notes[0].by) || "", date: (v.notes[0] && v.notes[0].date) || "", menuLine: "" };
+    return { kind: "empty", text: "한줄평 없음", by: "", date: "", menuLine: "" };
   }
 
   /* ── 소식 ── */
@@ -206,6 +249,14 @@
     var closed = m.status === "closed";
     var label = past ? "지난 모임" : closed ? "모집 마감" : d === 0 ? "오늘" : d === 1 ? "내일" : d > 1 ? "D-" + d : "";
     return { days: d, label: label, past: past, closed: closed };
+  }
+  /* 홈의 '다가오는 모임' 조건 — 소식 글쓰기 안내문(news.html TYPE_DESC)과 같은 말로 유지한다:
+     모임 모집 글 + 모임 날짜가 오늘 이후 + 마감 아님. 오늘 모임은 시간이 아직 지나지 않은 것만. 시간이 없으면 그날 하루 종일 */
+  function isUpcoming(v, today, nowHM) {
+    if (!v || v.kind !== "bung" || !v.meta || !v.meta.date) return false;
+    if (v.meta.status === "closed" || v.meta.date < today) return false;
+    if (v.meta.date === today && nowHM && /^\d{2}:\d{2}$/.test(String(v.meta.time || "")) && v.meta.time < nowHM) return false;
+    return true;
   }
   /* 상세에 표 형태로 놓는 사실 항목. 있는 것만 담긴다 */
   function postFacts(post, today) {
@@ -309,11 +360,12 @@
 
   window.EXCER_CONTENT = {
     AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES,
-    esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel,
-    dateText: dateText, relTime: relTime, kstToday: kstToday, daysFromToday: daysFromToday,
-    loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, placeView: placeView, placeLine: placeLine, mapUrl: mapUrl,
+    esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
+    dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
+    loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, noteText: noteText, noteDate: noteDate,
+    placeView: placeView, placeLine: placeLine, mapUrl: mapUrl,
     looksLikeAddress: looksLikeAddress,
     postType: postType, catLabel: catLabel, postMeta: postMeta, postFacts: postFacts, postSubline: postSubline, postView: postView,
-    bungState: bungState, excerpt: excerpt, caps: caps
+    bungState: bungState, isUpcoming: isUpcoming, excerpt: excerpt, caps: caps
   };
 })();
