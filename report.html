@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -135,6 +135,7 @@
     .hm-day { display: flex; align-items: center; font-size: 11px; font-weight: 600; color: var(--ink-2); }
     .hm-day.is-weekend { color: var(--brand); }
     .hm-cell { aspect-ratio: 1; border-radius: 3px; min-width: 16px; }
+    .hm-grid.is-empty { display: block; min-width: 0; }
     .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
     .hm-legend i { width: 16px; height: 10px; border-radius: 3px; }
 
@@ -147,7 +148,6 @@
     .rank-list { display: grid; }
     .rank-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); transition: opacity 0.2s var(--ease); }
     .rank-row:last-child { border-bottom: 0; }
-    .rank-row.is-dim { opacity: 0.3; }
     .rank-no { color: var(--ink-2); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
     .rank-row.is-top .rank-no { color: var(--ink); }
     .rank-main { min-width: 0; display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) 72px; gap: 10px; align-items: center; }
@@ -198,7 +198,7 @@
     .kw-list .kn { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
     .kw-list .kw { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--ink); font-weight: 600; }
     .kw-list .kw i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-    .kw-list .kw small { font-weight: 400; color: var(--ink-2); font-size: 11px; }
+    .kw-list .kw small { font-weight: 500; color: var(--ink-2); font-size: 12px; }
     .kw-list .kc { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
     @media (max-width: 640px) { .kw-list { grid-template-columns: 1fr; } }
     .kw-weekly { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
@@ -244,7 +244,7 @@
     .recap-brand { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .recap-brand .logo { font-size: 16px; font-weight: 700; color: #fff; }
     .recap-brand small { color: var(--on-dark-body); font-size: 13px; font-variant-numeric: tabular-nums; }
-    .recap-title { margin: 0; font-size: clamp(20px, 3vw, 26px); font-weight: 700; line-height: 1.25; color: #fff; }
+    .recap-title { margin: 0; font-size: clamp(19px, 2.6vw, 22px); font-weight: 700; line-height: 1.25; color: #fff; }
     .recap-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .recap-kpi { padding: 12px 14px; border-radius: var(--r-sm); background: rgba(255, 255, 255, 0.1); }
     .recap-kpi span { display: block; color: var(--on-dark-body); font-size: 12px; }
@@ -329,6 +329,7 @@
       </div>
       <div class="note-line" id="legacyNote" hidden>이 통계는 이전 형식으로 발행되었습니다. 기간 선택과 일부 항목은 제공되지 않습니다.</div>
       <div class="note-line" id="maskNote" hidden>이 통계는 닉네임을 한 글자만 남긴 형식으로 발행되었습니다.</div>
+      <div class="note-line" id="sampleNote" hidden>발행된 통계가 없어 예시 데이터를 표시합니다.</div>
     </div>
 
     <div class="container" id="loadingWrap" aria-busy="true" style="margin-top:24px">
@@ -342,8 +343,8 @@
 
     <div class="container" id="emptyWrap" hidden style="margin-top:24px">
       <div class="status-box">
-        <strong>통계를 불러오지 못했습니다.</strong>
-        <p>발행된 통계가 없거나 연결에 문제가 있습니다. 연결을 확인한 뒤 다시 시도해 주세요.</p>
+        <strong id="emptyTitle">통계를 불러오지 못했습니다.</strong>
+        <p id="emptyText">연결을 확인한 뒤 다시 시도해 주세요.</p>
         <button class="btn btn-secondary is-sm" type="button" id="retryBtn">다시 시도</button>
       </div>
     </div>
@@ -437,7 +438,7 @@
                 <label class="sr-only" for="rankMetric">순위 기준</label>
                 <select class="select-clean" id="rankMetric">
                   <option value="total">메시지 많은 순</option>
-                  <option value="rise">메시지 증가량순</option>
+                  <option value="rise">메시지 증감순</option>
                   <option value="steady">활동일 많은 순</option>
                   <option value="question">질문 많은 순</option>
                   <option value="reaction">반응 많은 순</option>
@@ -604,19 +605,6 @@
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
 
-      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
-      var revealEls = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
-          });
-        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-        revealEls.forEach(function (el) { io.observe(el); });
-      }
-
       /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
       var toastTimer = null;
@@ -651,26 +639,6 @@
         }
         requestAnimationFrame(step);
       }
-
-      /* ── 5. data-countup 자동 실행 ── */
-      var cuEls = document.querySelectorAll("[data-countup]");
-      function fire(el) {
-        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
-          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
-          suffix: el.getAttribute("data-countup-suffix") || ""
-        });
-      }
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        cuEls.forEach(fire);
-      } else {
-        var cuIo = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
-          });
-        }, { threshold: 0.4 });
-        cuEls.forEach(function (el) { cuIo.observe(el); });
-      }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -1045,6 +1013,17 @@
         if (p.length !== 3) return String(dateStr || "");
         return `${+p[1]}월 ${+p[2]}일 (${WEEK_KO[RM.weekdayOf(dateStr)]})`;
       }
+      /* y축: 정수 step 을 먼저 고르고 ymax 를 그 배수로 맞춘다 — 라벨이 곧 격자선 값이다 */
+      function niceAxis(max) {
+        const m = Math.max(1, max);
+        const rough = m / 4;
+        const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+        let step = pow * 10;
+        for (const k of [1, 2, 5, 10]) { if (k * pow >= rough) { step = k * pow; break; } }
+        step = Math.max(1, Math.round(step));
+        const ymax = Math.ceil(m / step) * step;
+        return { step, ymax, ticks: ymax / step };
+      }
       function kstToday() {
         const d = new Date(Date.now() + 9 * 3600 * 1000);
         return d.toISOString().slice(0, 10);
@@ -1054,6 +1033,9 @@
       const RAMP = ["#DCE7DF", "#B7CDBF", "#86AA96", "#557F6C", "#285244"];
       const ZERO_COLOR = "#F1EFE8";
       const CAT_COLOR = { "나들이": "#6B8F7E", "맛집": "#8A6A3A", "벙": "#285244", "정보": "#4E6E86" };
+      /* 분류 저장값 "벙"은 그대로 두고 화면에서만 "모임"으로 부른다. 칭호 이름도 같은 규칙 */
+      const catLabel = (c) => (c === "벙" ? "모임" : c);
+      const badgeText = (t) => String(t || "").replace(/^벙 /, "모임 ").replace(/벙 이야기/g, "모임 이야기").replace(/마디/g, "건");
       function rampColor(v, max) {
         if (!v) return ZERO_COLOR;
         const r = v / (max || 1);
@@ -1161,6 +1143,7 @@
       }
 
       /* ── 데이터 로드: preview → 발행본 → 예시 ── */
+      let previewMissing = false;
       async function loadData() {
         const params = new URLSearchParams(location.search);
         if (params.get("preview") === "1") {
@@ -1168,13 +1151,17 @@
             const draft = JSON.parse(localStorage.getItem("excer_report_draft") || "null");
             if (isV2(draft) || isV1(draft)) return { stats: trimNames(draft), source: "preview" };
           } catch (e) { /* 파손 → 다음 소스 */ }
+          previewMissing = true;
         }
+        let liveFailed = false;
         try {
           const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,stats,updated_at");
           liveRows = (rows || []).filter((r) => isV2(r.stats) || isV1(r.stats));
           liveRows.forEach((r) => trimNames(r.stats));
           if (liveRows.length) return { stats: liveRows[0].stats, source: "live", row: liveRows[0] };
-        } catch (e) { /* 미설치/네트워크 → 예시 */ }
+        } catch (e) { liveFailed = true; }
+        /* 연결 실패는 예시 데이터로 덮지 않는다 — 실패 화면과 다시 시도를 보여 준다 */
+        if (liveFailed) return { stats: null, source: "error" };
         try {
           const res = await fetch("data/report-sample.json");
           if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1207,7 +1194,8 @@
         else badge.innerHTML = '<strong>' + escapeHTML(st.periodLabel || "발행 통계") + '</strong>';
         $("maskNote").hidden = !st.maskNames;
         const gen = String(st.generatedAt || "").slice(0, 10);
-        $("metaLine").textContent = "기준일 " + fmtDateFull(st.range.to) + (gen ? " · 발행 " + gen : "");
+        const genTxt = /^\d{4}-\d{2}-\d{2}$/.test(gen) ? fmtDateFull(gen) : "";
+        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행 " + genTxt : "");
 
         const sel = $("reportSelect");
         if (state.source === "live" && liveRows.length >= 2) {
@@ -1304,7 +1292,7 @@
         let list;
         if (state.legacy) {
           if (state.rankMetric === "rise" || state.rankMetric === "steady") {
-            host.innerHTML = emptyBox(NO_ITEM, "이전 형식 통계에는 증가량과 활동일 순위가 없습니다.");
+            host.innerHTML = emptyBox(NO_ITEM, "이전 형식 통계에는 증감과 활동일 순위가 없습니다.");
             $("rankToggle").hidden = true; $("rankNote").textContent = "";
             return;
           }
@@ -1327,17 +1315,23 @@
           $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
           return;
         }
-        const maxAbs = Math.max(...list.map((x) => Math.abs(x.value)), 1);
-        const visible = state.rankOpen ? list : list.slice(0, 10);
+        const maxAbs = Math.max(...list.map((x) => Math.abs(x.value)), 1);   // 막대 기준은 거르기 전 전체
+        const ranked = list.map((x, i) => Object.assign({}, x, { rank: i + 1 }));
+        const matched = q ? ranked.filter((x) => x.name.toLowerCase().indexOf(q) >= 0) : ranked;
+        if (!matched.length) {
+          host.innerHTML = emptyBox("검색 결과가 없습니다.", "다른 닉네임을 입력해 주세요.");
+          $("rankToggle").hidden = true; $("rankNote").textContent = RANK_NOTES[state.rankMetric];
+          return;
+        }
+        const visible = state.rankOpen || q ? matched : matched.slice(0, 10);
         const isRise = state.rankMetric === "rise";
-        host.innerHTML = visible.map((x, i) => {
-          const dim = q && x.name.toLowerCase().indexOf(q) < 0;
+        host.innerHTML = visible.map((x) => {
           const w = Math.max(2, (Math.abs(x.value) / maxAbs) * 100);
           const valTxt = isRise ? (x.value >= 0 ? "+" + nf(x.value) : "−" + nf(Math.abs(x.value)))
             : state.rankMetric === "steady" ? nf(x.value) + "일" : nf(x.value);
           return `
-          <div class="rank-row${i < 3 ? " is-top" : ""}${dim ? " is-dim" : ""}" data-member="${escapeHTML(x.name)}">
-            <span class="rank-no">${i + 1}</span>
+          <div class="rank-row${x.rank <= 3 ? " is-top" : ""}" data-member="${escapeHTML(x.name)}">
+            <span class="rank-no">${x.rank}</span>
             <div class="rank-main">
               <button class="rank-name" type="button" data-open-member="${x.idx}">${highlightName(x.name)}</button>
               <div class="rank-track"><span class="rank-bar${isRise && x.value < 0 ? " is-neg" : ""}" data-w="${w.toFixed(1)}"></span></div>
@@ -1347,7 +1341,7 @@
         }).join("");
         requestAnimationFrame(() => { host.querySelectorAll(".rank-bar").forEach((b) => { b.style.width = b.dataset.w + "%"; }); });
         const toggle = $("rankToggle");
-        if (list.length > 10) {
+        if (!q && list.length > 10) {
           toggle.hidden = false;
           toggle.textContent = state.rankOpen ? "10명만 보기" : `전체 보기 (${nf(list.length)}명)`;
           toggle.setAttribute("aria-expanded", String(state.rankOpen));
@@ -1370,7 +1364,7 @@
           ? badges.map((b) => `
             <li>
               <span class="b-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>
-              <span><span class="b-title">${escapeHTML(b.title)}</span><span class="b-name">${highlightName(b.name)}</span><span class="b-desc">${escapeHTML(b.desc.replace(/마디/g, "건"))}</span></span>
+              <span><span class="b-title">${escapeHTML(badgeText(b.title))}</span><span class="b-name">${highlightName(b.name)}</span><span class="b-desc">${escapeHTML(badgeText(b.desc))}</span></span>
             </li>`).join("")
           : `<li style="grid-column:1/-1">${emptyBox("조건을 충족한 칭호가 없습니다.", "기간을 넓히면 표시될 수 있습니다.")}</li>`;
       }
@@ -1384,13 +1378,11 @@
         const pk = RM.peakOf(hourly), qt = RM.quietOf(hourly);
         const W = 760, H = 240, Lm = 44, Rm = 12, T = 12, B = 30;
         const pw = W - Lm - Rm, ph = H - T - B;
-        const pow = Math.pow(10, Math.max(0, Math.floor(Math.log10(max))));
-        let ymax = pow;
-        for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= max) { ymax = m * pow; break; } }
+        const ax = niceAxis(max), ymax = ax.ymax;
         const slot = pw / 24, bw = slot - 3;
         let grid = "", yt = "";
-        for (let g = 0; g <= 4; g++) {
-          const gv = (ymax / 4) * g, gy = T + ph - (gv / ymax) * ph;
+        for (let g = 0; g <= ax.ticks; g++) {
+          const gv = ax.step * g, gy = T + ph - (gv / ymax) * ph;
           grid += `<line x1="${Lm}" y1="${gy.toFixed(1)}" x2="${W - Rm}" y2="${gy.toFixed(1)}" stroke="#E1E4DC" stroke-width="1"/>`;
           yt += `<text x="${Lm - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5B655C">${nf(gv)}</text>`;
         }
@@ -1445,11 +1437,14 @@
         $("scopeHeatmap").textContent = state.legacy ? scopeAll() : scopeSel();
         const host = $("hmGrid");
         if (!grid) {
-          host.innerHTML = "";
-          host.parentElement.innerHTML = emptyBox(NO_ITEM);
+          host.classList.add("is-empty");
+          host.removeAttribute("role");
+          host.innerHTML = emptyBox(NO_ITEM);
           $("hmLegend").innerHTML = ""; $("hmTable").innerHTML = "";
           return;
         }
+        host.classList.remove("is-empty");
+        host.setAttribute("role", "img");
         let max = 0;
         grid.forEach((r) => r.forEach((v) => { if (v > max) max = v; }));
         let html = `<span class="hm-corner" aria-hidden="true"></span>`;
@@ -1489,10 +1484,7 @@
         }
         const W = 760, H = 250, Lm = 48, Rm = 18, T = 16, B = 34;
         const pw = W - Lm - Rm, ph = H - T - B;
-        const ymaxRaw = Math.max(...weeks.map((w) => w.total), 1);
-        const pow = Math.pow(10, Math.max(0, Math.floor(Math.log10(ymaxRaw))));
-        let ymax = pow;
-        for (const m of [1, 2, 2.5, 5, 10]) { if (m * pow >= ymaxRaw) { ymax = m * pow; break; } }
+        const ax = niceAxis(Math.max(...weeks.map((w) => w.total), 1)), ymax = ax.ymax;
         const x = (i) => Lm + (weeks.length === 1 ? pw / 2 : (i * pw) / (weeks.length - 1));
         const y = (v) => T + ph - (v / ymax) * ph;
         let shade = "";
@@ -1505,8 +1497,8 @@
           }
         }
         let gridL = "", yt = "";
-        for (let g = 0; g <= 4; g++) {
-          const gv = (ymax / 4) * g, gy = y(gv);
+        for (let g = 0; g <= ax.ticks; g++) {
+          const gv = ax.step * g, gy = y(gv);
           gridL += `<line x1="${Lm}" y1="${gy.toFixed(1)}" x2="${W - Rm}" y2="${gy.toFixed(1)}" stroke="#E1E4DC" stroke-width="1"/>`;
           yt += `<text x="${Lm - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5B655C">${nf(gv)}</text>`;
         }
@@ -1566,13 +1558,9 @@
         const kws = st.keywords || [];
         $("scopeKeywords").textContent = scopeAll();
         const cats = ["나들이", "맛집", "벙", "정보"];
-        const catTotals = {};
-        cats.forEach((c) => { catTotals[c] = 0; });
-        (st.members || []).forEach((m) => { if (m.kw) cats.forEach((c) => { catTotals[c] += m.kw[c] || 0; }); });
-        const hasCatData = cats.some((c) => catTotals[c] > 0);
         $("kwCats").innerHTML =
           `<button class="kw-cat-chip" type="button" data-cat="all" aria-pressed="${state.kwCat === "all"}">전체</button>` +
-          cats.map((c) => `<button class="kw-cat-chip" type="button" data-cat="${c}" aria-pressed="${state.kwCat === c}"><i style="background:${CAT_COLOR[c]}"></i>${c}${hasCatData ? ` <b>${nf(catTotals[c])}</b>` : ""}</button>`).join("");
+          cats.map((c) => `<button class="kw-cat-chip" type="button" data-cat="${c}" aria-pressed="${state.kwCat === c}"><i style="background:${CAT_COLOR[c]}"></i>${catLabel(c)}</button>`).join("");
         const list = $("kwList");
         const shown = kws.filter((k) => state.kwCat === "all" || k.cat === state.kwCat).slice(0, 30);
         if (!kws.length) { list.innerHTML = `<li style="grid-column:1/-1;border:0">${emptyBox("집계된 단어가 없습니다.")}</li>`; }
@@ -1580,7 +1568,7 @@
         else {
           list.innerHTML = shown.map((k, i) => {
             const cat = k.cat && CAT_COLOR[k.cat] ? k.cat : null;
-            return `<li><span class="kn">${i + 1}</span><span class="kw">${cat ? `<i style="background:${CAT_COLOR[cat]}"></i>` : ""}${escapeHTML(k.w)}${cat ? `<small>${cat}</small>` : ""}</span><span class="kc">${nf(k.c)}회</span></li>`;
+            return `<li><span class="kn">${i + 1}</span><span class="kw">${cat ? `<i style="background:${CAT_COLOR[cat]}"></i>` : ""}${escapeHTML(k.w)}${cat ? `<small>${catLabel(cat)}</small>` : ""}</span><span class="kc">${nf(k.c)}회</span></li>`;
           }).join("");
         }
         animateIn(list);
@@ -1721,14 +1709,14 @@
         host.innerHTML = `
           <div class="md-head">
             <b>${escapeHTML(m.name)}</b>
-            <small>${tt ? tt.label + " (메시지가 가장 많은 시간 구간) · " : "시간 유형 미판정 (30건 이상부터) · "}평균 ${nf1(m.avgLen || 0)}자</small>
+            <small>${tt ? tt.label + " (새벽·아침·점심·저녁 중 메시지가 가장 많은 구간) · " : "시간 유형 미판정 (30건 이상부터) · "}평균 ${nf1(m.avgLen || 0)}자</small>
           </div>
           <div class="md-stats">
             <div class="md-stat"><span>기간 메시지</span><strong>${nf(periodCount)}</strong></div>
             <div class="md-stat"><span>기간 활동일</span><strong>${nf(actDays)}일</strong></div>
             <div class="md-stat"><span>최장 연속</span><strong>${nf(m.streak || 0)}일</strong></div>
           </div>
-          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>${escapeHTML(b.title)}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">선택 기간에 받은 칭호가 없습니다.</p>`}
+          ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>${escapeHTML(badgeText(b.title))}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">선택 기간에 받은 칭호가 없습니다.</p>`}
           <div class="md-spark">${sparkSVG(series, fmtDateK(st.days[s0].d), fmtDateK(st.days[s1].d))}<div class="spark-cap">${sparkNote} (${fmtDateK(st.days[s0].d)}~${fmtDateK(st.days[s1].d)})</div></div>`;
         $("memberGrid").querySelectorAll("[data-open-member]").forEach((b) => { b.setAttribute("aria-pressed", String(+b.dataset.openMember === i)); });
       }
@@ -1761,13 +1749,13 @@
         host.innerHTML = `
           <div class="recap-inner">
             <div class="recap-brand"><span class="logo">동네친구들 활동 통계</span><small>${fmtDateK(s.from)}~${fmtDateK(s.to)} · ${s.len}일</small></div>
-            <h3 class="recap-title">${escapeHTML(st.periodLabel)} ${escapeHTML(presetLabel(state.preset))} 활동 요약</h3>
+            <h3 class="recap-title">${escapeHTML(st.periodLabel)} 활동 요약</h3>
             <div class="recap-kpis">
               <div class="recap-kpi"><span>총 메시지</span><strong>${nf(kpi.total)}<small>건</small></strong></div>
               <div class="recap-kpi"><span>활동 멤버</span><strong>${nf(kpi.activeMembers)}<small>명</small></strong></div>
               <div class="recap-kpi"><span>하루 평균</span><strong>${nf1(kpi.avgPerDay)}<small>건</small></strong></div>
             </div>
-            ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="tile-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(b.title)} · ${escapeHTML(b.desc.replace(/마디/g, "건"))}</span></div>`).join("")}</div>` : ""}
+            ${badges.length ? `<div class="recap-rows">${badges.map((b) => `<div class="recap-row"><span class="tile-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span><span class="who">${escapeHTML(b.name)}</span><span class="what">${escapeHTML(badgeText(b.title))} · ${escapeHTML(badgeText(b.desc))}</span></div>`).join("")}</div>` : ""}
             ${kws.length ? `<div class="recap-kws">${kws.map((k) => `<span class="recap-kw">#${escapeHTML(k.w)}</span>`).join("")}</div>` : ""}
             <div class="recap-foot"><span>활동 지수 ${nf1(temp.temp)} · 집계 숫자와 단어 빈도만 담았습니다.</span><span>동네친구들</span></div>
           </div>`;
@@ -1798,6 +1786,15 @@
         } finally {
           btn.disabled = false; btn.textContent = "이미지로 저장";
         }
+      }
+
+      /* 기본 기간: 기준 주가 7일 미만으로 잘리면 기준 월, 그것도 짧으면 전체 기간 */
+      function defaultPreset(st) {
+        const wk = RM.presetRange(st, "week");
+        if (RM.dayDiff(wk.from, wk.to) + 1 >= 7) return "week";
+        const mo = RM.presetRange(st, "month");
+        if (RM.dayDiff(mo.from, mo.to) + 1 >= 7) return "month";
+        return "all";
       }
 
       /* ── 기간 선택 적용 ── */
@@ -1849,7 +1846,6 @@
           b.addEventListener("click", () => {
             if (b.dataset.range === "custom") {
               $("rangeCustom").hidden = false;
-              document.querySelectorAll(".range-chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
               $("customFrom").focus();
               return;
             }
@@ -1906,13 +1902,14 @@
         $("loadingWrap").hidden = true;
         $("emptyWrap").hidden = true;
         $("dashBody").hidden = false;
+        $("sampleNote").hidden = source !== "sample";
         if (isV2(stats)) {
           state.data = stats;
           state.legacy = false;
           $("legacyNote").hidden = true;
           $("rangeFilter").querySelectorAll(".range-chip").forEach((b) => { b.disabled = false; });
           renderHero();
-          applyPreset("week");
+          applyPreset(defaultPreset(stats));
         } else {
           state.data = adaptV1(stats);
           state.legacy = true;
@@ -1937,11 +1934,14 @@
           $("loadingWrap").hidden = true;
           $("dashBody").hidden = true;
           $("emptyWrap").hidden = false;
-          $("sourceBadge").textContent = "통계 없음";
+          const failed = source === "error";
+          $("emptyTitle").textContent = failed ? "통계를 불러오지 못했습니다." : "발행된 통계가 없습니다.";
+          $("emptyText").textContent = failed ? "연결을 확인한 뒤 다시 시도해 주세요." : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
+          $("sourceBadge").textContent = failed ? "불러오기 실패" : "통계 없음";
           return;
         }
         bootWith(stats, source, row);
-        if (source === "sample") EXCER.toast("발행된 통계가 없어 예시 데이터를 표시합니다.");
+        if (previewMissing) EXCER.toast("미리보기 초안이 없어 발행된 통계를 표시합니다.");
       }
 
       boot();

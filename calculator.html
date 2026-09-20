@@ -15,7 +15,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
@@ -33,8 +33,6 @@
     /* ============================================================
        정산기 v2 페이지 전용 스타일
        ============================================================ */
-    .hero-band.is-compact .hero-sub { max-width: 560px; }
-    .hero-meta .stat-pill strong { letter-spacing: -0.03em; }
 
     /* ── 레이아웃: 좌 입력 / 우 결과(sticky) ── */
     .calc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 416px; gap: 18px; align-items: start; }
@@ -96,21 +94,20 @@
 
     /* ── 폼 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field { display: grid; gap: 7px; }
     .field.is-wide { grid-column: span 2; }
-    .field label { color: var(--ink-2); font-size: 13px; font-weight: 600; }
+    .field-hint { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
 
     .input, .textarea, .select {
       width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
       transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
-    .input, .select { min-height: 46px; padding: 0 14px; border-radius: 13px; font-weight: 700; }
-    .textarea { min-height: 96px; resize: vertical; padding: 13px 14px; border-radius: 15px; line-height: 1.55; font-weight: 600; }
+    .input, .select { min-height: 44px; padding: 0 12px; }
+    .textarea { min-height: 96px; }
     .input:hover, .textarea:hover, .select:hover { border-color: var(--line-strong); }
     .input:focus, .textarea:focus, .select:focus { border-color: rgba(40, 82, 68, 0.45); }
     .select {
       appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235F0080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235B655C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center;
     }
 
@@ -238,7 +235,7 @@
     .receipt-thumb { position: relative; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-strong); background: var(--offwhite); }
     .receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .receipt-thumb-del {
-      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
+      position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%;
       display: grid; place-items: center; background: rgba(36, 40, 36, 0.74); color: #fff; font-size: 12px; font-weight: 700;
       cursor: pointer; line-height: 1;
     }
@@ -272,7 +269,7 @@
     }
     .summary-card::before { content: ""; display: block; width: 18px; height: 3px; border-radius: 2px; background: var(--grad-brand); margin-bottom: 10px; }
     .summary-card span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
-    .summary-card strong { display: block; color: var(--deep-1); font-size: 17px; font-weight: 700; letter-spacing: -0.045em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .summary-card strong { display: block; color: var(--deep-1); font-size: 17px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
     /* ── 입금 현황 배지 카드 ── */
     .settle-status {
@@ -287,7 +284,7 @@
     .ss-acts .mini-btn { min-height: 40px; padding: 0 12px; font-size: 12px; }
     .ss-pending { color: var(--ink-2); font-size: 13px; font-weight: 700; line-height: 1.55; }
     .ss-pending b { color: var(--pink); }
-    .ss-note { color: var(--gray-2); font-size: 11px; font-weight: 700; }
+    .ss-note { color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; }
 
     /* ── 영수증(캡처 대상) — ⚠ 캡처 안전 범위: 불투명 배경만, blur·반투명 금지 ── */
     .receipt-shell { overflow: hidden; border-radius: var(--r-lg); padding: 0; }
@@ -306,7 +303,7 @@
     .receipt-head p { margin: 8px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.5; font-weight: 600; }
     .receipt-total { text-align: right; white-space: nowrap; }
     .receipt-total span { display: block; margin-bottom: 5px; color: var(--ink-2); font-size: 12px; font-weight: 600; }
-    .receipt-total strong { color: var(--brand); font-size: 24px; font-weight: 700; letter-spacing: -0.05em; }
+    .receipt-total strong { color: var(--brand); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
     .receipt-summary-line {
       display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
@@ -337,12 +334,14 @@
       background: var(--brand-soft); border: 1px solid var(--line-strong); color: var(--brand); font-size: 13px; font-weight: 700;
     }
     .payer-group-head em { font-style: normal; color: var(--ink-2); font-size: 12px; font-weight: 600; }
+    .pay-name { white-space: nowrap; overflow-wrap: anywhere; }
+    .pay-copy { white-space: nowrap; }
     .pay-row {
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
       padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line);
     }
     .pay-row > span { color: var(--ink); font-weight: 600; }
-    .pay-row .adj-note { display: block; color: var(--gray-2); font-size: 11px; font-weight: 700; margin-top: 1px; }
+    .pay-row .adj-note { display: block; color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; margin-top: 1px; }
     .pay-right { display: flex; align-items: center; gap: 10px; }
     .pay-right strong { color: var(--brand); font-size: 17px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
     .pay-copy {
@@ -404,46 +403,17 @@
     .btn-share:hover { background: var(--lavender-2); }
     .link-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
-    /* ── 3단계 가이드 레일 ── */
-    .step-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 0 0 18px; padding: 0; list-style: none; }
-    .step-rail-item a {
-      display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: var(--r-md);
-      background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line);
-      transition: transform 0.16s var(--ease), border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
-    }
-    .step-rail-item a:hover { transform: none; border-color: var(--line-strong); }
-    .step-rail-item b {
-      display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; flex: none;
-      background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 700;
-    }
-    .step-rail-item span { color: var(--ink-2); font-size: 13px; font-weight: 700; letter-spacing: -0.02em; }
-    .step-rail-item.is-goal b { background: var(--offwhite); color: var(--primary-700); }
-    @media (max-width: 640px) {
-      .step-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-      .step-rail-item a { flex-direction: column; align-items: flex-start; gap: 7px; padding: 11px 12px; }
-      .step-rail-item span { font-size: 12px; }
-    }
-
     /* ── 실시간 입력 안내 ── */
     .calc-hint {
-      display: flex; align-items: flex-start; gap: 9px;
+      display: block;
       padding: 13px 15px; border-radius: var(--r-md);
       font-size: 13px; font-weight: 700; line-height: 1.55;
     }
     .calc-hint[hidden] { display: none; }
-    .calc-hint::before { flex: none; font-size: 15px; line-height: 1.35; }
     .calc-hint b { font-weight: 700; }
-    .calc-hint.is-info {
-      background: var(--brand-soft);
-      color: var(--ink-2);
-    }
-    .calc-hint.is-info::before { content: "✏️"; }
-    .calc-hint.is-info b { color: var(--primary-700); }
-    .calc-hint.is-done {
-      background: var(--brand-soft);
-      color: var(--brand);
-    }
-    .calc-hint.is-done::before { content: "✅"; }
+    .calc-hint.is-info { background: var(--surface-2); color: var(--ink-2); border-left: 3px solid var(--line-strong); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+    .calc-hint.is-info b { color: var(--ink); }
+    .calc-hint.is-done { background: var(--brand-soft); color: var(--ink); border-left: 3px solid var(--brand); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
     .calc-hint.is-done b { color: var(--brand); }
 
     /* ── 모바일 하단 요약 바 ── */
@@ -519,7 +489,7 @@
         <h1 id="pageTitle">모임 정산</h1>
         <p class="page-lead">멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지를 만듭니다.</p>
       </div>
-      <div class="hero-signal" style="margin-top:0" aria-live="polite">
+      <div class="hero-signal" style="margin-top:0">
         <span class="hs"><span class="hs-k">합계</span><span class="hs-v"><span id="heroTotal">0원</span></span></span>
         <span class="hs"><span class="hs-k">참여</span><span class="hs-v"><span id="heroCount">0명</span></span></span>
         <span class="hs"><span class="hs-k" id="heroPerLabel">1인</span><span class="hs-v"><span id="heroPer">0원</span></span></span>
@@ -533,14 +503,14 @@
 
         <div class="calc-grid">
           <div class="calc-inputs">
-            <div class="helper-row reveal">
+            <div class="helper-row">
               <button id="loadSampleBtn" class="btn btn-secondary is-sm" type="button">예시 데이터 입력</button>
               <button id="resetBtn" class="btn btn-danger is-sm" type="button">전체 지우기</button>
               <span class="save-status"><i></i>입력 내용은 이 브라우저에 자동 저장됩니다.</span>
             </div>
 
             <!-- 1. 모임 정보와 멤버 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle1">
+            <section class="card is-lg" aria-labelledby="stepTitle1">
               <div class="card-head"><h2 class="card-title" id="stepTitle1"><span class="card-step">1</span>모임 정보와 멤버</h2></div>
               <div class="field-grid">
                 <div class="field is-wide">
@@ -572,7 +542,7 @@
             </section>
 
             <!-- 2. 차수별 비용 + 결제자 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle2">
+            <section class="card is-lg" aria-labelledby="stepTitle2">
               <div class="card-head">
                 <h2 class="card-title" id="stepTitle2"><span class="card-step">2</span>차수별 비용과 결제자</h2>
                 <button id="addRoundBtn" class="btn btn-secondary is-sm" type="button">＋ 차수 추가</button>
@@ -585,7 +555,7 @@
             </section>
 
             <!-- 3. 입금 정보 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle3">
+            <section class="card is-lg" aria-labelledby="stepTitle3">
               <div class="card-head"><h2 class="card-title" id="stepTitle3"><span class="card-step">3</span>입금 정보</h2></div>
               <div class="field-grid">
                 <div class="field"><label for="payBank">은행</label><input id="payBank" class="input" type="text" placeholder="예: 카카오뱅크" /></div>
@@ -599,10 +569,10 @@
               <p class="card-note">여기까지 입력하면 정산 결과가 만들어집니다. 아래 항목은 필요할 때만 엽니다.</p>
             </section>
 
-            <p class="fold-label reveal">선택 항목</p>
+            <p class="fold-label">선택 항목</p>
 
             <!-- 개인별 추가와 차감 -->
-            <details class="card fold-card reveal" id="foldAdj">
+            <details class="card fold-card" id="foldAdj">
               <summary class="fold-head">
                 <h2 class="card-title">개인별 추가와 차감 <span class="badge-soft">선택</span></h2>
                 <span class="fold-note" id="adjFoldNote">개인별 금액 조정</span>
@@ -614,12 +584,12 @@
                   <button id="addAdjBtn" class="btn btn-secondary is-sm" type="button">＋ 항목 추가</button>
                 </div>
                 <div id="adjList" class="adj-list"></div>
-                <p class="card-note">예: 서아 −4,000원 (먼저 귀가), 준호 +3,000원 (추가 주문). 더하거나 뺀 금액은 모임장이 부담하지 않고 같은 차수의 나머지 참여자가 똑같이 나눕니다.</p>
+                <p class="card-note">예: 서아 −4,000원 (먼저 귀가), 준호 +3,000원 (추가 주문). 더하거나 뺀 금액은 당사자를 뺀 같은 차수 참여자가 똑같이 나눕니다. 모임장도 그 차수에 참여했다면 함께 나눕니다.</p>
               </div>
             </details>
 
             <!-- 정산 옵션 -->
-            <details class="card fold-card reveal" id="foldOpts">
+            <details class="card fold-card" id="foldOpts">
               <summary class="fold-head">
                 <h2 class="card-title">정산 옵션</h2>
                 <span class="fold-note" id="optFoldNote">1원 그대로, 반올림</span>
@@ -658,7 +628,7 @@
             </details>
 
             <!-- 영수증 -->
-            <details class="card fold-card reveal" id="foldReceipt">
+            <details class="card fold-card" id="foldReceipt">
               <summary class="fold-head">
                 <h2 class="card-title">영수증 <span class="badge-soft">선택</span></h2>
                 <span class="fold-note" id="receiptFoldNote">첨부 없음</span>
@@ -682,7 +652,7 @@
             </details>
 
             <!-- 이전 정산 기록 -->
-            <details class="card fold-card reveal" id="historyCard">
+            <details class="card fold-card" id="historyCard">
               <summary class="fold-head">
                 <h2 class="card-title">이전 정산</h2>
                 <span class="fold-note" id="historyFoldNote">기록 없음</span>
@@ -1452,7 +1422,7 @@
               ? members.map((n) => {
                   const on = !ex.has(n);
                   const isHost = sameName(n, host);
-                  return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button"
+                  return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button" aria-pressed="${on}"
                     data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " (모임장)" : ""}</button>`;
                 }).join("")
               : `<span class="round-empty">참여 멤버를 먼저 입력해 주세요.</span>`}
@@ -1465,7 +1435,7 @@
       const members = memberPool();
       const list = $("adjList");
       if (!state.adjustments.length) {
-        list.innerHTML = `<p class="adj-empty">등록된 항목이 없습니다. 항목 추가를 눌러 택시비나 쿠폰처럼 한 사람에게만 더하거나 빼는 금액을 입력합니다.<br />특정 차수에만 해당하면 <b>차수</b>를 골라 주세요. 그 차수에 있던 사람끼리만 나눠 가져요.</p>`;
+        list.innerHTML = `<p class="adj-empty">등록된 항목이 없습니다. 항목 추가를 눌러 택시비나 쿠폰처럼 한 사람에게만 더하거나 빼는 금액을 입력합니다.<br />특정 차수에만 해당하면 <b>차수</b>를 골라 주세요. 그 차수에 참여한 사람끼리만 나눕니다.</p>`;
         return;
       }
       list.innerHTML = state.adjustments.map((a) => {
@@ -1513,7 +1483,9 @@
 
     function renderOptions() {
       $("unitChips").querySelectorAll(".chip").forEach((b) => {
-        b.classList.toggle("is-active", Number(b.dataset.unit) === state.rounding.unit);
+        const onUnit = Number(b.dataset.unit) === state.rounding.unit;
+        b.classList.toggle("is-active", onUnit);
+        b.setAttribute("aria-pressed", String(onUnit));
       });
       const modeWrap = $("modeChips");
       /* 1원 단위면 맞출 것이 없어 이 칸은 쓸 수 없다.
@@ -1523,7 +1495,9 @@
       const dim = state.rounding.unit === 1;
       modeWrap.classList.toggle("is-dim", dim);
       modeWrap.querySelectorAll(".chip").forEach((b) => {
-        b.classList.toggle("is-active", b.dataset.mode === state.rounding.mode);
+        const onMode = b.dataset.mode === state.rounding.mode;
+        b.classList.toggle("is-active", onMode);
+        b.setAttribute("aria-pressed", String(onMode));
         b.disabled = dim;
       });
       $("msgToggle").querySelectorAll("button").forEach((b) => {
@@ -1541,9 +1515,9 @@
       $("optFoldNote").textContent = `${unit}${mode}, ${MSG_LABEL[state.msgStyle]}${on ? `, 안내 ${on}개` : ""}`;
 
       const adjCount = state.adjustments.filter((a) => a.name && a.amount).length;
-      $("adjFoldNote").textContent = adjCount ? `${adjCount}건 반영 중` : "일찍 간 사람, 더 먹은 사람";
+      $("adjFoldNote").textContent = adjCount ? `${adjCount}건 반영 중` : "개인별 금액 조정";
 
-      $("receiptFoldNote").textContent = receipts.length ? `사진 ${receipts.length}장` : "사진 첨부 안 함";
+      $("receiptFoldNote").textContent = receipts.length ? `사진 ${receipts.length}장` : "첨부 없음";
       $("historyFoldNote").textContent = historyList.length ? `${historyList.length}건 보관 중` : "기록 없음";
     }
 
@@ -1568,26 +1542,27 @@
     function renderResults() {
       const c = calc();
 
-      /* 실시간 입력 안내 — 잘못/부족한 입력은 바로, 준비되면 다음 행동을 안내 */
+      /* 실시간 입력 안내 — 잘못/부족한 입력은 바로, 준비되면 다음 행동을 안내.
+         같은 문장이면 다시 쓰지 않는다 — 라이브 영역이라 글자를 칠 때마다 읽히면 안 된다 */
       const hintEl = $("calcHint");
+      const setHint = (el, cls, html) => {
+        el.hidden = false;
+        if (el.className !== cls) el.className = cls;
+        if (el.innerHTML !== html) el.innerHTML = html;
+      };
       if (hintEl) {
         if (!c.members.length) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "참여 멤버를 입력해 주세요. 모임장과 멤버 이름을 입력하면 계산을 시작합니다.";
+          setHint(hintEl, "calc-hint is-info", "참여 멤버를 입력해 주세요. 모임장과 멤버 이름을 입력하면 계산을 시작합니다.");
         } else if (!c.totalAmount) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "차수 금액을 입력해 주세요. 총 금액이 0원보다 커야 결과가 만들어집니다.";
+          setHint(hintEl, "calc-hint is-info", "차수 금액을 입력해 주세요. 총 금액이 0원보다 커야 결과가 만들어집니다.");
         } else if (c.rows.length && !(state.pay.bank.trim() && accountDigits())) {
           /* 계좌가 비면 복사 글에 입금계좌 줄이 통째로 빠지고 송금 버튼도 안 생긴다.
              다 됐다고 알려 놓고 계좌 없는 메시지를 보내게 두면 안 된다. */
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "계산 결과가 준비되었습니다. 입금 정보에 은행과 계좌번호를 입력하면 메시지에 계좌가 함께 담깁니다." + (state.sample ? " <b>(예시 데이터)</b>" : "");
+          setHint(hintEl, "calc-hint is-info", "계산 결과가 준비되었습니다. 입금 정보에 은행과 계좌번호를 입력하면 메시지에 계좌가 함께 담깁니다." + (state.sample ? " <b>(예시 데이터)</b>" : ""));
         } else if (c.rows.length) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-done";
-          hintEl.innerHTML = "계산 결과가 준비되었습니다. 메시지를 복사하거나 입금 확인 링크를 만들어 공유해 주세요." + (state.sample ? " <b>(예시 데이터)</b>" : "");
+          setHint(hintEl, "calc-hint is-done", "계산 결과가 준비되었습니다. 메시지를 복사하거나 입금 확인 링크를 만들어 공유해 주세요." + (state.sample ? " <b>(예시 데이터)</b>" : ""));
         } else {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "모임장 외에 참여 멤버를 더 입력하면 금액을 나눠 계산합니다.";
+          setHint(hintEl, "calc-hint is-info", "모임장 외에 참여 멤버를 더 입력하면 금액을 나눠 계산합니다.");
         }
       }
 
@@ -1642,7 +1617,7 @@
         ).join("");
         return `
           <div class="pay-row">
-            <span>${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}${adjNote}</span>
+            <span><span class="pay-name">${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}</span>${adjNote}</span>
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
               ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱을 열어 이 금액을 송금합니다" : "계좌번호와 금액을 복사합니다"}">${isMobileUA() ? "송금 앱 열기" : "계좌·금액 복사"}</button>` : ""}
@@ -2238,15 +2213,22 @@
       $("settleStatus").hidden = false;
     }
 
+    /* 돌려주는 값: "ok" 조회됨 / "none" 공유 기록 없음(만료·미생성) / "error" 연결 실패 */
     async function refreshSettleStatus() {
-      if (!state.shareId) { hideSettleStatus(); return; }
+      if (!state.shareId) { hideSettleStatus(); return "none"; }
       try {
         const data = await supaFetch("/rest/v1/rpc/settle_get", {
           method: "POST", body: JSON.stringify({ p_id: state.shareId })
         });
-        if (!data) { hideSettleStatus(); return; }
+        if (!data) { hideSettleStatus(); return "none"; }
         applySettleStatus(data);
-      } catch (e) { hideSettleStatus(); }
+        return "ok";
+      } catch (e) {
+        /* 연결 실패는 카드를 지우지 않고 그 안에 남긴다 — 다시 시도할 수 있게 */
+        $("ssPending").innerHTML = "입금 현황을 불러오지 못했습니다. 잠시 후 새로고침을 눌러 주세요.";
+        $("settleStatus").hidden = false;
+        return "error";
+      }
     }
 
     /* ============================================================
@@ -2563,9 +2545,11 @@
         const ok = await copyToClipboard(window.location.href);
         showToast(ok ? "페이지 주소를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
       });
-      $("ssRefresh").addEventListener("click", () => {
-        refreshSettleStatus();
-        showToast("입금 현황을 다시 확인했습니다.");
+      $("ssRefresh").addEventListener("click", async () => {
+        const r = await refreshSettleStatus();
+        showToast(r === "ok" ? "입금 현황을 다시 확인했습니다."
+          : r === "error" ? "입금 현황을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+          : "공유한 정산 기록이 없습니다. 입금 확인 링크를 다시 만들어 주세요.");
       });
       $("loadSampleBtn").addEventListener("click", loadSample);
       // 버튼을 위로 올린 만큼 잘못 눌릴 일도 늘어난다 — 한 번 묻는다

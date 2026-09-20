@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1E0230" />
+  <meta name="theme-color" content="#285244" />
 
   <title>맛집 · 동네친구들</title>
   <meta name="description" content="동네친구들이 모임에서 다녀온 식당 목록입니다. 지역, 종류, 가격대로 찾고 지도에서 볼 수 있습니다." />
@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -79,7 +79,7 @@
     @media (min-width: 700px)  { .place-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 1080px) { .place-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    .place-card { display: flex; flex-direction: column; padding: 20px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); }
+    .place-card { scroll-margin-top: calc(var(--nav-h) + 12px); display: flex; flex-direction: column; padding: 20px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); }
     .place-card.is-closed { background: var(--surface-2); }
     .pc-head { display: flex; align-items: flex-start; gap: 8px; }
     .pc-name { margin: 0; min-width: 0; flex: 1 1 auto; font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
@@ -117,18 +117,13 @@
 
     /* ── 폼 공통 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field { display: grid; gap: 6px; align-content: start; }
     .field.is-wide { grid-column: span 2; }
-    .field label { color: var(--ink); font-size: 14px; font-weight: 600; }
     .field label small { color: var(--ink-2); font-size: 12px; font-weight: 500; }
-    .field-hint { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
-    .input, .textarea { width: 100%; border: 1px solid var(--line-strong); outline: none; background: var(--surface); color: var(--ink); font-size: 16px; }
-    .input { min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); }
     select.input { padding-right: 30px; }
-    .textarea { min-height: 84px; resize: vertical; padding: 10px 12px; border-radius: var(--r-btn); line-height: 1.6; }
     .input:focus, .textarea:focus { border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: 1px; }
     .check-line { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--surface); color: var(--ink); font-size: 15px; cursor: pointer; }
 
+    .pass-modal { width: min(420px, 100%); }
     /* ── 모달 (모바일: 아래에서 올라오는 시트) ── */
     .place-modal { width: min(620px, 100%); }
     .note-modal { width: min(500px, 100%); }
@@ -198,7 +193,7 @@
             <span class="select-wrap"><label for="fSort">정렬</label>
               <select id="fSort" class="select" aria-label="정렬">
                 <option value="recent">최근 방문순</option>
-                <option value="again">재방문 많은 순</option>
+                <option value="again">방문 많은 순</option>
                 <option value="price">가격 낮은 순</option>
                 <option value="name">이름순</option>
               </select></span>
@@ -212,7 +207,7 @@
         </div>
       </div>
 
-      <div class="place-list" id="placeList" aria-live="polite" aria-busy="true"></div>
+      <div class="place-list" id="placeList" aria-busy="true"></div>
     </section>
   </main>
   <footer class="site-footer">
@@ -261,7 +256,7 @@
       </div>
       <div class="field-grid">
         <div class="field is-wide">
-          <label for="pName">가게 이름</label>
+          <label for="pName">식당 이름</label>
           <input id="pName" class="input" type="text" maxlength="40" placeholder="예: 우래옥 강남점" />
         </div>
         <div class="field">
@@ -313,7 +308,7 @@
         </div>
       </div>
       <div class="modal-foot">
-        <button id="pDelete" class="btn btn-danger is-sm modal-danger" type="button" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-trash"/></svg> 지우기</button>
+        <button id="pDelete" class="btn btn-danger is-sm modal-danger" type="button" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-trash"/></svg> 삭제</button>
         <button id="pCancel" class="btn btn-secondary" type="button">취소</button>
         <button id="pSubmit" class="btn btn-primary" type="button">등록</button>
       </div>
@@ -365,6 +360,23 @@
     </div>
   </div>
 
+  <!-- ── 비밀번호 확인 (한줄평 삭제) ── -->
+  <div id="passBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+      <div class="modal-head">
+        <h3 id="passTitle">한줄평 삭제</h3>
+        <button id="passClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <p class="field-hint" style="margin:0 0 12px">한줄평을 쓸 때 입력한 비밀번호를 입력해 주세요. 삭제한 한줄평은 되돌릴 수 없습니다.</p>
+      <label class="sr-only" for="passInput">비밀번호</label>
+      <input id="passInput" class="input" type="password" placeholder="비밀번호" autocomplete="off" />
+      <div class="modal-foot">
+        <button id="passCancel" class="btn btn-secondary" type="button">취소</button>
+        <button id="passOk" class="btn btn-danger" type="button">삭제</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- ── 공통 셸 JS — v3-shell 그대로 ── -->
@@ -380,19 +392,6 @@
       }
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
-
-      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
-      var revealEls = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
-          });
-        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-        revealEls.forEach(function (el) { io.observe(el); });
-      }
 
       /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
@@ -428,26 +427,6 @@
         }
         requestAnimationFrame(step);
       }
-
-      /* ── 5. data-countup 자동 실행 (뷰포트 진입 시 1회) ── */
-      var cuEls = document.querySelectorAll("[data-countup]");
-      function fire(el) {
-        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
-          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
-          suffix: el.getAttribute("data-countup-suffix") || ""
-        });
-      }
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        cuEls.forEach(fire);
-      } else {
-        var cuIo = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
-          });
-        }, { threshold: 0.4 });
-        cuEls.forEach(function (el) { cuIo.observe(el); });
-      }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -551,7 +530,7 @@
       }
       function dateText(d) {
         var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || ""));
-        return m ? (m[2] + "월 " + Number(m[3]) + "일") : "";
+        return m ? (Number(m[2]) + "월 " + Number(m[3]) + "일") : "";
       }
 
       /* 지도 주소가 없으면 '지역 + 상호명'으로 카카오맵 검색을 연다.
@@ -595,7 +574,11 @@
           } else if (state.sort === "name") {
             return String(a.name || "").localeCompare(String(b.name || ""), "ko");
           }
-          return String(b.last_visit || b.created_at || "").localeCompare(String(a.last_visit || a.created_at || ""));
+          // 방문 기록이 있는 곳이 먼저(최근 방문 내림차순). 없는 곳은 뒤에서 등록 시각 내림차순 — 형식이 달라 서로 비교하지 않는다
+          var av = String(a.last_visit || ""), bv = String(b.last_visit || "");
+          if (!!av !== !!bv) return av ? -1 : 1;
+          if (av && bv && av !== bv) return bv.localeCompare(av);
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         });
         return list;
       }
@@ -605,7 +588,7 @@
       function conditionList() {
         var out = [];
         if (state.q.trim()) out.push({ k: "q", label: '"' + state.q.trim() + '"' });
-        if (state.area !== "전체") out.push({ k: "area", label: state.area });
+        if (state.area !== "전체") out.push({ k: "area", label: areaLabel(state.area) });
         if (state.cat !== "전체") out.push({ k: "cat", label: state.cat });
         if (state.price !== "전체") out.push({ k: "price", label: priceText(Number(state.price)) });
         return out;
@@ -621,7 +604,7 @@
       /* 셀렉트 채우기 — 지역·종류는 등록된 것과 상관없이 전부 보인다 */
       function fillSelects() {
         $("fArea").innerHTML = '<option value="전체">지역 전체</option>' +
-          AREAS.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("");
+          AREAS.map(function (a) { return '<option value="' + esc(a) + '">' + esc(areaLabel(a)) + "</option>"; }).join("");
         $("fCat").innerHTML = '<option value="전체">종류 전체</option>' +
           CATS.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("");
       }
@@ -675,7 +658,7 @@
               ' <button type="button" class="note-del" data-delnote="' + n.id + '">삭제</button></div>' +
               '<p class="visit-note">' + esc(n.text) + "</p></div>";
           }).join("");
-          detail = '<div class="pc-detail">' +
+          detail = '<div class="pc-detail" id="place-detail-' + p.id + '">' +
             (rows || '<p class="visit-empty">한줄평이 없습니다.</p>') +
             (vote ? '<p class="visit-vote">재방문 의사 ' + vote.yes + "명 / " + vote.all + "명</p>" : "") +
             '<div class="pc-detail-actions">' +
@@ -691,7 +674,7 @@
           (latest ? '<p class="pc-note">' + esc(latest.text) + "</p>" : '<p class="pc-note is-empty">한줄평이 없습니다.</p>') +
           (by.length ? '<p class="pc-by">' + by.join(" · ") + "</p>" : "") +
           '<div class="pc-foot">' +
-          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '" aria-controls="place-' + p.id + '">' +
+          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="place-detail-' + p.id + '"' : "") + '>' +
             (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
           '<a class="btn btn-secondary is-sm pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">' +
             icon("map", "is-sm") + ' 지도에서 보기<span class="sr-only"> (새 창에서 열림)</span></a>' +
@@ -770,7 +753,7 @@
         $("pmTitle").textContent = p ? "맛집 정보 수정" : "맛집 등록";
         $("pName").value = p ? p.name : "";
         $("pArea").innerHTML = AREAS.map(function (a) {
-          return '<option' + (p && p.area === a ? " selected" : "") + ">" + esc(a) + "</option>";
+          return '<option value="' + esc(a) + '"' + (p && p.area === a ? " selected" : "") + ">" + esc(areaLabel(a)) + "</option>";
         }).join("");
         $("pCat").innerHTML = CATS.map(function (c) {
           return '<option' + (p && p.category === c ? " selected" : "") + ">" + esc(c) + "</option>";
@@ -785,6 +768,7 @@
         $("pPass").value = savedPass();
         $("pNickWrap").hidden = !!p;      // 수정할 땐 닉네임을 다시 묻지 않는다
         $("pDelete").hidden = !p;
+        $("pSubmit").textContent = p ? "수정" : "등록";
         $("placeBackdrop").hidden = false;
         setTimeout(function () { $("pName").focus(); }, 60);
       }
@@ -807,7 +791,8 @@
           p_price_note: $("pPriceNote").value.trim() || null
         };
         state.busy = true;
-        var btn = $("pSubmit"); btn.disabled = true; btn.textContent = "등록 중";
+        var editing = !!state.editId;
+        var btn = $("pSubmit"); btn.disabled = true; btn.textContent = editing ? "저장 중" : "등록 중";
 
         var call = state.editId
           ? api("/rest/v1/rpc/place_update", { method: "POST",
@@ -821,7 +806,7 @@
           closePlaceModal();
           return load();
         }).catch(function (e) { toast(errMsg(e)); })
-          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = "등록"; });
+          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = editing ? "수정" : "등록"; });
       }
 
       function deletePlace() {
@@ -831,7 +816,7 @@
         if (!window.confirm("이 식당을 삭제합니다. 한줄평도 함께 삭제되며 되돌릴 수 없습니다.\n영업을 종료한 식당이면 삭제 대신 '현재 영업 종료'를 켜 주세요. 계속할까요?")) return;
         state.busy = true;
         api("/rest/v1/rpc/place_delete", { method: "POST", body: { p_id: state.editId, p_pass: pass } })
-          .then(function () { toast("삭제했습니다."); closePlaceModal(); return load(); })
+          .then(function () { toast("식당을 삭제했습니다."); closePlaceModal(); return load(); })
           .catch(function (e) { toast(errMsg(e)); })
           .then(function () { state.busy = false; });
       }
@@ -872,19 +857,38 @@
           .then(function () { state.busy = false; btn.disabled = false; btn.textContent = "등록"; });
       }
 
+      var passResolve = null;
+      function askPassword() {
+        return new Promise(function (resolve) {
+          passResolve = resolve;
+          $("passInput").value = "";
+          $("passBackdrop").hidden = false;
+          setTimeout(function () { $("passInput").focus(); }, 30);
+        });
+      }
+      function closePassModal(value) {
+        if ($("passBackdrop").hidden) return;
+        $("passBackdrop").hidden = true;
+        var r = passResolve; passResolve = null;
+        if (r) r(value);
+      }
       function deleteNote(noteId) {
-        var pass = window.prompt("한줄평을 쓸 때 입력한 비밀번호를 입력해 주세요. 삭제한 한줄평은 되돌릴 수 없습니다.");
-        if (pass === null) return;
-        api("/rest/v1/rpc/place_note_delete", { method: "POST", body: { p_id: Number(noteId), p_pass: pass } })
-          .then(function () { toast("삭제했습니다."); return load(); })
-          .catch(function (e) { toast(errMsg(e)); });
+        askPassword().then(function (pass) {
+          if (pass === null) return;
+          if (pass.trim().length < 4) { toast("비밀번호는 4자 이상 입력해 주세요."); return; }
+          return api("/rest/v1/rpc/place_note_delete", { method: "POST", body: { p_id: Number(noteId), p_pass: pass } })
+            .then(function () { toast("한줄평을 삭제했습니다."); return load(); })
+            .catch(function (e) { toast(errMsg(e)); });
+        });
       }
 
       /* ── 이벤트 ── */
       $("placeList").addEventListener("click", function (e) {
         var t;
         if ((t = e.target.closest("[data-open]")))   { var id = Number(t.getAttribute("data-open"));
-                                                       state.openId = state.openId === id ? null : id; render(); return; }
+                                                       state.openId = state.openId === id ? null : id; render();
+                                                       var again = $("placeList").querySelector('[data-open="' + id + '"]');
+                                                       if (again) again.focus({ preventScroll: true }); return; }
         if ((t = e.target.closest("[data-note]")))   { openNoteModal(Number(t.getAttribute("data-note"))); return; }
         if ((t = e.target.closest("[data-edit]")))   { openPlaceModal(Number(t.getAttribute("data-edit"))); return; }
         if ((t = e.target.closest("[data-delnote]"))){ deleteNote(t.getAttribute("data-delnote")); return; }
@@ -927,15 +931,32 @@
       $("nCancel").addEventListener("click", closeNoteModal);
       $("nSubmit").addEventListener("click", submitNote);
       $("placeBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closePlaceModal(); });
+      $("passOk").addEventListener("click", function () { closePassModal($("passInput").value); });
+      $("passCancel").addEventListener("click", function () { closePassModal(null); });
+      $("passClose").addEventListener("click", function () { closePassModal(null); });
+      $("passInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); closePassModal($("passInput").value); } });
+      $("passBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closePassModal(null); });
       $("noteBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeNoteModal(); });
       document.addEventListener("keydown", function (e) {
         if (e.key !== "Escape") return;
+        if (!$("passBackdrop").hidden) { closePassModal(null); return; }
         if (!$("noteBackdrop").hidden) { closeNoteModal(); return; }
         if (!$("placeBackdrop").hidden) closePlaceModal();
       });
 
+      /* 홈이나 공유 링크의 #place-N 으로 들어오면 목록을 다 그린 뒤 그 식당으로 옮긴다 */
+      function openFromHash() {
+        var m = /^#place-(\d+)$/.exec(location.hash || "");
+        if (!m) return;
+        var el = document.getElementById("place-" + m[1]);
+        if (!el) return;
+        el.scrollIntoView({ block: "start" });
+        var b = el.querySelector("[data-open]");
+        if (b) b.focus({ preventScroll: true });
+      }
       fillSelects();
-      load();
+      load().then(openFromHash);
+      window.addEventListener("hashchange", openFromHash);
     })();
   </script>
 

@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -51,7 +51,7 @@
     .toc-list a:hover { color: var(--ink); background: var(--surface-2); }
     .toc-list a[aria-current="true"] { color: var(--brand); border-left-color: var(--brand); font-weight: 600; }
     .toc-list a.is-dim { opacity: 0.4; }
-    .toc-count { margin: 8px 12px 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .toc-count { margin: 8px 12px 0; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
 
     /* 본문 */
     .guide-summary { padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
@@ -129,11 +129,8 @@
     }
   </style>
   <script src="assets/site-core.js?v=2"></script>
-  <script src="assets/icons.js?v=1"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
-
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
   <!-- ════════ 상단 글래스 내비 (공통 셸 · 활성=필독) ════════ -->
@@ -445,7 +442,7 @@
           ]
         },
         {
-          id: "cat-check", no: "7", title: "모임 참여 전 확인 사항",
+          id: "cat-check", no: "7", title: "모임 참여 확인 사항",
           keywords: ["체크리스트", "확인", "참석 버튼", "시간", "장소", "중간 합류", "입금"],
           blocks: [
             { type: "list", ordered: true, items: [
@@ -596,7 +593,28 @@
         if (head) head.setAttribute("aria-expanded", String(open));
         if (body && inner) body.style.maxHeight = open ? inner.scrollHeight + "px" : "";
       }
+      /* 이동한 자리의 제목으로 포커스를 옮긴다 — 키보드 사용자가 목차에 남지 않게 */
+      function focusSection(id) {
+        var sec = document.getElementById(id);
+        if (!sec) return;
+        var h = sec.querySelector("h2") || sec;
+        if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+        h.focus({ preventScroll: true });
+      }
       catsHost.addEventListener("click", function (e) {
+        var jump = e.target.closest('a.para-jump[href^="#"]');
+        if (jump) {
+          var id = jump.getAttribute("href").slice(1);
+          if (searchInput.value) { searchInput.value = ""; applyFilter(); }
+          var target = document.getElementById(id);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ block: "start" });
+            history.replaceState(null, "", "#" + id);
+            focusSection(id);
+          }
+          return;
+        }
         var head = e.target.closest(".acc-head");
         if (!head) return;
         var item = head.closest(".acc-item");
@@ -619,6 +637,7 @@
       var wide = window.matchMedia("(min-width: 960px)");
       function syncToc() { if (wide.matches) tocBox.open = true; }
       syncToc();
+      tocBox.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
       if (wide.addEventListener) wide.addEventListener("change", function () { tocBox.open = wide.matches; });
 
       /* ── 검색 ── */
@@ -641,7 +660,7 @@
           });
         }
         searchCount.hidden = !kw;
-        searchCount.textContent = kw ? "검색 결과 " + visible + "개 항목" : "";
+        searchCount.textContent = kw ? "검색 결과 " + visible + "개" : "";
         noResults.hidden = visible !== 0;
       }
       searchInput.addEventListener("input", applyFilter);
@@ -665,6 +684,7 @@
         if (searchInput.value) { searchInput.value = ""; applyFilter(); }
         setActive(a.dataset.chip);
         if (!wide.matches) tocBox.open = false;
+        setTimeout(function () { focusSection(a.dataset.chip); }, 0);
       });
       setActive("summary");
       if ("IntersectionObserver" in window) {
@@ -691,19 +711,6 @@
       }
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
-
-      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
-      var revealEls = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
-          });
-        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-        revealEls.forEach(function (el) { io.observe(el); });
-      }
 
       /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
@@ -739,26 +746,6 @@
         }
         requestAnimationFrame(step);
       }
-
-      /* ── 5. data-countup 자동 실행 ── */
-      var cuEls = document.querySelectorAll("[data-countup]");
-      function fire(el) {
-        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
-          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
-          suffix: el.getAttribute("data-countup-suffix") || ""
-        });
-      }
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        cuEls.forEach(fire);
-      } else {
-        var cuIo = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
-          });
-        }, { threshold: 0.4 });
-        cuEls.forEach(function (el) { cuIo.observe(el); });
-      }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();

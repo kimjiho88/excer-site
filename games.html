@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -67,7 +67,7 @@
   <header class="page-head">
     <div class="container">
       <h1 id="pageTitle">게임</h1>
-      <p class="page-lead">브라우저에서 바로 실행하는 미니 게임입니다. 게임을 마치면 화면 왼쪽 위의 게임 목록 링크로 돌아올 수 있습니다.</p>
+      <p class="page-lead">브라우저에서 바로 실행하는 미니 게임입니다.</p>
     </div>
   </header>
 
@@ -81,7 +81,7 @@
               <span class="genre">방치형 RPG · 혼자 하기</span>
               <p>좀비가 점령한 강남 밤거리를 자동으로 사냥하며 성장, 수집, 환생을 반복하는 방치형 RPG입니다.</p>
               <dl>
-                <dt>저장 방식</dt><dd>이 브라우저에 자동 저장됩니다. 카카오 로그인을 하면 계정에도 저장되어 다른 기기에서 이어 할 수 있습니다.</dd>
+                <dt>저장 방식</dt><dd>이 브라우저에 자동 저장됩니다. 게임 안에서 구글 로그인을 하면 계정에 연결되어 다른 기기에서 이어 할 수 있습니다.</dd>
                 <dt>순위</dt><dd>닉네임을 등록하면 멤버 순위에 참가합니다.</dd>
               </dl>
             </div>
@@ -94,7 +94,8 @@
               <span class="genre">경영 · 방치 · 꾸미기</span>
               <p>빵집을 꾸미고 키우는 쿼터뷰 경영 게임입니다. 손님이 들어와 줄을 서고 앉아서 먹으며, 오븐을 켜 두면 자리를 비운 동안에도 빵이 만들어집니다.</p>
               <dl>
-                <dt>저장 방식</dt><dd>이 브라우저에 자동 저장됩니다. 별도 로그인 없이 이 브라우저에서만 이어 할 수 있습니다.</dd>
+                <dt>저장 방식</dt><dd>이 브라우저에 자동 저장되고 서버에도 함께 보관됩니다. 로그인 절차는 없으며 다른 기기로는 이어지지 않습니다.</dd>
+                <dt>순위</dt><dd>게임 안 순위 화면을 열면 빵집 이름과 레벨이 그 주 순위에 올라갑니다.</dd>
               </dl>
             </div>
             <div class="game-cta"><a class="btn btn-primary" href="bakery.html">실행</a></div>
@@ -158,19 +159,6 @@
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
 
-      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
-      var revealEls = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
-          });
-        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-        revealEls.forEach(function (el) { io.observe(el); });
-      }
-
       /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
       var toastTimer = null;
@@ -205,26 +193,6 @@
         }
         requestAnimationFrame(step);
       }
-
-      /* ── 5. data-countup 자동 실행 (뷰포트 진입 시 1회) ── */
-      var cuEls = document.querySelectorAll("[data-countup]");
-      function fire(el) {
-        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
-          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
-          suffix: el.getAttribute("data-countup-suffix") || ""
-        });
-      }
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        cuEls.forEach(fire);
-      } else {
-        var cuIo = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
-          });
-        }, { threshold: 0.4 });
-        cuEls.forEach(function (el) { cuIo.observe(el); });
-      }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();

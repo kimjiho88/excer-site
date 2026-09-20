@@ -85,7 +85,7 @@
   --nav-h: 60px;
 
   /* ══════════ 4. 글자 ══════════ */
-  --fs-display: 44px;      /* 홈 대표 제목 */
+  --fs-display: 40px;      /* 홈 대표 제목 */
   --fs-page: 34px;         /* 일반 페이지 제목 */
   --fs-title: 22px;        /* 섹션 h2 */
   --fs-h3: 19px;           /* 카드 제목 */
@@ -111,7 +111,7 @@
     --section-gap: 40px;
     --container-pad: 20px;
     --nav-h: 56px;
-    --fs-display: 32px;
+    --fs-display: 30px;
     --fs-page: 28px;
     --fs-title: 20px;
     --fs-h3: 18px;
@@ -314,6 +314,11 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 .hero-signal .hs-k { display: block; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
 .hero-signal .hs-v { display: block; margin-top: 4px; color: var(--ink); font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .hero-signal .hs-v small { font-size: 0.6em; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+@media (max-width: 640px) {
+  .hero-signal .hs { padding-right: var(--sp-3); }
+  .hero-signal .hs + .hs { padding-left: var(--sp-3); }
+  .hero-signal .hs-v { font-size: 18px; }
+}
 
 /* ============================================================
    카드 — 흰 면, 1px 선, 그림자 없음
@@ -371,6 +376,22 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
   transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
 }
 .mini-btn:hover { border-color: var(--ink-2); color: var(--ink); }
+
+/* ============================================================
+   폼 컨트롤 — 어느 페이지에서나 같은 모양. 높이·여백은 페이지에서 조정한다
+   ============================================================ */
+.field { display: grid; gap: 6px; align-content: start; }
+.field.is-wide { grid-column: span 2; }
+.field label { color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
+.field label small { color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.field-hint { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
+.input, .textarea {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-btn); outline: none;
+  background: var(--surface); color: var(--ink); font-size: 16px; font-weight: 400;
+}
+.input { min-height: 44px; padding: 0 12px; }
+.textarea { min-height: 84px; padding: 10px 12px; line-height: 1.6; resize: vertical; }
+.input:focus, .textarea:focus { border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: 1px; }
 
 /* ============================================================
    칩 / 배지 — 알약은 여기(필터·상태)에만
@@ -485,7 +506,9 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 .acc-head .acc-chevron { margin-left: auto; flex: none; color: var(--ink-2); transition: transform var(--dur-3) var(--ease); }
 .acc-head .acc-chevron svg { width: 20px; height: 20px; display: block; }
 .acc-item.is-open .acc-chevron { transform: rotate(180deg); }
-.acc-body { max-height: 0; overflow: hidden; transition: max-height var(--dur-3) var(--ease); }
+/* 접힌 본문은 보이지도, 탭 순서에 들지도 않는다. 열릴 때는 즉시, 닫힐 때는 접힘이 끝난 뒤 감춘다 */
+.acc-body { max-height: 0; overflow: hidden; visibility: hidden; transition: max-height var(--dur-3) var(--ease), visibility 0s linear var(--dur-3); }
+.acc-item.is-open .acc-body { visibility: visible; transition: max-height var(--dur-3) var(--ease), visibility 0s; }
 .acc-body-inner { padding: 0 18px 18px; color: var(--ink-2); font-size: 15px; line-height: 1.65; }
 
 /* ============================================================
@@ -526,7 +549,6 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 .mesh-bg::before { content: none; }
 .glow-orb { display: none; }
 .divider-dots { display: none; }
-.reveal { opacity: 1; transform: none; }
 .chart-rise { opacity: 1; transform: none; clip-path: none; }
 
 /* 항목 사이를 나누는 세로 줄 — 글자가 아니라 선으로 */
@@ -560,6 +582,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
   border-top: 1px solid var(--on-dark-line);
   color: var(--on-dark-muted); font-size: 13px;
 }
+.footer-bottom small { font-size: inherit; }
 /* 방문자 수 — 푸터 아래 줄의 작은 사실 하나 */
 .footer-visits { display: inline-flex; align-items: center; gap: 10px; color: var(--on-dark-muted); font-size: 13px; }
 .footer-visits b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
