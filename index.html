@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#285244" />
 
   <title>동네친구들 오픈채팅 커뮤니티</title>
-  <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요." />
+  <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 함께 다녀온 식당과 모임 소식을 모았습니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 오픈채팅 커뮤니티" />
-  <meta property="og:description" content="모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요." />
+  <meta property="og:description" content="함께 다녀온 식당과 모임 소식을 모았습니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -25,69 +25,76 @@
 
   <style>
     /* ============================================================
-       홈 — 서비스 소개 한 줄, 그 아래 실제 소식·모임·맛집
+       홈 — 도입 한 덩이, 그 아래 넓은 주 영역(장소 기록·최근 소식)과 좁은 보조 영역(정산·참여 안내)
        ============================================================ */
-    .hero-home { padding: var(--sp-7) 0 var(--sp-5); }
-    .hero-home .hero-title { font-size: var(--fs-display); line-height: 1.2; }
-    .hero-home .hero-sub { max-width: 34em; font-size: 17px; }
-    @media (max-width: 860px) { .hero-home { padding: var(--sp-6) 0 var(--sp-4); } .hero-home .hero-sub { font-size: 16px; } }
+    .home-intro { padding: var(--sp-7) 0 var(--sp-6); }
+    .home-title { margin: 0; max-width: 15em; font-size: var(--fs-display); font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; color: var(--ink); }
+    .home-sub { margin: 14px 0 0; max-width: 34em; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
+    .home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 24px; }
+    .home-actions .link-arrow { margin-top: 0; }
+    @media (max-width: 860px) {
+      .home-intro { padding: var(--sp-6) 0 var(--sp-5); }
+      .home-sub { font-size: 16px; }
+    }
 
-    /* ── 다가오는 모임: 날짜별 묶음. 시간 → 제목 → 장소 → 상태 ── */
-    .bung-groups { display: grid; gap: var(--sp-4); }
-    .bung-day-h { margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
-    .bung-rows { margin: 0; padding: 0; list-style: none; }
-    .bung-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--line); text-decoration: none; }
-    .bung-rows .bung-row:last-child { border-bottom: 1px solid var(--line); }
-    .bung-row:hover .bung-title { text-decoration: underline; text-underline-offset: 3px; }
-    .bung-time { color: var(--ink-2); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
-    .bung-main { min-width: 0; }
-    .bung-title { display: block; color: var(--ink); font-size: var(--fs-body); font-weight: 600; overflow-wrap: anywhere; }
-    .bung-place { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); font-weight: 500; }
-    .bung-state { color: var(--brand); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; }
-    @media (max-width: 600px) { .bung-row { grid-template-columns: 52px minmax(0, 1fr); } .bung-state { grid-column: 2; } }
+    .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 0 56px; align-items: start; }
+    .home-main { display: grid; gap: var(--sp-7); min-width: 0; }
+    .home-side { display: grid; gap: 16px; }
+    @media (max-width: 960px) {
+      .home-grid { grid-template-columns: 1fr; }
+      .home-side { margin-top: var(--sp-7); }
+    }
+    @media (max-width: 860px) { .home-main { gap: var(--sp-6); } .home-side { margin-top: var(--sp-6); } }
 
-    /* ── 소식 목록: 선으로만 나눈다 ── */
-    .news-list { display: grid; }
-    .news-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--line); text-decoration: none; }
-    .news-list .news-item:last-child { border-bottom: 1px solid var(--line); }
-    .news-item:hover .news-title { text-decoration: underline; text-underline-offset: 3px; }
-    .news-cat { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; white-space: nowrap; }
-    .news-cat.is-notice { color: var(--brand); font-weight: 600; }
-    .news-body { min-width: 0; }
-    .news-title { display: block; color: var(--ink); font-size: var(--fs-body); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .news-excerpt { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .news-meta { color: var(--ink-2); font-size: var(--fs-caption); white-space: nowrap; font-variant-numeric: tabular-nums; }
-    @media (max-width: 600px) { .news-item { grid-template-columns: minmax(0, 1fr) auto; } .news-cat { grid-column: 1 / -1; } .news-title { white-space: normal; } }
+    /* ── 장소 기록: 맨 앞 한 곳은 크게, 나머지는 두 열 행 ── */
+    .place-feed { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; border-bottom: 1px solid var(--line); }
+    .place-feed .row { align-content: start; }
+    .place-feed .row.is-lead { grid-column: 1 / -1; padding: 2px 0 18px; }
+    .place-feed .row:not(.is-lead) { border-bottom: 1px solid var(--line); margin-bottom: -1px; }
+    .pf-name { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0; color: var(--ink); font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; }
+    .row.is-lead .pf-name { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .pf-meta { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
+    .pf-meta b { color: var(--ink); font-weight: 500; }
+    .pf-none { color: var(--ink-2); }
+    .pf-menu { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .pf-menu b { color: var(--ink); font-weight: 600; }
+    .pf-review { margin: 6px 0 0; color: var(--ink); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+    .row.is-lead .pf-review { font-size: 18px; max-width: 34em; }
+    .pf-by { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
+    .row.is-lead .pf-by { margin-top: 8px; }
+    .pf-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    @media (max-width: 640px) {
+      .place-feed { grid-template-columns: 1fr; }
+      .row.is-lead .pf-name { font-size: 22px; }
+      .row.is-lead .pf-review { font-size: 16px; }
+    }
 
-    /* ── 맛집 4곳 ── */
-    .home-places { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
-    .hp-card { display: flex; flex-direction: column; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); text-decoration: none; }
-    .hp-card:hover { border-color: var(--line-strong); }
-    .hp-name { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-    .hp-meta { margin: 4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
-    .hp-note { margin: 10px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .hp-note.is-empty { color: var(--ink-2); }
-    .hp-by { margin: 8px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    @media (max-width: 1000px) { .home-places { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 480px)  { .home-places { grid-template-columns: 1fr; } }
+    /* ── 최근 소식: 제목 한 줄, 보조 한 줄 ── */
+    .group-h { margin: 18px 0 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+    .group-h:first-child { margin-top: 0; }
+    .news-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .news-row .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .news-row .row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .news-row .row-meta { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .news-row .row-state { align-self: center; }
+    .rm-sub + .rm-who::before { content: "·"; margin: 0 5px; }
+    @media (max-width: 600px) {
+      .news-row .row-title, .news-row .row-meta { white-space: normal; }
+      .rm-sub { display: block; }
+      .rm-sub + .rm-who::before { content: none; }
+    }
 
-    /* 섹션 안 상태 표시 — 글 한 줄 */
-    .sec-note { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
-    .sec-note .btn { margin-left: auto; }
-    .home-places .sec-note, .home-places .skel-rows { grid-column: 1 / -1; }
-    .skel-rows { display: grid; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-    .skel-rows .skeleton { display: block; }
-
-    /* ── 신규 멤버 안내: 세 줄 ── */
-    .join-steps { max-width: 40em; margin: 0; padding: 0; list-style: none; }
-    .join-steps li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
-    .join-steps li:last-child { border-bottom: 1px solid var(--line); }
-    .join-steps b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; }
-    .join-steps strong { display: block; font-size: var(--fs-body); font-weight: 600; }
-    .join-steps span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); }
+    /* ── 보조 영역 ── */
+    .join-steps { margin: 12px 0 0; padding: 0; list-style: none; }
+    .join-steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+    .join-steps b { display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; }
+    .join-steps strong { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
+    .join-steps span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    .panel .panel-act .link-arrow { margin-top: 0; min-height: 36px; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
+  <script src="assets/content.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -111,74 +118,65 @@
   </header>
 
   <main id="main" class="page-main">
-    <section class="hero-band hero-home" aria-labelledby="heroTitle">
+    <section class="home-intro" aria-labelledby="homeTitle">
       <div class="container">
-        <h1 class="hero-title" id="heroTitle">함께하는 동네 생활</h1>
-        <p class="hero-sub">모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요.</p>
-        <div class="hero-actions">
+        <h1 class="home-title" id="homeTitle">동네에서 만나고, 함께 기록합니다.</h1>
+        <p class="home-sub">오픈채팅으로 만나는 동네 커뮤니티입니다. 모임에서 함께 다녀온 식당과 모임 소식을 모았습니다.</p>
+        <div class="home-actions">
           <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
-          <a class="btn btn-secondary is-lg" href="guide.html">이용 안내</a>
+          <a class="link-arrow" href="guide.html">처음 참여하는 멤버 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
       </div>
     </section>
 
-    <!-- 다가오는 모임 — 날짜가 있는 모집 글만. 없으면 이 칸을 만들지 않는다 -->
-    <section class="section is-tight" id="secBung" hidden aria-labelledby="bungTitle">
-      <div class="container">
-        <div class="sec-bar">
-          <div class="sb-l"><h2 class="lead-h" id="bungTitle">다가오는 모임</h2><p class="sb-note">신청은 오픈채팅 공지에서 받습니다.</p></div>
-          <a class="link-arrow" href="news.html">소식에서 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-        </div>
-        <div class="bung-groups" id="bungGroups"></div>
-      </div>
-    </section>
-
-    <section class="section is-tight" aria-labelledby="newsTitle">
-      <div class="container">
-        <div class="sec-bar">
-          <div class="sb-l"><h2 class="lead-h" id="newsTitle">최근 소식</h2></div>
-          <a class="link-arrow" href="news.html">전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-        </div>
-        <div class="news-list" id="newsList" aria-busy="true">
-          <div class="skel-rows" aria-hidden="true">
-            <span class="skeleton skeleton-line" style="width:70%"></span>
-            <span class="skeleton skeleton-line" style="width:55%"></span>
-            <span class="skeleton skeleton-line" style="width:64%"></span>
-            <span class="skeleton skeleton-line" style="width:48%"></span>
+    <div class="container home-grid">
+      <div class="home-main">
+        <!-- 장소 기록 — 한줄평이 있는 최근 기록. 근거 없는 '인기'·'추천' 표시는 없다 -->
+        <section aria-labelledby="placesTitle">
+          <div class="sec-bar">
+            <div class="sb-l"><h2 class="lead-h" id="placesTitle">장소 기록</h2><p class="sb-note" id="placesNote">한줄평이 있는 최근 기록</p></div>
+            <a class="link-arrow" href="places.html">맛집 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
           </div>
-        </div>
-      </div>
-    </section>
+          <div class="place-feed" id="homePlaces" aria-busy="true">
+            <div class="row is-lead" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:40%"></span><span class="skeleton skeleton-line" style="width:30%;margin-top:8px"></span><span class="skeleton skeleton-line" style="width:70%;margin-top:14px"></span></div>
+            <div class="row" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:50%"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:10px"></span></div>
+            <div class="row" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:56%"></span><span class="skeleton skeleton-line" style="width:72%;margin-top:10px"></span></div>
+          </div>
+        </section>
 
-    <section class="section is-tight" aria-labelledby="placesTitle">
-      <div class="container">
-        <div class="sec-bar">
-          <div class="sb-l"><h2 class="lead-h" id="placesTitle">맛집</h2><p class="sb-note" id="placesNote">최근 등록순 4곳</p></div>
-          <a class="link-arrow" href="places.html">전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-        </div>
-        <div class="home-places" id="homePlaces" aria-busy="true">
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:60%"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:90%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:50%"></span><span class="skeleton skeleton-line" style="width:70%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:85%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:66%"></span><span class="skeleton skeleton-line" style="width:76%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:88%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:54%"></span><span class="skeleton skeleton-line" style="width:72%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:14px"></span></div>
-        </div>
+        <!-- 최근 소식 — 다가오는 모임이 있으면 그 묶음을 먼저 -->
+        <section aria-labelledby="newsTitle">
+          <div class="sec-bar">
+            <div class="sb-l"><h2 class="lead-h" id="newsTitle">최근 소식</h2></div>
+            <a class="link-arrow" href="news.html">소식 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+          </div>
+          <div id="newsList" aria-busy="true">
+            <div class="skel-rows" aria-hidden="true">
+              <span class="skeleton skeleton-line" style="width:70%"></span>
+              <span class="skeleton skeleton-line" style="width:55%"></span>
+              <span class="skeleton skeleton-line" style="width:64%"></span>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
 
-    <!-- 신규 멤버 안내 — 이용 안내의 규칙과 같은 내용을 짧게. 자세한 조건은 이용 안내로 -->
-    <section class="section is-tight" aria-labelledby="joinTitle">
-      <div class="container">
-        <div class="sec-bar">
-          <div class="sb-l"><h2 class="lead-h" id="joinTitle">처음 참여하는 멤버</h2></div>
-          <a class="link-arrow" href="guide.html">이용 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-        </div>
-        <ol class="join-steps">
-          <li><b>1</b><div><strong>오픈채팅 참여 후 닉네임 변경</strong><span>닉네임 · 지역 · 성별 · 출생년도 · 입장일 순서입니다. 예: 엑서 논현 남 88 0125</span></div></li>
-          <li><b>2</b><div><strong>이용 안내 확인</strong><span>모임 참여 절차, 정산 방법, 대화 매너를 확인합니다.</span></div></li>
-          <li><b>3</b><div><strong>2주 안에 첫 모임 참여</strong><span>참여할 모임 공지에서 참석 버튼을 누릅니다. 첫 모임은 음주 상태로 참여할 수 없습니다.</span></div></li>
-        </ol>
-      </div>
-    </section>
+      <aside class="home-side" aria-label="정산과 참여 안내">
+        <section class="panel is-brand" aria-labelledby="calcTitle">
+          <h2 id="calcTitle">모임 정산</h2>
+          <p>차수별 1/N 금액을 계산하고, 입금 안내 메시지와 입금 확인 링크를 만듭니다.</p>
+          <div class="panel-act"><a class="btn btn-secondary" href="calculator.html">정산 시작</a></div>
+        </section>
+        <section class="panel" aria-labelledby="joinTitle">
+          <h2 id="joinTitle">처음 참여하는 멤버</h2>
+          <ol class="join-steps">
+            <li><b>1</b><div><strong>오픈채팅 참여 후 닉네임 변경</strong><span>닉네임 · 지역 · 성별 · 출생년도 · 입장일 순서입니다. 예: 엑서 논현 남 88 0125</span></div></li>
+            <li><b>2</b><div><strong>이용 안내 확인</strong><span>모임 참여 절차, 정산 방법, 대화 매너를 확인합니다.</span></div></li>
+            <li><b>3</b><div><strong>2주 안에 첫 모임 참여</strong><span>참여할 모임 공지에서 참석 버튼을 누릅니다. 첫 모임은 음주 상태로 참여할 수 없습니다.</span></div></li>
+          </ol>
+          <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
+        </section>
+      </aside>
+    </div>
   </main>
 
   <footer class="site-footer">
@@ -219,56 +217,22 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- ════════ 홈 데이터 — 소식(다가오는 벙·최근 소식) + 맛집 4곳 ════════ -->
+  <!-- ════════ 홈 데이터 — 장소 기록 6곳 + 최근 소식(다가오는 모임 먼저) ════════ -->
   <script>
     (function () {
       "use strict";
-      var SUPA_URL = window.SUPA.url;    // assets/site-core.js
-      var SUPA_ANON = window.SUPA.anon;
-
+      var C = window.EXCER_CONTENT;
+      var SUPA_URL = window.SUPA.url, SUPA_ANON = window.SUPA.anon;
+      var esc = C.esc;
       function $(id) { return document.getElementById(id); }
-      function esc(v) {
-        var e = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-        return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return e[c]; });
-      }
       function supaGet(path) {
         return fetch(SUPA_URL + path, { headers: { apikey: SUPA_ANON, Authorization: "Bearer " + SUPA_ANON } })
           .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); });
       }
-      function kstToday() {
-        try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
-        catch (e) { return new Date().toISOString().slice(0, 10); }
-      }
-      // 상대시간 — 소식 페이지와 같은 단계
-      function relTime(iso) {
-        if (!iso) return "";
-        var t = new Date(iso).getTime();
-        if (!t) return "";
-        var s = Math.floor((Date.now() - t) / 1000);
-        if (s < 60) return "방금 전";
-        if (s < 3600) return Math.floor(s / 60) + "분 전";
-        if (s < 86400) return Math.floor(s / 3600) + "시간 전";
-        if (s < 604800) return Math.floor(s / 86400) + "일 전";
-        var d = new Date(t);
-        return (d.getMonth() + 1) + "월 " + d.getDate() + "일";
-      }
-      var DOW = ["일", "월", "화", "수", "목", "금", "토"];
-      function dayLabel(ymd, today) {
-        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
-        if (!m) return ymd;
-        var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-        var base = Number(m[2]) + "월 " + Number(m[3]) + "일 (" + DOW[d.getUTCDay()] + ")";
-        if (ymd === today) return "오늘, " + base;
-        var diff = Math.round((Date.parse(ymd + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000);
-        if (diff === 1) return "내일, " + base;
-        return base;
-      }
-      function excerpt(body) {
-        var t = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
-        return t.length > 80 ? t.slice(0, 80) + "…" : t;
-      }
+      function icon(name) { return '<svg class="ic is-sm" aria-hidden="true"><use href="#i-' + name + '"/></svg>'; }
+      /* 비어 있음·실패는 목록 자리에 한 줄로 */
       function note(host, text, retryFn) {
-        host.innerHTML = '<div class="sec-note"><span>' + esc(text) + "</span>" +
+        host.innerHTML = '<div class="status-line"><span>' + esc(text) + "</span>" +
           (retryFn ? '<button type="button" class="btn btn-secondary is-sm" data-retry>다시 시도</button>' : "") + "</div>";
         host.removeAttribute("aria-busy");
         if (retryFn) host.querySelector("[data-retry]").addEventListener("click", function (e) {
@@ -279,95 +243,79 @@
         });
       }
 
-      /* ══════════ 1) 소식 → 다가오는 벙 + 최근 소식 ══════════ */
-      function renderBung(posts) {
-        var today = kstToday();
-        var up = (posts || []).filter(function (p) {
-          var m = p && p.meta;
-          return m && m.kind === "bung" && m.date && m.date >= today;
-        }).sort(function (a, b) {
-          var d = String(a.meta.date).localeCompare(String(b.meta.date));
-          return d || String(a.meta.time || "").localeCompare(String(b.meta.time || ""));
-        });
-        var sec = $("secBung");
-        if (!up.length) { sec.hidden = true; return; }   // 일정이 없으면 이 칸을 만들지 않는다
-
-        var groups = {}, order = [];
-        up.forEach(function (p) {
-          var d = p.meta.date;
-          if (!groups[d]) { groups[d] = []; order.push(d); }
-          groups[d].push(p);
-        });
-        $("bungGroups").innerHTML = order.slice(0, 5).map(function (d) {
-          return '<div class="bung-day"><h3 class="bung-day-h">' + esc(dayLabel(d, today)) + "</h3><ul class=\"bung-rows\">" +
-            groups[d].map(function (p) {
-              var m = p.meta;
-              var state = "모집 중" + (m.cap ? " · 정원 " + Number(m.cap) + "명" : "");
-              return '<li><a class="bung-row" href="news.html#post-' + p.id + '">' +
-                '<span class="bung-time">' + (m.time ? esc(m.time) : "시간 미정") + "</span>" +
-                '<span class="bung-main"><span class="bung-title">' + esc(p.title || "모임 모집") + "</span>" +
-                (m.place ? '<span class="bung-place">' + esc(m.place) + "</span>" : "") + "</span>" +
-                '<span class="bung-state">' + esc(state) + "</span></a></li>";
-            }).join("") + "</ul></div>";
-        }).join("");
-        sec.hidden = false;
+      /* ══════════ 1) 소식 ══════════ */
+      function newsRowHTML(v) {
+        var tag = '<span class="type-tag' + (v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : "") + '">' + esc(v.label) + "</span>";
+        var sub = v.subline.text || v.excerpt;
+        var who = [v.author || "익명", C.relTime(v.created_at)];
+        if (v.comment_count) who.push("댓글 " + v.comment_count);
+        var state = v.subline.state ? '<span class="row-state' + (v.subline.past ? " is-past" : "") + '">' + esc(v.subline.state) + "</span>" : "";
+        return '<a class="row news-row" href="news.html#post-' + v.id + '">' +
+          '<span class="nr-line">' + tag + '<span class="row-title">' + esc(v.title || "제목 없음") + "</span></span>" +
+          state +
+          '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.map(esc).join(" · ") + "</span></span></a>";
       }
-
-      function renderNews(posts) {
+      function renderNews(rows) {
         var host = $("newsList");
-        if (!Array.isArray(posts) || !posts.length) { note(host, "등록된 소식이 없습니다."); return; }
-        var list = posts.slice().sort(function (a, b) {
-          if ((b.pinned ? 1 : 0) !== (a.pinned ? 1 : 0)) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        var posts = Array.isArray(rows) ? rows : [];
+        if (!posts.length) { note(host, "등록된 소식이 없습니다."); return; }
+        var today = C.kstToday();
+        var views = posts.map(function (p) { return C.postView(p, today); });
+        // 다가오는 모임: 날짜가 오늘 이후인 모집 글, 가까운 순, 최대 3건
+        var upcoming = views.filter(function (v) { return v.kind === "bung" && v.meta && v.meta.date && v.meta.date >= today && !v.bung.closed; })
+          .sort(function (a, b) { return String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
+          .slice(0, 3);
+        var shown = {};
+        upcoming.forEach(function (v) { shown[v.id] = true; });
+        var latest = views.slice().sort(function (a, b) {
+          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
           return String(b.created_at || "").localeCompare(String(a.created_at || ""));
-        }).slice(0, 5);
-        host.innerHTML = list.map(function (p) {
-          var cat = p.category || "자유";
-          if (cat === "벙 소식") cat = "모임 소식";
-          var ex = excerpt(p.body);
-          return '<a class="news-item" href="news.html#post-' + p.id + '">' +
-            '<span class="news-cat' + (cat === "공지" ? " is-notice" : "") + '">' + esc(cat) + "</span>" +
-            '<span class="news-body"><span class="news-title">' + esc(p.title || "제목 없음") + "</span>" +
-            (ex ? '<span class="news-excerpt">' + esc(ex) + "</span>" : "") + "</span>" +
-            '<span class="news-meta">' + esc(p.author || "익명") + " · " + esc(relTime(p.created_at)) + "</span></a>";
-        }).join("");
+        }).filter(function (v) { return !shown[v.id]; }).slice(0, 5);
+        var html = "";
+        if (upcoming.length) html += '<div class="group-h">다가오는 모임</div><div class="rows">' + upcoming.map(newsRowHTML).join("") + "</div>";
+        if (latest.length) html += (upcoming.length ? '<div class="group-h">최근 글</div>' : "") + '<div class="rows">' + latest.map(newsRowHTML).join("") + "</div>";
+        host.innerHTML = html;
         host.removeAttribute("aria-busy");
       }
-
       function loadPosts() {
-        supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at&order=pinned.desc,created_at.desc&limit=20")
-          .then(function (rows) { renderBung(rows); renderNews(rows); })
-          .catch(function () {
-            $("secBung").hidden = true;
-            note($("newsList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPosts);
-          });
+        supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=30")
+          .then(renderNews)
+          .catch(function () { note($("newsList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPosts); });
       }
 
-      /* ══════════ 2) 맛집 — 최근 등록된 곳 4곳 ══════════ */
-      function priceText(p) {
-        var lv = p.price_level;
-        return ["", "1인 1만원 이하", "1인 1만원대", "1인 2만원대", "1인 3만원 이상"][lv] || "";
+      /* ══════════ 2) 장소 기록 — 한줄평이 있는 최근 기록 6곳 ══════════ */
+      function recencyOf(v) {
+        var t = "";
+        v.notes.forEach(function (n) { var d = n.date || (n.created_at || "").slice(0, 10); if (d > t) t = d; });
+        return t || String(v.created_at || "").slice(0, 10);
+      }
+      function placeRowHTML(v, lead) {
+        var line = C.placeLine(v);
+        var meta = [v.areaLabel, v.category, v.priceText].filter(Boolean);
+        var by = [line.by, line.date ? C.dateText(line.date) + " 방문" : ""].filter(Boolean).join(" · ");
+        return '<article class="row' + (lead ? " is-lead" : "") + '">' +
+          '<h3 class="pf-name"><a href="places.html#place-' + v.id + '">' + esc(v.name) + "</a>" +
+            (v.visitCount >= 2 ? '<span class="type-tag">방문 ' + v.visitCount + "회</span>" : "") + "</h3>" +
+          '<p class="pf-meta"><b>' + esc(meta[0]) + "</b> · " + esc(v.category) + " · " + (v.priceLevel ? esc(v.priceText) : '<span class="pf-none">가격 미등록</span>') + "</p>" +
+          (v.menus.length && line.kind === "review" ? '<p class="pf-menu">추천 메뉴 <b>' + esc(v.menus.join(", ")) + "</b></p>" : "") +
+          '<p class="pf-review">' + esc(line.text) + "</p>" +
+          (by ? '<p class="pf-by">' + esc(by) + "</p>" : "") +
+          "</article>";
       }
       function renderPlaces(rows) {
         var host = $("homePlaces");
-        rows = (Array.isArray(rows) ? rows : []).filter(function (p) { return !p.closed; });
-        if (!rows.length) { note(host, "등록된 맛집이 없습니다."); $("placesNote").textContent = ""; return; }
-        var list = rows.slice(0, 4);
-        $("placesNote").textContent = "최근 등록순 " + list.length + "곳";
-        host.innerHTML = list.map(function (p) {
-          var latest = Array.isArray(p.notes) && p.notes[0] ? p.notes[0] : null;
-          var meta = [String(p.area || "").replace(/·/g, "/"), p.category, priceText(p)].filter(Boolean).join(" · ");
-          return '<a class="hp-card" href="places.html#place-' + p.id + '">' +
-            '<h3 class="hp-name">' + esc(p.name) + "</h3>" +
-            '<p class="hp-meta">' + esc(meta) + "</p>" +
-            (latest ? '<p class="hp-note">' + esc(latest.text) + "</p>" : '<p class="hp-note is-empty">한줄평이 없습니다</p>') +
-            (latest && latest.by ? '<p class="hp-by">' + esc(latest.by) + "</p>" : "") +
-            "</a>";
-        }).join("");
+        var views = (Array.isArray(rows) ? rows : []).map(C.placeView)
+          .filter(function (v) { return !v.closed && C.placeLine(v).kind !== "empty"; })
+          .sort(function (a, b) { return recencyOf(b).localeCompare(recencyOf(a)) || (b.id - a.id); })
+          .slice(0, 6);
+        if (!views.length) { note(host, "한줄평이 있는 기록이 없습니다. 맛집 페이지에서 다녀온 식당을 등록해 주세요."); $("placesNote").textContent = ""; return; }
+        $("placesNote").textContent = "한줄평이 있는 최근 기록 " + views.length + "곳";
+        host.innerHTML = views.map(function (v, i) { return placeRowHTML(v, i === 0); }).join("");
         host.removeAttribute("aria-busy");
       }
       function loadPlaces() {
-        supaGet("/rest/v1/site_places_v?select=id,name,area,category,price_level,closed,notes,created_at&order=created_at.desc&limit=8")
-          .then(renderPlaces)
+        Promise.all([C.loadCurated(), supaGet("/rest/v1/site_places_v?select=*&order=created_at.desc&limit=100")])
+          .then(function (r) { renderPlaces(r[1]); })
           .catch(function () { $("placesNote").textContent = ""; note($("homePlaces"), "맛집을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPlaces); });
       }
 
