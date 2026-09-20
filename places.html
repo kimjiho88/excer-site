@@ -751,10 +751,11 @@
       var ERRORS = {
         PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
         BAD_PASS: "비밀번호가 맞지 않습니다. 등록할 때 쓴 비밀번호나 운영진 비밀번호를 입력해 주세요.",
-        NOT_FOUND: "이미 삭제된 항목입니다. 목록을 다시 불러옵니다.",
+        NOT_FOUND: "이미 삭제된 항목입니다. 새로고침하면 목록이 맞춰집니다.",
         ALREADY_EXISTS: "같은 지역에 같은 이름의 식당이 이미 있습니다. 목록에서 찾아 한줄평을 남겨 주세요.",
         BAD_URL: "지도 링크는 http 또는 https 로 시작해야 합니다.",
-        BAD_DATE: "방문일은 오늘 이전이어야 합니다."
+        BAD_DATE: "방문일은 오늘 이전이어야 합니다.",
+        BAD_COORD: "위치 좌표가 올바르지 않습니다. 장소를 다시 골라 주세요."
       };
       function errMsg(err) {
         var raw = String((err && err.message) || "");
@@ -1341,7 +1342,7 @@
             // 첫 한줄평은 식당이 만들어진 뒤 한줄평 저장 함수로 한 번만 저장한다 (식당 쪽에 따로 두지 않는다). 작성자는 따로 적은 이름, 없으면 등록자
             return api("/rest/v1/rpc/place_note_create", { method: "POST", body: noteCreateBody(id, noteBy, pass, f.note) })
               .then(function () { toast("맛집과 첫 한줄평을 등록했습니다."); })
-              .catch(function () { toast("식당은 등록했지만 한줄평은 저장하지 못했습니다. 상세에서 다시 남겨 주세요."); })
+              .catch(function (e) { toast("식당은 등록했지만 한줄평은 저장하지 못했습니다(" + errMsg(e) + ") 상세에서 다시 남겨 주세요."); })
               .then(function () { closePlaceModal(); return load(); });
           });
         }).catch(function (e) {
@@ -1750,7 +1751,7 @@
         setError("geoPass", "");
         var r = it.results[idx];
         api("/rest/v1/rpc/place_set_location", { method: "POST", body: { p_id: it.v.id, p_pass: pass, p_lat: r.lat, p_lng: r.lng, p_map_url: r.url || null, p_area_detail: r.address || null } })
-          .then(function () { it.done = true; GEO.done++; renderGeoItem(i); remember(savedNick(), pass); return load(); })
+          .then(function () { it.done = true; GEO.done++; renderGeoItem(i); return load(); })   // 비밀번호(대개 운영진 것)는 저장하지 않는다
           .catch(function (e) { var msg = errMsg(e); if (/BAD_PASS/.test(String(e && e.message))) { setError("geoPass", msg); $("geoPass").focus(); } else toast(msg); });
       }
       function closeGeoModal() { $("geoBackdrop").hidden = true; }
@@ -1783,7 +1784,7 @@
         if ((t = e.target.closest("[data-delnote]"))) { deleteNote(t.getAttribute("data-delnote")); return; }
         if (e.target.closest("[data-add]"))           { openPlaceModal(null); return; }
         if (e.target.closest("[data-reset]"))         { resetAll(); return; }
-        if (e.target.closest("[data-retry]"))         { state.loaded = false; load(); return; }
+        if (e.target.closest("[data-retry]"))         { state.loaded = false; load().then(openFromHash); return; }
       });
       $("condRow").addEventListener("click", function (e) {
         var t = e.target.closest("[data-clear]");

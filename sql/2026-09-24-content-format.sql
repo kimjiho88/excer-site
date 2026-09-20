@@ -195,7 +195,10 @@ begin
   if v_cat = '공지' and rec.category <> '공지' and not site_is_admin(p_pass) then raise exception 'ADMIN_ONLY'; end if;
   update site_posts
      set title = trim(p_title), body = p_body, category = v_cat,
-         meta = post_meta_clean(v_cat, p_meta), updated_at = now()
+         meta = post_meta_clean(v_cat, p_meta),
+         -- 종류가 바뀌면 고정도 따라간다: 공지가 되면 고정, 공지가 아니게 되면 고정 해제. 종류가 그대로면 손대지 않는다(운영진이 따로 고정한 글 유지)
+         pinned = case when v_cat <> rec.category then (v_cat = '공지') else pinned end,
+         updated_at = now()
    where id = p_id;
 end $$;
 

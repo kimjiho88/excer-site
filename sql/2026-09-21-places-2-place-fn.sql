@@ -49,15 +49,20 @@ begin
   if p_map_url is not null and trim(p_map_url) <> '' and p_map_url !~* '^https?://' then
     raise exception 'BAD_URL';
   end if;
-  update site_places
-     set name = trim(p_name), area = p_area, category = p_category,
-         area_detail = nullif(trim(coalesce(p_area_detail, '')), ''),
-         map_url = nullif(trim(coalesce(p_map_url, '')), ''),
-         price_level = p_price_level,
-         price_note = nullif(trim(coalesce(p_price_note, '')), ''),
-         closed = coalesce(p_closed, false),
-         updated_at = now()
-   where id = p_id;
+  begin
+    update site_places
+       set name = trim(p_name), area = p_area, category = p_category,
+           area_detail = nullif(trim(coalesce(p_area_detail, '')), ''),
+           map_url = nullif(trim(coalesce(p_map_url, '')), ''),
+           price_level = p_price_level,
+           price_note = nullif(trim(coalesce(p_price_note, '')), ''),
+           closed = coalesce(p_closed, false),
+           updated_at = now()
+     where id = p_id;
+  exception when unique_violation then
+    -- 같은 지역에 같은 이름이 이미 있으면 등록 때와 같은 코드로(화면이 "이미 있습니다"로 안내)
+    raise exception 'ALREADY_EXISTS';
+  end;
 end $$;
 
 -- ── 6. 가게 지우기 ──
