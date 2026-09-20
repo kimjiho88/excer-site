@@ -112,6 +112,26 @@ SQL Editor 의 스니펫을 지우는 것도 마찬가지입니다 — 그건 '�
 
 확인: 파일 맨 아래 확인 쿼리에서 한줄평 새 칸 2줄(menu, tip), `place_note_create` 두 개(인자 7개·9개), `content_format = 2` 가 보이면 끝입니다.
 
+## 맛집 위치·지도 (2026-09-25)
+
+`sql/2026-09-25-places-location.sql` 을 SQL Editor 에 붙여넣고 **Run** 하세요. 다시 실행해도 안전합니다. (콘텐츠 양식 파일을 먼저 실행한 뒤에.)
+
+- `site_places` 에 좌표 칸(lat·lng)이 생기고, 위치만 저장하는 함수 `place_set_location` 이 생깁니다(등록자 비밀번호 또는 운영진 비밀번호. 옮겨온 29곳은 운영진만).
+- 공개 뷰 `site_places_v` 에 좌표가 실리고, `site_schema_v` 에 `places_location = 1` 이 추가됩니다. 화면은 이 값을 보고 지도·장소 검색·위치 잡기를 엽니다.
+- 기존 가게·한줄평은 바뀌지 않습니다. 좌표는 비어 있으므로 실행 직후에는 지도에 핀이 없습니다.
+
+확인: 파일 맨 아래 확인 쿼리에서 좌표 칸 2줄(lat, lng), `place_set_location` 한 줄, `site_schema_v` 에 `content_format 2`·`places_location 1` 이 보이면 끝입니다.
+
+### 카카오맵 키 (지도가 뜨려면 필요)
+
+1. [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 애플리케이션 추가.
+2. 앱 설정 → 플랫폼 → **Web** 에 `https://excer-site.vercel.app` 을 등록합니다(미리보기 주소로도 보려면 그 주소도).
+3. 앱 설정에 **카카오맵** 사용 설정 항목이 있으면 켭니다.
+4. 앱 키 → **JavaScript 키** 를 복사해 `assets/site-core.js` 의 `window.KAKAO = { jsKey: "" }` 에 넣고 배포합니다. 브라우저용 공개 키라 저장소에 두어도 됩니다.
+5. 맛집 페이지에서 **위치 잡기**(운영진 비밀번호)를 열어 옮겨온 29곳을 차례로 찾아 고르면 좌표가 저장되고 지도에 핀이 생깁니다. 새로 등록하는 식당은 등록 폼의 장소 검색에서 고르면 됩니다.
+
+키가 없거나 이 SQL 을 아직 실행하지 않았으면 지도·장소 검색·위치 잡기 버튼이 조용히 숨고, 목록은 그대로 동작합니다.
+
 ## 비밀번호 변경
 
 `sql/set_admin_password.sql` 을 열어 새 비밀번호를 넣고 Run 하면 됩니다.

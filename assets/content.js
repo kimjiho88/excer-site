@@ -20,6 +20,24 @@
   var AREAS = ["논현/신사", "역삼/선릉", "강남역", "압구정/청담", "삼성/대치", "서초/교대", "도곡/양재", "잠실/송파", "그 외"];
   var CATS = ["고기", "한식", "일식", "중식", "양식/퓨전", "술집/포차", "카페/디저트", "분식/면"];
   var PRICE_TEXT = ["가격 미등록", "1인 1만원 이하", "1인 1만원대", "1인 2만원대", "1인 3만원 이상"];
+  /* 종류별 아이콘(assets/icons.js 이름)과 색 — 목록 행·지도 핀·차트가 같은 것을 쓴다 */
+  var CAT_ICON = { "고기": "meat", "한식": "bowl", "일식": "fish", "중식": "dumpling", "양식/퓨전": "pasta", "술집/포차": "glass", "카페/디저트": "cup", "분식/면": "noodle" };
+  var CAT_COLOR = { "고기": "#A9502D", "한식": "#4B2A82", "일식": "#3F6E86", "중식": "#B23B3B", "양식/퓨전": "#6D4AAE", "술집/포차": "#7E5F25", "카페/디저트": "#8A5A7E", "분식/면": "#2F7A6B" };
+  function catIcon(c) { return CAT_ICON[slash(c)] || "utensils"; }
+  function catColor(c) { return CAT_COLOR[slash(c)] || "#4B2A82"; }
+
+  /* ── 초성 검색 ── "ㅇㅎㄱ" → 유쾌한그집. 검색어가 초성으로만 되어 있을 때 쓴다 */
+  var CHO = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+  function chosung(s) {
+    var out = "";
+    for (var i = 0; i < s.length; i++) {
+      var code = s.charCodeAt(i);
+      if (code >= 0xAC00 && code <= 0xD7A3) out += CHO[Math.floor((code - 0xAC00) / 588)];
+      else if (!/\s/.test(s[i])) out += s[i];
+    }
+    return out;
+  }
+  function isChosungQuery(q) { return !!q && /^[ㄱ-ㅎ]+$/.test(q.replace(/\s+/g, "")); }
 
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
@@ -193,8 +211,13 @@
     var uncovered = menus.filter(function (m) { return !notes.some(function (n) { return textHas(noteText(n), m); }); });
     var lastNoted = "";
     notes.forEach(function (n) { var d = noteDate(n); if (d > lastNoted) lastNoted = d; });
+    var lat = Number(p.lat), lng = Number(p.lng);
+    var hasCoords = isFinite(lat) && isFinite(lng) && p.lat != null && p.lng != null && !(lat === 0 && lng === 0);
     return {
       id: p.id, name: p.name, area: p.area, areaLabel: areaLabel(p.area), category: p.category,
+      catIcon: catIcon(p.category), catColor: catColor(p.category),
+      lat: hasCoords ? lat : null, lng: hasCoords ? lng : null, hasCoords: hasCoords,
+      chosung: chosung(String(p.name || "")),
       /* 화면에 쓰는 지역: "그 외"에 실제 위치 메모가 있으면 그 위치("용산 이태원")만. "그 외 지역"은 필터에서만 쓴다 */
       areaText: p.area === "그 외" && locationNote ? locationNote : areaLabel(p.area),
       address: address,
@@ -350,16 +373,20 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1;
-        (Array.isArray(rows) ? rows : []).forEach(function (x) { if (x.key === "content_format") v = Number(x.value) || 1; });
-        return { contentFormat: v };
+        var v = 1, loc = false;
+        (Array.isArray(rows) ? rows : []).forEach(function (x) {
+          if (x.key === "content_format") v = Number(x.value) || 1;
+          if (x.key === "places_location") loc = Number(x.value) >= 1;
+        });
+        return { contentFormat: v, location: loc };
       })
-      .catch(function () { return { contentFormat: 1 }; });
+      .catch(function () { return { contentFormat: 1, location: false }; });
     return capsPromise;
   }
 
   window.EXCER_CONTENT = {
-    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES,
+    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR,
+    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery,
     esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
     dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
     loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, noteText: noteText, noteDate: noteDate,
