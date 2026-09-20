@@ -9,11 +9,16 @@
   <meta name="robots" content="noindex" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
+  <meta name="apple-mobile-web-app-title" content="동네친구들" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
-  <script src="assets/chat-parser.js"></script>
+  <link rel="stylesheet" href="assets/site.css?v=8" />
+  <script src="assets/chat-parser.js?v=3"></script>
 
   <style>
     /* ============================================================
@@ -76,6 +81,14 @@
     .dropzone p { margin: 0; color: var(--gray); font-size: 13px; font-weight: 700; line-height: 1.6; }
     /* 파일 업로드 대신 붙여넣기 */
     .paste-alt { margin-top: 12px; }
+    /* '자동으로 가져올 수는 없나요?' — 접힌 설명 */
+    .auto-note { margin: -4px 0 12px; }
+    .auto-note summary { display: inline-block; cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 700; }
+    .auto-note summary:hover { text-decoration: underline; }
+    .auto-note .callout { font-size: 13px; }
+    /* 발행 직후 안내 줄 */
+    .after-publish { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-md); background: var(--brand-soft); color: var(--ink); font-size: 14px; font-weight: 600; }
+    .after-publish[hidden] { display: none; }
     .paste-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
     .paste-hint { font-size: 13px; font-weight: 700; }
     .paste-hint.ok { color: var(--brand); }
@@ -250,7 +263,7 @@
       .range-row .tilde { display: none; }
     }
   </style>
-  <script src="assets/site-core.js?v=4"></script>
+  <script src="assets/site-core.js?v=5"></script>
   <script src="assets/icons.js?v=1"></script>
 </head>
 <body>
@@ -265,7 +278,7 @@
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
         <a class="topnav-tab" href="guide.html">이용 안내</a>
-        <a class="topnav-tab is-active" href="report.html" aria-current="true">활동 통계</a>
+        <a class="topnav-tab is-active" href="report.html">활동 통계</a>
         <a class="topnav-tab" href="calculator.html">모임 정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
@@ -304,6 +317,16 @@
             <section class="card is-lg" aria-labelledby="stepUpload">
               <div class="step-head"><h2 class="step-title" id="stepUpload"><span class="step-no">1</span>대화 파일 올리기</h2></div>
               <p class="step-note">카카오톡 채팅방 → 메뉴 → 대화 내용 내보내기(.txt). 여러 파일을 함께 올릴 수 있습니다. 겹치는 날짜는 자동으로 알려 줍니다.</p>
+              <details class="auto-note">
+                <summary>자동으로 가져올 수는 없나요?</summary>
+                <div class="callout is-tip" style="margin-top:8px">
+                  <svg class="ic" aria-hidden="true"><use href="#i-bulb"/></svg>
+                  <div>
+                    <p><b>카카오톡 오픈채팅은 대화를 외부에서 읽는 공식 통로가 없습니다.</b> 그래서 '대화 내보내기' 파일이 유일한 입력이고, 이 페이지는 그 뒤의 손일을 줄이는 데 집중합니다.</p>
+                    <p>여러 파일 한 번에 올리기 · 기간 자동 감지 · 겹치는 날짜 중복 정리 · 나간 사람 자동 감지 · 지난 명단과 제목 재사용 · 파일이 막히면 붙여넣기. 한 달에 한 번, 내보내기 → 끌어다 놓기 → 발행 세 동작이면 됩니다.</p>
+                  </div>
+                </div>
+              </details>
               <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 드래그해서 올리기">
                 <strong>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</strong>
                 <p>안드로이드, 아이폰, PC 내보내기 형식을 자동으로 인식합니다. 여러 파일을 한 번에 올릴 수 있으며 기간이 겹치면 중복을 정리합니다.</p>
@@ -419,7 +442,9 @@
               <div class="field" style="margin-top:14px">
                 <label for="labelInput">통계 제목 (기간 이름)</label>
                 <input id="labelInput" class="input" type="text" placeholder="예: 2026년 6월" maxlength="40" />
+                <span class="field-hint">같은 제목으로 다시 발행하면 이전 내용을 교체합니다. 매달 최신 전체 파일을 <b>같은 제목</b>으로 발행하면 통계 하나에 계속 쌓입니다. <button type="button" class="text-btn is-quiet" id="reuseLabelBtn" hidden style="min-height:24px;padding:0 4px">지난 제목 그대로 쓰기</button></span>
               </div>
+              <p id="truncNote" class="hint" style="margin-top:8px;color:var(--danger)" hidden></p>
               <div class="field" style="margin-top:10px">
                 <label for="passInput">운영진 비밀번호 (발행하거나 삭제할 때만 필요)</label>
                 <input id="passInput" class="input" type="password" autocomplete="off" placeholder="발행할 때 입력" />
@@ -428,6 +453,12 @@
                 <button id="previewBtn" class="btn btn-secondary" type="button" disabled><svg class="ic is-sm" aria-hidden="true"><use href="#i-eye"/></svg> 미리보기</button>
                 <button id="publishBtn" class="btn btn-primary" type="button" disabled>발행하기</button>
                 <button id="downloadBtn" class="btn btn-ghost" type="button" disabled>JSON 내려받기</button>
+              </div>
+              <!-- 발행 직후: 채팅방에 알리는 다음 동작을 바로 내민다 -->
+              <div id="afterPublish" class="after-publish" hidden role="status" aria-live="polite">
+                <span id="afterPublishText">발행했습니다. 채팅방에 알릴까요?</span>
+                <button id="notifyBtn" class="btn btn-kakao is-sm" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg> 카카오톡으로 알리기</button>
+                <a class="btn btn-secondary is-sm" href="report.html" target="_blank" rel="noopener">발행된 통계 보기<span class="sr-only"> (새 창)</span></a>
               </div>
               <p class="hint" style="margin-top:10px">
                 미리보기는 이 브라우저에만 저장됩니다. 발행하면 같은 제목의 통계는 새 내용으로 교체됩니다.
@@ -491,7 +522,7 @@
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
     <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>이용 안내</a>
-    <a class="tab-item is-active" href="report.html" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>활동 통계</a>
+    <a class="tab-item is-active" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>활동 통계</a>
     <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>모임 정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
     <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
@@ -655,7 +686,7 @@
       /* 현재 방 멤버 명단으로 "그 사람만 남기기".
          닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. */
       function normName(s) { return String(s || "").trim().replace(/\s+/g, " "); }
-      function firstTok(s) { return normName(s).split(" ")[0].toLowerCase(); }
+      function firstTok(s) { return normName(s).split(/[\s/·|,]+/)[0].toLowerCase(); }   // 파서의 headOf 와 같은 구분자(공백·/·,)
       function applyRoster() {
         const raw = $("rosterInput").value || "";
         const lines = raw.split(/[\n,]+/).map(normName).filter(Boolean);
@@ -771,6 +802,8 @@
       /* 발행 플로우 1단계: 파일별 파싱 결과에서 겹침 감지 → (옵션) 병합 */
       function rebuild() {
         renderFileChips();
+        // 자료가 바뀌면 '발행했습니다' 줄은 더 이상 이 자료의 이야기가 아니다
+        $("afterPublish").hidden = true; lastPublished = null;
         if (!files.length) {
           merged = null; currentStats = null; dataMin = dataMax = null; overlapDates = [];
           $("parseInfo").hidden = true;
@@ -851,7 +884,10 @@
 
         // ③ 현재 방 멤버 자동 감지 — 퇴장/강퇴 메시지로 '나간 사람'을 추정해 미리 제외.
         //    (운영진이 멤버 표에서 최종 확인·조정. 파일 추가·재집계에도 운영진 수동 결정은 유지)
-        detectedLeft = new Set(ChatParser.membership(merged).leftNames);
+        //    나간 사람 이름은 원본("민지 강남 여 95 0312")인데 멤버 표는 앞 토막("민지")을 보여 준다.
+        //    둘 다 넣어 두어야 표의 '나감 감지' 태그와 실제 제외가 같은 사람을 가리킨다.
+        const headOf = (n) => { const h = String(n || "").trim().split(/[\s/·|,]+/)[0] || "?"; return h.length > 12 ? h.slice(0, 12) : h; };
+        detectedLeft = new Set(ChatParser.membership(merged).leftNames.flatMap((n) => [n, headOf(n)]));
         recomputeExcluded();
 
         $("rangeCard").hidden = false;
@@ -886,7 +922,10 @@
       }
 
       /* ── 발행 플로우 3단계: aggregate (v2) ── */
-      function recompute() {
+      /* 체크박스 하나에 1년치 파일 전체를 두 번 집계한다. 연타를 한 번으로 모은다 */
+      let recomputeTimer = null;
+      function recompute() { clearTimeout(recomputeTimer); recomputeTimer = setTimeout(recomputeNow, 120); }
+      function recomputeNow() {
         if (!merged) return;
         const { from, to } = currentRange();
 
@@ -997,6 +1036,16 @@
         $("sumMember").textContent = st ? nf(st.members.length) + "명" : "-";
         $("sumAvg").textContent = st && daysN ? nf(total / daysN) + "건" : "-";
         $("sumJoin").textContent = st ? nf(st.newMembers.count) + "명" : "-";
+        /* 잘림은 소리 내서 알린다 — 조용히 잘린 발행본은 나중에 아무도 이유를 모른다 */
+        const tn = $("truncNote");
+        if (tn) {
+          const tr = st && st.meta && st.meta.truncated;
+          const msgs = [];
+          if (tr && tr.days) msgs.push("기간이 800일을 넘어 앞부분이 잘렸습니다. 기간을 나눠 발행해 주세요.");
+          if (tr && tr.members) msgs.push("멤버가 120명을 넘어 순위 밖 멤버는 멤버 목록에서 빠졌습니다(합계에는 포함).");
+          tn.hidden = !msgs.length;
+          tn.textContent = msgs.join(" ");
+        }
       }
 
       function updateActions() {
@@ -1037,14 +1086,38 @@
             body: JSON.stringify({ p_pass: pass, p_period: st.periodLabel, p_stats: st })
           });
           EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다.`);
-          loadPreset();
-      loadReportList();
+          lastPublished = st;
+          $("afterPublishText").textContent = `"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다. 채팅방에 알릴까요?`;
+          $("afterPublish").hidden = false;
+          loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요합니다. 아래 안내를 확인해 주세요."); }
           else EXCER.toast(rpcErrorText(e, "발행에 실패했습니다. 잠시 후 다시 시도해 주세요."));
         } finally {
           btn.disabled = false; btn.textContent = "발행하기"; updateActions();
         }
+      }
+
+      /* 발행 직후 채팅방에 알리기 — 기간·메시지·멤버·활발한 시간 한 줄과 통계 링크. SDK 를 못 열면 링크 복사 */
+      let lastPublished = null;
+      function publishedSummary(st) {
+        const days = Array.isArray(st.days) ? st.days : [];
+        const total = (st.meta && Number(st.meta.totalMessages)) || days.reduce((a, d) => a + (Number(d.c) || 0), 0);
+        const members = Array.isArray(st.members) ? st.members.length : 0;
+        const hourly = new Array(24).fill(0);
+        days.forEach((d) => (d.byHour || []).forEach((c, h) => { hourly[h] += Number(c) || 0; }));
+        const max = Math.max(...hourly), peak = hourly.indexOf(max);
+        return [total ? `메시지 ${total.toLocaleString("ko-KR")}건` : "", members ? `이야기한 멤버 ${members}명` : "", max > 0 ? `가장 활발한 시간 ${peak}시` : ""].filter(Boolean).join(" · ");
+      }
+      async function notifyChat() {
+        const st = lastPublished; if (!st) return;
+        const btn = $("notifyBtn"); btn.disabled = true;
+        const url = location.origin + "/report.html";
+        try {
+          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계 · " + (st.periodLabel || ""), description: publishedSummary(st), url, buttonTitle: "통계 보기" }) : "fail";
+          if (r === "copy") EXCER.toast("카카오톡 공유 창을 열지 못해 통계 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
+          else if (r === "fail") EXCER.toast("복사에 실패했습니다. 주소창의 report.html 링크를 직접 올려 주세요.");
+        } finally { btn.disabled = false; }
       }
 
       function doDownload() {
@@ -1116,11 +1189,13 @@
           return;
         }
         // updated_at 이 가장 최근인 것을 찾는다(목록 정렬을 믿지 않는다)
-        let newest = 0, label = "";
+        let newest = 0, label = "", newestRow = null;
         rows.forEach((r) => {
           const t = new Date(r.updated_at || 0).getTime();
-          if (t > newest) { newest = t; label = r.period_label || ""; }
+          if (t > newest) { newest = t; label = r.period_label || ""; newestRow = r; }
         });
+        const rb = $("reuseLabelBtn");
+        if (rb) { rb.hidden = !label; rb.dataset.label = label || ""; }
         if (!newest) { el.hidden = true; return; }
         const kst = (ms) => {
           try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
@@ -1131,9 +1206,12 @@
         const when = days === 0 ? "오늘" : (days === 1 ? "어제" : days + "일 전");
         // 홈의 신선도 배지와 같은 경계(7일/14일)를 쓴다 — 두 화면이 다른 말을 하면 안 된다
         el.className = "check-strip " + (days <= 7 ? "is-ok" : (days <= 14 ? "is-mid" : "is-warn"));
+        // '기준 주' 안내는 통계 화면과 같은 기준(집계 마지막 날 range.to)으로 — 발행일이 아니라
+        const rangeTo = newestRow && newestRow.stats && newestRow.stats.range && /^\d{4}-\d{2}-\d{2}$/.test(String(newestRow.stats.range.to || "")) ? newestRow.stats.range.to : null;
+        const staleDays = rangeTo ? Math.max(0, Math.round((Date.parse(kst(Date.now()) + "T00:00:00Z") - Date.parse(rangeTo + "T00:00:00Z")) / 86400000)) : days;
         el.textContent = "마지막 발행 " + when + ", " + (label || "기간 미상") +
           ", 전체 " + rows.length + "건" +
-          (days > 1 ? ". 기준일이 지나 활동 통계에서는 '이번 주' 대신 '기준 주'로 표시됩니다" : "");
+          (staleDays > 1 ? ". 집계 마지막 날이 지나 활동 통계에서는 '이번 주' 대신 '기준 주'로 표시됩니다" : "");
         el.hidden = false;
       }
 
@@ -1256,9 +1334,16 @@
           labelDirty = $("labelInput").value.trim().length > 0;
           if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
         });
+        $("reuseLabelBtn").addEventListener("click", () => {
+          $("labelInput").value = $("reuseLabelBtn").dataset.label || "";
+          labelDirty = true;
+          if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+          EXCER.toast("지난 제목을 그대로 씁니다. 발행하면 이전 통계가 이 내용으로 교체됩니다.");
+        });
 
         $("previewBtn").addEventListener("click", doPreview);
         $("publishBtn").addEventListener("click", doPublish);
+        $("notifyBtn").addEventListener("click", notifyChat);
         $("downloadBtn").addEventListener("click", doDownload);
         $("presetClear").addEventListener("click", () => {
           try { localStorage.removeItem(PRESET_KEY); } catch (e) {}

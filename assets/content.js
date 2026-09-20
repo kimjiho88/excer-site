@@ -39,6 +39,21 @@
   }
   function isChosungQuery(q) { return !!q && /^[ㄱ-ㅎ]+$/.test(q.replace(/\s+/g, "")); }
 
+  /* ── 닉네임 자동완성 ── 기존 작성자 이름을 <datalist> 로 붙인다.
+     같은 사람이 띄어쓰기·오타로 둘로 갈리는 일을 줄인다. 이름은 화면에 있는 것만(서버에 새로 묻지 않음) */
+  function nickSuggest(input, names) {
+    if (!input || !names || !names.length) return;
+    var id = (input.id || "nick") + "-list";
+    var dl = document.getElementById(id);
+    if (!dl) { dl = document.createElement("datalist"); dl.id = id; document.body.appendChild(dl); }
+    var seen = {};
+    dl.innerHTML = names.map(function (n) { return String(n || "").trim(); })
+      .filter(function (n) { if (!n || seen[n]) return false; seen[n] = true; return true; })
+      .slice(0, 80)
+      .map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join("");
+    input.setAttribute("list", id);
+  }
+
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c];
@@ -239,6 +254,7 @@
      menuLine: 한줄평 글에 안 들어 있는 추천 메뉴가 있을 때만 "추천 메뉴 …" 한 줄을 앞에 둔다 (겹치면 한쪽만) */
   function placeLine(v) {
     if (v.latest) {
+      // 규칙(CONTENT_FORMAT 1.2-5): 한줄평 글에 안 들어 있는 메뉴가 하나라도 있으면 추천 메뉴 전체를 한 줄로. 전부 들어 있으면(겹치면) 줄을 두지 않는다
       var extra = v.menus.some(function (m) { return !textHas(v.latest.review, m); });
       return { kind: "review", text: v.latest.review, by: v.latest.by, date: v.latest.date, menuLine: extra ? v.menus.join(", ") : "" };
     }
@@ -266,7 +282,7 @@
     return m;
   }
   function bungState(m, today) {
-    if (!m || !m.date) return { days: null, label: "날짜 미정", past: false, closed: m && m.status === "closed" };
+    if (!m || !m.date) { var c0 = !!(m && m.status === "closed"); return { days: null, label: c0 ? "모집 마감" : "날짜 미정", past: false, closed: c0 }; }
     var d = daysFromToday(m.date, today);
     var past = d !== null && d < 0;
     var closed = m.status === "closed";
@@ -384,9 +400,33 @@
     return capsPromise;
   }
 
+  /* ── 이번 주 글감 — ISO 주차로 돌아가며 하나씩. 소식(글감 카드)과 홈(글감 줄)이 같은 것을 보여 준다 ── */
+  var PROMPTS = [
+    { cat: "자유", title: "요즘 자주 가는 동네 가게" },
+    { cat: "후기", title: "최근 다녀온 모임 한 줄 후기" },
+    { cat: "정보", title: "이번 주말 가 볼 만한 곳" },
+    { cat: "자유", title: "동네에서 발견한 산책 코스" },
+    { cat: "정보", title: "혼자 가기 좋은 밥집" },
+    { cat: "자유", title: "요즘 빠져 있는 취미" },
+    { cat: "벙 소식", title: "이런 모임 열어 볼까요?" },
+    { cat: "정보", title: "동네 행사와 축제 소식" },
+    { cat: "자유", title: "지난 모임에서 가장 웃겼던 순간" },
+    { cat: "정보", title: "요즘 볼만한 영화와 전시" },
+    { cat: "자유", title: "새로 온 멤버에게 해 주고 싶은 말" },
+    { cat: "후기", title: "이번 달 모임 정리" }
+  ];
+  function isoWeek(d) {
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - day);
+    var y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - y0) / 86400000 + 1) / 7);
+  }
+  function weeklyPrompt(date) { return PROMPTS[isoWeek(date || new Date()) % PROMPTS.length]; }
+
   window.EXCER_CONTENT = {
-    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR,
-    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery,
+    AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR, PROMPTS: PROMPTS, weeklyPrompt: weeklyPrompt,
+    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery, nickSuggest: nickSuggest,
     esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
     dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
     loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, noteText: noteText, noteDate: noteDate,

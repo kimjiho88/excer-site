@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4B2A82" />
+  <meta name="robots" content="noindex" />
+  <title>연결 없음 — 동네친구들</title>
+  <!-- 연결이 없을 때 서비스 워커(sw.js)가 보여 주는 한 장. 바깥 파일을 하나도 읽지 않도록 전부 이 안에 둔다 -->
+  <style>
+    :root { --bg: #F7F5EF; --surface: #FFFFFF; --ink: #241E2C; --ink-2: #625A6C; --brand: #4B2A82; --brand-soft: #EDE7F5; --line: #E3DFE4; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { display: grid; place-items: center; padding: 24px 16px; background: var(--bg); color: var(--ink); font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    .card { width: min(420px, 100%); padding: 28px 24px 24px; border-radius: 18px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.12); box-shadow: 0 20px 44px -28px rgba(46, 27, 69, 0.45); text-align: center; }
+    .logo { display: inline-flex; align-items: center; gap: 8px; color: var(--brand); font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+    .logo::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--brand); }
+    .ic { display: grid; place-items: center; width: 64px; height: 64px; margin: 20px auto 12px; border-radius: 20px; background: var(--brand-soft); color: var(--brand); }
+    .ic svg { width: 30px; height: 30px; }
+    h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+    p { margin: 8px 0 0; color: var(--ink-2); font-size: 15px; }
+    .acts { display: grid; gap: 8px; margin-top: 20px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 18px; border-radius: 12px; border: 1px solid transparent; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; text-decoration: none; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: #3A2068; }
+    .btn-secondary { background: var(--surface); color: var(--brand); border-color: var(--line); }
+    .btn-secondary:hover { background: var(--brand-soft); }
+    .state { margin-top: 14px; font-size: 13px; color: var(--ink-2); }
+    .state.is-on { color: #2F7A6B; font-weight: 700; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #17131C; --surface: #221C2A; --ink: #F1ECF6; --ink-2: #B6AEC0; --brand-soft: #2E2340; --line: #3A3144; }
+      .btn-primary { background: #7552A6; }
+      .btn-primary:hover { background: #8A67BB; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <span class="logo">동네친구들</span>
+    <div class="ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a15 15 0 0 1 20 0"/><path d="M5.5 13a10 10 0 0 1 13 0"/><path d="M9 16.5a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r="0.8" fill="currentColor"/><path d="M3 3l18 18"/></svg>
+    </div>
+    <h1>인터넷 연결이 없습니다</h1>
+    <p>연결이 돌아오면 다시 시도를 눌러 주세요. 작성 중이던 소식 글과 정산 입력은 이 기기에 남아 있습니다.</p>
+    <div class="acts">
+      <button type="button" class="btn btn-primary" id="retry">다시 시도</button>
+      <a class="btn btn-secondary" href="/index.html">홈으로</a>
+    </div>
+    <p class="state" id="state" aria-live="polite">오프라인</p>
+  </main>
+  <script>
+    (function () {
+      var st = document.getElementById("state");
+      function sync() {
+        var on = navigator.onLine;
+        st.textContent = on ? "연결이 돌아왔습니다. 다시 시도를 눌러 주세요." : "오프라인";
+        st.className = "state" + (on ? " is-on" : "");
+      }
+      document.getElementById("retry").addEventListener("click", function () { location.reload(); });
+      window.addEventListener("online", sync);
+      window.addEventListener("offline", sync);
+      sync();
+    })();
+  </script>
+</body>
+</html>

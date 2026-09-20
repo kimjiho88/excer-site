@@ -614,7 +614,11 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: underline; te
   transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
-@media (max-width: 860px) { .toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
+@media (max-width: 860px) {
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  /* 떠 있는 버튼(.fab)이 있는 페이지에서는 알림을 그 위로 — 버튼과 겹치지 않게 */
+  body:has(.fab:not(.is-hidden)) .toast { bottom: calc(144px + env(safe-area-inset-bottom)); }
+}
 
 /* ============================================================
    장식이었던 것들 — 전부 끈다
@@ -790,4 +794,136 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
   .bottom-tabbar { background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-top-color: rgba(75, 42, 130, 0.10); }
   .tab-item svg { box-sizing: content-box; padding: 3px 9px; border-radius: 999px; transition: background var(--dur-2) var(--ease); }
   .tab-item.is-active svg { background: var(--brand-soft); }
+}
+
+/* ============================================================
+   v8 — 도해·단계·콜아웃·FAQ·숫자 띠·공유·떠 있는 버튼
+   그림 없이도 구조가 보이게: 번호 원과 연결선, 색이 있는 안내 상자, 숫자 타일.
+   ============================================================ */
+/* 숫자 띠 — 커뮤니티 규모를 한 줄로. 값은 데이터가 있을 때만 채운다(없으면 타일째 숨김) */
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat-strip .st { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+.stat-strip .st-k { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+.stat-strip .st-k .ic { width: 16px; height: 16px; color: var(--brand); }
+.stat-strip .st-v { color: var(--ink); font-size: 26px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stat-strip .st-v small { margin-left: 3px; color: var(--ink-2); font-size: 13px; font-weight: 600; letter-spacing: 0; }
+.stat-strip .st-sub { color: var(--ink-2); font-size: var(--fs-micro); line-height: 1.4; }
+.stat-strip .st.is-brand { background: linear-gradient(160deg, #5A38A0, var(--brand) 60%, var(--brand-deep)); border-color: transparent; }
+.stat-strip .st.is-brand .st-k, .stat-strip .st.is-brand .st-sub { color: var(--on-dark-muted); }
+.stat-strip .st.is-brand .st-k .ic, .stat-strip .st.is-brand .st-v { color: #fff; }
+
+/* 단계 흐름 도해 — 번호 원 + 연결선. 기본 세로, .is-h 는 넓은 화면에서 가로 */
+.flow { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; counter-reset: flow; }
+.flow > li { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 0 14px; align-items: start; counter-increment: flow; }
+.flow .fl-n { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(180deg, #5B3A9E, var(--brand)); color: #fff; font-size: 15px; font-weight: 800; box-shadow: 0 6px 14px -8px rgba(75, 42, 130, 0.7); }
+.flow .fl-n::before { content: counter(flow); }
+.flow .fl-n .ic { width: 20px; height: 20px; }
+.flow .fl-n.has-ic::before { content: none; }
+.flow .fl-n.is-warm { background: linear-gradient(180deg, #BE5F36, var(--rust)); box-shadow: 0 6px 14px -8px rgba(169, 80, 45, 0.7); }
+.flow .fl-n.is-gold { background: linear-gradient(180deg, #9A7A36, var(--gold)); box-shadow: 0 6px 14px -8px rgba(126, 95, 37, 0.7); }
+.flow .fl-t { margin: 0; padding-top: 8px; color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.35; }
+.flow .fl-d { margin: 3px 0 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.55; }
+.flow .fl-d b { color: var(--ink); font-weight: 600; }
+.flow > li + li::before { content: ""; position: absolute; left: 19px; top: -14px; width: 2px; height: 14px; background: rgba(75, 42, 130, 0.25); }
+@media (min-width: 720px) {
+  .flow.is-h { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 0 16px; }
+  .flow.is-h > li { grid-template-columns: 1fr; gap: 0; }
+  .flow.is-h > li + li::before { content: none; }
+  .flow.is-h > li:not(:last-child)::after { content: ""; position: absolute; top: 19px; left: 48px; right: -8px; height: 2px; background: linear-gradient(90deg, rgba(75, 42, 130, 0.35), rgba(75, 42, 130, 0.10)); }
+  .flow.is-h .fl-t { padding-top: 10px; }
+}
+
+/* 콜아웃 — 아이콘 + 한두 문장. 정보(라벤더) / 주의(살구) / 위험(빨강) / 팁(황토) */
+.callout { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-radius: var(--r-md); background: var(--brand-soft); color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
+.callout .ic { width: 20px; height: 20px; margin-top: 1px; color: var(--brand); }
+.callout b { font-weight: 700; }
+.callout p { margin: 0; }
+.callout p + p { margin-top: 4px; }
+.callout.is-warn { background: var(--rust-soft); }
+.callout.is-warn .ic { color: var(--rust); }
+.callout.is-danger { background: var(--danger-soft); }
+.callout.is-danger .ic { color: var(--danger); }
+.callout.is-tip { background: var(--gold-soft); }
+.callout.is-tip .ic { color: var(--gold); }
+
+/* FAQ — details/summary. 열린 항목만 본문이 보인다 */
+.faq { display: grid; gap: 8px; }
+.faq details { border: 1px solid rgba(75, 42, 130, 0.10); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
+.faq details[open] { border-color: rgba(75, 42, 130, 0.22); }
+.faq summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 12px 16px; cursor: pointer; color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.4; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary .ic { flex: none; margin-left: auto; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
+.faq details[open] summary .ic { transform: rotate(180deg); }
+.faq .faq-q { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 800; }
+.faq .faq-a { padding: 0 16px 16px 52px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.65; }
+.faq .faq-a p { margin: 0 0 8px; }
+.faq .faq-a p:last-child, .faq .faq-a ul:last-child { margin-bottom: 0; }
+.faq .faq-a ul, .faq .faq-a ol { margin: 0 0 8px; padding-left: 20px; }
+@media (max-width: 640px) { .faq .faq-a { padding-left: 16px; } }
+
+/* 도해 그림(인라인 SVG) */
+.figure { margin: 0; }
+.figure svg { display: block; width: 100%; height: auto; }
+.figure figcaption { margin-top: 8px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+.figure.is-card { padding: 18px 20px; border: 1px solid rgba(75, 42, 130, 0.10); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
+
+/* 이미지 자리 — 파일이 오면 같은 자리에 <img> 를 넣는다. 빈 상자를 남기지 않게 글자 한 줄 */
+.img-slot { display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: var(--r-md); background: linear-gradient(160deg, #F3EFF9, #E9E2F3); color: var(--brand); font-size: var(--fs-caption); font-weight: 600; text-align: center; padding: 12px; }
+
+/* 카카오톡 공유 버튼 — 카카오 안내 색(노랑 #FEE500, 글자 #191919) */
+.btn-kakao { background: #FEE500; color: #191919; border-color: #FEE500; }
+.btn-kakao:hover { background: #F5DC00; border-color: #F5DC00; color: #191919; }
+.btn-kakao .ic { color: #191919; }
+.share-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* 떠 있는 버튼(모바일) — 탭바 위 오른쪽. 글쓰기·등록처럼 페이지의 주요 행동 하나 */
+.fab { display: none; }
+@media (max-width: 860px) {
+  .fab { position: fixed; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: calc(var(--z-tabbar) - 1); display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 18px 0 16px; border-radius: 999px; background: linear-gradient(180deg, #5B3A9E, var(--brand)); color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 12px 28px -10px rgba(75, 42, 130, 0.75), 0 2px 6px rgba(36, 30, 44, 0.12); transition: transform var(--dur-3) var(--ease), opacity var(--dur-3) var(--ease); }
+  .fab .ic { width: 20px; height: 20px; }
+  .fab.is-hidden { transform: translateY(120px); opacity: 0; pointer-events: none; }
+}
+
+/* 카드형 링크 — 짚으면 살짝 떠오른다 */
+.card-link { display: block; color: inherit; transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease); }
+.card-link:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px rgba(75, 42, 130, 0.45); border-color: rgba(75, 42, 130, 0.25); }
+
+/* 일러스트(인라인 SVG) 색 — 보라 기본, 살구·황토·녹슨 주황은 class 로 */
+.illus { color: var(--brand); }
+.illus .c-a { color: var(--apricot); }
+.illus .c-g { color: var(--gold); }
+.illus .c-r { color: var(--rust); }
+.illus .c-2 { color: var(--brand-2); }
+.illus .c-soft { color: #E4DBF1; }
+
+/* 작은 라벨 묶음(요약 칩) — 상세 첫 줄에 사실 몇 개 */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-fact { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: var(--fs-caption); font-weight: 600; }
+.chip-fact .ic { width: 14px; height: 14px; color: var(--brand); }
+
+/* 진행 표시(단계형 폼) — 1·2·3 점과 이름 */
+.stepper { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.stepper li { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; }
+.stepper li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.stepper li.is-done::before { background: var(--brand); }
+.stepper li.is-on { color: var(--brand); }
+.stepper li.is-on::before { background: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.stepper li + li { margin-left: 4px; }
+
+/* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
+@media (forced-colors: active) {
+  .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
+  .home-title, .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
+  .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
+}
+
+/* ── 인쇄: 정산 메시지·활동 통계·맛집 목록을 종이에 ── */
+@media print {
+  .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .hero-actions, .home-actions,
+  .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao { display: none !important; }
+  body { background: #fff !important; color: #000; }
+  .panel, .card, .status-line, .place-detail, .post-detail { box-shadow: none !important; border-color: #bbb !important; }
+  .home-title { -webkit-text-fill-color: #000; color: #000 !important; background: none !important; }
+  a { color: inherit; }
+  .page-main { padding-bottom: 0; }
 }

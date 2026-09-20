@@ -18,10 +18,15 @@
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
+  <meta name="apple-mobile-web-app-title" content="동네친구들" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/site.css?v=8" />
 
   <style>
     /* ============================================================
@@ -113,6 +118,31 @@
 
     .more-wrap { display: flex; justify-content: center; margin-top: 18px; }
 
+    /* ── 이번 주 글감 — 무엇을 쓸지 막막할 때 ── */
+    .draft-note { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 10px 12px; border-radius: 10px; background: var(--gold-soft, #F6EFD9); color: var(--ink); font-size: var(--fs-caption); line-height: 1.5; }
+    .draft-note .ic { width: 16px; height: 16px; color: var(--gold, #7E5F25); flex: none; }
+    .draft-note > span { flex: 1 1 200px; min-width: 0; }
+    .draft-note .text-btn { min-height: 30px; }
+    .prompt-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
+    .prompt-card .pc-ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--brand); box-shadow: var(--shadow-card); }
+    .prompt-card .pc-ic .ic { width: 22px; height: 22px; }
+    .prompt-card .pc-k { display: block; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+    .prompt-card .pc-t { display: block; margin-top: 2px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.4; }
+    @media (max-width: 600px) { .prompt-card { grid-template-columns: 44px minmax(0, 1fr); } .prompt-card .btn { grid-column: 1 / -1; width: 100%; } }
+    /* ── 이번 주 인기 글 ── */
+    .popular { margin: 14px 0 8px; padding: 12px 16px 6px; border-radius: 14px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    .popular .pop-h { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
+    .popular .pop-h .ic { width: 16px; height: 16px; color: var(--rust); }
+    .popular .pop-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); color: inherit; }
+    .popular .pop-row:hover .pop-t { color: var(--brand); }
+    .popular .pop-n { color: var(--rust); font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .popular .pop-t { min-width: 0; color: var(--ink); font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .popular .pop-m { color: var(--ink-2); font-size: var(--fs-caption); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    /* 지난 방문 뒤 올라온 글 표시 */
+    .new-dot { display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--rust); margin-left: 4px; vertical-align: 2px; }
+    .post-close { display: flex; justify-content: center; margin-top: 12px; }
+    .empty-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+
     /* ── 글쓰기 / 수정 모달 ── */
     .write-modal { width: min(680px, 100%); }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
@@ -132,9 +162,9 @@
       .field-grid .is-wide { grid-column: span 1; }
     }
   </style>
-  <script src="assets/site-core.js?v=4"></script>
+  <script src="assets/site-core.js?v=5"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=3"></script>
+  <script src="assets/content.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -193,6 +223,13 @@
             <button type="button" data-cat="자유" aria-pressed="false">자유</button>
           </div>
         </div>
+        <div class="prompt-card" id="promptCard" hidden>
+          <span class="pc-ic" aria-hidden="true"><svg class="ic"><use href="#i-bulb"/></svg></span>
+          <span><span class="pc-k">이번 주 글감</span><span class="pc-t" id="promptText"></span></span>
+          <button type="button" class="btn btn-secondary is-sm" id="promptWrite">이 글감으로 쓰기</button>
+        </div>
+        <div class="popular" id="popularWrap" hidden></div>
+
         <div class="board-foot"><span id="listNote" aria-live="polite"></span></div>
 
         <div id="setupBanner" class="status-line is-warn" hidden>
@@ -253,6 +290,12 @@
         <button id="writeCloseBtn" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <div class="field-grid" id="writeForm">
+        <!-- 글감·후기 쓰기로 열었는데 작성 중이던 다른 글이 있을 때 -->
+        <div class="draft-note is-wide" id="draftNote" hidden>
+          <svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>
+          <span>작성 중이던 글 <b id="draftNoteTitle"></b>이 임시 저장되어 있습니다. 이 창의 내용은 임시 저장하지 않습니다.</span>
+          <button type="button" class="text-btn" id="draftNoteLoad">그 글 불러오기</button>
+        </div>
         <div class="field is-wide" data-field="wCat">
           <label for="wCat">글 종류</label>
           <select id="wCat" class="input">
@@ -319,6 +362,7 @@
     </div>
   </div>
 
+  <button class="fab" id="fabWrite" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>글쓰기</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- 공통 셸 JS -->
@@ -370,7 +414,7 @@
     const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
     const ERROR_MAP = {
       BAD_PASS: "비밀번호가 맞지 않습니다. 글을 쓸 때 입력한 비밀번호나 운영진 비밀번호를 입력해 주세요.",
-      ADMIN_ONLY: "공지는 운영진 비밀번호로만 올릴 수 있습니다.",
+      ADMIN_ONLY: "운영진 비밀번호가 맞지 않습니다. 공지 작성과 글 고정은 운영진만 할 수 있습니다.",
       PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
       NOT_FOUND: "이미 삭제된 글입니다.",
       BAD_KEY: "이 글을 수정할 권한이 없습니다."
@@ -383,7 +427,11 @@
     function typeDesc(cat) {
       if (cat === "벙 소식") {
         const items = state.caps >= 2 ? "날짜·시간·장소·인원·비용" : "날짜·시간·장소·인원";
-        return items + "을 항목으로 적으면 목록에 그대로 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+        return items + "을 항목으로 적으면 글을 펼쳤을 때 표로 보이고, 목록 줄에는 날짜·시간·장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+      }
+      // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
+      if (state.caps < 2 && (cat === "후기" || cat === "정보" || cat === "공지")) {
+        return (cat === "공지" ? "운영진 비밀번호가 필요합니다. 목록 맨 위에 고정되고 홈에도 한 건 보입니다. " : "") + "지금은 제목과 내용만 있으면 됩니다. 항목 칸은 서버 업데이트 뒤에 열립니다.";
       }
       return {
         "자유": "제목과 내용만 있으면 됩니다.",
@@ -429,8 +477,33 @@
       category: "전체", sort: "latest", search: "",
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
-      myReactions: {}, reactBusy: {}, caps: 1
+      myReactions: {}, reactBusy: {}, caps: 1, popular: []
     };
+    /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
+    const SEEN_KEY = "excer_news_seen";
+    let lastSeen = "";
+    try { lastSeen = localStorage.getItem(SEEN_KEY) || ""; localStorage.setItem(SEEN_KEY, new Date().toISOString()); } catch (e) {}
+    /* 이번 주 글감 — content.js 의 목록을 ISO 주차로 돌아가며 하나씩(홈의 글감 줄과 같은 것). 글 종류와 제목만 미리 채우고 내용은 비운다 */
+    function currentPrompt() { return C.weeklyPrompt(); }
+    /* 홈의 '글 쓰러 가기'(#write-prompt)로 들어오면 글감이 채워진 글쓰기 창을 바로 연다 */
+    function openPromptFromHash() {
+      if (location.hash !== "#write-prompt") return;
+      if (state.degraded) { showToast(OFFLINE_MSG); return; }   // 해시는 남겨 두어 다시 시도 뒤에 열리게
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      const p = currentPrompt();
+      openWriteModal(null, { category: p.cat, title: p.title });
+    }
+    function renderPrompt() { $("promptText").textContent = currentPrompt().title; $("promptCard").hidden = state.degraded || !!state.search || state.category !== "전체"; }
+    /* 작성 중인 글은 이 브라우저에 임시로 남긴다 — 모달이 닫히거나 새로고침해도 사라지지 않게 */
+    const DRAFT_KEY = "excer_news_draft";
+    function loadDraft() { try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && (d.title || d.body) ? d : null; } catch (e) { return null; } }
+    function saveDraft() {
+      if (state.editingId || state.draftHold) return;
+      const d = { category: $("wCat").value, title: $("wTitle").value, body: $("wBody").value, meta: readMeta() };
+      try { if (d.title.trim() || d.body.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); else localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    }
+    function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+    function gotoPost(id) { if (hashPostId() === id) openFromHash(); else location.hash = "#post-" + id; }
     const $ = (id) => document.getElementById(id);
     function showToast(message) { if (window.EXCER) EXCER.toast(message); }
     function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name || "chat"}"/></svg>`; }
@@ -534,7 +607,7 @@
         state.degraded = false;
         $("setupBanner").hidden = true;
         if (reset) { state.posts = rows; state.expandedId = null; state.commentsCache = {}; }
-        else state.posts = state.posts.concat(rows);
+        else state.posts = state.posts.concat(rows.filter((r) => !state.posts.some((x) => x.id === r.id)));   // 링크로 먼저 불러온 글과 겹치지 않게
         state.offset += rows.length;
         state.hasMore = rows.length === PAGE_SIZE;
         state.loading = false;
@@ -603,9 +676,17 @@
           <button type="button" class="text-btn is-quiet" data-act="del-comment" data-id="${c.id}" data-post="${c.post_id}">삭제</button></div>
         <div class="comment-body">${renderBody(c.body)}</div></div>`;
     }
+    /* 관련 링크가 이 게시판의 글(#post-N)이면 새 창이 아니라 그 글로 바로 간다 — 후기와 모임 글이 서로 이어진다 */
     function factsHTML(facts) {
       if (!facts.length) return "";
-      return '<dl class="kv">' + facts.map((f) => `<dt>${esc(f.label)}</dt><dd>${f.href ? `<a href="${esc(f.href)}" target="_blank" rel="noopener noreferrer">${esc(f.value)}</a>` : esc(f.value)}</dd>`).join("") + "</dl>";
+      return '<dl class="kv">' + facts.map((f) => {
+        let val;
+        if (f.href) {
+          const m = /news\.html#post-(\d+)$/.exec(f.href) || /^#post-(\d+)$/.exec(f.href);
+          val = m ? `<a href="#post-${m[1]}" data-act="goto" data-id="${m[1]}">모임 글 보기</a>` : `<a href="${esc(f.href)}" target="_blank" rel="noopener noreferrer">${esc(f.value)}</a>`;
+        } else val = esc(f.value);
+        return `<dt>${esc(f.label)}</dt><dd>${val}</dd>`;
+      }).join("") + "</dl>";
     }
     /* 상세: 유형별 항목 → 본문 → (모집) 오픈채팅 → 반응 → 동작 → 댓글 */
     function detailHTML(post) {
@@ -624,9 +705,11 @@
         ${factsHTML(v.facts)}
         ${body}
         ${v.kind === "bung" && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
+        ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
         ${reactBarHTML(post)}
         <div class="post-actions">
+          <button type="button" class="text-btn" data-act="share" data-id="${post.id}">${icon("send", "is-sm")} 카카오톡 공유</button>
           <button type="button" class="text-btn" data-act="copy-link" data-id="${post.id}">${icon("link", "is-sm")} 링크 복사</button>
           <button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>
           <button type="button" class="text-btn is-quiet is-danger" data-act="delete" data-id="${post.id}">${icon("trash", "is-sm")} 삭제</button>
@@ -637,13 +720,14 @@
           <div class="comment-list">${commentsHTML}</div>
           <div class="comment-form">
             <div class="row2">
-              <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" aria-label="댓글 닉네임" value="${esc(savedNick())}" />
+              <input class="input c-nick" type="text" maxlength="24" placeholder="닉네임" aria-label="댓글 닉네임" value="${esc(savedNick())}" list="wNick-list" />
               <input class="input c-pass" type="password" placeholder="비밀번호 (4자 이상)" aria-label="댓글 비밀번호" autocomplete="new-password" value="${esc(savedPass())}" />
             </div>
             <textarea class="textarea c-body" maxlength="1000" placeholder="댓글" aria-label="댓글 내용"></textarea>
             <div class="comment-form-acts"><button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
           </div>
-        </div>`;
+        </div>
+        <div class="post-close"><button type="button" class="text-btn is-quiet" data-act="toggle" data-id="${post.id}">${icon("chevDown", "is-sm")} 글 접기</button></div>`;
     }
     function rowHTML(post) {
       const v = C.postView(post);
@@ -653,7 +737,7 @@
         <article class="row post-row${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
-              <span class="nr-line">${tagHTML(v)}<span class="row-title">${esc(v.title || "제목 없음")}</span></span>
+              <span class="nr-line">${tagHTML(v)}<span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
               ${st}
               <span class="row-meta">${metaLine(v)}</span>
             </button>
@@ -671,8 +755,25 @@
         return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
           <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
       }
-      return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>등록된 글이 없습니다.</strong><p>첫 글을 등록해 주세요.</p>
-        <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
+      return `<div class="empty-state" style="border-top:1px solid var(--line)"><span class="empty-ic">${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
+        <div class="empty-acts"><button type="button" class="btn btn-primary is-sm" data-act="open-write" data-cat="후기">모임 후기 쓰기</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="정보">정보 공유</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="자유">자유 글</button></div></div>`;
+    }
+    /* 이번 주 인기 글 — 최근 7일 안에 반응이나 댓글이 있는 글 셋. 전체 탭·검색 없음일 때만 */
+    async function loadPopular() {
+      if (state.degraded) return;
+      try {
+        const since = new Date(Date.now() - 7 * 86400000).toISOString();
+        const rows = (await supaFetch("/rest/v1/site_posts_v?select=id,category,title,author,created_at,reaction_count,comment_count&created_at=gte." + encodeURIComponent(since) + "&order=reaction_count.desc,comment_count.desc,created_at.desc&limit=3")) || [];
+        state.popular = rows.filter((r) => (Number(r.reaction_count) || 0) + (Number(r.comment_count) || 0) > 0).slice(0, 3);
+      } catch (e) { state.popular = []; }
+      renderPopular();
+    }
+    function renderPopular() {
+      const w = $("popularWrap"); const list = state.popular || [];
+      const show = list.length && state.category === "전체" && !state.search && !state.degraded;
+      w.hidden = !show;
+      if (!show) return;
+      w.innerHTML = `<p class="pop-h">${icon("flame")}이번 주 인기 글</p>` + list.map((r, i) => `<a class="pop-row" href="#post-${r.id}" data-act="goto" data-id="${r.id}"><span class="pop-n">${i + 1}</span><span class="pop-t">${esc(r.title || "제목 없음")}</span><span class="pop-m">반응 ${Number(r.reaction_count) || 0} · 댓글 ${Number(r.comment_count) || 0}</span></a>`).join("");
     }
     function renderList() {
       const posts = state.posts;
@@ -686,6 +787,9 @@
       if (keep) { const b = listEl.querySelector(`[data-act="${keep[0]}"][data-id="${keep[1]}"]`); if (b) b.focus({ preventScroll: true }); }
       applyLinkedMark();
       updateMoreBtn();
+      renderPrompt();
+      renderPopular();
+      if (!state.degraded && posts.length) C.nickSuggest($("wNick"), posts.map((p) => p.author));
     }
     /* 모임 모집만 볼 때는 날짜 순으로 묶는다. 모집 글은 "언제"가 제목보다 먼저 궁금하다 */
     function groupedHTML(posts) {
@@ -820,16 +924,26 @@
         ((v.kind === "notice" || v.kind === "info") && v.meta && v.meta.summary ? `<p class="pd-lead" style="margin:6px 0 8px">${esc(v.meta.summary)}</p>` : "") +
         factsHTML(v.facts);
     }
-    function openWriteModal(post) {
+    /* post: 수정할 글 / prefill: 새 글의 초기값 {category, title, body, meta} (글감·모임 후기 쓰기) / 둘 다 없으면 임시 저장분 */
+    function openWriteModal(post, prefill) {
       state.editingId = post ? post.id : null;
       clearErrors();
       $("writeTitle").textContent = post ? "글 수정" : "글쓰기";
-      $("wCat").value = post ? post.category : "자유";
-      renderTypeFields($("wCat").value, post ? C.postMeta(post) : null);
-      $("wTitle").value = post ? post.title : "";
-      $("wBody").value = post ? post.body : "";
+      const existing = post ? null : loadDraft();
+      const draft = !post && !prefill ? existing : null;
+      const init = post ? null : (prefill || draft || null);
+      /* 글감·후기 쓰기로 열었는데 작성 중이던 다른 글이 있으면 그 글을 덮어쓰지 않는다 — 이번 창은 임시 저장을 쉬고, 안내 줄로 알린다 */
+      state.draftHold = !!(prefill && existing);
+      $("draftNote").hidden = !state.draftHold;
+      if (state.draftHold) $("draftNoteTitle").textContent = existing.title ? "“" + existing.title.slice(0, 30) + "”" : "제목 없는 글";
+      const cat = post ? post.category : (init && init.category && CATS.includes(init.category) ? init.category : "자유");
+      $("wCat").value = cat;
+      renderTypeFields(cat, post ? C.postMeta(post) : (init && init.meta) || null);
+      $("wTitle").value = post ? post.title : (init && init.title) || "";
+      $("wBody").value = post ? post.body : (init && init.body) || "";
+      if (draft) showToast("작성 중이던 글을 다시 불러왔습니다.");
       $("wCount").textContent = $("wBody").value.length + " / 4000";
-      $("wNick").value = post ? post.author : ($("wNick").value || savedNick());
+      $("wNick").value = post ? post.author : savedNick();   // 수정 창에 남은 다른 사람 이름을 새 글에 물려주지 않는다
       $("wNickWrap").hidden = !!post;
       $("wPass").value = post && post.category === "공지" ? "" : savedPass();
       $("writeSubmitBtn").textContent = post ? "저장" : "등록";
@@ -846,6 +960,8 @@
       if (!state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 입력해 주세요."); ok = false; }
       if ($("wPass").value.trim().length < 4) { setError("wPass", "비밀번호는 4자 이상 입력해 주세요."); ok = false; }
       if (!$("wTitle").value.trim()) { setError("wTitle", cat === "벙 소식" ? "모임명을 입력해 주세요." : "제목을 입력해 주세요."); ok = false; }
+      else if ($("wTitle").value.trim().length > 100) { setError("wTitle", "제목은 100자까지입니다."); ok = false; }
+      if ($("wBody").value.length > 4000) { setError("wBody", "내용은 4000자까지입니다."); ok = false; }
       if (!$("wBody").value.trim()) { setError("wBody", "내용을 입력해 주세요."); ok = false; }
       document.querySelectorAll("#typeFields [data-key]").forEach((el) => {
         const v = String(el.value || "").trim();
@@ -878,6 +994,7 @@
           showToast("글을 등록했습니다.");
         }
         closeWriteModal();
+        if (!editing && !state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
         const keepId = state.editingId;
         renderListLoading();
@@ -901,6 +1018,7 @@
       try {
         await supaFetch("/rest/v1/rpc/post_delete", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass }) });
         state.posts = state.posts.filter((p) => p.id !== id);
+        state.offset = Math.max(0, state.offset - 1);   // 지운 만큼 다음 페이지 시작점도 당긴다
         if (state.expandedId === id) state.expandedId = null;
         renderList();
         showToast("글을 삭제했습니다.");
@@ -1037,8 +1155,12 @@
       $("writeForm").addEventListener("input", (e) => {
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
-        clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 120);
+        clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
       });
+      $("fabWrite").addEventListener("click", () => openWriteModal(null));
+      $("promptWrite").addEventListener("click", () => { const p = currentPrompt(); openWriteModal(null, { category: p.cat, title: p.title }); });
+      $("draftNoteLoad").addEventListener("click", () => { state.draftHold = false; openWriteModal(null); });
+      $("popularWrap").addEventListener("click", (e) => { const a = e.target.closest("[data-act='goto']"); if (!a) return; e.preventDefault(); gotoPost(Number(a.dataset.id)); });
       $("writeForm").addEventListener("change", () => { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 60); });
 
       let searchTimer = null;
@@ -1055,7 +1177,7 @@
         refetchList();
       });
       $("moreBtn").addEventListener("click", () => loadPosts(false));
-      $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true); });
+      $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true).then(openFromHash).then(openPromptFromHash).then(loadPopular); });
 
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
@@ -1065,8 +1187,22 @@
         const card = el.closest(".post-row");
         if (act === "toggle") { toggleExpand(id); return; }
         if (act === "copy-link") { copyPostLink(id); return; }
+        if (act === "goto") { e.preventDefault(); gotoPost(id); return; }
+        if (act === "share") {
+          const p = findPost(id); if (!p) return;
+          const v = C.postView(p);
+          window.KSHARE.share({ title: "[" + v.label + "] " + (v.title || ""), description: String(v.subline.text || v.excerpt || "").slice(0, 80), url: postUrl(id), buttonTitle: "글 보기" })
+            .then((r) => { const m = window.KSHARE.message(r); if (m) showToast(m); });
+          return;
+        }
+        if (act === "write-review") {
+          const p = findPost(id); if (!p) return;
+          const m = C.postMeta(p) || {};
+          openWriteModal(null, { category: "후기", title: ((p.title || "모임") + " 후기").slice(0, 100), meta: { activity: p.title || "", date: m.date || "", place: m.place || "", link: postUrl(p.id) } });
+          return;
+        }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
-        if (act === "open-write") { openWriteModal(null); return; }
+        if (act === "open-write") { openWriteModal(null, el.dataset.cat ? { category: el.dataset.cat } : null); return; }
         if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
@@ -1092,9 +1228,9 @@
     $("wNick").value = savedNick();
     bindEvents();
     renderTypeFields("자유", null);
-    C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, null); });
+    C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta()); });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
     renderListLoading();
-    loadPosts(true).then(openFromHash);
+    loadPosts(true).then(openFromHash).then(openPromptFromHash).then(loadPopular);
     window.addEventListener("hashchange", openFromHash);
   </script>
 </body>
