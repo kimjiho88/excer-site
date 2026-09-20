@@ -93,6 +93,29 @@
     /* ── 차트 공통 ── */
     .chart-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
     .chart-svg { width: 100%; height: auto; display: block; }
+    /* 좁은 화면에서는 viewBox 축소 비율만큼 축 글자를 키운다 (760 → 350px 이면 절반이 된다) */
+    @media (max-width: 640px) { .chart-svg text { font-size: 19px; } }
+    /* ── 운영 인사이트 ── */
+    .insight-lines { display: grid; gap: 8px; margin-bottom: 16px; }
+    .insight-line { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    .insight-line .ic { width: 20px; height: 20px; color: var(--brand); margin-top: 3px; }
+    .insight-line p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink); }
+    .insight-line b { font-weight: 700; color: var(--brand); }
+    .insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .ins-card { padding: 14px 16px; border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    .ins-card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--ink); }
+    .ins-card h3 .ic { width: 18px; height: 18px; color: var(--brand); }
+    .ins-card .ins-note { margin: 0 0 10px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    .ins-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+    .ins-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: var(--fs-sm); }
+    .ins-list li .n { color: var(--ink-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ins-list li b, .ins-list li button { text-align: left; color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ins-list li button { padding: 0; min-height: 28px; border-radius: 4px; }
+    .ins-list li button:hover { color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+    .ins-list li .v { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ins-bar { display: grid; gap: 6px; }
+    .ins-bar div { display: grid; grid-template-columns: 56px minmax(0, 1fr) 40px; gap: 8px; align-items: center; font-size: var(--fs-caption); color: var(--ink-2); }
+    .ins-bar i { display: block; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #6D4AAE, var(--brand)); }
     .chart-anim { opacity: 0; transition: opacity 0.4s var(--ease-out); }
     .chart-anim.is-in { opacity: 1; }
     .chart-tip {
@@ -366,6 +389,19 @@
           <div class="sec-body" id="bodySummary">
 
             <div class="kpi-grid" id="kpiGrid"></div>
+          </div>
+        </div>
+      </section>
+      <section class="section" id="secInsight">
+        <div class="container">
+          <div class="sec-head">
+            <h2>운영 인사이트<span class="scope" id="scopeInsight"></span></h2>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyInsight">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
+            <p>이 방이 어떻게 굴러가는지 숫자로 읽은 것입니다. 시간대·요일·달별 흐름, 새 멤버 적응, 대화를 여는 사람과 분위기 메이커를 봅니다.</p>
+          </div>
+          <div class="sec-body" id="bodyInsight">
+            <div class="insight-lines" id="insightLines"></div>
+            <div class="insight-grid" id="insightGrid"></div>
           </div>
         </div>
       </section>
@@ -1035,15 +1071,17 @@
       }
 
       /* 차트 색: 브랜드 녹색 한 가지의 밝기 단계 + 중립색 */
-      const RAMP = ["#E8E1F1", "#C9B9DE", "#A387C6", "#7552A6", "#4B2A82"];
-      const ZERO_COLOR = "#EDE9EA";
+      /* 0건(ZERO)과 1~2건(RAMP[0])이 한눈에 다르게 — 조용한 칸과 조금 있는 칸은 뜻이 다르다 */
+      const RAMP = ["#DDD3EB", "#C3B0DA", "#A387C6", "#7552A6", "#4B2A82"];
+      const ZERO_COLOR = "#F4F2F0";
       const CAT_COLOR = { "나들이": "#7E5F25", "맛집": "#A9502D", "벙": "#4B2A82", "정보": "#4E6E86" };
       /* 분류 저장값 "벙"은 그대로 두고 화면에서만 "모임"으로 부른다. 칭호 이름도 같은 규칙 */
       const catLabel = (c) => (c === "벙" ? "모임" : c);
       const badgeText = (t) => String(t || "").replace(/^벙 /, "모임 ").replace(/벙 이야기/g, "모임 이야기").replace(/마디/g, "건");
       function rampColor(v, max) {
         if (!v) return ZERO_COLOR;
-        const r = v / (max || 1);
+        /* 제곱근 눈금: 폭발한 칸 하나가 나머지를 전부 최저 단계로 누르지 않게 */
+        const r = Math.sqrt(v / (max || 1));
         if (r <= 0.16) return RAMP[0];
         if (r <= 0.36) return RAMP[1];
         if (r <= 0.58) return RAMP[2];
@@ -1200,7 +1238,10 @@
         $("maskNote").hidden = !st.maskNames;
         const gen = String(st.generatedAt || "").slice(0, 10);
         const genTxt = /^\d{4}-\d{2}-\d{2}$/.test(gen) ? fmtDateFull(gen) : "";
-        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행일 " + genTxt : "");
+        /* 며칠 지났는지 — 운영진 화면의 점검 줄과 같은 계산(발행일 기준 날짜 차이) */
+        const genDays = genTxt ? Math.max(0, Math.round((Date.parse(kstToday() + "T00:00:00Z") - Date.parse(gen + "T00:00:00Z")) / 86400000)) : null;
+        const ago = genDays === null ? "" : genDays === 0 ? " (오늘)" : genDays === 1 ? " (어제)" : " (" + genDays + "일 전)";
+        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? " · 발행일 " + genTxt + ago : "");
 
         const sel = $("reportSelect");
         if (state.source === "live" && liveRows.length >= 2) {
@@ -1217,6 +1258,74 @@
         if (!$("customFrom").value) $("customFrom").value = st.range.from;
         if (!$("customTo").value) $("customTo").value = st.range.to;
         $("periodBar").hidden = false;
+      }
+
+      /* ── 운영 인사이트: 발행 데이터에 이미 있는 값으로 방이 어떻게 굴러가는지 읽는다 ── */
+      function pctOf(a, b) { return b ? Math.round((a / b) * 100) : 0; }
+      function renderInsight() {
+        const sec = $("secInsight"); if (!sec) return;
+        const st = state.data, s = state.slice;
+        if (state.legacy || !s) { sec.hidden = true; return; }
+        sec.hidden = false;
+        $("scopeInsight").textContent = scopeSel();
+        const M = st.members || [];
+        const sums = RM.memberSums(st, s);
+        const hourly = RM.hourlyOf(st, s);
+        const total = hourly.reduce((x, y) => x + y, 0);
+        const lines = [];
+        const line = (ic, html) => lines.push(`<div class="insight-line"><svg class="ic" aria-hidden="true"><use href="#i-${ic}"/></svg><p>${html}</p></div>`);
+        if (total > 0) {
+          const sumH = (a, b) => { let t = 0; for (let h = a; h <= b; h++) t += hourly[h] || 0; return t; };
+          const bands = [["아침 6~10시", sumH(6, 10)], ["점심 11~14시", sumH(11, 14)], ["오후 15~17시", sumH(15, 17)], ["저녁 18~21시", sumH(18, 21)], ["밤 22시~새벽 1시", sumH(22, 23) + sumH(0, 1)], ["새벽 2~5시", sumH(2, 5)]].sort((a, b) => b[1] - a[1]);
+          line("clock", `대화의 <b>${pctOf(bands[0][1], total)}%</b>가 <b>${bands[0][0]}</b>에 오갑니다. 공지와 모임 모집은 이때 올리면 가장 많이 읽힙니다.`);
+        }
+        let wdC = 0, wdN = 0, weC = 0, weN = 0;
+        for (let i = s.i0; i <= s.i1; i++) { const d = st.days[i]; if (RM.weekdayOf(d.d) <= 4) { wdC += d.c; wdN++; } else { weC += d.c; weN++; } }
+        if (wdN && weN && (wdC || weC)) {
+          const wa = wdC / wdN, wea = weC / weN;
+          const ratio = Math.round((Math.max(wa, wea) / Math.max(1, Math.min(wa, wea))) * 10) / 10;
+          line("calendar", `하루 평균 평일 <b>${nf1(wa)}건</b>, 주말 <b>${nf1(wea)}건</b>. ${wea > wa ? "주말" : "평일"}이 ${ratio >= 1.2 ? ratio + "배 " : "조금 더 "}활발합니다.`);
+        }
+        const months = {}; (st.days || []).forEach((d) => { const k = d.d.slice(0, 7); months[k] = (months[k] || 0) + d.c; });
+        const mk = Object.keys(months).sort();
+        if (mk.length >= 2) {
+          const a = mk[mk.length - 2], b = mk[mk.length - 1];
+          const lastDay = new Date(+b.slice(0, 4), +b.slice(5, 7), 0).getDate();
+          const partial = String(st.range.to).slice(0, 7) === b && +String(st.range.to).slice(8, 10) < lastDay;
+          if (months[a] > 0) { const diff = Math.round(((months[b] - months[a]) / months[a]) * 100); line("trendUp", `<b>${+b.slice(5, 7)}월</b>은 ${+a.slice(5, 7)}월보다 <b>${diff >= 0 ? "+" : "−"}${Math.abs(diff)}%</b> (${nf(months[a])}건 → ${nf(months[b])}건)${partial ? ". 마지막 달은 집계가 끝나지 않았습니다" : ""}.`); }
+        }
+        const nm = st.newMembers || {};
+        if (nm.count) {
+          const avg = Number(nm.avgFirstWeekMsgs) || 0;
+          line("sprout", `발행 기간에 <b>${nf(nm.count)}명</b>이 새로 들어왔고, 중간에 합류한 멤버는 첫 주에 평균 <b>${nf(avg)}건</b>을 남겼습니다.${avg < 5 ? " 첫 주 대화가 적습니다. 새 멤버에게 먼저 말을 걸어 주세요." : ""}${nm.leaves ? ` 같은 기간 나간 사람은 ${nf(nm.leaves)}명입니다.` : ""}`);
+        }
+        const cutoff = RM.addDays(st.range.to, -14);
+        const quiet = M.filter((m) => (m.count || 0) > 0 && m.lastDate && m.lastDate < cutoff).length;
+        if (M.length) line("moon", `발행 기준일까지 <b>2주 넘게</b> 말이 없는 멤버가 <b>${nf(quiet)}명</b>입니다 (이야기한 멤버 ${nf(M.length)}명 중). 2개월 1회 참여 기준을 안내할 때 참고하세요.`);
+        const top3 = sums.slice().sort((a, b) => b - a).slice(0, 3).reduce((x, y) => x + y, 0);
+        const sumAll = sums.reduce((x, y) => x + y, 0);
+        if (sumAll > 0 && M.length >= 4) line("users", `상위 3명이 선택 기간 대화의 <b>${pctOf(top3, sumAll)}%</b>를 차지합니다. ${pctOf(top3, sumAll) >= 60 ? "몇 사람에게 쏠려 있습니다. 조용한 멤버가 끼어들 수 있는 가벼운 질문이 도움이 됩니다." : "여러 사람이 고르게 이야기합니다."}`);
+        const reps = M.map((m) => Number(m.replyMed)).filter((v) => v > 0);
+        if (reps.length) line("bolt", `다른 사람 말에 답이 오기까지 보통 <b>${nf(RM.medianOf(reps))}분</b> 걸립니다.`);
+        $("insightLines").innerHTML = lines.join("");
+
+        /* 카드: 대화 시작자 · 분위기 메이커 · 시간 유형 분포 · 사진과 링크 */
+        const cards = [];
+        const nameBtn = (m, i) => `<button type="button" data-open-member="${i}">${escapeHTML(m.name)}</button>`;
+        const listHTML = (items, unit) => `<ol class="ins-list">${items.map((it, k) => `<li><span class="n">${k + 1}</span>${nameBtn(it.m, it.i)}<span class="v">${nf(it.v)}${unit}</span></li>`).join("")}</ol>`;
+        const starters = M.map((m, i) => ({ m, i, v: Number(m.starts) || 0 })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 5);
+        if (starters.length) cards.push(`<div class="ins-card"><h3><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg>대화의 문을 여는 사람</h3><p class="ins-note">한 시간 넘게 조용하던 방에 먼저 말을 꺼낸 횟수 (발행 기간 전체)</p>${listHTML(starters, "회")}</div>`);
+        const mood = RM.moodMakers(st).filter((x) => x.score > 0).slice(0, 5).map((x) => ({ m: M[x.idx], i: x.idx, v: x.score }));
+        if (mood.length) cards.push(`<div class="ins-card"><h3><svg class="ic" aria-hidden="true"><use href="#i-party"/></svg>분위기 메이커</h3><p class="ins-note">사진·영상·이모티콘·리액션을 합한 값 (발행 기간 전체)</p>${listHTML(mood, "")}</div>`);
+        const types = {}; M.forEach((m) => { const t = RM.timeType(m); if (t) types[t.label] = (types[t.label] || 0) + 1; });
+        const tKeys = Object.keys(types);
+        if (tKeys.length) {
+          const mx = Math.max.apply(null, tKeys.map((k) => types[k]));
+          cards.push(`<div class="ins-card"><h3><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg>시간 유형 분포</h3><p class="ins-note">메시지 30건 이상 멤버의 가장 잦은 시간대</p><div class="ins-bar">${RM.TIME_BUCKETS.map((b) => types[b.label] ? `<div><span>${b.label}</span><i style="width:${Math.round((types[b.label] / mx) * 100)}%"></i><span>${nf(types[b.label])}명</span></div>` : "").join("")}</div></div>`);
+        }
+        let ph = 0, em = 0, lk = 0; M.forEach((m) => { const d = m.media || {}; ph += d.photo || 0; em += d.emoticon || 0; lk += d.link || 0; });
+        if (ph + em + lk > 0) cards.push(`<div class="ins-card"><h3><svg class="ic" aria-hidden="true"><use href="#i-frame"/></svg>사진과 링크</h3><p class="ins-note">발행 기간 전체</p><ol class="ins-list"><li><span class="n">·</span><b>사진</b><span class="v">${nf(ph)}장</span></li><li><span class="n">·</span><b>이모티콘</b><span class="v">${nf(em)}개</span></li><li><span class="n">·</span><b>링크</b><span class="v">${nf(lk)}개</span></li></ol></div>`);
+        $("insightGrid").innerHTML = cards.join("");
       }
 
       function kpiTile(lb, vl, unit, sub, cls) {
@@ -1271,6 +1380,7 @@
           kpiTile("가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건", "is-text"),
           kpiTile("가장 조용한 시간대", qtH.i + "시", "", nf(qtH.v) + "건", "is-text")
         ].join("");
+        renderInsight();
       }
 
       /* ── 멤버 순위 ── */

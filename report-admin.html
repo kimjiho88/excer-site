@@ -424,7 +424,9 @@
               <div class="field" style="margin-top:14px">
                 <label for="labelInput">통계 제목 (기간 이름)</label>
                 <input id="labelInput" class="input" type="text" placeholder="예: 2026년 6월" maxlength="40" />
+                <span class="field-hint">같은 제목으로 다시 발행하면 이전 내용을 교체합니다. 매달 최신 전체 파일을 <b>같은 제목</b>으로 발행하면 통계 하나에 계속 쌓입니다. <button type="button" class="text-btn is-quiet" id="reuseLabelBtn" hidden style="min-height:24px;padding:0 4px">지난 제목 그대로 쓰기</button></span>
               </div>
+              <p id="truncNote" class="hint" style="margin-top:8px;color:var(--danger)" hidden></p>
               <div class="field" style="margin-top:10px">
                 <label for="passInput">운영진 비밀번호 (발행하거나 삭제할 때만 필요)</label>
                 <input id="passInput" class="input" type="password" autocomplete="off" placeholder="발행할 때 입력" />
@@ -856,7 +858,10 @@
 
         // ③ 현재 방 멤버 자동 감지 — 퇴장/강퇴 메시지로 '나간 사람'을 추정해 미리 제외.
         //    (운영진이 멤버 표에서 최종 확인·조정. 파일 추가·재집계에도 운영진 수동 결정은 유지)
-        detectedLeft = new Set(ChatParser.membership(merged).leftNames);
+        //    나간 사람 이름은 원본("민지 강남 여 95 0312")인데 멤버 표는 앞 토막("민지")을 보여 준다.
+        //    둘 다 넣어 두어야 표의 '나감 감지' 태그와 실제 제외가 같은 사람을 가리킨다.
+        const headOf = (n) => { const h = String(n || "").trim().split(/[\s/·|,]+/)[0] || "?"; return h.length > 12 ? h.slice(0, 12) : h; };
+        detectedLeft = new Set(ChatParser.membership(merged).leftNames.flatMap((n) => [n, headOf(n)]));
         recomputeExcluded();
 
         $("rangeCard").hidden = false;
@@ -891,7 +896,10 @@
       }
 
       /* ── 발행 플로우 3단계: aggregate (v2) ── */
-      function recompute() {
+      /* 체크박스 하나에 1년치 파일 전체를 두 번 집계한다. 연타를 한 번으로 모은다 */
+      let recomputeTimer = null;
+      function recompute() { clearTimeout(recomputeTimer); recomputeTimer = setTimeout(recomputeNow, 120); }
+      function recomputeNow() {
         if (!merged) return;
         const { from, to } = currentRange();
 
@@ -1002,6 +1010,16 @@
         $("sumMember").textContent = st ? nf(st.members.length) + "명" : "-";
         $("sumAvg").textContent = st && daysN ? nf(total / daysN) + "건" : "-";
         $("sumJoin").textContent = st ? nf(st.newMembers.count) + "명" : "-";
+        /* 잘림은 소리 내서 알린다 — 조용히 잘린 발행본은 나중에 아무도 이유를 모른다 */
+        const tn = $("truncNote");
+        if (tn) {
+          const tr = st && st.meta && st.meta.truncated;
+          const msgs = [];
+          if (tr && tr.days) msgs.push("기간이 800일을 넘어 앞부분이 잘렸습니다. 기간을 나눠 발행해 주세요.");
+          if (tr && tr.members) msgs.push("멤버가 120명을 넘어 순위 밖 멤버는 멤버 목록에서 빠졌습니다(합계에는 포함).");
+          tn.hidden = !msgs.length;
+          tn.textContent = msgs.join(" ");
+        }
       }
 
       function updateActions() {
@@ -1126,6 +1144,8 @@
           const t = new Date(r.updated_at || 0).getTime();
           if (t > newest) { newest = t; label = r.period_label || ""; }
         });
+        const rb = $("reuseLabelBtn");
+        if (rb) { rb.hidden = !label; rb.dataset.label = label || ""; }
         if (!newest) { el.hidden = true; return; }
         const kst = (ms) => {
           try { return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
@@ -1260,6 +1280,12 @@
         $("labelInput").addEventListener("input", () => {
           labelDirty = $("labelInput").value.trim().length > 0;
           if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+        });
+        $("reuseLabelBtn").addEventListener("click", () => {
+          $("labelInput").value = $("reuseLabelBtn").dataset.label || "";
+          labelDirty = true;
+          if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+          EXCER.toast("지난 제목을 그대로 씁니다. 발행하면 이전 통계가 이 내용으로 교체됩니다.");
         });
 
         $("previewBtn").addEventListener("click", doPreview);

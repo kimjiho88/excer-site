@@ -439,6 +439,12 @@
     opts = opts || {};
     var exclude = Object.create(null);
     (opts.exclude || []).forEach(function (n) { exclude[String(n).trim()] = 1; });
+    /* 제외 이름은 원본("민지 강남 여 95 0312")으로도, 화면에 보이는 앞 토막("민지")으로도 올 수 있다.
+       발행 화면의 멤버 표는 앞 토막을 보여 주므로 둘 다 받아야 체크 해제가 실제로 먹는다 */
+    function headOf(name) {
+      var h = String(name == null ? "" : name).trim().split(/[\s/·|,]+/)[0] || "?";
+      return h.length > 12 ? h.slice(0, 12) : h;
+    }
 
     var inRange = function (d) {
       if (opts.from && d < opts.from) return false;
@@ -448,11 +454,12 @@
 
     var msgs = [];       // 일반 메시지(집계 대상)
     var joinEvents = []; // 범위 내 입장 이벤트 (이름은 welcome 판정에만 쓰고 미출력)
+    var leaveCount = 0;  // 범위 내 퇴장·강퇴 수 (개수만 — 누가 나갔는지는 싣지 않는다)
     (allMessages || []).forEach(function (m) {
       if (!m || !m.date || !inRange(m.date)) return;
       if (m.kind === "join") { joinEvents.push(m); return; }
-      if (m.kind === "leave") return; // 공개 통계 미포함(운영 민감 정보)
-      if (exclude[m.name]) return;
+      if (m.kind === "leave") { leaveCount += 1; return; } // 공개 통계 미포함(운영 민감 정보)
+      if (exclude[m.name] || exclude[headOf(m.name)]) return;
       msgs.push(m);
     });
 
@@ -482,7 +489,8 @@
     var to = opts.to || msgs[msgs.length - 1].date;
     var span = dayDiff(from, to) + 1;
     if (span < 1) span = 1;
-    if (span > 400) span = 400; // 방어: 비정상 범위
+    var truncatedDays = span > 800;
+    if (truncatedDays) span = 800; // 방어: 비정상 범위. 잘리면 meta.truncated.days 로 알린다(조용히 자르지 않는다)
 
     // ── 방 단위 일별 시계열 (빈 날도 0 으로 채움 — 기간 필터의 근간) ──
     var days = [], dayIdx = Object.create(null), cursor = from;
@@ -510,7 +518,8 @@
           media: { photo: 0, video: 0, emoticon: 0, link: 0 },
           textLen: 0, textCount: 0, dates: Object.create(null),
           kw: { "나들이": 0, "맛집": 0, "벙": 0, "정보": 0 },
-          firstDate: m.date, lastDate: m.date
+          firstDate: m.date, lastDate: m.date,
+          starts: 0, gaps: []   // 대화 시작 횟수(60분 넘게 조용하던 뒤 첫 말), 타인 말에 답한 간격(분)
         };
       }
       return st;
@@ -525,6 +534,9 @@
 
       var st = statOf(m);
       st.count += 1;
+      var gapAny = prev ? epochMin(m) - epochMin(prev) : -1;
+      if (!prev || gapAny >= 60) st.starts += 1;                                   // 대화의 문을 연 사람
+      if (prev && prev.name !== m.name && gapAny >= 0 && gapAny <= 60) st.gaps.push(gapAny); // 60분 안의 답
       if (di != null) st.daily[di] += 1;
       st.hours[m.hour] += 1;
       st.weekdays[m.weekday] += 1;
@@ -586,6 +598,9 @@
         welcome: st.welcome,
         media: st.media,
         avgLen: st.textCount ? Math.round((st.textLen / st.textCount) * 10) / 10 : 0,
+        textCount: st.textCount,          // avgLen 을 다시 계산하거나 발행본끼리 합칠 때 필요
+        starts: st.starts,
+        replyMed: medianMin(st.gaps),     // 타인 말에 답하기까지 걸린 시간의 중앙값(분). 답이 없으면 0
         streak: longestStreak(st.dates),
         activeDays: Object.keys(st.dates).length,
         kw: st.kw,
@@ -635,7 +650,8 @@
       ws = addDays(we, 1);
     }
 
-    var members = memberList.slice(0, 60);
+    var truncatedMembers = memberList.length > 120;
+    var members = memberList.slice(0, 120);
 
     // ── 표시 이름은 언제나 앞 토막까지만 ──
     //    오픈채팅 닉네임 양식이 "닉네임 지역 성별 출생년도" 라서, 그대로 실으면
@@ -681,13 +697,22 @@
       keywords: keywords,
       weeklyKeywords: weeklyKeywords,
       emojiStats: emojiStats,
-      newMembers: { count: joinsInRange, avgFirstWeekMsgs: avgFirstWeekMsgs },
+      newMembers: { count: joinsInRange, avgFirstWeekMsgs: avgFirstWeekMsgs, leaves: leaveCount },
       meta: {
         format: opts.format || "unknown",
         files: opts.files || 1,
-        totalMessages: totalCount
+        totalMessages: totalCount,
+        truncated: { days: truncatedDays, members: truncatedMembers }
       }
     };
+  }
+
+  // 분 단위 간격 배열의 중앙값(정수). 비어 있으면 0
+  function medianMin(arr) {
+    if (!arr || !arr.length) return 0;
+    var s = arr.slice().sort(function (a, b) { return a - b; });
+    var mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
   }
 
   // "6/23~6/29" 형태의 주 라벨
