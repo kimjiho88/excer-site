@@ -45,7 +45,7 @@
 | | visit_date, per_person | 실제 방문일, 1인 금액(선택) |
 | | author, created_at | 작성자, 작성일 |
 
-신규 칸은 `sql/2026-09-24-content-format.sql`로 추가합니다. 서버가 아직 이전 형식이면 화면은 한줄평 한 칸만 받고, 그 사실을 폼에 표시합니다(`site_schema_v` 조회로 판단).
+신규 칸은 `sql/2026-09-24-content-format-1-notes.sql`(한줄평 칸·함수) → `-2-meta.sql`(소식 정리기) → `-3-posts.sql`(글 함수·형식 창) 세 쪽으로 추가합니다. 서버가 아직 이전 형식이면 화면은 한줄평 한 칸만 받고, 그 사실을 폼에 표시합니다(`site_schema_v` 조회로 판단).
 
 좌표 칸과 위치 저장 함수 `place_set_location` 은 `sql/2026-09-25-places-location.sql` 로 추가합니다(`site_schema_v` 에 `places_location = 1`). 서버가 이 값을 주지 않거나 `assets/site-core.js` 의 `KAKAO.jsKey` 가 비어 있으면 지도·장소 검색·위치 잡기는 숨고, 목록은 그대로 동작합니다.
 
