@@ -4,18 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#285244" />
-  <title>동네친구들 벙비 정산기</title>
-  <meta name="description" content="벙 끝나고 1분이면 정산 끝. 멤버와 차수, 결제자만 넣으면 1원 단위까지 나눠서 카톡 메시지와 정산 이미지, 입금 체크 링크를 만들어요." />
+  <title>모임 정산 · 동네친구들</title>
+  <meta name="description" content="동네친구들 모임 정산입니다. 멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지, 입금 확인 링크를 만듭니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 벙비 정산기" />
-  <meta property="og:description" content="벙 끝나고 1분이면 정산 끝. 카톡에 붙일 메시지랑 입금 체크 링크까지 한 번에." />
+  <meta property="og:title" content="모임 정산 · 동네친구들" />
+  <meta property="og:description" content="멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지를 만듭니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
@@ -33,8 +33,6 @@
     /* ============================================================
        정산기 v2 페이지 전용 스타일
        ============================================================ */
-    .hero-band.is-compact .hero-sub { max-width: 560px; }
-    .hero-meta .stat-pill strong { letter-spacing: -0.03em; }
 
     /* ── 레이아웃: 좌 입력 / 우 결과(sticky) ── */
     .calc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 416px; gap: 18px; align-items: start; }
@@ -57,6 +55,7 @@
     /* ── 접어 둔 선택 항목 ──
        입력 칸이 여섯 덩이나 보이면 어디부터 채워야 할지 알기 어렵다.
        꼭 필요한 셋만 펼쳐 두고, 나머지는 필요할 때만 열도록 접는다. */
+    .sample-tag { margin: 0 0 10px; padding: 8px 12px; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
     .fold-label {
       display: flex; align-items: center; gap: 10px; margin: 10px 2px 0;
       color: var(--gray); font-size: var(--fs-micro); font-weight: 600;
@@ -95,21 +94,20 @@
 
     /* ── 폼 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field { display: grid; gap: 7px; }
     .field.is-wide { grid-column: span 2; }
-    .field label { color: var(--ink-2); font-size: 13px; font-weight: 600; }
+    .field-hint { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; font-weight: 500; }
 
     .input, .textarea, .select {
       width: 100%; border: 1px solid var(--line); outline: none; background: #fff; color: var(--ink);
       transition: border 0.18s var(--ease), box-shadow 0.18s var(--ease);
     }
-    .input, .select { min-height: 46px; padding: 0 14px; border-radius: 13px; font-weight: 700; }
-    .textarea { min-height: 96px; resize: vertical; padding: 13px 14px; border-radius: 15px; line-height: 1.55; font-weight: 600; }
+    .input, .select { min-height: 44px; padding: 0 12px; }
+    .textarea { min-height: 96px; }
     .input:hover, .textarea:hover, .select:hover { border-color: var(--line-strong); }
     .input:focus, .textarea:focus, .select:focus { border-color: rgba(40, 82, 68, 0.45); }
     .select {
       appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235F0080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235B655C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center;
     }
 
@@ -237,7 +235,7 @@
     .receipt-thumb { position: relative; width: 76px; height: 76px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-strong); background: var(--offwhite); }
     .receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .receipt-thumb-del {
-      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%;
+      position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%;
       display: grid; place-items: center; background: rgba(36, 40, 36, 0.74); color: #fff; font-size: 12px; font-weight: 700;
       cursor: pointer; line-height: 1;
     }
@@ -271,7 +269,7 @@
     }
     .summary-card::before { content: ""; display: block; width: 18px; height: 3px; border-radius: 2px; background: var(--grad-brand); margin-bottom: 10px; }
     .summary-card span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
-    .summary-card strong { display: block; color: var(--deep-1); font-size: 17px; font-weight: 700; letter-spacing: -0.045em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .summary-card strong { display: block; color: var(--deep-1); font-size: 17px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
     /* ── 입금 현황 배지 카드 ── */
     .settle-status {
@@ -286,7 +284,7 @@
     .ss-acts .mini-btn { min-height: 40px; padding: 0 12px; font-size: 12px; }
     .ss-pending { color: var(--ink-2); font-size: 13px; font-weight: 700; line-height: 1.55; }
     .ss-pending b { color: var(--pink); }
-    .ss-note { color: var(--gray-2); font-size: 11px; font-weight: 700; }
+    .ss-note { color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; }
 
     /* ── 영수증(캡처 대상) — ⚠ 캡처 안전 범위: 불투명 배경만, blur·반투명 금지 ── */
     .receipt-shell { overflow: hidden; border-radius: var(--r-lg); padding: 0; }
@@ -305,7 +303,7 @@
     .receipt-head p { margin: 8px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.5; font-weight: 600; }
     .receipt-total { text-align: right; white-space: nowrap; }
     .receipt-total span { display: block; margin-bottom: 5px; color: var(--ink-2); font-size: 12px; font-weight: 600; }
-    .receipt-total strong { color: var(--brand); font-size: 24px; font-weight: 700; letter-spacing: -0.05em; }
+    .receipt-total strong { color: var(--brand); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 
     .receipt-summary-line {
       display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px;
@@ -336,12 +334,14 @@
       background: var(--brand-soft); border: 1px solid var(--line-strong); color: var(--brand); font-size: 13px; font-weight: 700;
     }
     .payer-group-head em { font-style: normal; color: var(--ink-2); font-size: 12px; font-weight: 600; }
+    .pay-name { white-space: nowrap; overflow-wrap: anywhere; }
+    .pay-copy { white-space: nowrap; }
     .pay-row {
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
       padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line);
     }
     .pay-row > span { color: var(--ink); font-weight: 600; }
-    .pay-row .adj-note { display: block; color: var(--gray-2); font-size: 11px; font-weight: 700; margin-top: 1px; }
+    .pay-row .adj-note { display: block; color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; margin-top: 1px; }
     .pay-right { display: flex; align-items: center; gap: 10px; }
     .pay-right strong { color: var(--brand); font-size: 17px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
     .pay-copy {
@@ -403,46 +403,17 @@
     .btn-share:hover { background: var(--lavender-2); }
     .link-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 
-    /* ── 3단계 가이드 레일 ── */
-    .step-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 0 0 18px; padding: 0; list-style: none; }
-    .step-rail-item a {
-      display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: var(--r-md);
-      background: rgba(255, 255, 255, 0.92); border: 1px solid var(--line);
-      transition: transform 0.16s var(--ease), border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
-    }
-    .step-rail-item a:hover { transform: none; border-color: var(--line-strong); }
-    .step-rail-item b {
-      display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; flex: none;
-      background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 700;
-    }
-    .step-rail-item span { color: var(--ink-2); font-size: 13px; font-weight: 700; letter-spacing: -0.02em; }
-    .step-rail-item.is-goal b { background: var(--offwhite); color: var(--primary-700); }
-    @media (max-width: 640px) {
-      .step-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-      .step-rail-item a { flex-direction: column; align-items: flex-start; gap: 7px; padding: 11px 12px; }
-      .step-rail-item span { font-size: 12px; }
-    }
-
     /* ── 실시간 입력 안내 ── */
     .calc-hint {
-      display: flex; align-items: flex-start; gap: 9px;
+      display: block;
       padding: 13px 15px; border-radius: var(--r-md);
       font-size: 13px; font-weight: 700; line-height: 1.55;
     }
     .calc-hint[hidden] { display: none; }
-    .calc-hint::before { flex: none; font-size: 15px; line-height: 1.35; }
     .calc-hint b { font-weight: 700; }
-    .calc-hint.is-info {
-      background: var(--brand-soft);
-      color: var(--ink-2);
-    }
-    .calc-hint.is-info::before { content: "✏️"; }
-    .calc-hint.is-info b { color: var(--primary-700); }
-    .calc-hint.is-done {
-      background: var(--brand-soft);
-      color: var(--brand);
-    }
-    .calc-hint.is-done::before { content: "✅"; }
+    .calc-hint.is-info { background: var(--surface-2); color: var(--ink-2); border-left: 3px solid var(--line-strong); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+    .calc-hint.is-info b { color: var(--ink); }
+    .calc-hint.is-done { background: var(--brand-soft); color: var(--ink); border-left: 3px solid var(--brand); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
     .calc-hint.is-done b { color: var(--brand); }
 
     /* ── 모바일 하단 요약 바 ── */
@@ -458,7 +429,7 @@
         bottom: calc(78px + env(safe-area-inset-bottom));
         display: flex; align-items: center; justify-content: space-between; gap: 10px;
         min-height: 54px; padding: 8px 8px 8px 16px; border-radius: 18px;
-        background: rgba(24, 2, 40, 0.92); color: #fff;
+        background: rgba(36, 40, 36, 0.94); color: #fff;
         border: 1px solid rgba(255, 255, 255, 0.12);
         transition: transform 0.3s var(--ease), opacity 0.3s var(--ease);
       }
@@ -486,11 +457,6 @@
       .receipt-total { text-align: left; }
       .save-status { width: 100%; margin-left: 0; justify-content: flex-end; }
     }
-
-    /* 맺음 밴드부터 푸터까지 어두운 꼬리 하나로 잇는다.
-       그 사이에 흰 띠가 한 줄 끼면 실수처럼 보인다. */
-    .page-main { padding-bottom: 0; }
-    .site-footer { margin-top: 0; }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
@@ -507,86 +473,68 @@
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
-        <a class="topnav-tab" href="guide.html">필독</a>
-        <a class="topnav-tab" href="report.html">대시보드</a>
-        <a class="topnav-tab is-active" href="calculator.html" aria-current="page">정산</a>
+        <a class="topnav-tab" href="guide.html">이용 안내</a>
+        <a class="topnav-tab" href="report.html">활동 통계</a>
+        <a class="topnav-tab is-active" href="calculator.html" aria-current="page">모임 정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
     </div>
   </header>
 
-  <section class="hero-band is-compact" aria-labelledby="heroTitle">
-    <i class="glow-orb" style="--orb-size:420px; --orb-color:rgba(234, 240, 233,0.30); right:-150px; top:-170px" aria-hidden="true"></i>
-    <div class="container">
-      <div class="hero-copy">
-          <h1 class="hero-title" id="heroTitle">벙 끝나고 1분,<br /><span class="grad-text-hero">정산은 여기서 끝내요</span></h1>
-        <p class="hero-sub">
-          멤버와 차수, 결제한 사람만 넣으면 <strong>1원 단위까지</strong> 알아서 나눠요.
-          카톡에 붙일 메시지, 정산 이미지, 입금 체크 링크까지 한 번에 만들어요.
-        </p>
-        <!-- pill 세 개를 나란히 두면 그것도 결국 작은 카드 격자다.
-             구분선만 두고 숫자를 세운다. id 는 그대로 둬서 JS 는 건드리지 않는다. -->
-        <div class="hero-signal">
-          <span class="hs"><span class="hs-k">이번 정산</span><span class="hs-v"><span id="heroTotal">0원</span></span></span>
-          <span class="hs"><span class="hs-k">참여</span><span class="hs-v"><span id="heroCount">0명</span></span></span>
-          <span class="hs"><span class="hs-k" id="heroPerLabel">1인</span><span class="hs-v"><span id="heroPer">0원</span></span></span>
-        </div>
+  <header class="page-head">
+    <div class="container page-head-inner">
+      <div>
+        <h1 id="pageTitle">모임 정산</h1>
+        <p class="page-lead">멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지를 만듭니다.</p>
+      </div>
+      <div class="hero-signal" style="margin-top:0">
+        <span class="hs"><span class="hs-k">합계</span><span class="hs-v"><span id="heroTotal">0원</span></span></span>
+        <span class="hs"><span class="hs-k">참여</span><span class="hs-v"><span id="heroCount">0명</span></span></span>
+        <span class="hs"><span class="hs-k" id="heroPerLabel">1인</span><span class="hs-v"><span id="heroPer">0원</span></span></span>
       </div>
     </div>
-  </section>
+  </header>
 
   <main id="main" class="page-main">
     <section class="section">
       <div class="container">
-        <div class="section-head reveal">
-          <span class="eyebrow">정산 만들기</span>
-          <h2>이번 벙, 세 단계면 정산 끝</h2>
-          <p>멤버를 넣고, 차수별 금액과 결제한 사람을 고르면 결과가 바로 정리돼요.</p>
-        </div>
-
-        <ol class="step-rail reveal" aria-label="정산 단계 바로가기">
-          <li class="step-rail-item"><a href="#stepTitle1"><b>1</b><span>모임과 멤버</span></a></li>
-          <li class="step-rail-item"><a href="#stepTitle2"><b>2</b><span>금액과 결제자</span></a></li>
-          <li class="step-rail-item"><a href="#stepTitle3"><b>3</b><span>입금 정보</span></a></li>
-          <li class="step-rail-item is-goal"><a href="#resultArea"><b aria-hidden="true">↓</b><span>결과 보기</span></a></li>
-        </ol>
 
         <div class="calc-grid">
           <div class="calc-inputs">
-            <div class="helper-row reveal">
-              <button id="loadSampleBtn" class="btn btn-secondary is-sm" type="button">예시로 채워보기</button>
+            <div class="helper-row">
+              <button id="loadSampleBtn" class="btn btn-secondary is-sm" type="button">예시 데이터 입력</button>
               <button id="resetBtn" class="btn btn-danger is-sm" type="button">전체 지우기</button>
-              <span class="save-status"><i></i>적은 내용은 이 브라우저에 자동 저장돼요</span>
+              <span class="save-status"><i></i>입력 내용은 이 브라우저에 자동 저장됩니다.</span>
             </div>
 
             <!-- 1. 모임 정보와 멤버 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle1">
+            <section class="card is-lg" aria-labelledby="stepTitle1">
               <div class="card-head"><h2 class="card-title" id="stepTitle1"><span class="card-step">1</span>모임 정보와 멤버</h2></div>
               <div class="field-grid">
                 <div class="field is-wide">
                   <label for="eventTitle">모임명</label>
-                  <input id="eventTitle" class="input" type="text" placeholder="예: 강남 저녁 벙" />
+                  <input id="eventTitle" class="input" type="text" placeholder="예: 강남 저녁 모임" />
                 </div>
                 <div class="field">
                   <label for="eventDate">날짜</label>
                   <input id="eventDate" class="input" type="date" />
                 </div>
                 <div class="field">
-                  <label for="hostName">벙주</label>
+                  <label for="hostName">모임장(벙주)</label>
                   <input id="hostName" class="input" type="text" placeholder="예: 엑서" />
                 </div>
               </div>
               <div class="field card-sub">
                 <label for="membersText">참여 멤버</label>
-                <span class="field-hint">줄바꿈이나 쉼표, @ 로 구분해요. 벙주는 자동으로 들어가요.</span>
+                <span class="field-hint">줄바꿈, 쉼표, @로 구분합니다. 모임장은 자동으로 포함됩니다.</span>
                 <textarea id="membersText" class="textarea" placeholder="예:&#10;민지, 준호, 서아, 도윤&#10;또는 @민지 @준호 @서아 @도윤"></textarea>
                 <div id="memberChips" class="pchips"></div>
               </div>
               <div class="card-sub">
                 <div class="fav-head">
-                  <label id="favLabel">자주 벙하는 멤버</label>
+                  <label id="favLabel">저장한 멤버 구성</label>
                   <button id="saveGroupBtn" class="mini-btn" type="button">＋ 현재 구성 저장</button>
                 </div>
                 <div id="groupChips" class="group-chips" aria-labelledby="favLabel"></div>
@@ -594,20 +542,20 @@
             </section>
 
             <!-- 2. 차수별 비용 + 결제자 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle2">
+            <section class="card is-lg" aria-labelledby="stepTitle2">
               <div class="card-head">
                 <h2 class="card-title" id="stepTitle2"><span class="card-step">2</span>차수별 비용과 결제자</h2>
                 <button id="addRoundBtn" class="btn btn-secondary is-sm" type="button">＋ 차수 추가</button>
               </div>
               <div id="roundsHost" class="round-list"></div>
               <div class="target-help">
-                차수마다 참여 멤버가 칩으로 나와요. 그 차수에 <b>빠진 사람만 눌러서 끄면</b> 돼요.
-                <b>결제</b>에서 누가 카드를 긁었는지 고르면 받을 금액이 결제자별로 정리돼요.
+                차수마다 참여 멤버 목록이 표시됩니다. 그 차수에 참여하지 않은 사람만 눌러서 제외합니다.
+                결제자를 선택하면 받을 금액이 결제자별로 정리됩니다.
               </div>
             </section>
 
             <!-- 3. 입금 정보 -->
-            <section class="card is-lg reveal" aria-labelledby="stepTitle3">
+            <section class="card is-lg" aria-labelledby="stepTitle3">
               <div class="card-head"><h2 class="card-title" id="stepTitle3"><span class="card-step">3</span>입금 정보</h2></div>
               <div class="field-grid">
                 <div class="field"><label for="payBank">은행</label><input id="payBank" class="input" type="text" placeholder="예: 카카오뱅크" /></div>
@@ -616,32 +564,32 @@
               </div>
               <label class="notice-option" style="margin-top:12px">
                 <input id="payKakao" type="checkbox" />
-                <span>카카오페이 송금도 가능해요</span>
+                <span>카카오페이 송금 가능</span>
               </label>
-              <p class="card-note">여기까지만 채워도 정산 결과가 다 나와요. 아래는 필요할 때만 열면 돼요.</p>
+              <p class="card-note">여기까지 입력하면 정산 결과가 만들어집니다. 아래 항목은 필요할 때만 엽니다.</p>
             </section>
 
-            <p class="fold-label reveal">필요할 때만 열어 봐요</p>
+            <p class="fold-label">선택 항목</p>
 
             <!-- 개인별 추가와 차감 -->
-            <details class="card fold-card reveal" id="foldAdj">
+            <details class="card fold-card" id="foldAdj">
               <summary class="fold-head">
                 <h2 class="card-title">개인별 추가와 차감 <span class="badge-soft">선택</span></h2>
-                <span class="fold-note" id="adjFoldNote">일찍 간 사람, 더 먹은 사람</span>
+                <span class="fold-note" id="adjFoldNote">개인별 금액 조정</span>
                 <span class="fold-mark" aria-hidden="true"></span>
               </summary>
               <div class="fold-body">
                 <div class="card-head">
-                  <p class="card-note" style="margin:0">차수를 고르면 <b>그 차수에 있던 사람끼리만</b> 나눠 반영해요. <b>전체 차수</b>로 두면 택시비처럼 참여자 전원이 나눠요.</p>
+                  <p class="card-note" style="margin:0">차수를 선택하면 그 차수 참여자끼리만 나눠 반영합니다. 전체 차수로 두면 참여자 전원이 나눕니다.</p>
                   <button id="addAdjBtn" class="btn btn-secondary is-sm" type="button">＋ 항목 추가</button>
                 </div>
                 <div id="adjList" class="adj-list"></div>
-                <p class="card-note">예: <b>서아 −4,000원 (일찍 감)</b>, <b>준호 +3,000원 (더 먹음)</b>처럼 개인별로 더하거나 뺀 금액은, 벙주가 떠안지 않고 <b>같은 차수에 남은 사람들이 똑같이 나눠</b> 반영돼요.</p>
+                <p class="card-note">예: 서아 −4,000원 (먼저 귀가), 준호 +3,000원 (추가 주문). 더하거나 뺀 금액은 당사자를 뺀 같은 차수 참여자가 똑같이 나눕니다. 모임장도 그 차수에 참여했다면 함께 나눕니다.</p>
               </div>
             </details>
 
             <!-- 정산 옵션 -->
-            <details class="card fold-card reveal" id="foldOpts">
+            <details class="card fold-card" id="foldOpts">
               <summary class="fold-head">
                 <h2 class="card-title">정산 옵션</h2>
                 <span class="fold-note" id="optFoldNote">1원 그대로, 반올림</span>
@@ -664,9 +612,9 @@
                   <button class="chip" type="button" data-mode="floor">절사(내림)</button>
                 </div>
               </div>
-              <p class="card-note" style="margin:0 0 14px">단위를 맞추며 생기는 자투리는 <b>벙주(결제자) 부담</b>으로 처리하고, 결과에 합계 검증 줄로 표시해요.</p>
+              <p class="card-note" style="margin:0 0 14px">단위를 맞추며 생기는 차액은 결제자가 부담하며, 결과에 합계 검증 줄로 표시합니다.</p>
               <div class="opt-row">
-                <label id="msgLabel">카톡 메시지 형식</label>
+                <label id="msgLabel">메시지 형식</label>
                 <div class="tab-row msg-toggle" id="msgToggle" role="group" aria-labelledby="msgLabel">
                   <button type="button" data-msg="summary">요약형</button>
                   <button type="button" data-msg="detail">상세형</button>
@@ -680,15 +628,15 @@
             </details>
 
             <!-- 영수증 -->
-            <details class="card fold-card reveal" id="foldReceipt">
+            <details class="card fold-card" id="foldReceipt">
               <summary class="fold-head">
                 <h2 class="card-title">영수증 <span class="badge-soft">선택</span></h2>
-                <span class="fold-note" id="receiptFoldNote">사진 첨부 안 함</span>
+                <span class="fold-note" id="receiptFoldNote">첨부 없음</span>
                 <span class="fold-mark" aria-hidden="true"></span>
               </summary>
               <div class="fold-body">
               <div class="card-head">
-                <p class="card-note" style="margin:0">찍어 둔 영수증을 붙이면 정산 결과에 같이 담겨요.</p>
+                <p class="card-note" style="margin:0">영수증 사진을 첨부하면 정산 이미지와 공유 링크에 함께 담깁니다.</p>
                 <label class="mini-btn receipt-add-label" for="receiptInput">＋ 사진 추가</label>
               </div>
               <!-- hidden(=display:none) 이 아니라 sr-only 로 감춘다.
@@ -699,13 +647,12 @@
                    (발행 화면의 파일 입력이 이미 이 방식을 쓰고 있다). -->
               <input id="receiptInput" type="file" accept="image/*" multiple class="sr-only" />
               <div id="receiptThumbs" class="receipt-thumbs"></div>
-              <p class="card-note">첨부한 영수증은 <b>정산 이미지</b> 맨 아래와 <b>공유 링크</b>(최대 2장)에 함께 담겨요.
-                이 페이지를 닫으면 <b>사라져요</b>. 이미지 저장과 링크 만들기까지 한 번에 해주세요.</p>
+              <p class="card-note">영수증은 정산 이미지 맨 아래와 공유 링크(최대 2장)에 담깁니다. 페이지를 닫으면 첨부가 사라지므로 이미지 저장과 링크 생성까지 한 번에 진행해 주세요.</p>
               </div>
             </details>
 
             <!-- 이전 정산 기록 -->
-            <details class="card fold-card reveal" id="historyCard">
+            <details class="card fold-card" id="historyCard">
               <summary class="fold-head">
                 <h2 class="card-title">이전 정산</h2>
                 <span class="fold-note" id="historyFoldNote">기록 없음</span>
@@ -713,8 +660,8 @@
               </summary>
               <div class="fold-body">
                 <div class="card-head">
-                  <p class="card-note" style="margin:0">공유 링크를 만들면 자동으로 기록돼요. 최대 30건까지 이 브라우저에 보관해요.</p>
-                  <button id="saveHistoryBtn" class="mini-btn" type="button">＋ 지금 정산 기록하기</button>
+                  <p class="card-note" style="margin:0">공유 링크를 만들면 자동으로 기록됩니다. 이 브라우저에 최대 30건을 보관합니다.</p>
+                  <button id="saveHistoryBtn" class="mini-btn" type="button">＋ 현재 정산 기록</button>
                 </div>
                 <div id="historyList" class="history-list"></div>
               </div>
@@ -723,6 +670,7 @@
 
           <!-- 우측: 결과 -->
           <aside id="resultArea" class="calc-results" aria-label="정산 결과">
+            <p id="sampleTag" class="sample-tag" hidden>예시 데이터입니다. 실제 정산에는 내용을 지우고 입력해 주세요.</p>
             <div id="calcHint" class="calc-hint" role="status" hidden></div>
             <div id="summaryGrid" class="summary-grid"></div>
 
@@ -730,13 +678,13 @@
               <div class="ss-top">
                 <span class="ss-title"><svg class="ic is-sm" aria-hidden="true"><use href="#i-coins"/></svg> 입금 현황 <b class="ss-count" id="ssCount">0/0</b></span>
                 <span class="ss-acts">
-                  <a id="ssLink" class="mini-btn" href="#" target="_blank" rel="noopener">현황 페이지</a>
+                  <a id="ssLink" class="mini-btn" href="#" target="_blank" rel="noopener">입금 확인 페이지</a>
                   <button id="ssRefresh" class="mini-btn" type="button">새로고침</button>
                 </span>
               </div>
               <div class="progress"><span id="ssBar" style="width:0%"></span></div>
               <p class="ss-pending" id="ssPending"></p>
-              <span class="ss-note">공유 링크를 만든 시점의 명단 기준이에요. 페이지를 열 때 한 번 확인해요.</span>
+              <span class="ss-note">공유 링크를 만든 시점의 명단 기준입니다. 페이지를 열 때 한 번 확인합니다.</span>
             </div>
 
             <section class="card receipt-shell" aria-label="공유용 정산 결과">
@@ -746,34 +694,20 @@
             <div class="kakao-tip">
               <label class="notice-option mention-option">
                 <input id="mentionToggle" type="checkbox" />
-                <span><b>이름 앞에 @ 붙이기</b><br />오픈채팅방에 붙여넣으면 멘션으로 잡혀요</span>
+                <span><b>이름 앞에 @ 붙이기</b><br />메시지에서 이름을 찾기 쉽게 표시합니다.</span>
               </label>
-              <p class="mention-note">정산기에 적은 이름이 <b>오픈채팅 닉네임과 똑같아야</b> 태그돼요.
-                닉네임이 다르면 멤버 칸에 <b>닉네임 그대로</b> 적어 주세요. 일반 채팅방에서는 글자로만 보여요.</p>
+              <p class="mention-note">붙여넣기만으로 멤버가 자동 태그되지는 않습니다. 태그가 필요하면 채팅에서 @를 입력해 직접 선택해 주세요.</p>
             </div>
 
             <div class="result-actions">
-              <button id="copyTextBtn" class="btn btn-primary" type="button">전체 복사</button>
+              <button id="copyTextBtn" class="btn btn-primary" type="button">메시지 복사</button>
               <button id="saveImageBtn" class="btn btn-secondary" type="button">이미지 저장</button>
-              <button id="shareLinkBtn" class="btn btn-share" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-link"/></svg> 멤버가 입금 체크하는 링크 만들기</button>
+              <button id="shareLinkBtn" class="btn btn-share" type="button"><svg class="ic is-sm" aria-hidden="true"><use href="#i-link"/></svg> 입금 확인 링크 만들기</button>
             </div>
             <div class="link-row">
-              <button id="copyLinkBtn" class="mini-btn" type="button">정산기 주소 복사</button>
+              <button id="copyLinkBtn" class="mini-btn" type="button">이 페이지 주소 복사</button>
             </div>
           </aside>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 맺음 밴드 ── -->
-    <section class="band cta-band" aria-labelledby="ctaTitle">
-      <div class="container">
-        <span class="cta-rule" aria-hidden="true"></span>
-        <h2 id="ctaTitle">정산이 끝났으면<br />이제 다음 벙이에요</h2>
-        <p>만든 링크를 카톡방에 붙이면 각자 입금하고 체크까지 해요. 다음 벙은 소식에서 찾아봐요.</p>
-        <div class="hero-actions">
-          <a class="btn btn-hero is-lg" href="news.html">벙 소식 보기</a>
-          <a class="btn btn-glass is-lg" href="guide.html">정산 규칙 다시 보기</a>
         </div>
       </div>
     </section>
@@ -784,39 +718,33 @@
       <div class="footer-grid">
         <div>
           <span class="footer-logo">동네친구들</span>
-          <p class="footer-tagline">
-            오픈채팅에서 만난 동네 사람들이에요.<br />
-            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
-          </p>
-          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <p class="footer-tagline">오픈채팅으로 만나는 동네 커뮤니티입니다.</p>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
-          <h4>바로가기</h4>
           <ul class="footer-links">
             <li><a href="index.html">홈</a></li>
-            <li><a href="guide.html">필독</a></li>
-            <li><a href="report.html">운영 대시보드</a></li>
-            <li><a href="calculator.html">벙비 정산기</a></li>
+            <li><a href="guide.html">이용 안내</a></li>
+            <li><a href="report.html">활동 통계</a></li>
+            <li><a href="calculator.html">모임 정산</a></li>
             <li><a href="news.html">소식</a></li>
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
           </ul>
         </nav>
       </div>
       <div class="footer-bottom">
         <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
-        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
+        <small>© 2026 동네친구들</small>
       </div>
     </div>
   </footer>
 
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
-    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
-    <a class="tab-item is-active" href="calculator.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>이용 안내</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>활동 통계</a>
+    <a class="tab-item is-active" href="calculator.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>모임 정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
     <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
@@ -994,7 +922,7 @@
           var exArr = (r && Array.isArray(r.excluded)) ? r.excluded : [];
           var ex = new Set(exArr);
           var active = members.filter(function (n) { return !ex.has(n); });
-          if (!active.length) { warnings.push(label + ": 참여 멤버가 없어 계산에서 빠졌어요."); return; }
+          if (!active.length) { warnings.push(label + ": 참여 멤버가 없어 계산에서 제외했습니다."); return; }
           var payer = r && r.payer ? String(r.payer).trim() : "";
           if (!payer || members.indexOf(payer) < 0) {
             payer = (host && members.indexOf(host) >= 0) ? host : active[0];
@@ -1046,7 +974,7 @@
           var wantRound = a && a.round ? String(a.round) : "";
           if (!name || !amount) return;
           if (members.indexOf(name) < 0) {
-            warnings.push("추가와 차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았어요.");
+            warnings.push("추가와 차감: \"" + name + "\" 님은 멤버 목록에 없어 반영하지 않았습니다.");
             return;
           }
 
@@ -1060,9 +988,9 @@
               if (String(roundsOut[ri].id) === wantRound) { R = roundsOut[ri]; break; }
             }
             if (!R) {
-              warnings.push("추가와 차감: " + name + " 님 항목이 가리킨 차수가 지금은 계산에 없어요(금액이 비었거나 지워졌어요). 전체 참여자 기준으로 나눴어요.");
+              warnings.push("추가와 차감: " + name + " 님 항목의 차수가 계산에 없습니다(금액이 비었거나 삭제됨). 전체 참여자 기준으로 나눴습니다.");
             } else if (R.active.indexOf(name) < 0) {
-              warnings.push("추가와 차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았어요.");
+              warnings.push("추가와 차감: " + name + " 님은 " + R.label + "에 참여하지 않아 그 항목을 반영하지 않았습니다.");
               adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
                                  roundLabel: R.label, applied: false });
               return;
@@ -1072,12 +1000,12 @@
           }
 
           if (!target) {
-            warnings.push("추가와 차감을 반영할 결제자가 없어요. 차수 금액을 먼저 입력해주세요.");
+            warnings.push("추가와 차감을 반영할 결제자가 없습니다. 차수 금액을 먼저 입력해 주세요.");
             return;
           }
           var others = scope.filter(function (m) { return m !== name; });
           if (!others.length) {
-            warnings.push("추가와 차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했어요.");
+            warnings.push("추가와 차감: 배분할 다른 참여자가 없어 " + name + " 항목을 반영하지 못했습니다.");
             adjustments.push({ name: name, amount: amount, reason: reason, round: wantRound,
                                roundLabel: scopeLabel, applied: false });
             return;
@@ -1106,7 +1034,7 @@
         owed.forEach(function (pm, m) {
           pm.forEach(function (v, p) {
             if (v < 0) {
-              warnings.push(m + " 님은 차감이 부담액보다 커서 0원으로 정리했어요. 남은 " + fmtKR(-v) + "원은 " + p + " 님이 따로 챙겨주세요.");
+              warnings.push(m + " 님은 차감이 부담액보다 커서 0원으로 정리했습니다. 남은 " + fmtKR(-v) + "원은 " + p + " 님이 따로 처리해 주세요.");
               pm.set(p, 0);
             }
           });
@@ -1131,7 +1059,7 @@
             var rounded = roundToUnit(exact, unit, mode);
             exactSum += exact; roundedSum += rounded;
             if (rounded > 0) rows.push({ name: m, exact: exact, amount: rounded });
-            else warnings.push(m + " → " + p + ": " + fmtKR(exact) + "원이 " + unit + "원 단위 처리로 0원이 됐어요. (" + p + " 부담)");
+            else warnings.push(m + " → " + p + ": " + fmtKR(exact) + "원이 " + unit + "원 단위 처리로 0원이 되었습니다. (" + p + " 부담)");
           });
           return {
             name: p,
@@ -1176,7 +1104,7 @@
         owed.forEach(function (pm) {
           pm.forEach(function (v, p) { if (v > 0 && payerOrder.indexOf(p) < 0) orphaned += v; });
         });
-        if (orphaned > 0) warnings.push("정산에 배분되지 않은 금액이 " + fmtKR(orphaned) + "원 있어요. 결제자와 벙주 설정을 확인해 주세요.");
+        if (orphaned > 0) warnings.push("정산에 배분되지 않은 금액이 " + fmtKR(orphaned) + "원 있습니다. 결제자와 모임장 설정을 확인해 주세요.");
 
         /* 계산이 맞는지 보는 진짜 자리.
            화면에 보여 주는 "입금 합계 + 결제자 부담 = 총 벙비" 는 읽는 사람이
@@ -1194,8 +1122,8 @@
         });
         var balanced = exactBurdenSum === totalAmount;
         if (!balanced) {
-          warnings.push("계산이 맞지 않아요. 각자 몫을 더하면 " + fmtKR(exactBurdenSum) +
-                        "원인데 실제로 쓴 돈은 " + fmtKR(totalAmount) + "원이에요. 추가와 차감 항목을 확인해 주세요.");
+          warnings.push("합계가 맞지 않습니다. 각자 몫의 합은 " + fmtKR(exactBurdenSum) +
+                        "원, 실제 지출은 " + fmtKR(totalAmount) + "원입니다. 추가와 차감 항목을 확인해 주세요.");
         }
 
         var verify = {
@@ -1248,10 +1176,10 @@
       return res.status === 204 ? null : res.json();
     }
     const NOTICES = [
-      { id: "split", text: "금액은 차수별 참여 인원으로 나눠 계산했어요." },
-      { id: "host", text: "정산 기준은 벙주 재량으로 조정될 수 있어요." },
-      { id: "personal", text: "따로 개인적으로 산 항목은 정산에서 빼뒀어요." },
-      { id: "fast", text: "확인하고 가능한 한 빨리 입금 부탁드려요." }
+      { id: "split", text: "금액은 차수별 참여 인원으로 나눠 계산했습니다." },
+      { id: "host", text: "정산 기준은 모임장 판단으로 조정될 수 있습니다." },
+      { id: "personal", text: "개인적으로 구매한 항목은 정산에서 제외했습니다." },
+      { id: "fast", text: "확인 후 가능한 한 빨리 입금해 주세요." }
     ];
     const UNIT_LABEL = { 1: "1원", 10: "10원", 100: "100원" };
     const MODE_LABEL = { round: "반올림", ceil: "올림", floor: "절사" };
@@ -1267,7 +1195,8 @@
 
     function defaultState() {
       return {
-        eventTitle: "강남 저녁 벙",
+        sample: true,
+        eventTitle: "예시: 강남 저녁 모임",
         eventDate: today(),
         hostName: "엑서",
         membersText: "민지\n준호\n서아\n도윤",
@@ -1398,15 +1327,15 @@
       const { bank, account, holder, kakao } = state.pay;
       let s = [bank.trim(), account.trim()].filter(Boolean).join(" ");
       if (holder.trim()) s += s ? ` (${holder.trim()})` : holder.trim();
-      if (kakao) s += s ? ", 카카오페이도 돼요" : "카카오페이도 돼요";
+      if (kakao) s += s ? ", 카카오페이 가능" : "카카오페이 가능";
       return s.trim();
     }
     function checkedNotices() { return NOTICES.filter((n) => state.notices[n.id]); }
 
     function verifyText(c) {
-      let s = `입금 합계 ${formatWon(c.totalReceivable)} + 결제자 부담 ${formatWon(c.burden)} = 총 벙비 ${formatWon(c.totalAmount)}`;
-      if (c.residual > 0) s += `, 단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요`;
-      else if (c.residual < 0) s += `, 올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요`;
+      let s = `입금 합계 ${formatWon(c.totalReceivable)} + 결제자 부담 ${formatWon(c.burden)} = 총 비용 ${formatWon(c.totalAmount)}`;
+      if (c.residual > 0) s += `, 단위 차액 ${formatWon(c.residual)}은 결제자 부담`;
+      else if (c.residual < 0) s += `, 올림으로 결제자 부담 ${formatWon(-c.residual)} 감소`;
       return s;
     }
 
@@ -1432,7 +1361,7 @@
       $("memberChips").innerHTML = members.length
         ? members.map((n) => {
             const isHost = sameName(n, host);
-            return `<span class="pchip${isHost ? " is-host" : ""}">${escapeHTML(n)}${isHost ? " (벙주)" : ""}</span>`;
+            return `<span class="pchip${isHost ? " is-host" : ""}">${escapeHTML(n)}${isHost ? " (모임장)" : ""}</span>`;
           }).join("") + count
         : `<span class="pchip">멤버 없음</span>`;
     }
@@ -1440,9 +1369,9 @@
     function payerOptions(selected) {
       const members = memberPool();
       const host = cleanName(state.hostName);
-      let opts = `<option value=""${!selected ? " selected" : ""}>벙주${host ? ` (${escapeHTML(host)})` : " 자동"}</option>`;
+      let opts = `<option value=""${!selected ? " selected" : ""}>모임장${host ? ` (${escapeHTML(host)})` : " 자동"}</option>`;
       members.forEach((n) => {
-        opts += `<option value="${escapeHTML(n)}"${sameName(n, selected) ? " selected" : ""}>${escapeHTML(n)}${sameName(n, host) ? " (벙주)" : ""}</option>`;
+        opts += `<option value="${escapeHTML(n)}"${sameName(n, selected) ? " selected" : ""}>${escapeHTML(n)}${sameName(n, host) ? " (모임장)" : ""}</option>`;
       });
       if (selected && !members.includes(selected)) {
         opts += `<option value="${escapeHTML(selected)}" selected>${escapeHTML(selected)} (멤버 아님)</option>`;
@@ -1493,10 +1422,10 @@
               ? members.map((n) => {
                   const on = !ex.has(n);
                   const isHost = sameName(n, host);
-                  return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button"
-                    data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " (벙주)" : ""}</button>`;
+                  return `<button class="mchip ${on ? "is-on" : "is-off"}" type="button" aria-pressed="${on}"
+                    data-round-id="${escapeHTML(r.id)}" data-name="${escapeHTML(n)}">${escapeHTML(n)}${isHost ? " (모임장)" : ""}</button>`;
                 }).join("")
-              : `<span class="round-empty">참여 멤버를 먼저 입력해주세요</span>`}
+              : `<span class="round-empty">참여 멤버를 먼저 입력해 주세요.</span>`}
           </div>
         </div>`;
       }).join("");
@@ -1506,7 +1435,7 @@
       const members = memberPool();
       const list = $("adjList");
       if (!state.adjustments.length) {
-        list.innerHTML = `<p class="adj-empty">아직 없어요. <b>＋ 항목 추가</b>로 택시비나 쿠폰처럼 한 사람에게만 더하거나 빼는 금액을 넣어요.<br />특정 차수에만 해당하면 <b>차수</b>를 골라 주세요. 그 차수에 있던 사람끼리만 나눠 가져요.</p>`;
+        list.innerHTML = `<p class="adj-empty">등록된 항목이 없습니다. 항목 추가를 눌러 택시비나 쿠폰처럼 한 사람에게만 더하거나 빼는 금액을 입력합니다.<br />특정 차수에만 해당하면 <b>차수</b>를 골라 주세요. 그 차수에 참여한 사람끼리만 나눕니다.</p>`;
         return;
       }
       list.innerHTML = state.adjustments.map((a) => {
@@ -1542,7 +1471,7 @@
           <select class="select" data-field="adj-name" data-adj-id="${escapeHTML(a.id)}" aria-label="추가와 차감 멤버">${opts}</select>
           <select class="select adj-round" data-field="adj-round" data-adj-id="${escapeHTML(a.id)}" aria-label="적용할 차수">${rOpts}</select>
           <button class="adj-sign ${plus ? "is-plus" : "is-minus"}" type="button" data-action="adj-sign" data-adj-id="${escapeHTML(a.id)}"
-            aria-label="${plus ? "지금은 추가(+), 누르면 차감(−)으로 바뀌어요" : "지금은 차감(−), 누르면 추가(+)로 바뀌어요"}">${plus ? "＋" : "−"}</button>
+            aria-label="${plus ? "현재 추가(+). 누르면 차감(−)으로 바뀝니다." : "현재 차감(−). 누르면 추가(+)로 바뀝니다."}">${plus ? "＋" : "−"}</button>
           <input class="input" type="text" inputmode="numeric" placeholder="금액"
             value="${a.amount ? formatNumber(a.amount) : ""}" data-field="adj-amount" data-adj-id="${escapeHTML(a.id)}" aria-label="금액" />
           <input class="input adj-reason" type="text" placeholder="사유 (선택) 예: 택시"
@@ -1554,7 +1483,9 @@
 
     function renderOptions() {
       $("unitChips").querySelectorAll(".chip").forEach((b) => {
-        b.classList.toggle("is-active", Number(b.dataset.unit) === state.rounding.unit);
+        const onUnit = Number(b.dataset.unit) === state.rounding.unit;
+        b.classList.toggle("is-active", onUnit);
+        b.setAttribute("aria-pressed", String(onUnit));
       });
       const modeWrap = $("modeChips");
       /* 1원 단위면 맞출 것이 없어 이 칸은 쓸 수 없다.
@@ -1564,7 +1495,9 @@
       const dim = state.rounding.unit === 1;
       modeWrap.classList.toggle("is-dim", dim);
       modeWrap.querySelectorAll(".chip").forEach((b) => {
-        b.classList.toggle("is-active", b.dataset.mode === state.rounding.mode);
+        const onMode = b.dataset.mode === state.rounding.mode;
+        b.classList.toggle("is-active", onMode);
+        b.setAttribute("aria-pressed", String(onMode));
         b.disabled = dim;
       });
       $("msgToggle").querySelectorAll("button").forEach((b) => {
@@ -1582,9 +1515,9 @@
       $("optFoldNote").textContent = `${unit}${mode}, ${MSG_LABEL[state.msgStyle]}${on ? `, 안내 ${on}개` : ""}`;
 
       const adjCount = state.adjustments.filter((a) => a.name && a.amount).length;
-      $("adjFoldNote").textContent = adjCount ? `${adjCount}건 반영 중` : "일찍 간 사람, 더 먹은 사람";
+      $("adjFoldNote").textContent = adjCount ? `${adjCount}건 반영 중` : "개인별 금액 조정";
 
-      $("receiptFoldNote").textContent = receipts.length ? `사진 ${receipts.length}장` : "사진 첨부 안 함";
+      $("receiptFoldNote").textContent = receipts.length ? `사진 ${receipts.length}장` : "첨부 없음";
       $("historyFoldNote").textContent = historyList.length ? `${historyList.length}건 보관 중` : "기록 없음";
     }
 
@@ -1609,33 +1542,38 @@
     function renderResults() {
       const c = calc();
 
-      /* 실시간 입력 안내 — 잘못/부족한 입력은 바로, 준비되면 다음 행동을 안내 */
+      /* 실시간 입력 안내 — 잘못/부족한 입력은 바로, 준비되면 다음 행동을 안내.
+         같은 문장이면 다시 쓰지 않는다 — 라이브 영역이라 글자를 칠 때마다 읽히면 안 된다 */
       const hintEl = $("calcHint");
+      const setHint = (el, cls, html) => {
+        el.hidden = false;
+        if (el.className !== cls) el.className = cls;
+        if (el.innerHTML !== html) el.innerHTML = html;
+      };
       if (hintEl) {
         if (!c.members.length) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "먼저 <b>참여 멤버</b>를 넣어주세요. 벙주와 멤버 이름을 넣으면 계산이 시작돼요.";
+          setHint(hintEl, "calc-hint is-info", "참여 멤버를 입력해 주세요. 모임장과 멤버 이름을 입력하면 계산을 시작합니다.");
         } else if (!c.totalAmount) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "<b>차수 금액</b>을 넣어주세요. 총 금액은 0원보다 커야 정산이 만들어져요.";
+          setHint(hintEl, "calc-hint is-info", "차수 금액을 입력해 주세요. 총 금액이 0원보다 커야 결과가 만들어집니다.");
         } else if (c.rows.length && !(state.pay.bank.trim() && accountDigits())) {
           /* 계좌가 비면 복사 글에 입금계좌 줄이 통째로 빠지고 송금 버튼도 안 생긴다.
              다 됐다고 알려 놓고 계좌 없는 메시지를 보내게 두면 안 된다. */
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "금액은 다 나눴어요. <b>입금 정보</b>에 은행과 계좌번호를 넣으면 메시지에 계좌가 같이 담겨요.";
+          setHint(hintEl, "calc-hint is-info", "계산 결과가 준비되었습니다. 입금 정보에 은행과 계좌번호를 입력하면 메시지에 계좌가 함께 담깁니다." + (state.sample ? " <b>(예시 데이터)</b>" : ""));
         } else if (c.rows.length) {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-done";
-          hintEl.innerHTML = "정산 끝났어요. 바로 <b>복사</b>하거나 <b>공유 링크</b>로 보내세요.";
+          setHint(hintEl, "calc-hint is-done", "계산 결과가 준비되었습니다. 메시지를 복사하거나 입금 확인 링크를 만들어 공유해 주세요." + (state.sample ? " <b>(예시 데이터)</b>" : ""));
         } else {
-          hintEl.hidden = false; hintEl.className = "calc-hint is-info";
-          hintEl.innerHTML = "벙주 말고 <b>참여 멤버</b>를 더 넣으면 금액을 나눠서 계산해요.";
+          setHint(hintEl, "calc-hint is-info", "모임장 외에 참여 멤버를 더 입력하면 금액을 나눠 계산합니다.");
         }
       }
 
+      /* 예시 데이터 표시 */
+      const sampleTag = $("sampleTag");
+      if (sampleTag) sampleTag.hidden = !state.sample;
+
       /* 요약 타일 */
-      const burdenLabel = c.payers.filter((p) => p.paidTotal > 0).length > 1 ? "결제자 부담" : "벙주 부담";
+      const burdenLabel = c.payers.filter((p) => p.paidTotal > 0).length > 1 ? "결제자 부담" : "모임장 부담";
       $("summaryGrid").innerHTML = `
-        <div class="summary-card"><span>총 벙비</span><strong>${formatWon(c.totalAmount)}</strong></div>
+        <div class="summary-card"><span>총 비용</span><strong>${formatWon(c.totalAmount)}</strong></div>
         <div class="summary-card"><span>입금 합계</span><strong>${formatWon(c.totalReceivable)}</strong></div>
         <div class="summary-card"><span>${burdenLabel}</span><strong>${formatWon(c.burden)}</strong></div>`;
 
@@ -1679,11 +1617,11 @@
         ).join("");
         return `
           <div class="pay-row">
-            <span>${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}${adjNote}</span>
+            <span><span class="pay-name">${state.mention !== false ? "@" : ""}${escapeHTML(row.name)}</span>${adjNote}</span>
             <div class="pay-right">
               <strong>${formatWon(row.amount)}</strong>
-              ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱으로 송금" : "계좌+금액 복사"}">송금</button>` : ""}
-              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="${escapeHTML(row.name)} 님 금액만 복사해요">금액 복사</button>
+              ${sendable ? `<button class="pay-copy pay-send no-capture" type="button" data-send-amount="${row.amount}" title="${isMobileUA() ? "토스 앱을 열어 이 금액을 송금합니다" : "계좌번호와 금액을 복사합니다"}">${isMobileUA() ? "송금 앱 열기" : "계좌·금액 복사"}</button>` : ""}
+              <button class="pay-copy no-capture" type="button" data-copy="${formatWon(row.amount)}" title="${escapeHTML(row.name)} 님 금액만 복사합니다">금액 복사</button>
             </div>
           </div>`;
       };
@@ -1710,10 +1648,10 @@
       const detailHTML = c.rounds.length
         ? c.rounds.map((r) => `
           <div class="detail-line">
-            <div><b>${escapeHTML(r.label)}</b><span class="sep-row"><span>${r.count}명이 나눠요</span><span>결제 ${escapeHTML(r.payer)}</span></span><span class="round-who">${escapeHTML(r.active.join(", "))}</span></div>
+            <div><b>${escapeHTML(r.label)}</b><span class="sep-row"><span>${r.count}명 분담</span><span>결제 ${escapeHTML(r.payer)}</span></span><span class="round-who">${escapeHTML(r.active.join(", "))}</span></div>
             <strong>${formatWon(r.amount)}</strong>
           </div>`).join("")
-        : `<div class="detail-line"><div><b>입력된 차수가 없어요</b><span>차수와 금액을 입력해주세요.</span></div><strong>${formatWon(0)}</strong></div>`;
+        : `<div class="detail-line"><div><b>입력된 차수가 없습니다.</b><span>차수와 금액을 입력해 주세요.</span></div><strong>${formatWon(0)}</strong></div>`;
 
       const pt = payText();
       const notices = checkedNotices();
@@ -1722,8 +1660,8 @@
         : "";
       const residualLine = c.residual !== 0
         ? `<span class="residual">${c.residual > 0
-            ? `단위 자투리 ${formatWon(c.residual)}은 벙주(결제자) 부담이에요.`
-            : `올림으로 벙주(결제자) 부담이 ${formatWon(-c.residual)} 줄었어요.`}</span>`
+            ? `단위 차액 ${formatWon(c.residual)}은 결제자 부담입니다.`
+            : `올림으로 결제자 부담이 ${formatWon(-c.residual)} 줄었습니다.`}</span>`
         : "";
 
       $("captureTarget").innerHTML = `
@@ -1731,9 +1669,9 @@
           <div>
             <small>정산 안내</small>
             <h2>${escapeHTML(state.eventTitle || "모임 정산")}</h2>
-            <p class="sep-row">${state.eventDate ? `<span>${escapeHTML(state.eventDate)}</span>` : ""}<span>벙주 ${escapeHTML(c.host || "-")}</span></p>
+            <p class="sep-row">${state.eventDate ? `<span>${escapeHTML(state.eventDate)}</span>` : ""}<span>모임장 ${escapeHTML(c.host || "-")}</span></p>
           </div>
-          <div class="receipt-total"><span>총 벙비</span><strong>${formatWon(c.totalAmount)}</strong></div>
+          <div class="receipt-total"><span>총 비용</span><strong>${formatWon(c.totalAmount)}</strong></div>
         </div>
         <div class="receipt-summary-line">
           <span>참여 <b>${c.perPerson.count}명</b></span>
@@ -1742,7 +1680,7 @@
         </div>
         ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}${
           /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
-          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(" · "))} 님께 보낼 금액은 계좌를 따로 알려주세요</em>` : ""
+          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(" · "))} 님에게 보낼 금액은 계좌를 따로 안내합니다.</em>` : ""
         }</div>` : ""}
         <div class="receipt-section">
           <h3>입금 명단</h3>
@@ -1779,13 +1717,13 @@
       L.push(`💰 ${state.eventTitle || "모임 정산"} 정산`);
       const sub = [];
       if (state.eventDate) sub.push(state.eventDate);
-      sub.push(`벙주 ${c.host || "-"}`);
+      sub.push(`모임장 ${c.host || "-"}`);
       L.push(sub.join(", "));
 
       /* ── 한눈 요약 ── */
       if (c.perPerson.count) {
         L.push("");
-        L.push(`총 벙비 ${formatWon(c.totalAmount)}`);
+        L.push(`총 비용 ${formatWon(c.totalAmount)}`);
         L.push(`참여자 ${c.perPerson.count}명, 1인 ${c.perPerson.uniform ? "" : "평균 "}${formatWon(c.perPerson.value)}`);
       }
 
@@ -1794,7 +1732,7 @@
       L.push("");
       L.push("💸 보낼 금액");
       if (!activePayers.length) {
-        L.push("입금 대상이 없어요");
+        L.push("입금 대상이 없습니다.");
       } else if (activePayers.length === 1) {
         L.push(`📥 ${atNim(activePayers[0].name)}`);
         activePayers[0].rows.forEach((r) => L.push(`• ${at(r.name)}  ${formatWon(r.amount)}`));
@@ -1850,7 +1788,7 @@
         const owner = state.pay.holder.trim() || c.host;
         const others = activePayers.map((p) => p.name).filter((n) => !sameName(n, owner));
         if (activePayers.length > 1 && others.length) {
-          L.push(`※ ${others.map((n) => at(n)).join(" · ")} 님께 보낼 금액은 계좌를 따로 알려드릴게요`);
+          L.push(`※ ${others.map((n) => at(n)).join(" · ")} 님에게 보낼 금액은 계좌를 따로 안내합니다`);
         }
       }
 
@@ -1858,13 +1796,13 @@
       const shareUrl = currentShareUrl();
       if (shareUrl) {
         L.push("");
-        L.push("✅ 입금 후 완료 체크 부탁드려요");
+        L.push("✅ 입금 후 아래 링크에서 입금 완료를 눌러 주세요");
         L.push(`👉 ${shareUrl}`);
       }
       return L.join("\n");
     }
     function burdenWord(c) {
-      return c.payers.filter((p) => p.paidTotal > 0).length > 1 ? "결제자 부담" : "벙주 부담";
+      return c.payers.filter((p) => p.paidTotal > 0).length > 1 ? "결제자 부담" : "모임장 부담";
     }
 
     async function copyToClipboard(text) {
@@ -1883,13 +1821,13 @@
 
     async function copyResultText() {
       const ok = await copyToClipboard(buildCopyText());
-      showToast(ok ? "정산 결과를 복사했어요." : "복사에 실패했어요.");
+      showToast(ok ? "정산 메시지를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
     }
 
     async function saveResultImage() {
       const target = $("captureTarget");
       const button = $("saveImageBtn");
-      if (!window.htmlToImage) { showToast("이미지 저장 라이브러리를 불러오지 못했어요."); return; }
+      if (!window.htmlToImage) { showToast("이미지 저장 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."); return; }
       try {
         button.disabled = true; button.textContent = "저장 중...";
         if (document.fonts && document.fonts.ready) await document.fonts.ready;
@@ -1907,9 +1845,9 @@
         const safeTitle = (state.eventTitle || "정산결과").replace(/[\\/:*?"<>|]/g, "_");
         link.download = `${safeTitle}_${state.eventDate || today()}.png`;
         link.href = dataUrl; link.click();
-        showToast("정산 이미지를 저장했어요.");
+        showToast("정산 이미지를 저장했습니다.");
       } catch (e) {
-        console.error(e); showToast("이미지 저장에 실패했어요.");
+        console.error(e); showToast("이미지 저장에 실패했습니다. 다시 시도해 주세요.");
       } finally {
         button.disabled = false; button.textContent = "이미지 저장";
       }
@@ -1939,7 +1877,7 @@
     function renderGroups() {
       const host = $("groupChips");
       if (!memberGroups.length) {
-        host.innerHTML = `<span class="fav-empty">멤버를 입력하고 <b>현재 구성 저장</b>을 누르면, 다음부터 탭 한 번으로 불러올 수 있어요.</span>`;
+        host.innerHTML = `<span class="fav-empty">멤버를 입력하고 현재 구성 저장을 누르면 다음부터 한 번에 불러올 수 있습니다.</span>`;
         return;
       }
       host.innerHTML = memberGroups.map((g) => `
@@ -1952,20 +1890,20 @@
     }
 
     function saveCurrentGroup() {
-      if (!memberPool().length) { showToast("저장할 멤버가 없어요. 멤버를 먼저 입력해주세요."); return; }
+      if (!memberPool().length) { showToast("저장할 멤버가 없습니다. 멤버를 먼저 입력해 주세요."); return; }
       const suggested = state.eventTitle.trim() || "자주 보는 멤버";
-      const name = (window.prompt("이 멤버 구성의 이름을 지어주세요.", suggested) || "").trim().slice(0, 20);
+      const name = (window.prompt("멤버 구성 이름을 입력해 주세요.", suggested) || "").trim().slice(0, 20);
       if (!name) return;
       const group = { id: uid(), name, host: cleanName(state.hostName), membersText: state.membersText };
       const idx = memberGroups.findIndex((g) => g.name === name);
       if (idx >= 0) {
         group.id = memberGroups[idx].id;
         memberGroups[idx] = group;
-        showToast(`"${name}" 그룹을 지금 구성으로 바꿨어요.`);
+        showToast(`"${name}" 구성을 현재 멤버로 바꿨습니다.`);
       } else {
-        if (memberGroups.length >= 12) { showToast("그룹은 12개까지 저장할 수 있어요. 안 쓰는 그룹을 지워주세요."); return; }
+        if (memberGroups.length >= 12) { showToast("구성은 12개까지 저장할 수 있습니다. 사용하지 않는 구성을 삭제해 주세요."); return; }
         memberGroups.push(group);
-        showToast(`"${name}" 그룹을 저장했어요.`);
+        showToast(`"${name}" 구성을 저장했습니다.`);
       }
       persistGroups(memberGroups);
       renderGroups();
@@ -2004,7 +1942,7 @@
     function saveHistorySnapshot(silent) {
       const entry = snapshotEntry();
       if (!entry.total && !memberPool().length) {
-        if (!silent) showToast("기록할 내용이 없어요. 멤버와 금액을 먼저 입력해주세요.");
+        if (!silent) showToast("기록할 내용이 없습니다. 멤버와 금액을 먼저 입력해 주세요.");
         return;
       }
       const idx = entry.shareId ? historyList.findIndex((h) => h.shareId === entry.shareId) : -1;
@@ -2013,7 +1951,7 @@
       historyList = historyList.slice(0, MAX_HISTORY);
       persistHistory(historyList);
       renderHistory();
-      if (!silent) showToast("이번 정산을 기록했어요.");
+      if (!silent) showToast("현재 정산을 기록했습니다.");
     }
 
     function formatSavedAt(ts) {
@@ -2027,7 +1965,7 @@
       const hostEl = $("historyList");
       renderFoldNotes();
       if (!historyList.length) {
-        hostEl.innerHTML = `<p class="history-empty">아직 기록이 없어요. 공유 링크를 만들거나 <b>지금 정산 기록하기</b>를 누르면 여기에 쌓여요.</p>`;
+        hostEl.innerHTML = `<p class="history-empty">기록이 없습니다. 공유 링크를 만들거나 현재 정산 기록을 누르면 여기에 남습니다.</p>`;
         return;
       }
       hostEl.innerHTML = historyList.map((h) => `
@@ -2046,16 +1984,16 @@
 
     function loadHistoryEntry(id) {
       const h = historyList.find((x) => x.id === id);
-      if (!h || !h.state) { showToast("기록을 불러오지 못했어요."); return; }
+      if (!h || !h.state) { showToast("기록을 불러오지 못했습니다."); return; }
       const restored = normalizeState(JSON.parse(JSON.stringify(h.state)));
-      if (!restored) { showToast("기록을 불러오지 못했어요."); return; }
+      if (!restored) { showToast("기록을 불러오지 못했습니다."); return; }
       state = restored;
       receipts = [];
       fallbackShareUrl = null;
       renderReceiptThumbs();
       hydrateInputs(); renderAll(); openFoldsWithContent(); saveState();
       refreshSettleStatus();
-      showToast(`"${h.title}" 정산을 불러왔어요.`);
+      showToast(`"${h.title}" 정산을 불러왔습니다.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -2091,7 +2029,7 @@
     async function addReceiptFiles(files) {
       let added = 0, failed = 0;
       for (const file of files) {
-        if (receipts.length >= MAX_RECEIPTS) { showToast(`영수증은 ${MAX_RECEIPTS}장까지 첨부할 수 있어요.`); break; }
+        if (receipts.length >= MAX_RECEIPTS) { showToast(`영수증은 ${MAX_RECEIPTS}장까지 첨부할 수 있습니다.`); break; }
         if (!/^image\//.test(file.type || "")) { failed += 1; continue; }
         try {
           const dataUrl = await resizeImageFile(file, 900);            // 화면·이미지 저장용(고화질)
@@ -2103,8 +2041,8 @@
       }
       renderReceiptThumbs();
       renderResults();
-      if (added) showToast(`영수증 ${added}장을 첨부했어요.${failed ? " (일부는 읽지 못했어요)" : ""}`);
-      else if (failed) showToast("이미지를 읽지 못했어요. 다른 사진으로 시도해주세요.");
+      if (added) showToast(`영수증 ${added}장을 첨부했습니다.${failed ? " 일부 파일은 읽지 못했습니다." : ""}`);
+      else if (failed) showToast("이미지를 읽지 못했습니다. 다른 사진으로 시도해 주세요.");
     }
 
     /* 공유 링크에 담을 경량 영수증 — 크기 예산 안에서 최대 2장 */
@@ -2136,15 +2074,15 @@
     async function handleTransfer(amount) {
       const bank = state.pay.bank.trim();
       const digits = accountDigits();
-      if (!bank || !digits) { showToast("은행과 계좌번호를 먼저 입력해주세요."); return; }
+      if (!bank || !digits) { showToast("은행과 계좌번호를 먼저 입력해 주세요."); return; }
       if (isMobileUA()) {
         window.location.href = "supertoss://send?amount=" + amount + "&bank=" + encodeURIComponent(bank) + "&accountNo=" + digits;
-        showToast("토스 앱으로 연결할게요. 안 열리면 복사 버튼을 이용해주세요.");
+        showToast("토스 앱을 엽니다. 열리지 않으면 계좌·금액 복사를 이용해 주세요.");
       } else {
         const holder = state.pay.holder.trim();
         const text = `${bank} ${state.pay.account.trim()}${holder ? ` (${holder})` : ""} ${formatWon(amount)}`;
         const ok = await copyToClipboard(text);
-        showToast(ok ? "계좌와 금액을 복사했어요." : "복사에 실패했어요.");
+        showToast(ok ? "계좌와 금액을 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
       }
     }
 
@@ -2201,7 +2139,7 @@
 
     async function createShareLink() {
       const payload = buildSharePayload();
-      if (!payload.rows.length) { showToast("공유할 입금 명단이 없어요. 멤버와 금액을 먼저 입력해주세요."); return; }
+      if (!payload.rows.length) { showToast("공유할 입금 명단이 없습니다. 멤버와 금액을 먼저 입력해 주세요."); return; }
       const btn = $("shareLinkBtn");
       const prevLabel = btn.textContent;
       btn.disabled = true; btn.textContent = "링크 만드는 중...";
@@ -2235,9 +2173,9 @@
           const ok = await copyToClipboard(settleURL(id));
           const droppedReceipts = receipts.length && (!payload.receipts || payload.receipts.length < receipts.length);
           if (droppedReceipts) {
-            showToast("링크를 복사했어요. 영수증 일부는 링크에 안 담겨요 — '이미지 저장'으로 함께 보내주세요.");
+            showToast("링크를 복사했습니다. 영수증 일부는 링크에 담기지 않으므로 이미지 저장으로 함께 보내 주세요.");
           } else {
-            showToast(ok ? "공유 링크를 복사했어요. 카톡에 붙여넣어 주세요!" : "링크가 준비됐어요. 전체 복사에 함께 담겨요.");
+            showToast(ok ? "입금 확인 링크를 복사했습니다. 채팅에 붙여넣어 주세요." : "링크가 준비되었습니다. 메시지 복사에 함께 담깁니다.");
           }
         } else {
           // 저장에 실패하면 링크를 만들지 않는다.
@@ -2246,7 +2184,7 @@
           // 서버에 저장된 정산은 120일 뒤 자동으로 사라지지만, 링크에 담긴 내용은 사라지지 않는다.
           fallbackShareUrl = null;
           saveHistorySnapshot(true);
-          showToast("지금은 공유 링크를 만들 수 없어요. '전체 복사'로 정산 내용을 보내주세요.");
+          showToast("지금은 공유 링크를 만들 수 없습니다. 메시지 복사로 정산 내용을 보내 주세요.");
         }
       } finally {
         btn.disabled = false; btn.textContent = prevLabel;
@@ -2269,21 +2207,28 @@
       $("ssCount").textContent = `${done}/${total}`;
       $("ssBar").style.width = `${Math.round((done / total) * 100)}%`;
       $("ssPending").innerHTML = pending.length
-        ? `아직 <b>${pending.length}명</b> 대기 중 — ${escapeHTML(pending.join(", "))}`
-        : `모두 입금 완료! 정산이 끝났어요.`;
+        ? `대기 <b>${pending.length}명</b>: ${escapeHTML(pending.join(", "))}`
+        : `전원 입금 완료`;
       if (state.shareId) $("ssLink").href = settleURL(state.shareId);
       $("settleStatus").hidden = false;
     }
 
+    /* 돌려주는 값: "ok" 조회됨 / "none" 공유 기록 없음(만료·미생성) / "error" 연결 실패 */
     async function refreshSettleStatus() {
-      if (!state.shareId) { hideSettleStatus(); return; }
+      if (!state.shareId) { hideSettleStatus(); return "none"; }
       try {
         const data = await supaFetch("/rest/v1/rpc/settle_get", {
           method: "POST", body: JSON.stringify({ p_id: state.shareId })
         });
-        if (!data) { hideSettleStatus(); return; }
+        if (!data) { hideSettleStatus(); return "none"; }
         applySettleStatus(data);
-      } catch (e) { hideSettleStatus(); }
+        return "ok";
+      } catch (e) {
+        /* 연결 실패는 카드를 지우지 않고 그 안에 남긴다 — 다시 시도할 수 있게 */
+        $("ssPending").innerHTML = "입금 현황을 불러오지 못했습니다. 잠시 후 새로고침을 눌러 주세요.";
+        $("settleStatus").hidden = false;
+        return "error";
+      }
     }
 
     /* ============================================================
@@ -2305,12 +2250,14 @@
       ];
       fallbackShareUrl = null;
       hideSettleStatus();
+      state.sample = true;
       hydrateInputs(); renderAll(); openFoldsWithContent(); saveState();
-      showToast("예시 데이터를 불러왔어요.");
+      showToast("예시 데이터를 입력했습니다.");
     }
 
     function resetAll() {
       state = {
+        sample: false,
         eventTitle: "", eventDate: today(), hostName: "", membersText: "",
         rounds: [createRound()],
         adjustments: [],
@@ -2327,7 +2274,7 @@
       $("foldAdj").open = false; $("foldReceipt").open = false;
       hydrateInputs(); renderAll(); saveState();
       $("stepTitle1").scrollIntoView({ block: "start" });
-      showToast("모두 지웠어요. 처음부터 적어 주세요.");
+      showToast("모두 지웠습니다.");
     }
 
     function findRound(id) { return state.rounds.find((r) => r.id === id); }
@@ -2342,6 +2289,8 @@
     }
 
     function bindEvents() {
+      /* 예시 데이터 표시는 사용자가 무엇이든 입력하는 순간 내린다 */
+      document.querySelector(".calc-inputs").addEventListener("input", () => { if (state.sample) { state.sample = false; renderAndSave(); } });
       $("eventTitle").addEventListener("input", (e) => { state.eventTitle = e.target.value; renderAndSave(); });
       $("eventDate").addEventListener("input", (e) => { state.eventDate = e.target.value; renderAndSave(); });
       $("hostName").addEventListener("input", (e) => { state.hostName = e.target.value; renderMembers(); renderRounds(); renderAdjustments(); renderAndSave(); });
@@ -2382,7 +2331,7 @@
         if (!btn) return;
         state.msgStyle = btn.dataset.msg === "detail" ? "detail" : "summary";
         renderOptions(); saveState();
-        showToast(state.msgStyle === "detail" ? "상세형 메시지로 복사돼요." : "요약형 메시지로 복사돼요.");
+        showToast(state.msgStyle === "detail" ? "상세형 메시지로 복사합니다." : "요약형 메시지로 복사합니다.");
       });
 
       /* 차수 */
@@ -2464,7 +2413,7 @@
           let moved = 0;
           state.adjustments.forEach((a) => { if (a.round === goneId) { a.round = ""; moved++; } });
           renderRounds(); renderAdjustments(); renderAndSave();
-          if (moved) showToast(`지운 차수에 달려 있던 추가·차감 ${moved}건을 '전체 차수'로 옮겼어요.`);
+          if (moved) showToast(`삭제한 차수의 추가·차감 ${moved}건을 전체 차수로 옮겼습니다.`);
         }
       });
 
@@ -2533,7 +2482,7 @@
         const button = e.target.closest(".pay-copy");
         if (!button) return;
         const ok = await copyToClipboard(button.dataset.copy);
-        showToast(ok ? "복사했어요. 채팅창에 붙여넣어 주세요." : "복사에 실패했어요.");
+        showToast(ok ? "복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
       });
 
       /* 즐겨찾기 그룹 */
@@ -2545,7 +2494,7 @@
           memberGroups = memberGroups.filter((x) => x.id !== del.dataset.gid);
           persistGroups(memberGroups);
           renderGroups();
-          if (g) showToast(`"${g.name}" 그룹을 삭제했어요.`);
+          if (g) showToast(`"${g.name}" 구성을 삭제했습니다.`);
           return;
         }
         const load = e.target.closest(".group-load");
@@ -2555,7 +2504,7 @@
           state.hostName = String(g.host || "");
           state.membersText = String(g.membersText || "");
           hydrateInputs(); renderAll(); saveState();
-          showToast(`"${g.name}" 멤버를 불러왔어요.`);
+          showToast(`"${g.name}" 멤버를 불러왔습니다.`);
         }
       });
 
@@ -2570,7 +2519,7 @@
           historyList = historyList.filter((x) => x.id !== del.dataset.hid);
           persistHistory(historyList);
           renderHistory();
-          if (h) showToast(`"${h.title}" 기록을 삭제했어요.`);
+          if (h) showToast(`"${h.title}" 기록을 삭제했습니다.`);
         }
       });
 
@@ -2585,7 +2534,7 @@
         if (!del) return;
         receipts = receipts.filter((r) => r.id !== del.dataset.receiptId);
         renderReceiptThumbs(); renderResults();
-        showToast("영수증을 뺐어요.");
+        showToast("영수증을 제외했습니다.");
       });
 
       /* 액션 */
@@ -2594,21 +2543,23 @@
       $("saveImageBtn").addEventListener("click", saveResultImage);
       $("copyLinkBtn").addEventListener("click", async () => {
         const ok = await copyToClipboard(window.location.href);
-        showToast(ok ? "정산기 주소를 복사했어요." : "복사에 실패했어요.");
+        showToast(ok ? "페이지 주소를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
       });
-      $("ssRefresh").addEventListener("click", () => {
-        refreshSettleStatus();
-        showToast("입금 현황을 다시 확인했어요.");
+      $("ssRefresh").addEventListener("click", async () => {
+        const r = await refreshSettleStatus();
+        showToast(r === "ok" ? "입금 현황을 다시 확인했습니다."
+          : r === "error" ? "입금 현황을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+          : "공유한 정산 기록이 없습니다. 입금 확인 링크를 다시 만들어 주세요.");
       });
       $("loadSampleBtn").addEventListener("click", loadSample);
       // 버튼을 위로 올린 만큼 잘못 눌릴 일도 늘어난다 — 한 번 묻는다
       $("resetBtn").addEventListener("click", () => {
-        if (window.confirm("적어 둔 내용을 모두 지울까요? 되돌릴 수 없어요.")) resetAll();
+        if (window.confirm("입력한 내용을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?")) resetAll();
       });
       $("mentionToggle").addEventListener("change", (e) => {
         state.mention = e.target.checked;
         renderAndSave();
-        showToast(state.mention ? "이름 앞에 @ 를 붙여서 복사돼요." : "이름만 복사돼요.");
+        showToast(state.mention ? "이름 앞에 @를 붙여 복사합니다." : "이름만 복사합니다.");
       });
 
       /* 모바일 요약 바 */

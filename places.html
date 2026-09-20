@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1E0230" />
+  <meta name="theme-color" content="#285244" />
 
-  <title>동네친구들 맛집</title>
-  <meta name="description" content="동네친구들이 벙에서 실제로 다녀온 곳만 모았어요. 지역이나 종류로 찾고, 지도로 바로 열어요." />
+  <title>맛집 · 동네친구들</title>
+  <meta name="description" content="동네친구들이 모임에서 다녀온 식당 목록입니다. 지역, 종류, 가격대로 찾고 지도에서 볼 수 있습니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/places.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="동네친구들 맛집" />
-  <meta property="og:description" content="벙에서 진짜 가봤던 곳만 모았어요." />
+  <meta property="og:title" content="맛집 · 동네친구들" />
+  <meta property="og:description" content="모임에서 다녀온 식당과 멤버의 한줄평입니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%23285244'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
@@ -31,9 +31,6 @@
        ============================================================ */
 
     /* ── 머리: 제목·한 줄·올리기 버튼. 큰 배너는 없다 ── */
-    .places-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 32px 0 20px; }
-    .places-head h1 { margin: 0; font-size: var(--fs-title); font-weight: 700; }
-    .places-head p { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-body); }
 
     /* ── 탐색: 검색 + 필터 + 정렬 + 개수 ── */
     .explore { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
@@ -69,10 +66,6 @@
     .cond .ic { width: 14px; height: 14px; }
 
     @media (max-width: 700px) {
-      .places-head { padding: 24px 0 16px; }
-      .places-head h1 { font-size: 24px; }
-      .places-head p { font-size: 14px; }
-      .places-head .btn { flex: none; }
       .filter-toggle { display: inline-flex; }
       .filter-panel { display: none; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
       .filter-panel.is-open { display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -86,7 +79,7 @@
     @media (min-width: 700px)  { .place-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 1080px) { .place-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
-    .place-card { display: flex; flex-direction: column; padding: 20px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); }
+    .place-card { scroll-margin-top: calc(var(--nav-h) + 12px); display: flex; flex-direction: column; padding: 20px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); }
     .place-card.is-closed { background: var(--surface-2); }
     .pc-head { display: flex; align-items: flex-start; gap: 8px; }
     .pc-name { margin: 0; min-width: 0; flex: 1 1 auto; font-size: var(--fs-h3); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
@@ -124,18 +117,13 @@
 
     /* ── 폼 공통 ── */
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .field { display: grid; gap: 6px; align-content: start; }
     .field.is-wide { grid-column: span 2; }
-    .field label { color: var(--ink); font-size: 14px; font-weight: 600; }
     .field label small { color: var(--ink-2); font-size: 12px; font-weight: 500; }
-    .field-hint { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
-    .input, .textarea { width: 100%; border: 1px solid var(--line-strong); outline: none; background: var(--surface); color: var(--ink); font-size: 16px; }
-    .input { min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); }
     select.input { padding-right: 30px; }
-    .textarea { min-height: 84px; resize: vertical; padding: 10px 12px; border-radius: var(--r-btn); line-height: 1.6; }
     .input:focus, .textarea:focus { border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: 1px; }
     .check-line { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--surface); color: var(--ink); font-size: 15px; cursor: pointer; }
 
+    .pass-modal { width: min(420px, 100%); }
     /* ── 모달 (모바일: 아래에서 올라오는 시트) ── */
     .place-modal { width: min(620px, 100%); }
     .note-modal { width: min(500px, 100%); }
@@ -162,23 +150,23 @@
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
-        <a class="topnav-tab" href="guide.html">필독</a>
-        <a class="topnav-tab" href="report.html">대시보드</a>
-        <a class="topnav-tab" href="calculator.html">정산</a>
+        <a class="topnav-tab" href="guide.html">이용 안내</a>
+        <a class="topnav-tab" href="report.html">활동 통계</a>
+        <a class="topnav-tab" href="calculator.html">모임 정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab is-active" href="places.html" aria-current="page">맛집</a>
       </nav>
-      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
     </div>
   </header>
   <main id="main" class="page-main">
     <section class="container" aria-labelledby="heroTitle">
-      <div class="places-head">
+      <div class="page-head page-head-inner">
         <div>
-          <h1 id="heroTitle">우리가 다녀온 맛집</h1>
-          <p>함께 다녀온 곳과 친구들의 한줄평을 모았어요.</p>
+          <h1 id="heroTitle">맛집</h1>
+          <p class="page-lead">모임(벙)에서 다녀온 식당과 멤버의 한줄평입니다.</p>
         </div>
-        <button class="btn btn-primary" type="button" id="heroAddBtn">맛집 올리기</button>
+        <div class="page-actions"><button class="btn btn-primary" type="button" id="heroAddBtn">맛집 등록</button></div>
       </div>
 
       <!-- 탐색. 모바일에서는 검색과 '필터' 버튼만 보이고, 고른 조건이 알약으로 남는다. -->
@@ -186,7 +174,7 @@
         <div class="explore-row">
           <label class="search-box">
             <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-            <input id="placeSearch" type="search" placeholder="가게 이름이나 한줄평으로 찾기" aria-label="맛집 검색" autocomplete="off" />
+            <input id="placeSearch" type="search" placeholder="식당 이름이나 한줄평 검색" aria-label="맛집 검색" autocomplete="off" />
           </label>
           <button class="btn btn-secondary filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
             필터 <svg class="ic is-sm" aria-hidden="true"><use href="#i-chevDown"/></svg>
@@ -204,8 +192,8 @@
               </select></span>
             <span class="select-wrap"><label for="fSort">정렬</label>
               <select id="fSort" class="select" aria-label="정렬">
-                <option value="recent">최근 다녀온 순</option>
-                <option value="again">또 간 순</option>
+                <option value="recent">최근 방문순</option>
+                <option value="again">방문 많은 순</option>
                 <option value="price">가격 낮은 순</option>
                 <option value="name">이름순</option>
               </select></span>
@@ -214,25 +202,12 @@
         <div class="cond-row" id="condRow" hidden></div>
         <div class="explore-foot">
           <span class="places-count" id="placesCount" aria-live="polite">불러오는 중</span>
-          <span class="places-note">가격은 1인 기준, 술값은 뺐어요</span>
+          <span class="places-note">1인 기준 · 주류 제외</span>
           <button class="btn btn-secondary is-sm reset-btn" type="button" id="resetBtn" hidden>조건 초기화</button>
         </div>
       </div>
 
-      <div class="place-list" id="placeList" aria-live="polite" aria-busy="true"></div>
-    </section>
-
-    <!-- ── 맺음 밴드 ── -->
-    <section class="band cta-band" aria-labelledby="ctaTitle">
-      <div class="container">
-        <span class="cta-rule" aria-hidden="true"></span>
-        <h2 id="ctaTitle">다녀온 곳,<br />한 곳만 올려주세요</h2>
-        <p>가본 사람이 쓴 한 줄이 다음 벙 장소가 돼요. 가보지 않은 곳은 올리지 않아요.</p>
-        <div class="hero-actions">
-          <button class="btn btn-primary" type="button" data-add="1">맛집 올리기</button>
-          <a class="btn btn-secondary" href="news.html">후기 보러 가기</a>
-        </div>
-      </div>
+      <div class="place-list" id="placeList" aria-busy="true"></div>
     </section>
   </main>
   <footer class="site-footer">
@@ -240,38 +215,32 @@
       <div class="footer-grid">
         <div>
           <span class="footer-logo">동네친구들</span>
-          <p class="footer-tagline">
-            오픈채팅에서 만난 동네 사람들이에요.<br />
-            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
-          </p>
-          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <p class="footer-tagline">오픈채팅으로 만나는 동네 커뮤니티입니다.</p>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
-          <h4>바로가기</h4>
           <ul class="footer-links">
             <li><a href="index.html">홈</a></li>
-            <li><a href="guide.html">필독</a></li>
-            <li><a href="report.html">운영 대시보드</a></li>
-            <li><a href="calculator.html">벙비 정산기</a></li>
+            <li><a href="guide.html">이용 안내</a></li>
+            <li><a href="report.html">활동 통계</a></li>
+            <li><a href="calculator.html">모임 정산</a></li>
             <li><a href="news.html">소식</a></li>
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
           </ul>
         </nav>
       </div>
       <div class="footer-bottom">
         <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
-        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
+        <small>© 2026 동네친구들</small>
       </div>
     </div>
   </footer>
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
-    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
-    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>이용 안내</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>활동 통계</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>모임 정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
     <a class="tab-item is-active" href="places.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
@@ -282,12 +251,12 @@
   <div id="placeBackdrop" class="modal-backdrop" hidden>
     <div class="modal place-modal" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
       <div class="modal-head">
-        <h3 id="pmTitle">맛집 올리기</h3>
+        <h3 id="pmTitle">맛집 등록</h3>
         <button id="pClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <div class="field-grid">
         <div class="field is-wide">
-          <label for="pName">가게 이름</label>
+          <label for="pName">식당 이름</label>
           <input id="pName" class="input" type="text" maxlength="40" placeholder="예: 우래옥 강남점" />
         </div>
         <div class="field">
@@ -304,13 +273,13 @@
         </div>
         <div class="field is-wide">
           <label for="pMap">지도 링크 <small>선택</small></label>
-          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵이나 네이버지도 공유 링크를 붙여넣어 주세요" />
-          <span class="field-hint">비워 두면 '지역 + 가게 이름'으로 카카오맵 검색을 열어 줘요.</span>
+          <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵 또는 네이버지도 공유 링크" />
+          <span class="field-hint">비워 두면 지역과 식당 이름으로 카카오맵 검색을 엽니다.</span>
         </div>
         <div class="field">
           <label for="pPrice">가격대 <small>선택</small></label>
           <select id="pPrice" class="input">
-            <option value="">모르겠어요</option>
+            <option value="">선택 안 함</option>
             <option value="1">1인 1만원 이하</option>
             <option value="2">1인 1만원대</option>
             <option value="3">1인 2만원대</option>
@@ -319,14 +288,14 @@
         </div>
         <div class="field">
           <label for="pPriceNote">가격 메모 <small>선택</small></label>
-          <input id="pPriceNote" class="input" type="text" maxlength="30" placeholder="예: 점심 특선은 더 저렴해요" />
+          <input id="pPriceNote" class="input" type="text" maxlength="30" placeholder="예: 점심 특선 별도" />
         </div>
         <div class="field is-wide" id="pClosedWrap" hidden>
           <label class="check-line" for="pClosed">
             <input id="pClosed" type="checkbox" />
-            지금은 문 닫았어요
+            현재 영업 종료
           </label>
-          <span class="field-hint">문을 닫았어도 지우지 말고 이걸 켜주세요. 다녀온 기록은 남을 가치가 있어요.</span>
+          <span class="field-hint">영업을 종료한 식당은 삭제하지 말고 이 항목을 켜 주세요. 방문 기록은 유지됩니다.</span>
         </div>
         <div class="field" id="pNickWrap">
           <label for="pNick">닉네임</label>
@@ -335,13 +304,13 @@
         <div class="field">
           <label for="pPass">비밀번호</label>
           <input id="pPass" class="input" type="password" maxlength="60" placeholder="4자 이상" autocomplete="new-password" />
-          <span class="field-hint">나중에 고치거나 지울 때 필요해요</span>
+          <span class="field-hint">정보를 수정하거나 삭제할 때 필요합니다.</span>
         </div>
       </div>
       <div class="modal-foot">
-        <button id="pDelete" class="btn btn-danger is-sm modal-danger" type="button" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-trash"/></svg> 지우기</button>
+        <button id="pDelete" class="btn btn-danger is-sm modal-danger" type="button" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-trash"/></svg> 삭제</button>
         <button id="pCancel" class="btn btn-secondary" type="button">취소</button>
-        <button id="pSubmit" class="btn btn-primary" type="button">올리기</button>
+        <button id="pSubmit" class="btn btn-primary" type="button">등록</button>
       </div>
     </div>
   </div>
@@ -359,20 +328,20 @@
       <div class="field-grid">
         <div class="field is-wide">
           <label for="nBody">한 줄로 남겨 주세요</label>
-          <textarea id="nBody" class="textarea" maxlength="120" placeholder="예: 고기 질이 좋고 밑반찬이 계속 나와요 (120자)"></textarea>
+          <textarea id="nBody" class="textarea" maxlength="120" placeholder="예: 고기 질이 좋고 밑반찬이 계속 나옴 (120자)"></textarea>
         </div>
         <div class="field">
           <label for="nDate">다녀온 날 <small>선택</small></label>
           <input id="nDate" class="input" type="date" />
         </div>
         <div class="field">
-          <label for="nPer">1인 얼마 <small>선택</small></label>
+          <label for="nPer">1인 금액 <small>선택</small></label>
           <input id="nPer" class="input" type="number" min="0" max="1000000" step="1000" placeholder="예: 25000" />
         </div>
         <div class="field is-wide">
           <label class="check-line" for="nAgain">
             <input id="nAgain" type="checkbox" />
-            또 가고 싶어요
+            재방문 의사 있음
           </label>
         </div>
         <div class="field">
@@ -386,7 +355,24 @@
       </div>
       <div class="modal-foot">
         <button id="nCancel" class="btn btn-secondary" type="button">취소</button>
-        <button id="nSubmit" class="btn btn-primary" type="button">남기기</button>
+        <button id="nSubmit" class="btn btn-primary" type="button">등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 비밀번호 확인 (한줄평 삭제) ── -->
+  <div id="passBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="passTitle">
+      <div class="modal-head">
+        <h3 id="passTitle">한줄평 삭제</h3>
+        <button id="passClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <p class="field-hint" style="margin:0 0 12px">한줄평을 쓸 때 입력한 비밀번호를 입력해 주세요. 삭제한 한줄평은 되돌릴 수 없습니다.</p>
+      <label class="sr-only" for="passInput">비밀번호</label>
+      <input id="passInput" class="input" type="password" placeholder="비밀번호" autocomplete="off" />
+      <div class="modal-foot">
+        <button id="passCancel" class="btn btn-secondary" type="button">취소</button>
+        <button id="passOk" class="btn btn-danger" type="button">삭제</button>
       </div>
     </div>
   </div>
@@ -406,19 +392,6 @@
       }
       window.addEventListener("scroll", syncNav, { passive: true });
       syncNav();
-
-      /* ── 2. 스크롤 리빌 (.reveal → .is-visible) ── */
-      var revealEls = document.querySelectorAll(".reveal");
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        revealEls.forEach(function (el) { el.classList.add("is-visible"); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); }
-          });
-        }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-        revealEls.forEach(function (el) { io.observe(el); });
-      }
 
       /* ── 3. 토스트 ── */
       var toastEl = document.getElementById("toast");
@@ -454,26 +427,6 @@
         }
         requestAnimationFrame(step);
       }
-
-      /* ── 5. data-countup 자동 실행 (뷰포트 진입 시 1회) ── */
-      var cuEls = document.querySelectorAll("[data-countup]");
-      function fire(el) {
-        countUp(el, parseFloat(el.getAttribute("data-countup")) || 0, {
-          decimals: parseInt(el.getAttribute("data-countup-decimals") || "0", 10),
-          suffix: el.getAttribute("data-countup-suffix") || ""
-        });
-      }
-      if (!("IntersectionObserver" in window) || reduceMotion) {
-        cuEls.forEach(fire);
-      } else {
-        var cuIo = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) { fire(e.target); cuIo.unobserve(e.target); }
-          });
-        }, { threshold: 0.4 });
-        cuEls.forEach(function (el) { cuIo.observe(el); });
-      }
-
 
       window.EXCER = { toast: toast, countUp: countUp, fmt: fmt };
     })();
@@ -536,17 +489,17 @@
       }
 
       var ERRORS = {
-        PASS_TOO_SHORT: "비밀번호는 4자 이상이에요",
-        BAD_PASS: "비밀번호가 맞지 않아요",
-        NOT_FOUND: "이미 지워진 가게예요",
-        ALREADY_EXISTS: "같은 이름의 가게가 이미 있어요",
-        BAD_URL: "지도 주소는 http 로 시작해야 해요",
-        BAD_DATE: "다녀온 날짜가 오늘보다 뒤예요"
+        PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
+        BAD_PASS: "비밀번호가 맞지 않습니다. 다시 입력해 주세요.",
+        NOT_FOUND: "이미 삭제된 식당입니다.",
+        ALREADY_EXISTS: "같은 이름의 식당이 이미 등록되어 있습니다.",
+        BAD_URL: "지도 링크는 http로 시작해야 합니다.",
+        BAD_DATE: "방문 날짜는 오늘 이전이어야 합니다."
       };
       function errMsg(err) {
         var raw = String((err && err.message) || "");
         for (var k in ERRORS) if (raw.indexOf(k) >= 0) return ERRORS[k];
-        return "잠시 뒤 다시 시도해 주세요";
+        return "요청을 처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
       }
 
       /* ── 읽기 도우미 ── */
@@ -577,7 +530,7 @@
       }
       function dateText(d) {
         var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || ""));
-        return m ? (m[2] + "월 " + Number(m[3]) + "일") : "";
+        return m ? (Number(m[2]) + "월 " + Number(m[3]) + "일") : "";
       }
 
       /* 지도 주소가 없으면 '지역 + 상호명'으로 카카오맵 검색을 연다.
@@ -592,6 +545,8 @@
 
       /* ── 고르기·정렬 ── */
       function norm(v) { return String(v == null ? "" : v).toLowerCase().replace(/\s+/g, ""); }
+      /* 저장값 "그 외"는 그대로 두고 화면에서만 "그 외 지역"으로 보여 준다 */
+      function areaLabel(a) { return a === "그 외" ? "그 외 지역" : (a || ""); }
       function matchesQuery(p, q) {
         if (!q) return true;
         var hay = [p.name, p.area, p.area_detail, p.category, p.price_note, p.author]
@@ -619,7 +574,11 @@
           } else if (state.sort === "name") {
             return String(a.name || "").localeCompare(String(b.name || ""), "ko");
           }
-          return String(b.last_visit || b.created_at || "").localeCompare(String(a.last_visit || a.created_at || ""));
+          // 방문 기록이 있는 곳이 먼저(최근 방문 내림차순). 없는 곳은 뒤에서 등록 시각 내림차순 — 형식이 달라 서로 비교하지 않는다
+          var av = String(a.last_visit || ""), bv = String(b.last_visit || "");
+          if (!!av !== !!bv) return av ? -1 : 1;
+          if (av && bv && av !== bv) return bv.localeCompare(av);
+          return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         });
         return list;
       }
@@ -629,7 +588,7 @@
       function conditionList() {
         var out = [];
         if (state.q.trim()) out.push({ k: "q", label: '"' + state.q.trim() + '"' });
-        if (state.area !== "전체") out.push({ k: "area", label: state.area });
+        if (state.area !== "전체") out.push({ k: "area", label: areaLabel(state.area) });
         if (state.cat !== "전체") out.push({ k: "cat", label: state.cat });
         if (state.price !== "전체") out.push({ k: "price", label: priceText(Number(state.price)) });
         return out;
@@ -645,7 +604,7 @@
       /* 셀렉트 채우기 — 지역·종류는 등록된 것과 상관없이 전부 보인다 */
       function fillSelects() {
         $("fArea").innerHTML = '<option value="전체">지역 전체</option>' +
-          AREAS.map(function (a) { return "<option>" + esc(a) + "</option>"; }).join("");
+          AREAS.map(function (a) { return '<option value="' + esc(a) + '">' + esc(areaLabel(a)) + "</option>"; }).join("");
         $("fCat").innerHTML = '<option value="전체">종류 전체</option>' +
           CATS.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("");
       }
@@ -674,13 +633,13 @@
         var lv = priceLevel(p), vc = visitCount(p);
         var notes = notesOf(p), latest = notes[0] || null, vote = againVote(p);
 
-        var meta = ['<span class="m m-area">' + esc(p.area) + (p.area_detail ? " " + esc(p.area_detail) : "") + "</span>"];
+        var meta = ['<span class="m m-area">' + esc(areaLabel(p.area)) + (p.area_detail ? " " + esc(p.area_detail) : "") + "</span>"];
         if (p.category) meta.push('<span class="m">' + esc(p.category) + "</span>");
         meta.push('<span class="m">' + esc(priceText(lv)) + (lv && p.price_note ? " (" + esc(p.price_note) + ")" : "") + "</span>");
 
         var tags = [];
-        if (p.closed) tags.push('<span class="pc-tag is-closed">문 닫음</span>');
-        else if (vc >= 2) tags.push('<span class="pc-tag">또 갔어요 ' + vc + "번</span>");
+        if (p.closed) tags.push('<span class="pc-tag is-closed">영업 종료</span>');
+        else if (vc >= 2) tags.push('<span class="pc-tag">방문 ' + vc + "회</span>");
 
         var by = [];
         if (latest && latest.by) by.push(esc(latest.by));
@@ -693,18 +652,18 @@
             if (n.by) head.push("<b>" + esc(n.by) + "</b>");
             if (n.date) head.push("<span>" + esc(dateText(n.date)) + "</span>");
             if (n.per_person) head.push("<span>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</span>");
-            if (n.again) head.push("<span>또 가고 싶어요</span>");
+            if (n.again) head.push("<span>재방문 의사</span>");
             return '<div class="visit-row">' +
               '<div class="visit-head">' + head.join("") +
-              ' <button type="button" class="note-del" data-delnote="' + n.id + '">지우기</button></div>' +
+              ' <button type="button" class="note-del" data-delnote="' + n.id + '">삭제</button></div>' +
               '<p class="visit-note">' + esc(n.text) + "</p></div>";
           }).join("");
-          detail = '<div class="pc-detail">' +
-            (rows || '<p class="visit-empty">아직 한줄평이 없어요</p>') +
-            (vote ? '<p class="visit-vote">또 가고 싶다는 사람 ' + vote.yes + "명 / " + vote.all + "명</p>" : "") +
+          detail = '<div class="pc-detail" id="place-detail-' + p.id + '">' +
+            (rows || '<p class="visit-empty">한줄평이 없습니다.</p>') +
+            (vote ? '<p class="visit-vote">재방문 의사 ' + vote.yes + "명 / " + vote.all + "명</p>" : "") +
             '<div class="pc-detail-actions">' +
-            '<button type="button" class="btn btn-primary is-sm" data-note="' + p.id + '">한줄평 남기기</button>' +
-            '<button type="button" class="btn btn-secondary is-sm" data-edit="' + p.id + '">정보 고치기</button>' +
+            '<button type="button" class="btn btn-primary is-sm" data-note="' + p.id + '">한줄평 쓰기</button>' +
+            '<button type="button" class="btn btn-secondary is-sm" data-edit="' + p.id + '">정보 수정</button>' +
             "</div></div>";
         }
 
@@ -712,13 +671,13 @@
           '<div class="pc-head"><h3 class="pc-name">' + esc(p.name) + "</h3>" +
           (tags.length ? '<span class="pc-tags">' + tags.join("") + "</span>" : "") + "</div>" +
           '<p class="pc-meta">' + meta.join("") + "</p>" +
-          (latest ? '<p class="pc-note">' + esc(latest.text) + "</p>" : '<p class="pc-note is-empty">아직 한줄평이 없어요</p>') +
+          (latest ? '<p class="pc-note">' + esc(latest.text) + "</p>" : '<p class="pc-note is-empty">한줄평이 없습니다.</p>') +
           (by.length ? '<p class="pc-by">' + by.join(" · ") + "</p>" : "") +
           '<div class="pc-foot">' +
-          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '" aria-controls="place-' + p.id + '">' +
+          '<button type="button" class="pc-more" data-open="' + p.id + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="place-detail-' + p.id + '"' : "") + '>' +
             (open ? "접기" : "자세히") + icon("chevDown", "is-sm") + "</button>" +
           '<a class="btn btn-secondary is-sm pc-map" href="' + esc(mapUrl(p)) + '" target="_blank" rel="noopener noreferrer">' +
-            icon("map", "is-sm") + ' 지도<span class="sr-only"> (새 창에서 열림)</span></a>' +
+            icon("map", "is-sm") + ' 지도에서 보기<span class="sr-only"> (새 창에서 열림)</span></a>' +
           "</div>" + detail + "</article>";
       }
 
@@ -727,20 +686,20 @@
         if (state.all.length && hasCondition()) {
           var labels = conditionList().map(function (c) { return c.label; }).join(", ");
           return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
-            "<strong>" + esc(labels) + " 조건에 맞는 곳이 없어요</strong>" +
-            "<p>조건을 바꾸거나 풀어 보세요. 전체 " + state.all.length + "곳이 있어요.</p>" +
+            "<strong>검색 결과가 없습니다.</strong>" +
+            "<p>다른 검색어나 필터를 선택해 주세요. 현재 조건: " + esc(labels) + " · 전체 " + state.all.length + "곳</p>" +
             '<button type="button" class="btn btn-secondary is-sm" data-reset="1">조건 초기화</button>' +
             "</div></div>";
         }
         return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
-          "<strong>아직 다녀온 곳 기록이 없어요</strong>" +
-          "<p>벙에서 다녀온 곳을 하나씩 모으는 자리예요. 첫 곳을 올려볼까요?</p>" +
-          '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 올리기</button>' +
+          "<strong>등록된 맛집이 없습니다.</strong>" +
+          "<p>모임에서 다녀온 식당을 등록해 주세요.</p>" +
+          '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 등록</button>' +
           "</div></div>";
       }
       function errorHTML() {
         return '<div class="card" style="grid-column:1/-1"><div class="empty-state">' +
-          "<strong>맛집 목록을 불러오지 못했어요</strong><p>연결이 잠깐 끊겼을 수 있어요.</p>" +
+          "<strong>맛집 목록을 불러오지 못했습니다.</strong><p>연결을 확인한 뒤 다시 시도해 주세요.</p>" +
           '<button type="button" class="btn btn-secondary is-sm" data-retry="1">다시 시도</button>' +
           "</div></div>";
       }
@@ -758,7 +717,7 @@
         $("placeList").innerHTML = list.length ? list.map(cardHTML).join("") : emptyHTML();
         $("placeList").removeAttribute("aria-busy");
         $("placesCount").textContent = !state.all.length
-          ? "아직 등록된 곳이 없어요"
+          ? "등록된 곳 없음"
           : (hasCondition() ? list.length + "곳 (전체 " + state.all.length + "곳)" : "전체 " + state.all.length + "곳");
         renderConditions();
       }
@@ -783,7 +742,7 @@
           .catch(function () {
             $("placeList").innerHTML = errorHTML();
             $("placeList").removeAttribute("aria-busy");
-            $("placesCount").textContent = "불러오지 못했어요";
+            $("placesCount").textContent = "불러오지 못함";
             $("resetBtn").hidden = true;
           });
       }
@@ -791,10 +750,10 @@
       function openPlaceModal(id) {
         state.editId = id || null;
         var p = id ? state.all.filter(function (x) { return x.id === id; })[0] : null;
-        $("pmTitle").textContent = p ? "맛집 정보 고치기" : "맛집 올리기";
+        $("pmTitle").textContent = p ? "맛집 정보 수정" : "맛집 등록";
         $("pName").value = p ? p.name : "";
         $("pArea").innerHTML = AREAS.map(function (a) {
-          return '<option' + (p && p.area === a ? " selected" : "") + ">" + esc(a) + "</option>";
+          return '<option value="' + esc(a) + '"' + (p && p.area === a ? " selected" : "") + ">" + esc(areaLabel(a)) + "</option>";
         }).join("");
         $("pCat").innerHTML = CATS.map(function (c) {
           return '<option' + (p && p.category === c ? " selected" : "") + ">" + esc(c) + "</option>";
@@ -809,6 +768,7 @@
         $("pPass").value = savedPass();
         $("pNickWrap").hidden = !!p;      // 수정할 땐 닉네임을 다시 묻지 않는다
         $("pDelete").hidden = !p;
+        $("pSubmit").textContent = p ? "수정" : "등록";
         $("placeBackdrop").hidden = false;
         setTimeout(function () { $("pName").focus(); }, 60);
       }
@@ -819,9 +779,9 @@
         var name = $("pName").value.trim();
         var pass = $("pPass").value;
         var nick = ($("pNick").value || savedNick()).trim();
-        if (!name) { toast("가게 이름을 적어 주세요"); $("pName").focus(); return; }
-        if (!state.editId && !nick) { toast("닉네임을 적어 주세요"); $("pNick").focus(); return; }
-        if (pass.trim().length < 4) { toast("비밀번호는 4자 이상이에요"); $("pPass").focus(); return; }
+        if (!name) { toast("식당 이름을 입력해 주세요."); $("pName").focus(); return; }
+        if (!state.editId && !nick) { toast("닉네임을 입력해 주세요."); $("pNick").focus(); return; }
+        if (pass.trim().length < 4) { toast("비밀번호는 4자 이상 입력해 주세요."); $("pPass").focus(); return; }
 
         var common = {
           p_name: name, p_area: $("pArea").value, p_category: $("pCat").value,
@@ -831,7 +791,8 @@
           p_price_note: $("pPriceNote").value.trim() || null
         };
         state.busy = true;
-        var btn = $("pSubmit"); btn.disabled = true; btn.textContent = "올리는 중...";
+        var editing = !!state.editId;
+        var btn = $("pSubmit"); btn.disabled = true; btn.textContent = editing ? "저장 중" : "등록 중";
 
         var call = state.editId
           ? api("/rest/v1/rpc/place_update", { method: "POST",
@@ -841,21 +802,21 @@
 
         call.then(function () {
           if (!state.editId) remember(nick, pass);
-          toast(state.editId ? "맛집 정보를 고쳤어요" : "맛집을 올렸어요.");
+          toast(state.editId ? "맛집 정보를 수정했습니다." : "맛집을 등록했습니다.");
           closePlaceModal();
           return load();
         }).catch(function (e) { toast(errMsg(e)); })
-          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = "올리기"; });
+          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = editing ? "수정" : "등록"; });
       }
 
       function deletePlace() {
         if (state.busy || !state.editId) return;
         var pass = $("pPass").value;
-        if (pass.trim().length < 4) { toast("비밀번호를 입력해 주세요"); return; }
-        if (!window.confirm("이 가게를 지울까요? 한줄평도 함께 사라져요.\n문 닫은 곳이면 지우지 말고 '지금은 문 닫았어요'를 켜주세요.")) return;
+        if (pass.trim().length < 4) { toast("비밀번호를 입력해 주세요."); return; }
+        if (!window.confirm("이 식당을 삭제합니다. 한줄평도 함께 삭제되며 되돌릴 수 없습니다.\n영업을 종료한 식당이면 삭제 대신 '현재 영업 종료'를 켜 주세요. 계속할까요?")) return;
         state.busy = true;
         api("/rest/v1/rpc/place_delete", { method: "POST", body: { p_id: state.editId, p_pass: pass } })
-          .then(function () { toast("지웠어요"); closePlaceModal(); return load(); })
+          .then(function () { toast("식당을 삭제했습니다."); closePlaceModal(); return load(); })
           .catch(function (e) { toast(errMsg(e)); })
           .then(function () { state.busy = false; });
       }
@@ -877,11 +838,11 @@
       function submitNote() {
         if (state.busy) return;
         var body = $("nBody").value.trim(), nick = $("nNick").value.trim(), pass = $("nPass").value;
-        if (!body) { toast("한줄평을 적어 주세요"); $("nBody").focus(); return; }
-        if (!nick) { toast("닉네임을 적어 주세요"); $("nNick").focus(); return; }
-        if (pass.trim().length < 4) { toast("비밀번호는 4자 이상이에요"); $("nPass").focus(); return; }
+        if (!body) { toast("한줄평을 입력해 주세요."); $("nBody").focus(); return; }
+        if (!nick) { toast("닉네임을 입력해 주세요."); $("nNick").focus(); return; }
+        if (pass.trim().length < 4) { toast("비밀번호는 4자 이상 입력해 주세요."); $("nPass").focus(); return; }
         state.busy = true;
-        var btn = $("nSubmit"); btn.disabled = true; btn.textContent = "남기는 중...";
+        var btn = $("nSubmit"); btn.disabled = true; btn.textContent = "등록 중";
         api("/rest/v1/rpc/place_note_create", { method: "POST", body: {
           p_place_id: state.noteFor, p_author: nick, p_pass: pass, p_body: body,
           p_again: $("nAgain").checked,
@@ -889,26 +850,45 @@
           p_per_person: parseInt($("nPer").value, 10) || null
         } }).then(function () {
           remember(nick, pass);
-          toast("한줄평을 남겼어요");
+          toast("한줄평을 등록했습니다.");
           closeNoteModal();
           return load();
         }).catch(function (e) { toast(errMsg(e)); })
-          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = "남기기"; });
+          .then(function () { state.busy = false; btn.disabled = false; btn.textContent = "등록"; });
       }
 
+      var passResolve = null;
+      function askPassword() {
+        return new Promise(function (resolve) {
+          passResolve = resolve;
+          $("passInput").value = "";
+          $("passBackdrop").hidden = false;
+          setTimeout(function () { $("passInput").focus(); }, 30);
+        });
+      }
+      function closePassModal(value) {
+        if ($("passBackdrop").hidden) return;
+        $("passBackdrop").hidden = true;
+        var r = passResolve; passResolve = null;
+        if (r) r(value);
+      }
       function deleteNote(noteId) {
-        var pass = window.prompt("한줄평을 쓸 때 입력한 비밀번호를 적어 주세요");
-        if (pass === null) return;
-        api("/rest/v1/rpc/place_note_delete", { method: "POST", body: { p_id: Number(noteId), p_pass: pass } })
-          .then(function () { toast("지웠어요"); return load(); })
-          .catch(function (e) { toast(errMsg(e)); });
+        askPassword().then(function (pass) {
+          if (pass === null) return;
+          if (pass.trim().length < 4) { toast("비밀번호는 4자 이상 입력해 주세요."); return; }
+          return api("/rest/v1/rpc/place_note_delete", { method: "POST", body: { p_id: Number(noteId), p_pass: pass } })
+            .then(function () { toast("한줄평을 삭제했습니다."); return load(); })
+            .catch(function (e) { toast(errMsg(e)); });
+        });
       }
 
       /* ── 이벤트 ── */
       $("placeList").addEventListener("click", function (e) {
         var t;
         if ((t = e.target.closest("[data-open]")))   { var id = Number(t.getAttribute("data-open"));
-                                                       state.openId = state.openId === id ? null : id; render(); return; }
+                                                       state.openId = state.openId === id ? null : id; render();
+                                                       var again = $("placeList").querySelector('[data-open="' + id + '"]');
+                                                       if (again) again.focus({ preventScroll: true }); return; }
         if ((t = e.target.closest("[data-note]")))   { openNoteModal(Number(t.getAttribute("data-note"))); return; }
         if ((t = e.target.closest("[data-edit]")))   { openPlaceModal(Number(t.getAttribute("data-edit"))); return; }
         if ((t = e.target.closest("[data-delnote]"))){ deleteNote(t.getAttribute("data-delnote")); return; }
@@ -951,15 +931,32 @@
       $("nCancel").addEventListener("click", closeNoteModal);
       $("nSubmit").addEventListener("click", submitNote);
       $("placeBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closePlaceModal(); });
+      $("passOk").addEventListener("click", function () { closePassModal($("passInput").value); });
+      $("passCancel").addEventListener("click", function () { closePassModal(null); });
+      $("passClose").addEventListener("click", function () { closePassModal(null); });
+      $("passInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); closePassModal($("passInput").value); } });
+      $("passBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closePassModal(null); });
       $("noteBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closeNoteModal(); });
       document.addEventListener("keydown", function (e) {
         if (e.key !== "Escape") return;
+        if (!$("passBackdrop").hidden) { closePassModal(null); return; }
         if (!$("noteBackdrop").hidden) { closeNoteModal(); return; }
         if (!$("placeBackdrop").hidden) closePlaceModal();
       });
 
+      /* 홈이나 공유 링크의 #place-N 으로 들어오면 목록을 다 그린 뒤 그 식당으로 옮긴다 */
+      function openFromHash() {
+        var m = /^#place-(\d+)$/.exec(location.hash || "");
+        if (!m) return;
+        var el = document.getElementById("place-" + m[1]);
+        if (!el) return;
+        el.scrollIntoView({ block: "start" });
+        var b = el.querySelector("[data-open]");
+        if (b) b.focus({ preventScroll: true });
+      }
       fillSelects();
-      load();
+      load().then(openFromHash);
+      window.addEventListener("hashchange", openFromHash);
     })();
   </script>
 

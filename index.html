@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#285244" />
 
   <title>동네친구들 오픈채팅 커뮤니티</title>
-  <meta name="description" content="가까이 살고, 함께 즐겨요. 밥 한 끼부터 주말 산책까지 동네친구들과 일상을 나눠요." />
+  <meta name="description" content="동네친구들 오픈채팅 커뮤니티. 모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요." />
   <meta property="og:url" content="https://excer-site.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="동네친구들 오픈채팅 커뮤니티" />
-  <meta property="og:description" content="가까이 살고, 함께 즐겨요. 밥 한 끼부터 주말 산책까지 동네친구들과 일상을 나눠요." />
+  <meta property="og:description" content="모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -25,32 +25,18 @@
 
   <style>
     /* ============================================================
-       홈 — 대표 이미지와 콘텐츠를 편집해 보여주는 화면
-       순서: 대표 영역 → 다가오는 벙(있을 때만) → 함께 간 맛집 → 최근 소식·후기 → 처음이라면
+       홈 — 서비스 소개 한 줄, 그 아래 실제 소식·모임·맛집
        ============================================================ */
+    .hero-home { padding: var(--sp-7) 0 var(--sp-5); }
+    .hero-home .hero-title { font-size: var(--fs-display); line-height: 1.2; }
+    .hero-home .hero-sub { max-width: 34em; font-size: 17px; }
+    @media (max-width: 860px) { .hero-home { padding: var(--sp-6) 0 var(--sp-4); } .hero-home .hero-sub { font-size: 16px; } }
 
-    /* ── 대표 영역: 글 55% / 그림 45% ── */
-    .hero-home { padding: var(--sp-7) 0 var(--sp-6); }
-    .hero-home .hero-title { margin-top: 0; }
-    .hero-home .hero-sub { font-size: 17px; }
-    .hero-img { border-radius: var(--r-lg); }
-    @media (max-width: 860px) {
-      .hero-home { padding: var(--sp-6) 0 var(--sp-5); }
-      .hero-home .hero-sub { font-size: 16px; }
-      /* 제목·설명이 먼저, 그림은 그 아래에 낮게 */
-      .hero-split { gap: var(--sp-5); }
-      .hero-img { aspect-ratio: 16 / 10; }
-    }
-
-    /* ── 다가오는 벙: 날짜별 묶음, 한 줄에 시간 → 제목 → 장소 → 상태 ── */
-    .bung-groups { display: grid; gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
-    .bung-day { margin: 0; }
+    /* ── 다가오는 모임: 날짜별 묶음. 시간 → 제목 → 장소 → 상태 ── */
+    .bung-groups { display: grid; gap: var(--sp-4); }
     .bung-day-h { margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
     .bung-rows { margin: 0; padding: 0; list-style: none; }
-    .bung-row {
-      display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: baseline;
-      padding: 12px 0; border-top: 1px solid var(--line); text-decoration: none;
-    }
+    .bung-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--line); text-decoration: none; }
     .bung-rows .bung-row:last-child { border-bottom: 1px solid var(--line); }
     .bung-row:hover .bung-title { text-decoration: underline; text-underline-offset: 3px; }
     .bung-time { color: var(--ink-2); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
@@ -58,24 +44,9 @@
     .bung-title { display: block; color: var(--ink); font-size: var(--fs-body); font-weight: 600; overflow-wrap: anywhere; }
     .bung-place { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); font-weight: 500; }
     .bung-state { color: var(--brand); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; }
-    @media (max-width: 600px) {
-      .bung-row { grid-template-columns: 52px minmax(0, 1fr); }
-      .bung-state { grid-column: 2; }
-    }
+    @media (max-width: 600px) { .bung-row { grid-template-columns: 52px minmax(0, 1fr); } .bung-state { grid-column: 2; } }
 
-    /* ── 함께 간 맛집: 4장, 실데이터 ── */
-    .home-places { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
-    .hp-card { display: flex; flex-direction: column; padding: 18px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); text-decoration: none; min-height: 150px; }
-    .hp-card:hover { border-color: var(--line-strong); }
-    .hp-name { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
-    .hp-meta { margin: 4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    .hp-note { margin: 10px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .hp-note.is-empty { color: var(--ink-2); }
-    .hp-by { margin: auto 0 0; padding-top: 8px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    @media (max-width: 1000px) { .home-places { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 480px)  { .home-places { grid-template-columns: 1fr; } .hp-card { min-height: 0; } }
-
-    /* ── 최근 소식·후기: 선으로만 나눈 목록 ── */
+    /* ── 소식 목록: 선으로만 나눈다 ── */
     .news-list { display: grid; }
     .news-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--line); text-decoration: none; }
     .news-list .news-item:last-child { border-bottom: 1px solid var(--line); }
@@ -85,38 +56,38 @@
     .news-body { min-width: 0; }
     .news-title { display: block; color: var(--ink); font-size: var(--fs-body); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-excerpt { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .news-meta { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; white-space: nowrap; }
-    @media (max-width: 600px) {
-      .news-item { grid-template-columns: minmax(0, 1fr) auto; }
-      .news-cat { grid-column: 1 / -1; }
-      .news-title { white-space: normal; }
-    }
+    .news-meta { color: var(--ink-2); font-size: var(--fs-caption); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    @media (max-width: 600px) { .news-item { grid-template-columns: minmax(0, 1fr) auto; } .news-cat { grid-column: 1 / -1; } .news-title { white-space: normal; } }
 
-    /* 섹션 안 상태 표시 (불러오는 중·실패·없음) — 카드가 아니라 글 한 줄 */
+    /* ── 맛집 4곳 ── */
+    .home-places { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
+    .hp-card { display: flex; flex-direction: column; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); text-decoration: none; }
+    .hp-card:hover { border-color: var(--line-strong); }
+    .hp-name { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+    .hp-meta { margin: 4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .hp-note { margin: 10px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .hp-note.is-empty { color: var(--ink-2); }
+    .hp-by { margin: 8px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
+    @media (max-width: 1000px) { .home-places { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 480px)  { .home-places { grid-template-columns: 1fr; } }
+
+    /* 섹션 안 상태 표시 — 글 한 줄 */
     .sec-note { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
     .sec-note .btn { margin-left: auto; }
+    .home-places .sec-note, .home-places .skel-rows { grid-column: 1 / -1; }
     .skel-rows { display: grid; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
     .skel-rows .skeleton { display: block; }
 
-    /* ── 처음이라면: 세 줄 + 활동 그림 넷 ── */
-    .join-grid { display: grid; gap: var(--sp-6); grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
-    .join-steps { margin: var(--sp-4) 0 0; padding: 0; list-style: none; }
-    .join-steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+    /* ── 신규 멤버 안내: 세 줄 ── */
+    .join-steps { max-width: 40em; margin: 0; padding: 0; list-style: none; }
+    .join-steps li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
     .join-steps li:last-child { border-bottom: 1px solid var(--line); }
-    .join-steps b { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 13px; font-weight: 600; }
+    .join-steps b { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; }
     .join-steps strong { display: block; font-size: var(--fs-body); font-weight: 600; }
     .join-steps span { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-sm); }
-    .join-copy .hero-actions { margin-top: var(--sp-4); }
-    .activity-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .activity-grid figure { margin: 0; }
-    .activity-grid .img-slot { border-radius: var(--r-md); }
-    .activity-grid .act-cap { display: block; margin-top: 6px; color: var(--ink); font-size: var(--fs-sm); font-weight: 500; }
-    .activity-note { margin: 8px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
-    @media (max-width: 860px) { .join-grid { grid-template-columns: 1fr; } }
   </style>
   <script src="assets/site-core.js?v=2"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/images.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -129,75 +100,44 @@
       </a>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab is-active" href="index.html" aria-current="page">홈</a>
-        <a class="topnav-tab" href="guide.html">필독</a>
-        <a class="topnav-tab" href="report.html">대시보드</a>
-        <a class="topnav-tab" href="calculator.html">정산</a>
+        <a class="topnav-tab" href="guide.html">이용 안내</a>
+        <a class="topnav-tab" href="report.html">활동 통계</a>
+        <a class="topnav-tab" href="calculator.html">모임 정산</a>
         <a class="topnav-tab" href="news.html">소식</a>
         <a class="topnav-tab" href="places.html">맛집</a>
       </nav>
-      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a>
+      <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
     </div>
   </header>
 
   <main id="main" class="page-main">
-    <!-- ── 대표 영역 ── -->
     <section class="hero-band hero-home" aria-labelledby="heroTitle">
-      <div class="container hero-split">
-        <div class="hero-copy">
-          <h1 class="hero-title" id="heroTitle">가까이 살고,<br />함께 즐겨요.</h1>
-          <p class="hero-sub">밥 한 끼부터 주말 산책까지. 동네친구들과 일상을 나눠요.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
-            <a class="btn btn-secondary is-lg" href="guide.html">처음 오셨나요</a>
-          </div>
+      <div class="container">
+        <h1 class="hero-title" id="heroTitle">함께하는 동네 생활</h1>
+        <p class="hero-sub">모임 소식과 맛집, 활동 기록을 한곳에서 확인하세요.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
+          <a class="btn btn-secondary is-lg" href="guide.html">이용 안내</a>
         </div>
-        <!-- 동네 대표 그림. assets/images.js 가 채운다. 파일이 없으면 같은 비율의 단색 자리. -->
-        <figure class="img-slot hero-img" data-img="neighborhood-hero" data-eager></figure>
       </div>
     </section>
 
-    <!-- ── 1. 다가오는 벙 — 모집 글에 날짜가 있고 아직 지나지 않은 것만. 없으면 통째로 숨긴다 ── -->
-    <section class="section" id="secBung" hidden aria-labelledby="bungTitle">
+    <!-- 다가오는 모임 — 날짜가 있는 모집 글만. 없으면 이 칸을 만들지 않는다 -->
+    <section class="section is-tight" id="secBung" hidden aria-labelledby="bungTitle">
       <div class="container">
         <div class="sec-bar">
-          <div class="sb-l">
-            <h2 class="lead-h" id="bungTitle">다가오는 벙</h2>
-            <p class="sb-note">카톡방에 올라온 모집 글 기준이에요. 신청은 카톡방에서 받아요.</p>
-          </div>
+          <div class="sb-l"><h2 class="lead-h" id="bungTitle">다가오는 모임</h2><p class="sb-note">신청은 오픈채팅 공지에서 받습니다.</p></div>
           <a class="link-arrow" href="news.html">소식에서 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
         <div class="bung-groups" id="bungGroups"></div>
       </div>
     </section>
 
-    <!-- ── 2. 함께 간 맛집 ── -->
-    <section class="section" aria-labelledby="placesTitle">
+    <section class="section is-tight" aria-labelledby="newsTitle">
       <div class="container">
         <div class="sec-bar">
-          <div class="sb-l">
-            <h2 class="lead-h" id="placesTitle">함께 간 맛집</h2>
-            <p class="sb-note" id="placesNote">최근 등록된 곳부터 4곳</p>
-          </div>
-          <a class="link-arrow" href="places.html">맛집 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
-        </div>
-        <div class="home-places" id="homePlaces" aria-busy="true">
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:60%"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:90%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:50%"></span><span class="skeleton skeleton-line" style="width:70%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:85%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:66%"></span><span class="skeleton skeleton-line" style="width:76%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:88%;margin-top:14px"></span></div>
-          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:54%"></span><span class="skeleton skeleton-line" style="width:72%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:14px"></span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 3. 최근 소식·후기 ── -->
-    <section class="section" aria-labelledby="newsTitle">
-      <div class="container">
-        <div class="sec-bar">
-          <div class="sb-l">
-            <h2 class="lead-h" id="newsTitle">최근 소식과 후기</h2>
-            <p class="sb-note">공지, 벙 소식, 다녀온 후기가 여기에 먼저 올라와요.</p>
-          </div>
-          <a class="link-arrow" href="news.html">소식 전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+          <div class="sb-l"><h2 class="lead-h" id="newsTitle">최근 소식</h2></div>
+          <a class="link-arrow" href="news.html">전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
         <div class="news-list" id="newsList" aria-busy="true">
           <div class="skel-rows" aria-hidden="true">
@@ -210,30 +150,33 @@
       </div>
     </section>
 
-    <!-- ── 4. 처음이라면 — 입장 → 필독 → 첫 참여. 활동 그림은 오른쪽에 작게 ── -->
-    <section class="section" aria-labelledby="joinTitle">
-      <div class="container join-grid">
-        <div class="join-copy">
-          <h2 class="lead-h" id="joinTitle">처음이라면 이렇게</h2>
-          <ol class="join-steps">
-            <li><b>1</b><div><strong>오픈채팅에 들어와요</strong><span>닉네임을 양식에 맞춰 바꿔요. 예: 엑서 논현 남 88</span></div></li>
-            <li><b>2</b><div><strong>필독 1분 요약을 봐요</strong><span>벙 참여와 정산, 매너만 훑으면 돼요.</span></div></li>
-            <li><b>3</b><div><strong>2주 안에 첫 벙에 나와요</strong><span>관심 가는 벙에 댓글로 신청하면 끝이에요.</span></div></li>
-          </ol>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a>
-            <a class="btn btn-secondary" href="guide.html">필독 보기</a>
-          </div>
+    <section class="section is-tight" aria-labelledby="placesTitle">
+      <div class="container">
+        <div class="sec-bar">
+          <div class="sb-l"><h2 class="lead-h" id="placesTitle">맛집</h2><p class="sb-note" id="placesNote">최근 등록순 4곳</p></div>
+          <a class="link-arrow" href="places.html">전체 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
-        <div>
-          <div class="activity-grid" aria-label="함께하는 활동">
-            <figure><span class="img-slot is-sm" data-img="activity-dining"></span><figcaption class="act-cap">함께 밥 먹기</figcaption></figure>
-            <figure><span class="img-slot is-sm" data-img="activity-walking"></span><figcaption class="act-cap">동네 산책</figcaption></figure>
-            <figure><span class="img-slot is-sm" data-img="activity-culture"></span><figcaption class="act-cap">전시와 공연</figcaption></figure>
-            <figure><span class="img-slot is-sm" data-img="activity-boardgame"></span><figcaption class="act-cap">보드게임</figcaption></figure>
-          </div>
-          <p class="activity-note">활동 일러스트예요. 실제 모임 사진이 아니에요.</p>
+        <div class="home-places" id="homePlaces" aria-busy="true">
+          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:60%"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:90%;margin-top:14px"></span></div>
+          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:50%"></span><span class="skeleton skeleton-line" style="width:70%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:85%;margin-top:14px"></span></div>
+          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:66%"></span><span class="skeleton skeleton-line" style="width:76%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:88%;margin-top:14px"></span></div>
+          <div class="hp-card" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:54%"></span><span class="skeleton skeleton-line" style="width:72%;margin-top:10px"></span><span class="skeleton skeleton-line" style="width:80%;margin-top:14px"></span></div>
         </div>
+      </div>
+    </section>
+
+    <!-- 신규 멤버 안내 — 이용 안내의 규칙과 같은 내용을 짧게. 자세한 조건은 이용 안내로 -->
+    <section class="section is-tight" aria-labelledby="joinTitle">
+      <div class="container">
+        <div class="sec-bar">
+          <div class="sb-l"><h2 class="lead-h" id="joinTitle">처음 참여하는 멤버</h2></div>
+          <a class="link-arrow" href="guide.html">이용 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+        </div>
+        <ol class="join-steps">
+          <li><b>1</b><div><strong>오픈채팅 참여 후 닉네임 변경</strong><span>닉네임 · 지역 · 성별 · 출생년도 · 입장일 순서입니다. 예: 엑서 논현 남 88 0125</span></div></li>
+          <li><b>2</b><div><strong>이용 안내 확인</strong><span>모임 참여 절차, 정산 방법, 대화 매너를 확인합니다.</span></div></li>
+          <li><b>3</b><div><strong>2주 안에 첫 모임 참여</strong><span>참여할 모임 공지에서 참석 버튼을 누릅니다. 첫 모임은 음주 상태로 참여할 수 없습니다.</span></div></li>
+        </ol>
       </div>
     </section>
   </main>
@@ -243,39 +186,33 @@
       <div class="footer-grid">
         <div>
           <span class="footer-logo">동네친구들</span>
-          <p class="footer-tagline">
-            오픈채팅에서 만난 동네 사람들이에요.<br />
-            필독부터 운영 대시보드, 벙비 정산까지 여기서 같이 봐요.
-          </p>
-          <span class="footer-note"><svg class="ic is-sm" aria-hidden="true"><use href="#i-lock"/></svg> 대화 원문은 저장하지 않아요. 집계 숫자와 키워드만 다뤄요</span>
+          <p class="footer-tagline">오픈채팅으로 만나는 동네 커뮤니티입니다.</p>
         </div>
         <nav class="footer-col" aria-label="푸터 메뉴">
-          <h4>바로가기</h4>
           <ul class="footer-links">
             <li><a href="index.html">홈</a></li>
-            <li><a href="guide.html">필독</a></li>
-            <li><a href="report.html">운영 대시보드</a></li>
-            <li><a href="calculator.html">벙비 정산기</a></li>
+            <li><a href="guide.html">이용 안내</a></li>
+            <li><a href="report.html">활동 통계</a></li>
+            <li><a href="calculator.html">모임 정산</a></li>
             <li><a href="news.html">소식</a></li>
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
-            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 들어가기</a></li>
+            <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
           </ul>
         </nav>
       </div>
       <div class="footer-bottom">
         <span class="footer-visits" id="visitBox" hidden><span class="tv-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tv-cell"><i>오늘</i><b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i><b id="visitTotal">0</b></span></span>
-        <small>© 2026 동네친구들 오픈채팅 커뮤니티</small>
-        <small>모두가 즐거운 모임을 위해, 매너가 먼저예요</small>
+        <small>© 2026 동네친구들</small>
       </div>
     </div>
   </footer>
 
   <nav class="bottom-tabbar" aria-label="모바일 하단 내비게이션">
     <a class="tab-item is-active" href="index.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v10h12V10"/></svg>홈</a>
-    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>필독</a>
-    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>대시보드</a>
-    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>정산</a>
+    <a class="tab-item" href="guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>이용 안내</a>
+    <a class="tab-item" href="report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 20v-7"/><path d="M12 20V8"/><path d="M17 20v-10"/></svg>활동 통계</a>
+    <a class="tab-item" href="calculator.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M16 16h.01"/></svg>모임 정산</a>
     <a class="tab-item" href="news.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>소식</a>
     <a class="tab-item" href="places.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 4 0V3"/><path d="M7 10v11"/><path d="M17 3c-1.7 1.2-2.5 3-2.5 5.5S15.3 12 17 12v9"/></svg>맛집</a>
   </nav>
@@ -334,7 +271,12 @@
         host.innerHTML = '<div class="sec-note"><span>' + esc(text) + "</span>" +
           (retryFn ? '<button type="button" class="btn btn-secondary is-sm" data-retry>다시 시도</button>' : "") + "</div>";
         host.removeAttribute("aria-busy");
-        if (retryFn) host.querySelector("[data-retry]").addEventListener("click", retryFn);
+        if (retryFn) host.querySelector("[data-retry]").addEventListener("click", function (e) {
+          var b = e.currentTarget;
+          b.disabled = true; b.textContent = "불러오는 중";
+          host.setAttribute("aria-busy", "true");
+          retryFn();
+        });
       }
 
       /* ══════════ 1) 소식 → 다가오는 벙 + 최근 소식 ══════════ */
@@ -363,7 +305,7 @@
               var state = "모집 중" + (m.cap ? " · 정원 " + Number(m.cap) + "명" : "");
               return '<li><a class="bung-row" href="news.html#post-' + p.id + '">' +
                 '<span class="bung-time">' + (m.time ? esc(m.time) : "시간 미정") + "</span>" +
-                '<span class="bung-main"><span class="bung-title">' + esc(p.title || "벙 모집") + "</span>" +
+                '<span class="bung-main"><span class="bung-title">' + esc(p.title || "모임 모집") + "</span>" +
                 (m.place ? '<span class="bung-place">' + esc(m.place) + "</span>" : "") + "</span>" +
                 '<span class="bung-state">' + esc(state) + "</span></a></li>";
             }).join("") + "</ul></div>";
@@ -373,19 +315,20 @@
 
       function renderNews(posts) {
         var host = $("newsList");
-        if (!Array.isArray(posts) || !posts.length) { note(host, "아직 올라온 소식이 없어요."); return; }
+        if (!Array.isArray(posts) || !posts.length) { note(host, "등록된 소식이 없습니다."); return; }
         var list = posts.slice().sort(function (a, b) {
           if ((b.pinned ? 1 : 0) !== (a.pinned ? 1 : 0)) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
           return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         }).slice(0, 5);
         host.innerHTML = list.map(function (p) {
           var cat = p.category || "자유";
+          if (cat === "벙 소식") cat = "모임 소식";
           var ex = excerpt(p.body);
           return '<a class="news-item" href="news.html#post-' + p.id + '">' +
             '<span class="news-cat' + (cat === "공지" ? " is-notice" : "") + '">' + esc(cat) + "</span>" +
             '<span class="news-body"><span class="news-title">' + esc(p.title || "제목 없음") + "</span>" +
             (ex ? '<span class="news-excerpt">' + esc(ex) + "</span>" : "") + "</span>" +
-            '<span class="news-meta">' + esc(p.author || "동네친구") + " · " + esc(relTime(p.created_at)) + "</span></a>";
+            '<span class="news-meta">' + esc(p.author || "익명") + " · " + esc(relTime(p.created_at)) + "</span></a>";
         }).join("");
         host.removeAttribute("aria-busy");
       }
@@ -395,7 +338,7 @@
           .then(function (rows) { renderBung(rows); renderNews(rows); })
           .catch(function () {
             $("secBung").hidden = true;
-            note($("newsList"), "소식을 불러오지 못했어요.", loadPosts);
+            note($("newsList"), "소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPosts);
           });
       }
 
@@ -407,16 +350,16 @@
       function renderPlaces(rows) {
         var host = $("homePlaces");
         rows = (Array.isArray(rows) ? rows : []).filter(function (p) { return !p.closed; });
-        if (!rows.length) { note(host, "아직 등록된 맛집이 없어요. 다녀온 곳을 올려 주세요."); $("placesNote").textContent = ""; return; }
+        if (!rows.length) { note(host, "등록된 맛집이 없습니다."); $("placesNote").textContent = ""; return; }
         var list = rows.slice(0, 4);
-        $("placesNote").textContent = "최근 등록된 곳부터 " + list.length + "곳";
+        $("placesNote").textContent = "최근 등록순 " + list.length + "곳";
         host.innerHTML = list.map(function (p) {
           var latest = Array.isArray(p.notes) && p.notes[0] ? p.notes[0] : null;
           var meta = [String(p.area || "").replace(/·/g, "/"), p.category, priceText(p)].filter(Boolean).join(" · ");
           return '<a class="hp-card" href="places.html#place-' + p.id + '">' +
             '<h3 class="hp-name">' + esc(p.name) + "</h3>" +
             '<p class="hp-meta">' + esc(meta) + "</p>" +
-            (latest ? '<p class="hp-note">' + esc(latest.text) + "</p>" : '<p class="hp-note is-empty">아직 한줄평이 없어요</p>') +
+            (latest ? '<p class="hp-note">' + esc(latest.text) + "</p>" : '<p class="hp-note is-empty">한줄평이 없습니다</p>') +
             (latest && latest.by ? '<p class="hp-by">' + esc(latest.by) + "</p>" : "") +
             "</a>";
         }).join("");
@@ -425,7 +368,7 @@
       function loadPlaces() {
         supaGet("/rest/v1/site_places_v?select=id,name,area,category,price_level,closed,notes,created_at&order=created_at.desc&limit=8")
           .then(renderPlaces)
-          .catch(function () { $("placesNote").textContent = ""; note($("homePlaces"), "맛집을 불러오지 못했어요.", loadPlaces); });
+          .catch(function () { $("placesNote").textContent = ""; note($("homePlaces"), "맛집을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.", loadPlaces); });
       }
 
       loadPosts();
@@ -474,7 +417,7 @@
         try { desc = decodeURIComponent(desc.replace(/\+/g, " ")); } catch (e) {}
         try { history.replaceState(null, "", location.pathname); } catch (e) {}
         setTimeout(function () {
-          alert("로그인 처리 중 오류가 발생했어요: " + desc + "\n\n게임의 카카오 로그인은 게임 페이지에서 다시 시도해 주세요.");
+          alert("로그인 처리 중 오류가 발생했습니다: " + desc + "\n\n게임의 카카오 로그인은 게임 페이지에서 다시 시도해 주세요.");
         }, 200);
       } catch (e) {}
     })();
