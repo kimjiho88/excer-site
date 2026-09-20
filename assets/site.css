@@ -614,7 +614,11 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: underline; te
   transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
-@media (max-width: 860px) { .toast { bottom: calc(84px + env(safe-area-inset-bottom)); } }
+@media (max-width: 860px) {
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  /* 떠 있는 버튼(.fab)이 있는 페이지에서는 알림을 그 위로 — 버튼과 겹치지 않게 */
+  body:has(.fab:not(.is-hidden)) .toast { bottom: calc(144px + env(safe-area-inset-bottom)); }
+}
 
 /* ============================================================
    장식이었던 것들 — 전부 끈다
