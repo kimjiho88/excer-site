@@ -17,7 +17,7 @@
 | games.html | 게임 목록 | 정적 | 유지 | 유지 | 링크 | 확인 | 확인 | 게임 내부 미변경 |
 | game_v2.html / bakery.html | 게임 | 게임 저장 | 미변경(복귀 링크만 이전 단계에서) | - | gameback.js | - | 확인 | - |
 | report-admin.html | 통계 발행(운영진) | site_reports | 유지. 공용 토큰 적용 | 유지 | footcheck.js | 확인 | 확인 | 서버 설정 전이라 발행 미검증 |
-| 공통 셸 | 메뉴·푸터·탭바·팝업·알림·상태 | - | site.css v6: 행 목록(.rows/.row), 패널(.panel/.is-brand/.is-soft), 사실 표(.kv), 유형 라벨(.type-tag), 폼 오류(.field-error)·미리보기(.form-preview), 모바일 시트(.is-sheet), 상태 줄(.status-line) | 용어 사전 적용 | 건너뛰기 링크, 대화상자 포커스 유지·Esc·복귀, 탭바 가림 없음(a11ytest.js), 가로 넘침 390/768/1440 없음(shoot768.js) | 확인 | 확인 | 대비 측정기는 13px 400 글자를 실제보다 옅게 잰다(계산값 5.1:1) → 보조 글자를 500 으로 |
+| 공통 셸 | 메뉴·푸터·탭바·팝업·알림·상태 | - | site.css v6: 행 목록(.rows/.row), 패널(.panel/.is-brand/.is-soft), 사실 표(.kv), 유형 라벨(.type-tag), 폼 오류(.field-error)·미리보기(.form-preview), 모바일 시트(.is-sheet), 상태 줄(.status-line) | 용어 사전 적용 | 건너뛰기 링크, 대화상자 포커스 유지·Esc·복귀, 탭바 가림 없음(a11ytest.js), 가로 넘침 390/768/1440 없음(shoot768.js) | 확인 | 확인 | 픽셀 대비 측정: 홈·맛집·소식·이용 안내·정산 확인 미달 0. 남은 것은 정산 12px 칩 2건과 통계의 접힌 표 셀(측정 오차, 계산값은 기준 이상) |
 
 ## 2. 콘텐츠 종류별 정리 양식 (요약 — 전문은 CONTENT_FORMAT.md)
 
