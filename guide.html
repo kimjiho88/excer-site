@@ -177,6 +177,7 @@
 
     /* 아코디언 — site.css 공통, 여기선 본문 안 여백만 */
     .acc-head { font-size: 15px; }
+    .acc-item[hidden] { display: none; }
     .acc-body-inner { display: grid; gap: 12px; padding-top: 2px; color: var(--ink); font-size: var(--fs-body); }
     .acc-body-inner ol, .acc-body-inner ul { padding-left: 22px; display: grid; gap: 6px; }
     .acc-body-inner p { margin: 0; line-height: 1.7; }
@@ -809,11 +810,17 @@
         if (sumLink) sumLink.classList.toggle("is-dim", !!kw);
         var startLink = tocStart.querySelector('[data-chip="start"]');
         if (startLink) startLink.classList.toggle("is-dim", !startShow);
-        if (kw.length >= 2) {
-          document.querySelectorAll(".guide-cat:not([hidden]) .acc-item").forEach(function (item) {
-            if (item.dataset.search.indexOf(kw) !== -1) setAcc(item, true);
+        /* 문답(accordion)은 맞는 항목만 남기고 펼친다 — 그 절에 맞는 문답이 하나도 없으면(절 제목·키워드로만 걸린 경우) 전부 보여 준다 */
+        document.querySelectorAll(".guide-cat").forEach(function (sec) {
+          var items = Array.prototype.slice.call(sec.querySelectorAll(".acc-item"));
+          if (!items.length) return;
+          var hits = kw ? items.filter(function (item) { return item.dataset.search.indexOf(kw) !== -1; }) : [];
+          items.forEach(function (item) {
+            var hit = hits.indexOf(item) !== -1;
+            item.hidden = !!kw && hits.length > 0 && !hit;
+            if (kw.length >= 2 && hit) setAcc(item, true);
           });
-        }
+        });
         searchCount.hidden = !kw;
         searchCount.textContent = kw ? "검색 결과 " + visible + "개 항목" : "";
         noResults.hidden = visible !== 0 || !kw;
