@@ -510,7 +510,7 @@
               { title: "참여자가 할 일", ic: "wallet", warm: true, steps: [
                 { title: "내용 확인", text: "금액이 불명확하거나 빠진 사람이 있으면 **입금 전에** 모임장에게 확인합니다." },
                 { title: "신속히 입금", text: "확인한 금액을 바로 보냅니다." },
-                { title: "오류는 조용히", text: "정산 오류는 공개적으로 문제 삼지 않고 모임장이나 운영진에게 확인합니다." }
+                { title: "정산 오류는 공개적으로 문제 삼지 않고 모임장이나 운영진에게 확인합니다." }
               ] }
             ] },
             { type: "cta", text: "차수별 1/N 금액과 입금 확인 링크는 모임 정산 페이지에서 만들 수 있습니다.", href: "calculator.html", label: "모임 정산 열기" }
@@ -635,7 +635,8 @@
       }
       function flowList(steps, cls) {
         return '<ol class="flow' + (cls ? " " + cls : "") + '" style="--n:' + steps.length + '">' + steps.map(function (s) {
-          return "<li><span class=\"fl-n" + (s.ic ? " has-ic" : "") + '" aria-hidden="true">' + (s.ic ? icon(s.ic) : "") + "</span><div><p class=\"fl-t\">" + em(s.title) + '</p><p class="fl-d">' + em(s.text) + "</p></div></li>";
+          // 설명(text)이 없는 단계는 제목 한 줄만 — 빈 문단을 남기지 않는다
+          return "<li><span class=\"fl-n" + (s.ic ? " has-ic" : "") + '" aria-hidden="true">' + (s.ic ? icon(s.ic) : "") + "</span><div><p class=\"fl-t\">" + em(s.title) + "</p>" + (s.text ? '<p class="fl-d">' + em(s.text) + "</p>" : "") + "</div></li>";
         }).join("") + "</ol>";
       }
 
