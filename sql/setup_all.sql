@@ -252,9 +252,16 @@ declare r site_settlements; v_name text;
 begin
   v_name := trim(coalesce(p_name, ''));
   if length(v_name) not between 1 and 30 then raise exception 'BAD_NAME'; end if;
+  select * into r from site_settlements where id = p_id;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  -- 입금 명단(payload.rows)에 있는 이름만 받는다 (2026-09-26 settle-guard 와 같은 내용)
+  if not exists (
+    select 1 from jsonb_array_elements(
+      case when jsonb_typeof(r.payload->'rows') = 'array' then r.payload->'rows' else '[]'::jsonb end) e
+     where trim(coalesce(e->>'name', '')) = v_name
+  ) then raise exception 'NOT_IN_LIST'; end if;
   update site_settlements set paid = case when p_paid then paid || jsonb_build_object(v_name, true) else paid - v_name end,
     updated_at = now() where id = p_id returning * into r;
-  if not found then raise exception 'NOT_FOUND'; end if;
   return jsonb_build_object('id', r.id, 'paid', r.paid, 'updatedAt', r.updated_at);
 end $$;
 

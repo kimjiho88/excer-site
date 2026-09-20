@@ -600,7 +600,7 @@
                 { type: "para", text: "브라우저의 **홈 화면에 추가**를 누르면 홈 화면 아이콘으로 열립니다. 아이폰은 Safari 공유 버튼 → 홈 화면에 추가, 안드로이드는 Chrome 메뉴 → 홈 화면에 추가(또는 앱 설치)입니다. 아이콘을 길게 누르면 정산·소식·맛집 바로가기가 뜹니다." }
               ] },
               { q: "정산 결과는 채팅방에 어떻게 보내나요?", body: [
-                { type: "para", text: "모임 정산의 **카카오톡으로 보내기**가 입금 확인 링크를 만들어 카카오톡 공유 창을 엽니다. 공유 창이 열리지 않는 브라우저에서는 링크가 복사되니 채팅창에 붙여넣으면 됩니다. 멤버는 그 링크에서 자기 이름의 입금 완료를 누릅니다." },
+                { type: "para", text: "모임 정산의 **카카오톡으로 보내기**가 입금 확인 링크를 만들어 카카오톡 공유 창을 엽니다. 공유 창이 열리지 않는 브라우저에서는 링크가 복사되거나 직접 복사할 수 있는 창이 뜨니 채팅창에 붙여넣으면 됩니다. 멤버는 그 링크에서 자기 이름의 입금 완료를 누릅니다." },
                 { type: "cta", text: "정산 화면으로:", href: "calculator.html", label: "모임 정산 열기" }
               ] },
               { q: "오늘 뭘 먹을지 못 정했어요.", body: [
@@ -792,10 +792,15 @@
 
       /* ── 검색 ── */
       var links = Array.prototype.slice.call(document.querySelectorAll("#tocStart [data-chip], #tocList [data-chip]"));
+      var lastKw = "";
+      if (!summary.dataset.search) summary.dataset.search = summary.textContent.replace(/\s+/g, " ").toLowerCase();
       function applyFilter() {
         var kw = searchInput.value.trim().toLowerCase();
         var visible = 0;
-        summary.hidden = !!kw;
+        // 주요 이용 규칙(요약)도 검색 대상 — 거기에만 있는 말("1:1")로도 찾을 수 있게
+        var sumShow = !kw || summary.dataset.search.indexOf(kw) !== -1;
+        summary.hidden = !sumShow;
+        if (kw && sumShow) visible += 1;
         var startShow = !kw || start.dataset.search.toLowerCase().indexOf(kw) !== -1;
         start.hidden = !startShow;
         if (kw && startShow) visible += 1;
@@ -807,22 +812,26 @@
           if (link) link.classList.toggle("is-dim", !show);
         });
         var sumLink = tocStart.querySelector('[data-chip="summary"]');
-        if (sumLink) sumLink.classList.toggle("is-dim", !!kw);
+        if (sumLink) sumLink.classList.toggle("is-dim", !sumShow);
         var startLink = tocStart.querySelector('[data-chip="start"]');
         if (startLink) startLink.classList.toggle("is-dim", !startShow);
         /* 문답(accordion)은 맞는 항목만 남기고 펼친다 — 그 절에 맞는 문답이 하나도 없으면(절 제목·키워드로만 걸린 경우) 전부 보여 준다 */
+        var faqHits = 0;
         document.querySelectorAll(".guide-cat").forEach(function (sec) {
           var items = Array.prototype.slice.call(sec.querySelectorAll(".acc-item"));
           if (!items.length) return;
           var hits = kw ? items.filter(function (item) { return item.dataset.search.indexOf(kw) !== -1; }) : [];
+          faqHits += hits.length;
           items.forEach(function (item) {
             var hit = hits.indexOf(item) !== -1;
             item.hidden = !!kw && hits.length > 0 && !hit;
             if (kw.length >= 2 && hit) setAcc(item, true);
+            else if (!kw && lastKw) setAcc(item, false);   // 검색을 지우면 검색이 펼친 문답을 다시 접는다
           });
         });
+        lastKw = kw;
         searchCount.hidden = !kw;
-        searchCount.textContent = kw ? "검색 결과 " + visible + "개 항목" : "";
+        searchCount.textContent = kw ? "검색 결과 " + visible + "개 절" + (faqHits ? " · 문답 " + faqHits + "개" : "") : "";
         noResults.hidden = visible !== 0 || !kw;
       }
       searchInput.addEventListener("input", applyFilter);
@@ -863,6 +872,8 @@
         if (!id) return;
         var target = document.getElementById(id);
         if (!target) return;
+        if (searchInput.value) { searchInput.value = ""; applyFilter(); }   // 검색으로 숨긴 절로는 갈 수 없으니 먼저 푼다
+
         var acc = target.closest && target.closest(".acc-item");
         if (acc) setAcc(acc, true);
         target.scrollIntoView({ block: "start" });
