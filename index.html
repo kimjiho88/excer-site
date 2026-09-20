@@ -28,6 +28,17 @@
        홈 — 도입 한 덩이, 그 아래 넓은 주 영역(장소 기록·최근 소식)과 좁은 보조 영역(정산·참여 안내)
        ============================================================ */
     .home-intro { padding: var(--sp-7) 0 var(--sp-6); }
+    /* 대표 이미지는 선택 사항. assets/img/home-hero.(webp|jpg) 가 있을 때만 오른쪽 열이 생긴다.
+       파일이 없으면 열도, 빈 상자도 없다 — 아래 로더가 파일을 확인한 뒤에만 .has-image 를 붙인다 */
+    .intro-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 56px; align-items: center; }
+    .home-intro.has-image .intro-grid { grid-template-columns: minmax(0, 1fr) 420px; }
+    .intro-figure { margin: 0; }
+    /* width·height 속성은 원본 비율 힌트일 뿐이다. height 를 auto 로 돌려놓지 않으면 속성값 900px 이 그대로 높이가 된다 */
+    .intro-figure img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center; border-radius: var(--r-md); background: var(--surface-2); }
+    @media (max-width: 960px) {
+      .home-intro.has-image .intro-grid { grid-template-columns: 1fr; gap: 24px 0; }
+      .intro-figure { order: 2; }
+    }
     .home-title { margin: 0; max-width: 15em; font-size: var(--fs-display); font-weight: 700; line-height: 1.18; letter-spacing: -0.025em; color: var(--ink); }
     .home-sub { margin: 14px 0 0; max-width: 34em; color: var(--ink-2); font-size: 17px; line-height: 1.6; }
     .home-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 24px; }
@@ -118,14 +129,20 @@
   </header>
 
   <main id="main" class="page-main">
-    <section class="home-intro" aria-labelledby="homeTitle">
-      <div class="container">
-        <h1 class="home-title" id="homeTitle">동네에서 만나고, 함께 기록합니다.</h1>
-        <p class="home-sub">오픈채팅으로 만나는 동네 커뮤니티입니다. 모임에서 함께 다녀온 식당과 모임 소식을 모았습니다.</p>
-        <div class="home-actions">
-          <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
-          <a class="link-arrow" href="guide.html">처음 참여하는 멤버 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+    <section class="home-intro" id="homeIntro" aria-labelledby="homeTitle">
+      <div class="container intro-grid">
+        <div class="intro-text">
+          <h1 class="home-title" id="homeTitle">동네에서 만나고, 함께 기록합니다.</h1>
+          <p class="home-sub">오픈채팅으로 만나는 동네 커뮤니티입니다. 모임에서 함께 다녀온 식당과 모임 소식을 모았습니다.</p>
+          <div class="home-actions">
+            <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
+            <a class="link-arrow" href="guide.html">처음 참여하는 멤버 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
+          </div>
         </div>
+        <!-- 대표 이미지 자리(선택). 파일이 있을 때만 보인다. 규격은 docs/IMAGE_SPEC.md -->
+        <figure class="intro-figure" id="homeHeroFigure" hidden>
+          <img id="homeHero" alt="" width="1200" height="900" decoding="async" />
+        </figure>
       </div>
     </section>
 
@@ -216,6 +233,23 @@
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ════════ 대표 이미지(선택) — 파일이 있을 때만 자리를 만든다 ════════ -->
+  <script>
+    (function () {
+      "use strict";
+      var CANDIDATES = ["assets/img/home-hero.webp", "assets/img/home-hero.jpg"];
+      var fig = document.getElementById("homeHeroFigure"), img = document.getElementById("homeHero"), sec = document.getElementById("homeIntro");
+      function tryNext(i) {
+        if (i >= CANDIDATES.length) return;                 // 파일이 없으면 아무것도 바꾸지 않는다
+        var probe = new Image();
+        probe.onload = function () { img.src = CANDIDATES[i]; fig.hidden = false; sec.classList.add("has-image"); };
+        probe.onerror = function () { tryNext(i + 1); };
+        probe.src = CANDIDATES[i];
+      }
+      tryNext(0);
+    })();
+  </script>
 
   <!-- ════════ 홈 데이터 — 장소 기록 6곳 + 최근 소식(다가오는 모임 먼저) ════════ -->
   <script>
