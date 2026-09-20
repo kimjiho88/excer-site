@@ -3,7 +3,8 @@
    배포가 잦아 오래된 파일이 남는 일을 피하기 위해서다.
    저장하는 것은 offline.html 한 장뿐이고, 연결이 없을 때 '페이지 이동' 요청에만 그것을 돌려준다.
    그 밖의 요청(스크립트·그림·데이터)은 서비스 워커를 거치지 않는다(respondWith 를 부르지 않으면 브라우저가 평소처럼 처리). */
-var CACHE = "excer-offline-v1";
+var VERSION = "2026-09-20a";            // offline.html 을 고치면 이 값을 올린다 — 그래야 설치된 브라우저에 새 판이 저장된다
+var CACHE = "excer-offline-" + VERSION;
 var OFFLINE = "/offline.html";
 
 self.addEventListener("install", function (e) {
