@@ -1,6 +1,6 @@
-# 탭별 이미지 기획과 생성 프롬프트
+# 탭별 이미지 기획과 생성 프롬프트 (챗GPT용)
 
-홈 대표 그림(가을 모닥불) 한 장으로 잡힌 화풍을 사이트 전체로 넓히는 계획입니다. 이미지는 외부 생성 도구로 만들고, 파일이 들어오면 자리를 여는 순서로 갑니다. 규격·표시 규칙은 `docs/IMAGE_SPEC.md`, 색 체계는 `assets/site.css` 토큰이 기준입니다.
+홈 대표 그림(가을 모닥불) 한 장으로 잡힌 화풍을 사이트 전체로 넓히는 계획입니다. 이미지는 챗GPT에 커버 그림을 첨부해 같은 톤으로 만들고, 파일이 들어오면 자리를 여는 순서로 갑니다. 규격·표시 규칙은 `docs/IMAGE_SPEC.md`, 색 체계는 `assets/site.css` 토큰이 기준입니다.
 
 ## 1. 기획 검토 — 어디에 두고 어디에 두지 않나
 
@@ -33,21 +33,21 @@
 
 가을 대표 그림은 이미 있어 셈에서 뺐습니다. 순위 1만 넣어도 사이트 인상이 바뀌고, 2·3은 있으면 좋은 것입니다.
 
-## 2. 화풍 기준 — 가을 그림에 맞춘다
+## 2. 화풍 기준 — 커버 그림에 맞춘다
 
-가을 그림의 특징을 그대로 잇습니다. 새 그림이 이 조건을 벗어나면 다시 뽑습니다.
+커버 그림(가을 모닥불)의 특징을 그대로 잇습니다. 새 그림이 이 조건을 벗어나면 다시 뽑습니다.
 
 - **한국 웹툰풍 디지털 일러스트**. 깨끗한 선, 부드러운 셀 셰이딩에 회화적인 빛. 실사·3D·수채화 아님.
 - **따뜻한 빛이 주인공**. 등불·창문·모닥불·석양처럼 화면 안에 광원이 하나 있고, 그 빛이 인물과 사물을 감싼다.
 - **색**. 그림 안은 주황·빨강·남색이 자유롭지만, 사이트 바탕(크림 `#F7F5EF`)과 보라(`#4B2A82`)·녹슨 주황(`#A9502D`)·황토(`#7E5F25`) 옆에 놓여도 튀지 않아야 한다. 형광색·쨍한 하늘색·민트 금지.
 - **사람**. 20대 후반~30대, 다섯 명 안팎, 웃거나 이야기하는 중. 특정 실존 인물·연예인 닮음 금지. 얼굴 클로즈업 금지(생성 결함이 얼굴·손에서 나온다).
-- **글자 없음**. 간판·메뉴판·휴대폰 화면·책 표지 어디에도 글자가 없어야 한다. 생성 도구가 만드는 글자는 항상 깨진다. 간판은 빈 판이나 그림 기호로.
+- **글자 없음**. 간판·메뉴판·휴대폰 화면·책 표지 어디에도 글자가 없어야 한다. 생성된 글자는 항상 깨진다. 간판은 빈 판이나 그림 기호로.
 - **한국 동네 배경**. 골목 식당, 포장마차, 한강 공원, 벚꽃길, 아파트 창문 불빛. 서양식 다이너·유럽 광장 아님.
 - **브랜드·로고 없음**. 카카오·특정 식당·맥주 상표가 보이면 안 된다.
 
-### 다섯 친구 — 이어 쓰면 좋은 인물 설정 (선택)
+### 다섯 친구 — 홈 계절 그림에서 이어 쓰는 인물 설정
 
-가을 그림의 다섯 명을 다른 계절에도 같은 사람으로 두면 "같은 모임"이 됩니다. 생성 도구가 완벽히 같은 얼굴을 내지는 못하므로, 옷과 머리 모양으로 알아보게 합니다.
+커버 그림의 다섯 명을 다른 계절에도 같은 사람으로 둡니다. 챗GPT가 얼굴을 완전히 같게 내지는 못하므로 옷과 머리로 알아보게 합니다. 홈 계절 그림에만 쓰고, 배너·스팟에는 필요 없습니다.
 
 | 번호 | 설정 |
 |---|---|
@@ -57,187 +57,218 @@
 | D | 갈색 머리, 아이보리 니트에 체크 목도리 |
 | E | 검은 머리, 올리브색 플리스 |
 
-이 표는 홈 계절 그림에만 씁니다. 배너·스팟은 인물이 작거나 없어서 필요 없습니다.
-
 ## 3. 규격 요약
 
-| 종류 | 원본 생성 크기 | 웹용 파일 | 표시 | 용량 상한 |
-|---|---|---|---|---|
-| 홈 계절 장면 | 3:2 1536×1024, 4:5 1122×1402(또는 1024×1280) | 3:2 → 1440×960·720×480, 4:5 → 800×1000·400×500 | 지금 가을 그림과 같은 자리·규칙 | 1440 판 300 KB, 800 판 200 KB |
-| 머리 배너(안내·맛집) | 3:2 1536×1024 | 1440×960·720×480 | PC: 제목 오른쪽 열(약 58%). 모바일: 제목 아래 화면 폭(350×233). 인물이 작아야 모바일에서도 읽힌다 | 300 KB / 100 KB |
-| 스팟(통계·정산·소식·오늘 뭐 먹지·오프라인) | 1:1 1024×1024 | 480×480·240×240 | 96~120px 원 또는 둥근 네모 | 40 KB |
-| 빈 상태(소식·맛집·통계) | 4:3 1024×768 | 640×480·320×240 | 빈 상태 상자 안 240px 폭, 가운데 | 60 KB |
-| OG | 조립 | 1200×630 JPG 92 | 카카오톡 미리보기 | 200 KB |
+챗GPT는 세 가지 크기만 냅니다. 가로 1536×1024(3:2), 세로 1024×1536(2:3), 정사각 1024×1024. 4:5 와 4:3 은 이 중 하나로 받아서 잘라 씁니다. 프롬프트에 "위아래(또는 좌우) 끝은 잘라낼 것"이라고 미리 알려 두면 중요한 것이 끝에 놓이지 않습니다.
 
-파일 이름: `assets/img/<탭>-<자리>-<폭>.webp` (예: `places-banner-1440.webp`, `news-spot-480.webp`, `home-winter-desktop-1440.webp`). 원본은 `assets/img/src/` 에 그대로 둡니다.
+| 종류 | 챗GPT에 요청할 크기 | 잘라 쓰는 방법 | 웹용 파일 | 표시 | 용량 상한 |
+|---|---|---|---|---|---|
+| 홈 계절 장면 3:2 | 가로 1536×1024 | 그대로 | 1440×960·720×480 | 지금 가을 그림과 같은 자리·규칙 | 300 KB |
+| 홈 계절 장면 4:5 | 세로 1024×1536 | 위아래 합쳐 256px 잘라 1024×1280 | 800×1000·400×500 | 모바일 340px 폭 | 200 KB |
+| 머리 배너(안내·맛집) 3:2 | 가로 1536×1024 | 그대로 | 1440×960·720×480 | PC: 제목 오른쪽 열. 모바일: 제목 아래 화면 폭(350×233). 인물이 작아야 모바일에서도 읽힌다 | 300 KB / 100 KB |
+| 스팟(통계·정산·소식·오늘 뭐 먹지·오프라인) 1:1 | 정사각 1024×1024 | 그대로 | 480×480·240×240 | 96~120px 원 또는 둥근 네모 | 40 KB |
+| 빈 상태(소식·맛집·통계) 4:3 | 가로 1536×1024 | 좌우 합쳐 171px 잘라 1365×1024 | 640×480·320×240 | 빈 상태 상자 안 240px 폭, 가운데 | 60 KB |
+| OG | 조립 | — | 1200×630 JPG 92 | 카카오톡 미리보기 | 200 KB |
+
+파일 이름: `assets/img/<탭>-<자리>-<폭>.webp` (예: `places-banner-1440.webp`, `news-spot-480.webp`, `home-winter-desktop-1440.webp`). 챗GPT가 준 PNG 원본은 `assets/img/src/` 에 그대로 둡니다. 자르기와 줄이기는 파일을 받은 뒤 이쪽에서 합니다.
 
 배너·스팟·빈 상태는 모두 `<img … onerror>` 방식으로 붙여 파일이 없으면 자리가 사라집니다. 홈 그림과 같은 규칙입니다.
 
-## 4. 프롬프트
+## 4. 챗GPT 프롬프트
 
-모든 프롬프트는 **공통 화풍 블록 + 장면 블록 + 금지 블록** 세 조각을 이어 붙입니다. 영어로 두는 이유는 생성 도구가 영어 지시를 더 정확히 따르기 때문이고, 옆에 한국어 요약을 달았습니다.
+### 진행 방법
 
-### 공통 화풍 블록 (앞에 붙임)
+1. **대화 하나에서 전부 만듭니다.** 새 대화를 열고, 첫 메시지에 커버 그림(`assets/img/src/autumn-desktop.webp`, 또는 사이트 홈에서 저장한 그림)을 **첨부**한 뒤 아래 "기준 잡기" 메시지를 보냅니다. 이후 요청은 모두 같은 대화에서 이어 갑니다. 대화를 바꾸면 톤이 흔들립니다.
+2. **한 번에 한 장씩** 요청합니다. 프롬프트마다 "위 기준대로"가 들어 있어 첫 메시지를 다시 붙일 필요가 없습니다.
+3. 결과에 글자·깨진 손·이상한 얼굴이 있으면 새로 뽑지 말고 **부분 수정**을 시킵니다. 예: "왼쪽 두 번째 사람 손가락을 자연스럽게 고쳐 줘, 나머지는 그대로", "간판의 글자를 지우고 빈 나무판으로 바꿔 줘".
+4. 마음에 들면 **원본 크기 PNG로 저장**합니다(미리보기 저장 아님). 이름은 프롬프트에 적힌 파일 이름으로.
+5. 한 자리에 2~3장을 받아 두고 고르면 편합니다. 같은 프롬프트에 "다른 구도로 한 장 더"라고만 덧붙이면 됩니다.
+
+### 4-0. 기준 잡기 — 첫 메시지 (커버 그림 첨부)
 
 ```
-Korean webtoon-style digital illustration, warm and cozy mood, clean linework with soft cel shading and painterly light, one warm light source inside the scene (lantern, window, campfire or sunset glow), rich but harmonious palette of cream, deep plum purple accents, rust orange and warm gold, gentle rim light, high detail, consistent style with a cozy autumn campfire illustration, no text anywhere, no signage text, no logos, no watermark
+첨부한 그림은 우리 동네 친구 모임 웹사이트의 메인 커버 일러스트야(가을 밤, 모닥불 곁의 다섯 친구).
+지금부터 요청하는 이미지는 전부 이 커버와 한 세트로 보여야 해. 같은 작가가 그린 것처럼 화풍·선·채색·빛의 톤을 맞춰 줘.
+
+지켜 줄 것:
+1. 한국 웹툰풍 디지털 일러스트. 깨끗한 선, 부드러운 셀 셰이딩, 회화적인 빛. 실사·3D·수채화 느낌은 안 돼.
+2. 장면 안에 따뜻한 광원이 하나 있고(등불·창문·모닥불·석양) 그 빛이 인물과 사물을 감싸게.
+3. 색은 커버처럼 따뜻한 주황·크림·남색 계열. 형광색, 쨍한 하늘색, 민트색은 쓰지 마.
+4. 그림 어디에도 글자·숫자·간판 문구·로고·워터마크를 넣지 마. 간판이나 메뉴판이 필요하면 빈 판이나 그림 기호로만.
+5. 얼굴 클로즈업 없이, 인물은 화면에서 중간 크기 이하로.
+6. 실존 인물이나 연예인을 닮지 않게.
+7. 배경은 한국의 동네(골목 식당, 포장마차, 한강 공원 같은 곳). 서양식 가게나 유럽 거리처럼 보이면 안 돼.
+
+한 번에 한 장씩 요청할게. 요청마다 크기(가로 1536×1024 / 세로 1024×1536 / 정사각 1024×1024)를 적을 테니 그대로 맞춰 줘.
+이해했으면 "준비됐어"라고만 답해 줘.
 ```
-
-### 금지 블록 (뒤에 붙임 · 부정 프롬프트를 따로 받는 도구는 그 칸에)
-
-```
-text, letters, typography, readable signs, watermark, logo, brand names, signature, photo-realistic, 3D render, blurry, extra fingers, deformed hands, distorted face, duplicate people, cropped heads, close-up face, neon colors, cyan, mint green, western diner, real celebrities
-```
-
-### 도구별 메모
-
-- Midjourney: 뒤에 `--ar 3:2`(또는 `4:5`, `1:1`, `4:3`) `--style raw`. 가을 원본을 `--sref` 로 주면 화풍이 가장 잘 맞음. 금지 블록은 `--no` 뒤에.
-- GPT 이미지·DALL·E 계열: 가을 원본을 참고 이미지로 첨부하고 "match this illustration style"을 프롬프트 앞에 한 번 더 적음. 금지 블록은 문장 끝에 "Avoid: …"로.
-- Stable Diffusion 계열: 금지 블록을 negative prompt 칸에. 가을 원본으로 image-to-image 강도 0.3~0.4 를 쓰면 구도는 새로, 화풍은 유지.
-- 한 자리에 3~4장 뽑아 손·얼굴·글자 결함이 없는 것을 고릅니다. 글자가 조금이라도 보이면 탈락.
-
----
 
 ### 4-1. 홈 — 계절 대표 그림 (순위 1)
 
-계절이 바뀌면 `index.html` 의 계절 블록(알약 문구·제목·소개·파일)과 `assets/og.jpg` 를 같이 바꿉니다. 3:2 와 4:5 두 장씩입니다. 4:5 는 같은 장면을 세로로 다시 뽑는 것이지 3:2 를 자르는 것이 아닙니다(잘라내면 얼굴이 잘립니다).
+계절이 바뀌면 `index.html` 의 계절 블록(알약 문구·제목·소개·파일)과 `assets/og.jpg` 를 같이 바꿉니다. 계절마다 가로 한 장, 세로 한 장입니다. 세로는 같은 장면을 다시 그리는 것이지 가로를 자르는 것이 아닙니다.
 
-**겨울 (12~2월)** · 파일 `home-winter-desktop-*.webp`, `home-winter-mobile-*.webp`
-한국어 요약: 눈 오는 저녁 골목 포장마차. 다섯 친구가 김 오르는 어묵탕·떡볶이 앞에 목도리·패딩 차림으로 웃으며 잔을 부딪침. 주황 등불과 파란 눈길의 대비.
+**겨울 (12~2월)** · 파일 `home-winter-desktop.png`, `home-winter-mobile.png`
+
 ```
-Five friends in their late twenties and early thirties gathered at a small table inside a cozy Korean street food tent (pojangmacha) on a snowy evening, steam rising from a pot of fish cake soup and tteokbokki, warm orange lantern light against a blue snowy alley outside, scarves and puffer jackets, laughing and raising paper cups, snowflakes drifting past the tent opening, wide composition with the group in the middle ground, blank sign boards
+위 기준대로, 가로 1536×1024로 그려 줘.
+장면: 눈 내리는 저녁, 한국 골목의 포장마차 안. 20대 후반~30대 친구 다섯 명이 작은 테이블에 둘러앉아, 김이 오르는 어묵탕과 떡볶이를 앞에 두고 목도리와 패딩 차림으로 웃으며 종이컵을 부딪치고 있어. 포장마차 안은 주황빛 등불로 따뜻하고, 천막 밖으로는 파란 눈길과 떨어지는 눈송이가 보여. 인물은 화면 가운데 중간 크기, 좌우로 골목이 넓게 보이는 구도.
+다섯 명은 커버 그림의 다섯 명과 같은 사람들이야. 챙 넓은 모자를 쓴 긴 갈색 웨이브 머리 여성(아이보리 니트), 짧은 갈색 머리에 진녹색 재킷과 흰 후드 남성, 긴 갈색 머리에 벽돌빨강 스웨터 여성, 갈색 머리에 아이보리 니트와 체크 목도리 남성, 검은 머리에 올리브색 플리스 남성. 겨울이라 그 위에 코트나 패딩을 걸쳤어.
+포장마차 간판과 메뉴판은 글자 없이 비워 둬.
 ```
-4:5 판: 끝에 `vertical composition, table in the foreground, the five friends closer together, snow visible at the top` 을 더함.
+
+```
+같은 장면을 세로 1024×1536으로 다시 그려 줘. 테이블이 앞쪽에 오고 다섯 명이 더 가까이 모여 있고, 위쪽에 눈 내리는 하늘이 보이게. 위아래 끝 약 12%씩은 나중에 잘라낼 거라, 얼굴과 손은 화면 가운데 쪽에 두고 위아래 끝에는 배경만 두어 줘.
+```
+
 대체 텍스트: "눈 오는 저녁 포장마차에서 어묵탕을 앞에 두고 웃는 다섯 사람을 그린 일러스트"
 홈 문구 후보: 알약 "2026 겨울" · 제목 "함께 보내는 겨울" · 소개 "뜨끈한 국물 한 그릇부터 눈 오는 날 산책까지, 동네친구들과 함께합니다."
 
-**봄 (3~5월)** · 파일 `home-spring-*`
-한국어 요약: 벚꽃 만개한 한강 공원 피크닉. 돗자리 위 김밥·치킨·커피, 꽃잎 날림, 자전거와 연이 멀리.
+**봄 (3~5월)** · 파일 `home-spring-desktop.png`, `home-spring-mobile.png`
+
 ```
-Five friends having a picnic under cherry blossom trees in full bloom at a riverside park in Seoul, sitting on a picnic mat with kimbap, fried chicken and iced coffee cups, petals drifting in soft afternoon light, bicycles and a kite far in the background, the river and a bridge beyond, wide composition, people mid-sized and relaxed
+위 기준대로, 가로 1536×1024로 그려 줘.
+장면: 벚꽃이 만개한 서울 한강 공원의 오후. 커버 그림의 다섯 친구(같은 인물 설정, 봄이라 가벼운 옷차림)가 돗자리 위에 둘러앉아 김밥, 치킨, 아이스커피를 나누고 있어. 꽃잎이 부드러운 햇빛 속에 흩날리고, 멀리 강과 다리, 자전거 타는 사람과 연 하나가 보여. 인물은 중간 크기로 편안한 자세, 좌우로 벚꽃길이 넓게 보이는 구도. 광원은 나뭇가지 사이로 내려오는 따뜻한 오후 햇빛.
 ```
-4:5 판: `vertical composition, blossom branches framing the top, picnic mat in the foreground`.
+
+```
+같은 장면을 세로 1024×1536으로 다시 그려 줘. 벚꽃 가지가 위쪽을 감싸고 돗자리가 앞쪽에 오게. 위아래 끝 약 12%씩은 잘라낼 거라 얼굴과 손은 가운데 쪽에, 끝에는 꽃가지와 잔디만.
+```
+
 대체 텍스트: "벚꽃 아래 한강 공원 돗자리에 둘러앉은 다섯 사람을 그린 일러스트"
 홈 문구 후보: "2026 봄" · "함께 보내는 봄" · "벚꽃 피크닉부터 저녁 한 끼까지, 동네친구들과 함께합니다."
 
-**여름 (6~8월)** · 파일 `home-summer-*`
-한국어 요약: 한강 야경, 잔디에 앉아 치킨과 시원한 음료. 강물 위 도시 불빛, 작은 조명 줄, 멀리 불꽃.
+**여름 (6~8월)** · 파일 `home-summer-desktop.png`, `home-summer-mobile.png`
+
 ```
-Five friends sitting on the grass by the Han River at night in summer, fried chicken and iced drinks on a low table, city lights reflected on the water, string lights on a nearby stall, a small paper fan, distant fireworks bursting low in the sky, warm lamp light on the faces, wide composition with the skyline behind
+위 기준대로, 가로 1536×1024로 그려 줘.
+장면: 여름밤 한강 잔디밭. 커버 그림의 다섯 친구(같은 인물 설정, 반팔과 얇은 셔츠 차림)가 낮은 테이블에 치킨과 시원한 음료를 놓고 앉아 있어. 강물에 도시 불빛이 비치고, 옆 매점의 작은 조명 줄이 얼굴을 따뜻하게 비추고, 하늘 낮은 곳에서 불꽃놀이가 터지고 있어. 부채 하나, 돗자리, 뒤로 서울 야경. 인물은 중간 크기, 좌우로 강변이 넓게 보이는 구도. 광원은 조명 줄과 불꽃.
 ```
-4:5 판: `vertical composition, fireworks at the top, the group in the lower half`.
+
+```
+같은 장면을 세로 1024×1536으로 다시 그려 줘. 불꽃놀이가 위쪽 하늘에, 다섯 명은 아래쪽 절반에. 위아래 끝 약 12%씩은 잘라낼 거라 얼굴과 손은 가운데 쪽에, 끝에는 하늘과 잔디만.
+```
+
 대체 텍스트: "여름밤 한강 잔디밭에 앉아 불꽃놀이를 보는 다섯 사람을 그린 일러스트"
 홈 문구 후보: "2026 여름" · "함께 보내는 여름" · "한강 치킨부터 여름밤 산책까지, 동네친구들과 함께합니다."
 
-### 4-2. 맛집 — 머리 배너 (순위 1)
+### 4-2. 맛집 — 머리 배너 (순위 1) · 파일 `places-banner.png`
 
-파일 `places-banner-1440.webp`, `places-banner-720.webp`. 사람은 작게, 골목이 주인공. 간판은 빈 판.
-한국어 요약: 해 질 무렵 서울 뒷골목. 작은 식당들이 늘어서고 창마다 따뜻한 불빛, 숯불 연기, 화분과 등. 친구 넷이 어디 갈지 고르며 걷는 뒷모습.
+사람은 작게, 골목이 주인공입니다. 모바일에서 350px 폭으로도 보여야 해서 얼굴이 크면 안 됩니다.
+
 ```
-A narrow Seoul back alley at dusk lined with small neighborhood restaurants, warm light glowing from every window, thin grill smoke, hanging paper lanterns, potted plants by the doors, blank wooden sign boards without any text, a group of four friends seen from behind strolling and pointing at a restaurant, cobblestone ground with a soft evening sky above, wide establishing shot with small figures
+위 기준대로, 가로 1536×1024로 그려 줘.
+장면: 해 질 무렵 서울의 좁은 뒷골목. 작은 동네 식당들이 양옆으로 늘어서 있고 창마다 따뜻한 불빛, 숯불 연기가 가늘게 오르고, 종이 등이 걸려 있고, 문 앞에 화분이 놓여 있어. 나무 간판들은 전부 글자 없이 비어 있어. 친구 넷이 뒷모습으로 걸어가며 한 식당을 가리키고 있어. 바닥은 돌길, 위로는 부드러운 저녁 하늘. 인물은 작게, 골목 전체가 넓게 보이는 구도. 광원은 식당 창문과 등불.
 ```
+
 대체 텍스트: "해 질 무렵 식당이 늘어선 골목을 걷는 친구들을 그린 일러스트"
 
-### 4-3. 이용 안내 — 머리 배너 (순위 1)
+### 4-3. 이용 안내 — 머리 배너 (순위 1) · 파일 `guide-banner.png`
 
-파일 `guide-banner-1440.webp`, `guide-banner-720.webp`. "처음 온 사람이 환영받는 순간". 문 밖에서 본 장면이라 얼굴이 작다.
-한국어 요약: 저녁 골목의 아늑한 식당 입구. 안에서는 테이블의 친구들이 손을 흔들고, 문 앞에 갓 도착한 한 사람이 서 있다. 안의 따뜻한 빛이 길로 쏟아짐.
+"처음 온 사람이 환영받는 순간"입니다. 문 밖에서 본 장면이라 얼굴이 작습니다.
+
 ```
-The entrance of a cozy small Korean restaurant on a quiet evening street, seen from slightly outside, one newcomer standing at the open door with a small wave, inside a table of four friends turning around and waving warmly, warm interior light spilling onto the pavement, a bicycle leaning by the wall, blank menu board, welcoming and gentle mood, figures small within the scene
+위 기준대로, 가로 1536×1024로 그려 줘.
+장면: 조용한 저녁 골목에 있는 작고 아늑한 한국 식당의 입구를 바깥에서 살짝 비껴 본 모습. 열린 문 앞에 방금 도착한 한 사람이 서서 작게 손을 흔들고, 안쪽 테이블의 친구 넷이 돌아보며 따뜻하게 손을 흔들어 맞이하고 있어. 안의 따뜻한 빛이 길바닥으로 쏟아지고, 벽에 자전거 한 대가 기대어 있어. 메뉴판은 글자 없이 빈 판. 인물은 모두 작게, 환영하는 분위기. 광원은 실내 조명.
 ```
+
 대체 텍스트: "식당 문 앞에 도착한 사람을 안에서 반기는 친구들을 그린 일러스트"
 
-### 4-4. 맛집 — '오늘 뭐 먹지' 스팟 (순위 2)
+### 4-4. 맛집 — '오늘 뭐 먹지' 스팟 (순위 2) · 파일 `places-pick.png`
 
-파일 `places-pick-480.webp`, `places-pick-240.webp`. 사물 중심 스티커풍. 카드 왼쪽 96px 원 안에 들어갑니다.
-한국어 요약: 위에서 본 작은 뽑기 룰렛. 칸마다 국수·구이·초밥·피자 그림 기호, 옆에 젓가락 한 쌍. 크림 바탕.
-```
-Top-down sticker-style illustration of a small wooden spinning wheel divided into slices, each slice showing a tiny food icon (noodle bowl, grilled meat, sushi, pizza slice, dumplings, a bowl of rice), a pair of chopsticks resting beside it, centered on a plain cream background, soft shadow, no text
-```
-대체 텍스트: "" (장식 — 카드 제목이 뜻을 전한다)
+카드 왼쪽 96px 원 안에 들어갑니다. 사물만, 스티커처럼.
 
-### 4-5. 활동 통계 — 머리 스팟 (순위 2)
+```
+위 기준대로, 정사각 1024×1024로 그려 줘. 이번엔 사람 없이 사물만 스티커처럼.
+장면: 위에서 내려다본 작은 나무 룰렛(뽑기판). 칸마다 국수 그릇, 구운 고기, 초밥, 피자 조각, 만두, 밥 한 그릇 같은 작은 음식 그림 기호가 하나씩 들어 있어. 옆에 젓가락 한 쌍. 크림색 단색 배경 가운데에 놓고, 아래에 부드러운 그림자. 글자와 숫자는 넣지 마.
+```
 
-파일 `report-spot-480.webp`, `report-spot-240.webp`. "밤에도 대화가 오가는 동네"를 창문 불빛으로.
-한국어 요약: 밤의 아파트 창문 몇 개가 나란히, 각 창이 말풍선 모양으로 빛남. 위에 별. 글자 없음.
-```
-Sticker-style illustration of a row of small apartment windows at night, each window glowing warmly in the shape of a rounded speech bubble, a few stars above, deep plum night sky, centered on a plain cream background, no text
-```
-대체 텍스트: ""
+### 4-5. 활동 통계 — 머리 스팟 (순위 2) · 파일 `report-spot.png`
 
-### 4-6. 모임 정산·정산 확인 — 머리 스팟 (순위 2, 두 페이지 공용)
+"밤에도 대화가 오가는 동네"를 창문 불빛으로 나타냅니다.
 
-파일 `settle-spot-480.webp`, `settle-spot-240.webp`. 휴대폰 화면은 넣지 않습니다(화면 안에 글자가 생깁니다).
-한국어 요약: 나무 테이블 위 영수증 한 장, 동전 몇 개, 접힌 지폐, 젓가락, 작은 계산기. 위에서 본 스티커풍.
 ```
-Top-down sticker-style illustration of a wooden table corner with a blank paper receipt, a few coins and a folded bill, a pair of chopsticks and a small pocket calculator with blank keys, soft warm light, centered on a plain cream background, no text or numbers
+위 기준대로, 정사각 1024×1024로 그려 줘. 사람 없이 스티커처럼.
+장면: 밤의 아파트 창문 대여섯 개가 나란히 있고, 창마다 따뜻한 불빛이 둥근 말풍선 모양으로 빛나고 있어. 위에는 별 몇 개, 하늘은 짙은 자두빛 남색. 크림색 단색 배경 가운데에 놓고, 글자는 넣지 마.
 ```
-대체 텍스트: ""
 
-### 4-7. 소식 — 머리 스팟 (순위 2)
+### 4-6. 모임 정산·정산 확인 — 머리 스팟 (순위 2, 두 페이지 공용) · 파일 `settle-spot.png`
 
-파일 `news-spot-480.webp`, `news-spot-240.webp`.
-한국어 요약: 코르크 게시판에 색색의 빈 카드가 핀으로 꽂혀 있고, 작은 확성기와 종이비행기. 스티커풍.
-```
-Sticker-style illustration of a small cork board with a few blank colored note cards pinned on it in cream, plum and rust tones, a tiny megaphone and a paper airplane in front, centered on a plain cream background, soft shadow, no text
-```
-대체 텍스트: ""
+휴대폰 화면은 넣지 않습니다. 화면 안에 글자가 생깁니다.
 
-### 4-8. 소식 — 빈 상태 (순위 3)
+```
+위 기준대로, 정사각 1024×1024로 그려 줘. 사람 없이 스티커처럼.
+장면: 위에서 내려다본 나무 테이블 모서리. 글자 없는 빈 영수증 한 장, 동전 몇 개, 접힌 지폐 한 장, 젓가락 한 쌍, 자판이 빈 작은 계산기. 따뜻한 조명, 크림색 단색 배경 가운데, 부드러운 그림자. 글자와 숫자는 어디에도 넣지 마.
+```
 
-파일 `news-empty-640.webp`, `news-empty-320.webp`. "첫 글을 남겨 주세요" 옆에 놓입니다.
-한국어 요약: 창가 카페 테이블, 펼쳐진 빈 노트와 펜, 커피 한 잔, 아침 빛.
-```
-A cafe table by a window in soft morning light, an open notebook with blank pages and a pen, a cup of coffee, a small plant on the sill, quiet and inviting, 4:3 composition, no text
-```
-대체 텍스트: ""
+### 4-7. 소식 — 머리 스팟 (순위 2) · 파일 `news-spot.png`
 
-### 4-9. 맛집 — 빈 상태 (순위 3)
+```
+위 기준대로, 정사각 1024×1024로 그려 줘. 사람 없이 스티커처럼.
+장면: 작은 코르크 게시판에 크림·자두·녹슨 주황 색의 빈 카드 몇 장이 핀으로 꽂혀 있고, 앞에 작은 확성기와 종이비행기 하나. 크림색 단색 배경 가운데, 부드러운 그림자. 카드는 전부 빈 종이, 글자는 넣지 마.
+```
 
-파일 `places-empty-640.webp`, `places-empty-320.webp`.
-한국어 요약: 빈 나무 식탁에 김 오르는 그릇 하나와 젓가락 두 쌍, 작은 화분. 따뜻한 빛. "첫 기록을 기다리는 자리".
-```
-An empty wooden restaurant table with one steaming bowl of soup, two pairs of chopsticks laid out for guests, a small potted plant, warm hanging lamp light, inviting and calm, 4:3 composition, no text
-```
-대체 텍스트: ""
+### 4-8. 소식 — 빈 상태 (순위 3) · 파일 `news-empty.png`
 
-### 4-10. 활동 통계 — 빈 상태 (순위 3)
+"첫 글을 남겨 주세요" 옆에 놓입니다.
 
-파일 `report-empty-640.webp`, `report-empty-320.webp`. 발행 전·불러오지 못함 두 경우 공용.
-한국어 요약: 책상 위 둘둘 말린 종이 차트, 찻잔, 안경. 조용한 장면.
 ```
-A quiet desk with a rolled-up paper chart tied with string, a cup of tea and a pair of reading glasses, warm desk lamp light, cream wall behind, 4:3 composition, no text
+위 기준대로, 가로 1536×1024로 그려 줘. 사람 없이.
+장면: 아침 햇빛이 드는 창가의 카페 테이블. 펼쳐진 빈 노트와 펜 하나, 커피 한 잔, 창턱의 작은 화분. 조용하고 편안한 분위기. 좌우 끝 약 6%씩은 잘라낼 거라 중요한 것은 가운데에. 노트는 빈 페이지, 글자는 넣지 마.
 ```
-대체 텍스트: ""
 
-### 4-11. 오프라인 페이지 — 스팟 (순위 3)
+### 4-9. 맛집 — 빈 상태 (순위 3) · 파일 `places-empty.png`
 
-파일 `offline-spot-480.webp`, `offline-spot-240.webp`.
-한국어 요약: 실이 느슨하게 풀린 종이컵 전화기 두 개. 크림 바탕 스티커풍.
 ```
-Sticker-style illustration of two paper cups connected by a loose, slack string (a tin-can telephone that has gone quiet), centered on a plain cream background, soft shadow, gentle humor, no text
+위 기준대로, 가로 1536×1024로 그려 줘. 사람 없이.
+장면: 빈 나무 식탁 위에 김이 오르는 국 한 그릇, 손님을 기다리듯 놓인 젓가락 두 쌍, 작은 화분 하나. 위에서 내려오는 따뜻한 전등 빛. "첫 기록을 기다리는 자리" 느낌. 좌우 끝 약 6%씩은 잘라낼 거라 중요한 것은 가운데에. 글자는 넣지 마.
 ```
-대체 텍스트: ""
+
+### 4-10. 활동 통계 — 빈 상태 (순위 3) · 파일 `report-empty.png`
+
+발행 전·불러오지 못함 두 경우에 같이 씁니다.
+
+```
+위 기준대로, 가로 1536×1024로 그려 줘. 사람 없이.
+장면: 조용한 책상. 끈으로 묶어 둘둘 만 종이 차트 하나, 찻잔, 안경. 따뜻한 스탠드 불빛, 뒤는 크림색 벽. 좌우 끝 약 6%씩은 잘라낼 거라 중요한 것은 가운데에. 글자와 숫자는 넣지 마.
+```
+
+### 4-11. 오프라인 페이지 — 스팟 (순위 3) · 파일 `offline-spot.png`
+
+```
+위 기준대로, 정사각 1024×1024로 그려 줘. 사람 없이 스티커처럼.
+장면: 종이컵 전화기 두 개가 실로 이어져 있는데 실이 느슨하게 늘어져 있어(연결이 끊긴 느낌, 살짝 귀엽게). 크림색 단색 배경 가운데, 부드러운 그림자. 글자는 넣지 마.
+```
 
 ### 4-12. 공유 미리보기(OG) — 조립 (순위 4)
 
-새로 그리지 않습니다. `assets/img/src/og.html` 을 탭별로 복사해 오른쪽 그림만 바꾸고 1200×630 으로 캡처합니다.
+새로 그리지 않습니다. `assets/img/src/og.html` 을 탭별로 복사해 오른쪽 그림만 바꾸고 1200×630 으로 캡처합니다. 문구는 이쪽에서 HTML 로 얹으므로 챗GPT에 글자를 부탁할 일이 없습니다.
 
 | 페이지 | 오른쪽 그림 | 왼쪽 문구 |
 |---|---|---|
-| 홈 | 계절 4:5 그림 | 지금과 같음(계절 문구) |
-| 이용 안내 | 안내 배너(3:2 → 4:5 로 가운데 잘라 씀. 인물이 작아 잘려도 됨) | "이용 안내" · "처음 2주 동안 할 일, 닉네임 양식, 모임 참여와 정산" |
+| 홈 | 계절 세로 그림 | 지금과 같음(계절 문구) |
+| 이용 안내 | 안내 배너(가운데를 세로로 잘라 씀. 인물이 작아 잘려도 됨) | "이용 안내" · "처음 2주 동안 할 일, 닉네임 양식, 모임 참여와 정산" |
 | 활동 통계 | 통계 스팟(큰 원) | "활동 통계" · "우리 방이 언제, 얼마나 이야기하는지" |
 | 모임 정산·정산 확인 | 정산 스팟 | "모임 정산" · "차수별 1/N과 입금 확인 링크" |
 | 소식 | 소식 스팟 | "소식" · "공지 · 모임 모집 · 후기 · 정보" |
-| 맛집 | 맛집 배너(가운데 잘라 4:5) | "맛집" · "모임에서 다녀온 식당과 한줄평" |
+| 맛집 | 맛집 배너(가운데를 세로로 잘라 씀) | "맛집" · "모임에서 다녀온 식당과 한줄평" |
+
+### 받은 그림 확인표
+
+저장하기 전에 다섯 가지만 봅니다. 하나라도 걸리면 부분 수정을 시킵니다.
+
+- 글자·숫자가 어디에도 없나 (간판, 메뉴판, 영수증, 계산기, 노트).
+- 손가락 수와 손 모양이 자연스러운가.
+- 얼굴이 커버 그림의 얼굴들과 같은 결인가 (눈 크기, 선 굵기).
+- 색이 커버와 같은 온도인가 (형광·하늘색·민트가 섞이지 않았나).
+- 배경이 한국 동네로 보이나.
 
 ## 5. 제작 순서
 
-1. **가을 원본을 참고 이미지로 걸고** 순위 1의 8장(홈 6 + 배너 2)부터 뽑습니다. 자리당 3~4장 생성 → 글자·손·얼굴 결함 확인 → 1장 선택.
-2. 원본을 `assets/img/src/` 에 넣고 알려 주시면, 웹용 크기(3:2 1440/720, 4:5 800/400, 1:1 480/240, 4:3 640/320)로 줄이고 WebP 로 저장해 자리를 붙입니다. 홈 그림 때 쓴 방법(크로미움 캔버스, 품질 0.8~0.82)을 그대로 씁니다.
-3. 자리 붙이기는 페이지마다 `<img … onerror>` 한 덩어리입니다. 파일이 없거나 못 읽으면 자리가 접혀 빈 상자가 남지 않습니다. 붙인 뒤 390·768·1440 폭에서 잘림·밀림·대비를 검사합니다.
-4. 순위 2·3은 있으면 붙이고, 없으면 지금처럼 아이콘과 글자만으로 둡니다. 순위 4의 OG 는 배너·스팟이 들어온 뒤 조립합니다.
+1. 챗GPT 새 대화에 커버 그림을 첨부하고 4-0 기준 잡기 메시지를 보냅니다.
+2. 순위 1의 여덟 장(홈 6 + 배너 2)부터 4-1~4-3 프롬프트를 한 장씩 보냅니다. 자리당 2~3장 받아 확인표로 고릅니다.
+3. 고른 PNG 원본을 `assets/img/src/` 에 넣고 알려 주시면, 잘라내기(4:5·4:3)와 웹용 크기 줄이기, WebP 저장, 자리 붙이기를 이쪽에서 합니다. 홈 그림 때 쓴 방법(크로미움 캔버스, 품질 0.8~0.82)을 그대로 씁니다.
+4. 자리 붙이기는 페이지마다 `<img … onerror>` 한 덩어리입니다. 파일이 없거나 못 읽으면 자리가 접혀 빈 상자가 남지 않습니다. 붙인 뒤 390·768·1440 폭에서 잘림·밀림·대비를 검사합니다.
+5. 순위 2·3은 있으면 붙이고, 없으면 지금처럼 아이콘과 글자만으로 둡니다. 순위 4의 OG 는 배너·스팟이 들어온 뒤 조립합니다.
 
 ## 6. 하지 않기로 한 것
 
