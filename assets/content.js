@@ -25,6 +25,9 @@
   var CAT_COLOR = { "고기": "#A9502D", "한식": "#4B2A82", "일식": "#3F6E86", "중식": "#B23B3B", "양식/퓨전": "#6D4AAE", "술집/포차": "#7E5F25", "카페/디저트": "#8A5A7E", "분식/면": "#2F7A6B" };
   function catIcon(c) { return CAT_ICON[slash(c)] || "utensils"; }
   function catColor(c) { return CAT_COLOR[slash(c)] || "#4B2A82"; }
+  /* 종류별 그림(assets/img/food-<slug>-160/320.webp) — 2세대 스티커 8장. 없는 종류는 null → 선 아이콘만 */
+  var CAT_IMG = { "고기": "meat", "한식": "korean", "일식": "japanese", "중식": "chinese", "양식/퓨전": "western", "술집/포차": "pub", "카페/디저트": "cafe", "분식/면": "bunsik" };
+  function catImg(c) { var s = CAT_IMG[slash(c)]; return s ? "food-" + s : null; }
 
   /* ── 초성 검색 ── "ㅇㅎㄱ" → 유쾌한그집. 검색어가 초성으로만 되어 있을 때 쓴다 */
   var CHO = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
@@ -230,7 +233,7 @@
     var hasCoords = isFinite(lat) && isFinite(lng) && p.lat != null && p.lng != null && !(lat === 0 && lng === 0);
     return {
       id: p.id, name: p.name, area: p.area, areaLabel: areaLabel(p.area), category: p.category,
-      catIcon: catIcon(p.category), catColor: catColor(p.category),
+      catIcon: catIcon(p.category), catColor: catColor(p.category), catImg: catImg(p.category),
       lat: hasCoords ? lat : null, lng: hasCoords ? lng : null, hasCoords: hasCoords,
       chosung: chosung(String(p.name || "")),
       /* 화면에 쓰는 지역: "그 외"에 실제 위치 메모가 있으면 그 위치("용산 이태원")만. "그 외 지역"은 필터에서만 쓴다 */
@@ -426,7 +429,7 @@
 
   window.EXCER_CONTENT = {
     AREAS: AREAS, CATS: CATS, POST_TYPES: POST_TYPES, CAT_COLOR: CAT_COLOR, PROMPTS: PROMPTS, weeklyPrompt: weeklyPrompt,
-    catIcon: catIcon, catColor: catColor, chosung: chosung, isChosungQuery: isChosungQuery, nickSuggest: nickSuggest,
+    catIcon: catIcon, catColor: catColor, catImg: catImg, chosung: chosung, isChosungQuery: isChosungQuery, nickSuggest: nickSuggest,
     esc: esc, slash: slash, areaLabel: areaLabel, priceText: priceText, priceLevel: priceLevel, textHas: textHas, menuItems: menuItems, menusIn: menusIn,
     dateText: dateText, relTime: relTime, kstToday: kstToday, kstNowHM: kstNowHM, daysFromToday: daysFromToday,
     loadCurated: loadCurated, curatedKey: curatedKey, noteView: noteView, noteText: noteText, noteDate: noteDate,

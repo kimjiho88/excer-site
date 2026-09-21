@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=11" />
+  <link rel="stylesheet" href="assets/site.css?v=12" />
 
   <style>
     /* ============================================================
@@ -151,6 +151,11 @@
     .textarea.is-body { min-height: 150px; }
     .type-fields { display: contents; }
     .type-desc { margin: -4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    /* 글 종류 선택 옆 그림(2세대 posts-*) — 56px 타일, 고른 종류에 맞춰 바뀐다 */
+    .wcat-wrap { display: flex; align-items: center; gap: 12px; }
+    .wcat-wrap .input { flex: 1 1 auto; min-width: 0; }
+    .wcat-img { display: block; flex: none; width: 56px; height: 56px; border-radius: 14px; background: #F7F6F2; border: 1px solid var(--line); object-fit: cover; }
+    .wcat-img[hidden] { display: none; }
     .form-preview .post-row { border-top: 0; }
     .form-preview .post-head { padding: 4px 0 6px; cursor: default; }
     .form-preview .post-head:hover .row-title { text-decoration: none; }
@@ -164,7 +169,7 @@
   </style>
   <script src="assets/site-core.js?v=6"></script>
   <script src="assets/icons.js?v=1"></script>
-  <script src="assets/content.js?v=4"></script>
+  <script src="assets/content.js?v=5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -299,13 +304,17 @@
         </div>
         <div class="field is-wide" data-field="wCat">
           <label for="wCat">글 종류</label>
-          <select id="wCat" class="input">
-            <option value="자유" selected>자유</option>
-            <option value="벙 소식">모임 모집</option>
-            <option value="후기">모임 후기</option>
-            <option value="정보">정보</option>
-            <option value="공지">공지 (운영진)</option>
-          </select>
+          <!-- 종류 그림(2세대 posts-*, 후기는 flow-record) — 고른 종류를 그림으로도 보여 준다. 못 읽으면 숨김 -->
+          <div class="wcat-wrap">
+            <select id="wCat" class="input">
+              <option value="자유" selected>자유</option>
+              <option value="벙 소식">모임 모집</option>
+              <option value="후기">모임 후기</option>
+              <option value="정보">정보</option>
+              <option value="공지">공지 (운영진)</option>
+            </select>
+            <img class="wcat-img" id="wCatImg" src="assets/img/posts-free-160.webp" width="320" height="320" alt="" decoding="async" onerror="this.hidden = true" />
+          </div>
           <p class="type-desc" id="typeDesc"></p>
         </div>
         <p class="form-note is-wide" id="capsNote" hidden>서버 업데이트 전이라 이 종류의 항목은 저장되지 않습니다. 날짜와 장소는 본문에 적어 주세요.</p>
@@ -756,7 +765,7 @@
         return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
           <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
       }
-      return `<div class="empty-state" style="border-top:1px solid var(--line)"><img class="empty-img" src="assets/img/news-empty-320.webp" srcset="assets/img/news-empty-320.webp 320w, assets/img/news-empty-640.webp 640w" sizes="240px" width="640" height="480" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image'); this.nextElementSibling.hidden = false" /><span class="empty-ic" hidden>${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
+      return `<div class="empty-state" style="border-top:1px solid var(--line)"><img class="empty-img" src="assets/img/news-empty-320.webp" srcset="assets/img/news-empty-320.webp 320w, assets/img/news-empty-640.webp 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image'); this.nextElementSibling.hidden = false" /><span class="empty-ic" hidden>${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
         <div class="empty-acts"><button type="button" class="btn btn-primary is-sm" data-act="open-write" data-cat="후기">모임 후기 쓰기</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="정보">정보 공유</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="자유">자유 글</button></div></div>`;
     }
     /* 이번 주 인기 글 — 최근 7일 안에 반응이나 댓글이 있는 글 셋. 전체 탭·검색 없음일 때만 */
@@ -887,6 +896,9 @@
       const fields = (TYPE_FIELDS[cat] || []).filter((f) => state.caps >= 2 || (cat === "벙 소식" && !f.v2));
       $("typeFields").innerHTML = fields.map(fieldHTML).join("");
       $("typeDesc").textContent = typeDesc(cat);
+      // 종류 그림 — posts-*(공지·모집·정보·자유), 후기는 flow-record. 바꿀 때마다 다시 보이게(전에 못 읽어 숨었어도)
+      const TYPE_IMG = { "공지": "posts-notice", "벙 소식": "posts-meetup", "후기": "flow-record", "정보": "posts-info", "자유": "posts-free" };
+      const ti = $("wCatImg"); if (ti) { const stem = TYPE_IMG[cat] || "posts-free"; ti.hidden = false; ti.src = "assets/img/" + stem + "-160.webp"; ti.srcset = "assets/img/" + stem + "-160.webp 160w, assets/img/" + stem + "-320.webp 320w"; ti.sizes = "56px"; }
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
       $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
       $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
