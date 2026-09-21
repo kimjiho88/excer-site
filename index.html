@@ -49,15 +49,17 @@
     .tab-card .tc-title { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 15px; font-weight: 700; }
     .tab-card .tc-sub { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
 
-    /* ── B·C: 왼쪽 넓은 열은 공지·다가오는 모임·최근 후기, 오른쪽 좁은 열은 참여 흐름과 주요 기능 ──
-       HTML 순서는 참여 흐름 → 주요 기능 → 공지·모임. 화면이 넓으면 grid-area 로 자리만 바꾼다 */
+    /* ── B·C: 왼쪽 넓은 열은 공지·다가오는 모임·최근 후기, 오른쪽 좁은 열은 참여 흐름. 주요 기능 카드 넷은 두 열 아래 한 줄 ──
+       HTML 순서는 참여 흐름 → 주요 기능 → 공지·모임(좁은 화면은 이 순서). 화면이 넓으면 grid-area 로 자리만 바꾼다.
+       주요 기능을 오른쪽 열에 두면 왼쪽 열(공지·모임)이 짧은 날 왼쪽 아래가 비어서, 전체 폭 한 줄로 내렸다 */
     .home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6) 56px; align-items: start; padding-top: var(--sp-5); }   /* 커버 바로 아래에 붙지 않게 */
     .home-side { display: grid; gap: 20px; min-width: 0; }
-    .home-live { min-width: 0; }
+    .home-live, .home-feat { min-width: 0; }
     @media (min-width: 961px) {
-      .home-grid { grid-template-columns: minmax(0, 1fr) 320px; grid-template-areas: "live side"; }
+      .home-grid { grid-template-columns: minmax(0, 1fr) 320px; grid-template-areas: "live side" "feat feat"; }
       .home-live { grid-area: live; }
       .home-side { grid-area: side; }
+      .home-feat { grid-area: feat; }
     }
 
     /* 참여 흐름: 네 단계 도해(번호 원 + 연결선). 라벤더로 흐르는 면 */
@@ -157,7 +159,7 @@
         <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
-      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>오늘</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i> <b id="visitTotal">0</b></span></span>
+      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab is-active" href="index.html" aria-current="page">홈</a>
         <a class="topnav-tab" href="guide.html">이용 안내</a>
@@ -206,8 +208,8 @@
     <!-- ══ 계절 대표 소개 끝 ══ -->
 
     <div class="container home-grid">
-      <!-- B. 참여 흐름과 주요 기능 -->
-      <aside class="home-side" aria-label="참여 흐름과 주요 기능">
+      <!-- B. 참여 흐름 -->
+      <aside class="home-side" aria-label="참여 흐름">
         <section class="panel join-panel" aria-labelledby="joinTitle">
           <h2 id="joinTitle"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>처음 참여한다면</h2>
           <ol class="flow" aria-label="참여 흐름 네 단계">
@@ -218,17 +220,18 @@
           </ol>
           <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
         </section>
-        <!-- 주요 기능 — 탭 그림 카드 넷. 그림을 못 읽으면 크림 타일만 남고 이름·설명은 그대로 -->
-        <section aria-labelledby="featTitle">
-          <h2 class="side-h" id="featTitle">주요 기능</h2>
+      </aside>
+
+      <!-- 주요 기능 — 탭 그림 카드 넷. PC 에서는 두 열 아래 한 줄(grid-area feat), 좁은 화면은 참여 흐름 다음. 그림을 못 읽으면 크림 타일만 남고 이름·설명은 그대로 -->
+      <section class="home-feat" aria-labelledby="featTitle">
+        <div class="sec-bar"><div class="sb-l"><h2 class="lead-h" id="featTitle">주요 기능</h2></div></div>
           <ul class="tab-cards">
             <li><a class="tab-card" href="places.html"><span class="tc-img is-scene"><img src="assets/img/places-banner-720.webp" width="720" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">맛집</span><span class="tc-sub">다녀온 식당과 한줄평</span></a></li>
-            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp" srcset="assets/img/news-spot-240.webp 240w, assets/img/news-spot-480.webp 480w" sizes="120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지 · 모집 · 후기</span></a></li>
-            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp" srcset="assets/img/settle-spot-240.webp 240w, assets/img/settle-spot-480.webp 480w" sizes="120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
-            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp" srcset="assets/img/report-spot-240.webp 240w, assets/img/report-spot-480.webp 480w" sizes="120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
+            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp" srcset="assets/img/news-spot-240.webp 240w, assets/img/news-spot-480.webp 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지 · 모집 · 후기</span></a></li>
+            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp" srcset="assets/img/settle-spot-240.webp 240w, assets/img/settle-spot-480.webp 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
+            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp" srcset="assets/img/report-spot-240.webp 240w, assets/img/report-spot-480.webp 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
           </ul>
-        </section>
-      </aside>
+      </section>
 
       <!-- C. 실제 공지 한 건, 다가오는 모임(최대 2건), 최근 모임 후기 한 건. 데이터가 없으면 다음 행동을 안내 -->
       <section class="home-live" aria-labelledby="liveTitle">

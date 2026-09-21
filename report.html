@@ -144,6 +144,15 @@
     .hm-grid.is-empty { display: block; min-width: 0; }
     .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
     .hm-legend i { width: 16px; height: 10px; border-radius: 3px; }
+    /* 폰: 24칸을 한 화면에 다 넣는다(칸 10px 안팎). 옆으로 밀어야 저녁·밤이 보이던 것을 없앤다. 정확한 수는 아래 '표로 보기' */
+    @media (max-width: 480px) {
+      .hm-scroll { overflow-x: visible; padding-bottom: 0; }
+      .hm-grid { min-width: 0; grid-template-columns: 22px repeat(24, minmax(0, 1fr)); gap: 2px; }
+      .hm-cell { min-width: 0; border-radius: 2px; }
+      .hm-hour, .hm-day { font-size: 10px; }
+      .hm-hour { overflow: visible; white-space: nowrap; }
+      .hm-hour:nth-child(25) { text-align: right; }   /* 마지막 '23'이 칸 밖으로 삐져나오지 않게 */
+    }
 
     /* ── 멤버 순위 ── */
     .rank-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
@@ -288,7 +297,7 @@
         <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
-      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>오늘</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>누적</i> <b id="visitTotal">0</b></span></span>
+      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
         <a class="topnav-tab" href="guide.html">이용 안내</a>
