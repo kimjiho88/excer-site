@@ -9,13 +9,14 @@ var OFFLINE = "/offline.html";
 var OFFLINE_IMG = "/assets/img/offline-spot-240.webp";   // offline.html 이 쓰는 그림. 없어도 페이지는 아이콘으로 동작한다
 
 self.addEventListener("install", function (e) {
+  // offline.html 을 저장하지 못하면 설치를 실패로 둔다 — 그래야 브라우저가 이전 워커와 저장본을 그대로 두고 다음에 다시 설치한다.
+  // (실패를 삼키고 활성화하면 activate 가 멀쩡한 옛 저장본을 지워 오프라인 페이지가 사라진다.) 그림은 없어도 되므로 그 실패만 삼킨다.
   e.waitUntil(
     caches.open(CACHE)
       .then(function (c) {
         return c.add(new Request(OFFLINE, { cache: "reload" }))
           .then(function () { return c.add(new Request(OFFLINE_IMG, { cache: "reload" })).catch(function () {}); });
       })
-      .catch(function () {})
       .then(function () { return self.skipWaiting(); })
   );
 });

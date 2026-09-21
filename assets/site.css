@@ -919,14 +919,16 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .page-head-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; align-items: center; }
 .head-banner { margin: 0; min-width: 0; }
 .head-banner img { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; aspect-ratio: 3 / 2; border-radius: 14px; background: var(--surface-2); box-shadow: 0 24px 48px -30px rgba(46, 27, 69, 0.55), 0 2px 6px rgba(36, 30, 44, 0.08); }
-.head-banner.no-image { display: none; }
+/* 파일을 못 읽으면 onerror 가 .page-head-grid 에 .no-image 를 붙인다 — 그림 열(트랙·간격)까지 없애 글이 한 열로 돌아온다(홈 대표 그림의 .home-hero.no-image 와 같은 방식) */
+.page-head-grid.no-image .head-banner, .head-banner.no-image { display: none; }
 @media (min-width: 768px) {
-  .page-head-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); }
+  .page-head-grid:not(.no-image) { grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); }
   .head-banner img { max-width: none; margin: 0; }
 }
 /* 머리 스팟 — 제목 왼쪽의 표지판 타일. 그림의 크림 배경과 같은 색 타일 + 얇은 테두리 */
 .head-with-spot { display: flex; align-items: center; gap: 18px; min-width: 0; }
-.head-spot { flex: none; width: 104px; height: 104px; border-radius: 26px; background: #F7F6F2; object-fit: cover; box-shadow: 0 10px 22px -14px rgba(46, 27, 69, 0.5), inset 0 0 0 1px rgba(75, 42, 130, 0.12); }
+/* 테두리는 진짜 border 로 — img 위의 안쪽 그림자(inset)는 그림이 덮어 보이지 않는다. border-box 라 치수는 그대로 */
+.head-spot { flex: none; width: 104px; height: 104px; border-radius: 26px; border: 1px solid rgba(75, 42, 130, 0.12); background: #F7F6F2; object-fit: cover; box-shadow: 0 10px 22px -14px rgba(46, 27, 69, 0.5); }
 .head-spot.no-image { display: none; }
 @media (max-width: 640px) { .head-with-spot { gap: 14px; } .head-spot { width: 76px; height: 76px; border-radius: 20px; } }
 /* 빈 상태 그림 — 안내 문장 위 240px */
@@ -946,6 +948,7 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
   .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .hero-actions, .home-actions,
   .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao,
   .head-banner, .head-spot, .empty-img { display: none !important; }
+  .page-head-grid { grid-template-columns: minmax(0, 1fr) !important; }   /* 배너를 숨기면 열도 하나로 */
   body { background: #fff !important; color: #000; }
   .panel, .card, .status-line, .place-detail, .post-detail { box-shadow: none !important; border-color: #bbb !important; }
   .home-title { -webkit-text-fill-color: #000; color: #000 !important; background: none !important; }

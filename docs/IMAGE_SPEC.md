@@ -29,12 +29,12 @@
 
 | 항목 | 값 |
 |---|---|
-| 파일 | `assets/og.jpg` 1200 × 630, JPG 품질 92, 157 KB (8개 페이지의 `og:image` 가 같은 파일을 가리킴). 옛 `og.png` 는 지움 |
+| 파일 | `assets/og.jpg` 1200 × 630, JPG 품질 92, 157 KB. 홈·게임 목록·활동 통계·모임 정산·정산 확인 5개 페이지의 `og:image` 가 가리킴(안내·맛집·소식은 아래 탭별 파일. 발행 화면에는 og:image 가 없음). 옛 `og.png` 는 지움 |
 | 원본 | `assets/img/src/og.html` — 이 페이지를 1200 × 630, 배율 1 로 캡처한 것. 문구를 바꾸면 다시 캡처(`scratchpad/mkog.js`). PNG 는 534 KB 로 기준(500 KB)을 넘어 JPG 로 둠 |
 | 구성 | 바탕 `#F7F5EF`. 왼쪽: "오픈채팅 커뮤니티"(`#625A6C`) · "동네친구들"(`#4B2A82`, 92px) · "밥 한 끼부터 주말 나들이까지, 동네친구들과 함께합니다."(`#241E2C`, 32px) · "모임 정산 · 소식 · 맛집". 오른쪽: 홈 모바일용 세로형 그림 427 × 534, 모서리 18px — 다섯 사람이 다 들어가고 잘리지 않음 |
 | 안전 영역 | 글자는 가로 120~613px(10~51%), 그림은 653~1080px(≤90%). 카카오톡이 좌우를 조금 잘라도 글자·얼굴이 남음 |
 | 문구 규칙 | 홈의 계절 블록과 같은 문장을 씀. 계절이 바뀌어 홈 문구를 바꾸면 여기도 같이 |
-| 탭별 미리보기(2026-09-21) | 같은 틀(`assets/img/src/og-<탭>.html`)에서 오른쪽 그림과 문구만 다르게: `assets/og-guide.jpg`(안내 배너를 4:5 로 가운데 잘라, 139 KB) · `assets/og-places.jpg`(맛집 배너, 132 KB) · `assets/og-news.jpg`(소식 스팟을 427px 타일에, 64 KB). `guide.html`·`places.html`·`news.html` 의 `og:image` 가 각각을 가리킴. 통계·정산(`og-report.html`·`og-settle.html`)은 스팟 그림이 오면 `scratchpad/mkog2.js` 로 캡처해 `report.html`·`calculator.html`·`settle.html` 에 연결. 홈·발행 화면은 `og.jpg` 그대로 |
+| 탭별 미리보기(2026-09-21) | 같은 틀(`assets/img/src/og-<탭>.html`)에서 오른쪽 그림과 문구만 다르게: `assets/og-guide.jpg`(안내 배너를 4:5 로 가운데 잘라, 139 KB) · `assets/og-places.jpg`(맛집 배너, 132 KB) · `assets/og-news.jpg`(소식 스팟을 427px 타일에, 64 KB). `guide.html`·`places.html`·`news.html` 의 `og:image` 가 각각을 가리킴. 통계·정산(`og-report.html`·`og-settle.html`)은 스팟 그림이 오면 `scratchpad/mkog2.js` 로 캡처해 `report.html`·`calculator.html`·`settle.html` 에 연결(그때까지 `og.jpg`). 홈·게임 목록은 `og.jpg` 그대로 |
 
 ## 3. 게임 목록 화면 캡처 (선택, 자리 아직 없음)
 
@@ -54,11 +54,11 @@
 |---|---|
 | 파일 | 안내 `assets/img/guide-banner-1440.webp`(214 KB)·`-720.webp`(80 KB), 맛집 `assets/img/places-banner-1440.webp`(212 KB)·`-720.webp`(79 KB). 원본 `assets/img/src/guide-banner.webp`·`places-banner.webp` 1536 × 1024 |
 | 자리 | `.page-head` 안 `.page-head-grid` 의 둘째 열 `<figure class="head-banner">`. 안내는 제목·설명 옆, 맛집은 제목·설명·등록 버튼(`.page-head-inner`) 옆 |
-| PC 표시 (≥ 768px) | 글 열 · 그림 열 42%(최소 280px). 1440px 화면에서 약 470 × 313. 비율 3:2 그대로, 잘라내지 않음 |
-| 모바일 표시 (≤ 767px) | 제목·설명·버튼 다음에 화면 폭(최대 420px, 가운데). 390px 화면에서 358 × 239. 인물이 작은 장면이라 이 크기에서도 읽힘 |
-| sizes | `(min-width: 1168px) 470px, (min-width: 768px) 40vw, min(420px, calc(100vw - 32px))` |
+| PC 표시 (≥ 768px) | 글 열 · 그림 열 42%(최소 280px). 컨테이너 안쪽 폭(1120 − 48 = 1072px) 기준이라 1440px 화면에서 약 450 × 300. 비율 3:2 그대로, 잘라내지 않음 |
+| 모바일 표시 (≤ 767px) | 제목·설명·버튼 다음에 화면 폭(최대 420px, 가운데). 390px 화면에서 350 × 233(좌우 여백 20px). 인물이 작은 장면이라 이 크기에서도 읽힘 |
+| sizes | `(min-width: 1168px) 450px, (min-width: 768px) calc(42vw - 20px), min(420px, calc(100vw - 40px))` |
 | 모서리·효과 | 14px, 아래로 떨어지는 옅은 그림자. 로딩 중 바탕 `--surface-2` |
-| 실패 | `onerror` 가 figure 에 `.no-image` → 그림 열이 사라지고 글이 한 열로 |
+| 실패 | `onerror` 가 `.page-head-grid` 에 `.no-image` → 그림과 그림 열(트랙·간격)이 함께 사라지고 글이 한 열로(홈 대표 그림과 같은 방식). 인쇄도 한 열 |
 | 대체 텍스트 | 안내 "식당 문 앞에 도착한 사람을 안에서 반기는 친구들을 그린 일러스트" · 맛집 "해 질 무렵 식당이 늘어선 골목을 걷는 친구들을 그린 일러스트" |
 
 ## 5. 머리 스팟 — 소식·활동 통계·모임 정산·정산 확인 (소식 적용됨, 나머지는 파일 대기)
@@ -67,7 +67,7 @@
 |---|---|
 | 파일 | 소식 `assets/img/news-spot-480.webp`(16 KB)·`-240.webp`(6 KB). 통계 `report-spot-480/240.webp`, 정산·정산 확인 공용 `settle-spot-480/240.webp` — 자리는 붙어 있고 파일이 오면 열림(그때까지는 `onerror` 로 접힘). 원본 1254 × 1254 |
 | 자리 | 제목 왼쪽 `<img class="head-spot">`, 제목·설명과 함께 `.head-with-spot` 으로 묶음 |
-| 표시 | 104 × 104(≤ 640px 화면은 76 × 76), 모서리 26px(20px). 그림이 크림 배경(#F7F6F2)으로 생성돼 있어 같은 색 타일 + 얇은 보라 테두리 + 옅은 그림자로 "타일"로 읽히게 함 |
+| 표시 | 104 × 104(≤ 640px 화면은 76 × 76), 모서리 26px(20px). 그림이 크림 배경(#F7F6F2)으로 생성돼 있어 같은 색 타일 + 얇은 보라 테두리(`border`, 안쪽 그림자는 img 위에서 안 보임) + 옅은 그림자로 "타일"로 읽히게 함 |
 | 실패 | `onerror` 가 img 에 `.no-image` → 숨김. 제목이 컨테이너 왼쪽에 붙음 |
 | 대체 텍스트 | `""` (장식 — 제목이 뜻을 전한다) |
 
