@@ -910,17 +910,42 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .stepper li.is-on::before { background: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .stepper li + li { margin-left: 4px; }
 
+/* ============================================================
+   v9 — 그림 자리: 머리 배너(3:2)·머리 스팟(1:1)·빈 상태 그림(4:3)
+   규격·파일은 docs/IMAGE_SPEC.md. 파일이 없거나 못 읽으면 img 의 onerror 가 .no-image 를 붙여 자리가 접힌다 — 글·버튼은 그대로.
+   스팟 그림은 배경이 크림(#F7F6F2)으로 생성돼 있어, 같은 색 타일 안에 놓아 경계가 "타일"로 읽히게 한다.
+   ============================================================ */
+/* 머리 배너 — PC(≥768): 글 왼쪽·그림 오른쪽 42%. 모바일: 제목·설명·버튼 다음에 화면 폭(최대 420px) */
+.page-head-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; align-items: center; }
+.head-banner { margin: 0; min-width: 0; }
+.head-banner img { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; aspect-ratio: 3 / 2; border-radius: 14px; background: var(--surface-2); box-shadow: 0 24px 48px -30px rgba(46, 27, 69, 0.55), 0 2px 6px rgba(36, 30, 44, 0.08); }
+.head-banner.no-image { display: none; }
+@media (min-width: 768px) {
+  .page-head-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); }
+  .head-banner img { max-width: none; margin: 0; }
+}
+/* 머리 스팟 — 제목 왼쪽의 표지판 타일. 그림의 크림 배경과 같은 색 타일 + 얇은 테두리 */
+.head-with-spot { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.head-spot { flex: none; width: 104px; height: 104px; border-radius: 26px; background: #F7F6F2; object-fit: cover; box-shadow: 0 10px 22px -14px rgba(46, 27, 69, 0.5), inset 0 0 0 1px rgba(75, 42, 130, 0.12); }
+.head-spot.no-image { display: none; }
+@media (max-width: 640px) { .head-with-spot { gap: 14px; } .head-spot { width: 76px; height: 76px; border-radius: 20px; } }
+/* 빈 상태 그림 — 안내 문장 위 240px */
+.empty-state .empty-img, .status-box .empty-img { display: block; width: min(240px, 100%); height: auto; aspect-ratio: 4 / 3; margin: 0 auto 8px; border-radius: 12px; background: var(--surface-2); box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
+.empty-img.no-image { display: none; }
+
 /* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
 @media (forced-colors: active) {
   .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
   .home-title, .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
   .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
+  .head-spot, .head-banner img, .empty-img { border: 1px solid CanvasText; }
 }
 
 /* ── 인쇄: 정산 메시지·활동 통계·맛집 목록을 종이에 ── */
 @media print {
   .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .hero-actions, .home-actions,
-  .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao { display: none !important; }
+  .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao,
+  .head-banner, .head-spot, .empty-img { display: none !important; }
   body { background: #fff !important; color: #000; }
   .panel, .card, .status-line, .place-detail, .post-detail { box-shadow: none !important; border-color: #bbb !important; }
   .home-title { -webkit-text-fill-color: #000; color: #000 !important; background: none !important; }

@@ -12,7 +12,7 @@
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="소식 · 동네친구들" />
   <meta property="og:description" content="공지, 모임 모집, 모임 후기, 정보, 자유 글을 한곳에서 확인합니다." />
-  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.jpg" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-news.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=8" />
+  <link rel="stylesheet" href="assets/site.css?v=9" />
 
   <style>
     /* ============================================================
@@ -189,9 +189,13 @@
 
   <header class="page-head">
     <div class="container is-narrow page-head-inner">
-      <div>
-        <h1 id="pageTitle">소식</h1>
-        <p class="page-lead">동네친구들의 공지와 모임 소식을 올리는 게시판입니다.</p>
+      <div class="head-with-spot">
+        <!-- 머리 스팟(1:1) — 파일을 못 읽으면 숨김. 규격: docs/IMAGE_SPEC.md -->
+        <img class="head-spot" src="assets/img/news-spot-240.webp" srcset="assets/img/news-spot-240.webp 240w, assets/img/news-spot-480.webp 480w" sizes="104px" width="480" height="480" alt="" decoding="async" onerror="this.classList.add('no-image')" />
+        <div>
+          <h1 id="pageTitle">소식</h1>
+          <p class="page-lead">동네친구들의 공지와 모임 소식을 올리는 게시판입니다.</p>
+        </div>
       </div>
       <div class="page-actions">
         <button class="btn btn-primary" id="heroWriteBtn" type="button">글쓰기</button>
@@ -755,7 +759,7 @@
         return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
           <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
       }
-      return `<div class="empty-state" style="border-top:1px solid var(--line)"><span class="empty-ic">${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
+      return `<div class="empty-state" style="border-top:1px solid var(--line)"><img class="empty-img" src="assets/img/news-empty-320.webp" srcset="assets/img/news-empty-320.webp 320w, assets/img/news-empty-640.webp 640w" sizes="240px" width="640" height="480" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image'); this.nextElementSibling.hidden = false" /><span class="empty-ic" hidden>${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
         <div class="empty-acts"><button type="button" class="btn btn-primary is-sm" data-act="open-write" data-cat="후기">모임 후기 쓰기</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="정보">정보 공유</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="자유">자유 글</button></div></div>`;
     }
     /* 이번 주 인기 글 — 최근 7일 안에 반응이나 댓글이 있는 글 셋. 전체 탭·검색 없음일 때만 */

@@ -17,6 +17,10 @@
     .logo::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--brand); }
     .ic { display: grid; place-items: center; width: 64px; height: 64px; margin: 20px auto 12px; border-radius: 20px; background: var(--brand-soft); color: var(--brand); }
     .ic svg { width: 30px; height: 30px; }
+    .ic[hidden] { display: none; }
+    /* 종이컵 전화기 그림 — 서비스 워커가 offline.html 과 함께 저장해 둔다. 못 읽으면 위의 아이콘으로 */
+    .spot { display: block; width: 150px; height: 150px; margin: 12px auto 4px; border-radius: 32px; background: #F7F6F2; }
+    .spot[hidden] { display: none; }
     h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
     p { margin: 8px 0 0; color: var(--ink-2); font-size: 15px; }
     .acts { display: grid; gap: 8px; margin-top: 20px; }
@@ -37,7 +41,8 @@
 <body>
   <main class="card" role="main">
     <span class="logo">동네친구들</span>
-    <div class="ic" aria-hidden="true">
+    <img class="spot" src="/assets/img/offline-spot-240.webp" width="240" height="240" alt="" decoding="async" onerror="this.hidden = true; document.getElementById('fallbackIc').hidden = false" />
+    <div class="ic" id="fallbackIc" aria-hidden="true" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a15 15 0 0 1 20 0"/><path d="M5.5 13a10 10 0 0 1 13 0"/><path d="M9 16.5a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r="0.8" fill="currentColor"/><path d="M3 3l18 18"/></svg>
     </div>
     <h1>인터넷 연결이 없습니다</h1>
