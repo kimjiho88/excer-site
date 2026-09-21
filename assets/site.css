@@ -261,12 +261,27 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 }
 .topnav-cta { margin-left: var(--sp-2); }
 .topnav-page { display: none; }
-.topnav-visits { display: none; }
+/* 방문 횟수 알약 — 로고 오른쪽 빈자리, 메뉴 앞. 서버 값이 오기 전·실패 시엔 [hidden] */
+.topnav-visits { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; padding: 5px 10px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap; }
+.topnav-visits[hidden] { display: none; }
+.topnav-visits b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.topnav-visits .tv-ic { width: 14px; height: 14px; display: block; color: var(--brand); }
+.topnav-visits .tv-cell { display: inline-flex; gap: 4px; align-items: baseline; }
+.topnav-visits .tv-cell i { font-style: normal; }
+.topnav-visits .tv-sep { width: 1px; height: 12px; background: var(--line-strong); }
+.topnav-visits:not([hidden]) ~ .topnav-tabs { margin-left: 0; }
 @media (max-width: 860px) {
   .topnav-tabs { display: none; }      /* 이동은 하단 탭바가 담당 */
   .topnav-sub { display: none; }
   .topnav-cta { margin-left: auto; }
+  .topnav-visits:not([hidden]) ~ .topnav-cta { margin-left: 0; }
+  .topnav-visits { gap: 6px; padding: 4px 8px; font-size: 11px; }
   .topnav-logo { font-size: 18px; }
+}
+@media (max-width: 480px) {
+  /* 좁은 폰: 로고와 버튼 사이가 120px 남짓이라 두 줄로 쌓고 아이콘·구분선은 뺀다 */
+  .topnav-visits { flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 8px; line-height: 1.1; }
+  .topnav-visits .tv-ic, .topnav-visits .tv-sep { display: none; }
 }
 
 /* ============================================================
@@ -659,12 +674,6 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: underline; te
   color: var(--on-dark-muted); font-size: 13px;
 }
 .footer-bottom small { font-size: inherit; }
-.footer-visits { display: inline-flex; align-items: center; gap: 10px; color: var(--on-dark-muted); font-size: 13px; }
-.footer-visits b { color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
-.footer-visits .tv-ic svg { width: 14px; height: 14px; display: block; }
-.footer-visits .tv-cell { display: inline-flex; gap: 4px; align-items: baseline; }
-.footer-visits .tv-cell i { font-style: normal; }
-.footer-visits .tv-sep { width: 1px; height: 12px; background: var(--on-dark-line); }
 @media (max-width: 860px) {
   .footer-grid { flex-direction: column; gap: var(--sp-4); }
   .site-footer { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }

@@ -265,24 +265,31 @@ begin
   return jsonb_build_object('id', r.id, 'paid', r.paid, 'updatedAt', r.updated_at);
 end $$;
 
--- ── 방문자 카운터 ──
-create table if not exists site_visit_log (
-  day date not null,
-  device_key text not null check (device_key ~ '^[a-z0-9]{16,40}$'),
-  first_seen timestamptz not null default now(),
-  primary key (day, device_key)
+-- ── 방문 횟수 카운터 (2026-09-21: 페이지를 열 때마다 +1. 옛 하루 1회 방식은 2026-09-21-visit-hits.sql 참고) ──
+create table if not exists site_visit_counts (
+  day  date   primary key,
+  hits bigint not null default 0 check (hits >= 0)
 );
-alter table site_visit_log enable row level security;
+alter table site_visit_counts enable row level security;
+create or replace function visit_hit()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare kst_today date := (now() at time zone 'Asia/Seoul')::date;
+begin
+  insert into site_visit_counts (day, hits) values (kst_today, 1)
+  on conflict (day) do update set hits = site_visit_counts.hits + 1;
+  return jsonb_build_object(
+    'today', coalesce((select hits from site_visit_counts where day = kst_today), 0),
+    'total', (select coalesce(sum(hits), 0) from site_visit_counts));
+end $$;
+-- 옛 스크립트가 부르던 이름. p_count=true 면 1 더하고, false 면 읽기만. 기기 키는 무시.
 create or replace function visit_ping(p_device text, p_count boolean default true)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare kst_today date := (now() at time zone 'Asia/Seoul')::date;
 begin
-  if p_count and p_device ~ '^[a-z0-9]{16,40}$' then
-    insert into site_visit_log (day, device_key) values (kst_today, p_device) on conflict do nothing;
-  end if;
+  if p_count then return visit_hit(); end if;
   return jsonb_build_object(
-    'today', (select count(*) from site_visit_log where day = kst_today),
-    'total', (select count(*) from site_visit_log));
+    'today', coalesce((select hits from site_visit_counts where day = kst_today), 0),
+    'total', (select coalesce(sum(hits), 0) from site_visit_counts));
 end $$;
 
 -- ── 함수 실행 권한 ──
@@ -310,5 +317,5 @@ grant execute on function
   comment_create(bigint, text, text, text), comment_delete(bigint, text),
   post_react(bigint, text, text, boolean), my_reactions(text, bigint[]),
   settle_save(text, text, jsonb), settle_get(text), settle_set_paid(text, text, boolean),
-  visit_ping(text, boolean)
+  visit_hit(), visit_ping(text, boolean)
 to anon, authenticated;
