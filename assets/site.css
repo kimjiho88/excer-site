@@ -936,8 +936,11 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
   .cover-inner.has-actions { grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 24px; }
   .cover-inner.has-actions .cover-actions { margin-top: 0; }
 }
-.cover.no-image .cover-img { display: none; }
-.cover.no-image::after { content: none; }
+.cover.no-image .cover-img, .cover.no-image .cover-spot { display: none; }
+.cover:not(.is-spot).no-image::after { content: none; }
+.cover.is-spot.no-image .cover-inner { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
+/* 커버 위의 초점 고리는 흰색으로 — 보라 고리는 보라 바탕에서 안 보인다 */
+.cover a:focus-visible, .cover button:focus-visible { outline-color: #fff; }
 .cover-inner { position: relative; display: grid; align-content: end; min-height: 380px; padding-top: 56px; padding-bottom: 40px; }
 .cover-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; min-height: 28px; padding: 0 12px 0 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.01em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .cover-kicker .ic { width: 14px; height: 14px; }
@@ -960,7 +963,8 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .cover .hero-signal .hs-k { color: rgba(255, 255, 255, 0.78); }
 .cover .hero-signal .hs-v, .cover .hero-signal .hs-v small { color: #fff; }
 /* 홈형 — 첫 화면을 채우는 높이, 더 큰 제목 */
-.cover.is-home .cover-inner { min-height: 580px; padding-bottom: 52px; }
+.cover.is-home .cover-inner { min-height: clamp(420px, calc(100vh - 140px), 580px); padding-bottom: 52px; }   /* 짧은 화면(가로 폰·작은 노트북)에서는 제목·버튼이 첫 화면 안에 들게 */
+.cover.is-home.no-image .cover-inner { min-height: 360px; }   /* 그림이 없으면 민무늬 판을 길게 두지 않는다 */
 .cover.is-home .cover-title { font-size: 58px; }
 .cover.is-home .cover-lead { font-size: 19px; }
 @media (max-width: 767px) {
@@ -970,9 +974,11 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
   .cover.is-spot .cover-inner { column-gap: 16px; min-height: 200px; padding-top: 26px; padding-bottom: 26px; }
   .cover-spot { width: 112px; height: 112px; border-radius: 28px; box-shadow: 0 20px 36px -20px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.10); }
   .cover.is-home .cover-inner { min-height: 520px; padding-bottom: 36px; }
+  .cover.is-home.no-image .cover-inner { min-height: 320px; }
   .cover.is-home .cover-title { font-size: 40px; }
   .cover.is-home .cover-lead { font-size: 16px; }
 }
+@media (max-width: 360px) { .cover-spot { width: 88px; height: 88px; border-radius: 22px; } }
 /* 커버 바로 아래의 첫 내용은 커버에 붙지 않되, 첫 섹션의 자기 여백과 겹치지 않게 */
 .cover + .container, .cover + .page-main, .cover + main { padding-top: var(--sp-5); }
 .cover + .page-main > .section:first-child { margin-top: 0; }
@@ -984,7 +990,7 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 /* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
 @media (forced-colors: active) {
   .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
-  .home-title, .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
+  .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
   .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
   .empty-img, .cover-spot { border: 1px solid CanvasText; }
   .cover .cover-img { display: none; }   /* 그림 위 글자는 읽을 수 없으니 그림을 빼고 배경색 위에 */
@@ -993,15 +999,16 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 
 /* ── 인쇄: 정산 메시지·활동 통계·맛집 목록을 종이에 ── */
 @media print {
-  .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .hero-actions, .home-actions,
+  .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .cover-actions, .cover-kicker,
   .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao,
   .empty-img, .cover-img, .cover-spot { display: none !important; }
   .cover { background: none !important; color: #000; }
   .cover::after { content: none !important; }
+  .cover-inner { min-height: 0 !important; padding: 12px 0 0 !important; align-content: start; }
+  .cover .hero-signal .hs + .hs { border-left-color: #bbb; }
   .cover-title, .cover-lead, .cover .hero-signal .hs-k, .cover .hero-signal .hs-v { color: #000 !important; text-shadow: none; }
   body { background: #fff !important; color: #000; }
   .panel, .card, .status-line, .place-detail, .post-detail { box-shadow: none !important; border-color: #bbb !important; }
-  .home-title { -webkit-text-fill-color: #000; color: #000 !important; background: none !important; }
   a { color: inherit; }
   .page-main { padding-bottom: 0; }
 }
