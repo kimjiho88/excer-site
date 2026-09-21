@@ -21,7 +21,8 @@ with want (ord, t, 부름) as (values
   (5, 'site_visit_log',   '방문 기록'),
   (6, 'site_config',      '설정'),
   (7, 'site_places',      '맛집'),
-  (8, 'site_place_notes', '한줄평')
+  (8, 'site_place_notes', '한줄평'),
+  (9, 'site_visit_counts', '방문 횟수(날짜 수)')
 ),
 have as (
   select ord, t, 부름, to_regclass('public.' || t) as reg from want

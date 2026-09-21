@@ -122,14 +122,12 @@
   }
 
   /* ──────────────────────────────────────────────────────────
-     ② 방문자 카운터
-     서버는 (날짜, 기기키) 한 쌍을 하루에 하나만 남긴다.
-     today = 오늘 찍힌 기기 수, total = 지금까지 쌓인 모든 (날짜,기기) 수.
-     그래서 total 은 '사람 수'가 아니라 '들른 횟수'다 — 문구도 그렇게 쓴다.
+     ② 방문 횟수 카운터 (상단 내비의 알약)
+     페이지를 열 때마다 서버의 오늘 칸에 1 을 더한다(visit_hit).
+     today = 오늘(KST) 페이지를 연 횟수, total = 지금까지 연 횟수 전부.
+     사람 수가 아니라 횟수다 — 새로고침도 한 번으로 센다. 그래서 기기 키도,
+     세션 중복 방지도 없다(2026-09-21, 하루 1회 방식에서 바꿈. sql/2026-09-21-visit-hits.sql).
      ────────────────────────────────────────────────────────── */
-  var DEVICE_KEY = "excer_device_key";
-  var COUNTED_KEY = "excer_visit_counted";
-
   function thousands(n) {
     return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
@@ -161,39 +159,24 @@
     requestAnimationFrame(step);
   }
 
-  function deviceKey() {
-    var k = null;
-    try { k = localStorage.getItem(DEVICE_KEY); } catch (e) {}
-    if (!k || !/^[a-z0-9]{16,40}$/.test(k)) {
-      k = "";
-      var s = "abcdefghijklmnopqrstuvwxyz0123456789";
-      for (var i = 0; i < 24; i++) k += s[Math.floor(Math.random() * s.length)];
-      try { localStorage.setItem(DEVICE_KEY, k); } catch (e) {}
-    }
-    return k;
-  }
-
   function startVisitCounter() {
     var box = document.getElementById("visitBox");
     if (!box) return;
     var elToday = document.getElementById("visitToday");
     var elTotal = document.getElementById("visitTotal");
 
-    var counted = false;
-    try { counted = sessionStorage.getItem(COUNTED_KEY) === "1"; } catch (e) {}
-
-    fetch(SUPA.url + "/rest/v1/rpc/visit_ping", {
+    fetch(SUPA.url + "/rest/v1/rpc/visit_hit", {
       method: "POST",
       headers: {
         apikey: SUPA.anon,
         Authorization: "Bearer " + SUPA.anon,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ p_device: deviceKey(), p_count: !counted })
+      body: "{}"
     })
-      .then(function (r) { if (!r.ok) throw new Error("visit_ping"); return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error("visit_hit"); return r.json(); })
       .then(function (d) {
-        try { sessionStorage.setItem(COUNTED_KEY, "1"); } catch (e) {}
+        if (!d || typeof d.today !== "number" || typeof d.total !== "number") throw new Error("visit_hit shape");
         box.hidden = false;
         countTo(elToday, d.today, 700);
         countTo(elTotal, d.total, 700);
