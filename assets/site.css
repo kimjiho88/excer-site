@@ -992,16 +992,33 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .cover + .container, .cover + .page-main, .cover + main { padding-top: var(--sp-5); }
 .cover + .page-main > .section:first-child { margin-top: 0; }
 .page-head.is-under-cover { padding: var(--sp-4) 0 0; }
-/* 빈 상태 그림 — 안내 문장 위 240px */
-.empty-state .empty-img, .status-box .empty-img { display: block; width: min(240px, 100%); height: auto; aspect-ratio: 4 / 3; margin: 0 auto 8px; border-radius: 12px; background: var(--surface-2); box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
+/* 빈 상태 그림 — 안내 문장 위 240px. 2세대 그림은 3:2 원본을 자르지 않고 그대로 쓴다 */
+.empty-state .empty-img, .status-box .empty-img { display: block; width: min(240px, 100%); height: auto; aspect-ratio: 3 / 2; margin: 0 auto 8px; border-radius: 12px; background: var(--surface-2); box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
 .empty-img.no-image { display: none; }
+
+/* ── v12: 2세대 미니 스팟 — 종류·단계·장 머리·글 종류·정산 단계·칭호 옆의 작은 그림 ──
+   자리(span/li)에 has-img 를 붙이고 그 안에 img.mini-img + 기존 선 아이콘을 둔다. 그림을 못 읽으면
+   img 의 onerror 가 has-img 를 떼어 선 아이콘이 다시 보인다. 스티커 원본은 흰 바탕이라 타일도 크림 */
+.has-img { background: #F7F6F2 !important; box-shadow: none !important; overflow: hidden; }
+.has-img > .ic { display: none; }
+.mini-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.mini-img[hidden] { display: none; }
+.flow > li.has-img { grid-template-columns: 52px minmax(0, 1fr); }
+.flow > li.has-img > .fl-n { width: 52px; height: 52px; border-radius: 14px; background: #F7F6F2; box-shadow: var(--shadow-card); overflow: hidden; }
+.flow > li.has-img > .fl-n::before { content: none; }
+.flow > li.has-img + li::before { left: 25px; }
+@media (max-width: 640px) {
+  .flow > li.has-img { grid-template-columns: 44px minmax(0, 1fr); }
+  .flow > li.has-img > .fl-n { width: 44px; height: 44px; border-radius: 12px; }
+  .flow > li.has-img + li::before { left: 21px; }
+}
 
 /* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
 @media (forced-colors: active) {
   .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
   .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
   .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
-  .empty-img, .cover-spot { border: 1px solid CanvasText; }
+  .empty-img, .cover-spot, .has-img { border: 1px solid CanvasText; }
   .cover .cover-img { display: none; }   /* 그림 위 글자는 읽을 수 없으니 그림을 빼고 배경색 위에 */
   .cover::after { content: none; }
 }
