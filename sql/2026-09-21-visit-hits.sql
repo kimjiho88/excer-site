@@ -1,8 +1,11 @@
 -- ============================================================
 -- 방문 횟수 카운터 (2026-09-21)
 -- ------------------------------------------------------------
--- 바뀌는 것: '하루에 기기 하나 = 1' 이던 집계를 '페이지를 열 때마다 +1' 로.
---   오늘 = 오늘(KST) 페이지를 연 횟수, 누적 = 지금까지 연 횟수 전부.
+-- 바뀌는 것: '하루에 기기 하나 = 1' 이던 집계를 '사이트에 들어올 때마다 +1' 로.
+--   오늘 = 오늘(KST) 링크를 타고 사이트에 들어온 횟수, 누적 = 그것의 합.
+--   같은 사람이 세 번 들어오면 3. 같은 탭 안에서 페이지를 옮기거나 새로고침하는 건
+--   한 번의 입장 안이라 세지 않는다 — 그 판단은 사이트 스크립트가 하고(탭마다 처음 한 번),
+--   여기 visit_hit 는 불릴 때마다 +1 만 한다.
 -- 지금까지의 기록(site_visit_log, 하루 1회 방식)은 날짜별로 합쳐
 --   새 표의 시작값이 되므로 누적이 0 으로 돌아가지 않는다.
 -- 재실행 안전. 기기 키·개인정보는 더 이상 보내지도 저장하지도 않는다.
@@ -25,7 +28,7 @@ do $$ begin
   end if;
 end $$;
 
--- 페이지를 열 때마다 부른다: 오늘 칸에 1 더하고 오늘·누적을 돌려준다.
+-- 사이트에 들어올 때(탭마다 처음 한 번) 부른다: 오늘 칸에 1 더하고 오늘·누적을 돌려준다.
 create or replace function visit_hit()
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare kst_today date := (now() at time zone 'Asia/Seoul')::date;
@@ -37,8 +40,8 @@ begin
     'total', (select coalesce(sum(hits), 0) from site_visit_counts));
 end $$;
 
--- 옛 스크립트(브라우저 캐시에 남아 있을 수 있음)가 부르던 visit_ping 도 같은 셈으로.
---   p_count=true 면 1 더하고, false 면 읽기만. 기기 키는 무시한다.
+-- visit_ping: p_count=true 면 1 더하고(옛 스크립트가 부르던 이름), false 면 읽기만.
+--   새 스크립트는 같은 탭에서 페이지를 옮길 때 false 로 불러 숫자만 받아 간다. 기기 키는 무시.
 create or replace function visit_ping(p_device text, p_count boolean default true)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare kst_today date := (now() at time zone 'Asia/Seoul')::date;

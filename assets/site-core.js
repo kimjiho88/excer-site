@@ -122,12 +122,17 @@
   }
 
   /* ──────────────────────────────────────────────────────────
-     ② 방문 횟수 카운터 (상단 내비의 알약)
-     페이지를 열 때마다 서버의 오늘 칸에 1 을 더한다(visit_hit).
-     today = 오늘(KST) 페이지를 연 횟수, total = 지금까지 연 횟수 전부.
-     사람 수가 아니라 횟수다 — 새로고침도 한 번으로 센다. 그래서 기기 키도,
-     세션 중복 방지도 없다(2026-09-21, 하루 1회 방식에서 바꿈. sql/2026-09-21-visit-hits.sql).
+     ② 입장 횟수 카운터 (상단 내비의 알약)
+     today = 오늘(KST) 링크를 타고 사이트에 들어온 횟수, total = 그것의 누적.
+     '들어온 한 번'은 브라우저 탭(세션) 하나가 처음 열릴 때다 — 카카오톡에서 링크를
+     누를 때마다 새 탭이 열리니 그때마다 +1. 같은 탭에서 홈→맛집으로 옮기거나
+     새로고침하는 건 한 번의 입장 안이라 세지 않는다(sessionStorage 표시).
+     같은 사람이 하루에 세 번 들어오면 3 — 사람 수가 아니라 횟수다.
+     서버(visit_hit)는 부를 때마다 +1 만 하고, 언제 부를지는 여기서 정한다.
+     (2026-09-21, 기기당 하루 1회 방식에서 바꿈. sql/2026-09-21-visit-hits.sql)
      ────────────────────────────────────────────────────────── */
+  var COUNTED_KEY = "excer_visit_counted";   // 이 탭에서 이미 입장으로 셌는가
+
   function thousands(n) {
     return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
@@ -165,18 +170,25 @@
     var elToday = document.getElementById("visitToday");
     var elTotal = document.getElementById("visitTotal");
 
-    fetch(SUPA.url + "/rest/v1/rpc/visit_hit", {
+    var counted = false;
+    try { counted = sessionStorage.getItem(COUNTED_KEY) === "1"; } catch (e) {}
+    // 이 탭에서 처음이면 +1(visit_hit), 이미 셌으면 숫자만 읽는다(visit_ping 의 읽기 전용 경로)
+    var path = counted ? "/rest/v1/rpc/visit_ping" : "/rest/v1/rpc/visit_hit";
+    var body = counted ? { p_device: "readonly", p_count: false } : {};
+
+    fetch(SUPA.url + path, {
       method: "POST",
       headers: {
         apikey: SUPA.anon,
         Authorization: "Bearer " + SUPA.anon,
         "Content-Type": "application/json"
       },
-      body: "{}"
+      body: JSON.stringify(body)
     })
-      .then(function (r) { if (!r.ok) throw new Error("visit_hit"); return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error(path); return r.json(); })
       .then(function (d) {
-        if (!d || typeof d.today !== "number" || typeof d.total !== "number") throw new Error("visit_hit shape");
+        if (!d || typeof d.today !== "number" || typeof d.total !== "number") throw new Error("visit shape");
+        try { sessionStorage.setItem(COUNTED_KEY, "1"); } catch (e) {}   // 성공했을 때만 표시 — 실패하면 다음 페이지에서 다시 센다
         box.hidden = false;
         countTo(elToday, d.today, 700);
         countTo(elTotal, d.total, 700);
