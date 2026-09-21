@@ -915,22 +915,74 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
    규격·파일은 docs/IMAGE_SPEC.md. 파일이 없거나 못 읽으면 img 의 onerror 가 .no-image 를 붙여 자리가 접힌다 — 글·버튼은 그대로.
    스팟 그림은 배경이 크림(#F7F6F2)으로 생성돼 있어, 같은 색 타일 안에 놓아 경계가 "타일"로 읽히게 한다.
    ============================================================ */
-/* 머리 배너 — PC(≥768): 글 왼쪽·그림 오른쪽 42%. 모바일: 제목·설명·버튼 다음에 화면 폭(최대 420px) */
-.page-head-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; align-items: center; }
-.head-banner { margin: 0; min-width: 0; }
-.head-banner img { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; aspect-ratio: 3 / 2; border-radius: 14px; background: var(--surface-2); box-shadow: 0 24px 48px -30px rgba(46, 27, 69, 0.55), 0 2px 6px rgba(36, 30, 44, 0.08); }
-/* 파일을 못 읽으면 onerror 가 .page-head-grid 에 .no-image 를 붙인다 — 그림 열(트랙·간격)까지 없애 글이 한 열로 돌아온다(홈 대표 그림의 .home-hero.no-image 와 같은 방식) */
-.page-head-grid.no-image .head-banner, .head-banner.no-image { display: none; }
+/* ── v10 · 전면 커버 — 그림이 화면 폭을 채우고 제목은 그 위에 흰 글자로 ──
+   세 가지: 배너형(안내·맛집, 3:2 장면을 cover 로 채움), 스팟형(소식·통계·정산·정산 확인, 짙은 보라 띠 + 큰 그림 타일), 홈형(계절 그림, 첫 화면 높이).
+   흰 글자는 아래쪽 보라 그라데이션(맨 아래 92%) 위에만 놓여 대비를 지킨다. 그림을 못 읽으면 onerror 가 .no-image 를 붙여 보라 그라데이션만 남는다.
+   장면 그림은 여기서 잘린다(object-fit: cover) — 인물이 가운데·위쪽에 있어 얼굴은 남고 아래쪽 바닥이 글 뒤로 들어간다. 규격: docs/IMAGE_SPEC.md 9절 */
+.cover { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: linear-gradient(135deg, #2E1B52 0%, var(--brand) 55%, #6D4AAE 100%); }
+.cover .cover-img { position: absolute; inset: 0; z-index: -2; display: block; width: 100%; height: 100%; }
+.cover .cover-img img, .cover img.cover-img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 42%; }
+/* 그라데이션은 위쪽 40%(얼굴이 있는 곳)는 거의 건드리지 않고, 글이 놓이는 아래 42%에서 급히 짙어진다. 왼쪽 아래에는 타원형 어둠을 한 겹 더 —
+   밝은 창문·등불 위에 제목이 놓여도 흰 글자 대비 4.5:1 이 나오게(imgtest 가 픽셀로 잰다) */
+.cover::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 140% 110% at 0% 100%, rgba(36, 22, 60, 0.90) 0%, rgba(36, 22, 60, 0.82) 30%, rgba(36, 22, 60, 0.55) 50%, rgba(36, 22, 60, 0) 72%),
+              linear-gradient(180deg, rgba(36, 22, 60, 0.08) 0%, rgba(36, 22, 60, 0.16) 40%, rgba(36, 22, 60, 0.42) 50%, rgba(36, 22, 60, 0.74) 58%, rgba(36, 22, 60, 0.88) 68%, rgba(36, 22, 60, 0.94) 100%); }
+/* 홈은 커버가 높아 글이 더 아래에 놓이므로 왼쪽 아래 어둠을 약하게 — 왼쪽 인물의 얼굴이 남는다 */
+.cover.is-home::after {
+  background: radial-gradient(ellipse 120% 70% at 0% 100%, rgba(36, 22, 60, 0.62) 0%, rgba(36, 22, 60, 0.38) 40%, rgba(36, 22, 60, 0) 70%),
+              linear-gradient(180deg, rgba(36, 22, 60, 0.08) 0%, rgba(36, 22, 60, 0.16) 40%, rgba(36, 22, 60, 0.42) 50%, rgba(36, 22, 60, 0.74) 58%, rgba(36, 22, 60, 0.88) 68%, rgba(36, 22, 60, 0.94) 100%); }
+/* 버튼이 있는 배너 커버(맛집): 넓은 화면에서는 버튼을 오른쪽 아래로 보내 글 기둥을 낮춘다 */
 @media (min-width: 768px) {
-  .page-head-grid:not(.no-image) { grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); }
-  .head-banner img { max-width: none; margin: 0; }
+  .cover-inner.has-actions { grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 24px; }
+  .cover-inner.has-actions .cover-actions { margin-top: 0; }
 }
-/* 머리 스팟 — 제목 왼쪽의 표지판 타일. 그림의 크림 배경과 같은 색 타일 + 얇은 테두리 */
-.head-with-spot { display: flex; align-items: center; gap: 18px; min-width: 0; }
-/* 테두리는 진짜 border 로 — img 위의 안쪽 그림자(inset)는 그림이 덮어 보이지 않는다. border-box 라 치수는 그대로 */
-.head-spot { flex: none; width: 104px; height: 104px; border-radius: 26px; border: 1px solid rgba(75, 42, 130, 0.12); background: #F7F6F2; object-fit: cover; box-shadow: 0 10px 22px -14px rgba(46, 27, 69, 0.5); }
-.head-spot.no-image { display: none; }
-@media (max-width: 640px) { .head-with-spot { gap: 14px; } .head-spot { width: 76px; height: 76px; border-radius: 20px; } }
+.cover.no-image .cover-img, .cover.no-image .cover-spot { display: none; }
+.cover:not(.is-spot).no-image::after { content: none; }
+.cover.is-spot.no-image .cover-inner { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
+/* 커버 위의 초점 고리는 흰색으로 — 보라 고리는 보라 바탕에서 안 보인다 */
+.cover a:focus-visible, .cover button:focus-visible { outline-color: #fff; }
+.cover-inner { position: relative; display: grid; align-content: end; min-height: 380px; padding-top: 56px; padding-bottom: 40px; }
+.cover-kicker { display: inline-flex; align-items: center; gap: 6px; width: fit-content; min-height: 28px; padding: 0 12px 0 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 13px; font-weight: 700; letter-spacing: 0.01em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cover-kicker .ic { width: 14px; height: 14px; }
+.cover-title { margin: 12px 0 0; max-width: 14em; color: #fff; font-size: 46px; font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; text-shadow: 0 2px 18px rgba(36, 22, 60, 0.55); text-wrap: balance; }
+.cover-lead { margin: 10px 0 0; max-width: 34em; color: rgba(255, 255, 255, 0.9); font-size: 17px; line-height: 1.55; text-shadow: 0 1px 10px rgba(36, 22, 60, 0.55); }
+.cover-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 22px; }
+.cover .btn-primary { background: #fff; color: var(--brand); border-color: #fff; box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.55); }
+.cover .btn-primary:hover { background: #F1ECF8; color: var(--brand-hover); }
+.cover .btn-secondary { background: rgba(255, 255, 255, 0.14); color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.cover .btn-secondary:hover { background: rgba(255, 255, 255, 0.24); color: #fff; }
+.cover .link-arrow { color: #fff; }
+.cover .link-arrow:hover { color: #F1ECF8; }
+/* 스팟형 — 짙은 보라 띠, 왼쪽 글·오른쪽 큰 그림 타일(크림 바탕) */
+.cover.is-spot::after { background: radial-gradient(70% 90% at 88% 50%, rgba(255, 255, 255, 0.12), transparent 70%); }
+.cover.is-spot .cover-inner { grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: center; column-gap: 32px; min-height: 250px; padding-top: 40px; padding-bottom: 40px; }
+.cover-spot { display: block; width: 200px; height: 200px; border-radius: 48px; background: #F7F6F2; object-fit: cover; box-shadow: 0 34px 60px -30px rgba(0, 0, 0, 0.6), 0 0 0 6px rgba(255, 255, 255, 0.10); }
+.cover-spot.no-image { display: none; }
+.cover .hero-signal { margin-top: 18px; }
+.cover .hero-signal .hs + .hs { border-left-color: rgba(255, 255, 255, 0.3); }
+.cover .hero-signal .hs-k { color: rgba(255, 255, 255, 0.78); }
+.cover .hero-signal .hs-v, .cover .hero-signal .hs-v small { color: #fff; }
+/* 홈형 — 첫 화면을 채우는 높이, 더 큰 제목 */
+.cover.is-home .cover-inner { min-height: clamp(420px, calc(100vh - 140px), 580px); padding-bottom: 52px; }   /* 짧은 화면(가로 폰·작은 노트북)에서는 제목·버튼이 첫 화면 안에 들게 */
+.cover.is-home.no-image .cover-inner { min-height: 360px; }   /* 그림이 없으면 민무늬 판을 길게 두지 않는다 */
+.cover.is-home .cover-title { font-size: 58px; }
+.cover.is-home .cover-lead { font-size: 19px; }
+@media (max-width: 767px) {
+  .cover-inner { min-height: 300px; padding-top: 36px; padding-bottom: 26px; }
+  .cover-title { font-size: 34px; }
+  .cover-lead { font-size: 15px; }
+  .cover.is-spot .cover-inner { column-gap: 16px; min-height: 200px; padding-top: 26px; padding-bottom: 26px; }
+  .cover-spot { width: 112px; height: 112px; border-radius: 28px; box-shadow: 0 20px 36px -20px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.10); }
+  .cover.is-home .cover-inner { min-height: 520px; padding-bottom: 36px; }
+  .cover.is-home.no-image .cover-inner { min-height: 320px; }
+  .cover.is-home .cover-title { font-size: 40px; }
+  .cover.is-home .cover-lead { font-size: 16px; }
+}
+@media (max-width: 360px) { .cover-spot { width: 88px; height: 88px; border-radius: 22px; } }
+/* 커버 바로 아래의 첫 내용은 커버에 붙지 않되, 첫 섹션의 자기 여백과 겹치지 않게 */
+.cover + .container, .cover + .page-main, .cover + main { padding-top: var(--sp-5); }
+.cover + .page-main > .section:first-child { margin-top: 0; }
+.page-head.is-under-cover { padding: var(--sp-4) 0 0; }
 /* 빈 상태 그림 — 안내 문장 위 240px */
 .empty-state .empty-img, .status-box .empty-img { display: block; width: min(240px, 100%); height: auto; aspect-ratio: 4 / 3; margin: 0 auto 8px; border-radius: 12px; background: var(--surface-2); box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
 .empty-img.no-image { display: none; }
@@ -938,20 +990,25 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 /* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
 @media (forced-colors: active) {
   .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
-  .home-title, .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
+  .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
   .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
-  .head-spot, .head-banner img, .empty-img { border: 1px solid CanvasText; }
+  .empty-img, .cover-spot { border: 1px solid CanvasText; }
+  .cover .cover-img { display: none; }   /* 그림 위 글자는 읽을 수 없으니 그림을 빼고 배경색 위에 */
+  .cover::after { content: none; }
 }
 
 /* ── 인쇄: 정산 메시지·활동 통계·맛집 목록을 종이에 ── */
 @media print {
-  .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .hero-actions, .home-actions,
+  .topnav, .bottom-tabbar, .toast, .skip-link, .fab, .modal-backdrop, .site-footer, .page-actions, .cover-actions, .cover-kicker,
   .pick-card, .overview, .prompt-card, .popular, .share-row, .btn-kakao,
-  .head-banner, .head-spot, .empty-img { display: none !important; }
-  .page-head-grid { grid-template-columns: minmax(0, 1fr) !important; }   /* 배너를 숨기면 열도 하나로 */
+  .empty-img, .cover-img, .cover-spot { display: none !important; }
+  .cover { background: none !important; color: #000; }
+  .cover::after { content: none !important; }
+  .cover-inner { min-height: 0 !important; padding: 12px 0 0 !important; align-content: start; }
+  .cover .hero-signal .hs + .hs { border-left-color: #bbb; }
+  .cover-title, .cover-lead, .cover .hero-signal .hs-k, .cover .hero-signal .hs-v { color: #000 !important; text-shadow: none; }
   body { background: #fff !important; color: #000; }
   .panel, .card, .status-line, .place-detail, .post-detail { box-shadow: none !important; border-color: #bbb !important; }
-  .home-title { -webkit-text-fill-color: #000; color: #000 !important; background: none !important; }
   a { color: inherit; }
   .page-main { padding-bottom: 0; }
 }
