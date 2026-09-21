@@ -81,7 +81,7 @@
     function share(opts) {
       opts = opts || {};
       var url = opts.url || location.href;
-      var image = opts.imageUrl || (location.origin + "/assets/og.jpg");
+      var image = opts.imageUrl || (location.origin + "/assets/og.jpg?v=2");
       return loadSdk().then(function (Kakao) {
         Kakao.Share.sendDefault({
           objectType: "feed",
