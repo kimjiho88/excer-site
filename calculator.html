@@ -7,6 +7,7 @@
   <title>모임 정산 · 동네친구들</title>
   <meta name="description" content="동네친구들 모임 정산입니다. 멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지, 입금 확인 링크를 만듭니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
+  <link rel="canonical" href="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="모임 정산 · 동네친구들" />
@@ -22,7 +23,8 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <script defer src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
     /* 단일 가변 폰트 — 이미지 캡처 시 폰트 임베드 부담을 줄여 깨짐 방지 (정산기 전용 유지) */
@@ -32,7 +34,7 @@
       src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=13" />
+  <link rel="stylesheet" href="assets/site.css?v=14" />
 
   <style>
     /* ============================================================
@@ -437,7 +439,8 @@
     .calc-warn p { margin: 2px 0 0; font-weight: 500; }
     .calc-stepper { margin: 4px 0 14px; flex-wrap: wrap; }
     /* 멤버 칩의 빼기 버튼, 이름 추가 칸, 최근 함께한 멤버 */
-    .pchip .pc-x { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: 0 -6px 0 6px; border-radius: 50%; color: inherit; font-size: 15px; line-height: 1; opacity: 0.7; cursor: pointer; }
+    /* 빼기 버튼: 보이는 원은 작아도 누르는 넓이는 32px(칩 높이 36px 안에서) — 22px 이던 것을 키움 */
+    .pchip .pc-x { display: inline-grid; place-items: center; width: 32px; height: 32px; margin: -4px -11px -4px 1px; border-radius: 50%; color: inherit; font-size: 16px; line-height: 1; opacity: 0.7; cursor: pointer; }
     .pchip .pc-x:hover { background: rgba(75, 42, 130, 0.12); opacity: 1; }
     .member-add { display: flex; gap: 8px; margin-top: 10px; }
     .member-add .input { flex: 1 1 auto; min-width: 0; }
@@ -1573,13 +1576,13 @@
         <div class="round" data-round-id="${escapeHTML(r.id)}">
           <div class="round-head">
             <span class="round-badge">${idx + 1}차</span>
-            <input class="input" type="text" placeholder="예: 고기집 (선택)" value="${escapeHTML(r.name)}"
+            <input class="input" type="text" placeholder="예: 고기집 (선택)" value="${escapeHTML(r.name)}" aria-label="${idx + 1}차 이름"
               data-field="round-name" data-round-id="${escapeHTML(r.id)}" />
             <button class="mini-btn" type="button" data-action="del-round" data-round-id="${escapeHTML(r.id)}">삭제</button>
           </div>
           <div class="round-grid2">
             <div class="round-amount-wrap">
-              <input class="input" type="text" inputmode="numeric" placeholder="금액" style="padding-right:34px"
+              <input class="input" type="text" inputmode="numeric" placeholder="금액" style="padding-right:34px" aria-label="${idx + 1}차 금액(원)"
                 value="${r.amount ? formatNumber(r.amount) : ""}" data-field="round-amount" data-round-id="${escapeHTML(r.id)}" />
               <span class="won-suffix">원</span>
             </div>
