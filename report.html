@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=12" />
+  <link rel="stylesheet" href="assets/site.css?v=13" />
   <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
@@ -247,10 +247,20 @@
     .badge-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
     .badge-list .b-ic { display: grid; place-items: center; color: var(--brand); }
     /* 배지 그림(2세대 badge-*, 투명 배경) — 40px. li.has-img 는 배경을 깔지 않는다(site.css 의 .has-img 크림 배경은 타일용) */
-    .badge-list li.has-img { grid-template-columns: 40px minmax(0, 1fr); background: none !important; box-shadow: none !important; overflow: visible; }
-    .badge-list .b-ic.has-img { width: 40px; height: 40px; background: none !important; }
-    .badge-list .b-ic.has-img .mini-img { object-fit: contain; }
     .badge-list .b-ic .ic { width: 20px; height: 20px; }
+    /* 메달 카드 — 2세대 메달(투명 바탕) 88px, 제목·이름·기준. 못 읽으면 선 아이콘 */
+    .badge-cards { margin: 0 0 12px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .badge-cards[hidden] { display: none; }
+    .badge-card { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 12px 8px 12px; border-radius: 14px; background: var(--surface-2); text-align: center; }
+    .badge-card .bc-img { width: 88px; height: 88px; margin-bottom: 6px; background: none; object-fit: contain; }
+    .badge-card .bc-ic { display: none; place-items: center; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); }
+    .badge-card .bc-ic .ic { width: 22px; height: 22px; }
+    .badge-card.no-image .bc-ic { display: grid; }
+    .badge-card .b-title { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+    .badge-card .b-name { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--ink); }
+    .badge-card .b-desc { display: block; margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
+    @media (max-width: 640px) { .badge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .badge-card .bc-img { width: 72px; height: 72px; } }
+    @media (forced-colors: active) { .badge-card { border: 1px solid CanvasText; } }
     .badge-list .b-title { display: block; font-size: 13px; font-weight: 500; color: var(--ink-2); }
     .badge-list .b-name { font-size: 14px; font-weight: 600; color: var(--ink); }
     .badge-list .b-desc { font-size: 12px; color: var(--ink-2); margin-left: 6px; }
@@ -322,7 +332,7 @@
         <h1 class="cover-title" id="pageTitle">활동 통계</h1>
         <p class="cover-lead">오픈채팅 대화를 기간별로 집계했습니다. 숫자와 단어 빈도만 다루고 원문은 저장하지 않습니다.</p>
       </div>
-      <img class="cover-spot" src="assets/img/report-spot-240.webp" srcset="assets/img/report-spot-240.webp 240w, assets/img/report-spot-480.webp 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
+      <img class="cover-spot" src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
   </section>
   <div class="page-head is-under-cover">
@@ -373,7 +383,7 @@
 
     <div class="container" id="emptyWrap" hidden style="margin-top:24px">
       <div class="status-box">
-        <img class="empty-img" src="assets/img/report-empty-320.webp" srcset="assets/img/report-empty-320.webp 320w, assets/img/report-empty-640.webp 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image')" />
+        <img class="empty-img" src="assets/img/report-empty-320.webp?v=2" srcset="assets/img/report-empty-320.webp?v=2 320w, assets/img/report-empty-640.webp?v=2 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image')" />
         <strong id="emptyTitle">통계를 불러오지 못했습니다.</strong>
         <p id="emptyText">연결을 확인한 뒤 다시 시도해 주세요.</p>
         <button class="btn btn-secondary is-sm" type="button" id="retryBtn">다시 시도</button>
@@ -552,6 +562,7 @@
               <div class="stat-card">
                 <h3>칭호</h3>
                 <p class="cap" id="badgeCap">조건을 충족한 멤버에게만 표시합니다. 활약왕과 성장왕은 선택 기간, 나머지는 발행 기간 전체를 기준으로 합니다.</p>
+                <ul class="badge-cards" id="badgeCards" aria-label="메달 칭호" hidden></ul>
                 <ul class="badge-list" id="badgeList"></ul>
               </div>
             </div>
@@ -1419,24 +1430,33 @@
         $("scopeIndex").textContent = scopeSel();
         if (state.legacy) {
           state.badgeList = [];
+          const cards0 = $("badgeCards"); if (cards0) { cards0.hidden = true; cards0.innerHTML = ""; }
           host.innerHTML = `<li style="grid-column:1/-1">${emptyBox(NO_ITEM)}</li>`;
           return;
         }
         const badges = RM.badges(state.data, state.slice, state.prev);
         state.badgeList = badges;
-        /* 2세대 배지 그림이 있는 칭호 여섯(활약왕·성장왕·벙 지킴이·환영요정·정보공유왕·리액션왕)만 그림, 나머지는 선 아이콘.
-           지급 기준은 그대로(RM.badges) — 그림은 표시만 바꾼다. 못 읽으면 onerror 가 has-img 를 떼어 아이콘으로 */
+        /* 2세대 메달 그림이 있는 칭호 여섯(활약왕·성장왕·벙 지킴이·환영요정·정보공유왕·리액션왕)은 위쪽 카드(메달 88px)로,
+           나머지(시간대·나들이·맛집·꾸준함)는 아래 목록에 선 아이콘으로. 지급 기준은 그대로(RM.badges) — 표시만 나눈다.
+           (목록 줄의 40px 메달은 전부 같은 주황 원으로 보여 뺐다.) 메달을 못 읽으면 onerror 가 카드에 no-image 를 붙여 선 아이콘으로 */
         const BADGE_IMG = { "활약왕": "badge-active", "성장왕": "badge-growth", "벙 지킴이": "badge-guardian", "환영요정": "badge-welcome", "정보공유왕": "badge-sharing", "리액션왕": "badge-reaction" };
-        const badgeArt = (b) => BADGE_IMG[b.title]
-          ? `<span class="b-ic has-img" aria-hidden="true"><img class="mini-img" src="assets/img/${BADGE_IMG[b.title]}-128.webp" srcset="assets/img/${BADGE_IMG[b.title]}-128.webp 128w, assets/img/${BADGE_IMG[b.title]}-256.webp 256w" sizes="40px" width="256" height="256" alt="" loading="lazy" decoding="async" onerror="var p=this.parentNode;p.classList.remove('has-img');p.parentNode.classList.remove('has-img');this.remove()" /><svg class="ic"><use href="#i-${b.icon}"/></svg></span>`
-          : `<span class="b-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>`;
-        host.innerHTML = badges.length
-          ? badges.map((b) => `
-            <li${BADGE_IMG[b.title] ? ' class="has-img"' : ""}>
-              ${badgeArt(b)}
-              <span><span class="b-title">${escapeHTML(badgeText(b.title))}</span><span class="b-name">${highlightName(b.name)}</span><span class="b-desc">${escapeHTML(badgeText(b.desc))}</span></span>
+        const text = (b) => `<span class="b-title">${escapeHTML(badgeText(b.title))}</span><span class="b-name">${highlightName(b.name)}</span><span class="b-desc">${escapeHTML(badgeText(b.desc))}</span>`;
+        const cardOf = (b) => { const s = BADGE_IMG[b.title]; return `
+            <li class="badge-card">
+              <img class="spot-img bc-img" src="assets/img/${s}-128.webp" srcset="assets/img/${s}-128.webp 128w, assets/img/${s}-256.webp 256w" sizes="88px" width="256" height="256" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" />
+              <span class="bc-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>
+              ${text(b)}
+            </li>`; };
+        const withArt = badges.filter((b) => BADGE_IMG[b.title]), plain = badges.filter((b) => !BADGE_IMG[b.title]);
+        const cards = $("badgeCards");
+        if (cards) { cards.hidden = !withArt.length; cards.innerHTML = withArt.map(cardOf).join(""); }
+        host.innerHTML = plain.length
+          ? plain.map((b) => `
+            <li>
+              <span class="b-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>
+              <span>${text(b)}</span>
             </li>`).join("")
-          : `<li style="grid-column:1/-1">${emptyBox("조건을 충족한 칭호가 없습니다.", "기간을 넓히면 표시될 수 있습니다.")}</li>`;
+          : (badges.length ? "" : `<li style="grid-column:1/-1">${emptyBox("조건을 충족한 칭호가 없습니다.", "기간을 넓히면 표시될 수 있습니다.")}</li>`);
       }
 
       /* ── 시간대별 막대 ── */

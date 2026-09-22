@@ -32,7 +32,7 @@
       src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=12" />
+  <link rel="stylesheet" href="assets/site.css?v=13" />
 
   <style>
     /* ============================================================
@@ -50,9 +50,7 @@
     .card-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
     .card-title { margin: 0; font-size: 17px; letter-spacing: -0.035em; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--ink); }
     /* 단계 그림(2세대 calc-*) — 제목 왼쪽 44px 타일. 입력·결과를 가리지 않는다 */
-    .card-title .step-img { display: block; flex: none; width: 44px; height: 44px; border-radius: 12px; background: #F7F6F2; border: 1px solid var(--line); object-fit: cover; }
     .kakao-tip { position: relative; }
-    .kakao-tip .share-img { float: right; width: 52px; height: 52px; margin: -2px 0 6px 12px; border-radius: 12px; background: #F7F6F2; border: 1px solid var(--line); object-fit: cover; }
     .card-step {
       display: grid; place-items: center; width: 27px; height: 27px; border-radius: 10px;
       background: var(--grad-brand); color: #fff; font-size: 13px; font-weight: 700; flex: none;
@@ -549,7 +547,7 @@
         <h1 class="cover-title" id="pageTitle">모임 정산</h1>
         <p class="cover-lead">멤버와 차수별 금액을 넣으면 1인 정산 금액과 안내 메시지가 만들어집니다.</p>
       </div>
-      <img class="cover-spot" src="assets/img/settle-spot-240.webp" srcset="assets/img/settle-spot-240.webp 240w, assets/img/settle-spot-480.webp 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
+      <img class="cover-spot" src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
   </section>
 
@@ -564,13 +562,17 @@
               <button id="resetBtn" class="btn btn-danger is-sm" type="button">전체 지우기</button>
               <span class="save-status"><i></i>입력 내용은 이 브라우저에 자동 저장됩니다.</span>
             </div>
-            <ol class="stepper calc-stepper" id="calcStepper" aria-label="정산 진행 단계">
-              <li class="is-on">모임과 멤버</li><li>차수 금액</li><li>입금 정보</li><li>결과 공유</li>
+            <!-- 진행 단계 — 넓은 화면에서는 2세대 정산 그림(calc-*) 80px 카드 넷, 좁은 화면에서는 점 stepper(그림 숨김). 그림을 못 읽으면 글만 -->
+            <ol class="stepper calc-stepper is-cards" id="calcStepper" aria-label="정산 진행 단계">
+              <li class="is-on"><img class="spot-img st-img" src="assets/img/calc-members-160.webp" srcset="assets/img/calc-members-160.webp 160w, assets/img/calc-members-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>모임과 멤버</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-rounds-160.webp" srcset="assets/img/calc-rounds-160.webp 160w, assets/img/calc-rounds-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>차수 금액</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-payment-160.webp" srcset="assets/img/calc-payment-160.webp 160w, assets/img/calc-payment-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>입금 정보</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-share-160.webp" srcset="assets/img/calc-share-160.webp 160w, assets/img/calc-share-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>결과 공유</span></li>
             </ol>
 
             <!-- 1. 모임 정보와 멤버 -->
             <section class="card is-lg" aria-labelledby="stepTitle1">
-              <div class="card-head"><h2 class="card-title" id="stepTitle1"><img class="step-img" src="assets/img/calc-members-160.webp" srcset="assets/img/calc-members-160.webp 160w, assets/img/calc-members-320.webp 320w" sizes="44px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.remove()" /><span class="card-step">1</span>모임 정보와 멤버</h2></div>
+              <div class="card-head"><h2 class="card-title" id="stepTitle1"><span class="card-step">1</span>모임 정보와 멤버</h2></div>
               <div class="field-grid">
                 <div class="field is-wide">
                   <label for="eventTitle">모임명</label>
@@ -613,7 +615,7 @@
             <!-- 2. 차수별 비용 + 결제자 -->
             <section class="card is-lg" aria-labelledby="stepTitle2">
               <div class="card-head">
-                <h2 class="card-title" id="stepTitle2"><img class="step-img" src="assets/img/calc-rounds-160.webp" srcset="assets/img/calc-rounds-160.webp 160w, assets/img/calc-rounds-320.webp 320w" sizes="44px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.remove()" /><span class="card-step">2</span>차수별 비용과 결제자</h2>
+                <h2 class="card-title" id="stepTitle2"><span class="card-step">2</span>차수별 비용과 결제자</h2>
                 <button id="addRoundBtn" class="btn btn-secondary is-sm" type="button">＋ 차수 추가</button>
               </div>
               <div id="roundsHost" class="round-list"></div>
@@ -625,7 +627,7 @@
 
             <!-- 3. 입금 정보 -->
             <section class="card is-lg" aria-labelledby="stepTitle3">
-              <div class="card-head"><h2 class="card-title" id="stepTitle3"><img class="step-img" src="assets/img/calc-payment-160.webp" srcset="assets/img/calc-payment-160.webp 160w, assets/img/calc-payment-320.webp 320w" sizes="44px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.remove()" /><span class="card-step">3</span>입금 정보</h2></div>
+              <div class="card-head"><h2 class="card-title" id="stepTitle3"><span class="card-step">3</span>입금 정보</h2></div>
               <div class="field-grid">
                 <div class="field"><label for="payBank">은행</label><input id="payBank" class="input" type="text" placeholder="예: 카카오뱅크" /></div>
                 <div class="field"><label for="payHolder">예금주</label><input id="payHolder" class="input" type="text" placeholder="예: 엑서" /></div>
@@ -770,8 +772,6 @@
             </div>
 
             <div class="kakao-tip">
-              <!-- 결과 공유 단계 그림(2세대 calc-share). 글을 가리지 않게 오른쪽 위 작은 타일, 못 읽으면 사라짐 -->
-              <img class="share-img" src="assets/img/calc-share-160.webp" srcset="assets/img/calc-share-160.webp 160w, assets/img/calc-share-320.webp 320w" sizes="52px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.remove()" />
               <p class="kakao-tip-title">카카오톡에 붙여넣을 때</p>
               <p>붙여넣은 글의 @이름은 태그(멘션)로 바뀌지 않습니다. 멤버에게 알림을 보내려면 메시지를 보낸 뒤 채팅창에 @를 입력하고 목록에서 이름을 골라 주세요.</p>
               <label class="notice-option mention-option">

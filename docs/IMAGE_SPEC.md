@@ -104,21 +104,23 @@
 | 인쇄·고대비 | 인쇄: 그림·타일 숨기고 검정 글자. 강제 색상: 그림을 빼고 배경색 위 글자 |
 | 홈 그림 카드 | 주요 기능 4행을 그림 카드 4장으로(`.tab-cards`): 맛집은 배너를 16:10 으로 채우고, 소식·정산·통계는 스팟을 크림 타일 안에 contain. 그림을 못 읽으면 크림 타일만 남고 이름·설명은 그대로 |
 
-## 10. 2세대 본문 미니 스팟 — 50장 패키지 (적용됨, 2026-09-21 밤)
+## 10. 2세대 본문 그림 — 큰 자리에만 (적용됨, 2026-09-22 · 9차 재배치)
 
-`docs/IMAGE_PLAN.md` 7·8절의 지시서로 만든 2세대 세트. 커버·스팟·빈 상태·계절 16장은 같은 이름으로 **교체**했고(4~9절의 자리 그대로), 아래 34장이 본문 안의 새 자리에 들어갔다. 원본 PNG(1254 × 1254 정사각·1536 × 1024 장면, 매니페스트 SHA-256 50/50 일치)는 저장소에 넣지 않고 보존판 `assets/img/src/<이름>.webp`(품질 0.92, 투명 유지)로 두었다. 규칙은 `assets/site.css` v12 블록(`.has-img`·`.mini-img`·`.flow > li.has-img`).
+`docs/IMAGE_PLAN.md` 7·8절 지시서로 만든 2세대 세트. 커버·스팟·빈 상태·계절 16장은 같은 이름으로 **교체**했고(4~9절의 자리 그대로, 참조에 `?v=2`), 아래 34장은 본문 안의 큰 자리(80px 이상)에 들어갔다. 처음(9-21 밤)에는 44~56px 아이콘 자리에 넣었는데 얼룩·빈 크림 네모로 보여 하루 뒤 전부 빼고 다시 놓았다(`REDESIGN_CHECKLIST.md` 14절). 원본 PNG(1254 × 1254 정사각·1536 × 1024 장면, 매니페스트 SHA-256 50/50 일치)는 저장소에 넣지 않고 보존판 `assets/img/src/<이름>.webp`(품질 0.92, 투명 유지)로 두었다. 공통 규칙은 `assets/site.css` v13 블록(`.spot-img`·`.step-cards`·`.cat-open`·`.stepper.is-cards`·`.empty-spot`).
 
-| 세트 | 파일(웹용 크기) | 자리 | 표시 | 실패 |
+**원칙**: 그림은 카드·머리·빈 상태에서 80px 이상으로만. 목록 줄·제목 옆·입력 칸 옆의 44~56px 자리에는 선 아이콘(`assets/icons.js`)만 둔다. 그림을 못 읽으면 `onerror` 가 그림만 지우고(자리에 `no-image`) 글·아이콘·번호는 그대로.
+
+| 세트 | 파일(웹용) | 자리 | 크기 | 실패 |
 |---|---|---|---|---|
-| 음식 종류 8 | `food-{meat,korean,japanese,chinese,western,pub,cafe,bunsik}-160/320.webp`(2~9 / 5~27 KB) | 맛집 목록 행 왼쪽 타일(`.pr-ic.has-img`, PC 56 · 폰 44px), 홈 최근 맛집 카드 타일(`.pc-ic.has-img` 48px). 종류 → 파일 대응은 `assets/content.js` 의 `CAT_IMG`·`catImg()` — 8종 밖의 종류(기타)는 선 아이콘 그대로 | `object-fit: cover`, 크림 바탕, 선 아이콘 숨김 | `onerror` 가 `has-img` 를 떼고 `<img>` 를 지워 선 아이콘 복귀 |
-| 참여 단계 4 + 정기 참여 1 | `flow-{enter,first-meeting,host,record}-160/320.webp`, `participation-spot-240/480.webp` | 홈 '처음 참여한다면'(들어오기·첫 모임·정산=`settle-spot`·기록), 안내 '처음 2주'(들어오기·첫 모임·모임 열기·정기 참여=`participation-spot`) — `.flow > li.has-img` 의 번호 원판 자리(52px, 폰 44px) | 둥근 네모 타일, 연결선 위치 보정(`+ li::before`) | 번호 원판·선 아이콘 복귀 |
-| 안내 장 머리 6 | `rules-{eligibility,nickname,meetup,manners,boundaries,faq}-160/320.webp`(2~4 / 6~11 KB) | 이용 안내 7개 장의 `h2` 왼쪽(`img.cat-img` 56 · 폰 44px). 4장 '모임 비용 정산'은 `settle-spot`. 번호 배지(`.cat-no`)는 그대로 | | `<img>` 만 사라지고 제목·번호 유지 |
-| 글 종류 4 | `posts-{notice,meetup,info,free}-160/320.webp` | 소식 글쓰기 창의 '글 종류' 선택 옆(`#wCatImg`) — 공지·모집·정보·자유는 각 그림, 후기는 `flow-record`. 목록은 제목 중심 그대로(그림 없음) | 44px 타일 | 숨김 |
-| 정산 단계 3 + 공유 1 | `calc-{members,rounds,payment,share}-160/320.webp`(2~5 KB) | 정산 카드 제목 1~3 왼쪽(`.step-img` 44px), 카카오톡 안내 상자 오른쪽(`.share-img`). 입력·결과 칸은 건드리지 않음 | | 숨김 |
-| 칭호 배지 6 | `badge-{active,growth,guardian,welcome,sharing,reaction}-128/256.webp`(5~7 / 15~18 KB, 투명) | 통계 칭호 목록의 활약왕·성장왕·모임 지킴이·환영요정·정보공유왕·리액션왕(`report.html` `BADGE_IMG`). 다른 칭호(새벽반·아침반·퇴근반·나들이 대장·맛집 탐험가·꾸준함)는 선 아이콘 | 40px, `contain`, 바탕 없음 | 선 아이콘 복귀 |
-| 404 1 | `notfound-empty-640/320.webp` | `404.html`(새 파일 — 정적 배포에서 Vercel 이 404 상태로 내보냄, `noindex`, robots 제외). 메뉴·커버 없이 안내 카드 하나 | 300px 3:2 | 돋보기 아이콘 |
+| 음식 종류 8 | `food-{meat,korean,japanese,chinese,western,pub,cafe,bunsik}-160/320.webp` | 맛집 **상세 머리**(`.pd-hero` — 그림 왼쪽, 요약 칩 오른쪽). 종류 → 파일은 `assets/content.js` 의 `CAT_IMG`·`catImg()`. 목록 줄·홈 카드 타일은 선 아이콘 | PC 128 · 폰 96px | 칩이 전체 폭으로 |
+| 참여 단계 4 + 정기 참여 1 | `flow-{enter,first-meeting,host,record}`, `participation-spot` | 이용 안내 **'처음 2주' 카드 4장**(`.step-cards`: 그림 4:3 위, 번호 배지, 글 아래. PC 4열·폰 2×2). 홈 '처음 참여한다면'은 선 아이콘 원판. `flow-record` 는 소식 글감·빈 상태의 '후기'용 | 카드 폭(≥ 150px) | 번호·글만 |
+| 안내 장 삽화 6 | `rules-{eligibility,nickname,meetup,manners,boundaries,faq}` (+ 4장 '모임 비용 정산'은 `settle-spot`) | 각 장의 **여는 줄**(`.cat-open` — 그림 왼쪽, 첫 항목 오른쪽). 제목 줄(번호 배지 + 제목)에는 그림 없음 | PC 128 · 폰 96px | 첫 항목이 전체 폭으로 |
+| 글 종류 4 | `posts-{notice,meetup,info,free}` (후기는 `flow-record`) | 소식 **이번 주 글감 카드**(`#promptArt`, 글감의 종류대로)와 **종류별 빈 상태**("정보 글이 없습니다" 위 120px, `.empty-spot`). 글쓰기 창의 종류 선택 옆·목록 줄에는 없음 | 96/80px · 120px | 전구 아이콘 / 문장만 |
+| 정산 단계 3 + 공유 1 | `calc-{members,rounds,payment,share}` | 정산 **진행 stepper 카드**(`.stepper.is-cards`, 모임과 멤버 → 차수 금액 → 입금 정보 → 결과 공유) — 넓은 화면(≥ 768px)에서만 그림, 좁은 화면은 점 stepper 그대로. 단계 제목·카톡 안내 상자에는 없음 | 80px | 글만 |
+| 칭호 메달 6 | `badge-{active,growth,guardian,welcome,sharing,reaction}-128/256.webp`(투명) | 통계 **메달 카드**(`#badgeCards`, 활약왕·성장왕·모임 지킴이·환영요정·정보공유왕·리액션왕). 나머지 칭호(새벽반·아침반·퇴근반·나들이 대장·맛집 탐험가·꾸준함)는 아래 목록에 선 아이콘 | PC 88 · 폰 72px, `contain` | 선 아이콘 |
+| 404 1 | `notfound-empty-640/320.webp` | `404.html`(정적 배포에서 Vercel 이 404 상태로 내보냄, `noindex`, robots 제외) | 300px 3:2 | 돋보기 아이콘 |
 
-지연 로딩(`loading="lazy"`)이라 화면 아래쪽 타일은 스크롤해 가까워질 때 요청되며, 그때 실패하면 그 자리에서 아이콘으로 돌아간다. 검사는 `scratchpad/img2test.js`(1440·390, 성공·실패 경로), `imgtest.js`(빈 상태 3:2).
+미사용: 없음(34장 전부 자리 있음). `posts-notice`·`posts-meetup` 는 공지·모집 글감이나 그 종류의 빈 상태에서만 나온다. 검사는 `scratchpad/img2test.js`(1440·390, 자리·크기·실패 경로·`?v=2`), `imgtest.js`(커버·빈 상태 3:2).
 
 ## 만들지 않는 자리
 
