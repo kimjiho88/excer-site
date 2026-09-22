@@ -34,7 +34,7 @@
       src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=15" />
+  <link rel="stylesheet" href="assets/site.css?v=16" />
 
   <style>
     /* ============================================================
@@ -44,7 +44,7 @@
     /* ── 레이아웃: 좌 입력 / 우 결과(sticky) ── */
     .calc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 416px; gap: 18px; align-items: start; }
     .calc-inputs { display: grid; gap: 14px; min-width: 0; }
-    .calc-results { position: sticky; top: calc(var(--nav-h) + 14px); display: grid; gap: 12px; min-width: 0; }
+    .calc-results { position: sticky; top: calc(var(--nav-h) + 14px); display: grid; gap: 12px; min-width: 0; max-height: calc(100vh - var(--nav-h) - 28px); max-height: calc(100dvh - var(--nav-h) - 28px); overflow-y: auto; align-content: start; }   /* 결과 열이 화면보다 길면 안에서 스크롤 — 왼쪽 열을 다 내리기 전엔 아래 버튼이 안 보이던 것 */
     #resultArea { scroll-margin-top: calc(var(--nav-h) + 12px); }
     /* 단계 레일로 뛰면 제목이 상단 바에 가려진다 */
     .card-title[id] { scroll-margin-top: calc(var(--nav-h) + 18px); }
@@ -113,7 +113,7 @@
     .input, .select { min-height: 44px; padding: 0 12px; border-radius: var(--r-btn); }
     .textarea { min-height: 96px; }
     .input:hover, .textarea:hover, .select:hover { border-color: var(--line-strong); }
-    .input:focus, .textarea:focus, .select:focus { border-color: rgba(40, 82, 68, 0.45); }
+    .input:focus, .textarea:focus, .select:focus { border-color: var(--brand); }
     .select {
       appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23625A6C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -138,7 +138,7 @@
       border: 1px solid var(--line-strong); background: #fff;
       transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
-    .group-chip:hover { border-color: rgba(40, 82, 68, 0.32); }
+    .group-chip:hover { border-color: rgba(75, 42, 130, 0.32); }
     .group-load {
       display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 5px 0 13px;
       color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer;
@@ -297,7 +297,7 @@
     }
     .summary-card::before { content: ""; display: block; width: 18px; height: 3px; border-radius: 2px; background: var(--grad-brand); margin-bottom: 10px; }
     .summary-card span { display: block; margin-bottom: 5px; color: var(--gray); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
-    .summary-card strong { display: block; color: var(--deep-1); font-size: 17px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .summary-card strong { display: block; color: var(--deep-1); font-size: clamp(14px, 4.3vw, 17px); font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }   /* 100만 원 넘는 7자리도 폰 타일 안에 */
 
     /* ── 입금 현황 배지 카드 ── */
     .settle-status {
@@ -364,13 +364,13 @@
       background: var(--brand-soft); border: 1px solid var(--line-strong); color: var(--brand); font-size: 13px; font-weight: 700;
     }
     .payer-group-head em { font-style: normal; color: var(--ink-2); font-size: 12px; font-weight: 600; }
-    .pay-name { white-space: nowrap; overflow-wrap: anywhere; }
+    .pay-name { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* 긴 닉네임이 금액·복사 버튼을 카드 밖으로 밀지 않게 — 바깥 span(아래)이 줄어들고 이름은 말줄임 */
     .pay-copy { white-space: nowrap; }
     .pay-row {
-      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0;   /* 격자 칸(1fr)이 긴 이름의 최소 폭으로 늘어나지 않게 */
       padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line);
     }
-    .pay-row > span { color: var(--ink); font-weight: 600; min-width: 0; }
+    .pay-row > span { color: var(--ink); font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; }
     .pay-row .adj-note { display: block; color: var(--gray-2); font-size: var(--fs-caption); font-weight: 700; margin-top: 1px; }
     .pay-right { display: flex; align-items: center; gap: 10px; flex: none; }
     .pay-right strong { color: var(--brand); font-size: 17px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
@@ -467,7 +467,7 @@
 
     @media (max-width: 1023px) {
       .calc-grid { grid-template-columns: 1fr; }
-      .calc-results { position: relative; top: auto; }
+      .calc-results { position: relative; top: auto; max-height: none; overflow: visible; }
     }
     @media (max-width: 860px) {
       .mobile-bar {
@@ -505,7 +505,7 @@
     @media (max-width: 767px) {
       .field-grid, .result-actions, .round-grid2 { grid-template-columns: 1fr; }
       .field.is-wide { grid-column: auto; }
-      .summary-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
       .summary-card { padding: 12px 11px; }
       .summary-card strong { font-size: 15px; }
       .capture-target { padding: 24px 18px 20px; }
@@ -567,10 +567,10 @@
             </div>
             <!-- 진행 단계 — 넓은 화면에서는 2세대 정산 그림(calc-*) 80px 카드 넷, 좁은 화면에서는 점 stepper(그림 숨김). 그림을 못 읽으면 글만 -->
             <ol class="stepper calc-stepper is-cards" id="calcStepper" aria-label="정산 진행 단계">
-              <li class="is-on"><img class="spot-img st-img" src="assets/img/calc-members-160.webp" srcset="assets/img/calc-members-160.webp 160w, assets/img/calc-members-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>모임과 멤버</span></li>
-              <li><img class="spot-img st-img" src="assets/img/calc-rounds-160.webp" srcset="assets/img/calc-rounds-160.webp 160w, assets/img/calc-rounds-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>차수 금액</span></li>
-              <li><img class="spot-img st-img" src="assets/img/calc-payment-160.webp" srcset="assets/img/calc-payment-160.webp 160w, assets/img/calc-payment-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>입금 정보</span></li>
-              <li><img class="spot-img st-img" src="assets/img/calc-share-160.webp" srcset="assets/img/calc-share-160.webp 160w, assets/img/calc-share-320.webp 320w" sizes="80px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>결과 공유</span></li>
+              <li class="is-on"><img class="spot-img st-img" src="assets/img/calc-members-160.webp" srcset="assets/img/calc-members-160.webp 160w, assets/img/calc-members-320.webp 320w" sizes="80px" width="320" height="320" alt="" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>모임과 멤버</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-rounds-160.webp" srcset="assets/img/calc-rounds-160.webp 160w, assets/img/calc-rounds-320.webp 320w" sizes="80px" width="320" height="320" alt="" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>차수 금액</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-payment-160.webp" srcset="assets/img/calc-payment-160.webp 160w, assets/img/calc-payment-320.webp 320w" sizes="80px" width="320" height="320" alt="" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>입금 정보</span></li>
+              <li><img class="spot-img st-img" src="assets/img/calc-share-160.webp" srcset="assets/img/calc-share-160.webp 160w, assets/img/calc-share-320.webp 320w" sizes="80px" width="320" height="320" alt="" decoding="async" onerror="this.closest('li').classList.add('no-image');this.remove()" /><span>결과 공유</span></li>
             </ol>
 
             <!-- 1. 모임 정보와 멤버 -->
