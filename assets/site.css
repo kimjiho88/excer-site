@@ -996,29 +996,48 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .empty-state .empty-img, .status-box .empty-img { display: block; width: min(240px, 100%); height: auto; aspect-ratio: 3 / 2; margin: 0 auto 8px; border-radius: 12px; background: var(--surface-2); box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
 .empty-img.no-image { display: none; }
 
-/* ── v12: 2세대 미니 스팟 — 종류·단계·장 머리·글 종류·정산 단계·칭호 옆의 작은 그림 ──
-   자리(span/li)에 has-img 를 붙이고 그 안에 img.mini-img + 기존 선 아이콘을 둔다. 그림을 못 읽으면
-   img 의 onerror 가 has-img 를 떼어 선 아이콘이 다시 보인다. 스티커 원본은 흰 바탕이라 타일도 크림 */
-.has-img { background: #F7F6F2 !important; box-shadow: none !important; overflow: hidden; }
-.has-img > .ic { display: none; }
-.mini-img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
-.mini-img[hidden] { display: none; }
-.flow > li.has-img { grid-template-columns: 52px minmax(0, 1fr); }
-.flow > li.has-img > .fl-n { width: 52px; height: 52px; border-radius: 14px; background: #F7F6F2; box-shadow: var(--shadow-card); overflow: hidden; }
-.flow > li.has-img > .fl-n::before { content: none; }
-.flow > li.has-img + li::before { left: 25px; }
-@media (max-width: 640px) {
-  .flow > li.has-img { grid-template-columns: 44px minmax(0, 1fr); }
-  .flow > li.has-img > .fl-n { width: 44px; height: 44px; border-radius: 12px; }
-  .flow > li.has-img + li::before { left: 21px; }
+/* ── v13: 2세대 그림의 큰 자리 — 카드·머리·빈 상태(96px 이상). 44~56px 아이콘 자리에는 두지 않는다 ──
+   (v12 의 .has-img 미니 타일은 얼룩으로 보여 뺐다.) 공통 규칙: 크림 바탕(#F7F6F2)의 정사각 그림, 못 읽으면 onerror 가 그림만 지우고 글은 그대로 */
+.spot-img { display: block; flex: none; background: #F7F6F2; object-fit: cover; }
+/* 단계 카드 — 그림 위(4:3 로 잘라), 번호 배지, 글 아래. 이용 안내 '처음 2주' */
+.step-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.step-cards > li { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 10px 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(75, 42, 130, 0.10); counter-increment: step; }
+.step-cards .sc-head { position: relative; margin: -10px -12px 10px; }
+.step-cards .sc-img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 13px 13px 0 0; background: #F7F6F2; object-fit: cover; object-position: 50% 45%; }
+.step-cards .sc-n { position: absolute; left: 10px; top: 10px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(180deg, #5B3A9E, var(--brand)); color: #fff; font-size: 13px; font-weight: 800; box-shadow: 0 4px 10px -4px rgba(46, 27, 69, 0.6); }
+.step-cards .sc-n::before { content: counter(step); }
+.step-cards > li.no-image .sc-head { margin: 0 0 8px; height: 28px; }
+.step-cards > li.no-image .sc-n { left: 0; top: 0; }
+.step-cards .fl-t { margin: 0; padding: 0; font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.step-cards .fl-d { margin: 4px 0 0; font-size: var(--fs-caption); line-height: 1.5; color: var(--ink-2); }
+.step-cards .fl-d b { color: var(--ink); font-weight: 600; }
+@media (max-width: 767px) { .step-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+/* 장 여는 줄 — 그림 왼쪽, 첫 항목 오른쪽. 이용 안내 각 장 */
+.cat-open { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 16px; align-items: start; }
+.cat-open .cat-art { width: 128px; height: 128px; border-radius: 20px; box-shadow: var(--shadow-card); }
+.cat-open.no-image { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) { .cat-open { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; } .cat-open .cat-art { width: 96px; height: 96px; border-radius: 16px; } }
+/* 카드형 진행 단계 — 정산 stepper. 넓은 화면에서만 그림 카드, 좁은 화면은 점 stepper 그대로 */
+@media (min-width: 768px) {
+  .stepper.is-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .stepper.is-cards li { flex-direction: column; justify-content: flex-start; gap: 8px; padding: 12px 10px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); white-space: normal; text-align: center; }
+  .stepper.is-cards li::before { display: none; }
+  .stepper.is-cards li + li { margin-left: 0; }
+  .stepper.is-cards li.is-on { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  .stepper.is-cards li.is-done { color: var(--ink-2); }
+  .stepper.is-cards .st-img { width: 80px; height: 80px; border-radius: 18px; }
+  .stepper.is-cards li.no-image .st-img { display: none; }
 }
+@media (max-width: 767px) { .stepper.is-cards .st-img { display: none; } }
+/* 빈 상태 안의 종류 스팟(카테고리별 빈 상태) — 장면 그림(3:2)이 아니라 물건 스팟(1:1) 120px */
+.empty-state .empty-spot { width: 120px; height: 120px; margin: 0 auto 10px; border-radius: 24px; box-shadow: 0 12px 26px -18px rgba(46, 27, 69, 0.55); }
 
 /* ── 강제 색상(고대비) 모드: 그림자로만 표시하던 초점을 선으로도 ── */
 @media (forced-colors: active) {
   .input:focus, .textarea:focus, .btn:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid CanvasText; outline-offset: 2px; }
   .grad-text, .grad-text-hero { background: none !important; -webkit-text-fill-color: CanvasText; color: CanvasText !important; }
   .type-tag, .row-state, .chip-fact, .callout { border: 1px solid CanvasText; }
-  .empty-img, .cover-spot, .has-img { border: 1px solid CanvasText; }
+  .empty-img, .cover-spot, .spot-img { border: 1px solid CanvasText; }
   .cover .cover-img { display: none; }   /* 그림 위 글자는 읽을 수 없으니 그림을 빼고 배경색 위에 */
   .cover::after { content: none; }
 }

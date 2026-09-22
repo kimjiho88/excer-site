@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=12" />
+  <link rel="stylesheet" href="assets/site.css?v=13" />
   <script src="assets/site-core.js?v=7"></script>
   <script src="assets/icons.js?v=1"></script>
   <script src="assets/content.js?v=5"></script>
@@ -88,7 +88,6 @@
     .pr-head { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 12px; align-items: start; }
     /* 종류 타일 — 2세대 음식 그림(56px). 그림을 못 읽으면 종류색 옅은 면 위에 선 아이콘 */
     .pr-ic { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 14px; color: var(--cat, var(--brand)); background: color-mix(in srgb, var(--cat, var(--brand)) 12%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat, var(--brand)) 22%, transparent); }
-    .pr-ic.has-img { border: 1px solid var(--line); }
     @supports not (color: color-mix(in srgb, red 10%, white)) { .pr-ic { background: var(--brand-soft); } }
     .pr-ic .ic { width: 20px; height: 20px; }
     .place-row.is-closed .pr-ic { filter: grayscale(1); opacity: 0.6; }
@@ -229,6 +228,12 @@
       .cat-chip.is-on, .kpin.is-on { outline: 2px solid Highlight; outline-offset: 1px; }
     }
 
+    /* ── 상세 머리: 종류 그림 + 요약 칩 ── */
+    .pd-hero { display: flex; align-items: flex-start; gap: 14px; margin: 0 0 16px; }
+    .pd-hero .pd-chips { flex: 1 1 auto; min-width: 0; margin: 0; align-content: flex-start; }
+    .pd-art { width: 128px; height: 128px; border-radius: 20px; box-shadow: var(--shadow-card); }
+    .pd-hero.no-image .pd-art { display: none; }
+    @media (max-width: 640px) { .pd-hero { gap: 12px; } .pd-art { width: 96px; height: 96px; border-radius: 16px; } }
     /* ── 상세 위 요약 칩 ── */
     .pd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
     .pd-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: var(--fs-caption); font-weight: 600; }
@@ -337,8 +342,8 @@
   </header>
   <!-- 전면 커버 — 골목 배너가 화면 폭을 채우고 제목·등록 버튼은 그 위에. 못 읽으면 보라 그라데이션만. 규격: docs/IMAGE_SPEC.md 9절 -->
   <section class="cover" aria-labelledby="heroTitle">
-    <img class="cover-img" src="assets/img/places-banner-1440.webp"
-         srcset="assets/img/places-banner-720.webp 720w, assets/img/places-banner-1440.webp 1440w" sizes="100vw"
+    <img class="cover-img" src="assets/img/places-banner-1440.webp?v=2"
+         srcset="assets/img/places-banner-720.webp?v=2 720w, assets/img/places-banner-1440.webp?v=2 1440w" sizes="100vw"
          width="1440" height="960" decoding="async" fetchpriority="high"
          alt="해 질 무렵 식당이 늘어선 골목을 걷는 친구들을 그린 일러스트"
          onerror="this.closest('.cover').classList.add('no-image')" />
@@ -401,7 +406,7 @@
       <!-- 오늘 뭐 먹지: 지금 조건에 맞는 곳 가운데 하나를 무작위로. 다시 뽑기는 직전 것을 피한다 -->
       <div class="pick-card" id="pickCard" hidden role="status" aria-live="polite">
         <!-- 뽑기판 그림 — 못 읽으면 종류 아이콘(pickIc)으로 되돌아감 -->
-        <img class="pick-img" src="assets/img/places-pick-240.webp" srcset="assets/img/places-pick-240.webp 240w, assets/img/places-pick-480.webp 480w" sizes="64px" width="480" height="480" alt="" decoding="async" onerror="this.hidden = true; document.getElementById('pickIc').hidden = false" />
+        <img class="pick-img" src="assets/img/places-pick-240.webp?v=2" srcset="assets/img/places-pick-240.webp?v=2 240w, assets/img/places-pick-480.webp?v=2 480w" sizes="64px" width="480" height="480" alt="" decoding="async" onerror="this.hidden = true; document.getElementById('pickIc').hidden = false" />
         <span class="pick-ic" id="pickIc" aria-hidden="true" hidden></span>
         <span>
           <span class="pick-k">오늘의 추천 <small id="pickFrom"></small></span>
@@ -938,10 +943,9 @@
         return '<button type="button" class="by-btn" data-by="' + esc(name) + '" title="' + esc(name) + ' 기록만 보기">' +
           (prefix ? "<small>" + esc(prefix) + "</small>" : "") + '<span class="who" data-initial="' + esc(name.slice(0, 1)) + '">' + esc(name) + "</span></button>";
       }
-      /* 종류 타일 — 2세대 음식 그림(food-*)이 있으면 그림, 못 읽으면 onerror 가 has-img 를 떼어 선 아이콘으로 */
+      /* 종류 타일 — 선 아이콘(종류 색). 2세대 음식 그림은 목록 줄에서는 쓰지 않는다(44~56px 에서는 얼룩으로 보였다) — 상세 머리(detailHTML)에서 128px 로 */
       function catTile(v) {
-        if (!v.catImg) return '<span class="pr-ic" aria-hidden="true">' + icon(v.catIcon) + "</span>";
-        return '<span class="pr-ic has-img" aria-hidden="true"><img class="mini-img" src="assets/img/' + v.catImg + '-160.webp" srcset="assets/img/' + v.catImg + '-160.webp 160w, assets/img/' + v.catImg + '-320.webp 320w" sizes="56px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="var p=this.parentNode;p.classList.remove(\'has-img\');this.remove()" />' + icon(v.catIcon) + "</span>";
+        return '<span class="pr-ic" aria-hidden="true">' + icon(v.catIcon) + "</span>";
       }
       function rowHTML(v) {
         var open = state.openId === v.id;
@@ -1000,6 +1004,12 @@
         if (v.visitCount) chips.push('<span class="pd-chip">' + icon("calendar", "is-sm") + "방문 " + v.visitCount + "회" + (v.lastVisit ? " · 마지막 " + esc(C.dateText(v.lastVisit)) : "") + "</span>");
         if (v.closed) chips.push('<span class="pd-chip is-quiet">영업 종료</span>');
         var chipRow = '<div class="pd-chips" aria-label="기본 정보">' + chips.join("") + "</div>";
+        /* 상세 머리 — 종류 그림(2세대 food-*) 128px(폰 96px) 왼쪽에, 요약 칩 오른쪽에. 식당 사진이 아니라 종류 삽화다(칩의 종류 이름이 붙어 있다).
+           못 읽으면 onerror 가 그림만 지우고 칩이 전체 폭으로 */
+        var art = v.catImg
+          ? '<img class="spot-img pd-art" src="assets/img/' + v.catImg + '-320.webp" srcset="assets/img/' + v.catImg + '-160.webp 160w, assets/img/' + v.catImg + '-320.webp 320w" sizes="(max-width: 640px) 96px, 128px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.pd-hero\').classList.add(\'no-image\');this.remove()" />'
+          : "";
+        var hero = '<div class="pd-hero' + (art ? "" : " no-image") + '">' + art + chipRow + "</div>";
 
         var notes = v.notes.length ? v.notes.map(function (n) { return noteHTML(n, v); }).join("") : '<p class="pd-empty">아직 한줄평이 없습니다. 다녀온 분이 첫 기록을 남겨 주세요.</p>';
         var vote = v.again ? '<p class="pd-empty" style="margin-top:8px">다시 가고 싶다는 기록 ' + v.again.yes + "건 / " + v.again.all + "건</p>" : "";
@@ -1023,7 +1033,7 @@
            추천 메뉴 항목은 후기 글에 없는 메뉴가 있거나 메뉴를 적은 사람이 둘 이상일 때만 — 후기 한 건에 든 메뉴를 또 적지 않는다.
            메뉴가 없으면 그 열을 아예 내보내지 않는다(빈 칸이 격자 자리를 차지해 왼쪽 위가 비던 문제) */
         return '<div class="place-detail" id="place-detail-' + v.id + '" style="--cat:' + esc(v.catColor) + '">' +
-          chipRow +
+          hero +
           '<div class="pd-grid">' +
             (v.showMenuSection ? '<div class="pd-col"><div class="pd-sec"><h4 class="pd-h">추천 메뉴</h4><p class="pd-menus">' + esc(v.menus.join(", ")) + "</p></div></div>" : "") +
             '<div class="pd-col is-notes">' +
@@ -1050,7 +1060,7 @@
             '<button type="button" class="btn btn-secondary is-sm" data-reset="1">조건 초기화</button></div>';
         }
         return '<div class="empty-state" style="border-top:1px solid var(--line)">' +
-          '<img class="empty-img" src="assets/img/places-empty-320.webp" srcset="assets/img/places-empty-320.webp 320w, assets/img/places-empty-640.webp 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add(\'no-image\')" />' +
+          '<img class="empty-img" src="assets/img/places-empty-320.webp?v=2" srcset="assets/img/places-empty-320.webp?v=2 320w, assets/img/places-empty-640.webp?v=2 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add(\'no-image\')" />' +
           '<strong>등록된 맛집이 없습니다.</strong>' +
           "<p>모임에서 다녀온 식당을 등록해 주세요.</p>" +
           '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 등록</button></div>';

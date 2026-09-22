@@ -26,7 +26,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=12" />
+  <link rel="stylesheet" href="assets/site.css?v=13" />
 
   <style>
     /* ============================================================
@@ -123,12 +123,16 @@
     .draft-note .ic { width: 16px; height: 16px; color: var(--gold, #7E5F25); flex: none; }
     .draft-note > span { flex: 1 1 200px; min-width: 0; }
     .draft-note .text-btn { min-height: 30px; }
-    .prompt-card { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
-    .prompt-card .pc-ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--brand); box-shadow: var(--shadow-card); }
+    .prompt-card { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
+    .prompt-card .pc-art { width: 96px; height: 96px; border-radius: 20px; box-shadow: var(--shadow-card); }
+    .prompt-card .pc-ic { display: none; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--brand); box-shadow: var(--shadow-card); }
     .prompt-card .pc-ic .ic { width: 22px; height: 22px; }
+    .prompt-card.no-image { grid-template-columns: 44px minmax(0, 1fr) auto; }
+    .prompt-card.no-image .pc-art { display: none; }
+    .prompt-card.no-image .pc-ic { display: grid; }
     .prompt-card .pc-k { display: block; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .prompt-card .pc-t { display: block; margin-top: 2px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.4; }
-    @media (max-width: 600px) { .prompt-card { grid-template-columns: 44px minmax(0, 1fr); } .prompt-card .btn { grid-column: 1 / -1; width: 100%; } }
+    @media (max-width: 600px) { .prompt-card { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; } .prompt-card .pc-art { width: 80px; height: 80px; border-radius: 16px; } .prompt-card.no-image { grid-template-columns: 44px minmax(0, 1fr); } .prompt-card .btn { grid-column: 1 / -1; width: 100%; } }
     /* ── 이번 주 인기 글 ── */
     .popular { margin: 14px 0 8px; padding: 12px 16px 6px; border-radius: 14px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
     .popular .pop-h { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
@@ -152,10 +156,6 @@
     .type-fields { display: contents; }
     .type-desc { margin: -4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
     /* 글 종류 선택 옆 그림(2세대 posts-*) — 56px 타일, 고른 종류에 맞춰 바뀐다 */
-    .wcat-wrap { display: flex; align-items: center; gap: 12px; }
-    .wcat-wrap .input { flex: 1 1 auto; min-width: 0; }
-    .wcat-img { display: block; flex: none; width: 56px; height: 56px; border-radius: 14px; background: #F7F6F2; border: 1px solid var(--line); object-fit: cover; }
-    .wcat-img[hidden] { display: none; }
     .form-preview .post-row { border-top: 0; }
     .form-preview .post-head { padding: 4px 0 6px; cursor: default; }
     .form-preview .post-head:hover .row-title { text-decoration: none; }
@@ -202,7 +202,7 @@
         <p class="cover-lead">동네친구들의 공지와 모임 소식을 올리는 게시판입니다.</p>
         <div class="cover-actions"><button class="btn btn-primary" id="heroWriteBtn" type="button">글쓰기</button></div>
       </div>
-      <img class="cover-spot" src="assets/img/news-spot-240.webp" srcset="assets/img/news-spot-240.webp 240w, assets/img/news-spot-480.webp 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
+      <img class="cover-spot" src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
   </section>
 
@@ -231,6 +231,8 @@
           </div>
         </div>
         <div class="prompt-card" id="promptCard" hidden>
+          <!-- 글감 종류 그림(2세대 posts-*, 후기는 flow-record) 96px. 못 읽으면 전구 아이콘으로 -->
+          <img class="spot-img pc-art" id="promptArt" src="assets/img/posts-free-320.webp" width="320" height="320" alt="" decoding="async" onerror="this.closest('.prompt-card').classList.add('no-image')" />
           <span class="pc-ic" aria-hidden="true"><svg class="ic"><use href="#i-bulb"/></svg></span>
           <span><span class="pc-k">이번 주 글감</span><span class="pc-t" id="promptText"></span></span>
           <button type="button" class="btn btn-secondary is-sm" id="promptWrite">이 글감으로 쓰기</button>
@@ -304,17 +306,13 @@
         </div>
         <div class="field is-wide" data-field="wCat">
           <label for="wCat">글 종류</label>
-          <!-- 종류 그림(2세대 posts-*, 후기는 flow-record) — 고른 종류를 그림으로도 보여 준다. 못 읽으면 숨김 -->
-          <div class="wcat-wrap">
-            <select id="wCat" class="input">
-              <option value="자유" selected>자유</option>
-              <option value="벙 소식">모임 모집</option>
-              <option value="후기">모임 후기</option>
-              <option value="정보">정보</option>
-              <option value="공지">공지 (운영진)</option>
-            </select>
-            <img class="wcat-img" id="wCatImg" src="assets/img/posts-free-160.webp" width="320" height="320" alt="" decoding="async" onerror="this.hidden = true" />
-          </div>
+          <select id="wCat" class="input">
+            <option value="자유" selected>자유</option>
+            <option value="벙 소식">모임 모집</option>
+            <option value="후기">모임 후기</option>
+            <option value="정보">정보</option>
+            <option value="공지">공지 (운영진)</option>
+          </select>
           <p class="type-desc" id="typeDesc"></p>
         </div>
         <p class="form-note is-wide" id="capsNote" hidden>서버 업데이트 전이라 이 종류의 항목은 저장되지 않습니다. 날짜와 장소는 본문에 적어 주세요.</p>
@@ -495,6 +493,9 @@
     try { lastSeen = localStorage.getItem(SEEN_KEY) || ""; localStorage.setItem(SEEN_KEY, new Date().toISOString()); } catch (e) {}
     /* 이번 주 글감 — content.js 의 목록을 ISO 주차로 돌아가며 하나씩(홈의 글감 줄과 같은 것). 글 종류와 제목만 미리 채우고 내용은 비운다 */
     function currentPrompt() { return C.weeklyPrompt(); }
+    /* 글 종류 → 2세대 그림(posts-*, 후기는 flow-record). 글감 카드(96px)와 종류별 빈 상태(120px)에서만 쓴다 — 글쓰기 창·목록 줄에는 두지 않는다 */
+    const TYPE_IMG = { "공지": "posts-notice", "벙 소식": "posts-meetup", "후기": "flow-record", "정보": "posts-info", "자유": "posts-free" };
+    function typeArt(cat, cls, px) { const s = TYPE_IMG[cat]; if (!s) return ""; return `<img class="spot-img ${cls}" src="assets/img/${s}-320.webp" srcset="assets/img/${s}-160.webp 160w, assets/img/${s}-320.webp 320w" sizes="${px}px" width="320" height="320" alt="" loading="lazy" decoding="async" onerror="this.remove()" />`; }
     /* 홈의 '글 쓰러 가기'(#write-prompt)로 들어오면 글감이 채워진 글쓰기 창을 바로 연다 */
     function openPromptFromHash() {
       if (location.hash !== "#write-prompt") return;
@@ -503,7 +504,13 @@
       const p = currentPrompt();
       openWriteModal(null, { category: p.cat, title: p.title });
     }
-    function renderPrompt() { $("promptText").textContent = currentPrompt().title; $("promptCard").hidden = state.degraded || !!state.search || state.category !== "전체"; }
+    function renderPrompt() {
+      const p = currentPrompt();
+      $("promptText").textContent = p.title;
+      const art = $("promptArt"), s = TYPE_IMG[p.cat] || "posts-free";
+      if (art && !art.src.includes("/" + s + "-")) { $("promptCard").classList.remove("no-image"); art.src = "assets/img/" + s + "-320.webp"; art.srcset = "assets/img/" + s + "-160.webp 160w, assets/img/" + s + "-320.webp 320w"; art.sizes = "(max-width: 600px) 80px, 96px"; }
+      $("promptCard").hidden = state.degraded || !!state.search || state.category !== "전체";
+    }
     /* 작성 중인 글은 이 브라우저에 임시로 남긴다 — 모달이 닫히거나 새로고침해도 사라지지 않게 */
     const DRAFT_KEY = "excer_news_draft";
     function loadDraft() { try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && (d.title || d.body) ? d : null; } catch (e) { return null; } }
@@ -762,10 +769,10 @@
           <button type="button" class="btn btn-secondary is-sm" data-act="clear-search">검색 지우기</button></div>`;
       }
       if (state.category !== "전체") {
-        return `<div class="empty-state" style="border-top:1px solid var(--line)"><strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
+        return `<div class="empty-state" style="border-top:1px solid var(--line)">${typeArt(state.category, "empty-spot", 120)}<strong>${esc(C.catLabel(state.category))} 글이 없습니다.</strong><p>다른 종류를 고르거나 새 글을 등록해 주세요.</p>
           <button type="button" class="btn btn-primary is-sm" data-act="open-write">글쓰기</button></div>`;
       }
-      return `<div class="empty-state" style="border-top:1px solid var(--line)"><img class="empty-img" src="assets/img/news-empty-320.webp" srcset="assets/img/news-empty-320.webp 320w, assets/img/news-empty-640.webp 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image'); this.nextElementSibling.hidden = false" /><span class="empty-ic" hidden>${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
+      return `<div class="empty-state" style="border-top:1px solid var(--line)"><img class="empty-img" src="assets/img/news-empty-320.webp?v=2" srcset="assets/img/news-empty-320.webp?v=2 320w, assets/img/news-empty-640.webp?v=2 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image'); this.nextElementSibling.hidden = false" /><span class="empty-ic" hidden>${icon("megaphone")}</span><strong>등록된 글이 없습니다.</strong><p>첫 글을 남겨 보세요. 모임 후기, 동네 정보, 가벼운 이야기 무엇이든 좋습니다.</p>
         <div class="empty-acts"><button type="button" class="btn btn-primary is-sm" data-act="open-write" data-cat="후기">모임 후기 쓰기</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="정보">정보 공유</button><button type="button" class="btn btn-secondary is-sm" data-act="open-write" data-cat="자유">자유 글</button></div></div>`;
     }
     /* 이번 주 인기 글 — 최근 7일 안에 반응이나 댓글이 있는 글 셋. 전체 탭·검색 없음일 때만 */
@@ -896,9 +903,6 @@
       const fields = (TYPE_FIELDS[cat] || []).filter((f) => state.caps >= 2 || (cat === "벙 소식" && !f.v2));
       $("typeFields").innerHTML = fields.map(fieldHTML).join("");
       $("typeDesc").textContent = typeDesc(cat);
-      // 종류 그림 — posts-*(공지·모집·정보·자유), 후기는 flow-record. 바꿀 때마다 다시 보이게(전에 못 읽어 숨었어도)
-      const TYPE_IMG = { "공지": "posts-notice", "벙 소식": "posts-meetup", "후기": "flow-record", "정보": "posts-info", "자유": "posts-free" };
-      const ti = $("wCatImg"); if (ti) { const stem = TYPE_IMG[cat] || "posts-free"; ti.hidden = false; ti.src = "assets/img/" + stem + "-160.webp"; ti.srcset = "assets/img/" + stem + "-160.webp 160w, assets/img/" + stem + "-320.webp 320w"; ti.sizes = "56px"; }
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
       $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
       $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
