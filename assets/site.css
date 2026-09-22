@@ -142,7 +142,8 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-width:
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;   /* dvh 를 모르는 브라우저(iOS 15.3 이하)는 윗줄 vh */
   /* 외부 폰트가 막히면 기기의 한글 글꼴로 그대로 보인다 */
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   font-size: var(--fs-body);
@@ -602,7 +603,7 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: underline; te
 }
 .modal-backdrop[hidden] { display: none; }
 .modal {
-  width: min(560px, 100%); max-height: min(88dvh, 760px); overflow: auto;
+  width: min(560px, 100%); max-height: min(88vh, 760px); max-height: min(88dvh, 760px); overflow: auto;
   border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-float);
   padding: 24px;
 }
@@ -614,7 +615,7 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: underline; te
 /* 모바일: 아래에서 올라오는 시트 */
 @media (max-width: 640px) {
   .modal-backdrop.is-sheet { padding: 0; place-items: end stretch; }
-  .modal-backdrop.is-sheet .modal { width: 100%; max-width: none; max-height: 92dvh; border-radius: 12px 12px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .modal-backdrop.is-sheet .modal { width: 100%; max-width: none; max-height: 92vh; max-height: 92dvh; border-radius: 12px 12px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
   .modal-backdrop.is-sheet .modal-foot { flex-direction: column-reverse; }
   .modal-backdrop.is-sheet .modal-foot .btn { width: 100%; }
 }
