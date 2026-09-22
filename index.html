@@ -27,7 +27,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=14" />
+  <link rel="stylesheet" href="assets/site.css?v=16" />
 
   <style>
     /* ============================================================
@@ -44,9 +44,13 @@
     .tab-card { position: relative; display: grid; gap: 2px; padding: 10px 10px 12px; border-radius: 16px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); color: inherit; text-decoration: none; transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease); }
     .tab-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -20px rgba(75, 42, 130, 0.5); border-color: rgba(75, 42, 130, 0.25); }
     .tab-card:hover .tc-title { color: var(--brand); }
-    .tab-card .tc-img { display: grid; place-items: center; aspect-ratio: 16 / 10; margin-bottom: 8px; border-radius: 11px; overflow: hidden; background: #F7F6F2; }
-    .tab-card .tc-img img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    /* 그림 상자 16:10 — padding 으로 비율을 잡고 그림은 절대 위치로 채운다. (aspect-ratio 상자 안의 height:100% 는 iOS 사파리·카톡 브라우저에서
+       높이가 안 잡혀 정사각 스팟이 위아래로 잘려 보였다 — 절대 위치는 어디서나 상자 크기를 따른다) */
+    .tab-card .tc-img { position: relative; display: block; margin-bottom: 8px; border-radius: 11px; overflow: hidden; background: #F7F6F2; }
+    .tab-card .tc-img::before { content: ""; display: block; padding-top: 62.5%; }
+    .tab-card .tc-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
     .tab-card .tc-img.is-scene img { object-fit: cover; }
+    .tab-card .tc-img[hidden] { display: none; }   /* 그림을 못 읽으면 빈 크림 상자 대신 글만 */
     .tab-card .tc-title { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 15px; font-weight: 700; }
     .tab-card .tc-sub { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
 
@@ -113,6 +117,7 @@
     .places-band { margin-top: var(--section-gap); padding: var(--sp-7) 0; background: linear-gradient(180deg, #F3EFF9 0%, #EDE7F5 100%); border-top: 1px solid rgba(75, 42, 130, 0.08); border-bottom: 1px solid rgba(75, 42, 130, 0.08); }
     .places-band .sec-bar { border-bottom-color: rgba(75, 42, 130, 0.14); }
     .place-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    @media (min-width: 534px) and (max-width: 787px) { .place-cards { grid-template-columns: 1fr; } }   /* 카드 3장이 2열이면 하나가 홀로 남는다 */
     .place-card { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 14px; padding: 18px; border: 1px solid rgba(75, 42, 130, 0.10); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
     .place-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px rgba(75, 42, 130, 0.45); }
     /* 종류 타일 — 2세대 음식 그림(48px). 못 읽으면 종류색 옅은 면 위에 선 아이콘 */
@@ -230,10 +235,10 @@
       <section class="home-feat" aria-labelledby="featTitle">
         <div class="sec-bar"><div class="sb-l"><h2 class="lead-h" id="featTitle">주요 기능</h2></div></div>
           <ul class="tab-cards">
-            <li><a class="tab-card" href="places.html"><span class="tc-img is-scene"><img src="assets/img/places-banner-720.webp?v=2" width="720" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">맛집</span><span class="tc-sub">다녀온 식당과 한줄평</span></a></li>
-            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지 · 모집 · 후기</span></a></li>
-            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
-            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
+            <li><a class="tab-card" href="places.html"><span class="tc-img is-scene"><img src="assets/img/places-banner-720.webp?v=2" width="720" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">맛집</span><span class="tc-sub">다녀온 식당과 한줄평</span></a></li>
+            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지 · 모집 · 후기</span></a></li>
+            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
+            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
           </ul>
       </section>
 
