@@ -206,6 +206,17 @@
     .switch input:checked + .knob { background: var(--grad-brand); }
     .switch input:checked + .knob::after { transform: translateX(20px); }
     .switch input:focus-visible + .knob { outline: 3px solid rgba(40, 82, 68, 0.34); outline-offset: 2px; }
+    /* 운영진 확인 화면 — 비밀번호를 서버에서 확인해야 도구가 열린다 */
+    .gate { display: grid; place-items: center; padding: var(--sp-6) 0 var(--sp-7); }
+    .gate[hidden] { display: none; }
+    .gate-card { width: 100%; max-width: 420px; display: grid; gap: 14px; padding: 24px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    .gate-card h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 20px; }
+    .gate-card h2 .ic { width: 22px; height: 22px; color: var(--brand); }
+    .gate-card p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+    .gate-msg { padding: 10px 12px; border-radius: var(--r-sm); background: var(--danger-soft); color: var(--ink) !important; }
+    .gate-msg[hidden] { display: none; }
+    .gate-ok { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 13px; }
+    .tool-section[hidden] { display: none; }
     .mask-copy > b { display: block; font-size: 14px; letter-spacing: -0.02em; color: var(--ink); }
     .mask-copy p b { color: var(--ink); }
     .mini-summary.is-busy { opacity: 0.45; transition: opacity 0.15s; }
@@ -310,7 +321,24 @@
   </header>
 
   <main id="main" class="page-main">
-    <section class="section">
+    <!-- 운영진 확인: 비밀번호를 서버에서 확인해야 아래 도구가 보인다(비밀번호는 저장하지 않는다) -->
+    <section class="gate" id="adminGate" aria-labelledby="gateTitle">
+      <div class="container">
+        <form class="gate-card" id="gateForm" autocomplete="on">
+          <h2 id="gateTitle"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>운영진 확인</h2>
+          <p>운영진 비밀번호를 입력하면 통계 발행 도구가 열립니다.</p>
+          <input type="text" name="username" value="운영진" autocomplete="username" hidden />
+          <div class="field">
+            <label for="gatePass">운영진 비밀번호</label>
+            <input id="gatePass" class="input" type="password" autocomplete="current-password" required />
+          </div>
+          <p class="gate-msg" id="gateMsg" role="alert" hidden></p>
+          <button class="btn btn-primary" id="gateBtn" type="submit">들어가기</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="section tool-section" id="toolSection" hidden>
       <div class="container">
         <div class="admin-layout" aria-label="통계 작성 도구">
           <div class="stack">
@@ -455,10 +483,11 @@
                 <span class="field-hint">같은 제목으로 다시 발행하면 이전 내용을 교체합니다. 매달 최신 전체 파일을 <b>같은 제목</b>으로 발행하면 통계 하나에 계속 쌓입니다. <button type="button" class="text-btn is-quiet" id="reuseLabelBtn" hidden>지난 제목 그대로 쓰기</button></span>
               </div>
               <p id="truncNote" class="hint" style="margin-top:8px;color:var(--danger)" hidden></p>
-              <div class="field" style="margin-top:10px">
-                <label for="passInput">운영진 비밀번호 (발행하거나 삭제할 때만 필요)</label>
-                <input id="passInput" class="input" type="password" autocomplete="off" placeholder="발행할 때 입력" />
+              <div class="field" id="passField" style="margin-top:10px" hidden>
+                <label for="passInput">운영진 비밀번호</label>
+                <input id="passInput" class="input" type="password" autocomplete="off" />
               </div>
+              <div class="gate-ok" id="gateOk"><span>운영진으로 확인했습니다.</span><button type="button" class="mini-btn" id="lockBtn">잠그기</button></div>
               <div class="action-col">
                 <button id="previewBtn" class="btn btn-secondary" type="button" disabled><svg class="ic is-sm" aria-hidden="true"><use href="#i-eye"/></svg> 미리보기</button>
                 <button id="publishBtn" class="btn btn-primary" type="button" disabled>발행하기</button>
@@ -649,6 +678,13 @@
         if (m.includes("BAD_STATS")) return "통계 데이터가 서버 한도(약 1MB)를 넘었거나 비어 있습니다. 기간을 줄여(예: 최근 12개월) 다시 발행해 주세요.";
         if (m.includes("22P02") || /surrogate|invalid input syntax/i.test(m)) return "닉네임에 서버가 읽지 못하는 글자가 있습니다. 새로고침한 뒤 다시 시도해 주세요.";
         return fallback || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      }
+      // 확인 뒤 비밀번호가 바뀌었거나 비어 있으면 발행 칸에 비밀번호 입력을 다시 보여 준다
+      function askPassAgain() {
+        const f = $("passField"), ok = $("gateOk");
+        if (f) f.hidden = false;
+        if (ok) ok.hidden = true;
+        $("passInput").focus();
       }
       function isMissingTable(err) {
         const m = String((err && err.message) || "");
@@ -1141,7 +1177,7 @@
         const st = finalizedStats();
         if (!st) return;
         const pass = $("passInput").value;
-        if (!pass) { EXCER.toast("운영진 비밀번호를 입력해 주세요."); $("passInput").focus(); return; }
+        if (!pass) { EXCER.toast("운영진 비밀번호를 입력해 주세요."); askPassAgain(); return; }
         if (!st.periodLabel) { EXCER.toast("통계 제목을 입력해 주세요."); $("labelInput").focus(); return; }
         const btn = $("publishBtn");
         btn.disabled = true; btn.textContent = "발행 중";
@@ -1157,7 +1193,7 @@
           loadReportList();
         } catch (e) {
           if (isMissingTable(e)) { $("setupBox").hidden = false; EXCER.toast("서버 설정이 필요합니다. 아래 안내를 확인해 주세요."); }
-          else EXCER.toast(rpcErrorText(e, "발행에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+          else { EXCER.toast(rpcErrorText(e, "발행에 실패했습니다. 잠시 후 다시 시도해 주세요.")); if (String(e && e.message).includes("BAD_PASS")) askPassAgain(); }
         } finally {
           btn.disabled = false; btn.textContent = "발행하기"; updateActions();
         }
@@ -1307,7 +1343,7 @@
 
       async function doDelete(id, label, btn) {
         const pass = $("passInput").value;
-        if (!pass) { EXCER.toast("삭제하려면 운영진 비밀번호를 입력해 주세요."); $("passInput").focus(); return; }
+        if (!pass) { EXCER.toast("삭제하려면 운영진 비밀번호를 입력해 주세요."); askPassAgain(); return; }
         if (!window.confirm(`"${label}" 통계를 삭제합니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
         btn.disabled = true;
         try {
@@ -1320,7 +1356,7 @@
         } catch (e) {
           btn.disabled = false;
           if (isMissingTable(e)) { $("setupBox").hidden = false; }
-          else EXCER.toast(rpcErrorText(e, "삭제에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+          else { EXCER.toast(rpcErrorText(e, "삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.")); if (String(e && e.message).includes("BAD_PASS")) askPassAgain(); }
         }
       }
 
@@ -1425,9 +1461,52 @@
         });
       }
 
+      /* ── 운영진 확인 ──
+         비밀번호가 맞는지는 서버만 안다(브라우저에 정답이나 해시를 두지 않는다).
+         report_delete 는 비밀번호부터 확인하고, 틀리면 BAD_PASS 를 낸다. 맞으면 id 로 지우는데
+         id 는 1부터 매겨지므로 -1 은 절대 없는 번호 — 아무것도 지우지 않고 '맞다'는 답만 받는다. */
+      let gateFails = 0, gateWaitUntil = 0;
+      function gateMessage(text) { const m = $("gateMsg"); m.hidden = !text; m.textContent = text || ""; }
+      function unlock(pass) {
+        $("passInput").value = pass;
+        $("adminGate").hidden = true;
+        $("toolSection").hidden = false;
+        loadPreset();
+        loadReportList();
+        const h = $("pageTitle"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+      }
+      $("gateForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const pass = $("gatePass").value;
+        if (!pass) { gateMessage("비밀번호를 입력해 주세요."); $("gatePass").focus(); return; }
+        const wait = Math.ceil((gateWaitUntil - Date.now()) / 1000);
+        if (wait > 0) { gateMessage(`여러 번 틀려서 잠시 막았습니다. ${wait}초 뒤에 다시 입력해 주세요.`); return; }
+        const btn = $("gateBtn");
+        btn.disabled = true; btn.textContent = "확인 중";
+        try {
+          await supaFetch("/rest/v1/rpc/report_delete", { method: "POST", body: JSON.stringify({ p_pass: pass, p_id: -1 }) });
+          gateFails = 0; gateMessage("");
+          unlock(pass);
+        } catch (err) {
+          const m = String((err && err.message) || "");
+          if (m.includes("BAD_PASS")) {
+            gateFails += 1;
+            if (gateFails >= 5) { gateWaitUntil = Date.now() + 30000; gateFails = 0; }
+            gateMessage("비밀번호가 맞지 않습니다. 운영진 비밀번호를 아직 정하지 않았다면 sql/set_admin_password.sql 로 먼저 정해야 합니다.");
+            $("gatePass").select();
+          } else if (isMissingTable(err)) {
+            gateMessage("서버 설정이 아직 없습니다. Supabase 에서 sql/setup_all.sql 과 sql/set_admin_password.sql 을 먼저 실행해 주세요.");
+          } else {
+            gateMessage("서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.");
+          }
+        } finally {
+          btn.disabled = false; btn.textContent = "들어가기";
+        }
+      });
+      $("lockBtn").addEventListener("click", () => { $("passInput").value = ""; location.reload(); });
+
       bindEvents();
-      loadPreset();
-      loadReportList();
+      $("gatePass").focus();
     })();
   </script>
 </body>
