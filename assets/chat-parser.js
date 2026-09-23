@@ -119,22 +119,35 @@
         if (lm) who = lm[1].trim();
       }
       if (kind && dateStr) {
-        // 시각이 없는 줄(PC 형식의 입장·퇴장)은 바로 앞 메시지의 시각을 이어받는다 — 정오(12시)로 꾸미면
-        // 같은 날 저녁 메시지보다 앞으로 정렬돼 '나감' 판정과 환영 창(60분)이 어긋난다
-        var h = hour == null ? (prevTime ? prevTime.hour : 12) : hour;
-        var mi = min == null ? (prevTime ? prevTime.min : 0) : +min;
-        messages.push({
+        // 시각이 없는 줄(PC 형식의 입장·퇴장)은 같은 날 바로 앞 메시지의 시각을 이어받는다.
+        // 그날 첫 줄이면(앞 메시지가 전날) 전날 시각을 빌리면 안 된다 — 다음에 오는 메시지의 시각을 기다렸다 받는다.
+        // (정오로 꾸미거나 전날 시각을 쓰면 같은 날 메시지와 순서가 뒤집혀 '나감' 판정과 환영 창(60분)이 어긋난다)
+        var sameDay = prevTime && prevTime.date === dateStr;
+        var h = hour == null ? (sameDay ? prevTime.hour : 12) : hour;
+        var mi = min == null ? (sameDay ? prevTime.min : 0) : +min;
+        var ev = {
           date: dateStr, hour: h, min: mi,
           weekday: weekdayOf(dateStr),
           name: who, kind: kind, len: 0, text: ""
-        });
+        };
+        messages.push(ev);
+        if (hour == null && !sameDay) pendingSys.push(ev);
       } else if (kind) {
         // 날짜를 아직 모르는 줄(파일 맨 앞)은 사건으로 남길 수 없으니 개수도 세지 않는다 — meta 와 사건 수가 어긋나지 않게
         if (kind === "join") meta.joins -= 1; else meta.leaves -= 1;
       }
       last = null; // 시스템 행 뒤의 프리픽스 없는 줄은 이어붙이지 않음
     }
-    var prevTime = null; // 마지막으로 읽은 메시지의 시각(PC 형식 시스템 줄에 물려줌)
+    var prevTime = null; // 마지막으로 읽은 메시지의 날짜·시각(PC 형식 시스템 줄에 물려줌)
+    var pendingSys = []; // 시각을 아직 못 받은 그날 첫 시스템 줄 — 같은 날 다음 메시지 시각을 받는다
+    var pcMode = false;  // PC 날짜 구분선을 본 뒤인지(PC 에서는 날짜만 있는 줄이 공지 본문일 수 있다)
+    function setTime(dateStr, hour, min) {
+      prevTime = { date: dateStr, hour: hour, min: +min };
+      if (pendingSys.length) {
+        pendingSys.forEach(function (ev) { if (ev.date === dateStr) { ev.hour = hour; ev.min = +min; } });
+        pendingSys = [];
+      }
+    }
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
@@ -145,7 +158,7 @@
 
       // 1) PC 날짜 구분선
       m = t.match(RE_PC_DATE);
-      if (m) { curDate = toDateStr(m[1], m[2], m[3]); counts.pc += 0.5; last = null; continue; }
+      if (m) { curDate = toDateStr(m[1], m[2], m[3]); counts.pc += 0.5; last = null; pcMode = true; pendingSys = []; continue; }
 
       // 2) 파일 머리말
       if (RE_HEADER.test(t) && !RE_ANDROID_MSG.test(t) && !RE_IOS_MSG.test(t) && !RE_PC_MSG.test(t)) {
@@ -157,7 +170,7 @@
       if (m) {
         var d1 = toDateStr(m[1], m[2], m[3]);
         curDate = d1; counts.android += 1;
-        prevTime = { hour: toHour24(m[4], m[5]), min: +m[6] };
+        setTime(d1, toHour24(m[4], m[5]), m[6]);
         pushMsg(d1, prevTime.hour, m[6], m[7], m[8]);
         continue;
       }
@@ -167,7 +180,7 @@
       if (m) {
         var d2 = toDateStr(m[1], m[2], m[3]);
         curDate = d2; counts.ios += 1;
-        prevTime = { hour: toHour24(m[4], m[5]), min: +m[6] };
+        setTime(d2, toHour24(m[4], m[5]), m[6]);
         pushMsg(d2, prevTime.hour, m[6], m[7], m[8]);
         continue;
       }
@@ -176,7 +189,7 @@
       m = line.match(RE_PC_MSG);
       if (m && curDate) {
         counts.pc += 1;
-        prevTime = { hour: toHour24(m[2], m[3]), min: +m[4] };
+        setTime(curDate, toHour24(m[2], m[3]), m[4]);
         pushMsg(curDate, prevTime.hour, m[4], m[1], m[5]);
         continue;
       }
@@ -195,9 +208,12 @@
         // 아니면 아래 9) 로 흘러가 직전 메시지에 이어 붙는다
       }
 
-      // 7) 날짜만 있는 행 (날짜 변경선)
+      // 7) 날짜만 있는 행 (Android/iOS 날짜 변경선).
+      //    PC 내보내기의 날짜 구분선은 늘 '---- … ----' 꼴이라, PC 에서 날짜만 있는 줄은 공지 본문의 한 줄이다
+      //    — 그 날짜로 뒤 메시지를 옮기지 말고 앞 메시지에 이어 붙인다(아래 9)
       m = t.match(RE_DATE_ONLY);
-      if (m) { curDate = toDateStr(m[1], m[2], m[3]); last = null; continue; }
+      if (m && !pcMode) { curDate = toDateStr(m[1], m[2], m[3]); last = null; continue; }
+      if (m && !last) { continue; }
 
       // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등) — 시각은 직전 메시지 것을 잇는다
       if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, null, t); continue; }
@@ -245,6 +261,7 @@
     "와요", "왔어요", "올게요", "봐요", "봤어요", "볼게요", "보면", "보고", "주세요",
     "드려요", "드립니다", "합니당", "해주세요", "부탁드려요", "감사합니다", "감사해요",
     "고마워요", "죄송해요", "죄송합니다", "안녕하세요", "반갑습니다", "반가워요",
+    "싶다", "싶어", "싶은", "먹고", "가실", "가실분", "오실", "오실분", "계신", "어때", "어떠세", "같다", "있다", "없다", "했다", "한다",
     "환영해요", "환영합니다", "축하해요", "축하합니다", "고생하셨습니다", "수고하셨습니다",
     "괜찮아요", "괜찮은", "아니에요", "아닌데", "아니고", "아니라", "맞아요", "맞네요",
     "그래요", "그러네요", "그렇죠", "그니까", "그러니까", "글쿤요", "그렇군요",
@@ -293,6 +310,8 @@
       tokens.forEach(function (raw) {
         var w = stripParticle(raw);
         if (w.length < 2) return;
+        // '있나요·계세요·먹을까요·할게요·부탁해요' 에서 '요'만 떼면 '있나·계세·먹을까' 같은 조각이 남는다 — 동사 꼴은 버린다
+        if (w !== raw && /[요죠]$/.test(raw) && /[나까게세해어지네데래라자봐줘와워]$/.test(w)) return;
         // 한 글자 반복(ㅋㅋ류는 자모라 이미 제외) / 같은 글자 반복어 제거
         if (/^(.)\1+$/.test(w)) return;
         var key = /[a-zA-Z]/.test(w) ? w.toLowerCase() : w;
@@ -443,6 +462,37 @@
     return best;
   }
 
+  /* ── 이름 도우미 ─────────────────────────────────────────────
+     앞 토막 = 닉네임 양식("엑서 논현 남 88 0125")의 첫 부분. 공백·/·|·, 에 더해 괄호·밑줄에서도 끊는다
+     ("도윤[서초]", "도윤_서초" 도 동네를 싣지 않게). 12자 제한은 글자 단위(이모지를 반으로 자르지 않게). */
+  var RE_BRACKETED = /[\[(（{<【][^\])）}>】]*[\])）}>】]/g;
+  var RE_HEAD_SPLIT = /[\s\/·|,()（）\[\]{}<>【】_]+/;
+  function headName(name) {
+    var raw = String(name == null ? "" : name).trim();
+    // 괄호 안(대개 동네·나이: "도윤[서초]", "[서초]도윤")은 통째로 빼고 첫 토막을 잡는다. 괄호만 있는 이름이면 괄호 안 글을 쓴다
+    var parts = raw.replace(RE_BRACKETED, " ").split(RE_HEAD_SPLIT).filter(Boolean);
+    if (!parts.length) parts = raw.split(RE_HEAD_SPLIT).filter(Boolean);
+    var h = parts[0] || "?";
+    var cps = Array.from(h);
+    return cps.length > 12 ? cps.slice(0, 12).join("") : h;
+  }
+  /* 원본 닉네임 → 표시 이름(앞 토막, 겹치면 민지·민지2). 번호는 원본 이름 사전순이라 같은 자료면 늘 같다.
+     발행 화면은 이 표를 그대로 써서 멤버 표·나감 감지·명단 적용을 모두 같은 이름(표시 이름)으로 다룬다 */
+  function displayNames(allMessages) {
+    var display = Object.create(null), byHead = Object.create(null);
+    (allMessages || []).forEach(function (m) {
+      if (!m || !m.name || m.kind === "join" || m.kind === "leave") return;
+      if (display[m.name] != null) return;
+      display[m.name] = "";
+      var h = headName(m.name);
+      (byHead[h] = byHead[h] || []).push(m.name);
+    });
+    Object.keys(byHead).forEach(function (h) {
+      byHead[h].sort().forEach(function (raw, i) { display[raw] = i ? h + (i + 1) : h; });
+    });
+    return display;
+  }
+
   /* ── aggregate (v2 통계 스키마) ─────────────────────────────
      opts: { from, to ("YYYY-MM-DD"), exclude:[닉네임], keywordLimit(기본 40),
              maskNames(true 면 members[].name 을 집계 단계에서 "첫 글자+*" 로 치환),
@@ -457,10 +507,7 @@
     (opts.exclude || []).forEach(function (n) { exclude[String(n).trim()] = 1; });
     /* 제외 이름은 원본("민지 강남 여 95 0312")으로도, 화면에 보이는 앞 토막("민지")으로도 올 수 있다.
        발행 화면의 멤버 표는 앞 토막을 보여 주므로 둘 다 받아야 체크 해제가 실제로 먹는다 */
-    function headOf(name) {
-      var h = String(name == null ? "" : name).trim().split(/[\s/·|,]+/)[0] || "?";
-      return h.length > 12 ? h.slice(0, 12) : h;
-    }
+    var headOf = headName;
 
     var inRange = function (d) {
       if (opts.from && d < opts.from) return false;
@@ -470,20 +517,10 @@
 
     /* 표시 이름 = 앞 토막, 동명이인은 숫자(민지, 민지2). 번호는 원본 이름의 사전순으로 정해 두어
        같은 자료를 다시 집계해도 같은 사람에게 같은 번호가 붙는다 — 발행 화면의 체크(표시 이름으로 보냄)가 늘 그 사람을 가리키게 */
-    var display = Object.create(null);
-    (function () {
-      var byHead = Object.create(null);
-      (allMessages || []).forEach(function (m) {
-        if (!m || !m.name || m.kind === "join" || m.kind === "leave") return;
-        if (display[m.name] != null) return;
-        display[m.name] = "";
-        var h = headOf(m.name);
-        (byHead[h] = byHead[h] || []).push(m.name);
-      });
-      Object.keys(byHead).forEach(function (h) {
-        byHead[h].sort().forEach(function (raw, i) { display[raw] = i ? h + (i + 1) : h; });
-      });
-    })();
+    var display = displayNames(allMessages);
+    // 표시 이름으로만 빼는 목록(발행 화면의 멤버 표·명단·나감 감지가 쓰는 이름) — 원본 이름과 우연히 같아도 다른 사람을 빼지 않게
+    var excludeDisp = Object.create(null);
+    (opts.excludeDisplay || []).forEach(function (n) { excludeDisp[String(n)] = 1; });
 
     var msgs = [];       // 일반 메시지(집계 대상)
     var joinEvents = []; // 범위 내 입장 이벤트 (이름은 welcome 판정에만 쓰고 미출력)
@@ -492,6 +529,7 @@
       if (!m || !m.date || !inRange(m.date)) return;
       if (m.kind === "join") { joinEvents.push(m); return; }
       if (m.kind === "leave") { leaveCount += 1; return; } // 공개 통계 미포함(운영 민감 정보)
+      if (excludeDisp[display[m.name]]) return;                                   // 표시 이름(민지·민지2)으로 — 발행 화면이 보내는 이름
       if (exclude[m.name] || exclude[display[m.name] || headOf(m.name)]) return;   // 원본 이름으로도, 표시 이름으로도
       msgs.push(m);
     });
@@ -671,7 +709,7 @@
     //    사람 이름은 단어 목록에 오르지 않게: 현재 멤버뿐 아니라 제외한(나간) 사람의 이름, 앞 토막, 부르는 꼴(○○야/○○아)까지 막는다
     var memberNames = memberList.map(function (m) { return m.name; });
     var stopNames = memberNames.slice();
-    memberNames.concat(Object.keys(exclude)).forEach(function (n) {
+    memberNames.concat(Object.keys(exclude), Object.keys(excludeDisp), opts.stopNames || []).forEach(function (n) {
       var h = headOf(n);
       [n, h, h + "야", h + "아", h + "님", h + "씨"].forEach(function (x) { if (x && stopNames.indexOf(x) < 0) stopNames.push(x); });
     });
@@ -680,12 +718,14 @@
 
     // ── 주차별 키워드 (월요일 경계 주 단위, 주당 상위 3) — 주제 변화 추이 ──
     var weeklyKeywords = [];
-    var ws = from;
+    var ws = from, mi = 0;
     while (ws <= to) {
       var we = addDays(ws, 6 - weekdayOf(ws)); // 그 주 일요일
       if (we > to) we = to;
       var wStart = ws, wEnd = we;
-      var weekMsgs = msgs.filter(function (m) { return m.date >= wStart && m.date <= wEnd; });
+      while (mi < msgs.length && msgs[mi].date < wStart) mi += 1;
+      var weekMsgs = [];
+      while (mi < msgs.length && msgs[mi].date <= wEnd) { weekMsgs.push(msgs[mi]); mi += 1; }
       if (weekMsgs.length) {
         weeklyKeywords.push({
           week: weekLabel(wStart, wEnd),
@@ -722,7 +762,7 @@
     if (opts.maskNames) {
       var used = Object.create(null);
       members.forEach(function (m) {
-        var base = (String(m.name).trim().charAt(0) || "?") + "*";
+        var base = (Array.from(String(m.name).trim())[0] || "?") + "*";   // 첫 글자(이모지도 한 글자로 — 반쪽 글자는 서버가 거부한다)
         var out = base, n = 2;
         while (used[out]) { out = base + n; n += 1; }
         used[out] = 1;
@@ -788,6 +828,9 @@
       lists = lists[0]; // mergeMessages([listA, listB]) 형태도 허용
     }
     var sigOf = function (m) {
+      // 입장·퇴장은 날짜·종류·이름으로만 — PC 내보내기에는 이 줄에 시각이 없어(앞뒤 메시지 시각을 빌림) 같은 사건도 분이 다르다.
+      // 같은 날 같은 사람이 두 번 들어온 경우는 아래 '한 파일 안 최대 등장 횟수' 규칙이 지킨다
+      if (m.kind === "join" || m.kind === "leave") return m.date + "|" + m.kind + "|" + (m.name || "");
       // 분(min)까지 서명에 넣는다 — 같은 시간대의 짧은 말("ㅋㅋ"·"ㅇㅇ")이 다른 파일의 다른 말과 같은 것으로 묶이지 않게
       return m.date + "|" + m.hour + "|" + (m.min || 0) + "|" + (m.name || "") + "|" + (m.len || 0) + "|" + m.kind;
     };
@@ -849,6 +892,8 @@
     parse: parse,
     aggregate: aggregate,
     membership: membership,
+    displayNames: displayNames,
+    headName: headName,
     detectOverlap: detectOverlap,
     mergeMessages: mergeMessages,
     classify: classify,

@@ -17,8 +17,8 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=16" />
-  <script src="assets/chat-parser.js?v=3"></script>
+  <link rel="stylesheet" href="assets/site.css?v=17" />
+  <script src="assets/chat-parser.js?v=4"></script>
 
   <style>
     /* ============================================================
@@ -206,7 +206,12 @@
     .switch input:checked + .knob { background: var(--grad-brand); }
     .switch input:checked + .knob::after { transform: translateX(20px); }
     .switch input:focus-visible + .knob { outline: 3px solid rgba(40, 82, 68, 0.34); outline-offset: 2px; }
-    .mask-copy b { display: block; font-size: 14px; letter-spacing: -0.02em; color: var(--ink); }
+    .mask-copy > b { display: block; font-size: 14px; letter-spacing: -0.02em; color: var(--ink); }
+    .mask-copy p b { color: var(--ink); }
+    .mini-summary.is-busy { opacity: 0.45; transition: opacity 0.15s; }
+    .range-note { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink); font-size: 13px; line-height: 1.55; }
+    .range-note.is-warn { background: var(--danger-soft); }
+    .range-note .text-btn { margin-left: 6px; }
     .mask-copy p { margin: 4px 0 0; color: var(--gray); font-size: 13px; line-height: 1.6; font-weight: 700; }
     .mask-preview { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
     .mask-preview code { padding: 3px 10px; border-radius: 9px; background: var(--offwhite); font-size: 12px; font-weight: 600; color: var(--deep-1); }
@@ -380,6 +385,7 @@
                 <button class="chip" type="button" data-quick="60">최근 60일</button>
                 <button class="chip" type="button" data-quick="all">전체</button>
               </div>
+              <p id="rangeNote" class="range-note" role="status" hidden></p>
             </section>
 
             <!-- 3) 멤버 -->
@@ -423,7 +429,7 @@
                 <div class="mask-copy">
                   <b>닉네임을 첫 글자만 남기기</b>
                   <p>이 설정을 켜지 않아도 <b>닉네임 뒷부분(지역, 성별, 출생년도)은 발행되지 않습니다.</b>
-                  공백 앞 첫 토막만 저장됩니다. 예를 들어 "엑서 논현 남 88" 은 "엑서" 로 저장됩니다.</p>
+                  공백이나 괄호·밑줄 앞 첫 토막만 저장됩니다. 예를 들어 "엑서 논현 남 88" 과 "엑서[논현]" 은 "엑서" 로 저장됩니다.</p>
                   <p>닉네임을 한 단계 더 가리고 싶을 때 켭니다. 켜면 발행되는 데이터 자체가
                   "첫 글자 + *" 로 저장됩니다. 서버에도 원래 닉네임이 남지 않아 발행 후에는
                   되돌릴 수 없습니다. 미리보기와 JSON에도 똑같이 적용됩니다.</p>
@@ -637,10 +643,11 @@
       }
       function rpcErrorText(err, fallback) {
         const m = String((err && err.message) || "");
-        if (m.includes("BAD_PASS")) return "비밀번호가 맞지 않습니다. 다시 입력해 주세요.";
+        if (m.includes("BAD_PASS")) return "비밀번호가 맞지 않습니다. 다시 입력해 주세요. (운영진 비밀번호를 아직 정하지 않았다면 sql/set_admin_password.sql 로 먼저 정해야 합니다.)";
         if (m.includes("NOT_FOUND")) return "이미 삭제된 통계입니다.";
         if (m.includes("BAD_PERIOD")) return "통계 제목을 입력해 주세요.";
-        if (m.includes("BAD_STATS")) return "통계 데이터가 비어 있거나 너무 큽니다. 파일을 확인해 주세요.";
+        if (m.includes("BAD_STATS")) return "통계 데이터가 서버 한도(약 1MB)를 넘었거나 비어 있습니다. 기간을 줄여(예: 최근 12개월) 다시 발행해 주세요.";
+        if (m.includes("22P02") || /surrogate|invalid input syntax/i.test(m)) return "닉네임에 서버가 읽지 못하는 글자가 있습니다. 새로고침한 뒤 다시 시도해 주세요.";
         return fallback || "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
       }
       function isMissingTable(err) {
@@ -668,7 +675,11 @@
       let mergedMeta = { format: "unknown", files: 0 };
       let overlapDates = [];        // 파일 간 겹침 날짜
       let dataMin = null, dataMax = null;
-      const excluded = new Set();   // 통계 제외 멤버 (원 닉네임 기준)
+      const excluded = new Set();   // 통계 제외 멤버 — 표시 이름(민지·민지2) 하나로만 다룬다(멤버 표·명단·나감 감지가 모두 같은 이름)
+      let dispMap = Object.create(null);   // 원본 닉네임 → 표시 이름(ChatParser.displayNames)
+      let rawOfDisp = Object.create(null); // 표시 이름 → 원본 닉네임들
+      let leftRawNames = [];               // 나감 감지된 원본 닉네임 — 단어 목록에 이름이 오르지 않게 막는 데만 쓴다
+      let baseCache = { key: "", agg: null }; // 제외 전 집계(멤버 표용) — 기간이 같으면 다시 계산하지 않는다
       const dropped = new Set();    // 삭제한 키워드
       let labelDirty = false;
       let currentStats = null;      // 발행/미리보기 대상 (v2)
@@ -689,7 +700,7 @@
       /* 현재 방 멤버 명단으로 "그 사람만 남기기".
          닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. */
       function normName(s) { return String(s || "").trim().replace(/\s+/g, " "); }
-      function firstTok(s) { return normName(s).split(/[\s/·|,]+/)[0].toLowerCase(); }   // 파서의 headOf 와 같은 구분자(공백·/·,)
+      function firstTok(s) { return ChatParser.headName(normName(s)).toLowerCase(); }   // 파서의 앞 토막과 같은 규칙
       function applyRoster() {
         const raw = $("rosterInput").value || "";
         const lines = raw.split(/[\n,]+/).map(normName).filter(Boolean);
@@ -704,22 +715,28 @@
         const full = new Set(lines.map((l) => l.toLowerCase()));
         const nick = new Set(lines.map(firstTok));
         const matchedRosterFull = new Set();  // 매칭된 붙여넣기 항목(오탈자 확인용)
+        // 앞 토막이 같은 멤버(민지·민지2)는 앞 토막만으로는 누구인지 모른다 — 명단에 전체 닉네임이 있으면 그 사람만, 앞 토막만 적었으면 모두 남긴다
+        const headCount = Object.create(null);
+        lastMembers.forEach((m) => { const h = firstTok((rawOfDisp[m.name] || [m.name])[0]); headCount[h] = (headCount[h] || 0) + 1; });
+        const headOnly = new Set(lines.filter((l) => normName(l).toLowerCase() === firstTok(l)).map(firstTok));
         let keep = 0;
         // 명단이 이번 결정을 대체 — 매칭=포함 고정, 비매칭=제외 고정(파일 추가에도 유지)
         manualOff.clear(); manualOn.clear();
         lastMembers.forEach((m) => {
-          const nm = normName(m.name).toLowerCase();
-          const nk = firstTok(m.name);
-          const hit = full.has(nm) || nick.has(nk) || full.has(nk) || nick.has(nm);
+          const raws = (rawOfDisp[m.name] || [m.name]).map((r) => normName(r).toLowerCase());
+          const nk = firstTok(raws[0]);
+          const exact = raws.some((r) => full.has(r)) || full.has(normName(m.name).toLowerCase());
+          const hit = exact || (headCount[nk] > 1 ? headOnly.has(nk) : (nick.has(nk) || full.has(nk)));
           if (hit) {
             keep += 1;
             manualOn.add(m.name);
-            lines.forEach((l) => { if (l.toLowerCase() === nm || firstTok(l) === nk) matchedRosterFull.add(l); });
+            lines.forEach((l) => { const ll = l.toLowerCase(); if (raws.includes(ll) || firstTok(l) === nk) matchedRosterFull.add(l); });
           } else {
             manualOff.add(m.name);
           }
         });
         recomputeExcluded();
+        const offCount = lastMembers.filter((m) => excluded.has(m.name)).length;
         const unmatched = lines.filter((l) => !matchedRosterFull.has(l));
         statusEl.hidden = false;
         if (keep === 0) {
@@ -727,7 +744,7 @@
           statusEl.innerHTML = "명단과 일치하는 멤버가 없습니다. 대화 내역의 닉네임과 같은지 확인해 주세요.";
         } else {
           statusEl.className = "roster-status ok";
-          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${excluded.size}명</b>(나가거나 내보낸 사람)은 통계에서 제외했습니다.`;
+          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${offCount}명</b>(나가거나 내보낸 사람)은 통계에서 제외했습니다.`;
           if (unmatched.length) {
             const show = unmatched.slice(0, 8).map(escapeHTML).join(", ");
             msg += `<br><span class="warn">명단에 있지만 대화 내역에서 못 찾은 이름 ${unmatched.length}개: ${show}${unmatched.length > 8 ? " …" : ""} (오탈자이거나 그 기간에 메시지가 없는 사람일 수 있습니다)</span>`;
@@ -842,10 +859,14 @@
         const autoMerge = $("autoMergeChk").checked;
         if (overlapDates.length && autoMerge) {
           merged = ChatParser.mergeMessages(lists);
-          const removed = rawCount - merged.length;
+          const isSys = (m) => m.kind === "join" || m.kind === "leave";
+          const rawSys = lists.reduce((s, l) => s + l.filter(isSys).length, 0);
+          const mergedSys = merged.filter(isSys).length;
+          const removedMsg = (rawCount - rawSys) - (merged.length - mergedSys);
+          const removedSys = rawSys - mergedSys;
           $("mergeResult").hidden = false;
-          $("mergeResult").textContent = removed > 0
-            ? `중복 ${nf(removed)}건을 정리했습니다.`
+          $("mergeResult").textContent = (removedMsg + removedSys) > 0
+            ? `겹친 메시지 ${nf(removedMsg)}건` + (removedSys ? `과 입장·퇴장 기록 ${nf(removedSys)}건` : "") + "을 한 번만 세도록 정리했습니다."
             : "서명이 겹치는 중복 메시지는 없습니다.";
         } else {
           merged = overlapDates.length
@@ -889,8 +910,13 @@
         //    (운영진이 멤버 표에서 최종 확인·조정. 파일 추가·재집계에도 운영진 수동 결정은 유지)
         //    나간 사람 이름은 원본("민지 강남 여 95 0312")인데 멤버 표는 앞 토막("민지")을 보여 준다.
         //    둘 다 넣어 두어야 표의 '나감 감지' 태그와 실제 제외가 같은 사람을 가리킨다.
-        const headOf = (n) => { const h = String(n || "").trim().split(/[\s/·|,]+/)[0] || "?"; return h.length > 12 ? h.slice(0, 12) : h; };
-        detectedLeft = new Set(ChatParser.membership(merged).leftNames.flatMap((n) => [n, headOf(n)]));
+        //    그래서 원본 이름을 파서와 같은 규칙의 표시 이름(민지·민지2)으로 바꿔 한 이름으로만 다룬다.
+        dispMap = ChatParser.displayNames(merged);
+        rawOfDisp = Object.create(null);
+        Object.keys(dispMap).forEach((raw) => { const d = dispMap[raw]; if (d) (rawOfDisp[d] = rawOfDisp[d] || []).push(raw); });
+        leftRawNames = ChatParser.membership(merged).leftNames;
+        detectedLeft = new Set(leftRawNames.map((n) => dispMap[n]).filter(Boolean));
+        baseCache = { key: "", agg: null };
         recomputeExcluded();
 
         $("rangeCard").hidden = false;
@@ -927,15 +953,48 @@
       /* ── 발행 플로우 3단계: aggregate (v2) ── */
       /* 체크박스 하나에 1년치 파일 전체를 두 번 집계한다. 연타를 한 번으로 모은다 */
       let recomputeTimer = null;
-      function recompute() { clearTimeout(recomputeTimer); recomputeTimer = setTimeout(recomputeNow, 120); }
+      function setBusy(on) {
+        const ms = $("miniSummary");
+        ms.classList.toggle("is-busy", on);
+        if (on) ms.setAttribute("aria-busy", "true"); else ms.removeAttribute("aria-busy");
+      }
+      function recompute() { clearTimeout(recomputeTimer); setBusy(true); recomputeTimer = setTimeout(recomputeNow, 120); }
       function recomputeNow() {
+        try { recomputeInner(); } finally { setBusy(false); }
+      }
+      function renderRangeNote(from, to, hasData) {
+        const el = $("rangeNote");
+        if (!hasData) {
+          el.hidden = false; el.className = "range-note is-warn";
+          el.innerHTML = `선택한 기간(${escapeHTML(from)} ~ ${escapeHTML(to)})에는 메시지가 없습니다. 파일의 대화는 ${escapeHTML(dataMin)} ~ ${escapeHTML(dataMax)} 입니다.<button type="button" class="text-btn" id="rangeResetBtn">전체 기간으로</button>`;
+          return;
+        }
+        const outside = (from < dataMin ? dayGap(from, dataMin) : 0) + (to > dataMax ? dayGap(dataMax, to) : 0);
+        if (outside > 0) {
+          el.hidden = false; el.className = "range-note";
+          el.textContent = `파일에 없는 날 ${nf(outside)}일이 기간에 들어 있어 0건으로 채워집니다(하루 평균이 낮아집니다). 파일의 대화는 ${dataMin} ~ ${dataMax} 입니다.`;
+          return;
+        }
+        el.hidden = true;
+      }
+      function dayGap(a, b) { return Math.max(0, Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000)); }
+      function recomputeInner() {
         if (!merged) return;
         const { from, to } = currentRange();
+        const hasData = hasDataBetween(from, to);
+        renderRangeNote(from, to, hasData);
+        if (!hasData) {
+          ["memberCard", "kwEditCard"].forEach((id) => { $(id).hidden = true; });
+          currentStats = null; renderMiniSummary(null); updateActions();
+          return;
+        }
 
-        // 멤버 표는 "제외 전·마스킹 전" 집계 기준으로 그려야 다시 체크할 수 있다
-        const baseAgg = ChatParser.aggregate(merged, {
-          from, to, format: mergedMeta.format, files: mergedMeta.files
-        });
+        // 멤버 표는 "제외 전·마스킹 전" 집계 기준으로 그려야 다시 체크할 수 있다. 기간이 같으면 다시 계산하지 않는다(체크 하나에 1년치를 두 번 집계하던 것)
+        const key = from + "|" + to;
+        if (baseCache.key !== key) {
+          baseCache = { key, agg: ChatParser.aggregate(merged, { from, to, format: mergedMeta.format, files: mergedMeta.files, stopNames: leftRawNames }) };
+        }
+        const baseAgg = baseCache.agg;
         lastMembers = baseAgg.members || [];
         // 저장된 명단이 있으면 첫 집계 직후 한 번 자동 적용한다.
         // 매달 같은 명단을 다시 붙여넣던 단계가 이걸로 사라진다.
@@ -948,7 +1007,8 @@
 
         currentStats = ChatParser.aggregate(merged, {
           from, to,
-          exclude: [...excluded],
+          excludeDisplay: [...excluded],
+          stopNames: leftRawNames,
           dropKeywords: [...dropped],
           keywordLimit: 40,
           maskNames: $("maskChk").checked,
@@ -1023,7 +1083,7 @@
         host.hidden = false;
         const used = Object.create(null);
         const samples = members.slice(0, 3).map((m) => {
-          const base = (String(m.name).trim().charAt(0) || "?") + "*";
+          const base = (Array.from(String(m.name).trim())[0] || "?") + "*";
           let out = base, n = 2;
           while (used[out]) { out = base + n; n += 1; }
           used[out] = 1;
@@ -1046,6 +1106,8 @@
           const msgs = [];
           if (tr && tr.days) msgs.push("기간이 800일을 넘어 앞부분이 잘렸습니다. 기간을 나눠 발행해 주세요.");
           if (tr && tr.members) msgs.push("멤버가 120명을 넘어 순위 밖 멤버는 멤버 목록에서 빠졌습니다(합계에는 포함).");
+          // 서버는 통계 데이터를 약 1MB(저장 크기)까지 받는다. 글자 수로 약 20만 자를 넘으면 한도에 가까워진다
+          if (st) { let len = 0; try { len = JSON.stringify(st).length; } catch (e) {} if (len > 190000) msgs.push("기간이 길고 멤버가 많아 서버 한도를 넘을 수 있습니다. 발행이 실패하면 기간을 최근 12개월 이내로 줄여 주세요."); }
           tn.hidden = !msgs.length;
           tn.textContent = msgs.join(" ");
         }
@@ -1210,7 +1272,8 @@
         // 홈의 신선도 배지와 같은 경계(7일/14일)를 쓴다 — 두 화면이 다른 말을 하면 안 된다
         el.className = "check-strip " + (days <= 7 ? "is-ok" : (days <= 14 ? "is-mid" : "is-warn"));
         // '기준 주' 안내는 통계 화면과 같은 기준(집계 마지막 날 range.to)으로 — 발행일이 아니라
-        const rangeTo = newestRow && newestRow.stats && newestRow.stats.range && /^\d{4}-\d{2}-\d{2}$/.test(String(newestRow.stats.range.to || "")) ? newestRow.stats.range.to : null;
+        const rng = newestRow && (newestRow.range || (newestRow.stats && newestRow.stats.range));
+        const rangeTo = rng && /^\d{4}-\d{2}-\d{2}$/.test(String(rng.to || "")) ? rng.to : null;
         const staleDays = rangeTo ? Math.max(0, Math.round((Date.parse(kst(Date.now()) + "T00:00:00Z") - Date.parse(rangeTo + "T00:00:00Z")) / 86400000)) : days;
         el.textContent = "마지막 발행 " + when + ", " + (label || "기간 미상") +
           ", 전체 " + rows.length + "건" +
@@ -1222,7 +1285,7 @@
       async function loadReportList() {
         const host = $("reportList");
         try {
-          const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,updated_at");
+          const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,updated_at,range:stats->range");
           $("setupBox").hidden = true;
           renderCheckStrip(rows);
           host.innerHTML = (rows && rows.length)
@@ -1253,8 +1316,7 @@
             body: JSON.stringify({ p_pass: pass, p_id: Number(id) })
           });
           EXCER.toast("삭제했습니다.");
-          loadPreset();
-      loadReportList();
+          loadReportList();
         } catch (e) {
           btn.disabled = false;
           if (isMissingTable(e)) { $("setupBox").hidden = false; }
@@ -1292,18 +1354,21 @@
         $("autoMergeChk").addEventListener("change", rebuild);
         $("maskChk").addEventListener("change", () => { recompute(); savePreset(); });
 
+        $("rangeNote").addEventListener("click", (e) => { if (e.target.closest("#rangeResetBtn")) { setRange(dataMin, dataMax, "all"); recompute(); } });
         $("fromDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
         $("toDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
         document.querySelectorAll("[data-quick]").forEach((b) => {
           b.addEventListener("click", () => {
-            const now = new Date();
-            if (b.dataset.quick === "prev") { const [a, z] = monthRange(now, -1); setRange(a, z, "prev"); }
-            else if (b.dataset.quick === "this") { const [a, z] = monthRange(now, 0); setRange(a, z, "this"); }
-            else if (b.dataset.quick === "60") {
-              const to = new Date(now); const from = new Date(now); from.setDate(from.getDate() - 59);
-              setRange(ymd(from), ymd(to), "60");
-            }
-            else setRange(dataMin, dataMax, "all");
+            const now = new Date(), q = b.dataset.quick;
+            let a = dataMin, z = dataMax;
+            if (q === "prev") [a, z] = monthRange(now, -1);
+            else if (q === "this") [a, z] = monthRange(now, 0);
+            else if (q === "60") { const f = new Date(now); f.setDate(f.getDate() - 59); a = ymd(f); z = ymd(now); }
+            // 파일의 날짜 밖(미래 포함)은 자른다
+            if (a < dataMin) a = dataMin;
+            if (z > dataMax) z = dataMax;
+            if (a > z) { EXCER.toast(`${b.textContent.trim()}에 해당하는 대화가 파일에 없습니다. 파일의 대화는 ${dataMin} ~ ${dataMax} 입니다.`); return; }
+            setRange(a, z, q);
             recompute();
           });
         });
