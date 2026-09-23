@@ -849,12 +849,12 @@ a.row:hover .row-title, .row a:hover .row-title { text-decoration: none; color: 
 .flow .fl-t { margin: 0; padding-top: 8px; color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.35; }
 .flow .fl-d { margin: 3px 0 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.55; }
 .flow .fl-d b { color: var(--ink); font-weight: 600; }
-.flow > li + li::before { content: ""; position: absolute; left: 19px; top: -14px; width: 2px; height: 14px; background: rgba(75, 42, 130, 0.25); }
+/* 연결선은 원 아래에서 다음 칸 위까지 — 설명이 두 줄 이상이어도 선이 원에 붙어 있다(예전에는 칸 사이 틈에만 그려 원과 떨어졌다) */
+.flow > li:not(:last-child)::after { content: ""; position: absolute; left: 19px; top: 40px; bottom: -14px; width: 2px; background: rgba(75, 42, 130, 0.25); }
 @media (min-width: 720px) {
   .flow.is-h { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 0 16px; }
   .flow.is-h > li { grid-template-columns: 1fr; gap: 0; }
-  .flow.is-h > li + li::before { content: none; }
-  .flow.is-h > li:not(:last-child)::after { content: ""; position: absolute; top: 19px; left: 48px; right: -8px; height: 2px; background: linear-gradient(90deg, rgba(75, 42, 130, 0.35), rgba(75, 42, 130, 0.10)); }
+  .flow.is-h > li:not(:last-child)::after { content: ""; position: absolute; top: 19px; bottom: auto; left: 48px; right: -8px; width: auto; height: 2px; background: linear-gradient(90deg, rgba(75, 42, 130, 0.35), rgba(75, 42, 130, 0.10)); }
   .flow.is-h .fl-t { padding-top: 10px; }
 }
 
