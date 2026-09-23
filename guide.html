@@ -63,6 +63,9 @@
     /* 키가 낮은 PC 창(노트북 768 등): 목차가 화면 아래로 잘리지 않게 옆 칸만 따로 스크롤 */
     @media (min-width: 960px) and (max-height: 860px) {
       .guide-side { max-height: calc(100vh - var(--nav-h) - 24px); overflow-y: auto; overscroll-behavior: contain; margin: -4px -6px 0; padding: 4px 6px 10px; }
+      .toc-list a { min-height: 30px; padding-top: 4px; padding-bottom: 4px; }
+      .toc-group { margin: 6px 12px 2px; }
+      .toc-box > summary { padding-top: 10px; padding-bottom: 10px; }
     }
 
     /* 커버: 폰에서는 낮게 — 첫 화면(390×844)에 질문 타일 첫 두 줄이 보이게 */
@@ -105,7 +108,7 @@
     .plain-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--ink); font-size: 15px; line-height: 1.6; }
     .plain-list li::marker { color: var(--ink-2); }
     .cat-body b, .acc-body-inner b { font-weight: 700; }
-    .list-title { display: block; margin-bottom: 8px; font-size: var(--fs-sm); font-weight: 700; color: var(--ink); }
+    .list-title { display: block; margin: 0 0 8px; font-size: var(--fs-sm); font-weight: 700; line-height: 1.4; color: var(--ink); }
     .para-jump, .doc-link { margin-left: 6px; color: var(--brand); font-size: var(--fs-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
     .cat-body .callout p { font-size: var(--fs-sm); line-height: 1.55; }
 
@@ -217,6 +220,7 @@
     .lane .flow .fl-t { padding-top: 5px; font-size: 14px; line-height: 1.45; }
     .lane .flow .fl-d { font-size: var(--fs-caption); }
     .lane.is-warm .flow .fl-n { background: linear-gradient(180deg, #BE5F36, var(--rust)); box-shadow: 0 6px 14px -8px rgba(169, 80, 45, 0.7); }
+    @media (max-width: 359px) { .lane { grid-template-columns: minmax(0, 1fr); } }
     .fl-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
     .fl-chips span { display: inline-flex; align-items: center; min-height: 24px; padding: 0 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 600; }
 
@@ -243,7 +247,7 @@
     /* 5장 만드는 법 — 누르는 순서 칩 + 뒤 안내 + 버튼 줄 */
     .tap-path { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; margin: 0; padding: 0; list-style: none; }
     .tap-path li { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
-    .tap-path li + li::before { content: "›"; color: var(--ink-2); font-size: 18px; font-weight: 700; line-height: 1; }
+    .tap-path li + li::before { content: "›"; content: "›" / ""; color: var(--ink-2); font-size: 18px; font-weight: 700; line-height: 1; }
     .tp { display: inline-flex; align-items: center; min-height: 34px; padding: 4px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); font-size: 14px; font-weight: 600; line-height: 1.35; }
     .tp.is-final { background: var(--brand); border-color: var(--brand); color: #fff; }
     .cat-body .tp-after { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; margin: 0; color: var(--ink); font-size: 14px; line-height: 1.55; }
@@ -290,7 +294,7 @@
     .cat-body .lad2-k { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; }
     .lad2-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
     .lad2-steps li { position: relative; display: grid; gap: 1px; align-content: center; min-height: 52px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
-    .lad2-steps li + li::before { content: "›"; position: absolute; left: -13px; top: 50%; transform: translateY(-50%); color: var(--ink-2); font-size: 16px; font-weight: 700; }
+    .lad2-steps li + li::before { content: "›"; content: "›" / ""; position: absolute; left: -13px; top: 50%; transform: translateY(-50%); color: var(--ink-2); font-size: 16px; font-weight: 700; }
     .lad2-steps .lt { color: var(--ink-2); font-size: 12px; font-weight: 700; }
     .lad2-steps .lb { color: var(--ink); font-size: 14px; font-weight: 700; }
     .lad2-steps .ls { color: var(--ink-2); font-size: 12px; }
@@ -534,8 +538,8 @@
             { type: "nicktags", keywords: ["좋은 예", "나쁜 예", "이모지"], good: "엑서 논현 남 88 0125",
               bad: [{ strike: "엑서", text: "이름만" }, { text: "이모지만" }, { strike: "엑서 논현", text: "칸 누락" }],
               caption: "지역·성별·출생년도·입장일이 빠지면 알아보기 어렵습니다." },
-            { type: "numcards", keywords: ["닉네임 변경", "바꾸고 싶어요", "재입장", "횟수", "몇 번", "기기 교체", "1981", "1982"], items: [
-              { anchor: "rule-nick-change", wide: true, big: "입장 후 1회", label: "닉네임 변경", sub: "바꿀 때 **운영진 3명을 모두 태그**합니다." },
+            { type: "numcards", keywords: ["닉네임 변경", "바꾸고 싶어요", "재입장", "횟수", "몇 번", "기기 교체", "예외 상황", "1981", "1982"], items: [
+              { anchor: "rule-nick-change", wide: true, big: "입장 후 1회만", label: "닉네임 변경", sub: "바꿀 때 **운영진 3명을 모두 태그**합니다." },
               { anchor: "rule-reentry", big: "최대 1회", label: "재입장", sub: "1981년생 및 이전" },
               { big: "최대 3회", label: "재입장", sub: "1982년생 및 이후" } ],
               foot: "기기 교체처럼 불가피한 사유는 **미리 알리면** 재입장 예외를 적용할 수 있습니다." }
@@ -544,10 +548,10 @@
           key: "모임(벙)은 공지의 **참석 버튼**으로 신청합니다.",
           keywords: ["벙", "벙주", "모임장", "참석 버튼", "신청", "명단", "시간", "장소", "시간 엄수", "지각", "늦으면", "불참", "못 가요", "중간 합류", "모임에 중간부터 합류해도 되나요", "사전 연락", "임의 참여"],
           blocks: [
-            { type: "flow", keywords: ["신청", "명단", "시간 엄수", "장소"], steps: [
-              { ic: "check", title: "확정되면 누르기", text: "누르지 않으면 참석 명단에 들어가지 않습니다." },
+            { type: "flow", keywords: ["신청", "명단", "시간 엄수", "시간 약속", "장소"], steps: [
+              { ic: "check", title: "참여가 확정되면 누르기", text: "누르지 않으면 참석 명단에 들어가지 않습니다." },
               { ic: "clock", title: "가기 전 다시 확인", text: "시간과 장소" },
-              { ic: "users", title: "현장에서", text: "모임장(벙주)이 안내한 시간과 방식에 맞추고, 공지한 시간을 지킵니다." } ] },
+              { ic: "users", title: "현장에서", text: "모임장(벙주)이 공지한 시간을 지키고, 안내한 방식에 맞춥니다." } ] },
             { type: "routes", anchor: "rule-join", host: true, ic: "crown", title: "달라지면 모임장에게", keywords: ["지각", "늦으면", "불참", "못 가요", "중간 합류", "사전 연락", "변경"], rows: [
               { s: "늦을 때", w: "바로" },
               { s: "못 가게 되거나 참여가 바뀔 때", w: "바로" },
@@ -556,7 +560,7 @@
           ] },
         { id: "cat-settle", title: "모임 비용 정산", q: "정산은 어떻게?", k: "1/N 원칙", img: "settle-spot",
           key: "**1/N**이 원칙입니다. 상황에 따라 모임장 판단으로 예외를 둘 수 있습니다.",
-          keywords: ["정산", "1/N", "엔빵", "벙비", "모임 비용", "영수증", "결제 내역", "계좌", "입금", "입금 완료", "입금 확인 링크", "댓글", "정산기", "정산 금액이 이상합니다", "카카오톡 공유", "카카오톡으로 보내기", "정산 결과는 채팅방에 어떻게 보내나요"],
+          keywords: ["정산", "1/N", "엔빵", "벙비", "모임 비용", "영수증", "결제 내역", "계좌", "입금", "입금 완료", "입금 확인 링크", "댓글", "정산기", "정산 금액이 이상합니다", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "정산 결과는 채팅방에 어떻게 보내나요"],
           blocks: [
             { type: "lanes", keywords: ["영수증", "결제 내역", "계좌", "입금", "입금 완료", "댓글", "정산 금액이 이상합니다"], lanes: [
               { title: "모임장이 할 일", ic: "crown", img: "calc-rounds", steps: [
@@ -568,7 +572,7 @@
                 { title: "신속히 입금" },
                 { title: "입금 확인 링크에서 내 이름의 **입금 완료** 누르기" } ] } ] },
             { type: "tool", anchor: "rule-calc", ic: "send", title: "모임 정산 페이지", href: "calculator.html", label: "모임 정산 열기",
-              keywords: ["정산기", "카카오톡 공유", "카카오톡으로 보내기", "링크 복사", "정산 결과"],
+              keywords: ["정산기", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "링크 복사", "정산 결과"],
               text: "차수별 1/N 금액과 입금 확인 링크를 만들고, **카카오톡으로 보내기**를 누르면 카카오톡 공유 창이 열립니다.",
               sub: "공유 창이 열리지 않는 브라우저에서는 링크가 복사되거나 직접 복사할 창이 뜨니, 채팅창에 붙여넣습니다." }
           ] },
@@ -590,7 +594,7 @@
           ] },
         { id: "cat-manner", title: "연락과 대화", q: "운영진 연락은?", k: "1:1 대화", img: "rules-manners",
           key: "운영진에게는 오픈채팅에서 운영진 닉네임을 눌러 **1:1 대화**로 연락합니다.",
-          keywords: ["운영진", "연락", "운영진은 어떻게 연락하나요", "1:1", "오픈채팅", "매너", "불편", "저격", "중재", "한동안 모임에 못 나갑니다", "장기 미참여", "사정", "규칙에 없는 상황", "규칙에 없는 상황이 생기면 어떻게 되나요", "제재", "메시지 삭제", "메시지를 삭제해도 되나요", "가리기"],
+          keywords: ["운영진", "연락", "운영진은 어떻게 연락하나요", "1:1", "오픈채팅", "매너", "배려", "불편", "저격", "중재", "한동안 모임에 못 나갑니다", "장기 미참여", "사정", "규칙에 없는 상황", "규칙에 없는 상황이 생기면 어떻게 되나요", "제재", "메시지 삭제", "메시지를 삭제해도 되나요", "가리기"],
           blocks: [
             { type: "routes", anchor: "rule-ops", ic: "users", title: "이럴 때 알립니다",
               btn: { href: "https://open.kakao.com/o/geS7Tzy", label: "오픈채팅 열기" },
@@ -615,7 +619,7 @@
               { label: "비벙 관련", steps: [{ tag: "1차", text: "구두 경고" }, { tag: "2차", text: "운영진 면담", sub: "사유 확인" }, { tag: "3차", text: "강제퇴장", final: true }] } ] }
           ] },
         { id: "cat-faq", title: "사이트 사용", q: "사이트 쓰는 법", k: "앱처럼 쓰기 · 후기", img: "rules-faq",
-          keywords: ["사이트", "홈 화면", "설치", "앱", "바로가기", "오늘 뭐 먹지", "내 주변", "맛집", "후기 쓰기", "후기", "임시 저장", "쓰던 글이 사라졌어요"],
+          keywords: ["사이트", "자주 묻는 질문", "질문", "FAQ", "홈 화면", "설치", "앱", "바로가기", "오늘 뭐 먹지", "내 주변", "맛집", "후기 쓰기", "후기", "임시 저장", "쓰던 글이 사라졌어요"],
           blocks: [
             { type: "accordion", items: [
               { q: "사이트를 앱처럼 쓸 수 있나요?", body: [
@@ -698,7 +702,7 @@
           case "flow":
             return flowList(b.steps, b.steps.some(function (s) { return s.ic; }) ? "is-h" : "");
           case "routes":
-            return '<div class="rt' + (b.host ? " is-host" : "") + '"' + aid(b.anchor) + '><div class="rt-top"><p class="rt-h">' + icon(b.ic) + esc(b.title) + "</p>" +
+            return '<div class="rt' + (b.host ? " is-host" : "") + '"' + aid(b.anchor) + '><div class="rt-top"><h3 class="rt-h">' + icon(b.ic) + esc(b.title) + "</h3>" +
               (b.btn ? '<a class="btn btn-secondary is-sm" href="' + esc(b.btn.href) + '" target="_blank" rel="noopener noreferrer">' + esc(b.btn.label) + "</a>" : "") + "</div>" +
               '<ul class="rt-list">' + b.rows.map(function (r) {
                 return "<li" + aid(r.anchor) + '><span class="rt-s">' + esc(r.s) + "</span>" +
@@ -708,17 +712,17 @@
           case "lanes":
             return '<div class="lanes">' + b.lanes.map(function (l) {
               return '<div class="lane' + (l.warm ? " is-warm" : "") + '">' + (l.img ? pic(l.img, "lane-img", "80px", ".lane") : "") +
-                '<div><p class="lane-h">' + icon(l.ic) + esc(l.title) + "</p>" + flowList(l.steps) + "</div></div>";
+                '<div><h3 class="lane-h">' + icon(l.ic) + esc(l.title) + "</h3>" + flowList(l.steps) + "</div></div>";
             }).join("") + "</div>";
           case "tool":
-            return '<div class="tool"' + aid(b.anchor) + '><div class="tool-top"><p class="tool-h">' + icon(b.ic) + esc(b.title) + "</p>" +
+            return '<div class="tool"' + aid(b.anchor) + '><div class="tool-top"><h3 class="tool-h">' + icon(b.ic) + esc(b.title) + "</h3>" +
               '<a class="btn btn-primary is-sm" href="' + esc(b.href) + '">' + esc(b.label) + "</a></div>" +
               '<p class="tool-t">' + em(b.text) + "</p>" + (b.sub ? '<p class="tool-s">' + em(b.sub) + "</p>" : "") + "</div>";
           case "rulecards":
             return '<div class="rc"' + aid(b.anchor) + '><div class="rc-line"><span class="rc-b">원칙</span> <span>' + em(b.rule) + "</span></div>" +
               '<div class="rc-line"><span class="rc-b is-ex">예외</span> <ul class="rc-chips">' + b.ex.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div></div>";
           case "path":
-            return "<div" + aid(b.anchor) + '><b class="list-title">' + esc(b.title) + '</b><ol class="tap-path">' + b.steps.map(function (s, i) {
+            return "<div" + aid(b.anchor) + '><h3 class="list-title">' + esc(b.title) + '</h3><ol class="tap-path">' + b.steps.map(function (s, i) {
                 return '<li><span class="tp' + (i === b.steps.length - 1 ? " is-final" : "") + '">' + esc(s) + "</span></li>";
               }).join("") + "</ol></div>" +
               (b.after ? '<p class="tp-after">' + icon("clock") + "<span>" + em(b.after) + "</span></p>" : "") +
@@ -727,7 +731,7 @@
             return '<div class="note' + (b.danger ? " is-danger" : "") + '"' + aid(b.anchor) + "><b>" + em(b.title) + "</b>" +
               "<p>" + em(b.text) + (b.to ? " " + jumpLink(b.to, b.toLabel) : "") + "</p></div>";
           case "contrast":
-            return "<div" + aid(b.anchor) + ">" + (b.title ? '<b class="list-title">' + esc(b.title) + "</b>" : "") +
+            return "<div" + aid(b.anchor) + ">" + (b.title ? '<h3 class="list-title">' + esc(b.title) + "</h3>" : "") +
               '<div class="contrast' + (b.pair ? " is-pair" : "") + '">' + b.items.map(function (it) {
                 return '<div class="ct ' + (it.bad ? "is-bad" : "is-good") + '">' + icon(it.bad ? "close" : "checkCircle") + "<div><b>" + esc(it.title) + "</b> " + em(it.text) + "</div></div>";
               }).join("") + "</div></div>";
@@ -737,7 +741,7 @@
                 g.items.map(function (i) { return "<li>" + icon("close") + esc(i) + "</li>"; }).join("") + "</ul></div>";
             }).join("") + "</div>";
           case "ladders":
-            return "<div" + aid(b.anchor) + '><b class="list-title">' + esc(b.title) + '</b><div class="lad2">' + b.tracks.map(function (t) {
+            return "<div" + aid(b.anchor) + '><h3 class="list-title">' + esc(b.title) + '</h3><div class="lad2">' + b.tracks.map(function (t) {
               var cells = t.steps.map(function (s) {
                 return "<li" + (s.final ? ' class="is-final"' : "") + '><span class="lt">' + esc(s.tag) + '</span> <span class="lb">' + esc(s.text) + "</span>" + (s.sub ? ' <span class="ls">' + esc(s.sub) + "</span>" : "") + "</li>";
               });
@@ -858,10 +862,15 @@
 
       /* ── 목차: PC에서는 항상 펼침, 폰·태블릿에서는 접힘 ── */
       var wide = window.matchMedia("(min-width: 960px)");
-      function syncToc() { if (wide.matches) tocBox.open = true; }
+      var tocSummary = tocBox.querySelector("summary");
+      /* 넓은 화면에서는 목차가 늘 펼쳐져 있어 '목차' 머리는 누를 수 없는 버튼 — 탭 순서에서 뺀다 */
+      function syncToc() {
+        if (wide.matches) { tocBox.open = true; tocSummary.setAttribute("tabindex", "-1"); tocSummary.setAttribute("aria-disabled", "true"); }
+        else { tocSummary.removeAttribute("tabindex"); tocSummary.removeAttribute("aria-disabled"); }
+      }
       syncToc();
-      tocBox.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
-      if (wide.addEventListener) wide.addEventListener("change", function () { tocBox.open = wide.matches; });
+      tocSummary.addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
+      if (wide.addEventListener) wide.addEventListener("change", function () { tocBox.open = wide.matches; syncToc(); });
       document.querySelector(".toc-inner").addEventListener("click", function (e) {
         var a = e.target.closest('a[href^="#"]');
         if (!a) return;
@@ -926,26 +935,49 @@
           else a.removeAttribute("aria-current");
         });
       }
-      setActive("summary");
-      if ("IntersectionObserver" in window) {
-        var spy = new IntersectionObserver(function (entries) {
-          var hit = entries.filter(function (en) { return en.isIntersecting; })
-            .sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; })[0];
-          if (hit) setActive(hit.target.id);
-        }, { rootMargin: "-20% 0px -60% 0px", threshold: 0.01 });
-        document.querySelectorAll("#summary, .guide-cat").forEach(function (s) { spy.observe(s); });
+      /* 지금 읽는 장 = 내비 바로 아래 기준선을 넘어선 마지막 장(위치로 매번 다시 계산 — 하위 자리로 이동하거나 방향을 바꿔도 맞게) */
+      var spyTargets = [summary].concat(Array.prototype.slice.call(document.querySelectorAll(".guide-cat")));
+      var navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-h")) || 60;
+      function spyNow() {
+        var line = navH + 40, cur = "summary";
+        spyTargets.forEach(function (sec) { if (!sec.hidden && sec.getBoundingClientRect().top <= line) cur = sec.id; });
+        setActive(cur);
       }
+      var spyTick = false;
+      window.addEventListener("scroll", function () {
+        if (spyTick) return;
+        spyTick = true;
+        requestAnimationFrame(function () { spyTick = false; spyNow(); });
+      }, { passive: true });
+      spyNow();
 
       /* ── 링크로 들어온 자리(#start, #cat-settle, #rule-dup 등)로 이동 — 렌더가 끝난 뒤라 자리가 정확하다.
          뒤로 가기(popstate)와 주소 바뀜(hashchange) 모두 같은 처리 ── */
       openFromHash();
-      /* 크롬은 페이지를 다 읽은 뒤 주소의 #자리가 포커스를 못 받는 요소(장·문답 틀)면 포커스를 비운다 — 다 읽은 뒤 한 번 더 맞춘다 */
-      window.addEventListener("load", function () {
-        setTimeout(function () {
-          var t = document.getElementById(hashId());
-          if (t && t.closest(".guide-doc") && (!document.activeElement || document.activeElement === document.body)) focusTarget(t);
-        }, 0);
-      });
+      /* 처음 들어올 때: 글꼴이 늦게 도착하면 위쪽 글이 다시 흘러 자리가 어긋나고, 크롬은 다 읽은 뒤 #자리가 포커스를 못 받는
+         요소(장·문답 틀)면 포커스를 비운다 — 글꼴·페이지를 다 읽은 뒤 사용자가 아직 움직이지 않았으면 자리와 포커스를 다시 맞춘다 */
+      var userMoved = false;
+      ["wheel", "touchstart", "keydown", "mousedown"].forEach(function (ev) { window.addEventListener(ev, function () { userMoved = true; }, { passive: true, once: true }); });
+      function settleHash() {
+        if (userMoved) return;
+        var t = document.getElementById(hashId());
+        if (!t || !t.closest(".guide-doc")) return;
+        t.scrollIntoView({ block: "start", behavior: "instant" });
+        if (!document.activeElement || document.activeElement === document.body) focusTarget(t);
+        spyNow();
+      }
+      window.addEventListener("load", function () { setTimeout(settleHash, 0); });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(settleHash, 0); });
+      /* 글꼴 조각(동적 서브셋)은 화면에 새 글자가 보일 때마다 더 받아 오므로, 처음 몇 초 동안 본문 높이가 바뀌면 다시 맞춘다 */
+      if (hashId() && "ResizeObserver" in window) {
+        var settleUntil = Date.now() + 6000, settleTimer = null;
+        var ro = new ResizeObserver(function () {
+          if (userMoved || Date.now() > settleUntil) { ro.disconnect(); return; }
+          clearTimeout(settleTimer);
+          settleTimer = setTimeout(settleHash, 60);
+        });
+        ro.observe(catsHost);
+      }
       window.addEventListener("hashchange", openFromHash);
       window.addEventListener("popstate", openFromHash);
     })();
