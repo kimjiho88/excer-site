@@ -27,7 +27,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=16" />
+  <link rel="stylesheet" href="assets/site.css?v=17" />
   <script defer src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
@@ -793,14 +793,21 @@
         return { pct: Math.round(((cur.avgPerDay - pv.avgPerDay) / pv.avgPerDay) * 100), basis: "avg", prevTotal: pv.total };
       }
 
-      /* 신규 멤버: firstDate 가 기간 내 (전체 시작일과 같은 멤버는 '원년 멤버'로 보고 제외) */
+      /* 신규 멤버(첫 메시지 기준 — 입장 기록이 없는 자료에서만 쓴다): firstDate 가 기간 안이고,
+         자료 첫 7일 안에 처음 말한 사람은 '원래 있던 멤버'로 본다(첫날 말하지 않았을 뿐인 사람을 새 멤버로 세지 않게) */
       function newMemberIdx(data, s) {
         var from = data.days[s.i0].d, to = data.days[s.i1].d;
+        var p = String(data.range.from || "").split("-");
+        var grace = p.length === 3 ? new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + 7)).toISOString().slice(0, 10) : "";
         var out = [];
         (data.members || []).forEach(function (m, i) {
-          if (m.firstDate && m.firstDate >= from && m.firstDate <= to && m.firstDate > data.range.from) out.push(i);
+          if (m.firstDate && m.firstDate >= from && m.firstDate <= to && m.firstDate >= grace) out.push(i);
         });
         return out;
+      }
+      /* 자료에 입장 기록이 한 번이라도 있는지 — 있으면 신규 멤버는 입장 기록으로 센다(발행 화면의 '새 멤버'와 같은 기준) */
+      function hasJoinData(data) {
+        return (data.days || []).some(function (d) { return (Number(d.joins) || 0) > 0; });
       }
 
       /* 복귀 멤버: 이번 기간 활동 > 0, 직전 기간 활동 0, firstDate 가 직전 기간 이전 */
@@ -1024,7 +1031,7 @@
         presetRange: presetRange, sliceIdx: sliceIdx,
         periodKPI: periodKPI, memberSums: memberSums,
         prevWindow: prevWindow, deltaPct: deltaPct,
-        newMemberIdx: newMemberIdx, returningIdx: returningIdx,
+        newMemberIdx: newMemberIdx, hasJoinData: hasJoinData, returningIdx: returningIdx,
         hourlyOf: hourlyOf, weekdayTotals: weekdayTotals, heatmapOf: heatmapOf,
         peakOf: peakOf, quietOf: quietOf,
         weeklySeries: weeklySeries, risers: risers, activeDaysOf: activeDaysOf,
@@ -1181,8 +1188,10 @@
           var used = Object.create(null);
           stats.members.forEach(function (m) {
             if (!m || m.name == null) return;
-            var head = String(m.name).trim().split(/[\s/·|,]+/)[0] || "?";
-            if (head.length > 12) head = head.slice(0, 12);
+            var rawName = String(m.name).trim(), SPLIT = /[\s\/·|,()（）\[\]{}<>【】_]+/;   // 파서(chat-parser.js headName)와 같은 규칙
+            var head = rawName.replace(/[\[(（{<【][^\])）}>】]*[\])）}>】]/g, " ").split(SPLIT).filter(Boolean)[0] || rawName.split(SPLIT).filter(Boolean)[0] || "?";
+            var cps = Array.from(head);
+            if (cps.length > 12) head = cps.slice(0, 12).join("");
             var out = head, n = 2;
             while (used[out]) { out = head + n; n += 1; }
             used[out] = 1;
@@ -1342,7 +1351,9 @@
           kpiTile("멤버당 평균", nf1(kpi.avgPerMember), "건", "활동 멤버 기준"),
           kpiTile("하루 평균", nf1(kpi.avgPerDay), "건", "메시지 없는 날 포함"),
           deltaTile,
-          kpiTile("신규 멤버", nf(newIdx.length), "명", kpi.joins ? "입장 " + nf(kpi.joins) + "회" : "첫 메시지 기준"),
+          RM.hasJoinData(st)
+            ? kpiTile("신규 멤버", nf(kpi.joins), "명", "입장 기록 기준")
+            : kpiTile("신규 멤버", nf(newIdx.length), "명", "첫 메시지 기준"),
           kpiTile("복귀 멤버", state.prev ? nf(retIdx.length) : "-", state.prev ? "명" : "", state.prev ? "직전 기간에 메시지가 없던 멤버" : "직전 기간 데이터가 없습니다."),
           kpiTile("가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건", "is-text"),
           kpiTile("가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건", "is-text"),
