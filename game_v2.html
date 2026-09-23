@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>좀비 헌팅 RPG · 논현 모임 v2</title>
+<title>좀비 헌팅 RPG | 논현 모임 v2</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="stage2/cloudsave.js?v=5"></script>
@@ -35,6 +35,7 @@ body{font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;color:var
 .trow{display:flex;align-items:center;gap:8px}
 .site-back{flex:none;color:#fff;opacity:.85;font-size:12px;font-weight:700;text-decoration:none;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.14)}
 .site-back:hover{opacity:1}
+.site-back::before{content:"";display:inline-block;width:5px;height:5px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 4px 0 2px;vertical-align:1px}
 .tlv{font-size:12px;font-weight:900;color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--accent3));
   padding:4px 10px;border-radius:8px;letter-spacing:.5px;
@@ -392,7 +393,7 @@ button.mini.risk{background:rgba(255,93,108,.15);color:#ff9bab;border:1px solid 
 <div class="app">
   <div class="topbar">
     <div class="trow">
-      <a class="site-back" href="games.html" aria-label="게임 목록으로 돌아가기">‹ 게임</a>
+      <a class="site-back" href="games.html" aria-label="게임 목록으로 돌아가기">게임</a>
       <span class="tlv">Lv.<span id="tLv">1</span></span>
       <span id="netDot" class="tnet" title="오프라인(봇 랭킹)"></span>
       <span class="tpow" id="tPowBox">⚔️ <span id="tPow">0</span></span>
@@ -535,9 +536,9 @@ const ICO={
 };
 const SKILLS=[
  {id:"atk",n:"전투 숙련",d:"전투력 +6%/Lv",ic:"⚔️"},
- {id:"luck",n:"행운",d:"전리품 등급↑ · 치명타 +0.5%/Lv",ic:"🍀"},
- {id:"wealth",n:"수색",d:"골드·강화석 +8%/Lv",ic:"💰"},
- {id:"haste",n:"신속",d:"행동력 회복·공속↑/Lv",ic:"🌀"},
+ {id:"luck",n:"행운",d:"전리품 등급↑, 치명타 +0.5%/Lv",ic:"🍀"},
+ {id:"wealth",n:"수색",d:"골드, 강화석 +8%/Lv",ic:"💰"},
+ {id:"haste",n:"신속",d:"행동력 회복, 공속↑/Lv",ic:"🌀"},
  {id:"collect",n:"수집가",d:"도감 보너스 +25%/Lv",ic:"📖"},
 ];
 const MAXE=30,PULL1=3,PULL10=27,REGEN_MS=80000,PITY=80,ENH_MAX=15,SKILL_MAX=30,KEY="nh_zh_v4";
@@ -604,9 +605,9 @@ function checkAuthError(){
   var here=location.href.split("#")[0].split("?")[0];
   var hint="";
   if(/redirect|allow|not.*valid|invalid.*request/i.test(desc))
-   hint="\n\nSupabase → Authentication → URL Configuration → Redirect URLs 에 아래 주소를 등록하세요:\n"+here;
+   hint="\n\nSupabase > Authentication > URL Configuration > Redirect URLs 에 아래 주소를 등록하세요:\n"+here;
   else if(/provider|kakao|unsupported/i.test(desc))
-   hint="\n\nSupabase → Authentication → Providers → Kakao 활성화 및 키(REST API 키/Client Secret) 확인이 필요합니다.";
+   hint="\n\nSupabase > Authentication > Providers > Kakao 활성화 및 키(REST API 키/Client Secret) 확인이 필요합니다.";
   if(typeof console!=="undefined")console.error("[OAuth 오류]",err,desc);
   setTimeout(function(){try{alert("카카오 로그인 실패\n\n"+desc+hint);}catch(e){}},250);
   try{history.replaceState(null,"",location.pathname);}catch(e){}
@@ -704,7 +705,7 @@ function liveBoard(metric){
  list.sort((a,b)=>b.val-a.val||b.pow-a.pow);return list;}
 function setBanner(on){const e=$("#netDot");if(e){e.style.background=on?"#3ecf8e":"#6b6477";e.style.boxShadow=on?"0 0 6px rgba(62,207,142,.6)":"none";e.title=on?"실시간 랭킹 연결됨":"오프라인(봇 랭킹)";}}
 function promptNick(){const ov=$("#ov-modal");if(!ov)return;
- ov.innerHTML='<div class="mcard"><div class="tt">랭킹 닉네임 설정</div><p class="muted small">단톡 형식 추천 · 닉/지역/성별/년 (예: 철수/논현/남/92)</p>'+
+ ov.innerHTML='<div class="mcard"><div class="tt">랭킹 닉네임 설정</div><p class="muted small">단톡 형식 추천: 닉/지역/성별/년 (예: 철수/논현/남/92)</p>'+
   '<input id="nkIn" maxlength="24" placeholder="닉/지역/성별/년" autocomplete="off" style="width:100%;margin:14px 0;padding:13px;border-radius:11px;border:1px solid var(--line);background:rgba(0,0,0,.32);color:#fff;font:700 15px Pretendard,sans-serif;-webkit-user-select:text;user-select:text"/>'+
   '<button class="rq" id="nkOk" style="width:100%">랭킹 참가</button></div>';
  ov.classList.add("show");
@@ -714,8 +715,8 @@ function promptNick(){const ov=$("#ov-modal");if(!ov)return;
 // 카카오 로그인/연결: 진행도를 카카오 신원에 영구 보관(기기 변경에도 복원).
 async function kakaoLogin(){
  if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다. 잠시 후 다시 시도해 주세요.");return;}
- toast("카카오 로그인 중…");
- if(typeof console!=="undefined")console.info("[카카오] redirectTo =",location.href.split("#")[0].split("?")[0]," · 이 주소가 Supabase Redirect URLs에 등록돼 있어야 합니다.");
+ toast("카카오 로그인 중");
+ if(typeof console!=="undefined")console.info("[카카오] redirectTo =",location.href.split("#")[0].split("?")[0],". 이 주소가 Supabase Redirect URLs에 등록돼 있어야 합니다.");
  try{
   try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
   // signInWithOAuth 경로는 scopes(profile_nickname)를 확실히 따름 → 카카오에 닉네임만 요청
@@ -745,11 +746,11 @@ async function googleLogin(){
  if(typeof CloudSave==="undefined"||!NET.cloudReady){toast("로그인 준비 중입니다. 잠시 후 다시 시도해 주세요.");return;}
  // 인앱 브라우저면 구글 OAuth가 막히므로 외부 브라우저로 유도
  if(isInAppBrowser()){
-  toast("구글 로그인은 Chrome/Safari에서만 돼요. 외부 브라우저로 엽니다…");
-  if(!openInExternalBrowser())alert("카카오톡 등 인앱 브라우저에서는 구글 로그인이 차단됩니다.\n\n오른쪽 아래 ⋮ 메뉴 → '다른 브라우저로 열기'(Chrome/Safari)로 연 뒤 다시 시도해 주세요.");
+  toast("구글 로그인은 Chrome/Safari에서만 돼요. 외부 브라우저로 엽니다");
+  if(!openInExternalBrowser())alert("카카오톡 등 인앱 브라우저에서는 구글 로그인이 차단됩니다.\n\n오른쪽 아래 점 세 개 메뉴에서 '다른 브라우저로 열기'(Chrome/Safari)를 눌러 연 뒤 다시 시도해 주세요.");
   return;
  }
- toast("구글 로그인 중…");
+ toast("구글 로그인 중");
  try{
   try{await CloudSave.saveCloud(S);}catch(e){} // 이전 전 현재 진행도 클라우드 확정
   await CloudSave.signInWithGoogle();           // 구글 동의 화면으로 리다이렉트
@@ -878,18 +879,18 @@ function enhance(id,fromEquip){
    it.plus=Math.max(0,it.plus-1);
    SFX.fail();
    save();updateTop();renderTab();
-   toast("💔 강화 실패… "+NAMES[it.type]+" +"+(it.plus)+"으로 강등됐어요");
+   toast("💔 강화 실패, "+NAMES[it.type]+" +"+(it.plus)+"으로 강등됐어요");
  }else{
    SFX.fail();
    save();updateTop();renderTab();
-   toast("💔 강화 실패… "+NAMES[it.type]+" +"+it.plus+" 유지 (재화 소모)");
+   toast("💔 강화 실패, "+NAMES[it.type]+" +"+it.plus+" 유지 (재화 소모)");
  }
 }
 function salvageValue(it){return Math.round((it.rarity+1)*(2+it.plus)*1.5*(1+S.skills.wealth*0.08));}
 function doSalvage(it){S.stones+=salvageValue(it);}
 function salvage(id){const i=S.inv.findIndex(x=>x.id===id);if(i<0)return;const it=S.inv[i];doSalvage(it);S.inv.splice(i,1);save();updateTop();renderTab();}
 function salvageAll(maxR){let n=0,g=0;S.inv=S.inv.filter(it=>{if(it.rarity<=maxR){g+=salvageValue(it);n++;return false;}return true;});S.stones+=g;
- if(n)toast(n+"개 분해 · 강화석 +"+g);else toast("분해할 장비 없음");save();updateTop();renderTab();}
+ if(n)toast(n+"개 분해, 강화석 +"+g);else toast("분해할 장비 없음");save();updateTop();renderTab();}
 
 /* ---------- 스킬 ---------- */
 function skillCost(lv){return{pt:1,gold:Math.round(140*Math.pow(1.42,lv))};}
@@ -940,14 +941,14 @@ function achClaimable(){if(!S.ach)S.ach={};return ACHS.filter(a=>!S.ach[a.id]&&a
 function claimAch(id){if(!S.ach)S.ach={};const a=ACHS.find(x=>x.id===id);if(!a)return;
  if(S.ach[id]){toast("이미 수령");return;}if(a.get()<a.goal){toast("아직 달성 전");return;}
  S.ach[id]=1;applyReward(a.rw);SFX.coin();flashFx=Math.max(flashFx||0,120);
- save();updateTop();renderGrow();toast("🏅 업적 달성 · "+a.n+" (💎"+(a.rw.gems||0)+")");}
+ save();updateTop();renderGrow();toast("🏅 업적 달성: "+a.n+" (💎"+(a.rw.gems||0)+")");}
 
 /* ---------- 도감 완성 보상 ---------- */
 const DEX_MILE=[{at:25,gems:20},{at:50,gems:40},{at:75,gems:70},{at:100,gems:120}];
 function dexRwClaimable(){if(!S.dexRw)S.dexRw={};const c=dexCount();return DEX_MILE.filter(m=>!S.dexRw[m.at]&&c>=m.at).length;}
 function claimDexRw(at){if(!S.dexRw)S.dexRw={};const m=DEX_MILE.find(x=>x.at===at);if(!m)return;
  if(S.dexRw[at]){toast("이미 수령");return;}if(dexCount()<at){toast("아직 미달성");return;}
- S.dexRw[at]=1;S.gems+=m.gems;SFX.coin();save();updateTop();renderGrow();toast("📖 도감 "+at+"종 달성 · 💎"+m.gems);}
+ S.dexRw[at]=1;S.gems+=m.gems;SFX.coin();save();updateTop();renderGrow();toast("📖 도감 "+at+"종 달성, 💎"+m.gems);}
 
 /* ---------- 주간 이벤트 사냥터 ---------- */
 // ISO 주차 시드로 매주 회전. 보너스 종류가 주마다 달라짐.
@@ -955,15 +956,15 @@ function weekKey(){const d=new Date();const oneJan=new Date(d.getFullYear(),0,1)
  const wk=Math.ceil((((d-oneJan)/86400000)+oneJan.getDay()+1)/7);return d.getFullYear()+"-W"+wk;}
 const EVENTS=[
  {n:"황금 러시",d:"골드 획득 2배",ic:"🪙",gold:2,drop:1,exp:1},
- {n:"전리품 축제",d:"드랍률 2배 · 경험치 1.5배",ic:"🎁",gold:1,drop:2,exp:1.5},
- {n:"광란의 사냥",d:"경험치 2배 · 골드 1.5배",ic:"⚔️",gold:1.5,drop:1,exp:2},
+ {n:"전리품 축제",d:"드랍률 2배, 경험치 1.5배",ic:"🎁",gold:1,drop:2,exp:1.5},
+ {n:"광란의 사냥",d:"경험치 2배, 골드 1.5배",ic:"⚔️",gold:1.5,drop:1,exp:2},
 ];
 function curEvent(){let h=0;const k=weekKey();for(let i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))>>>0;return EVENTS[h%EVENTS.length];}
 function evGoldMul(){return curEvent().gold;}
 function evDropMul(){return curEvent().drop;}
 function evExpMul(){return curEvent().exp;}
 function claimEventBonus(){if(S.evClaim===weekKey()){toast("이번 주 이벤트 보상은 이미 받았어요");return;}
- S.evClaim=weekKey();S.gems+=30;SFX.coin();save();updateTop();renderTab();toast("🎉 주간 이벤트 참여 보상 · 💎30");}
+ S.evClaim=weekKey();S.gems+=30;SFX.coin();save();updateTop();renderTab();toast("🎉 주간 이벤트 참여 보상: 💎30");}
 
 /* ---------- 출석 / 보급상자 (접속 보상) ---------- */
 function applyReward(r){if(r.gold)S.gold+=r.gold;if(r.stones)S.stones+=r.stones;if(r.gems)S.gems+=r.gems;}
@@ -977,19 +978,19 @@ function claimAttend(){rollAttend();if(S.attend.claimed){toast("오늘 출석 �
 const CHEST_MS=2*3600*1000;
 function chestReady(){return Date.now()>=(S.chestAt||0);}
 function chestLeft(){const ms=(S.chestAt||0)-Date.now();if(ms<=0)return"";const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return(h>0?h+"시간 ":"")+m+"분";}
-function claimChest(){if(!chestReady()){toast("보급 상자 충전 중 · "+chestLeft());return;}
+function claimChest(){if(!chestReady()){toast("보급 상자 충전 중, "+chestLeft()+" 남음");return;}
  const x=Math.random();let r;if(x<0.5)r={stones:20+Math.round(S.region*5)};else if(x<0.85)r={gold:500+S.region*120};else r={gems:10};
  applyReward(r);S.chestAt=Date.now()+CHEST_MS;save();updateTop();renderTab();
- toast("보급 상자 · "+(r.gems?"젬 "+r.gems:r.stones?"강화석 "+r.stones:"골드 "+fmt(r.gold)));}
+ toast("보급 상자: "+(r.gems?"젬 "+r.gems:r.stones?"강화석 "+r.stones:"골드 "+fmt(r.gold)));}
 
 /* ---------- 환생 ---------- */
 // 환생 회차별 잠금 해제 콘텐츠
 const REBIRTH_PERKS=[
- {reb:1,title:"각성",desc:"영구 전투력 +22% · 방치 9시간 · 시작 자원 보너스"},
- {reb:2,title:"강인",desc:"골드 획득 +16% · 방치 10시간 · 강화석 보너스"},
- {reb:3,title:"정예",desc:"엘리트 드랍(+20%)·2중 드랍 15% · 천장 70회로 단축 · 방치 11시간"},
- {reb:4,title:"전설",desc:"신화 확률 ×10(0.0001%) · 방치 12시간"},
- {reb:5,title:"불사",desc:"최강화 장비 이전 가능(매 환생 1개 보존) · 방치 13시간"},
+ {reb:1,title:"각성",desc:"영구 전투력 +22%, 방치 9시간, 시작 자원 보너스"},
+ {reb:2,title:"강인",desc:"골드 획득 +16%, 방치 10시간, 강화석 보너스"},
+ {reb:3,title:"정예",desc:"엘리트 드랍(+20%), 2중 드랍 15%, 천장 70회로 단축, 방치 11시간"},
+ {reb:4,title:"전설",desc:"신화 확률 ×10(0.0001%), 방치 12시간"},
+ {reb:5,title:"불사",desc:"최강화 장비 이전 가능(매 환생 1개 보존), 방치 13시간"},
 ];
 function rebirthPerkOf(n){return REBIRTH_PERKS.find(p=>p.reb===n)||null;}
 // 환생 회차별 특수 효과 계산
@@ -1002,9 +1003,9 @@ function canRebirth(){return S.lv>=rebirthReqLv();}
 function rebirth(){if(!canRebirth()){toast("레벨 "+rebirthReqLv()+" 이상에서 환생 가능");return;}
  const nextReb=S.rebirth+1;
  const perk=rebirthPerkOf(nextReb);
- const msg="환생하면 레벨·장비·강화석이 초기화됩니다.\n"
+ const msg="환생하면 레벨, 장비, 강화석이 초기화됩니다.\n"
   +(perk?"\n["+nextReb+"환생 잠금해제]\n"+perk.desc+"\n\n":"\n")
-  +"도감·환생횟수·최고기록은 영구 유지됩니다.\n환생하시겠습니까?";
+  +"도감, 환생횟수, 최고기록은 영구 유지됩니다.\n환생하시겠습니까?";
  if(!confirm(msg))return;
  // 5환생+: 최강화 장비 1개 이전
  let savedItem=null;
@@ -1023,7 +1024,7 @@ function rebirth(){if(!canRebirth()){toast("레벨 "+rebirthReqLv()+" 이상에�
  S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);
  SFX.rebirth();flashFx=Math.max(flashFx||0,260);
  const msg2=perk?("환생 "+keepReb+"회 ["+perk.title+"] 달성!\n"+perk.desc):"환생 "+keepReb+"회!";
- toast(msg2+" ✦ 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");
+ toast(msg2+" ✦ 전투력 +"+Math.round((rebirthMul()-1)*100)+"%, 골드 +"+rebGoldPct()+"%");
 }
 
 /* ===================================================================
@@ -1073,13 +1074,13 @@ function arenaOpponents(){
 function arenaCdLeft(){const ms=(S.arenaCdUntil||0)-Date.now();if(ms<=0)return"";const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return(h>0?h+"시간 ":"")+m+"분";}
 function arenaFight(opp){
  const now=Date.now();
- if((S.arenaCdUntil||0)>now){toast("아레나 재충전 중 · "+arenaCdLeft()+" 남음");return null;}
+ if((S.arenaCdUntil||0)>now){toast("아레나 재충전 중, "+arenaCdLeft()+" 남음");return null;}
  S.arenaCdUntil=now+3*3600*1000;
  const my=power()*(0.85+Math.random()*0.4);const ot=opp.pow*(0.85+Math.random()*0.4);
  const win=my>=ot;
  if(win){const gain=12+Math.round(Math.random()*10);S.arenaPts+=gain;S.daily.won++;S.gems+=4;
    toast("승리! 아레나 +"+gain+"점, 젬 +4");}
- else{S.arenaPts=Math.max(0,S.arenaPts-8);toast("패배… 전투력을 더 키워보세요");}
+ else{S.arenaPts=Math.max(0,S.arenaPts-8);toast("패배. 전투력을 더 키워보세요");}
  if(NET.ready)netSubmit(true);
  save();updateTop();renderTab();return win;}
 
@@ -1224,7 +1225,7 @@ function kill(z){zombies=zombies.filter(x=>x!==z);
  const drop=clamp(((z.boss?0.9:(z.elite?0.6:0.10))+S.skills.luck*0.01+eliteBonus)*evDropMul(),0,1);
  if(z.elite)toast("⭐ 엘리트 처치! 보상 대폭 증가");
  if(Math.random()<drop){const it=makeItem();const r=gainItem(it,true);
-   if(!r.salvaged)toast("전리품 · "+RAR[it.rarity].k+" "+NAMES[it.type]);}
+   if(!r.salvaged)toast("전리품: "+RAR[it.rarity].k+" "+NAMES[it.type]);}
  // 3환생+ 보너스 드랍 (15% 추가)
  if(S.rebirth>=3&&Math.random()<0.15){const it2=makeItem();gainItem(it2,true);}
  // 스테이지 진행
@@ -1335,7 +1336,7 @@ function renderHunt(){
  const cr=(S.region-1)*10+S.stage;
  const claimable=DAILY.filter(m=>!S.daily.claimed[m.id]&&m.get()>=m.goal).length;
  setHTML("#huntInfo",
-  '<div class="stagebar"><div><b>지역 '+S.region+'</b> · 스테이지 '+S.stage+(S.stage>=10?' <span class="bossw">⚠ 보스 출현</span>':'')+'</div>'+
+  '<div class="stagebar"><div><b>지역 '+S.region+'</b>, 스테이지 '+S.stage+(S.stage>=10?' <span class="bossw">⚠ 보스 출현</span>':'')+'</div>'+
   '<div class="muted">최고 통합 '+((S.bestRegion-1)*10+S.bestStage)+'단계</div></div>'+
   '<div class="muted small" style="margin:-2px 0 7px 1px">📍 '+regionLabel()+'</div>'+
   '<div class="stageprog"><i style="width:'+((S.stageKC||0)/STAGE_KILLS*100)+'%"></i></div>');
@@ -1353,7 +1354,7 @@ function renderHuntExtra(){
  // 주간 이벤트 배너
  const ev=curEvent();const evGot=S.evClaim===weekKey();
  let at='<div class="card evcard"><div class="evtop"><div class="evic">'+ev.ic+'</div>'+
-   '<div class="evb"><div class="evn">이번 주 이벤트 · '+ev.n+'</div><div class="muted small">'+ev.d+' · 사냥터 전역 적용 중</div></div>'+
+   '<div class="evb"><div class="evn">이번 주 이벤트: '+ev.n+'</div><div class="muted small">'+ev.d+' (사냥터 전역 적용 중)</div></div>'+
    '<button class="mini '+(evGot?'gray':'gold')+'" '+(evGot?'disabled':'')+' id="evBtn">'+(evGot?'수령✓':'💎30')+'</button></div></div>';
  at+='<div class="card"><div class="ttl2">📅 출석 체크 <span class="muted">'+S.attend.streak+'일 연속</span></div><div class="attend">';
  for(let i=0;i<7;i++){const r=ATTEND_RW[i];const ic=r.gems?'💎'+r.gems:r.stones?'💠'+r.stones:'🪙'+r.gold;
@@ -1361,14 +1362,14 @@ function renderHuntExtra(){
    at+='<div class="acell'+(done?' done':'')+(tdy?' today':'')+'" '+(tdy?'data-att="1"':'')+'><div class="ad">'+(i+1)+'일</div><div class="ar">'+ic+'</div>'+(done?'<div class="ack">✓</div>':'')+'</div>';}
  at+='</div>'+(!S.attend.claimed?'<div class="muted small" style="text-align:center;margin-top:8px">오늘의 출석 보상을 받아보세요!</div>':'')+'</div>';
  const ready=chestReady();
- at+='<div class="card chestcard"><div><div style="font-size:14px;font-weight:800">📦 무료 보급 상자</div><div class="muted small">'+(ready?'지금 받을 수 있어요!':'다음까지 '+chestLeft())+' · 2시간마다 충전</div></div>'+
+ at+='<div class="card chestcard"><div><div style="font-size:14px;font-weight:800">📦 무료 보급 상자</div><div class="muted small">'+(ready?'지금 받을 수 있어요!':'다음까지 '+chestLeft())+' (2시간마다 충전)</div></div>'+
    '<button class="mini '+(ready?'gold':'gray')+'" '+(ready?'':'disabled')+' id="chestBtn">'+(ready?'열기':'대기')+'</button></div>';
  const bp=board("pow");const myr=bp.findIndex(x=>x.me)+1;
  at+='<div class="card"><div class="ttl2">🏆 실시간 순위 <span class="pow2">내 순위 #'+myr+'</span></div>';
  bp.slice(0,3).forEach((e,i)=>{at+='<div class="rmini"><span class="rmno">'+["①","②","③"][i]+'</span><span class="rmnm">'+e.handle+(e.op?' 👑':'')+rebTag(e.rebirth)+(e.me?' (나)':'')+'</span><span class="rmv">'+fmt(e.val)+'</span></div>';});
  if(myr>3){at+='<div class="rmini me"><span class="rmno">#'+myr+'</span><span class="rmnm">나</span><span class="rmv">'+fmt(bp[myr-1].val)+'</span></div>';
    const up=bp[myr-2];if(up)at+='<div class="muted small" style="text-align:center;margin-top:7px">⬆ <b style="color:#cbb8e0">'+up.handle+'</b>님을 넘으려면 +'+fmt(up.val-bp[myr-1].val)+' 전투력</div>';}
- at+='<button class="mini gray" id="goRank" style="width:100%;margin-top:11px">전체 랭킹 보기 →</button></div>';
+ at+='<button class="mini gray" id="goRank" style="width:100%;margin-top:11px">전체 랭킹 보기</button></div>';
  setHTML("#huntExtra",at);
  const ac=$('#huntExtra [data-att]');if(ac)ac.onclick=claimAttend;
  const cb=$("#chestBtn");if(cb)cb.onclick=claimChest;
@@ -1378,7 +1379,7 @@ function renderHuntExtra(){
 function renderGacha(){
  const pityNow=rebirthPity();
  const mythRate=(0.00001*mythicMul()).toFixed(5);
- let rates=RAR.map(r=>'<span style="color:'+r.c+'">'+r.k+' '+r.w+'%</span>').join(" · ");
+ let rates=RAR.map(r=>'<span style="color:'+r.c+'">'+r.k+' '+r.w+'%</span>').join(", ");
  const pityInfo=S.rebirth>=3?'<span style="color:#ffd96b"> (✦3환생: 70회)</span>':'';
  const pityPct=Math.round(Math.min(1,S.pity/pityNow)*100);
  setHTML("#p-gacha",
@@ -1388,7 +1389,7 @@ function renderGacha(){
   '<div class="rates">'+rates+'</div>'+
   '<div class="gbtns"><button class="bigbtn" id="g1">단일 뽑기 <span class="cost">⚡'+PULL1+'</span></button>'+
   '<button class="bigbtn gold" id="g10">10연차 <span class="cost">⚡'+PULL10+'</span></button></div>'+
-  '<div class="muted small" style="margin-top:10px">전설 0.03% · 신화 '+mythRate+'%'+(S.rebirth>=4?' (✦4환생: ×10 부스트 적용)':' — 4환생 달성 시 신화 확률 10배')+'<br/>10연차는 행동력 또는 💎젬 20으로 가능</div></div>');
+  '<div class="muted small" style="margin-top:10px">전설 0.03%, 신화 '+mythRate+'%'+(S.rebirth>=4?' (✦4환생: ×10 부스트 적용)':' (4환생 달성 시 신화 확률 10배)')+'<br/>10연차는 행동력 또는 💎젬 20으로 가능</div></div>');
  const g1=$("#g1");if(g1)g1.onclick=()=>{const it=pull();if(it)reveal([it]);};
  const g10=$("#g10");if(g10)g10.onclick=()=>{const out=pull10();if(out)reveal(out);};
 }
@@ -1399,7 +1400,7 @@ function renderEquip(){
  s+='<div class="equiptop"><div class="portrait"><canvas id="pcv" width="64" height="64"></canvas></div><div class="slots">';
  slots.forEach(sl=>{const it=S.equip[sl];const c=it?RAR[it.rarity].c:"#4a4258";
   s+='<div class="slot"><div class="si">'+ICO[sl]+'</div><div class="sl-b"><div class="sn">'+(it?NAMES[it.type]+(it.plus?' <b style="color:#ffd96b">+'+it.plus+'</b>':''):'<span class="muted">'+SLOTNAME[sl]+' 없음</span>')+'</div>'+
-  (it?'<div class="ss" style="color:'+c+'">'+RAR[it.rarity].k+' · 전투력 '+itemPow(it)+'</div>':'')+'</div>'+
+  (it?'<div class="ss" style="color:'+c+'">'+RAR[it.rarity].k+', 전투력 '+itemPow(it)+'</div>':'')+'</div>'+
   (it&&it.plus<ENH_MAX?(()=>{const ch=enhSuccessChance(it.plus);const warn=it.plus>=11?' risk':it.plus>=6?' warn':'';return'<button class="mini'+warn+'" data-enh="'+sl+'" title="성공률 '+Math.round(ch*100)+'%">'+(it.plus>=6?'⚠ ':'')+'강화 '+Math.round(ch*100)+'%</button>';})():'')+'</div>';});
  s+='</div></div></div>';
  // 보관함
@@ -1416,7 +1417,7 @@ function renderEquip(){
    const cur=S.equip[it.slot];const up=cur?itemPow(it)-itemPow(cur):itemPow(it);
    s+='<div class="iitem" style="--c:'+c+'"><div class="ii">'+ICO[it.slot]+'</div>'+
    '<div class="ib"><div class="inm">'+NAMES[it.type]+(it.plus?' +'+it.plus:'')+'</div>'+
-   '<div class="ir">'+RAR[it.rarity].k+' · 전투력 '+itemPow(it)+(up>0?' <span class="up">▲'+up+'</span>':(up<0?' <span class="dn">▼'+(-up)+'</span>':''))+'</div></div>'+
+   '<div class="ir">'+RAR[it.rarity].k+', 전투력 '+itemPow(it)+(up>0?' <span class="up">▲'+up+'</span>':(up<0?' <span class="dn">▼'+(-up)+'</span>':''))+'</div></div>'+
    '<div class="iacts"><button class="mini eq" data-eq="'+it.id+'">장착</button><button class="mini gray" data-sv="'+it.id+'">분해</button></div></div>';});
   s+='</div>';}
  s+='</div>';
@@ -1449,14 +1450,14 @@ function renderGrow(){
  ACHS.forEach(a=>{const cur=Math.min(a.get(),a.goal),done=cur>=a.goal,claimed=S.ach&&S.ach[a.id];
   s+='<div class="achrow'+(claimed?' claimed':'')+'"><div class="ab2"><div class="an2">'+a.n+(claimed?' ✓':'')+'</div>'+
    '<div class="mbar"><i style="width:'+(cur/a.goal*100)+'%"></i></div>'+
-   '<div class="muted small">'+a.d+' · '+fmt(cur)+'/'+fmt(a.goal)+' · 보상 💎'+(a.rw.gems||0)+'</div></div>'+
+   '<div class="muted small">'+a.d+', '+fmt(cur)+'/'+fmt(a.goal)+', 보상 💎'+(a.rw.gems||0)+'</div></div>'+
    '<button class="mini '+(claimed?'gray':done?'gold':'')+'" '+(claimed||!done?'disabled':'')+' data-ach="'+a.id+'">'+(claimed?'완료':done?'수령':'진행')+'</button></div>';});
  s+='</div>';
  // 스킬
  s+='<div class="card"><div class="ttl2">특성 <span class="muted">SP '+S.skillPts+'</span></div>';
  SKILLS.forEach(sk=>{const lv=S.skills[sk.id];const c=skillCost(lv);const max=lv>=SKILL_MAX;
   s+='<div class="skill"><div class="ski">'+sk.ic+'</div><div class="sk-b"><div class="sn">'+sk.n+' <b>Lv.'+lv+(max?'/'+SKILL_MAX+' MAX':'')+'</b></div><div class="muted small">'+sk.d+'</div></div>'+
-  (max?'<button class="mini gray" disabled>최대</button>':'<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP·'+fmt(c.gold)+'G)</button>')+'</div>';});
+  (max?'<button class="mini gray" disabled>최대</button>':'<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP, '+fmt(c.gold)+'G)</button>')+'</div>';});
  s+='</div>';
  // 환생
  const nextRebPerk=rebirthPerkOf(S.rebirth+1);
@@ -1464,13 +1465,13 @@ function renderGrow(){
   '<div class="rebperk"><div>⚔️ 영구 전투력 <b>+'+Math.round((rebirthMul()-1)*100)+'%</b></div><div>🪙 골드 획득 <b>+'+rebGoldPct()+'%</b></div>'+
   '<div>🧟 방치 사냥 <b>'+idleCapH()+'시간</b></div><div>✨ 환생 시 특성P <b>+'+(S.rebirth+3)+'</b></div></div>';
  // 현재 환생 달성 효과들
- if(S.rebirth>=3)s+='<div class="rebunlock active"><span>✅ 3환생</span> 엘리트 드랍(+20%)·천장 70회</div>';
- if(S.rebirth>=4)s+='<div class="rebunlock active"><span>✅ 4환생</span> 신화 확률 10배(0.001%)·아레나 보너스</div>';
+ if(S.rebirth>=3)s+='<div class="rebunlock active"><span>✅ 3환생</span> 엘리트 드랍(+20%), 천장 70회</div>';
+ if(S.rebirth>=4)s+='<div class="rebunlock active"><span>✅ 4환생</span> 신화 확률 10배(0.001%), 아레나 보너스</div>';
  if(S.rebirth>=5)s+='<div class="rebunlock active"><span>✅ 5환생</span> 최강화 장비 이전 가능</div>';
  // 다음 환생에서 얻을 것
- if(nextRebPerk)s+='<div class="rebunlock next"><span>🔒 '+S.rebirth+'→'+(S.rebirth+1)+'환생</span> '+nextRebPerk.desc+'</div>';
- s+='<p class="muted small" style="margin-top:10px">레벨·장비·강화는 초기화되지만 <b>도감·환생 보너스·칭호는 영구 유지</b>됩니다. 환생 보너스는 <b>초반엔 크고 누적될수록 완만</b>해져(감소수익), 오래 한 사람과 신규의 격차가 과하게 벌어지지 않습니다.</p>'+
-  '<button class="bigbtn '+(canRebirth()?'gold':'')+'" id="rb" '+(canRebirth()?'':'disabled')+'>환생하기 (Lv.'+rebirthReqLv()+' 필요 · 현재 Lv.'+S.lv+')</button></div>';
+ if(nextRebPerk)s+='<div class="rebunlock next"><span>🔒 다음 '+(S.rebirth+1)+'환생</span> '+nextRebPerk.desc+'</div>';
+ s+='<p class="muted small" style="margin-top:10px">레벨, 장비, 강화는 초기화되지만 <b>도감, 환생 보너스, 칭호는 영구 유지</b>됩니다. 환생 보너스는 <b>초반엔 크고 누적될수록 완만</b>해져(감소수익), 오래 한 사람과 신규의 격차가 과하게 벌어지지 않습니다.</p>'+
+  '<button class="bigbtn '+(canRebirth()?'gold':'')+'" id="rb" '+(canRebirth()?'':'disabled')+'>환생하기 (Lv.'+rebirthReqLv()+' 필요, 현재 Lv.'+S.lv+')</button></div>';
  setHTML("#p-grow",s);
  $$('#p-grow [data-sk]').forEach(b=>b.onclick=()=>learn(b.dataset.sk));
  $$('#p-grow [data-ach]').forEach(b=>b.onclick=()=>claimAch(b.dataset.ach));
@@ -1491,9 +1492,9 @@ function renderRank(){
   else s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:700">랭킹 닉 <b style="color:#fff">'+NET.nick+'</b><button class="mini gray" id="chgNick" style="margin-left:auto">변경</button></div>';
   // 카카오 로그인: 진행도 영구 보관(기기 변경 복원)
   if(NET.cloudReady){const cu=NET.cloud;
-   if(cu&&(cu.hasGoogle||cu.hasKakao))s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#bff0d6">✅ '+(cu.hasGoogle?'구글':'카카오')+' 연결됨'+(cu.nick?' · '+cu.nick:'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
-   else s+='<button class="bigbtn" id="googleLogin" style="background:#fff;color:#1f1f1f;border:1px solid #dadce0;margin-bottom:7px">🔵 구글로 로그인 · 진행도 영구 보관</button>'+
-    (isInAppBrowser()?'<div class="muted" style="font-size:11px;margin:-3px 0 8px;color:#f0c96b;line-height:1.5">⚠ 카카오톡 안에서 열었어요. 구글 로그인은 Chrome/Safari에서만 돼요 — 버튼을 누르면 외부 브라우저로 열려요.</div>':'')+
+   if(cu&&(cu.hasGoogle||cu.hasKakao))s+='<div style="display:flex;align-items:center;gap:8px;background:rgba(62,207,142,.12);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#bff0d6">✅ '+(cu.hasGoogle?'구글':'카카오')+' 연결됨'+(cu.nick?' ('+cu.nick+')':'')+'<button class="mini gray" id="csOut" style="margin-left:auto">로그아웃</button></div>';
+   else s+='<button class="bigbtn" id="googleLogin" style="background:#fff;color:#1f1f1f;border:1px solid #dadce0;margin-bottom:7px">🔵 구글로 로그인해 진행도 영구 보관</button>'+
+    (isInAppBrowser()?'<div class="muted" style="font-size:11px;margin:-3px 0 8px;color:#f0c96b;line-height:1.5">⚠ 카카오톡 안에서 열었어요. 구글 로그인은 Chrome/Safari에서만 돼요. 버튼을 누르면 외부 브라우저로 열려요.</div>':'')+
     '<button class="bigbtn alt" id="kakaoLogin" style="margin-bottom:6px;padding:11px;font-size:13px">💬 카카오로 로그인 <span style="opacity:.65;font-size:11px">(비즈 인증 후 사용)</span></button>'+
     '<details style="margin:0 0 12px;font-size:12px"><summary class="muted" style="cursor:pointer;list-style:none">로그인이 안 되나요?</summary>'+
     '<div class="muted" style="margin-top:7px;line-height:1.7;background:rgba(255,255,255,.04);border-radius:9px;padding:9px 11px">'+
@@ -1503,7 +1504,7 @@ function renderRank(){
  if(NET.banned)s+='<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.16);border-radius:9px;padding:10px 12px;margin-bottom:12px">⚠ 운영진에 의해 랭킹 집계에서 제외된 계정입니다.</div>';
  // 내 순위 강조
  const me0=list[myr-1];
- s+='<div class="myrank"><div>내 순위 <b>#'+myr+'</b> / '+list.length+(S.rebirth>0?' · <span style="color:#ffd96b">✦'+S.rebirth+'환생</span>':'')+'</div><div class="mv">'+valLab(me0.val)+'</div></div>';
+ s+='<div class="myrank"><div>내 순위 <b>#'+myr+'</b> / '+list.length+(S.rebirth>0?', <span style="color:#ffd96b">✦'+S.rebirth+'환생</span>':'')+'</div><div class="mv">'+valLab(me0.val)+'</div></div>';
  if(myr>1){const up=list[myr-2];const diff=up.val-me0.val;
   s+='<div class="chase">⬆ <b>'+up.handle+'</b> 님이 '+(metric==="pow"?fmt(diff)+' 전투력':valLab(up.val))+' 앞서 있어요'+(metric==="pow"&&diff>0?' (+'+fmt(diff)+')':'')+'</div>';}
  // 포디움 top3
@@ -1522,10 +1523,10 @@ function renderRank(){
  s+='</div>';
  // 아레나
  const ops=arenaOpponents();const onCd=(S.arenaCdUntil||0)>Date.now();
- s+='<div class="card"><div class="ttl2">아레나 <span class="muted">'+S.arenaPts+'점 · '+myRank("arena")+'위</span></div>'+
-  '<p class="muted small">3시간마다 1회 도전 · 비슷한 전투력 구성원에게 도전하세요.</p>'+
+ s+='<div class="card"><div class="ttl2">아레나 <span class="muted">'+S.arenaPts+'점, '+myRank("arena")+'위</span></div>'+
+  '<p class="muted small">3시간마다 1회 도전. 비슷한 전투력 구성원에게 도전하세요.</p>'+
   (onCd?'<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.14);border-radius:9px;padding:9px 12px;margin:2px 0 8px">⏳ 다음 도전까지 '+arenaCdLeft()+'</div>':'');
- ops.forEach(o=>{s+='<div class="arow"><div class="aav">'+o.handle.slice(0,1)+'</div><div class="ab"><div class="anm">'+o.handle+(o.op?' 👑':'')+'</div><div class="muted small">전투력 '+fmt(o.pow)+' · '+o.arena+'점</div></div>'+
+ ops.forEach(o=>{s+='<div class="arow"><div class="aav">'+o.handle.slice(0,1)+'</div><div class="ab"><div class="anm">'+o.handle+(o.op?' 👑':'')+'</div><div class="muted small">전투력 '+fmt(o.pow)+', '+o.arena+'점</div></div>'+
   '<button class="mini '+(onCd?'gray':power()>=o.pow?'':'risk')+'" '+(onCd?'disabled':'')+' data-ar="'+o.name+'">도전</button></div>';});
  s+='</div>';
  setHTML("#p-rank",s);
@@ -1567,7 +1568,7 @@ function openMissions(){rollDaily();const ov=$("#ov-modal");if(!ov)return;
  let s='<div class="mcard"><div class="tt">📋 일일 미션 <span class="muted small">매일 0시 초기화</span></div>';
  DAILY.forEach(m=>{const cur=Math.min(m.get(),m.goal);const done=cur>=m.goal;const claimed=S.daily.claimed[m.id];
   const rw=m.rw.gems?'💎'+m.rw.gems:m.rw.stones?'💠'+m.rw.stones:'🪙'+fmt(m.rw.gold);
-  s+='<div class="mrow"><div class="mb"><div class="mn2">'+m.n+'</div><div class="mbar"><i style="width:'+(cur/m.goal*100)+'%"></i></div><div class="muted small">'+cur+' / '+m.goal+' · 보상 '+rw+'</div></div>'+
+  s+='<div class="mrow"><div class="mb"><div class="mn2">'+m.n+'</div><div class="mbar"><i style="width:'+(cur/m.goal*100)+'%"></i></div><div class="muted small">'+cur+' / '+m.goal+', 보상 '+rw+'</div></div>'+
    '<button class="mini '+(claimed?'gray':done?'gold':'')+'" '+(claimed||!done?'disabled':'')+' data-cl="'+m.id+'">'+(claimed?'완료':'수령')+'</button></div>';});
  s+='<button class="rc" id="mClose">닫기</button></div>';
  ov.innerHTML=s;ov.classList.add("show");
@@ -1592,10 +1593,10 @@ function idleReward(){const away=Date.now()-(S.lastSeen||Date.now());if(away<600
 
 /* ---------- 온보딩 튜토리얼 (첫 진입) ---------- */
 const TUT=[
- {ic:"🧟",t:"자동 전투",d:"좀비는 <b>자동으로</b> 사냥됩니다. 화면만 봐도 골드·경험치·장비가 쌓여요. 자리를 비워도 방치 보상으로 진행돼요."},
+ {ic:"🧟",t:"자동 전투",d:"좀비는 <b>자동으로</b> 사냥됩니다. 화면만 봐도 골드, 경험치, 장비가 쌓여요. 자리를 비워도 방치 보상으로 진행돼요."},
  {ic:"🎁",t:"전리품 뽑기",d:"행동력(⚡)으로 <b>장비를 뽑으세요</b>. 등급이 높을수록 강해요. 같은 종류를 모으면 도감 보너스도 쌓입니다."},
- {ic:"⚔️",t:"장착 & 강화",d:"보관함에서 장비를 <b>장착</b>하고, 골드·강화석으로 <b>강화</b>하세요. +6부터는 실패 위험이 있으니 신중히!"},
- {ic:"✦",t:"환생",d:"레벨이 막히면 <b>환생</b>하세요. 레벨은 초기화되지만 <b>영구 전투력·도감</b>은 유지되고, 더 빠르게 성장합니다."},
+ {ic:"⚔️",t:"장착 & 강화",d:"보관함에서 장비를 <b>장착</b>하고, 골드와 강화석으로 <b>강화</b>하세요. +6부터는 실패 위험이 있으니 신중히!"},
+ {ic:"✦",t:"환생",d:"레벨이 막히면 <b>환생</b>하세요. 레벨은 초기화되지만 <b>영구 전투력과 도감</b>은 유지되고, 더 빠르게 성장합니다."},
  {ic:"🏆",t:"랭킹 경쟁",d:"닉네임을 정하면 <b>실시간 랭킹</b>에 참여해요. 비슷한 상대와 아레나로 겨뤄 보세요. 준비됐나요?"},
 ];
 function showTutorial(step){step=step||0;const ov=$("#ov-modal");if(!ov)return;

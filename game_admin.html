@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>좀비 헌팅 — 운영자 콘솔</title>
+<title>좀비 헌팅 | 운영자 콘솔</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
 <style>
 :root{--bg:#0e0a16;--card:#171022;--line:#2a2038;--txt:#ece7f4;--mut:#8d83a3;--gold:#e6c964;--red:#e0566b;--grn:#46c46e;--pur:#a05fd0}
@@ -83,7 +83,7 @@ tr.op td.nm::after{content:" 👑"}
     </div>
     <div class="card">
       <div class="row" style="margin-bottom:12px">
-        <input type="text" id="q" placeholder="닉네임 검색…"/>
+        <input type="text" id="q" placeholder="닉네임 검색"/>
         <button class="g sm" id="fSus">의심계정만</button>
         <button class="g sm" id="fBan">제재계정만</button>
         <button class="g sm" id="fAll">전체</button>
@@ -124,14 +124,14 @@ async function connect(){
   const url=$("#url").value.trim(),anon=$("#anon").value.trim();
   if(!url||!anon){msg("URL과 anon key를 입력하세요","var(--red)");return;}
   try{localStorage.setItem("nh_adm_url",url);localStorage.setItem("nh_adm_anon",anon);}catch(e){}
-  msg("연결 중…");
+  msg("연결 중");
   try{
     sb=window.supabase.createClient(url,anon);
     let ses=(await sb.auth.getSession()).data.session;
     if(!ses)ses=(await sb.auth.signInAnonymously()).data.session;
     uid=ses&&ses.user&&ses.user.id;
-    if(!uid){msg("익명 로그인 실패 — Anonymous sign-ins 설정을 확인하세요","var(--red)");return;}
-    $("#who").textContent="uid "+uid.slice(0,8)+"…";
+    if(!uid){msg("익명 로그인 실패. Anonymous sign-ins 설정을 확인하세요","var(--red)");return;}
+    $("#who").textContent="uid "+uid.slice(0,8)+"...";
     // 운영자 여부 확인
     const me=await sb.from("game_players").select("is_op").eq("uid",uid).maybeSingle();
     const isOp=me.data&&me.data.is_op;
@@ -143,7 +143,7 @@ async function connect(){
 }
 
 async function load(){
-  msg("불러오는 중…");
+  msg("불러오는 중");
   try{
     const r=await sb.from("game_players").select("*").order("power",{ascending:false}).limit(500);
     if(r.error)throw r.error;

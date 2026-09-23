@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4B2A82" />
-  <title>모임 정산 · 동네친구들</title>
+  <title>모임 정산 | 동네친구들</title>
   <meta name="description" content="동네친구들 모임 정산입니다. 멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지, 입금 확인 링크를 만듭니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/calculator.html" />
   <link rel="canonical" href="https://excer-site.vercel.app/calculator.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
-  <meta property="og:title" content="모임 정산 · 동네친구들" />
+  <meta property="og:title" content="모임 정산 | 동네친구들" />
   <meta property="og:description" content="멤버와 차수별 금액, 결제자를 입력하면 1인 정산 금액과 안내 메시지를 만듭니다." />
-  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-settle.jpg?v=2" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-settle.jpg?v=3" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -528,7 +528,7 @@
         <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
-      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
+      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수(오늘과 지금까지)"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
         <a class="topnav-tab" href="guide.html">이용 안내</a>
@@ -546,7 +546,7 @@
   <section class="cover is-spot" aria-labelledby="pageTitle">
     <div class="container cover-inner">
       <div>
-        <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-receipt"/></svg>1/N 계산 · 입금 확인 링크</p>
+        <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-receipt"/></svg>1/N 계산과 입금 확인 링크</p>
         <h1 class="cover-title" id="pageTitle">모임 정산</h1>
         <p class="cover-lead">멤버와 차수별 금액을 넣으면 1인 정산 금액과 안내 메시지가 만들어집니다.</p>
       </div>
@@ -602,7 +602,7 @@
                   <button id="memberAddBtn" class="btn btn-secondary is-sm" type="button">추가</button>
                 </div>
                 <div class="recent-wrap" id="recentWrap" hidden>
-                  <span class="recent-label">최근 함께한 멤버 — 누르면 추가됩니다</span>
+                  <span class="recent-label">최근 함께한 멤버(누르면 추가됩니다)</span>
                   <div id="recentMembers" class="recent-chips"></div>
                 </div>
               </div>
@@ -1151,7 +1151,7 @@
             var rounded = roundToUnit(exact, unit, mode);
             exactSum += exact; roundedSum += rounded;
             if (rounded > 0) rows.push({ name: m, exact: exact, amount: rounded });
-            else warnings.push(m + " → " + p + ": " + fmtKR(exact) + "원이 " + unit + "원 단위 처리로 0원이 되었습니다. (" + p + " 부담)");
+            else warnings.push(m + " 님이 " + p + " 님에게 보낼 " + fmtKR(exact) + "원이 " + unit + "원 단위 처리로 0원이 되었습니다. (" + p + " 부담)");
           });
           return {
             name: p,
@@ -1536,7 +1536,7 @@
         if (!id) return;
         const url = settleURL(id);
         const title = (state.eventTitle.trim() || "모임 정산") + " 정산 안내";
-        const desc = `총 ${formatWon(c.totalAmount)} · ${c.perPerson.uniform ? "1인" : "1인 평균"} ${formatWon(c.perPerson.value)} · 입금 후 완료 표시를 눌러 주세요`;
+        const desc = `총 ${formatWon(c.totalAmount)}, ${c.perPerson.uniform ? "1인" : "1인 평균"} ${formatWon(c.perPerson.value)}. 입금 후 완료 표시를 눌러 주세요`;
         const r = window.KSHARE ? await window.KSHARE.share({ title, description: desc, url, buttonTitle: "입금 확인하기" }) : "fail";
         if (r === "copy") showToast("카카오톡 공유 창을 열지 못해 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
         else if (r === "fail") showCopyFallback(url, "입금 확인 링크");
@@ -1814,7 +1814,7 @@
           `<span class="adj-note">${adj.roundLabel ? escapeHTML(adj.roundLabel) + " " : ""}${adj.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(adj.amount))}원${adj.reason ? ` ${escapeHTML(adj.reason)}` : ""} 반영</span>`
         ).join("");
         // 한 사람에게 따로 알릴 때 붙여넣는 한 줄: "민지님 46,267원 · 입금계좌 카카오뱅크 …"
-        const line = `${row.name}님 ${formatWon(row.amount)}${withAccount ? ` · 입금계좌 ${pt}` : ""}`;
+        const line = `${row.name}님 ${formatWon(row.amount)}${withAccount ? `, 입금계좌 ${pt}` : ""}`;
         return `
           <div class="pay-row">
             <span><span class="pay-name">${state.atMark ? "@" : ""}${escapeHTML(row.name)}</span>${adjNote}</span>
@@ -1833,7 +1833,7 @@
         payHTML = activePayers[0].rows.map((row) => rowHTML(row, activePayers[0].name)).join("");
       } else {
         payHTML = activePayers.map((p) => `
-          <div class="payer-group-head"><span>→ ${escapeHTML(p.name)}에게</span><em>받을 ${formatWon(p.receivable)}</em></div>
+          <div class="payer-group-head"><span>${escapeHTML(p.name)}에게</span><em>받을 ${formatWon(p.receivable)}</em></div>
           ${p.rows.map((row) => rowHTML(row, p.name)).join("")}`).join("");
       }
 
@@ -1879,7 +1879,7 @@
         </div>
         ${pt ? `<div class="deposit-box">입금 계좌<br />${escapeHTML(pt)}${
           /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
-          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(" · "))} 님에게 보낼 금액은 계좌를 따로 안내합니다.</em>` : ""
+          otherPayers.length ? `<em class="deposit-warn">${escapeHTML(otherPayers.join(", "))} 님에게 보낼 금액은 계좌를 따로 안내합니다.</em>` : ""
         }</div>` : ""}
         <div class="receipt-section">
           <h3>입금 명단</h3>
@@ -1913,7 +1913,7 @@
       const atNim = (name) => (on ? `@${name} 님에게` : `${name}님에게`);
 
       /* ── 헤더 ── */
-      L.push(`💰 ${state.eventTitle || "모임 정산"} 정산`);
+      L.push(`${state.eventTitle || "모임 정산"} 정산`);
       const sub = [];
       if (state.eventDate) sub.push(formatDateKo(state.eventDate));
       sub.push(`모임장 ${c.host || "-"}`);
@@ -1929,65 +1929,65 @@
       /* ── 💸 보낼 금액 (핵심 · 받는 사람별로 묶어서) ── */
       const activePayers = c.payers.filter((p) => p.rows.length);
       L.push("");
-      L.push("💸 보낼 금액");
+      L.push("보낼 금액");
       if (!activePayers.length) {
         L.push("입금 대상이 없습니다.");
       } else if (activePayers.length === 1) {
-        L.push(`📥 ${atNim(activePayers[0].name)}`);
-        activePayers[0].rows.forEach((r) => L.push(`• ${at(r.name)}  ${formatWon(r.amount)}`));
+        L.push(atNim(activePayers[0].name));
+        activePayers[0].rows.forEach((r) => L.push(`- ${at(r.name)}  ${formatWon(r.amount)}`));
       } else {
         activePayers.forEach((p, i) => {
           if (i > 0) L.push("");
-          L.push(`📥 ${atNim(p.name)}`);
-          p.rows.forEach((r) => L.push(`• ${at(r.name)}  ${formatWon(r.amount)}`));
+          L.push(atNim(p.name));
+          p.rows.forEach((r) => L.push(`- ${at(r.name)}  ${formatWon(r.amount)}`));
         });
       }
 
       /* ── 벙주(결제자) 부담: 요약형에서만 ── */
       if (!detail && c.totalAmount) {
         L.push("");
-        L.push(`💳 ${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
+        L.push(`${burdenWord(c)} ${formatWon(c.burden)}${c.residual > 0 ? ` (단위 자투리 ${formatWon(c.residual)} 포함)` : ""}`);
       }
 
       /* ── 상세형: 차수 · 추가차감 · 검증 · 안내 ── */
       if (detail) {
         if (c.rounds.length) {
           L.push("");
-          L.push("🧾 차수별 내역");
-          c.rounds.forEach((r) => L.push(`• ${r.label} ${formatWon(r.amount)} (${r.count}명, 결제 ${r.payer})`));
+          L.push("차수별 내역");
+          c.rounds.forEach((r) => L.push(`- ${r.label} ${formatWon(r.amount)} (${r.count}명, 결제 ${r.payer})`));
         }
         if (c.adjustments.length) {
           L.push("");
-          L.push("➕ 추가 · 차감");
+          L.push("추가와 차감");
           c.adjustments.forEach((a) => L.push(
-            `• ${at(a.name)} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원` +
+            `- ${at(a.name)} ${a.amount > 0 ? "+" : "−"}${formatNumber(Math.abs(a.amount))}원` +
             `${a.reason ? ` (${a.reason})` : ""}` +
             // 어느 차수에서 오간 돈인지가 빠지면 받는 사람이 확인할 방법이 없다
-            `${a.roundLabel ? ` · ${a.roundLabel}` : " · 전체 차수"}` +
-            `${a.applied ? "" : " — 미반영"}`));
+            `${a.roundLabel ? `, ${a.roundLabel}` : ", 전체 차수"}` +
+            `${a.applied ? "" : " (미반영)"}`));
         }
         if (c.totalAmount) {
           L.push("");
-          L.push("🔍 합계 검증");
+          L.push("합계 검증");
           L.push(verifyText(c));
         }
         const notices = checkedNotices();
         if (notices.length) {
           L.push("");
-          L.push("📌 안내");
-          notices.forEach((n) => L.push(`• ${n.text}`));
+          L.push("안내");
+          notices.forEach((n) => L.push(`- ${n.text}`));
         }
       }
 
       /* ── 입금 계좌 ── */
       const pt = payText();
       if (pt) {
-        L.push(""); L.push(`🏦 입금계좌  ${pt}`);
+        L.push(""); L.push(`입금계좌  ${pt}`);
         /* 계좌는 한 사람 것뿐이다. 다른 결제자에게 갈 돈까지 이 계좌로 보내면 안 된다. */
         const owner = state.pay.holder.trim() || c.host;
         const others = activePayers.map((p) => p.name).filter((n) => !sameName(n, owner));
         if (activePayers.length > 1 && others.length) {
-          L.push(`※ ${others.map((n) => at(n)).join(" · ")}${on ? " " : ""}님에게 보낼 금액은 계좌를 따로 안내합니다`);
+          L.push(`참고: ${others.map((n) => at(n)).join(", ")}${on ? " " : ""}님에게 보낼 금액은 계좌를 따로 안내합니다`);
         }
       }
 
@@ -1995,8 +1995,8 @@
       const shareUrl = currentShareUrl();
       if (shareUrl) {
         L.push("");
-        L.push("✅ 입금 후 아래 링크에서 입금 완료를 눌러 주세요");
-        L.push(`👉 ${shareUrl}`);
+        L.push("입금 후 아래 링크에서 입금 완료를 눌러 주세요");
+        L.push(shareUrl);
       }
       return L.join("\n");
     }
@@ -2175,7 +2175,7 @@
         <div class="history-row" data-hid="${escapeHTML(h.id)}">
           <div class="history-main">
             <b>${escapeHTML(h.title || "모임 정산")}</b>
-            <span class="sep-row">${h.date ? `<span>${escapeHTML(h.date)}</span>` : ""}<span>${formatWon(h.total || 0)}</span><span>${h.memberCount || 0}명</span><span>1인${h.uniform ? "" : " 평균"} ${formatWon(h.perPerson || 0)}</span>${h.shareId ? `<em class="h-live">🔗 공유됨</em>` : ""}<span>저장 ${formatSavedAt(h.savedAt)}</span></span>
+            <span class="sep-row">${h.date ? `<span>${escapeHTML(h.date)}</span>` : ""}<span>${formatWon(h.total || 0)}</span><span>${h.memberCount || 0}명</span><span>1인${h.uniform ? "" : " 평균"} ${formatWon(h.perPerson || 0)}</span>${h.shareId ? `<em class="h-live">공유됨</em>` : ""}<span>저장 ${formatSavedAt(h.savedAt)}</span></span>
           </div>
           <div class="history-acts">
             <button class="mini-btn" type="button" data-action="h-load" data-hid="${escapeHTML(h.id)}">불러오기</button>
@@ -2509,7 +2509,7 @@
       } catch (e) {
         /* 연결 실패는 카드를 지우지 않고 그 안에 남긴다 — 다시 시도할 수 있게.
            아직 한 번도 못 받았으면 0/0 이 사실처럼 보이지 않게 비운다 */
-        $("ssCount").textContent = "—";
+        $("ssCount").textContent = "-";
         $("ssBar").style.width = "0%";
         $("ssLink").href = settleURL(state.shareId);
         $("ssPending").innerHTML = "입금 현황을 불러오지 못했습니다. 잠시 후 새로고침을 눌러 주세요.";
@@ -2707,7 +2707,7 @@
           let moved = 0;
           state.adjustments.forEach((a) => { if (a.round === goneId) { a.round = ""; moved++; } });
           renderRounds(); renderAdjustments(); renderAndSave();
-          if (moved) showToast(`삭제한 차수의 추가·차감 ${moved}건을 전체 차수로 옮겼습니다.`);
+          if (moved) showToast(`삭제한 차수의 추가와 차감 항목 ${moved}건을 전체 차수로 옮겼습니다.`);
         }
       });
 

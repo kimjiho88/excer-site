@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4B2A82" />
-  <title>정산 확인 · 동네친구들</title>
+  <title>정산 확인 | 동네친구들</title>
   <meta name="description" content="모임장이 보낸 정산 링크입니다. 내 정산 금액을 확인하고 입금 완료를 표시할 수 있습니다." />
   <meta name="robots" content="noindex" />
   <!-- 공유 미리보기는 정산 '내용'을 말하지 않는다.
@@ -12,9 +12,9 @@
        미리보기에는 고정 문구만 쓰고 페이지 내용을 반영하지 않는다. -->
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="정산 확인 · 동네친구들" />
+  <meta property="og:title" content="정산 확인 | 동네친구들" />
   <meta property="og:description" content="모임장이 보낸 정산 링크입니다. 내 정산 금액을 확인해 주세요." />
-  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-settle.jpg?v=2" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-settle.jpg?v=3" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -272,7 +272,7 @@
         <span class="topnav-logo">동네친구들</span>
         <span class="topnav-sub">오픈채팅 커뮤니티</span>
       </a>
-      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수 — 오늘과 지금까지"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
+      <span class="topnav-visits" id="visitBox" hidden title="사이트에 들어온 횟수(오늘과 지금까지)"><svg class="tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="tv-cell"><i>Today</i> <b id="visitToday">0</b></span><span class="tv-sep" aria-hidden="true"></span><span class="tv-cell"><i>Total</i> <b id="visitTotal">0</b></span></span>
       <nav class="topnav-tabs" aria-label="주요 메뉴">
         <a class="topnav-tab" href="index.html">홈</a>
         <a class="topnav-tab" href="guide.html">이용 안내</a>
@@ -293,8 +293,8 @@
         <h1 class="cover-title" id="pageTitle">정산 확인</h1>
         <p class="cover-lead">내 정산 금액을 확인하고 입금한 뒤 입금 완료를 눌러 주세요.</p>
         <div class="hero-signal" aria-live="polite">
-          <span class="hs"><span class="hs-k">총 비용</span><span class="hs-v"><span id="heroTotal">—</span></span></span>
-          <span class="hs"><span class="hs-k">입금 완료</span><span class="hs-v"><span id="heroPaid">—</span></span></span>
+          <span class="hs"><span class="hs-k">총 비용</span><span class="hs-v"><span id="heroTotal">-</span></span></span>
+          <span class="hs"><span class="hs-k">입금 완료</span><span class="hs-v"><span id="heroPaid">-</span></span></span>
         </div>
       </div>
       <img class="cover-spot" src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
@@ -651,8 +651,8 @@
     }
     function setHeroStats(total, done, count) {
       const t = $("heroTotal"), pc = $("heroPaid");
-      if (t) t.textContent = total == null ? "—" : formatWon(total);
-      if (pc) pc.textContent = (done == null || count == null) ? "—" : `${done}/${count}명`;
+      if (t) t.textContent = total == null ? "-" : formatWon(total);
+      if (pc) pc.textContent = (done == null || count == null) ? "-" : `${done}/${count}명`;
     }
 
     function renderLoading() {
@@ -687,7 +687,7 @@
       const bank = payload.pay.bank.trim();
       const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
       if (!bank || !digits) return "";
-      const label = isMobileUA() ? "토스로 송금" : "계좌·금액 복사";
+      const label = isMobileUA() ? "토스로 송금" : "계좌와 금액 복사";
       return `<button class="m-btn m-send" type="button" data-send-amount="${amount}"${owner ? ` title="${escapeHTML(owner)} 님 계좌로 ${formatWon(amount)}"` : ""}>${label}</button>`;
     }
 
@@ -845,7 +845,7 @@
           <div class="payer-rows">
             ${payload.groups.map((g) => `
             <div class="payer-row">
-              <div><b>→ ${escapeHTML(g.payer)}에게</b><br /><small>${escapeHTML(g.rows.map((r) => r.name).join(", "))}</small></div>
+              <div><b>${escapeHTML(g.payer)}에게</b><br /><small>${escapeHTML(g.rows.map((r) => r.name).join(", "))}</small></div>
               <strong>${formatWon(g.amount)}</strong>
             </div>`).join("")}
           </div>
