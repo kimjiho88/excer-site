@@ -307,13 +307,13 @@
     var t = postType(post.category).kind, f = [];
     if (t === "bung") {
       var when = m.date ? dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : (m.time || "");
-      if (when) f.push({ key: "when", label: "날짜·시간", value: when });
+      if (when) f.push({ key: "when", label: "날짜와 시간", value: when });
       if (m.place) f.push({ key: "place", label: "장소", value: m.place });
       if (m.cap) f.push({ key: "cap", label: "모집 인원", value: m.cap + "명" });
       if (m.cost) f.push({ key: "cost", label: "예상 비용", value: m.cost });
       f.push({ key: "host", label: "모임장", value: post.author || "" });
       f.push({ key: "apply", label: "신청 방법", value: m.apply || "오픈채팅 공지의 참석 버튼" });
-      if (m.bring) f.push({ key: "bring", label: "준비물·유의사항", value: m.bring });
+      if (m.bring) f.push({ key: "bring", label: "준비물과 유의사항", value: m.bring });
       if (m.status) f.push({ key: "status", label: "모집 상태", value: m.status === "closed" ? "마감" : "모집 중" });
     } else if (t === "notice") {
       if (m.audience) f.push({ key: "audience", label: "적용 대상", value: m.audience });
@@ -321,7 +321,7 @@
       if (period) f.push({ key: "period", label: m.from && m.to ? "적용 기간" : "적용일", value: period });
       if (m.action) f.push({ key: "action", label: "필요한 행동", value: m.action });
     } else if (t === "review") {
-      if (m.activity) f.push({ key: "activity", label: "모임·활동", value: m.activity });
+      if (m.activity) f.push({ key: "activity", label: "모임이나 활동", value: m.activity });
       if (m.date) f.push({ key: "date", label: "날짜", value: dateText(m.date, { withYear: true, withDow: true }) });
       if (m.place) f.push({ key: "place", label: "장소", value: m.place });
       if (m.link) f.push({ key: "link", label: "관련 링크", value: m.link, href: m.link });
@@ -342,7 +342,7 @@
       if (m.date) bits.push(dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : ""));
       else if (m.time) bits.push(m.time);
       if (m.place) bits.push(m.place);
-      return { text: bits.join(" · "), state: st.label, past: st.past || st.closed };
+      return { text: bits.join(", "), state: st.label, past: st.past || st.closed };
     }
     if (t === "notice" && m) {
       if (m.summary) return { text: m.summary, state: m.from ? dateText(m.from) + "부터" : "", past: false };
@@ -358,14 +358,14 @@
       if (m.activity) r.push(m.activity);
       if (m.date) r.push(dateText(m.date));
       if (m.place) r.push(m.place);
-      if (r.length) return { text: r.join(" · "), state: "", past: false };
+      if (r.length) return { text: r.join(", "), state: "", past: false };
     }
     return { text: "", state: "", past: false };
   }
   function excerpt(body, max) {
     var t = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
     max = max || 90;
-    return t.length > max ? t.slice(0, max) + "…" : t;
+    return t.length > max ? t.slice(0, max) + "..." : t;
   }
   function postView(post, today) {
     today = today || kstToday();

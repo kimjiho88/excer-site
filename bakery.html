@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#8a5a33" />
 <title>엑서 빵집 타이쿤</title>
-<meta name="description" content="내 이름을 건 빵집을 꾸미고 키운다 — 손님이 걸어 들어오는 쿼터뷰 빵집 경영 게임." />
+<meta name="description" content="내 이름을 건 빵집을 꾸미고 키운다. 손님이 걸어 들어오는 쿼터뷰 빵집 경영 게임." />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -313,6 +313,7 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 .top{padding:8px 10px 9px}
 .hudrow{display:flex;align-items:center;gap:7px}
 .site-back{flex:none;height:26px;padding:0 8px;border-radius:8px;display:inline-flex;align-items:center;gap:2px;color:#5a3d1c;font-size:12px;font-weight:900;line-height:1;white-space:nowrap;text-decoration:none;background:linear-gradient(180deg,#fffdf6,#ffedd0);border:2px solid #c89a68;box-shadow:0 2.5px 0 #d9b183}
+.site-back::before{content:"";width:5px;height:5px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 2px 0 2px}
 .avatarwrap{position:relative;flex:none;width:44px;height:44px}
 .avatarwrap .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:23px;
   background:radial-gradient(circle at 35% 30%,#fff,#f3e2c8);border:2.5px solid #fff;box-shadow:0 3px 8px rgba(120,80,30,.28)}
@@ -538,7 +539,7 @@ body.editing .actor.pet{pointer-events:none}
 <div class="app grade-1" id="app">
   <header class="top">
     <div class="hudrow">
-      <a class="site-back" href="games.html" aria-label="게임 목록으로 돌아가기">‹ 게임</a>
+      <a class="site-back" href="games.html" aria-label="게임 목록으로 돌아가기">게임</a>
       <div class="avatarwrap">
         <div class="av">🧑‍🍳</div>
         <span class="lvchip">Lv.<b id="hLvN">1</b></span>
@@ -554,7 +555,7 @@ body.editing .actor.pet{pointer-events:none}
       </div>
       <button class="gear" id="btnGear">⚙️</button>
     </div>
-    <div class="nextgoal"><span id="hGrade" class="grade">🏠 작은 동네 빵집</span><span class="tick" id="hTicker">🎯 —</span><span class="mood" id="hMood">✨ 0</span></div>
+    <div class="nextgoal"><span id="hGrade" class="grade">🏠 작은 동네 빵집</span><span class="tick" id="hTicker">🎯 -</span><span class="mood" id="hMood">✨ 0</span></div>
     <span id="hLv" style="display:none"></span>
   </header>
 
@@ -569,7 +570,7 @@ body.editing .actor.pet{pointer-events:none}
       <button class="railbtn" id="btnRank">🏆<small>랭킹</small></button>
     </div>
     <div class="tray" id="tray">
-      <div class="t-head">🛋️ 꾸미기 모드 <span>가구 선택 → 초록 타일 탭 · 배치된 가구 탭 = 회수</span><button id="editDone">완료</button></div>
+      <div class="t-head">🛋️ 꾸미기 모드 <span>가구 선택 후 초록 타일 탭, 배치된 가구를 탭하면 회수</span><button id="editDone">완료</button></div>
       <div class="trayrow" id="trayRow"></div>
     </div>
   </div>
@@ -1305,7 +1306,7 @@ $("#room").addEventListener("click",e=>{
           renderObjects();renderTray();renderHeader();saveLocal();
         }else{
           MOVING={kind:"fur",idx};SELECTED=null;
-          toast("이동할 칸을 탭하세요 · 다시 탭하면 보관");
+          toast("이동할 칸을 탭하세요. 다시 탭하면 보관");
           renderObjects();renderTray();
         }
         return;
@@ -1315,7 +1316,7 @@ $("#room").addEventListener("click",e=>{
       if(stKey){
         MOVING=(MOVING&&MOVING.kind==="station"&&MOVING.id===stKey)?null:{kind:"station",id:stKey};
         SELECTED=null;
-        if(MOVING)toast("🏗️ "+ (id==="st-display"?"진열대":id==="st-counter"?"카운터":DATA.balance.stations[id.slice(3)]?DATA.balance.stations[id.slice(3)].name:"설비") +" — 이동할 칸을 탭하세요");
+        if(MOVING)toast("🏗️ "+ (id==="st-display"?"진열대":id==="st-counter"?"카운터":DATA.balance.stations[id.slice(3)]?DATA.balance.stations[id.slice(3)].name:"설비") +": 이동할 칸을 탭하세요");
         renderObjects();renderTray();
         return;
       }
@@ -1335,7 +1336,7 @@ $("#room").addEventListener("click",e=>{
           const it=S.layout[MOVING.idx];
           const f=Core.furnitureById(DATA,it.id);
           if(!tileAllowed(f,x,y)){
-            toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
+            toast(zoneOf(f)==="garden"?"🌳 정원 전용이에요. 앞마당(초록 존)에 놓아주세요"
               :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요":"여기엔 놓을 수 없어요");
             return;
           }
@@ -1350,7 +1351,7 @@ $("#room").addEventListener("click",e=>{
         if(!f)return;
         if(blockedTiles().has(x+","+y)){toast("여기엔 놓을 수 없어요");return;}
         if(!tileAllowed(f,x,y)){
-          toast(zoneOf(f)==="garden"?"🌳 정원 전용 — 앞마당(초록 존)에 놓아주세요"
+          toast(zoneOf(f)==="garden"?"🌳 정원 전용이에요. 앞마당(초록 존)에 놓아주세요"
             :zoneOf(f)==="indoor"&&inTerrace(x,y)?"🏠 실내 전용 가구예요"
             :"여기엔 놓을 수 없어요");
           return;
@@ -1422,7 +1423,7 @@ function openShop(){
     return `<div class="rowitem${locked?" dim":""}">
       <div class="re">${f.emoji}</div>
       <div><div class="rn">${locked?"???":f.name} <span style="font-size:10px">${f.machine?'<b style="color:#b4650a">⚙️ 생산 레인 +1</b>':zoneTag(f)}</span></div>
-        <div class="rd">${f.machine?`${DATA.balance.stations[f.machine]?DATA.balance.stations[f.machine].name:f.machine} 동시 제작 +1`:`✨분위기 +${f.mood}${f.seats?` · 🪑좌석 ${f.seats}`:""}`} · 보유 ${S.owned[f.id]||0}${f.maxOwn?`/${f.maxOwn}`:""}</div></div>
+        <div class="rd">${f.machine?`${DATA.balance.stations[f.machine]?DATA.balance.stations[f.machine].name:f.machine} 동시 제작 +1`:`✨분위기 +${f.mood}${f.seats?`, 🪑좌석 ${f.seats}`:""}`}, 보유 ${S.owned[f.id]||0}${f.maxOwn?`/${f.maxOwn}`:""}</div></div>
       ${locked?`<button class="rb" disabled>Lv.${f.unlockLevel} 해금</button>`
         :(f.maxOwn&&(S.owned[f.id]||0)>=f.maxOwn)?`<button class="rb claimed" disabled>보유 완료</button>`
         :`<button class="rb" data-buy="${f.id}" ${S.coins<f.price?"disabled":""}>🪙 ${fmt(f.price)}</button>`}</div>`;
@@ -1437,15 +1438,15 @@ function openShop(){
     return `<div class="rowitem${locked?" dim":""}">
       <div class="re">${{"cat_cream":"🐱","cat_black":"🐈‍⬛","dog_shiba":"🐕","dog_white":"🐩","rabbit":"🐰"}[t.id]||"🐾"}</div>
       <div><div class="rn">${locked?"???":t.name}</div>
-      <div class="rd">✨분위기 +${DATA.balance.pets.moodPerPet} · 가끔 동전 발굴 · ${owned?"함께 사는 중":"종류당 1마리"}</div></div>
+      <div class="rd">✨분위기 +${DATA.balance.pets.moodPerPet}, 가끔 동전 발굴, ${owned?"함께 사는 중":"종류당 1마리"}</div></div>
       ${locked?`<button class="rb" disabled>Lv.${t.unlockLevel} 해금</button>`
         :owned>=capT?`<button class="rb claimed" disabled>함께 살아요</button>`
         :total>=capA?`<button class="rb" disabled>정원 가득 (${capA})</button>`
         :`<button class="rb" data-adopt="${t.id}" ${S.coins<t.price?"disabled":""}>🪙 ${fmt(t.price)}</button>`}</div>`;
   }).join("");
   openSheet(`<h4 class="hd-shop">🛒 상점 <span style="font-size:10px;color:var(--mut);font-weight:800">분위기 1당 팁 확률 +${(it.tipChancePerMood*100).toFixed(1)}%p (최대 +${it.tipChanceMax*100}%p)</span><button class="x" data-close>닫기 ✕</button></h4>
-    <div class="subhead" style="margin-top:0">🐾 펫 분양 — 매장을 돌아다니며 손님을 홀립니다</div>${petRows}
-    <div class="subhead">🛋️ 가구 — 🌳 정원 가구는 앞마당(초록 존)에 배치 (Lv.${TERRACE_UNLOCK}~)</div>${html}`);
+    <div class="subhead" style="margin-top:0">🐾 펫 분양: 매장을 돌아다니며 손님을 홀립니다</div>${petRows}
+    <div class="subhead">🛋️ 가구: 🌳 정원 가구는 앞마당(초록 존)에 배치 (Lv.${TERRACE_UNLOCK}~)</div>${html}`);
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-adopt]");if(!b||!S)return;
@@ -1532,7 +1533,7 @@ function openDex(){
     const bonus=Core.masteryBonusPct(DATA,S,r.id);
     return `<div class="rowitem"><div class="re">${r.emoji}</div>
       <div><div class="rn">${r.name} <span class="stars">${stars}</span>${bonus?` <b style="color:var(--green);font-size:10px">판매가 +${bonus}%</b>`:""}</div>
-      <div class="rd">누적 ${fmt(sold)}개${next?` — 다음 ★까지 ${fmt(next-sold)}개`:" — 마스터!"}</div>
+      <div class="rd">누적 ${fmt(sold)}개${next?`, 다음 ★까지 ${fmt(next-sold)}개`:", 마스터!"}</div>
       <div class="qbar"><i style="width:${pct}%"></i></div></div></div>`;
   }).join("");
   // 단골 앨범: 방문 누적 → 하트 단계
@@ -1547,7 +1548,7 @@ function openDex(){
     const nextT=[...HEART_TIERS].reverse().find(x=>visits<x.v);
     return `<div class="rowitem"><div class="re">${m.avatar}</div>
       <div><div class="rn">${t.h} ${m.nickname} <span style="font-size:10px;color:var(--mut)">${t.n}</span></div>
-      <div class="rd">방문 ${visits}회${nextT?` — ${nextT.h} ${nextT.n}까지 ${nextT.v-visits}회`:" — 최고 단계!"}</div></div></div>`;
+      <div class="rd">방문 ${visits}회${nextT?`, ${nextT.h} ${nextT.n}까지 ${nextT.v-visits}회`:", 최고 단계!"}</div></div></div>`;
   }).join("");
   const regCount=mem.filter(m=>(S.regulars&&S.regulars[m.id]||0)>=vReg).length;
   // 가구 컬렉션
@@ -1558,7 +1559,7 @@ function openDex(){
     return `<div class="dexcell${n>0?"":" locked"}">${n>0?(f.emoji||"🪑"):"🔒"}<small>${n>0?f.name+(n>1?" ×"+n:""):"미보유"}</small></div>`;
   }).join("");
   openSheet(`<h4 class="hd-quest">📖 도감 <span style="font-size:10px;color:var(--mut)">모을수록 가게가 강해져요</span><button class="x" data-close>닫기 ✕</button></h4>
-    <div class="subhead">🍽️ 메뉴 마스터리 <span style="font-weight:400">— 별을 채우면 판매가 보너스</span></div>${menuRows}
+    <div class="subhead">🍽️ 메뉴 마스터리<span style="font-weight:400">: 별을 채우면 판매가 보너스</span></div>${menuRows}
     <div class="subhead">💗 단골 앨범 (단골 ${regCount}/${mem.length})</div>${memRows}
     <div class="subhead">🐾 펫 (${new Set((S.pets||[]).map(x=>x.type)).size}/${(DATA.balance.pets.types||[]).length})</div><div class="dex-grid">${(DATA.balance.pets.types||[]).map(t=>{
       const n=(S.pets||[]).filter(x=>x.type===t.id).length;
@@ -1581,20 +1582,20 @@ function openRank(){
   const bars=hist.map(h=>`<div class="hbar" title="${h.d}"><i style="height:${Math.max(6,h.sold/hmax*100)}%"></i><small>${h.d==="오늘"?"오늘":h.d.slice(8)}</small></div>`).join("");
   const graph=`<div class="histwrap">${bars}</div>`;
   const title=repTitle();
-  openSheet(`<h4 class="hd-quest">🏆 랭킹 · 기록 <span style="font-size:10px;color:var(--mut)">개업 D+${days}</span><button class="x" data-close>닫기 ✕</button></h4>
-    <div class="titlechip">👑 ${title} <small>⭐${fmt(S.rep)} — 다음 칭호까지 ${(()=>{const ts=DATA.balance.reputation.titles||[];const nx=ts.find(t=>S.rep<t.rep);return nx?("⭐"+fmt(nx.rep-S.rep)):"최고 칭호!";})()}</small></div>
+  openSheet(`<h4 class="hd-quest">🏆 랭킹과 기록 <span style="font-size:10px;color:var(--mut)">개업 D+${days}</span><button class="x" data-close>닫기 ✕</button></h4>
+    <div class="titlechip">👑 ${title} <small>⭐${fmt(S.rep)} (다음 칭호까지 ${(()=>{const ts=DATA.balance.reputation.titles||[];const nx=ts.find(t=>S.rep<t.rep);return nx?("⭐"+fmt(nx.rep-S.rep)):"최고 칭호!";})()})</small></div>
     <div class="subhead">📈 최근 7일 판매</div>${graph}
     <div class="subhead">📊 오늘</div>
     ${row("🧾","판매",fmt(d.sold||0)+"개")}${row("🪙","수익",fmt(d.coinsEarned||0))}${row("💰","팁 수금",(d.tipCollects||0)+"회")}
     <div class="subhead">📅 이번 주 (월~일)</div>
     ${row("🗓️","주간 판매",fmt(wkSold)+"개")}
-    <div class="subhead">👑 명예의 전당 — 내 기록</div>
+    <div class="subhead">👑 명예의 전당 (내 기록)</div>
     ${row("🥇","하루 최다 판매",fmt(Math.max(r.bestSoldDay,d.sold||0))+"개")}
     ${row("💎","하루 최고 수익",fmt(Math.max(r.bestCoinsDay,d.coinsEarned||0)))}
     ${row("🔥","최장 연속 출석",(r.maxStreak||S.att&&S.att.streak||0)+"일")}
     ${row("🍞","누적 판매",fmt(S.totalSold||0)+"개")}
-    <div class="subhead">🌐 커뮤니티 레벨 랭킹 <span style="font-weight:400">— 기준은 딱 하나, 레벨!</span></div>
-    <div id="rankBoard" class="soon-msg" style="padding:14px">불러오는 중…</div>`);
+    <div class="subhead">🌐 커뮤니티 레벨 랭킹<span style="font-weight:400">: 기준은 딱 하나, 레벨!</span></div>
+    <div id="rankBoard" class="soon-msg" style="padding:14px">불러오는 중</div>`);
   loadWeeklyBoard();
 }
 async function loadWeeklyBoard(){
@@ -1643,10 +1644,10 @@ function openSettings(){
   const on=S.settings.sound!==false;
   openSheet(`<h4 class="hd-shop">⚙️ 설정<button class="x" data-close>닫기 ✕</button></h4>
     <div class="rowitem"><div class="re">🔊</div>
-      <div><div class="rn">효과음</div><div class="rd">탭·수금·레벨업 등 사운드</div></div>
+      <div><div class="rn">효과음</div><div class="rd">탭, 수금, 레벨업 등 사운드</div></div>
       <button class="rb ${on?"green":""}" id="sndToggle">${on?"켜짐":"꺼짐"}</button></div>
     <div class="rowitem"><div class="re">🏪</div>
-      <div><div class="rn">${S.name||"엑서 빵집"}</div><div class="rd">개업 D+${Math.max(1,Math.floor((nowSec()-(S.createdAt||nowSec()))/86400)+1)} · Lv.${S.level} · 엑서 빵집 타이쿤</div></div></div>`);
+      <div><div class="rn">${S.name||"엑서 빵집"}</div><div class="rd">개업 D+${Math.max(1,Math.floor((nowSec()-(S.createdAt||nowSec()))/86400)+1)}, Lv.${S.level}, 엑서 빵집 타이쿤</div></div></div>`);
   const t=document.getElementById("sndToggle");
   if(t)t.addEventListener("click",()=>{
     S.settings.sound=!(S.settings.sound!==false);
@@ -1686,7 +1687,7 @@ function renderSheet(){
       <button class="x" data-close>닫기 ✕</button></h4>
       <div class="qrow">${slots}</div>
       ${P>1?`<div style="font-size:10px;font-weight:800;color:#b4650a;margin:-4px 0 8px">⚙️ 동시 제작 ${P}레인 (보조 기계 효과)</div>`:""}
-      ${buf.length?`<div class="blocked" style="margin-bottom:9px">📦 ${buf.reduce((a,x)=>a+x.n,0)}개가 진열 공간 대기 중 — 진열대를 업그레이드하세요!</div>`:""}
+      ${buf.length?`<div class="blocked" style="margin-bottom:9px">📦 ${buf.reduce((a,x)=>a+x.n,0)}개가 진열 공간 대기 중이에요. 진열대를 업그레이드하세요!</div>`:""}
       <div class="menu-btns">${menus.map(r=>{
         const t=Core.craftSeconds(DATA,S,r);
         const pct=Core.masteryBonusPct(DATA,S,r.id);
@@ -1695,15 +1696,15 @@ function renderSheet(){
         const spec=S.daily.special===r.id;
         return `<button class="mbtn${spec?" special":""}" data-bake="${r.id}" ${full?"disabled":""} id="bake-${r.id}">
           ${spec?'<span class="spbadge">⭐ 오늘의 메뉴</span>':""}
-          <span class="me">${r.emoji}</span><span class="mn">${r.name}</span><span class="stars">${stars}</span><span class="mi">${r.batch}개 · ${fmtDur(t)}</span></button>`;
+          <span class="me">${r.emoji}</span><span class="mn">${r.name}</span><span class="stars">${stars}</span><span class="mi">${r.batch}개, ${fmtDur(t)}</span></button>`;
       }).join("")}</div>`);
   }
   else if(SHEET.type==="stock"){
     const un=Core.unlockedRecipes(DATA,S);
-    openSheet(`<h4 class="hd-stock">🧺 진열대 <span style="font-size:11px;color:var(--mut)">${Core.totalStock(S)}/${Core.stockCap(DATA,S)}개 · 오프라인 판매 상한</span>
+    openSheet(`<h4 class="hd-stock">🧺 진열대 <span style="font-size:11px;color:var(--mut)">${Core.totalStock(S)}/${Core.stockCap(DATA,S)}개, 오프라인 판매 상한</span>
       <button class="x" data-close>닫기 ✕</button></h4>
       ${un.map(r=>`<div class="rowitem"><div class="re">${r.emoji}</div>
-        <div><div class="rn">${r.name}</div><div class="rd">개당 🪙${Core.unitPrice(DATA,S,r)} · 누적 판매 ${S.sold[r.id]||0}개</div></div>
+        <div><div class="rn">${r.name}</div><div class="rd">개당 🪙${Core.unitPrice(DATA,S,r)}, 누적 판매 ${S.sold[r.id]||0}개</div></div>
         <b style="font-size:16px;color:var(--brown)">${S.stock[r.id]||0}</b></div>`).join("")}`);
   }
   else if(SHEET.type==="upgrade"){
@@ -1716,7 +1717,7 @@ function renderSheet(){
         :`<button class="rb" data-up="${e.id}" ${S.coins<cost?"disabled":""}>🪙 ${fmt(cost)}</button>`;
       return `<div class="rowitem${locked?" dim":""}">
         <div class="re">${e.emoji}<span class="elv">Lv.${lv}</span></div>
-        <div><div class="rn">${locked?"???":e.name}</div><div class="rd">${e.effectPerLevelLabel}${e.id==="display"?` · 상한 ${Core.stockCap(DATA,S)}개`:""}</div></div>${btn}</div>`;
+        <div><div class="rn">${locked?"???":e.name}</div><div class="rd">${e.effectPerLevelLabel}${e.id==="display"?`, 상한 ${Core.stockCap(DATA,S)}개`:""}</div></div>${btn}</div>`;
     };
     const rows=DATA.equipment.equipment.filter(e=>e.kind!=="staff").map(mkRow).join("");
     const staffRows=DATA.equipment.equipment.filter(e=>e.kind==="staff").map(mkRow).join("");
@@ -1724,7 +1725,7 @@ function renderSheet(){
       `<div class="gstep${x.minLevel<=S.level?" onx":""}"><span class="gdot"></span>${x.emoji} ${x.name}<span style="margin-left:auto;font-size:10px">Lv.${x.minLevel}</span></div>`).join("");
     openSheet(`<h4 class="hd-upgrade">🛠 성장 <button class="x" data-close>닫기 ✕</button></h4>
       <div class="subhead" style="margin-top:0">🏗️ 설비</div>${rows}
-      <div class="subhead">👨‍🍳 직원 — 교육할수록 제작이 빨라져요</div>${staffRows}
+      <div class="subhead">👨‍🍳 직원: 교육할수록 제작이 빨라져요</div>${staffRows}
       <div class="subhead">🏆 빵집 등급</div>${gsteps}`);
   }
   else if(SHEET.type==="quest"){
@@ -1733,7 +1734,7 @@ function renderSheet(){
       const done=st.cur>=st.tgt,claimed=!!S.daily.claimed[q.id];
       return `<div class="rowitem"><div class="re">${st.icon}</div>
         <div><div class="rn">${st.label}</div>
-        <div class="rd">🪙${q.rewardCoins} · XP ${q.rewardXp} · ⭐${q.rewardRep} — ${Math.min(st.cur,st.tgt)}/${st.tgt}</div>
+        <div class="rd">🪙${q.rewardCoins}, XP ${q.rewardXp}, ⭐${q.rewardRep} (${Math.min(st.cur,st.tgt)}/${st.tgt})</div>
         <div class="qbar"><i style="width:${Math.min(100,st.cur/st.tgt*100)}%"></i></div></div>
         <button class="rb ${claimed?"claimed":"green"}" data-claim="${q.id}" ${(!done||claimed)?"disabled":""}>${claimed?"완료":"받기"}</button></div>`;
     }).join("");
@@ -1741,14 +1742,14 @@ function renderSheet(){
     const acDone=allQuestsDone(),acClaimed=!!S.daily.claimed.allclear;
     const acRow=ac?`<div class="rowitem allclear"><div class="re">🎁</div>
       <div><div class="rn">올클리어 보너스 상자</div>
-      <div class="rd">5개 퀘스트 모두 완료 시 — 🪙${ac.rewardCoins} · XP ${ac.rewardXp} · ⭐${ac.rewardRep}</div></div>
+      <div class="rd">5개 퀘스트 모두 완료 시: 🪙${ac.rewardCoins}, XP ${ac.rewardXp}, ⭐${ac.rewardRep}</div></div>
       <button class="rb ${acClaimed?"claimed":"green"}" data-claim="__allclear" ${(!acDone||acClaimed)?"disabled":""}>${acClaimed?"완료":"받기"}</button></div>`:"";
     // 📦 단체 주문 보드 (Lv.6+) — 재고로 납품하면 프리미엄 보상
     let orderRows="";
     const nSlots=Core.orderSlots(DATA,S);
     if(nSlots>0){
       const today=kstDateStr(nowSec());
-      orderRows=`<div class="subhead">📦 단체 주문 <span style="font-weight:400">— 재고로 납품하면 정가보다 후한 값 (매일 새 주문)</span></div>`;
+      orderRows=`<div class="subhead">📦 단체 주문<span style="font-weight:400">: 재고로 납품하면 정가보다 후한 값 (매일 새 주문)</span></div>`;
       for(let i=0;i<nSlots;i++){
         const od=Core.genOrder(DATA,S,today,i);
         if(!od)continue;
@@ -1758,10 +1759,10 @@ function renderSheet(){
           const r=Core.recipeById(DATA,L.id);
           const have=S.stock[L.id]||0;
           return `${r.emoji} ${r.name} <b style="color:${have>=L.qty?"var(--green)":"var(--red)"}">${Math.min(have,L.qty)}/${L.qty}</b>`;
-        }).join(" · ");
+        }).join(", ");
         orderRows+=`<div class="rowitem${done?" dim":""}"><div class="re">${["🚚","🛵","🚛"][i]||"📦"}</div>
           <div><div class="rn">${lines}</div>
-          <div class="rd">보상 🪙${fmt(od.rewardCoins)} · XP ${od.rewardXp} · ⭐${od.rewardRep}</div></div>
+          <div class="rd">보상 🪙${fmt(od.rewardCoins)}, XP ${od.rewardXp}, ⭐${od.rewardRep}</div></div>
           <button class="rb ${done?"claimed":"green"}" data-order="${i}" ${(done||!can)?"disabled":""}>${done?"납품 완료":"납품"}</button></div>`;
       }
     }
@@ -1794,7 +1795,7 @@ document.addEventListener("click",e=>{
   if(cost==null||S.coins<cost)return;
   S.coins-=cost;S.equip[id]=lv+1;S.daily.upgrades+=1;
   const eq=Core.equipById(DATA,id);
-  toast("✨ "+eq.name+" Lv."+S.equip[id]+" — "+eq.effectPerLevelLabel);
+  toast("✨ "+eq.name+" Lv."+S.equip[id]+" ("+eq.effectPerLevelLabel+")");
   renderSheet();renderHeader();renderObjects();saveLocal();
 });
 document.addEventListener("click",e=>{
@@ -1900,7 +1901,7 @@ function showAttendance(rep){
     return `<div class="attcell${got?" got":""}${today?" today":""}">
       <b>${i+1}일</b><span>${got?"✅":"🎁"}</span><small>🪙${r.coins}${r.rep?" ⭐"+r.rep:""}</small></div>`;
   }).join("");
-  openSheet(`<h4 class="hd-quest">📅 출석 도장 <span style="font-size:10px;color:var(--mut)">${rep.stamp}일차 · 연속 ${rep.streak}일</span><button class="x" data-close>닫기 ✕</button></h4>
+  openSheet(`<h4 class="hd-quest">📅 출석 도장 <span style="font-size:10px;color:var(--mut)">${rep.stamp}일차, 연속 ${rep.streak}일</span><button class="x" data-close>닫기 ✕</button></h4>
     <div class="att-grid">${cells}</div>
     <div class="att-msg">오늘 보상: 🪙${rep.coins} + XP ${rep.xp}${rep.rep?" + ⭐"+rep.rep:""}${rep.bonus?` <b class="att-bonus">연속 ${rep.streak}일 보너스 ×${cfg.streakMult}!</b>`:""}
     <br><small>${rep.streak>=cfg.streakBonusFrom?"연속 출석 보너스 적용 중이에요!":"연속 "+cfg.streakBonusFrom+"일부터 보상이 ×"+cfg.streakMult+"가 돼요"}</small></div>`);
@@ -2068,7 +2069,7 @@ function stepActors(dt){
           if(a.t>10&&Core.totalStock(S)<=0){ // 소프트 실패: 시무룩하게 떠남
             if(a.want){a.want.remove();a.want=null;}
             setMood(a,"sad");
-            actorSay(a,null,"😢 다 팔렸네…",1400);
+            actorSay(a,null,"😢 다 팔렸네",1400);
             a.state="leave";a.wp=[fx.corridor,fx.door,{x:fx.spawn.x,y:fx.spawn.y}];
           }
         }
@@ -2175,7 +2176,7 @@ function ensurePetGrant(){
   S.granted.pet1=true;
   S.pets=S.pets||[];S.pets.push({type:"cat_cream"});
   syncPets();
-  setTimeout(()=>{Snd.play("done");modal("🐱","첫 펫 입양!","크림 고양이가 우리 매장에 왔어요.<br>돌아다니는 고양이를 <b>쓰다듬어</b> 보세요 —<br>가끔 <b>동전도 찾아온답니다!</b> 💰",{okText:"환영해!"});},600);
+  setTimeout(()=>{Snd.play("done");modal("🐱","첫 펫 입양!","크림 고양이가 우리 매장에 왔어요.<br>돌아다니는 고양이를 <b>쓰다듬어</b> 보세요.<br>가끔 <b>동전도 찾아온답니다!</b> 💰",{okText:"환영해!"});},600);
 }
 function ensureGrants(){
   ensurePetGrant();
@@ -2237,7 +2238,7 @@ function guide(msg,anchorSel){
 function ftueAdvance(step){
   ftueStep=step;S.ftue.step=step;
   if(step===1)setTimeout(()=>guide("오븐을 탭해서 🥯 모닝롤을 구워보세요! (첫 베이킹은 5초)","[data-obj='st-oven']"),150);
-  else if(step===2)guide("굽는 중… 완성되면 진열대로 자동 이동해요!",null);
+  else if(step===2)guide("굽는 중이에요. 완성되면 진열대로 자동 이동해요!",null);
   else if(step===3)guide(null);
   else if(step===4){
     guide("📋 퀘스트와 🛋️ 꾸미기로 나만의 빵집을 만들어보세요!",null);
@@ -2256,7 +2257,7 @@ function ftueTick(){
       let bonus=DATA.balance.ftue.firstSaleBonusXp;
       if(S.level===1)bonus=Math.max(bonus,Core.xpNeed(DATA,1)-S.xp);
       const ups=Core.addXp(DATA,S,bonus);
-      if(res)toast("🪙 첫 판매! +"+res.coins+"코인"+(host?" — "+host.nickname+"님":""));
+      if(res)toast("🪙 첫 판매! +"+res.coins+"코인"+(host?" ("+host.nickname+"님)":""));
       guide(null);
       ftueAdvance(3);
       const all=(res?res.levelUps:[]).concat(ups);
@@ -2286,7 +2287,7 @@ function offlineSettleAndShow(){
     const r=Core.recipeById(DATA,id);return r.emoji+" "+r.name+" <b>"+rep.soldBy[id]+"개</b>";
   }).join("<br>");
   modal("🛎️","다녀오셨네요!","<b>"+fmtDur(rep.awaySec)+"</b> 동안 빵집이 열심히 팔았어요.",
-    {list:(items||"판매 없음")+"<br>─────────<br>🪙 <b>+"+fmt(rep.coins)+"</b> · XP <b>+"+rep.xp+"</b>"+(rep.tips?" · 팁 항아리 💰"+rep.tips:""),
+    {list:(items||"판매 없음")+"<br>─────────<br>🪙 <b>+"+fmt(rep.coins)+"</b>, XP <b>+"+rep.xp+"</b>"+(rep.tips?", 팁 항아리 💰"+rep.tips:""),
      okText:"받기",cb:()=>{queueLevelUps(rep.levelUps);}});
   renderAll();
 }
@@ -2430,7 +2431,7 @@ function tapPet(el){
   if(nowSec()-pp.patAt>=cfg.patCooldownSec){ // 쓰다듬기
     pp.patAt=nowSec();
     Snd.play("pop");coinPop(r.left+r.width/2-8,r.top-4,"❤️");
-    actorSay(pp,null,["골골골…","멍멍! 🐶","기분 좋아~","🐾"][Math.floor(Math.random()*4)],1300);
+    actorSay(pp,null,["골골골","멍멍! 🐶","기분 좋아~","🐾"][Math.floor(Math.random()*4)],1300);
   }else coinPop(r.left+r.width/2-8,r.top-4,"💕");
   return true;
 }
@@ -2492,16 +2493,16 @@ function tickRush(){
 let TICKI=0;
 function tickerItems(){
   const items=[];
-  if(NEEDS.length)items.push({html:"🔔 <b>지금 할 일 "+NEEDS.length+"개</b> — 매장의 말풍선을 탭하세요!",act:null});
+  if(NEEDS.length)items.push({html:"🔔 <b>지금 할 일 "+NEEDS.length+"개</b>: 매장의 말풍선을 탭하세요!",act:null});
   const nx=Core.nextUnlock(DATA,S.level);
   items.push({html:nx?("🎯 다음: <b>Lv."+nx.level+"</b> "+nx.headline):"👑 모든 목표 달성!",act:openUpgrade});
   const sp=specialRecipe();
   if(sp){const ds=DATA.balance.dailySpecial;
-    items.push({html:"⭐ 오늘의 메뉴 <b>"+sp.emoji+" "+sp.name+"</b> XP×"+ds.xpMult+"·팁+"+Math.round(ds.tipChanceAdd*100)+"%",act:()=>openKitchen(sp.station)});}
+    items.push({html:"⭐ 오늘의 메뉴 <b>"+sp.emoji+" "+sp.name+"</b> XP×"+ds.xpMult+", 팁+"+Math.round(ds.tipChanceAdd*100)+"%",act:()=>openKitchen(sp.station)});}
   const w=rushWindow();
-  if(w)items.push({html:"🔥 <b>러시 타임</b> — 팁 확률 UP! (~"+w[1]+"시)",act:null});
-  if(S.cleanUntil&&nowSec()<S.cleanUntil)items.push({html:"🧽 <b>반짝반짝</b> — 팁 확률 +3% ("+Math.ceil((S.cleanUntil-nowSec())/60)+"분)",act:null});
-  else if(S.dirt&&S.dirt.length)items.push({html:"🧹 바닥에 얼룩 "+S.dirt.length+"개 — 탭해서 청소!",act:null});
+  if(w)items.push({html:"🔥 <b>러시 타임</b>: 팁 확률 UP! (~"+w[1]+"시)",act:null});
+  if(S.cleanUntil&&nowSec()<S.cleanUntil)items.push({html:"🧽 <b>반짝반짝</b>: 팁 확률 +3% ("+Math.ceil((S.cleanUntil-nowSec())/60)+"분)",act:null});
+  else if(S.dirt&&S.dirt.length)items.push({html:"🧹 바닥에 얼룩 "+S.dirt.length+"개, 탭해서 청소!",act:null});
   return items;
 }
 function renderTicker(){

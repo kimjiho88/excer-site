@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>좀비 헌팅 RPG · 논현 모임</title>
+<title>좀비 헌팅 RPG | 논현 모임</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -274,8 +274,8 @@ const ICO={
 const SKILLS=[
  {id:"atk",n:"전투 숙련",d:"전투력 +6%/Lv",ic:"⚔️"},
  {id:"luck",n:"행운",d:"전리품 등급↑ /Lv",ic:"🍀"},
- {id:"wealth",n:"수색",d:"골드·강화석 +8%/Lv",ic:"💰"},
- {id:"haste",n:"신속",d:"행동력 회복·공속↑/Lv",ic:"🌀"},
+ {id:"wealth",n:"수색",d:"골드, 강화석 +8%/Lv",ic:"💰"},
+ {id:"haste",n:"신속",d:"행동력 회복, 공속↑/Lv",ic:"🌀"},
  {id:"collect",n:"수집가",d:"도감 보너스 +25%/Lv",ic:"📖"},
 ];
 const MAXE=30,PULL1=3,PULL10=27,REGEN_MS=80000,PITY=70,ENH_MAX=15,KEY="nh_zh_v2";
@@ -368,7 +368,7 @@ function liveBoard(metric){
  list.sort((a,b)=>b.val-a.val||b.pow-a.pow);return list;}
 function setBanner(on){const e=$("#netDot");if(e){e.style.background=on?"#46c46e":"#6b6477";e.title=on?"실시간 랭킹 연결됨":"오프라인(봇 랭킹)";}}
 function promptNick(){const ov=$("#ov-modal");if(!ov)return;
- ov.innerHTML='<div class="mcard"><div class="tt">랭킹 닉네임 설정</div><p class="muted small">단톡 형식 추천 · 닉/지역/성별/년 (예: 철수/논현/남/92)</p>'+
+ ov.innerHTML='<div class="mcard"><div class="tt">랭킹 닉네임 설정</div><p class="muted small">단톡 형식 추천: 닉/지역/성별/년 (예: 철수/논현/남/92)</p>'+
   '<input id="nkIn" maxlength="24" placeholder="닉/지역/성별/년" autocomplete="off" style="width:100%;margin:14px 0;padding:13px;border-radius:11px;border:1px solid var(--line);background:rgba(0,0,0,.32);color:#fff;font:700 15px Pretendard,sans-serif;-webkit-user-select:text;user-select:text"/>'+
   '<button class="rq" id="nkOk" style="width:100%">랭킹 참가</button></div>';
  ov.classList.add("show");
@@ -453,7 +453,7 @@ function salvageValue(it){return Math.round((it.rarity+1)*(2+it.plus)*1.5*(1+S.s
 function doSalvage(it){S.stones+=salvageValue(it);}
 function salvage(id){const i=S.inv.findIndex(x=>x.id===id);if(i<0)return;const it=S.inv[i];doSalvage(it);S.inv.splice(i,1);save();updateTop();renderTab();}
 function salvageAll(maxR){let n=0,g=0;S.inv=S.inv.filter(it=>{if(it.rarity<=maxR){g+=salvageValue(it);n++;return false;}return true;});S.stones+=g;
- if(n)toast(n+"개 분해 · 강화석 +"+g);else toast("분해할 장비 없음");save();updateTop();renderTab();}
+ if(n)toast(n+"개 분해, 강화석 +"+g);else toast("분해할 장비 없음");save();updateTop();renderTab();}
 
 /* ---------- 스킬 ---------- */
 function skillCost(lv){return{pt:1,gold:Math.round(120*Math.pow(1.4,lv))};}
@@ -495,10 +495,10 @@ function claimAttend(){rollAttend();if(S.attend.claimed){toast("오늘 출석 �
 const CHEST_MS=2*3600*1000;
 function chestReady(){return Date.now()>=(S.chestAt||0);}
 function chestLeft(){const ms=(S.chestAt||0)-Date.now();if(ms<=0)return"";const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return(h>0?h+"시간 ":"")+m+"분";}
-function claimChest(){if(!chestReady()){toast("보급 상자 충전 중 · "+chestLeft());return;}
+function claimChest(){if(!chestReady()){toast("보급 상자 충전 중, "+chestLeft()+" 남음");return;}
  const x=Math.random();let r;if(x<0.5)r={stones:20+Math.round(S.region*5)};else if(x<0.85)r={gold:500+S.region*120};else r={gems:10};
  applyReward(r);S.chestAt=Date.now()+CHEST_MS;save();updateTop();renderTab();
- toast("보급 상자 · "+(r.gems?"젬 "+r.gems:r.stones?"강화석 "+r.stones:"골드 "+fmt(r.gold)));}
+ toast("보급 상자: "+(r.gems?"젬 "+r.gems:r.stones?"강화석 "+r.stones:"골드 "+fmt(r.gold)));}
 
 /* ---------- 환생 ---------- */
 function canRebirth(){return S.lv>=30+S.rebirth*10;}
@@ -507,7 +507,7 @@ function rebirth(){if(!canRebirth()){toast("레벨 "+(30+S.rebirth*10)+" 이상�
  const n=fresh();n.dex=keepDex;n.rebirth=keepReb;n.gems=keepGems+30;
  n.skillPts=keepReb;n.gold=800*keepReb;n.stones=50*keepReb;   // 환생 메리트: 보너스 특성P + 시작 자원
  n.bestRegion=S.bestRegion;n.bestStage=S.bestStage;           // 최고기록은 보존
- S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"% · 골드 +"+rebGoldPct()+"%");}
+ S=n;save();updateTop();renderTab();if(NET.ready)netSubmit(true);toast("환생 "+keepReb+"회! 영구 전투력 +"+Math.round((rebirthMul()-1)*100)+"%, 골드 +"+rebGoldPct()+"%");}
 
 /* ===================================================================
    랭킹 / 봇 / 아레나
@@ -556,13 +556,13 @@ function arenaOpponents(){
 function arenaCdLeft(){const ms=(S.arenaCdUntil||0)-Date.now();if(ms<=0)return"";const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000);return(h>0?h+"시간 ":"")+m+"분";}
 function arenaFight(opp){
  const now=Date.now();
- if((S.arenaCdUntil||0)>now){toast("아레나 재충전 중 · "+arenaCdLeft()+" 남음");return null;}
+ if((S.arenaCdUntil||0)>now){toast("아레나 재충전 중, "+arenaCdLeft()+" 남음");return null;}
  S.arenaCdUntil=now+3*3600*1000;
  const my=power()*(0.85+Math.random()*0.4);const ot=opp.pow*(0.85+Math.random()*0.4);
  const win=my>=ot;
  if(win){const gain=12+Math.round(Math.random()*10);S.arenaPts+=gain;S.daily.won++;S.gems+=4;
    toast("승리! 아레나 +"+gain+"점, 젬 +4");}
- else{S.arenaPts=Math.max(0,S.arenaPts-8);toast("패배… 전투력을 더 키워보세요");}
+ else{S.arenaPts=Math.max(0,S.arenaPts-8);toast("패배. 전투력을 더 키워보세요");}
  if(NET.ready)netSubmit(true);
  save();updateTop();renderTab();return win;}
 
@@ -641,7 +641,7 @@ function kill(z){zombies=zombies.filter(x=>x!==z);
  if(S.keCtr>=5){S.keCtr=0;if(S.energy<MAXE){if(S.energy>=MAXE-1)S.lastEnergyAt=Date.now();S.energy=Math.min(MAXE,S.energy+1);}}
  const drop=z.boss?0.9:0.13+S.skills.luck*0.01;
  if(Math.random()<drop){const it=makeItem();const r=gainItem(it,true);
-   if(!r.salvaged)toast("전리품 · "+RAR[it.rarity].k+" "+NAMES[it.type]);}
+   if(!r.salvaged)toast("전리품: "+RAR[it.rarity].k+" "+NAMES[it.type]);}
  // 스테이지 진행
  if(z.boss){S.region++;S.stage=1;zombies=[];spawnT=300;toast("🏆 보스 처치! "+regionLabel()+" 진입");}
  else{S.stageKC=(S.stageKC||0)+1;if(S.stageKC>=STAGE_KILLS){S.stageKC=0;S.stage=Math.min(10,S.stage+1);}}
@@ -706,7 +706,7 @@ function renderHunt(){
  const cr=(S.region-1)*10+S.stage;
  const claimable=DAILY.filter(m=>!S.daily.claimed[m.id]&&m.get()>=m.goal).length;
  setHTML("#huntInfo",
-  '<div class="stagebar"><div><b>지역 '+S.region+'</b> · 스테이지 '+S.stage+(S.stage>=10?' <span class="bossw">⚠ 보스 출현</span>':'')+'</div>'+
+  '<div class="stagebar"><div><b>지역 '+S.region+'</b>, 스테이지 '+S.stage+(S.stage>=10?' <span class="bossw">⚠ 보스 출현</span>':'')+'</div>'+
   '<div class="muted">최고 통합 '+((S.bestRegion-1)*10+S.bestStage)+'단계</div></div>'+
   '<div class="muted small" style="margin:-2px 0 7px 1px">📍 '+regionLabel()+'</div>'+
   '<div class="stageprog"><i style="width:'+((S.stageKC||0)/STAGE_KILLS*100)+'%"></i></div>');
@@ -727,29 +727,29 @@ function renderHuntExtra(){
    at+='<div class="acell'+(done?' done':'')+(tdy?' today':'')+'" '+(tdy?'data-att="1"':'')+'><div class="ad">'+(i+1)+'일</div><div class="ar">'+ic+'</div>'+(done?'<div class="ack">✓</div>':'')+'</div>';}
  at+='</div>'+(!S.attend.claimed?'<div class="muted small" style="text-align:center;margin-top:8px">오늘의 출석 보상을 받아보세요!</div>':'')+'</div>';
  const ready=chestReady();
- at+='<div class="card chestcard"><div><div style="font-size:14px;font-weight:800">📦 무료 보급 상자</div><div class="muted small">'+(ready?'지금 받을 수 있어요!':'다음까지 '+chestLeft())+' · 2시간마다 충전</div></div>'+
+ at+='<div class="card chestcard"><div><div style="font-size:14px;font-weight:800">📦 무료 보급 상자</div><div class="muted small">'+(ready?'지금 받을 수 있어요!':'다음까지 '+chestLeft())+' (2시간마다 충전)</div></div>'+
    '<button class="mini '+(ready?'gold':'gray')+'" '+(ready?'':'disabled')+' id="chestBtn">'+(ready?'열기':'대기')+'</button></div>';
  const bp=board("pow");const myr=bp.findIndex(x=>x.me)+1;
  at+='<div class="card"><div class="ttl2">🏆 실시간 순위 <span class="pow2">내 순위 #'+myr+'</span></div>';
  bp.slice(0,3).forEach((e,i)=>{at+='<div class="rmini"><span class="rmno">'+["①","②","③"][i]+'</span><span class="rmnm">'+e.handle+(e.op?' 👑':'')+rebTag(e.rebirth)+(e.me?' (나)':'')+'</span><span class="rmv">'+fmt(e.val)+'</span></div>';});
  if(myr>3){at+='<div class="rmini me"><span class="rmno">#'+myr+'</span><span class="rmnm">나</span><span class="rmv">'+fmt(bp[myr-1].val)+'</span></div>';
    const up=bp[myr-2];if(up)at+='<div class="muted small" style="text-align:center;margin-top:7px">⬆ <b style="color:#cbb8e0">'+up.handle+'</b>님을 넘으려면 +'+fmt(up.val-bp[myr-1].val)+' 전투력</div>';}
- at+='<button class="mini gray" id="goRank" style="width:100%;margin-top:11px">전체 랭킹 보기 →</button></div>';
+ at+='<button class="mini gray" id="goRank" style="width:100%;margin-top:11px">전체 랭킹 보기</button></div>';
  setHTML("#huntExtra",at);
  const ac=$('#huntExtra [data-att]');if(ac)ac.onclick=claimAttend;
  const cb=$("#chestBtn");if(cb)cb.onclick=claimChest;
  const gr=$("#goRank");if(gr)gr.onclick=()=>go("rank");
 }
 function renderGacha(){
- let rates=RAR.map(r=>'<span style="color:'+r.c+'">'+r.k+' '+r.w+'%</span>').join(" · ");
+ let rates=RAR.map(r=>'<span style="color:'+r.c+'">'+r.k+' '+r.w+'%</span>').join(", ");
  setHTML("#p-gacha",
   '<div class="card"><div class="ttl">전리품 뽑기</div>'+
   '<p class="muted small">좀비를 사냥할수록 행동력이 모이고, 뽑기로 장비를 얻습니다.</p>'+
-  '<div class="pity">천장까지 '+Math.max(0,PITY-S.pity)+'회 · '+PITY+'회 누적 시 영웅 이상 확정</div>'+
+  '<div class="pity">천장까지 '+Math.max(0,PITY-S.pity)+'회, '+PITY+'회 누적 시 영웅 이상 확정</div>'+
   '<div class="rates">'+rates+'</div>'+
   '<div class="gbtns"><button class="bigbtn" id="g1">단일 뽑기 <span class="cost">⚡'+PULL1+'</span></button>'+
   '<button class="bigbtn gold" id="g10">10연차 <span class="cost">⚡'+PULL10+'</span></button></div>'+
-  '<div class="muted small" style="margin-top:10px">⚠ 전설 0.12% · 신화 0.00001% (약 1천만 분의 1)의 극악 확률 — 신화는 사실상 전설의 영역입니다. 10연은 행동력 또는 젬 20으로 가능</div></div>');
+  '<div class="muted small" style="margin-top:10px">⚠ 전설 0.12%, 신화 0.00001% (약 1천만 분의 1)의 극악 확률입니다. 신화는 사실상 전설의 영역입니다. 10연은 행동력 또는 젬 20으로 가능</div></div>');
  const g1=$("#g1");if(g1)g1.onclick=()=>{const it=pull();if(it)reveal([it]);};
  const g10=$("#g10");if(g10)g10.onclick=()=>{const out=pull10();if(out)reveal(out);};
 }
@@ -760,7 +760,7 @@ function renderEquip(){
  s+='<div class="equiptop"><div class="portrait"><canvas id="pcv" width="64" height="64"></canvas></div><div class="slots">';
  slots.forEach(sl=>{const it=S.equip[sl];const c=it?RAR[it.rarity].c:"#4a4258";
   s+='<div class="slot"><div class="si">'+ICO[sl]+'</div><div class="sl-b"><div class="sn">'+(it?NAMES[it.type]+(it.plus?' <b style="color:#ffd96b">+'+it.plus+'</b>':''):'<span class="muted">'+SLOTNAME[sl]+' 없음</span>')+'</div>'+
-  (it?'<div class="ss" style="color:'+c+'">'+RAR[it.rarity].k+' · 전투력 '+itemPow(it)+'</div>':'')+'</div>'+
+  (it?'<div class="ss" style="color:'+c+'">'+RAR[it.rarity].k+', 전투력 '+itemPow(it)+'</div>':'')+'</div>'+
   (it&&it.plus<ENH_MAX?'<button class="mini" data-enh="'+sl+'">강화</button>':'')+'</div>';});
  s+='</div></div></div>';
  // 보관함
@@ -772,7 +772,7 @@ function renderEquip(){
    const cur=S.equip[it.slot];const up=cur?itemPow(it)-itemPow(cur):itemPow(it);
    s+='<div class="iitem" style="--c:'+c+'"><div class="ii">'+ICO[it.slot]+'</div>'+
    '<div class="ib"><div class="inm">'+NAMES[it.type]+(it.plus?' +'+it.plus:'')+'</div>'+
-   '<div class="ir">'+RAR[it.rarity].k+' · 전투력 '+itemPow(it)+(up>0?' <span class="up">▲'+up+'</span>':(up<0?' <span class="dn">▼'+(-up)+'</span>':''))+'</div></div>'+
+   '<div class="ir">'+RAR[it.rarity].k+', 전투력 '+itemPow(it)+(up>0?' <span class="up">▲'+up+'</span>':(up<0?' <span class="dn">▼'+(-up)+'</span>':''))+'</div></div>'+
    '<div class="iacts"><button class="mini eq" data-eq="'+it.id+'">장착</button><button class="mini gray" data-sv="'+it.id+'">분해</button></div></div>';});
   s+='</div>';}
  s+='</div>';
@@ -798,14 +798,14 @@ function renderGrow(){
  s+='<div class="card"><div class="ttl2">특성 <span class="muted">SP '+S.skillPts+'</span></div>';
  SKILLS.forEach(sk=>{const lv=S.skills[sk.id];const c=skillCost(lv);
   s+='<div class="skill"><div class="ski">'+sk.ic+'</div><div class="sk-b"><div class="sn">'+sk.n+' <b>Lv.'+lv+'</b></div><div class="muted small">'+sk.d+'</div></div>'+
-  '<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP·'+fmt(c.gold)+'G)</button></div>';});
+  '<button class="mini" data-sk="'+sk.id+'">+ ('+c.pt+'SP, '+fmt(c.gold)+'G)</button></div>';});
  s+='</div>';
  // 환생
  s+='<div class="card"><div class="ttl2">환생 <span class="muted">'+S.rebirth+'회</span><span class="pow2">✦'+S.rebirth+'환생 칭호</span></div>'+
   '<div class="rebperk"><div>⚔️ 영구 전투력 <b>+'+Math.round((rebirthMul()-1)*100)+'%</b></div><div>🪙 골드 획득 <b>+'+rebGoldPct()+'%</b></div>'+
   '<div>🧟 방치 사냥 <b>'+idleCapH()+'시간</b></div><div>✨ 보너스 특성P <b>+'+S.rebirth+'</b></div></div>'+
-  '<p class="muted small">레벨·장비·강화는 초기화되지만 <b>도감·환생 보너스·칭호는 영구 유지</b>됩니다. 환생할수록 골드·방치 효율이 올라 방치형에서도 성장 속도가 빨라지고, 랭킹에 ✦환생 칭호가 표시됩니다.</p>'+
-  '<button class="bigbtn '+(canRebirth()?'gold':'')+'" id="rb" '+(canRebirth()?'':'disabled')+'>환생하기 (Lv.'+(30+S.rebirth*10)+' 필요 · 현재 Lv.'+S.lv+')</button></div>';
+  '<p class="muted small">레벨, 장비, 강화는 초기화되지만 <b>도감, 환생 보너스, 칭호는 영구 유지</b>됩니다. 환생할수록 골드와 방치 효율이 올라 방치형에서도 성장 속도가 빨라지고, 랭킹에 ✦환생 칭호가 표시됩니다.</p>'+
+  '<button class="bigbtn '+(canRebirth()?'gold':'')+'" id="rb" '+(canRebirth()?'':'disabled')+'>환생하기 (Lv.'+(30+S.rebirth*10)+' 필요, 현재 Lv.'+S.lv+')</button></div>';
  setHTML("#p-grow",s);
  $$('#p-grow [data-sk]').forEach(b=>b.onclick=()=>learn(b.dataset.sk));
  const rb=$("#rb");if(rb)rb.onclick=rebirth;
@@ -825,7 +825,7 @@ function renderRank(){
  if(NET.banned)s+='<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.16);border-radius:9px;padding:10px 12px;margin-bottom:12px">⚠ 운영진에 의해 랭킹 집계에서 제외된 계정입니다.</div>';
  // 내 순위 강조
  const me0=list[myr-1];
- s+='<div class="myrank"><div>내 순위 <b>#'+myr+'</b> / '+list.length+(S.rebirth>0?' · <span style="color:#ffd96b">✦'+S.rebirth+'환생</span>':'')+'</div><div class="mv">'+valLab(me0.val)+'</div></div>';
+ s+='<div class="myrank"><div>내 순위 <b>#'+myr+'</b> / '+list.length+(S.rebirth>0?', <span style="color:#ffd96b">✦'+S.rebirth+'환생</span>':'')+'</div><div class="mv">'+valLab(me0.val)+'</div></div>';
  if(myr>1){const up=list[myr-2];const diff=up.val-me0.val;
   s+='<div class="chase">⬆ <b>'+up.handle+'</b> 님이 '+(metric==="pow"?fmt(diff)+' 전투력':valLab(up.val))+' 앞서 있어요'+(metric==="pow"&&diff>0?' (+'+fmt(diff)+')':'')+'</div>';}
  // 포디움 top3
@@ -844,10 +844,10 @@ function renderRank(){
  s+='</div>';
  // 아레나
  const ops=arenaOpponents();const onCd=(S.arenaCdUntil||0)>Date.now();
- s+='<div class="card"><div class="ttl2">아레나 <span class="muted">'+S.arenaPts+'점 · '+myRank("arena")+'위</span></div>'+
-  '<p class="muted small">3시간마다 1회 도전 · 비슷한 전투력 구성원에게 도전하세요.</p>'+
+ s+='<div class="card"><div class="ttl2">아레나 <span class="muted">'+S.arenaPts+'점, '+myRank("arena")+'위</span></div>'+
+  '<p class="muted small">3시간마다 1회 도전. 비슷한 전투력 구성원에게 도전하세요.</p>'+
   (onCd?'<div style="font-size:12px;font-weight:700;color:#f0a8bd;background:rgba(192,71,107,.14);border-radius:9px;padding:9px 12px;margin:2px 0 8px">⏳ 다음 도전까지 '+arenaCdLeft()+'</div>':'');
- ops.forEach(o=>{s+='<div class="arow"><div class="aav">'+o.handle.slice(0,1)+'</div><div class="ab"><div class="anm">'+o.handle+(o.op?' 👑':'')+'</div><div class="muted small">전투력 '+fmt(o.pow)+' · '+o.arena+'점</div></div>'+
+ ops.forEach(o=>{s+='<div class="arow"><div class="aav">'+o.handle.slice(0,1)+'</div><div class="ab"><div class="anm">'+o.handle+(o.op?' 👑':'')+'</div><div class="muted small">전투력 '+fmt(o.pow)+', '+o.arena+'점</div></div>'+
   '<button class="mini '+(onCd?'gray':power()>=o.pow?'':'risk')+'" '+(onCd?'disabled':'')+' data-ar="'+o.name+'">도전</button></div>';});
  s+='</div>';
  setHTML("#p-rank",s);
@@ -885,7 +885,7 @@ function openMissions(){rollDaily();const ov=$("#ov-modal");if(!ov)return;
  let s='<div class="mcard"><div class="tt">📋 일일 미션 <span class="muted small">매일 0시 초기화</span></div>';
  DAILY.forEach(m=>{const cur=Math.min(m.get(),m.goal);const done=cur>=m.goal;const claimed=S.daily.claimed[m.id];
   const rw=m.rw.gems?'💎'+m.rw.gems:m.rw.stones?'💠'+m.rw.stones:'🪙'+fmt(m.rw.gold);
-  s+='<div class="mrow"><div class="mb"><div class="mn2">'+m.n+'</div><div class="mbar"><i style="width:'+(cur/m.goal*100)+'%"></i></div><div class="muted small">'+cur+' / '+m.goal+' · 보상 '+rw+'</div></div>'+
+  s+='<div class="mrow"><div class="mb"><div class="mn2">'+m.n+'</div><div class="mbar"><i style="width:'+(cur/m.goal*100)+'%"></i></div><div class="muted small">'+cur+' / '+m.goal+', 보상 '+rw+'</div></div>'+
    '<button class="mini '+(claimed?'gray':done?'gold':'')+'" '+(claimed||!done?'disabled':'')+' data-cl="'+m.id+'">'+(claimed?'완료':'수령')+'</button></div>';});
  s+='<button class="rc" id="mClose">닫기</button></div>';
  ov.innerHTML=s;ov.classList.add("show");
