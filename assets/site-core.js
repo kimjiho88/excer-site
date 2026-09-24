@@ -281,6 +281,29 @@
     }
   }
 
+  /* ──────────────────────────────────────────────────────────
+     ④ 누름 모양과 입력 중 탭바
+     아이폰 사파리는 페이지에 터치 리스너가 하나라도 있어야 누르는 동안의 모양(:active)을 그린다.
+     글을 입력하는 동안에는 html 에 is-typing 을 붙여 아래 탭바를 숨긴다(site.css) —
+     키보드가 화면을 줄이는 안드로이드 카카오톡에서 탭바가 키보드 위에 올라앉아 입력칸과 검색 결과를 가리던 것.
+     안드로이드에서 뒤로 가기로 키보드만 닫으면 포커스가 입력칸에 남는다 → 화면 높이가 돌아온 것을 보고 다시 보인다.
+     ────────────────────────────────────────────────────────── */
+  document.addEventListener("touchstart", function () {}, { passive: true });
+  var TYPING = 'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="color"]), textarea, select';
+  function isTyping(el) { return !!(el && el.matches && el.matches(TYPING)); }
+  function setTyping(on) { document.documentElement.classList.toggle("is-typing", on); }
+  var fullH = window.innerHeight, lastW = window.innerWidth, kbUp = false;
+  document.addEventListener("focusin", function (e) { if (isTyping(e.target)) setTyping(true); });
+  document.addEventListener("focusout", function () { kbUp = false; setTyping(false); });
+  window.addEventListener("resize", function () {
+    var h = window.innerHeight;
+    if (window.innerWidth !== lastW) { lastW = window.innerWidth; fullH = h; return; }   // 방향이 바뀌면 기준 높이를 새로
+    if (h > fullH) fullH = h;
+    if (!isTyping(document.activeElement)) return;
+    if (h < fullH - 150) { kbUp = true; setTyping(true); }        // 키보드가 올라와 화면이 줄었다
+    else if (kbUp && h >= fullH - 80) { kbUp = false; setTyping(false); }   // 키보드만 내려갔다
+  }, { passive: true });
+
   function start() {
     startVisitCounter();
     watchModals();
