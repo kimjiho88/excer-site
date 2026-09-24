@@ -67,7 +67,8 @@
     @media (max-width: 640px) { .guide-layout { --card-x: 14px; --card-y: 12px; } }
     /* 카드 한 벌 */
     .qt, .rt, .rc, .tool, .ban-board, .lad2, .cat-body .nick-parts, .num-cards, .toc-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-r); box-shadow: none; }
-    .guide-doc .btn-secondary { border-color: var(--line-strong); }
+    .guide-doc .btn-secondary { border-color: var(--line-strong); }   /* 카드 선과 같은 회색 계열 — 흰 카드 안에서 보라 기운 테두리만 따로 놀던 것 */
+    @media (hover: hover) and (pointer: fine) { .guide-doc .btn-secondary:hover { border-color: var(--brand); } }
     /* 크림 그림: 틀 없이 가장자리 3% 를 바탕에 녹인다(그림 바탕색이 페이지 바탕과 거의 같다).
        그림마다 여백이 달라 칸 안에서 그림이 들쭉날쭉하던 것 — 그림은 그린 부분에 맞춰 잘라 두고(IMAGE_SPEC 11절), 칸 안에서는 왼쪽에 붙인다 */
     .qt-img, .ch-art, .rb-img, .lane-img {
@@ -570,15 +571,16 @@
         return String(value).replace(/[&<>"']/g, function (ch) { return entities[ch]; });
       }
       /* 줄 끝 한 낱말 막기 — text-wrap: pretty 가 없는 브라우저(아이폰 iOS 18 이하의 사파리·카카오톡 등)에서만,
-         문장의 마지막 짧은 낱말(6자 이하)을 앞 낱말과 줄바꿈 없는 공백으로 잇는다. 크롬처럼 pretty 가 있으면 그대로 둔다 */
+         문장의 마지막 짧은 낱말(문장부호 빼고 6자 이하)을 앞 낱말과 줄바꿈 없는 공백으로 잇는다. 크롬처럼 pretty 가 있으면 그대로 둔다 */
       var NEED_TAIL = !(window.CSS && CSS.supports && (CSS.supports("text-wrap-style", "pretty") || CSS.supports("text-wrap", "pretty")));
       function keepTail(t) {
         if (!NEED_TAIL) return t;
-        return String(t).replace(/ ([^ \u00a0]+)$/, function (m, w) { return w.replace(/\*\*|\[\[|\|[^\]]*\]\]/g, "").length <= 6 ? "\u00a0" + w : m; });
+        return String(t).replace(/ ([^ \u00a0]+)$/, function (m, w) { return w.replace(/\*\*|\[\[|\|[^\]]*\]\]/g, "").replace(/[.,!?)]+$/, "").length <= 6 ? "\u00a0" + w : m; });
       }
       /* 본문 글은 **강조** 와 [[글|id]](본문 안 이동 링크)만 허용한다 */
+      /* '할 수 있다'의 '수'(의존 명사)는 앞말과 한 덩어리로 — '적용할 / 수 있습니다'처럼 갈라지지 않게 */
       function em(text) {
-        return esc(keepTail(text)).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[\[(.+?)\|([a-z0-9-]+)\]\]/g, '<a class="para-jump" href="#$2">$1</a>');
+        return esc(keepTail(String(text).replace(/ 수 (있|없)/g, "\u00a0수 $1"))).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[\[(.+?)\|([a-z0-9-]+)\]\]/g, '<a class="para-jump" href="#$2">$1</a>');
       }
       /* 검색용 글 — 글자 값만 모은다(파일 이름·앵커·주소·모양 값은 빼서 'rule-'·'webp' 같은 말이 걸리지 않게) */
       var SKIP = { img: 1, id: 1, anchor: 1, to: 1, href: 1, ic: 1, tone: 1, final: 1, host: 1, warm: 1, wide: 1, head: 1, type: 1, btn: 1 };
@@ -632,7 +634,7 @@
           blocks: [
             { type: "nickfmt", anchor: "rule-nick", keywords: ["닉네임 양식", "출생년도", "입장일"], parts: [
               { label: "닉네임", ex: "엑서" }, { label: "지역", ex: "논현" }, { label: "성별", ex: "남" },
-              { label: "출생 연도", ex: "88", note: "뒤 두 자리" }, { label: "입장일", ex: "0125", note: "월일 네 자리" } ] },
+              { label: "출생 연도", ex: "88", note: "뒤 두\u00a0자리" }, { label: "입장일", ex: "0125", note: "월일 네\u00a0자리" } ] },
             { type: "nicktags", keywords: ["좋은 예", "나쁜 예", "이모지"], good: "엑서 논현 남 88 0125",
               bad: [{ ex: "엑서", text: "이름만" }, { text: "이모지만" }, { ex: "엑서 논현", text: "칸 누락" }],
               caption: "지역, 성별, 출생 연도, 입장일이 빠지면 알아보기 어렵습니다." },
@@ -706,7 +708,7 @@
           keywords: ["모임 개설", "개설 자격", "자격", "벙 만들기", "모임 만들기", "모임은 어떻게 만드나요", "캘린더", "공식 벙", "공식 모임", "모임 공지 없이 따로 만나도 되나요", "따로 만나", "지인", "가족", "친척", "커플", "중복 벙", "중복 모임", "중복 모임은 언제 열 수 있나요", "비벙", "지양", "모집 글", "소식"],
           blocks: [
             { type: "rulecards", anchor: "rule-official", keywords: ["따로 만나", "공지 없이", "지인", "가족", "친척", "커플"],
-              need: "[[첫 모임에 1회 참여한 뒤부터|start]] 열\u00a0수 있습니다.",
+              need: "[[첫 모임에 1회 참여한 뒤부터|start]] 열 수 있습니다.",
               rule: "방 안 멤버 **두 명 이상**이 만나면 공식\u00a0모임으로 엽니다.", ex: ["가족이나 친척", "직장, 학교, 오래된 친구처럼 방 밖에서 알던\u00a0사이", "방 안 공식 커플"] },
             { type: "path", anchor: "rule-make", title: "만드는 법", keywords: ["벙 만들기", "모임 만들기", "캘린더", "모집 글"],
               steps: ["채팅 우측 상단 메뉴", "캘린더", "연필 아이콘", "제목, 날짜, 시간, 위치, 참석 여부 입력", "확인 후 올리기"],
