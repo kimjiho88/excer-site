@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="only light" />
-  <meta name="theme-color" content="#4B2A82" />
+  <meta name="theme-color" content="#F7F5EF" />
 
   <title>이용 안내 | 동네친구들</title>
   <meta name="description" content="처음 2주, 닉네임, 모임 가기와 열기, 정산, 운영진 연락, 금지 행동을 상황별로 정리한 동네친구들 이용 안내입니다." />
@@ -227,6 +227,7 @@
     .cat-body .rb-k { margin: 0; color: var(--ink-2); font-size: 13px; font-weight: 700; line-height: 18px; }
     .cat-body .rb-big { margin: 4px 0 0; color: var(--ink); font-size: 20px; font-weight: 500; line-height: 28px; text-wrap: balance; }
     .cat-body .rb-big b { font-weight: 700; }
+    .cat-body .rb-sub { margin: 4px 0 0; color: var(--ink); font-size: 16px; line-height: 24px; }   /* 지키지 않았을 때(내보내기) — 곁글이 아니라 규칙이라 본문 색 */
     .rule-band .para-jump { margin-top: -6px; font-size: 16px; }
     @media (max-width: 640px) {
       .rule-band { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; }
@@ -469,7 +470,7 @@
     <div class="container cover-inner">
       <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-sprout"/></svg>처음 오셨다면 여기부터</p>
       <h1 class="cover-title" id="pageTitle">이용 안내</h1>
-      <p class="cover-lead">처음이라면 1장부터 읽고, 궁금한 것은 아래 질문을 누릅니다.</p>
+      <p class="cover-lead">처음이라면 1장부터 읽고, 필요한 장은 아래에서 바로 고릅니다.</p>
     </div>
   </section>
 
@@ -614,21 +615,21 @@
       }
 
       /* 규칙 데이터 — 날짜·횟수·대상·예외·조치 단계는 기존 규칙 그대로. 사실은 한 곳에만 둔다(중복 문장 없음).
-         q·k: 한눈에 타일(질문 / 답 조각) · img: 타일과 장 머리 그림(같은 파일) · head:false 면 장 머리 그림 없음
+         q·k: 한눈에 타일(17차부터 장 제목과 같은 말 / 짧은 답) · img: 타일과 장 머리 그림(같은 파일) · head:false 면 장 머리 그림 없음
          key: 장 머리 핵심 한 줄 · keywords: 검색어(화면에는 안 보임) · anchor: 하위 이동 자리(id) */
       var CATS = [
-        { id: "cat-must", title: "처음 2주", q: "처음 왔어요", k: "2주 안 첫 모임", img: "rules-eligibility", head: false,
+        { id: "cat-must", title: "처음 2주", q: "처음 2주", k: "2주 안에 첫 모임", img: "rules-eligibility", head: false,
           key: "들어온 날부터 첫 모임 뒤까지, 이 순서대로 하면 됩니다.",
           keywords: ["신입", "처음", "입장", "첫 벙", "첫 모임", "2주", "14일", "음주", "맨정신", "공지", "운영 원칙", "신입 표시", "모임 개설", "게스트 초대", "정기 참여", "2개월", "두 달", "유령회원", "술"],
           blocks: [
-            { type: "scenes", anchor: "start", label: "처음 2주 흐름", keywords: ["신입", "첫 벙", "맨정신", "공지", "운영 원칙", "게스트 초대", "모임 개설"], steps: [
+            { type: "scenes", anchor: "start", label: "처음 2주 흐름", keywords: ["신입", "첫 벙", "맨정신", "공지", "운영 원칙", "게스트 초대", "모임 개설", "내보내기", "안 나가면", "미참여"], steps: [
               { img: "flow-enter", title: "들어온 날", text: "닉네임을 [[양식|rule-nick]]에 맞추고, **공지를 먼저 확인**합니다. 운영진 안내와 공지가 운영의 기준입니다." },
-              { img: "flow-first-meeting", title: "입장 후 2주 안에 첫 모임", text: "첫 모임은 **음주 상태로 참여할 수 없습니다.**", to: "cat-bung", toLabel: "모임 신청" },
+              { img: "flow-first-meeting", title: "입장 후 2주 안에 첫 모임", text: "참여하지 않고 2주가 지나면 **내보내기** 처리합니다. 첫 모임은 **음주 상태로 참여할 수 없습니다.**", to: "cat-bung", toLabel: "모임 신청" },
               { img: "flow-host", title: "첫 모임 1회 뒤부터", chips: ["신입 표시 사라짐", "모임 개설 가능", "게스트 초대 가능"] }
             ] },
-            { type: "band", anchor: "rule-regular", img: "participation-spot", kicker: "그 뒤로 계속", big: "모든 멤버는 **2개월에 1회 이상** 참여합니다.", to: "rule-ops", toLabel: "오래 못 나오면?", keywords: ["정기 참여", "유령회원"] }
+            { type: "band", anchor: "rule-regular", img: "participation-spot", kicker: "그 뒤로 계속", big: "모든 멤버는 **2개월에 1회 이상** 참여합니다.", sub: "2개월 동안 참여하지 않으면 내보내기 처리합니다.", to: "rule-ops", toLabel: "오래 못 나오면?", keywords: ["정기 참여", "유령회원", "내보내기", "안 나가면", "미참여"] }
           ] },
-        { id: "cat-basics", title: "닉네임과 재입장", q: "닉네임은 어떻게?", k: "양식, 변경, 재입장", img: "rules-nickname",
+        { id: "cat-basics", title: "닉네임과 재입장", q: "닉네임과 재입장", k: "다섯 부분, 변경 1회", img: "rules-nickname",
           key: "다섯 부분을 이 순서로, **띄어쓰기**로 잇습니다.",
           keywords: ["닉네임", "양식", "닉네임은 어떻게 정하나요", "닉네임 변경", "닉네임을 바꾸고 싶어요", "태그", "재입장", "재입장은 몇 번까지 되나요", "횟수", "기기 교체", "예외", "출생년도", "출생 연도", "연도", "나이", "몇 살", "닉변", "입장일", "이모지", "1981", "1982"],
           blocks: [
@@ -638,13 +639,13 @@
             { type: "nicktags", keywords: ["좋은 예", "나쁜 예", "이모지"], good: "엑서 논현 남 88 0125",
               bad: [{ ex: "엑서", text: "이름만" }, { text: "이모지만" }, { ex: "엑서 논현", text: "칸 누락" }],
               caption: "지역, 성별, 출생 연도, 입장일이 빠지면 알아보기 어렵습니다." },
-            { type: "numcards", keywords: ["닉네임 변경", "바꾸고 싶어요", "바꾸기", "바꾸려면", "재입장", "횟수", "몇 번", "기기 교체", "예외 상황", "탈퇴", "나가기", "나갔다", "1981", "1982"], items: [
-              { anchor: "rule-nick-change", wide: true, big: "입장 후 1회만", label: "닉네임 변경", sub: "바꿀 때 [[방장과 부방장|cat-manner]]인 운영진 3명을 모두 태그합니다." },
+            { type: "numcards", keywords: ["닉네임 변경", "바꾸고 싶어요", "바꾸기", "바꾸려면", "들어온 날", "첫날", "재입장", "횟수", "몇 번", "기기 교체", "예외 상황", "탈퇴", "나가기", "나갔다", "1981", "1982"], items: [
+              { anchor: "rule-nick-change", wide: true, big: "입장 후 1회만", label: "닉네임 변경", sub: "들어온 날 양식에 맞추는 것은 1회에 들어가지 않습니다. 바꿀 때는 채팅방에서 [[방장과 부방장|cat-manner]]인 운영진 3명을 모두 태그합니다." },
               { anchor: "rule-reentry", big: "최대 1회", label: "재입장", sub: "1981년생 및 이전" },
               { big: "최대 3회", label: "재입장", sub: "1982년생 및 이후" } ],
               foot: "기기 교체처럼 불가피한 사유는 [[운영진에게|rule-ops]] 미리 알리면 재입장 예외를 적용할 수 있습니다." }
           ] },
-        { id: "cat-bung", title: "모임 가기", q: "모임에 가려면?", k: "참석 버튼", img: "rules-meetup",
+        { id: "cat-bung", title: "모임 가기", q: "모임 가기", k: "참석 버튼 누르기", img: "rules-meetup",
           key: "모임(벙)은 모임장이 채팅방 캘린더에 올린 모임 공지의 **참석\u00a0버튼**으로 신청합니다.",
           keywords: ["벙", "벙주", "모임장", "참석 버튼", "신청", "명단", "시간", "장소", "시간 엄수", "지각", "늦으면", "늦어요", "늦을 것 같아요", "번개", "불참", "못 가요", "중간 합류", "모임에 중간부터 합류해도 되나요", "사전 연락", "임의 참여"],
           blocks: [
@@ -658,7 +659,7 @@
               { s: "중간부터 합류할 때", w: "먼저 연락하면 가능" } ] },
             { type: "callout", anchor: "rule-walkin", tone: "danger", ic: "close", text: "연락 없이 참여하는 **임의\u00a0참여는 금지**입니다.", keywords: ["임의 참여", "무단 참여"] }
           ] },
-        { id: "cat-settle", title: "모임 비용 정산", q: "정산은 어떻게?", k: "1/N 원칙", img: "settle-spot", head: false,
+        { id: "cat-settle", title: "모임 비용 정산", q: "모임 비용 정산", k: "1/N 원칙", img: "settle-spot", head: false,
           key: "**1/N**이 원칙입니다. 상황에 따라 모임장 판단으로 예외를 둘 수 있습니다.",
           keywords: ["정산", "1/N", "엔빵", "N빵", "더치페이", "송금", "계좌번호", "벙비", "모임 비용", "영수증", "결제 내역", "계좌", "입금", "입금 완료", "입금 확인 링크", "댓글", "정산기", "정산 금액이 이상합니다", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "정산 결과는 채팅방에 어떻게 보내나요"],
           blocks: [
@@ -676,7 +677,7 @@
               text: "차수별 1/N 금액과 입금 확인 링크를 만들고, **카카오톡으로 보내기**를 누르면 카카오톡 공유 창이 열립니다.",
               sub: "공유 창이 열리지 않는 브라우저에서는 링크가 복사되거나 직접 복사할 창이 뜨니, 채팅창에 붙여넣습니다." }
           ] },
-        { id: "cat-ban", title: "금지 행동", q: "이건 해도 되나요?", k: "금지 목록, 조치", img: "rules-boundaries",
+        { id: "cat-ban", title: "금지 행동", q: "금지 행동", k: "예외 없이 금지", img: "rules-boundaries",
           key: "아래 행동은 **예외 없이** 금지합니다. 음주 여부와 관계없이 같은 기준입니다.",
           keywords: ["금지", "피할 것", "노쇼", "불참", "플러팅", "연락처", "반말", "사생활", "폭언", "성희롱", "홍보", "개인정보", "사진", "뒷담화", "감정싸움", "기혼자", "유부", "결혼", "미혼", "번호 교환", "경고", "면담", "강제퇴장", "강퇴", "쫓겨", "추방", "내보내", "퇴출", "조치", "비벙"],
           blocks: [
@@ -689,7 +690,7 @@
               { label: "금지 행동 위반", steps: [{ tag: "1차", text: "구두 경고" }, { tag: "2차", text: "강제퇴장", sub: "재적발 시", final: true }] },
               { label: "비벙 관련", steps: [{ tag: "1차", text: "구두 경고" }, { tag: "2차", text: "운영진 면담", sub: "사유 확인" }, { tag: "3차", text: "강제퇴장", final: true }] } ] }
           ] },
-        { id: "cat-manner", title: "연락과 대화", q: "운영진 연락은?", k: "1:1 대화", img: "rules-manners",
+        { id: "cat-manner", title: "연락과 대화", q: "연락과 대화", k: "운영진과 1:1 대화", img: "rules-manners",
           key: "운영진은 오픈채팅에서 닉네임 옆에 **방장이나 부방장** 표시가 있는 3명입니다. 운영진 닉네임을 눌러 **1:1\u00a0대화**로 연락합니다.",
           keywords: ["운영진", "누구", "연락", "운영진은 어떻게 연락하나요", "1:1", "오픈채팅", "매너", "배려", "불편", "저격", "중재", "한동안 모임에 못 나갑니다", "장기 미참여", "사정", "규칙에 없는 상황", "규칙에 없는 상황이 생기면 어떻게 되나요", "제재", "메시지 삭제", "메세지 삭제", "메시지를 삭제해도 되나요", "가리기", "방장", "부방장"],
           blocks: [
@@ -703,7 +704,7 @@
               { bad: true, title: "직접 지우기", text: "메시지는 되도록 지우지 않습니다." },
               { bad: false, title: "가리기 요청", text: "꼭 지워야 하면 운영진에게 요청합니다." } ] }
           ] },
-        { id: "cat-open", title: "모임 열기", q: "모임을 열려면?", k: "공식 모임으로", img: "posts-meetup",
+        { id: "cat-open", title: "모임 열기", q: "모임 열기", k: "공식 모임으로", img: "posts-meetup",
           key: "오프라인 모임은 **공식 모임**으로 여는 것이 원칙입니다. 일정, 장소, 인원, 정산 기준을 누구나 확인할 수 있어야 합니다.",
           keywords: ["모임 개설", "개설 자격", "자격", "벙 만들기", "모임 만들기", "모임은 어떻게 만드나요", "캘린더", "공식 벙", "공식 모임", "모임 공지 없이 따로 만나도 되나요", "따로 만나", "지인", "가족", "친척", "커플", "중복 벙", "중복 모임", "중복 모임은 언제 열 수 있나요", "비벙", "지양", "모집 글", "소식"],
           blocks: [
@@ -719,7 +720,7 @@
             { type: "note", danger: true, anchor: "rule-bibung", keywords: ["비벙", "지양", "후일담"],
               title: "비벙은 지양합니다.", text: "비벙은 공지 없이 따로 모이는 모임입니다. 비벙 이야기, 사진, 후일담도 채팅방에 올리지 않습니다.", to: "rule-sanction", toLabel: "조치 단계" }
           ] },
-        { id: "cat-faq", title: "사이트 사용", q: "사이트 쓰는 법", k: "앱처럼 쓰기, 후기", img: "rules-faq",
+        { id: "cat-faq", title: "사이트 사용", q: "사이트 사용", k: "앱처럼 쓰기, 후기", img: "rules-faq",
           key: "사이트를 쓰다가 자주 묻는 것을 모았습니다.",
           keywords: ["사이트", "자주 묻는 질문", "질문", "FAQ", "홈 화면", "설치", "앱", "바로가기", "오늘 뭐 먹지", "내 주변", "맛집", "후기 쓰기", "후기", "임시 저장", "쓰던 글이 사라졌어요"],
           blocks: [
@@ -789,7 +790,7 @@
             }).join("") + "</ol>";
           case "band":
             return '<div class="rule-band"' + aid(b.anchor) + ">" + pic(b.img, "rb-img", "(max-width: 640px) 88px, 104px", ".rule-band") +
-              '<div><p class="rb-k">' + esc(b.kicker) + '</p><p class="rb-big">' + em(b.big) + "</p>" + jumpLink(b.to, b.toLabel) + "</div></div>";
+              '<div><p class="rb-k">' + esc(b.kicker) + '</p><p class="rb-big">' + em(b.big) + "</p>" + (b.sub ? '<p class="rb-sub">' + em(b.sub) + "</p>" : "") + jumpLink(b.to, b.toLabel) + "</div></div>";
           case "nickfmt":
             return '<div class="nick-dg"' + aid(b.anchor) + '><ol class="nick-parts" role="list" aria-label="닉네임 다섯 부분">' + b.parts.map(function (p) {
               return '<li class="nick-part"><span class="np-v">' + esc(p.ex) + '</span> <span class="np-k">' + esc(p.label) + "</span>" + (p.note ? ' <span class="np-n">' + esc(p.note) + "</span>" : "") + "</li>";
@@ -897,7 +898,7 @@
         "</section>";
       }).join("");
 
-      tocStart.innerHTML = '<li><a href="#summary" data-chip="summary">상황별 빠른 답</a></li>';
+      tocStart.innerHTML = '<li><a href="#summary" data-chip="summary">무엇이 궁금하세요?</a></li>';
       tocList.innerHTML = CATS.map(function (c, i) {
         return '<li><a href="#' + esc(c.id) + '" data-chip="' + esc(c.id) + '"><small>' + (i + 1) + "</small>" + esc(c.title) + "</a></li>";
       }).join("");

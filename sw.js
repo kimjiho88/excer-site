@@ -3,7 +3,7 @@
    배포가 잦아 오래된 파일이 남는 일을 피하기 위해서다.
    저장하는 것은 offline.html 한 장과 그 안의 그림 한 장뿐이고, 연결이 없을 때 '페이지 이동' 요청에만 offline.html 을 돌려준다.
    그 밖의 요청(스크립트·그림·데이터)은 서비스 워커를 거치지 않는다(respondWith 를 부르지 않으면 브라우저가 평소처럼 처리). */
-var VERSION = "2026-09-21b";            // offline.html 이나 그 그림을 고치면 이 값을 올린다 — 그래야 설치된 브라우저에 새 판이 저장된다
+var VERSION = "2026-09-24a";            // offline.html 이나 그 그림을 고치면 이 값을 올린다 — 그래야 설치된 브라우저에 새 판이 저장된다
 var CACHE = "excer-offline-" + VERSION;
 var OFFLINE = "/offline.html";
 var OFFLINE_IMG = "/assets/img/offline-spot-240.webp";   // offline.html 이 쓰는 그림. 없어도 페이지는 아이콘으로 동작한다
