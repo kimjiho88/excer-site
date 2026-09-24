@@ -114,13 +114,13 @@
 |---|---|---|---|---|
 | 음식 종류 8 | `food-{meat,korean,japanese,chinese,western,pub,cafe,bunsik}-160/320.webp` | 맛집 **상세 머리**(`.pd-hero` — 그림 왼쪽, 요약 칩 오른쪽). 종류 → 파일은 `assets/content.js` 의 `CAT_IMG`·`catImg()`. 목록 줄·홈 카드 타일은 선 아이콘 | PC 128 · 폰 96px | 칩이 전체 폭으로 |
 | 참여 단계 4 + 정기 참여 1 | `flow-{enter,first-meeting,host,record}`(안내 장면용 `-480` 추가. 13차에 세 장 모두 원본에서 크림 여백을 걷어 낸 정사각으로 다시 만듦 — 곧은 여백·타원·찢긴 가장자리가 섞여 보이던 것, 참조 `?v=2`), `participation-spot` | 이용 안내 1장 **장면 3장**(`ol#start.step-cards.is-3`: 어두운 장면화 `flow-enter·first-meeting·host` 만 한 줄. 16차부터 카드 상자 없이 그림 + 글. PC·태블릿 3열 윗그림 4:3, 폰은 한 줄씩 88px 정사각 + 글)과 따로 떨어진 **정기 참여**(`.rule-band`, 16차부터 판 없이 `participation-spot` PC 104 · 폰 88px + 한 문장). 홈 '처음 참여한다면'은 선 아이콘 원판. `flow-record` 는 소식 글감·빈 상태의 '후기'용 | 카드 폭 · 88px | 번호·글만 |
-| 안내 타일·장 머리 7 | `rules-{eligibility,nickname,meetup,manners,boundaries}`, `settle-spot`(정산), `posts-meetup`(모임 열기). `rules-faq` 는 18차에 사이트 사용 장을 빼면서 이용 안내에서 쓰지 않음(원판은 남김) | 이용 안내 **장 타일 7장**(`.qt`, '한눈에 보기' — PC·태블릿 88px, 16차부터 폰은 글만)과 같은 파일로 **장 머리**(`.cat-head .ch-art`, PC 112 · 폰 88px). 머리 그림은 2·3·5·6·7장만(1장은 장면 그림, 4장은 역할 그림이 바로 아래에 있어서), 그래서 폰에서는 한 그림이 한 번씩만 보인다. 4장 정산 레인에 역할 그림 한 쌍 `calc-rounds`(모임장)·`calc-payment`(참여자) 80px. 크림 그림은 틀·그림자 없이 가장자리를 바탕에 녹인다(mask, 17차부터 3%, 자른 판은 11절). 한 묶음 안에 어두운 장면화와 크림 스팟을 섞지 않는다(12차, `REDESIGN_CHECKLIST.md` 17절, 21절) | 80~112px | 글이 전체 폭으로 |
+| 안내 타일·장 머리 7 | `rules-{eligibility,nickname,meetup,manners,boundaries}`, `settle-spot`(정산), `posts-meetup`(모임 열기). `rules-faq` 는 18차에 사이트 사용 장을 빼면서 이용 안내에서 쓰지 않음(원판은 남김) | 이용 안내 **장 타일 7장**(`.qt`, '한눈에 보기' — PC·태블릿 88px, 16차부터 폰은 글만)과 같은 파일로 **장 머리**(`.cat-head .ch-art`, PC 112 · 폰 88px). 머리 그림은 2·3·5·6·7장만(1장은 장면 그림, 4장은 역할 그림이 바로 아래에 있어서), 그래서 폰에서는 한 그림이 한 번씩만 보인다. 4장 정산 레인에 역할 그림 한 쌍 `calc-rounds`(모임장)·`calc-payment`(참여자) 88px. 크림 그림은 틀·그림자 없이 가장자리를 바탕에 녹인다(mask, 17차부터 3%, 자른 판은 11절). 한 묶음 안에 어두운 장면화와 크림 스팟을 섞지 않는다(12차, `REDESIGN_CHECKLIST.md` 17절, 21절) | 88~112px | 글이 전체 폭으로 |
 | 글 종류 4 | `posts-{notice,meetup,info,free}` (후기는 `flow-record`) | 소식 **이번 주 글감 카드**(`#promptArt`, 글감의 종류대로)와 **종류별 빈 상태**("정보 글이 없습니다" 위 120px, `.empty-spot`). 글쓰기 창의 종류 선택 옆·목록 줄에는 없음 | 96/80px · 120px | 전구 아이콘 / 문장만 |
 | 정산 단계 3 + 공유 1 | `calc-{members,rounds,payment,share}` | 정산 **진행 stepper 카드**(`.stepper.is-cards`, 모임과 멤버 → 차수 금액 → 입금 정보 → 결과 공유) — 넓은 화면(≥ 768px)에서만 그림, 좁은 화면은 점 stepper 그대로. 단계 제목·카톡 안내 상자에는 없음 | 80px | 글만 |
 | 칭호 메달 6 | `badge-{active,growth,guardian,welcome,sharing,reaction}-128/256.webp`(투명) | 통계 **메달 카드**(`#badgeCards`, 활약왕·성장왕·모임 지킴이·환영요정·정보공유왕·리액션왕). 나머지 칭호(새벽반·아침반·퇴근반·나들이 대장·맛집 탐험가·꾸준함)는 아래 목록에 선 아이콘 | PC 88 · 폰 72px, `contain` | 선 아이콘 |
 | 404 1 | `notfound-empty-640/320.webp` | `404.html`(정적 배포에서 Vercel 이 404 상태로 내보냄, `noindex`, robots 제외) | 300px 3:2 | 돋보기 아이콘 |
 
-미사용: 없음(34장 전부 자리 있음). `posts-notice`·`posts-meetup` 는 공지·모집 글감이나 그 종류의 빈 상태에서만 나온다. 검사는 `scratchpad/img2test.js`(1440·390, 자리·크기·실패 경로·`?v=2`), `imgtest.js`(커버·빈 상태 3:2).
+미사용: `rules-faq`(18차에 이용 안내 사이트 사용 장을 빼면서 자리 없음, 원판만 남김). 나머지 33장은 자리 있음. `posts-notice`·`posts-meetup` 는 공지·모집 글감이나 그 종류의 빈 상태에서만 나온다. 검사는 `scratchpad/img2test.js`(1440·390, 자리·크기·실패 경로·`?v=2`), `imgtest.js`(커버·빈 상태 3:2).
 
 ## 11. 이용 안내 그림 — 그린 부분에 맞춰 자른 판 (적용됨, 2026-09-24 · 17차)
 
@@ -128,7 +128,7 @@
 
 - 만드는 법: 보존판 `assets/img/src/<이름>.webp`(1254px)에서 가장자리 12px 띠의 중앙값을 바탕색으로 잡고, 바탕과 차이(RGB 합) 30 넘는 곳의 테두리 상자를 찾아 긴 변의 3% 여백을 더해 자른다. 바탕과 거의 같은 곳(차이 6 이하)은 페이지 바탕 `#F7F5EF` 로 맞추고 30 까지 서서히 원래 색으로(그림마다 바탕이 1~3 달라 옅은 네모가 비치던 것). 폭 160/320(`-spot` 은 240/480), 높이는 비율대로, 품질 82.
 - 비율(폭/높이): nickname 1.023, meetup 1.007, posts-meetup 1.398, manners 0.96, boundaries 0.799, calc-rounds 1.04, calc-payment 1.534, eligibility 1.544, settle-spot 1.057, participation-spot 0.972. `pic()` 의 `RATIO` 표와 같다.
-- 칸 안 배치: 칸(88 또는 112px 정사각)은 그대로 두고 `object-fit: contain`, 장 머리와 레인과 띠는 `object-position: left center`(그림이 글 쪽 선에 붙는다), PC 질문 타일만 가운데. 가장자리 녹이기(mask)는 5% → 3%.
+- 칸 안 배치: 칸(88 또는 112px 정사각)은 그대로 두고 `object-fit: contain`, 장 머리와 레인과 띠는 `object-position: left center`(그림이 글 쪽 선에 붙는다), PC 장 타일만 가운데. 가장자리 녹이기(mask)는 5% → 3%.
 - `participation-spot`(정기 참여)은 그림 자체에 칠한 네모 테두리가 있어, 자른 뒤 둥근 네모 마스크(안쪽 7%, 흐림 5%)로 가장자리를 바탕에 녹였다. 세 장의 어두운 장면화 바로 아래에서 네 번째 장면처럼 보이던 것.
 - 파일 이름이 새 폴더라 캐시 꼬리표(`?v=`)는 없다. 그림을 바꾸면 이 절의 방법으로 다시 만들고 비율 표를 고친다.
 
