@@ -79,6 +79,7 @@
     "lock":      '<rect x="4.6" y="10.2" width="14.8" height="10.2" rx="2.2"/><path d="M8 10.2V7.4a4 4 0 0 1 8 0v2.8"/>',
     "check":     '<path d="m4.8 12.6 4.6 4.6L19.2 7.4"/>',
     "checkCircle": '<circle cx="12" cy="12" r="8.6"/><path d="m8.2 12.2 2.7 2.7 5-5.2"/>',
+    "xCircle": '<circle cx="12" cy="12" r="8.6"/><path d="m9 9 6 6M15 9l-6 6"/>',
     "plus":      '<path d="M12 5.2v13.6M5.2 12h13.6"/>',
     "chevDown":  '<path d="m6 9.4 6 5.6 6-5.6"/>',
     "chevRight": '<path d="m9.4 6 5.6 6-5.6 6"/>',
