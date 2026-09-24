@@ -7,13 +7,13 @@
   <meta name="theme-color" content="#F7F5EF" />
 
   <title>이용 안내 | 동네친구들</title>
-  <meta name="description" content="처음 2주, 닉네임, 모임 가기와 열기, 정산, 운영진 연락, 금지 행동을 상황별로 정리한 동네친구들 이용 안내입니다." />
+  <meta name="description" content="처음 2주, 닉네임, 모임 가기와 열기, 정산, 운영진 연락, 금지 행동 규칙을 정리한 동네친구들 이용 안내입니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/guide.html" />
   <link rel="canonical" href="https://excer-site.vercel.app/guide.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="이용 안내 | 동네친구들" />
-  <meta property="og:description" content="처음 2주, 닉네임, 모임 가기와 열기, 정산, 운영진 연락, 금지 행동을 상황별로 정리한 동네친구들 이용 안내입니다." />
+  <meta property="og:description" content="처음 2주, 닉네임, 모임 가기와 열기, 정산, 운영진 연락, 금지 행동 규칙을 정리한 동네친구들 이용 안내입니다." />
   <meta property="og:image" content="https://excer-site.vercel.app/assets/og-guide.jpg?v=3" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="assets/site.css?v=19" />
 
   <style>
-    /* 이용 안내 — 12차: 상황별 빠른 답(질문 타일 8장) → 같은 그림으로 여는 도해 장 8개.
+    /* 이용 안내 — 12차: 한눈에 보기(장 타일) → 같은 그림으로 여는 도해 장(18차부터 7개, 사이트 사용 장은 뺐다).
        사실은 한 곳에만 문장으로 둔다(중복 없음). 그림은 80px 이상, 한 묶음 안에 어두운 장면화와 크림 스팟을 섞지 않는다.
        그림을 못 읽으면 onerror 가 그림만 지우고(조상에 no-image) 글이 전체 폭을 쓴다. 설계 기록: docs/REDESIGN_CHECKLIST.md 17절, 22절 */
     .guide-layout { display: grid; gap: var(--sp-6); grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
@@ -55,7 +55,7 @@
        면 두 가지: 카드(흰 면 + 1px 선, 모서리 12, 그림자 없음)와 경고 판(옅은 빨강, 선 없음). 나머지 블록은 바탕 위에 바로, 간격으로 나눈다.
        색 두 가지: 보라는 '누를 수 있다'(링크, 버튼)와 '순서'(번호 표시, 장 번호), 빨강은 '금지, 경고'. 강조 글은 색 대신 굵기(본문 색 700).
        번호 표시 한 가지: 28px 연보라 원 + 보라 숫자(또는 16px 아이콘). 장면 그림 위에서만 흰 원.
-       그림: 한 장면에 한 번씩, 틀 없이 가장자리를 바탕에 녹인다. 폰의 질문 타일은 글만(그림은 각 장 머리에서 한 번).
+       그림: 한 장면에 한 번씩, 틀 없이 가장자리를 바탕에 녹인다. 폰의 장 타일은 글만(그림은 각 장 머리에서 한 번).
        글자(17차, 7단): 장 제목 --fs-title 700 / 블록 제목 18/24 700 / 항목 제목 16/22 700 / 읽는 글 16/24 본문 색
          / 곁글 14/22 보조 색(정말 덧붙이는 말만) / 라벨 13/18 700 보조 색 / 숫자 18/22 700. 굵기는 400, 500, 700 세 가지.
          의무나 결과를 말하는 문장은 크기와 상관없이 본문 색 — 회색 작은 글에 검은 굵은 글이 박혀 줄무늬처럼 보이던 것.
@@ -106,15 +106,11 @@
       .toc-box > summary { padding-top: 10px; padding-bottom: 10px; }
     }
 
-    /* 커버: 폰에서는 낮게 — 실제 폰 화면(주소창과 탭바를 뺀 390×664, 360×650)에 질문 여덟 개가 모두 보이게.
-       폰에서는 알약(처음 오셨다면 여기부터)을 뺀다 — 바로 아래 안내 글이 같은 말(처음이라면)을 한다 */
-    @media (max-width: 640px) {
-      .cover-inner { min-height: 160px; padding-top: 20px; padding-bottom: 18px; }
-      .cover-kicker { display: none; }
-      .cover-title { margin-top: 0; }
-    }
+    /* 커버: 제목과 사실 한 줄만(알약 없음, 18차). 폰에서는 낮게 — 실제 폰 화면(주소창과 탭바를 뺀 390×664, 360×650)에 장 타일이 모두 보이게 */
+    .cover-title { margin-top: 0; }
+    @media (max-width: 640px) { .cover-inner { min-height: 160px; padding-top: 20px; padding-bottom: 18px; } }
 
-    /* ── 한눈에: 질문 타일 8장(PC, 태블릿 4열 그림 카드, 폰 2열 글 카드). 누르면 그 장으로 ── */
+    /* ── 한눈에: 장 타일 7장(PC, 태블릿 4열 그림 카드, 폰 2열 글 카드). 누르면 그 장으로 ── */
     .quick h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.3; }
     .quick[hidden] { display: none; }
     .qt-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -130,7 +126,7 @@
       .qt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
       .qt { padding: 10px 14px; }
       .qt-k { margin-top: 2px; padding-top: 0; }   /* 옆 타일 제목이 두 줄이어도 힌트가 제목 바로 아래에 */
-      .qt-img { display: none; }   /* 그림은 각 장 머리에서 한 번 — 첫 화면에 질문 여덟 개가 다 들어온다(느린 불러오기라 폰에서는 받지도 않는다) */
+      .qt-img { display: none; }   /* 그림은 각 장 머리에서 한 번 — 첫 화면에 장 타일이 다 들어온다(느린 불러오기라 폰에서는 받지도 않는다) */
       .qt-q { font-size: 15px; }   /* 16 이면 타일이 한 줄씩 높아져 첫 화면에서 두 장이 잘린다 */
     }
     @media (max-width: 330px) { .qt-q { font-size: 14px; } }
@@ -157,7 +153,7 @@
     .cat-body .list-title { display: block; margin: 0 0 12px; }
     .para-jump { color: var(--brand); font-size: inherit; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; }
     .para-jump.is-tail { white-space: nowrap; }
-    /* 한 줄을 혼자 차지하는 링크(오래 못 나오면?, 모임 신청)는 누르는 칸을 44px 로 — 보이는 간격은 그대로(위아래 음수 여백) */
+    /* 한 줄을 혼자 차지하는 링크(참여가 어려울 때, 모임 신청)는 누르는 칸을 44px 로 — 보이는 간격은 그대로(위아래 음수 여백) */
     .rule-band .para-jump, .step-cards .sc-more { display: flex; align-items: center; width: fit-content; min-height: 44px; margin: -10px 0 -10px -4px; padding: 0 4px; }
     .cat-body .blk-act, .cat-body .cta-btn { margin: 4px 0 0; }   /* 블록 안 버튼은 한 가지: 글 다음 줄(블록 안 간격 8 + 4 = 12), 왼쪽, 보조 버튼 */
     .cat-body .cta-t { margin: 4px 0 0; }
@@ -404,7 +400,7 @@
       .toc-list a { min-height: 44px; }
       .toc-inner nav { display: flex; flex-direction: column; }
       .toc-inner .tg-faq, #tocFaq { order: -1; }
-      .toc-inner .tg-start, #tocStart { display: none; }
+      #tocStart { display: none; }
       .guide-cat { margin-top: 40px; padding-top: 28px; }
     }
     @media (max-width: 640px) {
@@ -467,9 +463,8 @@
          alt="식당 문 앞에 도착한 사람을 안에서 반기는 친구들을 그린 일러스트"
          onerror="this.closest('.cover').classList.add('no-image')" />
     <div class="container cover-inner">
-      <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-sprout"/></svg>처음 오셨다면 여기부터</p>
       <h1 class="cover-title" id="pageTitle">이용 안내</h1>
-      <p class="cover-lead">처음이라면 1장부터 읽고, 필요한 장은 아래에서 바로 고릅니다.</p>
+      <p class="cover-lead">동네친구들 운영 규칙입니다.</p>
     </div>
   </section>
 
@@ -487,11 +482,10 @@
           <summary>목차<svg class="toc-chev" aria-hidden="true"><use href="#i-chevDown"/></svg></summary>
           <div class="toc-inner">
             <nav aria-label="이용 안내 목차">
-              <div class="toc-group tg-start">한눈에</div>
               <ol class="toc-list" id="tocStart"></ol>
               <div class="toc-group">장별 안내</div>
               <ol class="toc-list" id="tocList"></ol>
-              <div class="toc-group tg-faq">자주 찾는 질문</div>
+              <div class="toc-group tg-faq">자주 찾는 규칙</div>
               <ul class="toc-list" id="tocFaq"></ul>
               <span id="tocNoMatch" hidden>검색 결과에 없음. 누르면 검색을 지우고 이동합니다.</span>
             </nav>
@@ -500,9 +494,9 @@
       </aside>
 
       <div class="guide-doc">
-        <!-- 한눈에 — 질문 타일 8장(CATS 의 q·k·img 로 렌더). 누르면 그 장으로, 폰에서 뒤로 가기로 여기로 돌아온다 -->
+        <!-- 한눈에 — 장 타일 7장(CATS 의 q·k·img 로 렌더). 누르면 그 장으로, 폰에서 뒤로 가기로 여기로 돌아온다 -->
         <section class="quick" id="summary" aria-labelledby="sumTitle">
-          <h2 id="sumTitle">무엇이 궁금하세요?</h2>
+          <h2 id="sumTitle">한눈에 보기</h2>
           <ul class="qt-grid" id="quickGrid"></ul>
         </section>
 
@@ -510,7 +504,7 @@
 
         <div id="noResults" hidden>
           <div class="no-results">
-            <p>검색 결과가 없습니다. 다른 검색어를 입력하거나, 운영진에게 1:1 대화로 물어봅니다.</p>
+            <p>검색 결과가 없습니다.</p>
             <p class="nr-act"><button class="btn btn-secondary is-sm" id="clearSearch" type="button">검색 지우기</button><a class="btn btn-secondary is-sm" href="#cat-manner">운영진 연락 방법</a></p>
           </div>
         </div>
@@ -603,7 +597,7 @@
       /* 크림 스팟 그림 — 이름이 -spot 이면 240/480, 나머지는 160/320. 못 읽으면 box(조상)에 no-image 를 붙이고 그림만 지운다.
          assets/img/guide/ 의 그림은 그린 부분에 맞춰 자른 판(여백 3%, 폭 기준 크기, 비율은 그림마다) — 칸 안에서 왼쪽에 붙어 들쭉날쭉하지 않다.
          다른 페이지는 assets/img/ 의 정사각 원판을 그대로 쓴다. 자른 비율: IMAGE_SPEC 11절 */
-      var RATIO = { "rules-nickname": 1.023, "rules-meetup": 1.007, "posts-meetup": 1.398, "rules-manners": 0.96, "rules-boundaries": 0.799, "rules-faq": 1.119, "calc-rounds": 1.04, "calc-payment": 1.534, "rules-eligibility": 1.544, "settle-spot": 1.057, "participation-spot": 0.972 };
+      var RATIO = { "rules-nickname": 1.023, "rules-meetup": 1.007, "posts-meetup": 1.398, "rules-manners": 0.96, "rules-boundaries": 0.799, "calc-rounds": 1.04, "calc-payment": 1.534, "rules-eligibility": 1.544, "settle-spot": 1.057, "participation-spot": 0.972 };
       function pic(name, cls, sizes, box, eager) {
         var s = /-spot$/.test(name), a = s ? 240 : 160, b = s ? 480 : 320, dir = RATIO[name] ? "assets/img/guide/" : "assets/img/", h = Math.round(b / (RATIO[name] || 1));
         return '<img class="spot-img ' + cls + '" src="' + dir + name + "-" + b + '.webp" srcset="' + dir + name + "-" + a + ".webp " + a + "w, " + dir + name + "-" + b + ".webp " + b + 'w" sizes="' + sizes + '" width="' + b + '" height="' + h + '" alt=""' + (eager ? "" : ' loading="lazy"') + ' decoding="async" onerror="this.closest(\'' + box + '\').classList.add(\'no-image\');this.remove()" />';
@@ -618,7 +612,6 @@
          key: 장 머리 핵심 한 줄 · keywords: 검색어(화면에는 안 보임) · anchor: 하위 이동 자리(id) */
       var CATS = [
         { id: "cat-must", title: "처음 2주", q: "처음 2주", k: "2주 안에 첫 모임", img: "rules-eligibility", head: false,
-          key: "들어온 날부터 첫 모임 뒤까지, 이 순서대로 하면 됩니다.",
           keywords: ["신입", "처음", "입장", "첫 벙", "첫 모임", "2주", "14일", "음주", "맨정신", "공지", "운영 원칙", "신입 표시", "모임 개설", "게스트 초대", "정기 참여", "2개월", "두 달", "유령회원", "술"],
           blocks: [
             { type: "scenes", anchor: "start", label: "처음 2주 흐름", keywords: ["신입", "첫 벙", "맨정신", "공지", "운영 원칙", "게스트 초대", "모임 개설"], steps: [
@@ -626,7 +619,7 @@
               { img: "flow-first-meeting", title: "입장 후 2주 안에 첫 모임", text: "첫 모임은 **음주 상태로 참여할 수 없습니다.**", to: "cat-bung", toLabel: "모임 신청" },
               { img: "flow-host", title: "첫 모임 1회 뒤부터", chips: ["신입 표시 사라짐", "모임 개설 가능", "게스트 초대 가능"] }
             ] },
-            { type: "band", anchor: "rule-regular", img: "participation-spot", kicker: "그 뒤로 계속", big: "모든 멤버는 **2개월에 1회 이상** 참여합니다.", to: "rule-ops", toLabel: "오래 못 나오면?", keywords: ["정기 참여", "유령회원"] }
+            { type: "band", anchor: "rule-regular", img: "participation-spot", kicker: "정기 참여", big: "모든 멤버는 **2개월에 1회 이상** 참여합니다.", to: "rule-ops", toLabel: "참여가 어려울 때", keywords: ["정기 참여", "유령회원"] }
           ] },
         { id: "cat-basics", title: "닉네임과 재입장", q: "닉네임과 재입장", k: "다섯 부분, 변경 1회", img: "rules-nickname",
           key: "다섯 부분을 이 순서로, **띄어쓰기**로 잇습니다.",
@@ -718,27 +711,6 @@
               rule: "중복 개설은 원칙적으로 **금지**합니다.", ex: ["기존 모임 정원 마감", "기존 모임의 설정 마감 시간이 지남", "기존 모임장이 사전에 동의"] },
             { type: "note", danger: true, anchor: "rule-bibung", keywords: ["비벙", "지양", "후일담"],
               title: "비벙은 지양합니다.", text: "비벙은 공지 없이 따로 모이는 모임입니다. 비벙 이야기, 사진, 후일담도 채팅방에 올리지 않습니다.", to: "rule-sanction", toLabel: "조치 단계" }
-          ] },
-        { id: "cat-faq", title: "사이트 사용", q: "사이트 사용", k: "앱처럼 쓰기, 후기", img: "rules-faq",
-          key: "사이트를 쓰다가 자주 묻는 것을 모았습니다.",
-          keywords: ["사이트", "자주 묻는 질문", "질문", "FAQ", "홈 화면", "설치", "앱", "바로가기", "오늘 뭐 먹지", "내 주변", "맛집", "후기 쓰기", "후기", "임시 저장", "쓰던 글이 사라졌어요"],
-          blocks: [
-            { type: "accordion", items: [
-              { q: "사이트를 앱처럼 쓸 수 있나요?", body: [
-                { type: "para", text: "브라우저의 **홈 화면에 추가**를 누르면 사이트가 홈 화면 아이콘으로 열립니다." },
-                { type: "list", items: [
-                  { k: "아이폰", t: "Safari 공유 버튼을 누르고 **홈\u00a0화면에\u00a0추가**를 누릅니다." },
-                  { k: "안드로이드", t: "Chrome 메뉴를 누르고 **홈\u00a0화면에\u00a0추가** 또는 **앱\u00a0설치**를 누릅니다." },
-                  { k: "바로가기", t: "안드로이드에서 설치한 아이콘을 길게 누르면 정산, 소식, 맛집 바로가기가 뜹니다." } ] } ] },
-              { q: "오늘 뭘 먹을지 못 정했어요.", body: [
-                { type: "para", text: "맛집의 **오늘 뭐 먹지**가 지금 고른 조건\u2060(지역, 종류, 가격) 안에서 한 곳을 골라 줍니다. 마음에 안 들면 다시 뽑기를 누릅니다. **내 주변**을 켜면 지금 있는 곳에서 가까운 순으로 정렬되고 거리가 함께 보입니다." },
-                { type: "cta", href: "places.html#pick", label: "오늘 뭐 먹지" } ] },
-              { q: "지난 모임 후기는 어떻게 쓰나요?", body: [
-                { type: "para", text: "소식에서 지난 모임 글을 펼치면 **이\u00a0모임\u00a0후기\u00a0쓰기** 버튼이 있습니다. 활동, 날짜, 장소, 모임 글 링크가 채워진 채로 열리니 내용만 적으면 됩니다. 올린 후기는 홈의 **최근\u00a0모임\u00a0후기**에도 보입니다." },
-                { type: "cta", href: "news.html", label: "소식 열기" } ] },
-              { q: "쓰던 글이 사라졌어요.", body: [
-                { type: "para", text: "소식 글쓰기 창에서 적던 내용은 이 브라우저에 **임시\u00a0저장**됩니다. 창을 닫거나 페이지를 나갔어도 글쓰기를 다시 열면 남아 있습니다. 저장(등록)하면 임시\u00a0저장은 지워집니다." } ] }
-            ] }
           ] }
       ];
 
@@ -897,12 +869,12 @@
         "</section>";
       }).join("");
 
-      tocStart.innerHTML = '<li><a href="#summary" data-chip="summary">무엇이 궁금하세요?</a></li>';
+      tocStart.innerHTML = '<li><a href="#summary" data-chip="summary">한눈에 보기</a></li>';
       tocList.innerHTML = CATS.map(function (c, i) {
         return '<li><a href="#' + esc(c.id) + '" data-chip="' + esc(c.id) + '"><small>' + (i + 1) + "</small>" + esc(c.title) + "</a></li>";
       }).join("");
       /* 자주 찾는 질문 — 답은 본문 한 곳에만 있고, 여기서는 그 자리로 이동만 */
-      var FAQ = [["닉네임을 바꾸려면", "rule-nick-change"], ["재입장은 몇 번까지", "rule-reentry"], ["같은 시간대 중복 모임", "rule-dup"], ["메시지를 지우려면", "rule-delete"], ["규칙에 없는 상황", "rule-judge"]];
+      var FAQ = [["닉네임 변경", "rule-nick-change"], ["재입장 횟수", "rule-reentry"], ["같은 시간대 중복 모임", "rule-dup"], ["메시지 삭제", "rule-delete"], ["규칙에 없는 상황", "rule-judge"]];
       tocFaq.innerHTML = FAQ.map(function (f) { return '<li><a href="#' + f[1] + '" data-jump="' + f[1] + '">' + esc(f[0]) + "</a></li>"; }).join("");
 
       /* ── 아코디언 ── */
@@ -1235,7 +1207,7 @@
       });
       window.addEventListener("hashchange", function () { if (hasY(history.state)) return; openFromHash(); });
 
-      /* 지금 탭(아래 탭바 '이용 안내', 위 메뉴 '이용 안내')을 다시 누르면 새로 읽지 않고 질문 타일로(검색 중이면 검색을 지우고) */
+      /* 지금 탭(아래 탭바 '이용 안내', 위 메뉴 '이용 안내')을 다시 누르면 새로 읽지 않고 장 타일로(검색 중이면 검색을 지우고) */
       document.querySelectorAll(".bottom-tabbar .tab-item.is-active, .topnav-tab.is-active").forEach(function (a) {
         a.addEventListener("click", function (e) {
           if (!plainClick(e)) return;
