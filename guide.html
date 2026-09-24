@@ -50,8 +50,27 @@
     .search-count { margin: -2px 4px 0; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
     .search-count[hidden] { display: none; }
 
-    /* 목차 — 세 묶음(한눈에 / 장별 안내 / 자주 찾는 질문) */
-    .toc-box { border: 1px solid rgba(75, 42, 130, 0.10); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
+    /* ── 16차 정돈: 폰에서 난잡해 보이던 것 — 칸마다 다른 상자·색·표시가 원인이었다 ─────────────
+       면 두 가지: 카드(흰 면 + 1px 선, 모서리 12, 그림자 없음)와 경고 판(옅은 빨강, 선 없음). 나머지 블록은 바탕 위에 바로, 간격으로 나눈다.
+       색 두 가지: 보라는 '누를 수 있다'(링크·버튼)와 '순서'(번호 표시·장 번호), 빨강은 '금지·경고'. 강조 글은 색 대신 굵기(본문 색 700).
+       번호 표시 한 가지: 28px 연보라 원 + 보라 숫자(또는 16px 아이콘). 장면 그림 위에서만 흰 원.
+       그림: 한 장면에 한 번씩, 틀·그림자 없이 가장자리를 바탕에 녹인다. 폰의 질문 타일은 글만(그림은 각 장 머리에서 한 번).
+       글자: 장 제목 --fs-title / 블록 제목 16 · 700 / 항목 제목 15 · 700 / 읽는 글 15 · 1.6 / 카드 글 14 · 1.55 / 보조 13 / 라벨 13 · 700 / 태그 12 · 700
+       간격(폰): 블록 안 8, 블록 사이 20, 장 사이 32 + 선 + 24. PC: 10 / 24 / 48 + 선 + 32 */
+    .guide-doc { --card-x: 16px; --card-y: 14px; --card-r: 12px; text-wrap: pretty; }
+    @media (max-width: 640px) { .guide-doc { --card-x: 14px; --card-y: 12px; } }
+    /* 카드 한 벌 */
+    .qt, .rt, .rc, .tool, .ban-board, .lad2, .cat-body .nick-parts, .num-cards, .toc-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-r); box-shadow: none; }
+    /* 크림 그림: 틀 없이 가장자리 5% 를 바탕에 녹인다(그림 바탕색이 페이지 바탕과 거의 같다) */
+    .qt-img, .ch-art, .rb-img, .lane-img {
+      box-shadow: none; border-radius: 0;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent);
+      -webkit-mask-composite: source-in;
+      mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent);
+      mask-composite: intersect;
+    }
+
+    /* 목차 — 세 묶음(한눈에 / 장별 안내 / 자주 찾는 질문). 펼치면 카드, 폰에서 접혀 있으면 조용한 한 줄 */
     .toc-box > summary { list-style: none; cursor: default; padding: 12px 16px; font-size: var(--fs-sm); font-weight: 600; color: var(--ink); display: flex; align-items: center; justify-content: space-between; }
     .toc-box > summary::-webkit-details-marker { display: none; }
     .toc-box > summary .toc-chev { display: none; width: 18px; height: 18px; color: var(--ink-2); transition: transform var(--dur-2) var(--ease); }
@@ -60,7 +79,7 @@
     .toc-list { list-style: none; margin: 0; padding: 0; display: grid; }
     .toc-list a { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 8px 6px 12px; border-left: 2px solid transparent; border-radius: 0 var(--r-xs) var(--r-xs) 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.4; }
     .toc-list a small { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; min-width: 1.2em; }
-    .toc-list a:hover { color: var(--ink); background: var(--surface-2); }
+    .toc-list a:hover { color: var(--ink); background: var(--bg); }
     .toc-list a[aria-current="true"] { color: var(--brand); border-left-color: var(--brand); font-weight: 600; background: var(--brand-soft); }
     .toc-list a.is-dim { opacity: 0.4; }
     #tocFaq a { font-size: var(--fs-caption); }
@@ -72,120 +91,133 @@
       .toc-box > summary { padding-top: 10px; padding-bottom: 10px; }
     }
 
-    /* 커버: 폰에서는 낮게 — 첫 화면(390×844)에 질문 타일 첫 두 줄이 보이게 */
+    /* 커버: 폰에서는 낮게 — 첫 화면(390×844)에 질문 여덟 개가 모두 보이게 */
     @media (max-width: 640px) { .cover-inner { min-height: 200px; padding-top: 28px; padding-bottom: 20px; } }
 
-    /* ── 한눈에: 질문 타일 8장(PC·태블릿 4열, 폰 2열). 누르면 그 장으로 ── */
-    .quick h2 { margin: 0 0 12px; font-size: var(--fs-title); }
+    /* ── 한눈에: 질문 타일 8장(PC·태블릿 4열 그림 카드, 폰 2열 글 카드). 누르면 그 장으로 ── */
+    .quick h2 { margin: 0 0 12px; font-size: 20px; }
     .quick[hidden] { display: none; }
     .qt-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-    .qt { position: relative; display: flex; flex-direction: column; align-items: flex-start; height: 100%; padding: 10px 12px 12px; border-radius: 14px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); color: var(--ink); text-decoration: none; transition: border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
-    .qt:hover { border-color: rgba(75, 42, 130, 0.32); transform: translateY(-2px); }
+    .qt { display: flex; flex-direction: column; align-items: flex-start; height: 100%; padding: 12px 14px 14px; color: var(--ink); text-decoration: none; transition: border-color var(--dur-2) var(--ease); }
+    .qt:hover { border-color: var(--line-strong); }
     .qt:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-    .qt-img { width: 88px; height: 88px; border-radius: 18px; margin-bottom: 6px; }
+    .qt-img { width: 88px; height: 88px; margin-bottom: 8px; }
     .qt-q { font-size: 16px; font-weight: 700; line-height: 1.3; }
-    .qt.no-image .qt-q { padding-right: 20px; }   /* 화살표는 그림 옆에 있으니 제목 오른쪽을 비워 둘 필요는 그림이 없을 때만 */
-    .qt-k { margin-top: auto; padding-top: 3px; color: var(--brand); font-size: 13px; font-weight: 800; line-height: 1.35; }
-    .qt-go { position: absolute; right: 10px; top: 10px; width: 18px; height: 18px; color: var(--brand); }
-    .qt.no-image { min-height: 72px; padding-top: 14px; }
+    .qt-k { margin-top: auto; padding-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; line-height: 1.35; }
     @media (max-width: 640px) {
+      .quick h2 { margin-bottom: 10px; font-size: 17px; }
       .qt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .qt-img { width: 80px; height: 80px; border-radius: 16px; }
+      .qt { padding: 12px 14px; }
+      .qt-img { display: none; }   /* 그림은 각 장 머리에서 한 번 — 첫 화면에 질문 여덟 개가 다 들어온다(느린 불러오기라 폰에서는 받지도 않는다) */
       .qt-q { font-size: 15px; }
     }
 
-    /* ── 15차 정리: 글자·여백 한 벌 ─────────────────────────────
-       글자: 장 제목 --fs-title / 블록 제목 16 · 700 / 읽는 글 15 · 1.6 / 카드 글 14 · 1.55 / 보조 글 13 · 1.5 / 라벨 13 · 700 / 태그 12 · 700
-       카드 안쪽 여백: 가로 --card-x(PC 16 · 폰 14), 세로 --card-y(PC 14 · 폰 12). 테두리 있는 카드는 1px 을 빼서 글 왼쪽 선이 모두 같게
-       굵은 글(**)은 한 가지(700, 본문 색). 보라 강조는 장 머리 한 줄과 정기 참여 띠에만.
-       줄바꿈: 이 문서 안 모든 글에 text-wrap: pretty(한 글자·한 낱말만 남는 마지막 줄 막기). 붙어 있어야 하는 말은 데이터에서 줄바꿈 없는 공백으로 */
-    .guide-doc { --card-x: 16px; --card-y: 14px; text-wrap: pretty; }
-    @media (max-width: 640px) { .guide-doc { --card-x: 14px; --card-y: 12px; } }
-
-    /* ── 장 머리: 그림(PC 112 · 폰 80) + 번호·제목 + 핵심 한 줄. 여덟 장 모두 같은 구조 ── */
-    .guide-cat { padding-top: var(--sp-7); }
+    /* ── 장: 위에 선 하나 + 여백으로 나눈다. 머리 = 그림(PC 112 · 폰 80) + 보라 번호와 제목 + 핵심 문장 ── */
+    .guide-cat { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--line); }
     .guide-cat[hidden] { display: none; }
-    .cat-head { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-    .ch-art { width: 112px; height: 112px; border-radius: 22px; box-shadow: var(--shadow-card); }
-    .cat-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-title); font-weight: 700; color: var(--ink); }
-    .cat-head h2 .cat-no { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #F1ECF8, #E4DBF1); color: var(--brand); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .ch-key { margin: 6px 0 0; color: var(--ink); font-size: 15px; line-height: 1.55; }
-    .ch-key b { color: var(--brand); font-weight: 700; }
-    .ch-key .ks { display: block; }   /* 두 문장이면 문장마다 새 줄에서 — 넓은 화면에서 둘째 문장 끝 두 낱말만 한 줄로 남던 것 */
+    .cat-head { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; align-items: center; }
     .cat-head.no-image { grid-template-columns: minmax(0, 1fr); }
-    .cat-body { display: grid; gap: var(--sp-4); margin-top: var(--sp-4); }
+    .ch-art { width: 112px; height: 112px; }
+    .cat-head h2 { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: var(--fs-title); font-weight: 700; color: var(--ink); }
+    .cat-head h2 .cat-no { flex: none; color: var(--brand); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ch-key { margin: 6px 0 0; color: var(--ink); font-size: 15px; line-height: 1.55; }
+    .ch-key b { color: var(--ink); font-weight: 700; }
+    .ch-key .ks { display: block; }   /* 두 문장이면 문장마다 새 줄에서 */
+    .cat-body { display: grid; gap: 24px; margin-top: 20px; }
     .cat-body > .blk { display: grid; gap: 10px; min-width: 0; }
     .cat-body > .blk[hidden] { display: none; }
 
-    /* 공통 글·제목·링크 */
+    /* 공통 글·제목·링크·버튼 자리 */
     .cat-body .para, .acc-body-inner p { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.6; }
     .cat-body b, .acc-body-inner b, .cat-body .fl-d b { color: var(--ink); font-weight: 700; }
-    .cat-body .list-title, .cat-body .rt-h, .cat-body .lane-h, .cat-body .tool-h { color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.35; }
-    .cat-body .list-title { display: block; margin: 8px 0 10px; }   /* 블록 제목은 카드 제목과 같은 16px, 아래 내용보다 한 단계 크게 */
-    .para-jump { color: var(--brand); font-size: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }   /* 앞뒤 글과 같은 크기·줄 높이(예전: 6px 여백 + 공백으로 두 칸 띄고 글자도 컸다) */
-    .para-jump.is-tail { white-space: nowrap; }   /* 문장 끝에 덧붙는 짧은 이동 링크만 한 덩어리로 */
-    /* 기기별 방법 — 점 표시 대신 이름 칸 + 설명 칸(설명이 두 줄이 돼도 같은 왼쪽 선) */
+    .cat-body .list-title, .cat-body .rt-h, .cat-body .lane-h, .cat-body .tool-h { margin: 0; color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.35; }
+    .cat-body .list-title { display: block; margin: 0 0 10px; }
+    .para-jump { color: var(--brand); font-size: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .para-jump.is-tail { white-space: nowrap; }
+    .cat-body .blk-act, .cat-body .cta-btn { margin: 8px 0 0; }   /* 블록 안 버튼은 한 가지: 글 다음 줄, 왼쪽, 보조 버튼 */
+    .cat-body .cta-t { font-size: var(--fs-sm); line-height: 1.55; }
+    /* 기기별 방법 — 이름 칸 + 설명 칸 */
     .kv-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--ink); font-size: 15px; line-height: 1.6; }
     .kv-list li { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 8px; }
     .kv-k { color: var(--ink); font-weight: 700; white-space: nowrap; }
-    /* 콜아웃(site.css) — 이 문서에서는 카드와 같은 안쪽 여백. 제목이 있는 것(비벙)은 첫 줄만 굵게 */
-    .cat-body .callout { padding: 12px var(--card-x); }
+    /* 콜아웃(site.css) — 이 문서에서는 경고 판(옅은 빨강)만 판으로, 나머지는 판 없이 */
+    .cat-body .callout { padding: 12px var(--card-x); border-radius: var(--card-r); font-size: var(--fs-sm); line-height: 1.55; }
     .cat-body .callout p { font-size: var(--fs-sm); line-height: 1.55; }
+    .cat-body .callout.is-tip { padding: 0 2px; background: none; }
+    .cat-body .callout.is-tip .ic { color: var(--ink-2); }
     .callout .co-t { font-weight: 700; }
     .callout.is-danger .co-t { color: var(--danger); }
 
-    /* 1장 장면 카드(어두운 장면화 3장). PC·태블릿 3열(윗그림 4:3), 폰 한 줄씩(88px 정사각 + 글) */
-    .cat-body .step-cards { padding-left: 0; }
-    @media (min-width: 641px) { .cat-body .step-cards.is-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    .cat-body .step-cards .fl-t { font-size: 15px; line-height: 1.4; }
-    .cat-body .step-cards .fl-d { font-size: var(--fs-sm); line-height: 1.55; }
-    .step-cards .sc-more { display: table; margin-top: 4px; }   /* '신청 방법'은 문장 뒤가 아니라 아래 줄에 — 그 줄만 높아지고 문장이 갈리던 것 */
-    .step-cards .sc-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 6px; }   /* 어느 폭에서나 한 줄에 하나(2+1, 1+1+1 로 폭마다 달라지던 것) */
-    .step-cards .sc-chips span { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 700; }
-    .step-cards .sc-chips .ic { width: 12px; height: 12px; }
-    @media (max-width: 640px) {
-      .cat-body .step-cards { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-      .step-cards > li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 0 12px; align-items: center; padding: 8px 12px 8px 8px; }
-      .step-cards .sc-head { margin: 0; }
-      .step-cards .sc-img { width: 88px; height: 88px; aspect-ratio: 1; border-radius: 10px; }
-      .step-cards .sc-n { left: 6px; top: 6px; width: 24px; height: 24px; font-size: 12px; }
-      .step-cards > li.no-image { grid-template-columns: minmax(0, 1fr); }
-      .step-cards > li.no-image .sc-head { margin: 0 0 6px; height: 24px; }
-      .step-cards .sc-chips { gap: 3px; }
-      .step-cards .sc-chips span { min-height: 24px; padding: 0 8px; }
-      .step-cards .sc-chips .ic { display: none; }
+    /* 번호 표시 한 벌 — 28px 연보라 원 + 보라 숫자(3장은 16px 아이콘), 연결선은 원 아래에서 다음 원까지 */
+    .cat-body .flow { padding-left: 0; }
+    .cat-body .flow > li { grid-template-columns: 28px minmax(0, 1fr); gap: 0 12px; align-content: start; }
+    .cat-body .flow .fl-n { width: 28px; height: 28px; background: var(--brand-soft); color: var(--brand); box-shadow: none; font-size: 13px; }
+    .cat-body .flow .fl-n .ic { width: 16px; height: 16px; }
+    .cat-body .flow > li:not(:last-child)::after { left: 13px; top: 28px; bottom: -14px; background: rgba(75, 42, 130, 0.25); }
+    .cat-body .flow .fl-t { padding-top: 3px; font-size: 15px; line-height: 1.4; }
+    .cat-body .flow .fl-d { font-size: var(--fs-sm); line-height: 1.55; }
+    @media (min-width: 720px) {
+      /* 3장 가로 흐름: 원 셋을 한 줄에, 선은 원 높이 가운데로 */
+      .cat-body .flow.is-h > li { grid-template-columns: 1fr; gap: 0; }
+      .cat-body .flow.is-h > li:not(:last-child)::after { top: 13px; bottom: auto; left: 40px; right: -8px; width: auto; height: 2px; background: rgba(75, 42, 130, 0.25); }
+      .cat-body .flow.is-h .fl-t { padding-top: 8px; }
     }
 
-    /* 1장 정기 참여 띠 — 황토 판, 크림 스팟 한 장 */
-    .rule-band { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; padding: var(--card-y) calc(var(--card-x) - 1px); border-radius: 14px; background: var(--gold-soft); border: 1px solid rgba(126, 95, 37, 0.18); }
-    .rb-img { width: 104px; height: 104px; border-radius: 16px; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7); }
-    .cat-body .rb-k { margin: 0; color: var(--gold); font-size: var(--fs-caption); font-weight: 700; }
-    .cat-body .rb-big { margin: 2px 0 0; color: var(--ink); font-size: 20px; font-weight: 700; line-height: 1.4; text-wrap: balance; }   /* '2개월에 1회 이상'이 두 줄로 갈리거나 '참여합니다.'만 남던 것 */
-    .cat-body .rb-big b { color: var(--brand); font-weight: 700; }
-    .rule-band .para-jump { display: inline-block; margin: 4px 0 0; font-size: var(--fs-caption); }
+    /* 1장 장면(어두운 장면화 3장) — 상자 없이. PC·태블릿 3열(윗그림 4:3), 폰 한 줄씩(88px 정사각 + 글) */
+    .cat-body .step-cards { padding-left: 0; gap: 16px; }
+    @media (min-width: 641px) { .cat-body .step-cards.is-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .cat-body .step-cards > li { padding: 0; border: 0; border-radius: 0; background: none; }
+    .cat-body .step-cards .sc-head { margin: 0 0 10px; }
+    .cat-body .step-cards .sc-img { border-radius: 10px; }
+    .cat-body .step-cards .sc-n { background: var(--surface); color: var(--brand); box-shadow: none; }
+    .cat-body .step-cards .fl-t { font-size: 15px; line-height: 1.4; }
+    .cat-body .step-cards .fl-d { font-size: var(--fs-sm); line-height: 1.55; }
+    .step-cards .sc-more { display: table; margin-top: 4px; }
+    /* 달라지는 것 세 가지 — 알약 대신 체크 줄 */
+    .step-cards .sc-chips { display: grid; gap: 4px; margin-top: 6px; }
+    .step-cards .sc-chips span { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; line-height: 1.5; }
+    .step-cards .sc-chips .ic { flex: none; width: 14px; height: 14px; color: var(--brand); }
+    @media (max-width: 640px) {
+      .cat-body .step-cards { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+      .cat-body .step-cards > li { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 0 12px; align-items: center; }
+      .cat-body .step-cards .sc-head { margin: 0; }
+      .step-cards .sc-img { width: 88px; height: 88px; aspect-ratio: 1; }
+      .step-cards .sc-n { left: 6px; top: 6px; width: 24px; height: 24px; font-size: 12px; }
+      .cat-body .step-cards > li.no-image { grid-template-columns: minmax(0, 1fr); }
+      .cat-body .step-cards > li.no-image .sc-head { margin: 0 0 6px; height: 24px; }
+    }
+
+    /* 1장 정기 참여 — 판 없이 그림 + 한 문장 */
+    .rule-band { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; }
     .rule-band.no-image { grid-template-columns: minmax(0, 1fr); }
+    .rb-img { width: 104px; height: 104px; }
+    .cat-body .rb-k { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 700; }
+    .cat-body .rb-big { margin: 2px 0 0; color: var(--ink); font-size: 20px; font-weight: 700; line-height: 1.4; text-wrap: balance; }
+    .rule-band .para-jump { display: inline-block; margin: 4px 0 0; font-size: var(--fs-caption); }
     @media (max-width: 640px) {
       .rule-band { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; }
       .rb-img { width: 88px; height: 88px; }
       .cat-body .rb-big { font-size: 17px; }
     }
 
-    /* 2장 닉네임 다섯 칸 — 본문 폭을 채운다(PC 에서 왼쪽 520px 에만 몰려 오른쪽이 비던 것) */
+    /* 2장 닉네임 다섯 칸 — 카드 한 장을 칸선으로 나눈다 */
     .nick-dg { display: grid; gap: 10px; }
-    .cat-body .nick-parts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0; padding-left: 0; list-style: none; }
-    .nick-part { display: grid; gap: 2px; justify-items: center; align-content: start; min-width: 0; padding: 10px 2px; border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.14); box-shadow: var(--shadow-card); text-align: center; }
-    .nick-part .np-v { color: var(--brand); font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .cat-body .nick-parts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0; padding-left: 0; list-style: none; overflow: hidden; }
+    .nick-part { display: grid; gap: 2px; justify-items: center; align-content: start; min-width: 0; padding: 10px 2px; text-align: center; }
+    .nick-part + .nick-part { border-left: 1px solid var(--line); }
+    .nick-part .np-v { color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .nick-part .np-k { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; }
     .nick-part .np-n { color: var(--ink-2); font-size: 12px; font-weight: 500; white-space: nowrap; }
-    @media (max-width: 640px) { .cat-body .nick-parts { gap: 6px; } .nick-part .np-v { font-size: 18px; } }
+    @media (max-width: 640px) { .nick-part .np-v { font-size: 17px; } }
     @media (max-width: 359px) {
-      /* 아주 좁은 폰: 3칸 + 2칸. 둘째 줄 두 칸이 폭을 나눠 가져 오른쪽 빈칸이 생기지 않게, 두 줄 높이도 같게 */
+      /* 아주 좁은 폰: 3칸 + 2칸, 둘째 줄 두 칸이 폭을 나눠 가진다 */
       .cat-body .nick-parts { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 1fr; }
       .nick-part { grid-column: span 2; }
-      .nick-part:nth-child(n+4) { grid-column: span 3; }
+      .nick-part:nth-child(n+4) { grid-column: span 3; border-top: 1px solid var(--line); }
+      .nick-part:nth-child(4) { border-left: 0; }
     }
 
-    /* 2장 좋은 예·나쁜 예 이름표 — 이름표가 두 줄로 접혀도 라벨은 첫 줄 가운데에 */
+    /* 2장 좋은 예·나쁜 예 이름표 — 알약은 여기만(모양 자체가 내용이라서) */
     .nt { display: grid; gap: 8px; }
     .nt-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: start; }
     .nt-k { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; color: var(--brand); font-size: var(--fs-caption); font-weight: 700; white-space: nowrap; }
@@ -195,128 +227,87 @@
     .nt-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
     .nt-tag { display: inline-flex; align-items: center; max-width: 100%; min-height: 30px; padding: 0 10px; border-radius: 999px; font-size: var(--fs-caption); }
     .is-good .nt-tag { min-height: 32px; padding: 0 12px; background: var(--brand-soft); border: 1px solid rgba(75, 42, 130, 0.3); color: var(--ink); font-size: 15px; font-weight: 700; }
-    .is-bad .nt-tag { background: var(--danger-soft); border: 1px solid rgba(166, 58, 43, 0.25); color: var(--ink-2); font-weight: 500; }
-    .nt-tag s { margin-right: 4px; color: rgba(166, 58, 43, 0.75); text-decoration-thickness: 1.5px; }
+    .is-bad .nt-tag { background: none; border: 1px solid var(--line-strong); color: var(--ink-2); font-weight: 500; }
+    .nt-tag s { margin-right: 4px; color: var(--ink-2); text-decoration-thickness: 1.5px; }
     .cat-body .nt-cap { margin: 0 0 0 72px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
     @media (max-width: 359px) { .nt-row { grid-template-columns: minmax(0, 1fr); } .cat-body .nt-cap { margin-left: 0; } }
 
-    /* 2장 숫자 카드(닉네임 변경·재입장) — 어느 폭에서나 세 장이 같은 구조(큰 숫자 · 이름 · 설명) */
-    .num-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .nc { display: grid; align-content: start; gap: 2px; min-width: 0; padding: var(--card-y) calc(var(--card-x) - 1px); border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
-    .nc-big { color: var(--brand); font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }   /* 장 제목보다 크지 않게 */
+    /* 2장 숫자 카드 — 카드 한 장을 칸선으로 나눈다(PC 세 칸, 폰 한 칸 + 두 칸) */
+    .num-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; }
+    .nc { display: grid; align-content: start; gap: 2px; min-width: 0; padding: var(--card-y) calc(var(--card-x) - 1px); }
+    .nc + .nc { border-left: 1px solid var(--line); }
+    .nc-big { color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
     .nc-k { margin-top: 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
     .nc-s { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
     @media (max-width: 640px) {
       .num-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .nc-big { font-size: 19px; }
-      .nc.is-wide { grid-column: 1 / -1; }
+      .nc-big { font-size: 17px; }
+      .nc.is-wide { grid-column: 1 / -1; border-bottom: 1px solid var(--line); }
+      .nc + .nc { border-left: 0; }
+      .nc:nth-child(3) { border-left: 1px solid var(--line); }
     }
 
-    /* 흐름 도해(3장 참석, 4장 레인 안) — 제목 15px, 설명 14px 로 1장 장면 카드와 같게 */
-    .cat-body .flow { padding-left: 0; }
-    .cat-body .flow > li { align-content: start; }   /* 가로 흐름에서 짧은 단계의 제목이 아래로 밀리지 않게 */
-    .cat-body .flow .fl-t { font-size: 15px; line-height: 1.4; }
-    .cat-body .flow .fl-d { font-size: var(--fs-sm); line-height: 1.55; }
-
-    /* 3장·6장 연락표 카드 — 누구에게, 언제(배지). 배지는 줄이 둘이어도 첫 줄에 맞춘다 */
-    .rt { padding: 12px calc(var(--card-x) - 1px); border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
-    .rt-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; }
-    .cat-body .rt-h { display: flex; align-items: center; gap: 8px; margin: 0; }
-    .rt-h .ic { flex: none; width: 18px; height: 18px; color: var(--brand); }
-    .rt.is-host .rt-h .ic { color: var(--rust); }
-    .rt-top .btn { flex: none; white-space: nowrap; }
-    .rt-list { display: grid; margin: 4px 0 0; padding: 0; list-style: none; }
-    .rt-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
-    .when { display: inline-flex; align-items: center; min-height: 26px; margin-top: -2px; padding: 0 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: var(--fs-caption); font-weight: 700; white-space: nowrap; }
-    .rt.is-host .when { background: var(--rust-soft); color: var(--rust); }
+    /* 3장·6장 연락표 카드 — 제목, 줄마다 상황과 답(굵은 글), 버튼은 목록 뒤 */
+    .rt { padding: var(--card-y) calc(var(--card-x) - 1px) calc(var(--card-y) - 2px); }
+    .rt-list { display: grid; margin: 8px 0 0; padding: 0; list-style: none; }
+    .rt-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
+    .when { color: var(--ink); font-weight: 700; white-space: nowrap; text-align: right; }
     .cat-body .rt-sub { grid-column: 1 / -1; margin: 3px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
-    @media (max-width: 359px) { .rt-list li { grid-template-columns: minmax(0, 1fr); } .when { justify-self: start; margin-top: 4px; } .rt-top { flex-wrap: wrap; } }
+    .rt .blk-act { margin: 4px 0 2px; }
+    @media (max-width: 359px) { .rt-list li { grid-template-columns: minmax(0, 1fr); } .when { justify-self: start; text-align: left; } }
 
-    /* 4장 정산 레인 — 역할 그림 + 제목을 한 줄에, 단계는 카드 전체 폭(예전: 그림 칸이 글을 좁은 기둥으로 밀어 서너 줄로 접혔다) */
-    .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; }
-    .lane { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px 14px; align-content: start; min-width: 0; padding: var(--card-y) calc(var(--card-x) - 1px); border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    /* 4장 정산 레인 — 상자 없이: 역할 그림 + 제목 한 줄, 단계는 전체 폭 */
+    .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 28px 32px; }
+    .lane { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 12px 14px; align-content: start; min-width: 0; }
     .lane > div { display: contents; }
-    .lane-img { grid-row: 1; width: 80px; height: 80px; border-radius: 16px; }
-    .cat-body .lane-h { grid-column: 2; grid-row: 1; align-self: center; display: flex; align-items: center; gap: 8px; margin: 0; }
-    .lane-h .ic { width: 18px; height: 18px; color: var(--brand); }
-    .lane.is-warm .lane-h .ic { color: var(--rust); }
-    .lane .flow { grid-column: 1 / -1; gap: 8px; }
+    .lane-img { grid-row: 1; width: 80px; height: 80px; }
+    .cat-body .lane-h { grid-column: 2; grid-row: 1; align-self: center; }
     .lane.no-image .lane-h { grid-column: 1 / -1; }
-    .lane .flow .fl-n { width: 30px; height: 30px; font-size: 12px; }
-    .lane .flow > li { grid-template-columns: 30px minmax(0, 1fr); gap: 0 10px; }
-    .lane .flow > li:not(:last-child)::after { left: 14px; top: 30px; bottom: -8px; }
-    .cat-body .lane .flow .fl-t { padding-top: 4px; }
-    .lane.is-warm .flow .fl-n { background: linear-gradient(180deg, #BE5F36, var(--rust)); box-shadow: 0 6px 14px -8px rgba(169, 80, 45, 0.7); }
-    /* 짧은 항목 칩 — 정산 적을 것·예외 목록이 같은 규격(28px, 13px, 둥근 8px) */
-    .fl-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .fl-chips span, .rc-chips li { display: inline-flex; align-items: center; max-width: 100%; min-height: 28px; padding: 3px 10px; border-radius: 8px; background: var(--surface-2); color: var(--ink); font-size: var(--fs-caption); font-weight: 500; line-height: 1.5; }
+    .lane .flow { grid-column: 1 / -1; gap: 10px; }
+    .cat-body .lane .flow > li:not(:last-child)::after { bottom: -10px; }
 
-    /* 4장 도구 카드(모임 정산 페이지) */
-    .tool { display: grid; gap: 8px; padding: var(--card-y) var(--card-x); border-radius: var(--r-md); background: var(--brand-soft); }
-    .tool-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .cat-body .tool-h { display: flex; align-items: center; gap: 8px; margin: 0; }
-    .tool-h .ic { width: 18px; height: 18px; color: var(--brand); }
-    .tool .btn { flex: none; white-space: nowrap; }
-    .cat-body .tool-t { max-width: 36em; margin: 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
+    /* 4장 모임 정산 페이지 — 카드, 버튼은 글 뒤 */
+    .tool { display: grid; gap: 6px; padding: var(--card-y) calc(var(--card-x) - 1px); }
+    .cat-body .tool-t { max-width: 36em; margin: 2px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
     .cat-body .tool-s { max-width: 36em; margin: 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
-    @media (max-width: 359px) { .tool-top { flex-wrap: wrap; } }
+    .tool .blk-act { margin: 4px 0 0; }
 
-    /* 5장 원칙·예외 카드 — 라벨 높이 = 글줄 높이라 라벨과 첫 줄 가운데가 맞는다 */
-    .rc { display: grid; gap: 10px; padding: var(--card-y) calc(var(--card-x) - 1px); border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
-    .acc-body-inner .rc { padding: 12px calc(var(--card-x) - 1px); box-shadow: none; }
+    /* 5장 원칙·예외 — 카드, 라벨은 회색 글자, 예외는 한 줄씩 */
+    .rc { display: grid; gap: 10px; padding: var(--card-y) calc(var(--card-x) - 1px); }
+    .acc-body-inner .rc { padding: 0; border: 0; background: none; }   /* 문답 안에서는 카드 속 카드를 만들지 않는다 */
     .rc-line { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
-    .rc-b { display: inline-grid; place-items: center; height: 22px; border-radius: 6px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; line-height: 1; }
-    .rc-b.is-ex { margin-top: 3px; background: var(--surface-2); color: var(--ink-2); }   /* 예외 줄은 칩(28px) 가운데에 */
-    .rc-b.is-need { background: var(--gold-soft); color: var(--gold); }
-    .rc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-    @media (max-width: 640px) { .rc-chips { display: grid; } .rc-chips li { display: block; max-width: none; } }   /* 폰: 칩이 제각각 폭으로 쌓이던 것 — 같은 폭 줄로 */
+    .rc-b { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 700; line-height: 21.7px; }
+    .rc-chips { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 
-    /* 5장 만드는 법 — 누르는 순서 칩. 화살표는 앞 칸 뒤에 붙인다(줄이 바뀌어도 화살표만 줄 첫머리에 오지 않게) */
-    .tap-path { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 0; margin: 0; padding: 0; list-style: none; counter-reset: tp; }
-    .tap-path li { display: inline-flex; align-items: center; max-width: 100%; counter-increment: tp; }
-    .tap-path li:not(:last-child)::after { content: ""; flex: none; width: 7px; height: 7px; margin: 0 9px 0 5px; border-top: 2px solid var(--ink-2); border-right: 2px solid var(--ink-2); transform: rotate(45deg); }
-    .tp { display: inline-flex; align-items: center; min-height: 34px; padding: 4px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink); font-size: var(--fs-sm); font-weight: 600; line-height: 1.35; }
-    .tp.is-final { background: var(--brand); border-color: var(--brand); color: #fff; }
-    @media (max-width: 640px) {
-      /* 폰: 칸이 세 줄로 들쭉날쭉 접히던 것 — 정산 단계와 같은 번호 세로 목록으로 */
-      .tap-path { display: grid; gap: 8px; }
-      .tap-path li { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 0 10px; align-items: start; }
-      .tap-path li::before { content: counter(tp); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 800; }
-      .tap-path li:last-child::before { background: var(--brand); color: #fff; }
-      .tap-path li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: -8px; width: 2px; height: auto; margin: 0; border: 0; transform: none; background: rgba(75, 42, 130, 0.25); }
-      .tp { min-height: 0; padding: 4px 0 0; border: 0; border-radius: 0; background: none; line-height: 1.45; }
-      .tp.is-final { background: none; color: var(--brand); font-weight: 700; }
-    }
-    .cat-body .tp-after { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; margin: 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
-    .tp-after .ic { width: 18px; height: 18px; margin-top: 2px; color: var(--brand); }
-    .cat-body .cta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 10px var(--card-x); border-radius: var(--r-md); background: var(--surface-2); color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
-    .cta-row > span { text-wrap: balance; }
-    .cta-row .btn { flex: none; white-space: nowrap; }
-    .cat-body .cta-btn { margin: 0; }
-    @media (max-width: 359px) { .cat-body .cta-row { flex-wrap: wrap; } }
+    /* 5장 만드는 법 — 번호 세로 목록(어느 폭에서나). 그 뒤 안내 한 줄, 소식 글과 버튼 */
+    .tap-path { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: tp; }
+    .tap-path li { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 0 12px; align-items: start; counter-increment: tp; }
+    .tap-path li::before { content: counter(tp); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 800; }
+    .tap-path li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: -8px; width: 2px; background: rgba(75, 42, 130, 0.25); }
+    .tp { padding-top: 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 600; line-height: 1.45; }
+    .cat-body .tp-after { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; margin: 4px 0 0; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
+    .tp-after .ic { width: 18px; height: 18px; margin-top: 2px; color: var(--ink-2); }
+    .cat-body .cta-t { margin: 4px 0 0; }
 
     /* 7장 '다른 장의 금지' 이동 줄 */
     .cat-body .see-also { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.6; }
-    .see-also .para-jump { white-space: nowrap; }   /* 짧은 이동 링크가 두 줄로 갈리지 않게 */
+    .see-also .para-jump { white-space: nowrap; }
 
-    /* 6장 메시지 삭제 대비 — PC 두 칸, 폰 한 칸(좁은 두 칸에서 세 줄로 접히던 것) */
-    .contrast { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-    .contrast .ct { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; padding: 12px var(--card-x); border-radius: var(--r-md); color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
+    /* 6장 메시지 삭제 — 판 없이 아이콘 + 글. PC 두 칸, 폰 한 칸 */
+    .contrast { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; }
+    .contrast .ct { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; }
     .contrast .ct .ic { width: 18px; height: 18px; margin-top: 2px; }
     .contrast .ct b { display: block; margin-bottom: 2px; }
-    .contrast .ct.is-bad { background: var(--danger-soft); }
     .contrast .ct.is-bad .ic { color: var(--danger); }
-    .contrast .ct.is-good { background: var(--brand-soft); }
     .contrast .ct.is-good .ic { color: var(--brand); }
     .contrast.is-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     @media (max-width: 640px) { .contrast.is-pair { grid-template-columns: minmax(0, 1fr); } }
 
-    /* 7장 금지 목록 — 칩 더미 대신 한 줄씩(× 아이콘 칸 + 글). PC 두 단, 폰 한 단에 묶음 이름은 위로 */
-    .ban-board { padding: 2px calc(var(--card-x) - 1px); border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(166, 58, 43, 0.18); box-shadow: var(--shadow-card); }
+    /* 7장 금지 목록 — 카드 한 장, 묶음 사이 선. 빨강은 × 표시에만 */
+    .ban-board { padding: 2px calc(var(--card-x) - 1px); }
     .bb-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 12px 0; }
     .bb-row + .bb-row { border-top: 1px solid var(--line); }
-    .cat-body .bb-k { display: flex; align-self: start; align-items: center; gap: 6px; min-height: 21px; margin: 0; color: var(--ink); font-size: var(--fs-caption); font-weight: 700; white-space: nowrap; }
-    .bb-k .ic { width: 16px; height: 16px; color: var(--danger); }
+    .cat-body .bb-k { align-self: start; margin: 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 700; line-height: 21px; white-space: nowrap; }
     .bb-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin: 0; padding: 0; list-style: none; }
     .bb-chips li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 8px; align-items: start; color: var(--ink); font-size: var(--fs-sm); line-height: 1.5; }
     .bb-chips li:only-child { grid-column: 1 / -1; }
@@ -326,67 +317,67 @@
       .bb-chips { grid-template-columns: minmax(0, 1fr); }
     }
 
-    /* 7장 조치 단계 — 차수를 세로로 맞춰 2단계와 3단계 차이가 보이게. 칸 글은 위에서부터(1차·2차 글자 높이가 칸마다 달랐던 것) */
-    .lad2 { display: grid; gap: 10px; }
-    .lad2-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: center; }
-    .cat-body .lad2-k { margin: 0; color: var(--ink); font-size: var(--fs-caption); font-weight: 700; }   /* 금지 목록 묶음 이름과 같은 라벨 */
-    .lad2-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
-    .lad2-steps li { position: relative; display: grid; gap: 2px; align-content: start; min-height: 64px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); }
-    .lad2-steps li + li::before { content: ""; position: absolute; left: -15px; top: 50%; width: 7px; height: 7px; border-top: 2px solid var(--ink-2); border-right: 2px solid var(--ink-2); transform: translateY(-50%) rotate(45deg); }
-    .lad2-steps .lt { color: var(--ink-2); font-size: 12px; font-weight: 700; }
+    /* 7장 조치 단계 — 금지 목록과 같은 카드 한 장. 차수 칸을 세로로 맞추고, 칸 면·화살표 없이 */
+    .lad2 { display: grid; padding: 2px calc(var(--card-x) - 1px); }
+    .lad2-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; }
+    .lad2-row + .lad2-row { border-top: 1px solid var(--line); }
+    .cat-body .lad2-k { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 700; line-height: 18px; }
+    .lad2-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+    .lad2-steps li { display: grid; gap: 2px; align-content: start; }
+    .lad2-steps .lt { color: var(--ink-2); font-size: 12px; font-weight: 700; line-height: 18px; }
     .lad2-steps .lb { color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
     .lad2-steps .ls { color: var(--ink-2); font-size: var(--fs-caption); }
-    .lad2-steps li.is-final { background: var(--danger-soft); }
-    .lad2-steps li.is-final .lt, .lad2-steps li.is-final .lb { color: var(--danger); }
-    @media (max-width: 640px) {
-      .lad2-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
-      .lad2-steps { gap: 14px; }
-      .lad2-steps li { padding: 10px; }
-      .lad2-steps li + li::before { left: -13px; }
-    }
+    .lad2-steps li.is-final .lb { color: var(--danger); }
+    @media (max-width: 640px) { .lad2-row { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
 
-    /* 아코디언 — site.css 공통. 여기선 카드와 같은 안쪽 여백, PC 에서 읽는 글 한 줄 길이 제한 */
-    .guide-doc .acc-head { padding-inline: calc(var(--card-x) - 1px); font-size: 15px; }
+    /* 문답 — 카드 대신 선 목록(site.css 공통 모양은 이 문서 안에서만 덮는다) */
+    .guide-doc .accordion { display: grid; gap: 0; border-top: 1px solid var(--line); }
+    .guide-doc .acc-item, .guide-doc .acc-item.is-open { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
     .acc-item[hidden] { display: none; }
-    .accordion { display: grid; gap: 8px; }
-    .guide-doc .acc-body-inner { display: grid; gap: 12px; padding: 2px calc(var(--card-x) - 1px) 16px; color: var(--ink); font-size: 15px; }
-    .acc-body-inner > p, .acc-body-inner > .kv-list { max-width: 34em; }   /* PC 에서 한 줄 60자 넘게 길어지던 것 */
-    @media (max-width: 640px) { .acc-head { min-height: 52px; } }
+    .guide-doc .acc-head { min-height: 52px; padding-inline: 2px; font-size: 15px; }
+    .guide-doc .acc-body-inner { display: grid; gap: 12px; padding: 0 2px 16px; color: var(--ink); font-size: 15px; }
+    .acc-body-inner > p, .acc-body-inner > .kv-list { max-width: 34em; }
 
-    .doc-updated { margin: var(--sp-7) 0 0; padding-top: var(--sp-4); border-top: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-caption); display: flex; flex-wrap: wrap; gap: 6px 16px; }
+    .doc-updated { margin: var(--sp-7) 0 0; color: var(--ink-2); font-size: var(--fs-caption); display: flex; flex-wrap: wrap; gap: 6px 16px; }
     .doc-updated a { color: var(--brand); font-weight: 600; }
 
     /* 검색 빈 상태 */
     #noResults { padding-top: var(--sp-6); }
-    .no-results { padding: 24px; border: 1px dashed var(--line-strong); border-radius: var(--r-md); text-align: center; }
+    .no-results { padding: 24px; border: 1px dashed var(--line-strong); border-radius: var(--card-r); text-align: center; }
     .no-results p { margin: 0 0 12px; color: var(--ink-2); font-size: var(--fs-sm); }
 
     /* 인쇄·고대비 */
     @media print { .quick, .guide-side { display: none; } .guide-layout { grid-template-columns: 1fr; } }
-    @media (forced-colors: active) { .qt, .rt, .lane, .nc, .rc, .ban-board, .tool, .rule-band { border: 1px solid CanvasText; } }
+    @media (forced-colors: active) { .qt, .rt, .rc, .tool, .ban-board, .lad2, .nick-parts, .num-cards, .callout.is-danger { border: 1px solid CanvasText; } }
 
     /* 좁은 화면: 목차를 접는다(959px 이하) */
     @media (max-width: 959px) {
       .guide-layout { grid-template-columns: 1fr; gap: var(--sp-5); }
-      .guide-side { position: static; max-width: 740px; }   /* 검색·목차 폭을 본문(최대 740px)과 같게 — 오른쪽 끝이 계단지던 것 */
+      .guide-side { position: static; max-width: 740px; }
       .toc-box > summary { cursor: pointer; }
       .toc-box > summary .toc-chev { display: block; }
       .toc-box[open] > summary .toc-chev { transform: rotate(180deg); }
       .toc-box[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 8px; }
-      .guide-cat { padding-top: var(--sp-6); }
+      .guide-cat { margin-top: 40px; padding-top: 28px; }
     }
     @media (max-width: 640px) {
-      /* 폰 장 머리: 그림 + 제목을 한 줄에, 핵심 문장은 아래 전체 폭(그림 옆 좁은 칸에서 서너 줄로 접히던 것) */
-      .guide-cat { padding-top: 28px; }
-      .cat-head { grid-template-columns: 80px minmax(0, 1fr); gap: 12px 14px; padding-bottom: 12px; }
+      /* 폰: 접힌 목차는 상자 없이 검색칸 아래 한 줄 */
+      .guide-side { gap: 4px; }
+      .toc-box:not([open]) { background: none; border-color: transparent; }
+      .toc-box:not([open]) > summary { min-height: 44px; padding: 0 2px; justify-content: flex-start; gap: 6px; color: var(--ink-2); }
+      /* 장 사이 32 + 선 + 24, 블록 사이 20, 블록 안 8 */
+      .guide-cat { margin-top: 32px; padding-top: 24px; }
+      .cat-body { gap: 20px; margin-top: 16px; }
+      .cat-body > .blk { gap: 8px; }
+      /* 장 머리: 그림 + 제목을 한 줄에, 핵심 문장은 아래 전체 폭 */
+      .cat-head { grid-template-columns: 80px minmax(0, 1fr); gap: 12px 14px; }
       .cat-head > div { display: contents; }
-      .cat-head h2 { grid-column: 2; grid-row: 1; gap: 8px; }
+      .cat-head h2 { grid-column: 2; grid-row: 1; align-self: center; gap: 8px; }
       .cat-head.no-image h2 { grid-column: 1 / -1; }
       .ch-key { grid-column: 1 / -1; margin: 0; }
       .ch-key .ks { text-wrap: balance; }
-      .ch-art { width: 80px; height: 80px; border-radius: 16px; }
-      .cat-head h2 .cat-no { width: 28px; height: 28px; font-size: 13px; }
-      .cat-body { gap: 12px; margin-top: 12px; }
+      .ch-art { width: 80px; height: 80px; }
+      .doc-updated { margin-top: 40px; }
     }
     @media (max-width: 359px) { .cat-body .list-title, .cat-body .rt-h, .cat-body .lane-h, .cat-body .tool-h { font-size: 15px; } }
   </style>
@@ -563,7 +554,7 @@
          q·k: 한눈에 타일(질문 / 답 조각) · img: 타일과 장 머리 그림(같은 파일) · head:false 면 장 머리 그림 없음
          key: 장 머리 핵심 한 줄 · keywords: 검색어(화면에는 안 보임) · anchor: 하위 이동 자리(id) */
       var CATS = [
-        { id: "cat-must", title: "처음 2주", q: "처음 왔어요", k: "2주 안 첫 모임", img: "rules-eligibility",
+        { id: "cat-must", title: "처음 2주", q: "처음 왔어요", k: "2주 안 첫 모임", img: "rules-eligibility", head: false,
           key: "들어온 날부터 첫 모임 뒤까지, 이 순서대로 하면 됩니다.",
           keywords: ["신입", "처음", "입장", "첫 벙", "첫 모임", "2주", "14일", "음주", "맨정신", "공지", "운영 원칙", "신입 표시", "모임 개설", "게스트 초대", "정기 참여", "2개월", "두 달", "유령회원", "술"],
           blocks: [
@@ -598,26 +589,26 @@
               { ic: "check", title: "참여가 확정되면 누르기", text: "누르지 않으면 참석 명단에 들어가지 않습니다." },
               { ic: "clock", title: "가기 전 다시 확인", text: "시간과 장소" },
               { ic: "users", title: "현장에서", text: "모임장(벙주)이 공지한 시간을 지키고, 안내한 방식에 맞춥니다." } ] },
-            { type: "routes", anchor: "rule-join", host: true, ic: "crown", title: "달라지면 모임장에게", keywords: ["지각", "늦으면", "불참", "못 가요", "중간 합류", "사전 연락", "변경"], rows: [
+            { type: "routes", anchor: "rule-join", title: "달라지면 모임장에게", keywords: ["지각", "늦으면", "불참", "못 가요", "중간 합류", "사전 연락", "변경"], rows: [
               { s: "늦을 때", w: "바로" },
               { s: "못 가게 되거나 참여가 바뀔 때", w: "바로" },
               { s: "중간부터 합류할 때", w: "먼저 연락하면 가능" } ] },
             { type: "callout", anchor: "rule-walkin", tone: "danger", ic: "close", text: "연락 없이 참여하는 **임의\u00a0참여는 금지**입니다.", keywords: ["임의 참여", "무단 참여"] }
           ] },
-        { id: "cat-settle", title: "모임 비용 정산", q: "정산은 어떻게?", k: "1/N 원칙", img: "settle-spot",
+        { id: "cat-settle", title: "모임 비용 정산", q: "정산은 어떻게?", k: "1/N 원칙", img: "settle-spot", head: false,
           key: "**1/N**이 원칙입니다. 상황에 따라 모임장 판단으로 예외를 둘 수 있습니다.",
           keywords: ["정산", "1/N", "엔빵", "N빵", "더치페이", "송금", "계좌번호", "벙비", "모임 비용", "영수증", "결제 내역", "계좌", "입금", "입금 완료", "입금 확인 링크", "댓글", "정산기", "정산 금액이 이상합니다", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "정산 결과는 채팅방에 어떻게 보내나요"],
           blocks: [
             { type: "lanes", keywords: ["영수증", "결제 내역", "계좌", "입금", "입금 완료", "댓글", "정산 금액이 이상합니다"], lanes: [
-              { title: "모임장이 할 일", ic: "crown", img: "calc-rounds", steps: [
+              { title: "모임장이 할 일", img: "calc-rounds", steps: [
                 { title: "영수증 또는 결제 내역 올리기" },
                 { title: "빠짐없이 적기", chips: ["날짜", "참여자", "금액", "계좌", "참석자 태그"] },
                 { title: "모임 공지 댓글에 남기기" } ] },
-              { title: "참여자가 할 일", ic: "wallet", warm: true, img: "calc-payment", steps: [
+              { title: "참여자가 할 일", img: "calc-payment", steps: [
                 { anchor: "rule-settle-check", title: "모임이 끝나면 정산 내용 확인", text: "금액이 불명확하거나 빠진 사람이 있으면 **입금 전에** 모임장에게 확인합니다." },
                 { title: "신속히 입금" },
                 { title: "내 이름의 입금\u00a0완료 누르기", text: "모임장이 입금 확인 링크를 올린 경우" } ] } ] },
-            { type: "tool", anchor: "rule-calc", ic: "send", title: "모임 정산 페이지", href: "calculator.html", label: "모임 정산 열기",
+            { type: "tool", anchor: "rule-calc", title: "모임 정산 페이지", href: "calculator.html", label: "모임 정산 열기",
               keywords: ["정산기", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "링크 복사", "정산 결과"],
               text: "차수별 1/N 금액과 입금 확인 링크를 만들고, **카카오톡으로\u00a0보내기**를 누르면 카카오톡 공유\u00a0창이 열립니다.",
               sub: "공유 창이 열리지 않는 브라우저에서는 링크가 복사되거나 직접 복사할 창이 뜨니, 채팅창에 붙여넣습니다." }
@@ -643,7 +634,7 @@
           key: "운영진은 오픈채팅에서 닉네임 옆에 **방장이나 부방장** 표시가 있는 3명입니다. 운영진 닉네임을 눌러 **1:1\u00a0대화**로 연락합니다.",
           keywords: ["운영진", "연락", "운영진은 어떻게 연락하나요", "1:1", "오픈채팅", "매너", "배려", "불편", "저격", "중재", "한동안 모임에 못 나갑니다", "장기 미참여", "사정", "규칙에 없는 상황", "규칙에 없는 상황이 생기면 어떻게 되나요", "제재", "메시지 삭제", "메세지 삭제", "메시지를 삭제해도 되나요", "가리기", "방장", "부방장"],
           blocks: [
-            { type: "routes", anchor: "rule-ops", ic: "users", title: "이럴 때 알립니다",
+            { type: "routes", anchor: "rule-ops", title: "이럴 때 알립니다",
               btn: { href: "https://open.kakao.com/o/geS7Tzy", label: "오픈채팅 열기" },
               keywords: ["한동안", "장기 미참여", "사정", "불편", "저격", "중재", "규칙에 없는 상황", "제재"], rows: [
               { s: "오래 활동하기 어렵거나 특별한 사정이 있을\u00a0때", w: "미리" },
@@ -658,9 +649,9 @@
           keywords: ["금지", "피할 것", "노쇼", "불참", "플러팅", "연락처", "반말", "사생활", "폭언", "성희롱", "홍보", "개인정보", "사진", "뒷담화", "감정싸움", "기혼자", "유부", "번호 교환", "경고", "면담", "강제퇴장", "강퇴", "조치", "비벙"],
           blocks: [
             { type: "chipgroups", groups: [
-              { title: "사람에게", ic: "users", items: ["과도한 플러팅", "함부로 연락처를 묻거나 주고받기", "서로 합의하지 않은 반말", "사생활 침해", "비매너, 폭언, 성희롱"] },
-              { title: "방 안에서", ic: "megaphone", items: ["다른 방 홍보 또는 초대", "동의 없이 사진이나 개인정보 퍼뜨리기", "비방, 편 가르기, 뒷담화", "공개 채팅방에서의 감정싸움과 소모적인 말다툼", "기혼자 출입"] },
-              { title: "약속", ic: "clock", items: ["무단 노쇼와 불참 (참석 버튼을 누르고 오지 않는 경우 포함)"] } ] },
+              { title: "사람에게", items: ["과도한 플러팅", "함부로 연락처를 묻거나 주고받기", "서로 합의하지 않은 반말", "사생활 침해", "비매너, 폭언, 성희롱"] },
+              { title: "방 안에서", items: ["다른 방 홍보 또는 초대", "동의 없이 사진이나 개인정보 퍼뜨리기", "비방, 편 가르기, 뒷담화", "공개 채팅방에서의 감정싸움과 소모적인 말다툼", "기혼자 출입"] },
+              { title: "약속", items: ["무단 노쇼와 불참 (참석 버튼을 누르고 오지 않는 경우 포함)"] } ] },
             { type: "seealso", text: "다른 장의 금지: [[연락 없는 임의 참여|rule-walkin]], [[같은 시간대 중복 개설|rule-dup]]\u2060(원칙적\u00a0금지, 예외\u00a0있음)" },
             { type: "ladders", anchor: "rule-sanction", title: "조치 단계", keywords: ["경고", "면담", "강제퇴장", "조치", "비벙 조치", "재적발"], tracks: [
               { label: "금지 행동 위반", steps: [{ tag: "1차", text: "구두 경고" }, { tag: "2차", text: "강제퇴장", sub: "재적발 시", final: true }] },
@@ -708,7 +699,7 @@
           return "<li" + aid(s.anchor) + '><span class="fl-n' + (s.ic ? " has-ic" : "") + '" aria-hidden="true">' + (s.ic ? icon(s.ic) : "") + "</span>" +
             '<div><p class="fl-t">' + em(s.title) + "</p>" +
             (s.text ? '<p class="fl-d">' + em(s.text) + "</p>" : "") +
-            (s.chips ? '<div class="fl-chips">' + s.chips.map(function (c) { return "<span>" + esc(c) + "</span>"; }).join(" ") + "</div>" : "") +
+            (s.chips ? '<p class="fl-d">' + s.chips.map(esc).join(", ") + "</p>" : "") +
           "</div></li>";
         }).join("") + "</ol>";
       }
@@ -756,22 +747,22 @@
           case "flow":
             return flowList(b.steps, b.steps.some(function (s) { return s.ic; }) ? "is-h" : "");
           case "routes":
-            return '<div class="rt' + (b.host ? " is-host" : "") + '"' + aid(b.anchor) + '><div class="rt-top"><h3 class="rt-h">' + icon(b.ic) + esc(b.title) + "</h3>" +
-              (b.btn ? '<a class="btn btn-secondary is-sm" href="' + esc(b.btn.href) + '" target="_blank" rel="noopener noreferrer">' + esc(b.btn.label) + "</a>" : "") + "</div>" +
+            return '<div class="rt"' + aid(b.anchor) + '><h3 class="rt-h">' + esc(b.title) + "</h3>" +
               '<ul class="rt-list">' + b.rows.map(function (r) {
                 return "<li" + aid(r.anchor) + '><span class="rt-s">' + esc(r.s) + "</span>" +
                   (r.w ? ' <span class="when">' + esc(r.w) + "</span>" : "") +
                   (r.sub ? ' <p class="rt-sub">' + em(r.sub) + "</p>" : "") + "</li>";
-              }).join("") + "</ul></div>";
+              }).join("") + "</ul>" +
+              (b.btn ? '<p class="blk-act"><a class="btn btn-secondary is-sm" href="' + esc(b.btn.href) + '" target="_blank" rel="noopener noreferrer">' + esc(b.btn.label) + "</a></p>" : "") + "</div>";
           case "lanes":
             return '<div class="lanes">' + b.lanes.map(function (l) {
-              return '<div class="lane' + (l.warm ? " is-warm" : "") + '">' + (l.img ? pic(l.img, "lane-img", "80px", ".lane") : "") +
-                '<div><h3 class="lane-h">' + icon(l.ic) + esc(l.title) + "</h3>" + flowList(l.steps) + "</div></div>";
+              return '<div class="lane">' + (l.img ? pic(l.img, "lane-img", "80px", ".lane") : "") +
+                '<div><h3 class="lane-h">' + esc(l.title) + "</h3>" + flowList(l.steps) + "</div></div>";
             }).join("") + "</div>";
           case "tool":
-            return '<div class="tool"' + aid(b.anchor) + '><div class="tool-top"><h3 class="tool-h">' + icon(b.ic) + esc(b.title) + "</h3>" +
-              '<a class="btn btn-primary is-sm" href="' + esc(b.href) + '">' + esc(b.label) + "</a></div>" +
-              '<p class="tool-t">' + em(b.text) + "</p>" + (b.sub ? '<p class="tool-s">' + em(b.sub) + "</p>" : "") + "</div>";
+            return '<div class="tool"' + aid(b.anchor) + '><h3 class="tool-h">' + esc(b.title) + "</h3>" +
+              '<p class="tool-t">' + em(b.text) + "</p>" + (b.sub ? '<p class="tool-s">' + em(b.sub) + "</p>" : "") +
+              '<p class="blk-act"><a class="btn btn-secondary is-sm" href="' + esc(b.href) + '">' + esc(b.label) + "</a></p></div>";
           case "rulecards":
             return '<div class="rc"' + aid(b.anchor) + ">" + (b.need ? '<div class="rc-line"><span class="rc-b is-need">자격</span> <span>' + em(b.need) + "</span></div>" : "") +
               '<div class="rc-line"><span class="rc-b">원칙</span> <span>' + em(b.rule) + "</span></div>" +
@@ -781,7 +772,7 @@
                 return '<li><span class="tp' + (i === b.steps.length - 1 ? " is-final" : "") + '">' + esc(s) + "</span></li>";
               }).join("") + "</ol></div>" +
               (b.after ? '<p class="tp-after">' + icon("clock") + "<span>" + em(b.after) + "</span></p>" : "") +
-              (b.cta ? '<p class="cta-row"><span>' + esc(b.cta.text) + '</span><a class="btn btn-secondary is-sm" href="' + esc(b.cta.href) + '">' + esc(b.cta.label) + "</a></p>" : "");
+              (b.cta ? '<p class="para cta-t">' + esc(b.cta.text) + '</p><p class="blk-act"><a class="btn btn-secondary is-sm" href="' + esc(b.cta.href) + '">' + esc(b.cta.label) + "</a></p>" : "");
           case "note":
             return '<div class="callout is-' + (b.danger ? "danger" : "info") + '"' + aid(b.anchor) + ">" + icon("alert") +
               '<div><p class="co-t">' + em(b.title) + "</p><p>" + em(b.text) + (b.to ? " " + jumpLink(b.to, b.toLabel) : "") + "</p></div></div>";
@@ -792,7 +783,7 @@
               }).join("") + "</div></div>";
           case "chipgroups":
             return '<div class="ban-board">' + b.groups.map(function (g) {
-              return '<div class="bb-row"><p class="bb-k">' + icon(g.ic) + esc(g.title) + '</p><ul class="bb-chips">' +
+              return '<div class="bb-row"><p class="bb-k">' + esc(g.title) + '</p><ul class="bb-chips">' +
                 g.items.map(function (i) { return "<li>" + icon("close") + esc(i) + "</li>"; }).join("") + "</ul></div>";
             }).join("") + "</div>";
           case "ladders":
@@ -821,10 +812,9 @@
       var summary = document.getElementById("summary");
       var tocBox = document.getElementById("tocBox");
 
-      quickGrid.innerHTML = CATS.map(function (c, i) {
-        return '<li><a class="qt" href="#' + esc(c.id) + '">' + pic(c.img, "qt-img", "(max-width: 640px) 80px, 88px", ".qt", i < 4) +
-          '<span class="qt-q">' + esc(c.q) + '</span> <span class="qt-k">' + esc(c.k) + "</span>" +
-          '<svg class="qt-go" aria-hidden="true"><use href="#i-chevRight"/></svg></a></li>';
+      quickGrid.innerHTML = CATS.map(function (c) {
+        return '<li><a class="qt" href="#' + esc(c.id) + '">' + pic(c.img, "qt-img", "88px", ".qt") +
+          '<span class="qt-q">' + esc(c.q) + '</span> <span class="qt-k">' + esc(c.k) + "</span></a></li>";
       }).join("");
 
       catsHost.innerHTML = CATS.map(function (cat, i) {
