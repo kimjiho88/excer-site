@@ -100,7 +100,7 @@
     var people = Object.create(null), names = [], byHead = Object.create(null), namesByLen = null;
     var events = [], evByName = Object.create(null);
     var months = Object.create(null);
-    var hours = new Array(24).fill(0), weekdays = new Array(7).fill(0);
+    var hours = new Array(24).fill(0), weekdays = new Array(7).fill(0), gridM = Object.create(null);   // 달마다 요일 x 시간
     var totalN = 0, first = null, lastDate = null, fileStartT = null;
     var lastMin = -Infinity, sub = 0, curMinSigs = Object.create(null), boundary = null;
     var recentJoins = [], prev = null, pendingQ = [], unanswered = [], conflicts = [], run = null;
@@ -207,6 +207,7 @@
       if (p.sig.length < 12) p.sig.push(m.date + "|" + hm(m) + "|" + m.kind + "|" + (m.len || 0));
       var mo = M(m.date); mo.msgs += 1; mo.speakers[name] = 1;
       hours[m.hour] += 1; weekdays[m.weekday] += 1;
+      var gm = gridM[m.date.slice(0, 7)] || (gridM[m.date.slice(0, 7)] = new Array(168).fill(0)); gm[m.weekday * 24 + m.hour] += 1;
 
       while (recentJoins.length && t - recentJoins[0].t > 60 * 60000) recentJoins.shift();
       // 답 없는 질문: 30분 안에 다른 사람의 말이 오면 답
@@ -312,7 +313,10 @@
         var roleHist = roles.filter(function (r) { return r.name === n || r.from === n; }).map(function (r) { return { d: r.d, act: r.name === n ? r.act : "owner_off" }; });
         var parts = nickParts(n);
         var inWin = function (days) { var from = endN - days + 1, c = 0; for (var d in p.byDay) if (dnum(d) >= from) c += p.byDay[d]; return c; };
-        var d30 = inWin(30), d60 = inWin(60), d90 = inWin(90);
+        var d30 = inWin(30), d60 = inWin(60), d90 = inWin(90), d7 = inWin(7);
+        // 최근 12주 주별 메시지(시트의 작은 추이 선)
+        var wk = new Array(12).fill(0);
+        for (var dd in p.byDay) { var wi = Math.floor((endN - dnum(dd)) / 7); if (wi >= 0 && wi < 12) wk[11 - wi] += p.byDay[dd]; }
         var prev60 = d90 - d30;
         var flags = [];
         function F(code, level, label, extra) { flags.push({ c: code, l: level, t: label, x: extra || "" }); }
@@ -354,7 +358,7 @@
           role: owner === n && status === "in" ? "owner" : subs[n] && status === "in" ? "sub" : "", roles: roleHist,
           reentries: re.sort(function (a, b) { return a.d < b.d ? -1 : 1; }), sysNames: sysNames,
           events: evs.slice(-40).map(function (e) { return { k: e.kind, d: e.date, t: e.hm, how: e.how, by: e.by, name: e.name, via: e.via, key: e.key }; }),
-          first: p.firstDate, last: p.lastDate, n: p.n, d30: d30, d60: d60, d90: d90, activeDays: p.days, maxGap: p.maxGap,
+          first: p.firstDate, last: p.lastDate, n: p.n, d7: d7, d30: d30, d60: d60, d90: d90, wk: wk, activeDays: p.days, maxGap: p.maxGap,
           kinds: p.kinds, avgLen: p.textN ? Math.round(p.textLen / p.textN) : 0, nightShare: p.n ? Math.round((p.night / p.n) * 100) : 0,
           starts: p.starts, replies: p.replies, welcomes: p.welcomes, thanksGot: p.thanksGot, thanksGiven: p.thanksGiven,
           mentionsIn: p.mentionsIn, mentionsOut: Object.keys(p.mentionsOut).map(function (k) { return { to: k, c: p.mentionsOut[k] }; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 5),
@@ -402,6 +406,10 @@
         conflicts: conflicts.slice(-30),
         concentration: totalN ? Math.round((top10 / totalN) * 100) : 0,
         hours: hours, weekdays: weekdays,
+        grid: (function () {
+          var ks = Object.keys(gridM).sort(), rec = ks.slice(-3), sum = function (list) { var g = new Array(168).fill(0); list.forEach(function (k) { gridM[k].forEach(function (v, i) { g[i] += v; }); }); return g; };
+          return { recent: sum(rec), recentFrom: rec[0] || "", all: sum(ks) };
+        })(),
         sys: sysCount, unread: unread,
         roles: roles.slice(-100), staff: { owner: ledger.some(function (r) { return r.role === "owner"; }) ? owner : "", subs: ledger.filter(function (r) { return r.role === "sub"; }).map(function (r) { return r.name; }) },
         unlinked: unlinked.slice(-2000), defaultNames: dflt,
