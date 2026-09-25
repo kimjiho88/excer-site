@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=20" />
-  <script src="assets/chat-parser.js?v=7"></script>
-  <script src="assets/ops-analyzer.js?v=2"></script>
+  <script src="assets/chat-parser.js?v=8"></script>
+  <script src="assets/ops-analyzer.js?v=3"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 폰에서 먼저 보기 좋게 */
     body { background: var(--bg, #F7F5EF); }
@@ -110,6 +110,11 @@
     .form-row .wide { grid-column: 1 / -1; }
     .save-state { color: var(--ink-2); font-size: 12px; }
     .dropzone { border: 2px dashed var(--line-strong); border-radius: var(--r-md); padding: 24px 16px; text-align: center; background: var(--surface-2); cursor: pointer; }
+    .prog-wrap { display: grid; gap: 4px; }
+    .prog-wrap[hidden] { display: none; }
+    .prog { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+    .prog i { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 4px; transition: width 0.2s; }
+    .prog-wrap span { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
     .dropzone.is-over { border-color: var(--brand); background: var(--brand-soft); }
     .notice { padding: 10px 12px; border-radius: var(--r-sm); background: #FFF1D6; color: #5A3A00; font-size: 13px; line-height: 1.55; }
     .notice[hidden] { display: none; }
@@ -170,6 +175,7 @@
             <p class="sub">카카오톡 채팅방 메뉴의 대화 내보내기로 받은 .txt 파일입니다. 여러 파일을 함께 올리면 겹치는 부분은 한 번만 셉니다. 파일은 이 기기 안에서만 읽고, 서버에는 분석 결과와 신호에 걸린 줄의 짧은 발췌만 저장합니다.</p>
             <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 끌어다 놓기"><b>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</b></div>
             <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" aria-label="대화 파일 선택" />
+            <div id="progWrap" class="prog-wrap" hidden><div class="prog"><i id="progBar"></i></div><span id="progText" aria-live="polite"></span></div>
             <div id="fileInfo" class="rows"></div>
             <div class="chips">
               <button id="saveBtn" class="btn btn-primary" type="button" disabled>서버에 저장</button>
@@ -219,9 +225,9 @@
     let PASS = "";
     let localOnly = false;
     const S = { ledger: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {} }, history: { people: [] }, roster: null, savedAt: "", unsaved: false };
-    let parsedFiles = [];
+    let srcFiles = [], busy = false;
     let tab = "home";
-    const view = { q: "", filter: "all", sort: "count", sigSide: "bad", open: new Set(["fmt", "day", "day_missing", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set() };
+    const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "day", "day_missing", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set() };
 
     /* ── 서버 ── */
     async function rpc(name, body) {
@@ -293,6 +299,8 @@
 
     /* ── 사람 보조 ── */
     const people = () => (S.ledger && S.ledger.people) || [];
+    // 확인할 사람, 점검, 신호는 지금 방에 있는 사람만(나간 사람과 기본 프로필 이름은 멤버 탭에서)
+    const members = () => people().filter((p) => p.status === "in" && !p.dflt);
     const byPid = (pid) => people().find((p) => p.pid === pid);
     const exc = (pid) => S.records.exceptions[pid] || {};
     function effFlags(p) {
@@ -308,9 +316,14 @@
     const QUIET = ["silent", "drop"];   // 대기열과 신호 탭에서 빼고 점검에만
     function pending(p) {
       const rv = S.records.reviewed[p.pid] || {};
-      return effFlags(p).filter((f) => (f.l === "rule" || f.l === "watch") && !QUIET.includes(f.c) && rv[f.c] !== f.x);
+      return effFlags(p).filter((f) => (f.l === "rule" || f.l === "watch") && !QUIET.includes(f.c) && rv[f.c] !== (f.k || f.x));
     }
+    const ROLE = { owner: "방장", sub: "부방장" };
     function statusTag(p) {
+      const role = p.role ? `<span class="tag in">${ROLE[p.role]}</span>` : "";
+      return role + statusTag0(p) + (p.dflt ? `<span class="tag">기본 프로필 이름(여러 사람)</span>` : "");
+    }
+    function statusTag0(p) {
       if (p.status === "kicked") return `<span class="tag out">내보냄 ${esc(md(p.outDate))}</span>`;
       if (p.status === "left") return `<span class="tag out">나감 ${esc(md(p.outDate))}</span>`;
       return `<span class="tag in">방에 있음</span>`;
@@ -333,10 +346,10 @@
       if (!L) { host.innerHTML = ""; return; }
       const end = L.range.to, endN = dnum(end);
       const lastM = L.months[L.months.length - 1] || { joins: 0, leaves: 0, kicks: 0, net: 0 };
-      const queue = people().map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length).sort((a, b) => b.list.filter((f) => f.l === "rule").length - a.list.filter((f) => f.l === "rule").length || b.list.length - a.list.length);
+      const queue = members().map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length).sort((a, b) => b.list.filter((f) => f.l === "rule").length - a.list.filter((f) => f.l === "rule").length || b.list.length - a.list.length);
       const kickBack = queue.filter((x) => x.list.some((f) => f.c === "kick_return"));
       const newbies = people().filter((p) => p.status === "in" && p.joinedAt && endN - dnum(p.joinedAt) <= 30).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
-      const gone = people().filter((p) => p.status !== "in" && p.outDate && endN - dnum(p.outDate) <= 30).sort((a, b) => b.outDate.localeCompare(a.outDate));
+      const gone = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && endN - dnum(p.outDate) <= 30).sort((a, b) => b.outDate.localeCompare(a.outDate));
       host.innerHTML = `
         <div class="panel">
           <h2>한눈에 <small>대화 ${esc(md(L.range.from))} ~ ${esc(md(end))} 기준</small></h2>
@@ -346,6 +359,7 @@
             <div class="tile"><span>확인할 사람</span><strong>${nf(queue.length)}</strong><small>규칙 ${nf(queue.filter((x) => x.list.some((f) => f.l === "rule")).length)}명</small></div>
             <div class="tile"><span>신입(30일 안)</span><strong>${nf(newbies.length)}</strong><small>들어온 뒤 말한 사람</small></div>
           </div>
+          ${L.staff && (L.staff.owner || L.staff.subs.length) ? `<p class="sub">운영진: ${L.staff.owner ? "방장 " + esc(L.staff.owner) : ""}${L.staff.subs.length ? (L.staff.owner ? ", " : "") + "부방장 " + L.staff.subs.map(esc).join(", ") : ""}</p>` : ""}
         </div>
         ${kickBack.length ? `<div class="panel"><h2>내보낸 뒤 다시 들어온 사람 <small>${kickBack.length}명</small></h2><div class="rows">${kickBack.map((x) => personRow(x.p)).join("")}</div></div>` : ""}
         <div class="panel">
@@ -415,22 +429,23 @@
       let rulesHtml = "", unHtml = "";
       if (S.ledger) {
         const groups = CHECKS.map(([code, label]) => {
-          const list = people().filter((p) => effFlags(p).some((f) => f.c === code));
+          const list = members().filter((p) => effFlags(p).some((f) => f.c === code));
           if (RULE_CODES.includes(code)) ruleN += list.length;
           const detail = (p) => { const f = effFlags(p).find((x) => x.c === code); return f && f.x && code !== "silent" ? `<span>${esc(f.x)}</span>` : ""; };
           return detailsGroup(code, esc(label), `<div class="rows">${list.slice(0, 200).map((p) => personRow(p, detail(p))).join("")}</div>${list.length > 200 ? `<p class="sub">200명까지 보여 줍니다. 전체는 멤버 탭에서 찾습니다.</p>` : ""}`, list.length, false);
         });
         const dayFrom = S.records.settings.dayFrom || "";
-        rulesHtml = `<div class="panel"><h2>규칙 점검</h2><p class="sub">재입장과 닉네임 변경은 들어옴, 나감 줄과 지난 저장본을 비교한 추정입니다. 상세의 근거 날짜를 보고 판단해 주세요.</p>
+        rulesHtml = `<div class="panel"><h2>규칙 점검</h2><p class="sub">지금 방에 있는 사람만 봅니다. 재입장은 같은 이름의 들어옴, 나감 줄로 세고, 닉네임 변경은 지난 저장본과 비교합니다.</p>
           <label class="field"><span>입장일 칸 적용 시작일</span><input id="dayFrom" class="input" type="date" value="${esc(dayFrom)}" /></label>
           <p class="sub">이 날부터 들어온 사람만 입장일 칸 없음으로 봅니다.${dayFrom ? "" : " 비워 두면 보지 않습니다."}</p>
           ${groups.join("")}</div>`;
         const un = S.ledger.unlinked || [];
         const ug = unlinkedGroups();
         ruleN += ug.filter((g) => g.over).length;
-        const canLink = parsedFiles.length > 0;
+        const canLink = srcFiles.length > 0;
         unHtml = `<div class="panel"><h2>누구인지 정하지 못한 들어옴, 나감 <small>${un.length}줄, 이름 ${ug.length}개</small></h2>
           <p class="sub">말한 적 없이 드나든 사람이거나, 이름이 달라 누구인지 정하지 못한 줄입니다. 같은 이름끼리 모았습니다.${canLink ? "" : " 사람에게 잇기는 이 기기에서 파일을 올린 뒤에 할 수 있습니다."}</p>
+          ${S.ledger.defaultNames && S.ledger.defaultNames.lines ? `<p class="sub">기본 프로필 이름(뽀뽀하는 어피치 같은 이름)으로 드나든 줄 ${nf(S.ledger.defaultNames.lines)}줄(이름 ${nf(S.ledger.defaultNames.names)}개)은 여러 사람이 같은 이름을 쓰므로 사람별로 세지 않습니다.</p>` : ""}
           ${ug.length ? ug.slice(0, 120).map((g) => `<details class="group" data-open="u:${esc(g.name)}"${g.over || view.open.has("u:" + g.name) ? " open" : ""}><summary><h3>${esc(g.name)}${g.over ? `<span class="tag rule">재입장 한도 초과</span>` : ""}<span class="tag">들어옴 ${g.joins}${g.leaves ? ", 나감 " + g.leaves : ""}${g.kicks ? ", 내보냄 " + g.kicks : ""}</span>${g.re ? `<span class="tag">재입장 ${g.re}회${g.limit != null ? ", 한도 " + g.limit + "회" : ""}</span>` : ""}</h3></summary>
             <ul class="ev">${g.lines.map((u) => `<li><time>${esc(md(u.d))} ${esc(u.t)}</time><span>${u.k === "join" ? "들어옴" : u.how === "kick" ? "내보냄" : "나감"}${canLink && u.key ? ` <button class="text-btn" type="button" data-link="${esc(u.key)}" data-head="${esc(g.name.split(" ")[0])}">사람에게 잇기</button>` : ""}</span></li>`).join("")}</ul></details>`).join("") : `<p class="empty">없습니다.</p>`}
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
@@ -521,13 +536,13 @@
       if (!S.ledger) { host.innerHTML = ""; return; }
       const side = view.sigSide;
       const codes = {};
-      people().forEach((p) => effFlags(p).forEach((f) => { if ((side === "bad" && f.l === "watch" && !QUIET.includes(f.c)) || (side === "good" && f.l === "good")) (codes[f.c] = codes[f.c] || { t: f.t, list: [] }).list.push({ p, f }); }));
+      members().forEach((p) => effFlags(p).forEach((f) => { if ((side === "bad" && f.l === "watch" && !QUIET.includes(f.c)) || (side === "good" && f.l === "good")) (codes[f.c] = codes[f.c] || { t: f.t, list: [] }).list.push({ p, f }); }));
       const keys = Object.keys(codes).sort((a, b) => sigRank(a) - sigRank(b));
       const evOf = (p, c) => (p.ev || []).filter((e) => e.c === c || (c === "organizer" && e.c === "meetup"));
       const L = S.ledger;
       host.innerHTML = `<div class="panel">
         <div class="chips" role="group" aria-label="신호 종류"><button type="button" data-side="bad" aria-pressed="${side === "bad"}">살필 신호</button><button type="button" data-side="good" aria-pressed="${side === "good"}">좋은 신호</button></div>
-        <p class="sub">${side === "bad" ? "단어와 행동 모양으로 찾은 것이라 틀릴 수 있습니다. 근거 줄을 보고 판단해 주세요." : "환영, 감사 받음, 모임 제안, 정보 공유, 꾸준함입니다."}</p>
+        <p class="sub">${side === "bad" ? "지금 방에 있는 사람의 최근 90일입니다. 단어와 행동 모양으로 찾은 것이라 틀릴 수 있으니 근거 줄을 보고 판단해 주세요." : "환영, 감사 받음, 모임 제안, 정보 공유, 꾸준함입니다."}</p>
         ${keys.length ? keys.map((c) => `<div class="group"><h3>${esc(codes[c].t)} <span class="tag">${codes[c].list.length}명</span></h3><div class="rows">${codes[c].list.sort((a, b) => b.p.n - a.p.n).map(({ p, f }) => {
           const ev = evOf(p, c);
           return personRow(p, `<span>${esc(f.x)}</span>`) + (ev.length ? `<details class="more"><summary>근거 줄 ${ev.length}개</summary><ul class="ev">${ev.map((e) => `<li><time>${esc(md(e.d))} ${esc(e.t)}</time><span>${esc(e.x)}</span></li>`).join("")}</ul></details>` : "");
@@ -546,7 +561,7 @@
       const host = document.querySelector('[data-panel="flow"]');
       const L = S.ledger; if (!L) { host.innerHTML = ""; return; }
       const f = L.funnel;
-      host.innerHTML = `<div class="panel"><h2>월별 인원 변화</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td></tr>`).join("")}</tbody></table></div></div>
+      host.innerHTML = `<div class="panel"><h2>월별 인원 변화</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th><th>가림</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td><td>${nf(m.hidden || 0)}</td></tr>`).join("")}</tbody></table></div></div>
         <div class="panel"><h2>신입 흐름 <small>파일 안의 들어옴 ${nf(f.joined)}건</small></h2>
           <dl class="kv">
             <div><dt>60분 안에 환영 인사</dt><dd>${pct(f.welcomed, f.joined)}</dd></div>
@@ -562,7 +577,7 @@
         <div class="panel"><h2>답 없는 질문 시간대</h2>${bars(L.unanswered.byHour)}</div>
         <div class="panel"><h2>그 밖</h2><dl class="kv">
           <div><dt>상위 10% 사람이 차지한 메시지</dt><dd>${L.concentration}%</dd></div>
-          <div><dt>운영진이 가린 메시지</dt><dd>${nf(L.sys.hidden)}건</dd></div>
+          <div><dt>운영진이 가린 메시지</dt><dd>${nf(L.totals.hiddenMsgs != null ? L.totals.hiddenMsgs : L.sys.hidden)}건</dd></div>
           <div><dt>공지 등록</dt><dd>${nf(L.sys.notice)}건</dd></div>
           <div><dt>전체 메시지</dt><dd>${nf(L.totals.messages)}건</dd></div>
           <div><dt>말한 사람(누적)</dt><dd>${nf(L.totals.people)}명</dd></div>
@@ -619,8 +634,8 @@
       const pr = p.parts || {};
       const cell = (label, v, need) => `<div><span>${label}</span><b class="${!v && need ? "miss" : ""}">${esc(v || "없음")}</b></div>`;
       const acts = S.records.actions.filter((a) => a.pid === p.pid).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      const VIA = { name: "같은 이름", head: "앞 이름으로 이음", time: "시점으로 이음(추정)", manual: "직접 이음" };
-      const evs = (p.events || []).map((x) => `<li><time>${esc(md(x.d))} ${esc(x.t)}</time><span>${x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" + (x.by ? "(" + esc(x.by) + ")" : "") : "나감"}</span>${x.name !== p.name ? `<span class="tag">줄 이름: ${esc(x.name)}</span>` : ""}<span class="tag">${esc(VIA[x.via] || "")}</span>${x.via === "manual" && parsedFiles.length ? `<button class="text-btn is-quiet" type="button" data-unlink="${esc(x.key)}">풀기</button>` : ""}</li>`).join("");
+      const VIA = { name: "", head: "앞 이름으로 이음", time: "시점으로 이음(추정)", manual: "직접 이음" };
+      const evs = (p.events || []).map((x) => `<li><time>${esc(md(x.d))} ${esc(x.t)}</time><span>${x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" + (x.by ? "(" + esc(x.by) + ")" : "") : "나감"}</span>${x.name !== p.name ? `<span class="tag">줄 이름: ${esc(x.name)}</span>` : ""}${VIA[x.via] ? `<span class="tag">${esc(VIA[x.via])}</span>` : ""}${x.via === "manual" && srcFiles.length ? `<button class="text-btn is-quiet" type="button" data-unlink="${esc(x.key)}">풀기</button>` : ""}</li>`).join("");
       const kinds = p.kinds || {};
       const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}</span></li>`).join("");
       $("sheetBody").innerHTML = `
@@ -631,7 +646,8 @@
         </div>
         <div class="panel"><h2>들어옴, 나감 <small>재입장 ${p.reentries.length}회${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 예외 +" + e.reentry : ""}</small></h2>
           ${evs ? `<ul class="timeline">${evs}</ul>` : `<p class="sub">이 파일에 이 사람의 들어옴, 나감 줄이 없습니다.</p>`}
-          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.via === "gap" ? "(들어옴 줄 없음)" : "")).join(", ")}</p>` : ""}
+          ${(p.roles || []).length ? `<p class="sub">운영진 기록: ${p.roles.map((r) => esc(md(r.d)) + " " + ({ sub_on: "부방장이 됨", sub_off: "부방장 해제", owner: "방장이 됨", owner_off: "방장을 넘김" }[r.act] || "")).join(", ")}</p>` : ""}
+          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.via === "gap" ? "(들어옴 줄 없음)" : "") + (r.stay != null ? "(앞 머묾 " + r.stay + "일)" : "")).join(", ")}</p>` : ""}
         </div>
         <div class="panel"><h2>닉네임 이력</h2>
           ${names ? `<ul class="timeline">${names}</ul><p class="sub">날짜는 그 이름이 보인 파일의 마지막 대화 날짜입니다.</p>` : ""}
@@ -673,7 +689,7 @@
         </div>`;
       $("sheetBody").querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => { delete S.records.links[b.dataset.unlink]; saveRecords(); runAnalysis("풀었습니다. 저장하면 다른 기기에서도 보입니다."); }));
       const rb = $("reviewBtn");
-      if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
+      if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.k || f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
       $("actAdd").addEventListener("click", () => {
         S.records.actions.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pid: p.pid, name: p.name, kind: $("actKind").value, step: $("actStep").value, date: $("actDate").value || todayKST(), reason: $("actReason").value.trim().slice(0, 200) });
         saveRecords(); renderAll(); renderSheet(p); toast("조치를 적었습니다.");
@@ -700,29 +716,58 @@
     dz.addEventListener("drop", (e) => { e.preventDefault(); dz.classList.remove("is-over"); addFiles(e.dataTransfer && e.dataTransfer.files); });
     fi.addEventListener("change", () => { addFiles(fi.files); fi.value = ""; });
     async function addFiles(list) {
+      if (busy) { toast("분석 중입니다. 끝난 뒤에 올려 주세요."); return; }
       const arr = Array.from(list || []).filter((f) => /\.txt$/i.test(f.name) || (f.type || "").startsWith("text/"));
       if (!arr.length) { toast(".txt 파일만 올릴 수 있습니다."); return; }
-      for (const f of arr) {
-        if (parsedFiles.some((x) => x.name === f.name && x.size === f.size)) continue;
-        const text = await f.text();
-        parsedFiles.push({ name: f.name, size: f.size, parsed: ChatParser.parse(text, { keepSystem: true }) });
-      }
+      arr.forEach((f) => { if (!srcFiles.some((x) => x.name === f.name && x.size === f.size)) srcFiles.push(f); });
       runAnalysis();
     }
-    function runAnalysis(doneMsg) {
-      const lists = parsedFiles.map((f) => f.parsed.messages);
-      const messages = lists.length > 1 ? ChatParser.mergeMessages(lists) : lists[0];
-      const seen = new Set(), sys = [];
-      parsedFiles.forEach((f) => (f.parsed.meta.sys || []).forEach((s) => { const k = s.date + "|" + s.hour + "|" + s.min + "|" + s.text; if (!seen.has(k)) { seen.add(k); sys.push(s); } }));
-      let r = OpsAnalyzer.analyze({ messages, sys });
-      if (!r) { toast("대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
+    const mb = (n) => (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + "MB";
+    function setProgress(p) {
+      const w = $("progWrap");
+      if (p == null) { w.hidden = true; return; }
+      w.hidden = false;
+      $("progBar").style.width = Math.round(p * 100) + "%";
+      $("progText").textContent = "읽는 중 " + Math.round(p * 100) + "%";
+    }
+    /* 사람 열쇠(pid)에서 지금 이름: 직접 이은 줄을 분석기에 넘길 때 쓴다 */
+    function pidNames() {
+      const m = new Map();
+      ((S.history && S.history.people) || []).forEach((h) => { const n = (h.names[h.names.length - 1] || {}).n; if (n) m.set(h.pid, n); });
+      people().forEach((p) => m.set(p.pid, p.name));
+      return m;
+    }
+    /* 파일 읽기와 분석은 워커에서(화면이 멈추지 않게). 워커를 못 쓰면 이 화면에서 */
+    function analyzeFiles(list, links) {
+      return new Promise((resolve, reject) => {
+        const onP = (p) => setProgress(p);
+        const here = () => OpsAnalyzer.runFiles(list, { links, onProgress: onP }).then(resolve, reject);
+        let w = null;
+        try { w = new Worker("assets/ops-worker.js?v=1"); } catch (e) { w = null; }
+        if (!w) { here(); return; }
+        let started = false;
+        w.onmessage = (e) => {
+          const d = e.data || {};
+          if (d.type === "progress") { started = true; onP(d.p); }
+          else if (d.type === "done") { w.terminate(); resolve(d.r); }
+          else if (d.type === "error") { w.terminate(); reject(new Error(d.message)); }
+        };
+        w.onerror = (e) => { if (e && e.preventDefault) e.preventDefault(); w.terminate(); if (!started) here(); else reject(new Error((e && e.message) || "worker")); };
+        w.postMessage({ files: list, links });
+      });
+    }
+    async function runAnalysis(doneMsg) {
+      if (!srcFiles.length || busy) return;
+      busy = true; setProgress(0); $("saveBtn").disabled = true;
+      const lk = S.records.links || {}, names = pidNames(), links = {};
+      Object.keys(lk).forEach((k) => { const n = names.get(lk[k]); if (n) links[k] = n; });
+      let r = null;
+      try { r = await analyzeFiles(srcFiles, links); } catch (e) { r = undefined; }
+      busy = false; setProgress(null);
+      if (!r) { $("saveBtn").disabled = !S.unsaved || localOnly; toast(r === undefined ? "파일을 읽지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요." : "대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
       resolvePeople(r);
-      const lk = S.records.links || {}, links = {};
-      const nameOf = new Map(r.people.map((p) => [p.pid, p.name]));
-      Object.keys(lk).forEach((k) => { const n = nameOf.get(lk[k]); if (n) links[k] = n; });
-      if (Object.keys(links).length) { r = OpsAnalyzer.analyze({ messages, sys, links }); resolvePeople(r); }
       S.ledger = r; S.unsaved = true; S.savedAt = S.savedAt || "";
-      $("fileInfo").innerHTML = parsedFiles.map((f) => `<div class="prow" style="cursor:default"><span class="pn">${esc(f.name)}</span><span class="pr">${nf(f.parsed.messages.length)}줄</span></div>`).join("") +
+      $("fileInfo").innerHTML = srcFiles.map((f) => `<div class="prow" style="cursor:default"><span class="pn">${esc(f.name)}</span><span class="pr">${mb(f.size)}</span></div>`).join("") +
         `<p class="sub">대화 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, 메시지 ${nf(r.totals.messages)}건, 말한 사람 ${nf(r.totals.people)}명, 들어옴 ${nf(r.totals.joins)}, 나감 ${nf(r.totals.leaves)}, 내보냄 ${nf(r.totals.kicks)}</p>`;
       $("saveBtn").disabled = localOnly;
       renderAll();

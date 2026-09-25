@@ -38,6 +38,8 @@
   var RE_JOIN = /님이\s*들어왔습니다|님을\s*초대했습니다|님이\s*초대되었습니다/;
   var RE_LEAVE = /님이\s*나갔습니다|님을\s*내보냈습니다/;
   var RE_SYS_ETC = /^(채팅방\s*관리자가|운영정책을|메시지가\s*가려졌습니다|채팅방\s*이름을|공지가\s*등록되었습니다)/;
+  // 운영진 알림(가림, 부방장, 방장 변경, 관리자만 말하기, 봇). 앞 메시지 본문에 이어 붙이지 않는다
+  var RE_SYS_ADMIN = /^관리자가\s*(\d+개의\s*)?메시지를\s*가렸습니다|^관리자만\s*말하기\s*기능이|님이\s*부방장(이\s*되었습니다|에서\s*해제되었습니다)\.?$|^방장이\s.+님으로\s*변경되었습니다|^방장이\s*오픈채팅봇을/;
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -88,6 +90,8 @@
     function sysType(body) {
       var b = String(body || "");
       if (/가렸습니다|가려졌습니다/.test(b)) return "hidden";
+      if (/오픈채팅봇/.test(b)) return "bot";
+      if (/관리자만\s*말하기/.test(b)) return "lock";
       if (/공지/.test(b)) return "notice";
       if (/운영정책/.test(b)) return "policy";
       if (/채팅방\s*이름/.test(b)) return "rename";
@@ -221,7 +225,7 @@
       m = t.match(RE_ANDROID_SYS) || t.match(RE_IOS_SYS);
       if (m) {
         var sysBody = m[7] || "";
-        if (RE_JOIN.test(sysBody) || RE_LEAVE.test(sysBody) || RE_SYS_ETC.test(sysBody) || !last) {
+        if (RE_JOIN.test(sysBody) || RE_LEAVE.test(sysBody) || RE_SYS_ETC.test(sysBody) || RE_SYS_ADMIN.test(sysBody) || !last) {
           var d3 = toDateStr(m[1], m[2], m[3]);
           curDate = d3;
           pushSystem(d3, toHour24(m[4], m[5]), m[6], sysBody);
@@ -239,7 +243,7 @@
 
       // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등) — 시각은 직전 메시지 것을 잇는다
       if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, null, t); continue; }
-      if (RE_SYS_ETC.test(t)) { keepSys(curDate, prevTime ? prevTime.hour : null, prevTime ? prevTime.min : null, t); last = null; continue; }
+      if (RE_SYS_ETC.test(t) || RE_SYS_ADMIN.test(t)) { keepSys(curDate, prevTime ? prevTime.hour : null, prevTime ? prevTime.min : null, t); last = null; continue; }
 
       // 9) 그 외: 직전 메시지의 연속(멀티라인)
       if (last && (last.kind === "text" || last.kind === "link")) {
