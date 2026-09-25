@@ -407,7 +407,7 @@
       <div>
         <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>우리 방이 이야기하는 시간</p>
         <h1 class="cover-title" id="pageTitle">활동 통계</h1>
-        <p class="cover-lead">오픈채팅 대화를 기간별로 집계했습니다. 숫자와 단어 빈도만 다루고 원문은 저장하지 않습니다.</p>
+        <p class="cover-lead">오픈채팅 대화를 기간별로 집계했습니다. 원문은 저장하지 않습니다.</p>
       </div>
       <img class="cover-spot" src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
@@ -462,7 +462,7 @@
       <div class="status-box">
         <img class="empty-img" src="assets/img/report-empty-320.webp?v=2" srcset="assets/img/report-empty-320.webp?v=2 320w, assets/img/report-empty-640.webp?v=2 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image')" />
         <strong id="emptyTitle">통계를 불러오지 못했습니다.</strong>
-        <p id="emptyText">연결을 확인한 뒤 다시 시도해 주세요.</p>
+        <p id="emptyText" hidden></p>
         <button class="btn btn-secondary is-sm" type="button" id="retryBtn">다시 시도</button>
       </div>
     </div>
@@ -2138,7 +2138,8 @@
           $("emptyWrap").hidden = false;
           const failed = source === "error";
           $("emptyTitle").textContent = failed ? "통계를 불러오지 못했습니다." : "발행된 통계가 없습니다.";
-          $("emptyText").textContent = failed ? "연결을 확인한 뒤 다시 시도해 주세요." : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
+          $("emptyText").textContent = failed ? "" : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
+          $("emptyText").hidden = failed;   // 실패일 때는 제목과 다시 시도 버튼만
           $("sourceBadge").textContent = failed ? "불러오기 실패" : "통계 없음";
           return;
         }

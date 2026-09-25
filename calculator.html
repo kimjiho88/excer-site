@@ -2811,6 +2811,7 @@
         const del = e.target.closest(".group-del");
         if (del) {
           const g = memberGroups.find((x) => x.id === del.dataset.gid);
+          if (g && !window.confirm(`"${g.name}" 구성을 삭제할까요?`)) return;   // 한 번 눌러 바로 지워지지 않게
           memberGroups = memberGroups.filter((x) => x.id !== del.dataset.gid);
           persistGroups(memberGroups);
           renderGroups();

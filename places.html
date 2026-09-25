@@ -858,7 +858,7 @@
         var raw = String((err && err.message) || "");
         for (var k in ERRORS) if (raw.indexOf(k) >= 0) return ERRORS[k];
         if (err && err.status === 404) return "서버 기능을 찾지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
-        return "요청을 처리하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.";
+        return "요청을 처리하지 못했습니다. 다시 시도해 주세요.";
       }
 
       /* ── 폼 오류: 그 항목 아래에 표시하고 첫 오류로 포커스 ── */
@@ -1128,7 +1128,7 @@
           '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 등록</button></div>';
       }
       function errorHTML() {
-        return '<div class="status-line"><span>맛집 목록을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.</span>' +
+        return '<div class="status-line"><span>맛집 목록을 불러오지 못했습니다.</span>' +
           '<button type="button" class="btn btn-secondary is-sm" data-retry="1">다시 시도</button></div>';
       }
       function skeletonHTML() {
@@ -1585,6 +1585,9 @@
          SDK 는 지도를 처음 열 때 한 번만 읽는다(autoload=false → kakao.maps.load). */
       var MAP = { ready: false, loading: null, failed: false, map: null, pins: [], places: null, bounds: null, me: null };
       var MAP_KEY = "excer_places_map";
+      /* 위치 잡기는 운영진 기기에서만 보인다. 표시는 통계 발행 화면에서 운영진 비밀번호가 서버에서 맞았을 때 남는다(비밀번호는 저장하지 않는다) */
+      var ADMIN_DEVICE_KEY = "excer_admin_device";
+      function isAdminDevice() { try { return localStorage.getItem(ADMIN_DEVICE_KEY) === "1"; } catch (e) { return false; } }
       var SEOUL_GANGNAM = { lat: 37.4979, lng: 127.0276 };
       function mapAvailable() { return !!(state.loc && window.KAKAO && KAKAO.jsKey); }
       function loadKakao() {
@@ -1607,7 +1610,7 @@
       function syncMapButtons() {
         var on = mapAvailable() && !MAP.failed;
         $("mapToggle").hidden = !on;
-        $("geoBtn").hidden = !on || !state.views.some(function (v) { return !v.hasCoords && !v.closed; });
+        $("geoBtn").hidden = !on || !isAdminDevice() || !state.views.some(function (v) { return !v.hasCoords && !v.closed; });
         if (on && state.mapOn) openMap();
       }
       function openMap() {

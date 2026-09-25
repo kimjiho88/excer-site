@@ -39,6 +39,7 @@
     .search-box { position: relative; flex: 1 1 220px; min-width: 0; display: flex; align-items: center; }
     .search-box .ic { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--ink-2); pointer-events: none; }
     .search-box input { padding-left: 38px; }
+    .search-box input:placeholder-shown::-webkit-search-cancel-button { display: none; }   /* 빈 칸에서는 지우기 x 가 안내 글 자리를 먹지 않게(맛집과 같게) */
     .sort-select {
       min-height: 44px; padding: 0 32px 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line-strong);
       background: var(--surface) no-repeat right 10px center; color: var(--ink); font-size: 14px; -webkit-appearance: none; appearance: none;
@@ -252,7 +253,7 @@
           <div class="tools-row">
             <label class="search-box">
               <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-              <input id="searchInput" class="input" type="search" placeholder="검색" aria-label="소식 검색" autocomplete="off" />
+              <input id="searchInput" class="input" type="search" placeholder="제목, 내용 검색" aria-label="소식 검색" autocomplete="off" />
             </label>
             <label class="sr-only" for="sortSelect">정렬</label>
             <select id="sortSelect" class="sort-select">
@@ -281,7 +282,7 @@
         <div class="board-foot"><span id="listNote" aria-live="polite"></span></div>
 
         <div id="setupBanner" class="status-line is-warn" hidden>
-          <span>소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.</span>
+          <span>소식을 불러오지 못했습니다.</span>
           <button id="retryBtn" class="btn btn-secondary is-sm" type="button">다시 시도</button>
         </div>
 
@@ -580,7 +581,7 @@
       const msg = String((err && err.message) || "");
       for (const code of Object.keys(ERROR_MAP)) if (msg.includes(code)) return ERROR_MAP[code];
       if (err && err.status === 404) return OFFLINE_MSG;
-      return "요청을 처리하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.";
+      return "요청을 처리하지 못했습니다. 다시 시도해 주세요.";
     }
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) {} }
