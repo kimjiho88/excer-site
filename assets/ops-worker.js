@@ -1,5 +1,5 @@
 /* 운영 대시보드: 대화 파일 분석을 화면과 따로 돌린다(수백 MB 파일도 화면이 멈추지 않게) */
-importScripts("chat-parser.js?v=8", "ops-analyzer.js?v=3");
+importScripts("chat-parser.js?v=8", "ops-analyzer.js?v=4");
 self.onmessage = function (e) {
   var d = e.data || {};
   var last = 0;
