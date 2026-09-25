@@ -38,6 +38,8 @@
   var RE_JOIN = /님이\s*들어왔습니다|님을\s*초대했습니다|님이\s*초대되었습니다/;
   var RE_LEAVE = /님이\s*나갔습니다|님을\s*내보냈습니다/;
   var RE_SYS_ETC = /^(채팅방\s*관리자가|운영정책을|메시지가\s*가려졌습니다|채팅방\s*이름을|공지가\s*등록되었습니다)/;
+  // 운영진 알림(가림, 부방장, 방장 변경, 관리자만 말하기, 봇). 앞 메시지 본문에 이어 붙이지 않는다
+  var RE_SYS_ADMIN = /^관리자가\s*(\d+개의\s*)?메시지를\s*가렸습니다|^관리자만\s*말하기\s*기능이|님이\s*부방장(이\s*되었습니다|에서\s*해제되었습니다)\.?$|^방장이\s.+님으로\s*변경되었습니다|^방장이\s*오픈채팅봇을/;
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -77,10 +79,29 @@
   // · join 이벤트는 입장자 닉네임을 name 에 담는다 — 환영(welcome) 휴리스틱의
   //   "본인 제외" 판정용이며, aggregate() 결과에는 절대 노출되지 않는다.
   // · 퇴장/강퇴는 개수만 세고 누가 나갔는지는 어디에도 남기지 않는다 (name:"").
-  function parse(rawText) {
+  /* opts.keepSystem: 운영 대시보드 전용. 입장과 퇴장 말고 다른 시스템 줄(가림, 공지, 그 밖)과
+     읽지 못한 시스템 줄을 meta.sys 에 따로 모은다. 메시지 목록에는 넣지 않아 공개 통계 집계는 그대로다 */
+  function parse(rawText, opts) {
+    opts = opts || {};
     var lines = String(rawText || "").replace(/\r\n?/g, "\n").split("\n");
     var messages = [];
     var meta = { joins: 0, leaves: 0, format: "unknown" };
+    if (opts.keepSystem) meta.sys = [];
+    function sysType(body) {
+      var b = String(body || "");
+      if (/가렸습니다|가려졌습니다/.test(b)) return "hidden";
+      if (/오픈채팅봇/.test(b)) return "bot";
+      if (/관리자만\s*말하기/.test(b)) return "lock";
+      if (/공지/.test(b)) return "notice";
+      if (/운영정책/.test(b)) return "policy";
+      if (/채팅방\s*이름/.test(b)) return "rename";
+      if (/방장|부방장/.test(b)) return "role";
+      return "other";
+    }
+    function keepSys(dateStr, hour, min, body) {
+      if (!opts.keepSystem || !body) return;
+      meta.sys.push({ date: dateStr || "", hour: hour == null ? null : hour, min: min == null ? null : +min, type: sysType(body), text: String(body).slice(0, 120) });
+    }
     var counts = { android: 0, ios: 0, pc: 0 };
     var curDate = null; // PC 포맷용 현재 날짜
     var last = null;    // 멀티라인 연속용 직전 메시지
@@ -116,10 +137,11 @@
         // 절대 노출되지 않는다(aggregate 는 leave 를 세지도 출력하지도 않음).
         // 내보냄은 "OO님을 내보냈습니다" 와 "방장님이 OO님을 내보냈습니다" 두 꼴이 있다. 앞의 '누가' 부분은 떼고 나간 사람만 잡는다
         var lm = body.match(/^(.+?)님이\s*나갔습니다/);
-        var km = lm ? null : body.match(/^(?:.+?님이\s*)?(.+?)님을\s*내보냈습니다/);
+        var km = lm ? null : body.match(/^(?:(.+?)님이\s*)?(.+?)님을\s*내보냈습니다/);
         if (lm) { who = lm[1].trim(); how = "left"; }
-        else if (km) { who = km[1].trim(); how = "kick"; }
+        else if (km) { who = km[2].trim(); how = "kick"; var actor = km[1] ? km[1].trim() : ""; }
       }
+      if (!kind) { keepSys(dateStr, hour, min, body); last = null; return; }
       if (kind && dateStr) {
         // 시각이 없는 줄(PC 형식의 입장·퇴장)은 같은 날 바로 앞 메시지의 시각을 이어받는다.
         // 그날 첫 줄이면(앞 메시지가 전날) 전날 시각을 빌리면 안 된다 — 다음에 오는 메시지의 시각을 기다렸다 받는다.
@@ -133,6 +155,7 @@
           name: who, kind: kind, len: 0, text: ""
         };
         if (how) ev.how = how;   // 나감(left), 내보냄(kick). 발행 화면의 멤버 확인에만 쓰고 통계 JSON 에는 싣지 않는다
+        if (how === "kick" && actor && opts.keepSystem) ev.by = actor;   // 내보낸 사람(운영 대시보드 전용)
         messages.push(ev);
         if (hour == null && !sameDay) pendingSys.push(ev);
       } else if (kind) {
@@ -202,7 +225,7 @@
       m = t.match(RE_ANDROID_SYS) || t.match(RE_IOS_SYS);
       if (m) {
         var sysBody = m[7] || "";
-        if (RE_JOIN.test(sysBody) || RE_LEAVE.test(sysBody) || RE_SYS_ETC.test(sysBody) || !last) {
+        if (RE_JOIN.test(sysBody) || RE_LEAVE.test(sysBody) || RE_SYS_ETC.test(sysBody) || RE_SYS_ADMIN.test(sysBody) || !last) {
           var d3 = toDateStr(m[1], m[2], m[3]);
           curDate = d3;
           pushSystem(d3, toHour24(m[4], m[5]), m[6], sysBody);
@@ -220,7 +243,7 @@
 
       // 8) 프리픽스 없는 시스템 행 (PC 포맷의 입장/퇴장 등) — 시각은 직전 메시지 것을 잇는다
       if (RE_JOIN.test(t) || RE_LEAVE.test(t)) { pushSystem(curDate, null, null, t); continue; }
-      if (RE_SYS_ETC.test(t)) { last = null; continue; }
+      if (RE_SYS_ETC.test(t) || RE_SYS_ADMIN.test(t)) { keepSys(curDate, prevTime ? prevTime.hour : null, prevTime ? prevTime.min : null, t); last = null; continue; }
 
       // 9) 그 외: 직전 메시지의 연속(멀티라인)
       if (last && (last.kind === "text" || last.kind === "link")) {
