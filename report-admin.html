@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=20" />
-  <script src="assets/chat-parser.js?v=5"></script>
+  <script src="assets/chat-parser.js?v=6"></script>
 
   <style>
     /* ============================================================
@@ -164,19 +164,39 @@
     .member-filters .chip[hidden] { display: none; }
     .member-table { display: grid; gap: 6px; max-height: min(560px, 70vh); overflow-y: auto; margin-top: 10px; padding-right: 4px; overscroll-behavior: contain; }
     .member-row {
-      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: start;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: start;
       padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: #fff;
-      font-size: 13px; cursor: pointer; transition: background 0.14s var(--ease);
+      font-size: 13px; transition: background 0.14s var(--ease);
     }
-    @media (hover: hover) { .member-row:hover { background: var(--surface-2); border-color: var(--line-strong); } }
-    .member-row input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--brand); flex: none; }
+    @media (hover: hover) { .member-row:hover { border-color: var(--line-strong); } }
+    .m-main { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: start; cursor: pointer; min-width: 0; }
+    .m-main input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--brand); flex: none; }
     .member-row.is-excluded { background: var(--surface-2); }
-    .member-row.is-excluded .m-name, .member-row.is-excluded .m-raw { color: var(--ink-2); }
+    .member-row.is-excluded .m-name { color: var(--ink-2); }
     .member-row.is-excluded .m-name-text { text-decoration: line-through; }
+    .member-row.is-picking { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft); }
     .m-body { min-width: 0; display: grid; gap: 3px; }
-    .m-name { font-weight: 700; font-size: 14px; min-width: 0; display: flex; align-items: center; gap: 6px; }
-    .m-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-    .m-raw { color: var(--ink-2); font-size: 13px; overflow-wrap: anywhere; }
+    .m-name { font-weight: 700; font-size: 14px; min-width: 0; }
+    .m-name-text { overflow-wrap: anywhere; }
+    .m-alias { grid-column: 1; display: grid; gap: 2px; padding-left: 32px; color: var(--ink-2); font-size: 12px; justify-items: start; }
+    .m-alias b { color: var(--ink); font-weight: 600; }
+    .m-alias .text-btn { font-size: 12px; min-height: 28px; }
+    .m-act { grid-column: 2; justify-self: end; }
+    .m-act .text-btn { font-size: 12px; min-height: 28px; }
+    .merge-sugg { margin-top: 12px; padding: 12px; border-radius: var(--r-sm); background: var(--brand-soft); display: grid; gap: 10px; }
+    .merge-sugg[hidden] { display: none; }
+    .sugg-title { font-size: 13px; color: var(--ink); }
+    .sugg-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding-top: 10px; border-top: 1px solid rgba(75, 42, 130, 0.12); }
+    .sugg-title + .sugg-item { border-top: 0; padding-top: 0; }
+    .sugg-names { display: grid; gap: 2px; min-width: 0; font-size: 13px; }
+    .sugg-names b { font-weight: 700; overflow-wrap: anywhere; }
+    .sugg-names small { margin-left: 6px; color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+    .sugg-why { color: var(--ink-2); font-size: 12px; }
+    .sugg-acts { display: flex; gap: 6px; }
+    .merge-bar { position: sticky; top: calc(var(--nav-h) + 4px); z-index: 2; margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--ink); color: #fff; font-size: 13px; }
+    .merge-bar[hidden] { display: none; }
+    .merge-bar .mini-btn { background: #fff; }
+    @media (max-width: 480px) { .sugg-item { grid-template-columns: 1fr; } .sugg-acts { justify-content: flex-end; } }
     .m-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--ink-2); font-size: 12px; }
     .m-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--surface-2); color: var(--ink); }
     .m-tag.is-out { background: var(--danger-soft); color: var(--danger); }
@@ -421,8 +441,9 @@
             <!-- 3) 멤버 -->
             <section id="memberCard" class="card is-lg" aria-labelledby="stepMember" hidden>
               <div class="step-head"><h2 class="step-title" id="stepMember"><span class="step-no">3</span>멤버 확인</h2></div>
-              <p class="step-note">체크를 끈 사람은 통계에서 빠집니다. 나감 기록이 있는 사람은 미리 꺼 두었습니다. 직접 바꾼 것은 이 브라우저에 기억해 다음 달에도 그대로 적용합니다.</p>
+              <p class="step-note">줄 제목이 그대로 발행되는 이름입니다. 체크를 끈 사람은 통계에서 빠지고, 나감 기록이 있는 사람은 미리 꺼 두었습니다. 닉네임을 바꾼 사람은 합치기로 한 줄로 만듭니다. 직접 바꾼 것은 이 브라우저에 기억해 다음 달에도 적용합니다.</p>
               <p id="memberSummary" class="member-summary" role="status" aria-live="polite"></p>
+              <div id="mergeSugg" class="merge-sugg" hidden></div>
 
               <div class="member-tools">
                 <div class="member-search">
@@ -442,6 +463,7 @@
                 <button class="chip" type="button" data-mf="new" aria-pressed="false" hidden>새 이름 <b id="mfNew">0</b></button>
                 <button class="chip" type="button" data-mf="mine" aria-pressed="false" hidden>직접 정함 <b id="mfMine">0</b></button>
               </div>
+              <div id="mergeBar" class="merge-bar" role="status" aria-live="polite" hidden></div>
               <div id="memberTable" class="member-table" aria-label="멤버별 메시지 수"></div>
               <div class="member-foot" id="memberFoot" hidden>
                 <button id="decisionsClear" class="mini-btn" type="button" hidden>직접 정한 것 모두 지우기</button>
@@ -720,10 +742,16 @@
       let mergedMeta = { format: "unknown", files: 0 };
       let overlapDates = [];        // 파일 간 겹침 날짜
       let dataMin = null, dataMax = null;
-      const excluded = new Set();   // 통계 제외 멤버. 표시 이름(민지, 민지2) 하나로만 다룬다(멤버 표, 명단, 나감 감지가 모두 같은 이름)
-      let dispMap = Object.create(null);   // 원본 닉네임 -> 표시 이름(ChatParser.displayNames)
-      let rawOfDisp = Object.create(null); // 표시 이름 -> 원본 닉네임들
-      let rawInfo = Object.create(null);   // 원본 닉네임 -> { said: 마지막 대화일, left: 마지막 나감일, how: left|kick, joined: 마지막 입장일 }
+      /* 한 사람 = 닉네임 하나. 닉네임을 바꾼 사람은 '합치기'로 여러 닉네임을 한 사람으로 묶는다.
+         사람의 이름(발행되는 이름)은 묶음 안의 닉네임 전체 하나다. 앞 토막으로 줄이지 않는다 */
+      const excluded = new Set();   // 통계 제외 사람(발행 이름)
+      let groups = Object.create(null);    // 발행 이름 -> 그 사람의 닉네임들
+      let canonOf = Object.create(null);   // 닉네임 -> 발행 이름
+      let allRaws = [];                    // 파일에서 말한 적 있는 닉네임
+      let merges = Object.create(null);    // 기억: 닉네임 -> 합쳐 싣는 이름(이 브라우저, 다음 달에도)
+      let notSame = new Set();             // 기억: '같은 사람 아님'으로 넘긴 제안 "이름|이름"
+      let mergeFrom = null;                // 합치기 고르는 중인 사람
+      let rawInfo = Object.create(null);   // 닉네임 -> { first, said: 첫/마지막 대화일, left: 마지막 나감일, how: left|kick, joined: 마지막 입장일 }
       let leftRawNames = [];               // 나감 감지된 원본 닉네임. 단어 목록에 이름이 오르지 않게 막는 데도 쓴다
       let baseCache = { key: "", agg: null }; // 제외 전 집계(멤버 표용). 기간이 같으면 다시 계산하지 않는다
       const dropped = new Set();    // 삭제한 키워드
@@ -746,11 +774,12 @@
         try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
         catch (e) { return ymd(new Date()); }
       }
-      function rawsOf(d) { return rawOfDisp[d] || [d]; }
+      function rawsOf(d) { return groups[d] || [d]; }
       function infoOf(d) {
-        const out = { said: "", left: "", how: "", joined: "" };
+        const out = { first: "", said: "", left: "", how: "", joined: "" };
         rawsOf(d).forEach((r) => {
           const x = rawInfo[r]; if (!x) return;
+          if (x.first && (!out.first || x.first < out.first)) out.first = x.first;
           if (x.said > out.said) out.said = x.said;
           if (x.left > out.left) { out.left = x.left; out.how = x.how; }
           if (x.joined > out.joined) out.joined = x.joined;
@@ -783,7 +812,78 @@
       }
       function recomputeExcluded() {
         excluded.clear();
-        Object.keys(rawOfDisp).forEach((d) => { if (stateOf(d).off) excluded.add(d); });
+        Object.keys(groups).forEach((d) => { if (stateOf(d).off) excluded.add(d); });
+      }
+      const bySaidDesc = (a, b) => ((rawInfo[b] || {}).said || "").localeCompare((rawInfo[a] || {}).said || "");
+      /* 기억한 합치기로 사람 묶음을 다시 만든다. 싣는 이름은 기억한 이름이 이번 파일에 있으면 그것, 없으면 가장 최근에 말한 닉네임 */
+      function rebuildGroups() {
+        const byKey = Object.create(null);
+        allRaws.forEach((r) => { const k = merges[r] || r; (byKey[k] = byKey[k] || []).push(r); });
+        groups = Object.create(null); canonOf = Object.create(null);
+        Object.keys(byKey).forEach((k) => {
+          const raws = byKey[k];
+          const name = raws.includes(k) ? k : raws.slice().sort(bySaidDesc)[0];
+          groups[name] = raws.slice().sort(bySaidDesc);
+          raws.forEach((r) => { canonOf[r] = name; });
+        });
+        // 나감 판정: 묶음 안에서 가장 늦게 움직인 닉네임의 상태를 따른다(옛 닉네임에는 나감 기록이 없다)
+        const leftSet = new Set(leftRawNames);
+        const lastEv = (r) => { const x = rawInfo[r] || {}; return [x.said || "", x.left || "", x.joined || ""].sort().pop(); };
+        detectedLeft = new Set(Object.keys(groups).filter((d) => {
+          const latest = groups[d].slice().sort((a, b) => lastEv(b).localeCompare(lastEv(a)))[0];
+          return leftSet.has(latest);
+        }));
+        baseCache = { key: "", agg: null };
+      }
+      function nameMapNow() {
+        const m = Object.create(null); let n = 0;
+        Object.keys(canonOf).forEach((r) => { if (canonOf[r] !== r) { m[r] = canonOf[r]; n += 1; } });
+        return n ? m : null;
+      }
+      function mergePeople(a, b) {
+        const raws = rawsOf(a).concat(rawsOf(b));
+        const target = raws.slice().sort(bySaidDesc)[0];
+        raws.forEach((r) => { merges[r] = target; });
+        notSame.delete(pairKey(a, b));
+        mergeFrom = null;
+        savePreset(); rebuildGroups(); recomputeExcluded(); recompute();
+        EXCER.toast(`${raws.length}개 닉네임을 한 사람으로 합쳤습니다.`);
+      }
+      function unmergePerson(d) {
+        const raws = rawsOf(d);
+        raws.forEach((r) => { delete merges[r]; });
+        for (let i = 0; i < raws.length; i++) for (let j = i + 1; j < raws.length; j++) notSame.add(pairKey(raws[i], raws[j]));
+        savePreset(); rebuildGroups(); recomputeExcluded(); recompute();
+      }
+      function renamePerson(d, raw) {
+        rawsOf(d).forEach((r) => { merges[r] = raw; });
+        savePreset(); rebuildGroups(); recomputeExcluded(); recompute();
+      }
+      function pairKey(a, b) { return [a, b].sort().join("|"); }
+      /* 같은 사람일 수 있는 두 사람: 대화 기간이 거의 안 겹치고(하루까지), 입장일과 출생 연도가 같거나 앞 이름이 같다 */
+      function nickParts(raw) {
+        const t = normName(raw).split(" ");
+        return { head: firstTok(raw), birth: t.find((x) => /^\d{2}$/.test(x)) || "", day: t.find((x) => /^\d{4}$/.test(x)) || "", sex: t.find((x) => x === "남" || x === "여") || "" };
+      }
+      function suggestions() {
+        const people = (lastMembers || []).map((m) => m.name);
+        const out = [];
+        for (let i = 0; i < people.length; i++) for (let j = i + 1; j < people.length; j++) {
+          const a = people[i], b = people[j];
+          if (notSame.has(pairKey(a, b))) continue;
+          const ia = infoOf(a), ib = infoOf(b);
+          if (!ia.first || !ib.first) continue;
+          const s0 = ia.first > ib.first ? ia.first : ib.first, s1 = ia.said < ib.said ? ia.said : ib.said;   // 두 사람 대화 기간이 겹치는 구간
+          if (s1 >= s0 && dayGap(s0, s1) > 1) continue;   // 이틀 넘게 함께 말했으면 다른 사람
+          const pa = nickParts(a), pb = nickParts(b);
+          let why = "";
+          if (pa.day && pa.day === pb.day && pa.birth && pa.birth === pb.birth && (!pa.sex || !pb.sex || pa.sex === pb.sex)) why = "입장일, 출생 연도 같음";
+          else if (pa.head && pa.head === pb.head) why = "앞 이름 같음";
+          if (!why) continue;
+          const older = ia.said <= ib.said ? a : b, newer = older === a ? b : a;
+          out.push({ a: older, b: newer, why });
+        }
+        return out.slice(0, 12);
       }
       // 체크를 바꾸면: 자동, 명단 판정과 같아지면 직접 정한 것을 지우고, 다르면 원본 닉네임마다 기억한다
       function setDecision(d, off) {
@@ -1002,21 +1102,19 @@
         //    나간 사람 이름은 원본("민지 강남 여 95 0312")인데 멤버 표는 앞 토막("민지")을 보여 준다.
         //    둘 다 넣어 두어야 표의 '나감 감지' 태그와 실제 제외가 같은 사람을 가리킨다.
         //    그래서 원본 이름을 파서와 같은 규칙의 표시 이름(민지·민지2)으로 바꿔 한 이름으로만 다룬다.
-        dispMap = ChatParser.displayNames(merged);
-        rawOfDisp = Object.create(null);
-        Object.keys(dispMap).forEach((raw) => { const d = dispMap[raw]; if (d) (rawOfDisp[d] = rawOfDisp[d] || []).push(raw); });
         leftRawNames = ChatParser.membership(merged).leftNames;
-        detectedLeft = new Set(leftRawNames.map((n) => dispMap[n]).filter(Boolean));
-        // 원본 닉네임마다 마지막 대화일, 마지막 나감(나감, 내보냄), 마지막 입장일. 멤버 표에서 사람을 가려내는 데 쓴다(발행되지 않는다)
+        // 닉네임마다 첫, 마지막 대화일, 마지막 나감(나감, 내보냄), 마지막 입장일. 멤버 표에서 사람을 가려내는 데 쓴다(발행되지 않는다)
         rawInfo = Object.create(null);
         merged.forEach((m) => {
           if (!m.name) return;
-          const r = rawInfo[m.name] || (rawInfo[m.name] = { said: "", left: "", how: "", joined: "" });
+          const r = rawInfo[m.name] || (rawInfo[m.name] = { first: "", said: "", left: "", how: "", joined: "" });
           if (m.kind === "leave") { if (m.date >= r.left) { r.left = m.date; r.how = m.how || "left"; } }
           else if (m.kind === "join") { if (m.date > r.joined) r.joined = m.date; }
-          else if (m.date > r.said) r.said = m.date;
+          else { if (m.date > r.said) r.said = m.date; if (!r.first || m.date < r.first) r.first = m.date; }
         });
-        baseCache = { key: "", agg: null };
+        allRaws = Object.keys(rawInfo).filter((r) => rawInfo[r].said);
+        mergeFrom = null;
+        rebuildGroups();
         recomputeExcluded();
 
         $("rangeCard").hidden = false;
@@ -1089,9 +1187,10 @@
         }
 
         // 멤버 표는 제외 전 집계 기준으로 그려야 다시 체크할 수 있다. 기간이 같으면 다시 계산하지 않는다(체크 하나에 1년치를 두 번 집계하던 것)
-        const key = from + "|" + to;
+        const nameMap = nameMapNow();
+        const key = from + "|" + to + "|" + JSON.stringify(nameMap || {});
         if (baseCache.key !== key) {
-          baseCache = { key, agg: ChatParser.aggregate(merged, { from, to, format: mergedMeta.format, files: mergedMeta.files, stopNames: leftRawNames }) };
+          baseCache = { key, agg: ChatParser.aggregate(merged, { from, to, format: mergedMeta.format, files: mergedMeta.files, stopNames: leftRawNames, fullNames: true, nameMap }) };
         }
         const baseAgg = baseCache.agg;
         lastMembers = baseAgg.members || [];
@@ -1101,7 +1200,9 @@
 
         currentStats = ChatParser.aggregate(merged, {
           from, to,
-          excludeDisplay: [...excluded],
+          fullNames: true,
+          nameMap,
+          excludeNames: [...excluded],
           stopNames: leftRawNames,
           dropKeywords: [...dropped],
           keywordLimit: 40,
@@ -1150,13 +1251,38 @@
         $("memberFoot").hidden = cnt.mine === 0;
         $("decisionsClear").hidden = cnt.mine === 0;
 
+        // 같은 사람일 수 있는 제안
+        const sg = suggestions();
+        const sh = $("mergeSugg");
+        sh.hidden = !sg.length;
+        const span = (d) => { const x = infoOf(d); return x.first === x.said ? md(x.said) : md(x.first) + " ~ " + md(x.said); };
+        sh.innerHTML = sg.length ? `<b class="sugg-title">같은 사람일 수 있습니다</b>` + sg.map((x, i) => `
+          <div class="sugg-item">
+            <div class="sugg-names">
+              <span><b>${escapeHTML(x.a)}</b><small>${escapeHTML(span(x.a))}</small></span>
+              <span><b>${escapeHTML(x.b)}</b><small>${escapeHTML(span(x.b))}</small></span>
+              <span class="sugg-why">${escapeHTML(x.why)}</span>
+            </div>
+            <div class="sugg-acts">
+              <button class="btn btn-primary is-sm" type="button" data-sugg-merge="${i}">합치기</button>
+              <button class="mini-btn" type="button" data-sugg-no="${i}">아님</button>
+            </div>
+          </div>`).join("") : "";
+        sh._sugg = sg;
+
+        // 합치기 고르는 중
+        const mb = $("mergeBar");
+        if (mergeFrom && !groups[mergeFrom]) mergeFrom = null;
+        mb.hidden = !mergeFrom;
+        mb.innerHTML = mergeFrom ? `<span><b>${escapeHTML(mergeFrom)}</b>와 같은 사람을 아래에서 고르세요.</span><button class="mini-btn" type="button" data-merge-cancel>취소</button>` : "";
+
         const q = memberQuery.trim().toLowerCase();
         let shown = views.filter((v) => {
           if (memberFilter === "off" && !v.st.off) return false;
           if (memberFilter === "left" && !v.left) return false;
           if (memberFilter === "new" && !v.isNew) return false;
           if (memberFilter === "mine" && !v.mine) return false;
-          if (q && !(v.m.name.toLowerCase().includes(q) || rawsOf(v.m.name).some((r) => r.toLowerCase().includes(q)))) return false;
+          if (q && !rawsOf(v.m.name).some((r) => r.toLowerCase().includes(q))) return false;
           return true;
         });
         if (memberSort === "quiet") shown.sort((a, b) => (a.inf.said || "").localeCompare(b.inf.said || "") || a.m.count - b.m.count);
@@ -1167,22 +1293,28 @@
         $("memberTable").innerHTML = shown.length ? shown.map((v) => {
           const m = v.m, off = v.st.off;
           const share = (!off && includedTotal) ? Math.round((m.count / includedTotal) * 1000) / 10 : 0;
-          const raws = rawsOf(m.name).filter((r) => r !== m.name);
+          const others = rawsOf(m.name).filter((r) => r !== m.name);
           const tags = [];
           if (v.out) tags.push(`<span class="m-tag is-out">${v.inf.how === "kick" ? "내보냄" : "나감"} ${escapeHTML(md(v.inf.left))}</span>`);
           else if (v.left) tags.push(`<span class="m-tag is-back">다시 들어옴${v.inf.joined ? " " + escapeHTML(md(v.inf.joined)) : ""}</span>`);
           if (v.isNew) tags.push(`<span class="m-tag is-new">새 이름</span>`);
           if (WHY[v.st.why]) tags.push(`<span class="m-tag">${WHY[v.st.why]}</span>`);
+          const act = mergeFrom
+            ? (mergeFrom === m.name ? `<button class="mini-btn" type="button" data-merge-cancel>취소</button>` : `<button class="btn btn-primary is-sm" type="button" data-merge-into="${escapeHTML(m.name)}">이 사람과 합치기</button>`)
+            : `<button class="text-btn is-quiet" type="button" data-merge-start="${escapeHTML(m.name)}">합치기</button>`;
           return `
-          <label class="member-row${off ? " is-excluded" : ""}">
-            <input type="checkbox" data-member="${escapeHTML(m.name)}" ${off ? "" : "checked"} aria-label="${escapeHTML(rawsOf(m.name).join(", "))} 통계에 포함" />
-            <span class="m-body">
-              <span class="m-name"><span class="m-name-text">${escapeHTML(m.name)}</span></span>
-              ${raws.length ? `<span class="m-raw">${raws.map(escapeHTML).join(", ")}</span>` : ""}
-              <span class="m-meta">${v.inf.said ? `<span>마지막 대화 ${escapeHTML(md(v.inf.said))}</span>` : ""}${tags.join("")}</span>
-            </span>
+          <div class="member-row${off ? " is-excluded" : ""}${mergeFrom === m.name ? " is-picking" : ""}">
+            <label class="m-main">
+              <input type="checkbox" data-member="${escapeHTML(m.name)}" ${off ? "" : "checked"} aria-label="${escapeHTML(m.name)} 통계에 포함" />
+              <span class="m-body">
+                <span class="m-name"><span class="m-name-text">${escapeHTML(m.name)}</span></span>
+                <span class="m-meta">${v.inf.said ? `<span>마지막 대화 ${escapeHTML(md(v.inf.said))}</span>` : ""}${tags.join("")}</span>
+              </span>
+            </label>
             <span class="m-num"><span class="m-count">${nf(m.count)}</span><span class="m-share">${off ? "제외" : share + "%"}</span></span>
-          </label>`;
+            ${others.length ? `<div class="m-alias">${others.map((r) => `<span class="m-alias-item">합친 닉네임 <b>${escapeHTML(r)}</b>${rawInfo[r] && rawInfo[r].said ? ` <small>${escapeHTML(md(rawInfo[r].said))}까지</small>` : ""} <button class="text-btn is-quiet" type="button" data-rename="${escapeHTML(m.name)}" data-raw="${escapeHTML(r)}">이 이름으로 싣기</button></span>`).join("")}<button class="text-btn is-quiet" type="button" data-unmerge="${escapeHTML(m.name)}">풀기</button></div>` : ""}
+            <div class="m-act">${act}</div>
+          </div>`;
         }).join("") : `<p class="member-empty">해당하는 멤버가 없습니다.</p>`;
         if (focused) { const el = $("memberTable").querySelector(`input[data-member="${CSS.escape(focused)}"]`); if (el) el.focus({ preventScroll: true }); }
       }
@@ -1276,7 +1408,7 @@
           });
           EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다.`);
           lastPublished = st;
-          Object.keys(dispMap).forEach((raw) => seenRaw.add(raw));
+          allRaws.forEach((raw) => seenRaw.add(raw));
           savePreset();
           $("afterPublishText").textContent = `"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다. 채팅방에 알릴까요?`;
           $("afterPublish").hidden = false;
@@ -1337,6 +1469,8 @@
             roster: $("rosterInput").value || "",
             dropped: [...dropped],
             decisions: decisions,
+            merges: merges,
+            notSame: [...notSame].slice(-500),
             seen: [...seenRaw].slice(-3000),
             at: new Date().toISOString()
           }));
@@ -1355,11 +1489,15 @@
           Object.keys(p.decisions).forEach((r) => { const x = p.decisions[r]; if (x && typeof x.off === "boolean") decisions[r] = { off: x.off, at: String(x.at || "") }; });
         }
         if (Array.isArray(p.seen)) seenRaw = new Set(p.seen.map(String));
+        if (p.merges && typeof p.merges === "object") Object.keys(p.merges).forEach((r) => { if (typeof p.merges[r] === "string") merges[r] = p.merges[r]; });
+        if (Array.isArray(p.notSame)) notSame = new Set(p.notSame.map(String));
 
         const bar = $("presetBar");
         const bits = [];
         const nDec = Object.keys(decisions).length;
         if (nDec) bits.push("직접 정한 멤버 " + nDec + "명");
+        const nMerged = new Set(Object.keys(merges).filter((r) => merges[r] !== r).map((r) => merges[r])).size;
+        if (nMerged) bits.push("합친 사람 " + nMerged + "명");
         if (Array.isArray(p.dropped) && p.dropped.length) bits.push("뺀 단어 " + p.dropped.length + "개");
         if (p.roster) bits.push("멤버 명단(3단계에서 적용)");
         if (!bits.length) return;
@@ -1511,6 +1649,19 @@
           recomputeExcluded();
           recompute();
         });
+        // 같은 사람 합치기: 시작, 고르기, 취소, 풀기, 싣는 이름 바꾸기, 제안 합치기와 아님
+        $("memberCard").addEventListener("click", (e) => {
+          const t = e.target.closest("button"); if (!t) return;
+          if (t.dataset.mergeStart) { mergeFrom = t.dataset.mergeStart; renderMemberTable(); return; }
+          if (t.hasAttribute("data-merge-cancel")) { mergeFrom = null; renderMemberTable(); return; }
+          if (t.dataset.mergeInto && mergeFrom) { mergePeople(mergeFrom, t.dataset.mergeInto); return; }
+          if (t.dataset.unmerge) { unmergePerson(t.dataset.unmerge); return; }
+          if (t.dataset.rename) { renamePerson(t.dataset.rename, t.dataset.raw); return; }
+          const sg = $("mergeSugg")._sugg || [];
+          if (t.dataset.suggMerge != null && sg[+t.dataset.suggMerge]) { const x = sg[+t.dataset.suggMerge]; mergePeople(x.a, x.b); return; }
+          if (t.dataset.suggNo != null && sg[+t.dataset.suggNo]) { const x = sg[+t.dataset.suggNo]; notSame.add(pairKey(x.a, x.b)); savePreset(); renderMemberTable(); return; }
+        });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && mergeFrom) { mergeFrom = null; renderMemberTable(); } });
         document.querySelectorAll("[data-mf]").forEach((b) => b.addEventListener("click", () => {
           memberFilter = b.dataset.mf;
           document.querySelectorAll("[data-mf]").forEach((x) => { const on = x === b; x.classList.toggle("is-on", on); x.setAttribute("aria-pressed", on ? "true" : "false"); });
@@ -1568,9 +1719,11 @@
         $("notifyBtn").addEventListener("click", notifyChat);
         $("downloadBtn").addEventListener("click", doDownload);
         $("presetClear").addEventListener("click", () => {
-          if (!window.confirm("직접 정한 멤버, 뺀 단어, 명단, 본 이름 기록을 모두 지웁니다. 계속할까요?")) return;
+          if (!window.confirm("직접 정한 멤버, 합친 사람, 뺀 단어, 명단, 본 이름 기록을 모두 지웁니다. 계속할까요?")) return;
           try { localStorage.removeItem(PRESET_KEY); } catch (e) {}
           decisions = Object.create(null); seenRaw = new Set(); dropped.clear();
+          merges = Object.create(null); notSame = new Set(); mergeFrom = null;
+          if (merged) rebuildGroups();
           rosterOn.clear(); rosterOff.clear(); $("rosterInput").value = "";
           $("presetBar").hidden = true;
           if (merged) { recomputeExcluded(); recompute(); }

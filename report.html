@@ -208,8 +208,8 @@
     .rank-row:last-child { border-bottom: 0; }
     .rank-no { color: var(--ink-2); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
     .rank-row.is-top .rank-no { color: var(--ink); }
-    .rank-main { min-width: 0; display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr) 72px; gap: 10px; align-items: center; }
-    .rank-name { display: inline-flex; align-items: center; min-height: 32px; min-width: 48px; font-weight: 600; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: none; padding: 0; text-align: left; cursor: pointer; }
+    .rank-main { min-width: 0; display: grid; grid-template-columns: minmax(140px, 240px) minmax(0, 1fr) 72px; gap: 10px; align-items: center; }
+    .rank-name { display: inline-flex; align-items: center; min-height: 32px; min-width: 48px; font-weight: 600; font-size: 14px; line-height: 1.35; color: var(--ink); white-space: normal; overflow-wrap: anywhere; background: none; padding: 0; text-align: left; cursor: pointer; }
     .rank-name:hover { color: var(--brand); }
     .rank-name mark { background: var(--apricot-soft); color: var(--ink); border-radius: 3px; padding: 0 2px; }
     .rank-track { height: 10px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
@@ -251,7 +251,7 @@
       .member-pill { flex: none; }
     }
     .member-detail-card { position: sticky; top: calc(var(--nav-h) + 16px); }
-    .md-head b { display: block; font-size: 17px; font-weight: 700; color: var(--ink); }
+    .md-head b { display: block; font-size: 17px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
     .md-head small { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); }
     .md-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
     .md-stat { padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); }
@@ -321,7 +321,7 @@
     .badge-card .bc-ic .ic { width: 22px; height: 22px; }
     .badge-card.no-image .bc-ic { display: grid; }
     .badge-card .b-title { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); }
-    .badge-card .b-name { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--ink); }
+    .badge-card .b-name { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
     .badge-card .b-desc { display: block; margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
     @media (max-width: 640px) { .badge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .badge-card .bc-img { width: 80px; height: 80px; } }
     @media (forced-colors: active) { .badge-card { border: 1px solid CanvasText; } }
@@ -344,10 +344,10 @@
     .recap-kpi strong { display: block; margin-top: 3px; font-size: clamp(16px, 2.2vw, 21px); font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
     .recap-kpi strong small { font-size: 0.6em; color: var(--on-dark-body); font-weight: 500; }
     .recap-rows { display: grid; gap: 6px; }
-    .recap-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); background: rgba(255, 255, 255, 0.08); font-size: 13px; }
+    .recap-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 9px 12px; border-radius: var(--r-sm); background: rgba(255, 255, 255, 0.08); font-size: 13px; }
     .recap-row .tile-ic { flex: none; display: grid; place-items: center; color: #fff; }
     .recap-row .tile-ic .ic { width: 16px; height: 16px; }
-    .recap-row .who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; font-weight: 600; }
+    .recap-row .who { flex: 1 1 9em; min-width: 0; overflow-wrap: anywhere; color: #fff; font-weight: 600; }   /* 이름이 길면 설명이 다음 줄로 내려간다 */
     .recap-row .what { flex: none; margin-left: auto; color: var(--on-dark-body); font-size: 12px; }
     .recap-kws { display: flex; flex-wrap: wrap; gap: 6px; }
     .recap-kw { padding: 4px 10px; border-radius: var(--r-xs); background: rgba(255, 255, 255, 0.12); color: var(--on-dark-body); font-size: 12px; }
@@ -1256,21 +1256,10 @@
         };
       }
 
-      /* 이미 발행된 통계에는 줄이기 전의 닉네임이 들어 있을 수 있어 화면에 그릴 때 한 번 더 줄인다. */
+      /* 이름은 발행된 그대로 보여 준다(22차부터 닉네임 전체를 싣는다). 앞뒤 공백만 정리한다 */
       function trimNames(stats) {
         if (stats && Array.isArray(stats.members)) {
-          var used = Object.create(null);
-          stats.members.forEach(function (m) {
-            if (!m || m.name == null) return;
-            var rawName = String(m.name).trim(), SPLIT = /[\s\/·|,()（）\[\]{}<>【】_]+/;   // 파서(chat-parser.js headName)와 같은 규칙
-            var head = rawName.replace(/[\[(（{<【][^\])）}>】]*[\])）}>】]/g, " ").split(SPLIT).filter(Boolean)[0] || rawName.split(SPLIT).filter(Boolean)[0] || "?";
-            var cps = Array.from(head);
-            if (cps.length > 12) head = cps.slice(0, 12).join("");
-            var out = head, n = 2;
-            while (used[out]) { out = head + n; n += 1; }
-            used[out] = 1;
-            m.name = out;
-          });
+          stats.members.forEach(function (m) { if (m && m.name != null) m.name = String(m.name).trim(); });
         }
         return stats;
       }

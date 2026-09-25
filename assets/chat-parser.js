@@ -498,6 +498,9 @@
 
   /* ── aggregate (v2 통계 스키마) ─────────────────────────────
      opts: { from, to ("YYYY-MM-DD"), exclude:[닉네임], keywordLimit(기본 40),
+             fullNames(true 면 닉네임 전체를 그대로 싣는다. 발행 화면이 쓴다),
+             nameMap({원래 닉네임: 합칠 닉네임}, 닉네임을 바꾼 한 사람을 한 줄로 합친다),
+             excludeNames:[닉네임 전체], 합친 뒤의 이름과 정확히 같을 때만 뺀다,
              maskNames(true 면 members[].name 을 집계 단계에서 "첫 글자+*" 로 치환),
              dropKeywords:[단어], periodLabel(강제 라벨),
              format("android"|"ios"|"pc"|"mixed"), files(병합 파일 수) }
@@ -524,14 +527,21 @@
     // 표시 이름으로만 빼는 목록(발행 화면의 멤버 표·명단·나감 감지가 쓰는 이름) — 원본 이름과 우연히 같아도 다른 사람을 빼지 않게
     var excludeDisp = Object.create(null);
     (opts.excludeDisplay || []).forEach(function (n) { excludeDisp[String(n)] = 1; });
+    var nameMap = opts.nameMap || null;
+    var excludeFull = Object.create(null);
+    (opts.excludeNames || []).forEach(function (n) { excludeFull[String(n)] = 1; });
 
     var msgs = [];       // 일반 메시지(집계 대상)
     var joinEvents = []; // 범위 내 입장 이벤트 (이름은 welcome 판정에만 쓰고 미출력)
     var leaveCount = 0;  // 범위 내 퇴장·강퇴 수 (개수만 — 누가 나갔는지는 싣지 않는다)
     (allMessages || []).forEach(function (m) {
       if (!m || !m.date || !inRange(m.date)) return;
+      if (nameMap && nameMap[m.name] && nameMap[m.name] !== m.name) {   // 합친 사람: 이름만 바꾼 사본으로 센다(원본 메시지는 그대로)
+        var mm = {}; for (var k in m) mm[k] = m[k]; mm.name = nameMap[m.name]; m = mm;
+      }
       if (m.kind === "join") { joinEvents.push(m); return; }
       if (m.kind === "leave") { leaveCount += 1; return; } // 공개 통계 미포함(운영 민감 정보)
+      if (excludeFull[m.name]) return;
       if (excludeDisp[display[m.name]]) return;                                   // 표시 이름(민지·민지2)으로 — 발행 화면이 보내는 이름
       if (exclude[m.name] || exclude[display[m.name] || headOf(m.name)]) return;   // 원본 이름으로도, 표시 이름으로도
       msgs.push(m);
@@ -742,13 +752,11 @@
     var truncatedMembers = memberList.length > 120;
     var members = memberList.slice(0, 120);
 
-    // ── 표시 이름은 언제나 앞 토막까지만 ──
-    //    오픈채팅 닉네임 양식이 "닉네임 지역 성별 출생년도" 라서, 그대로 실으면
-    //    사는 동네와 성별, 태어난 해가 발행본에 함께 담긴다. 발행본은 공개 뷰로
-    //    누구나 내려받을 수 있으므로, 화면에서 가리는 것으로는 부족하다.
-    //    집계는 이름이 아니라 순서로 하니 줄여도 숫자는 그대로다.
-    //    이건 선택이 아니라 기본값이다. 마스킹 스위치는 이보다 한 단계 더 센 선택이다.
-    (function () {
+    // ── 이름 줄이기(fullNames 가 아닐 때만) ──
+    //    예전에는 발행본에 앞 토막만 실었다("닉네임 지역 성별 출생년도" 에서 닉네임만).
+    //    2026-09-25 운영자 결정으로 발행 화면은 fullNames 로 닉네임 전체를 싣는다(앞 토막만 남기면 누가 누구인지 헷갈린다).
+    //    fullNames 없이 부르는 곳은 지금처럼 앞 토막, 동명이인은 숫자로 구분한다.
+    if (!opts.fullNames) (function () {
       // 앞 토막이 겹치면(동명이인) 숫자로만 구분한다 — 뒤 정보를 되살리지 않는다.
       // 번호는 위에서 원본 이름 사전순으로 정한 display 를 그대로 쓴다(제외 체크와 같은 이름)
       var used = Object.create(null);
