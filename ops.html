@@ -1081,7 +1081,7 @@
           <article class="card span-3"><h3>머문 기간 <small class="cap">실제 입장일 기준</small></h3>${hbars(tenure, { unit: "명", color: "var(--s-teal)" })}</article>
         </div></section>
         <section class="dsec" id="d-act"><h2>활동</h2><div class="cgrid">
-          <article class="card span-4"><h3>최근 30일 메시지 수별 멤버</h3>${stack(tiers)}<p class="cap">0건인 멤버 ${nf(tiers[3].v)}명은 시트의 '조용함'으로 봅니다.</p></article>
+          <article class="card span-4"><h3>최근 30일 메시지 수별 멤버</h3>${stack(tiers)}</article>
           <article class="card span-4"><h3>최근 30일 많이 말한 멤버</h3>${hbars(top, { unit: "건", color: "var(--s-violet)" })}</article>
           <article class="card span-4"><h3>요일과 시간대 <small class="cap">${grid ? esc(L.grid.recentFrom) + "부터 3개월" : ""}</small></h3>${grid ? heat(grid) : `<p class="empty">파일을 다시 올리면 보입니다.</p>`}</article>
         </div></section>
@@ -1103,7 +1103,7 @@
       if (fl.startsWith("chk:")) { const set = new Set(boardRows(fl.slice(4)).map((x) => x.p.pid)); list = members().filter((p) => set.has(p.pid)); }
       else if (fl === "check") list = members().filter((p) => pending(p).length);
       else if (fl === "new") list = members().filter((p) => p.joinedAt && E - dnum(p.joinedAt) <= 30);
-      else if (fl === "quiet") list = members().filter((p) => !p.d30 || effFlags(p).some((f) => f.c === "silent" || f.c === "drop"));
+      else if (fl === "quiet") list = members().filter((p) => effFlags(p).some((f) => f.c === "silent" || f.c === "drop"));
       else if (fl === "out") list = people().filter((p) => p.status !== "in" && !p.dflt);
       else if (fl === "all") list = people().filter((p) => !p.dflt);
       else list = members();
