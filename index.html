@@ -43,20 +43,19 @@
     /* 주요 기능 — 탭 그림 카드. 옆 열(320px)에서는 2×2, 좁은 화면에서 전체 폭이 되면 자동으로 4열까지 */
     .tab-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
     .tab-card { position: relative; display: grid; gap: 2px; padding: 10px 10px 12px; border-radius: 16px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); color: inherit; text-decoration: none; transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease); }
-    .tab-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -20px rgba(75, 42, 130, 0.5); border-color: rgba(75, 42, 130, 0.25); }
-    .tab-card:hover .tc-title { color: var(--brand); }
     /* 그림 상자 16:10 — padding 으로 비율을 잡고 그림은 절대 위치로 채운다. (aspect-ratio 상자 안의 height:100% 는 iOS 사파리·카톡 브라우저에서
        높이가 안 잡혀 정사각 스팟이 위아래로 잘려 보였다 — 절대 위치는 어디서나 상자 크기를 따른다) */
     .tab-card .tc-img { position: relative; display: block; margin-bottom: 8px; border-radius: 11px; overflow: hidden; background: #F7F6F2; }
-    .tab-card .tc-img::before { content: ""; display: block; padding-top: 62.5%; }
+    .tab-card .tc-img::before { content: ""; display: block; padding-top: max(62.5%, 80px); }   /* 그림은 80px 아래로 줄지 않게 */
     .tab-card .tc-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
     .tab-card .tc-img.is-scene img { object-fit: cover; }
     .tab-card .tc-img[hidden] { display: none; }   /* 그림을 못 읽으면 빈 크림 상자 대신 글만 */
     .tab-card .tc-title { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 15px; font-weight: 700; }
     .tab-card .tc-sub { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
+    @media (max-width: 640px) { .tab-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }   /* 폰은 2열, 한 열로 길게 쌓이지 않게 */
 
     /* ── B·C: 왼쪽 넓은 열은 공지·다가오는 모임·최근 후기, 오른쪽 좁은 열은 참여 흐름. 주요 기능 카드 넷은 두 열 아래 한 줄 ──
-       HTML 순서는 참여 흐름 → 주요 기능 → 공지·모임(좁은 화면은 이 순서). 화면이 넓으면 grid-area 로 자리만 바꾼다.
+       HTML 순서는 공지와 모임, 참여 흐름, 주요 기능 순(좁은 화면은 이 순서로 쌓인다). 화면이 넓으면 grid-area 로 자리만 바꾼다.
        주요 기능을 오른쪽 열에 두면 왼쪽 열(공지·모임)이 짧은 날 왼쪽 아래가 비어서, 전체 폭 한 줄로 내렸다 */
     .home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6) 56px; align-items: start; padding-top: var(--sp-5); }   /* 커버 바로 아래에 붙지 않게 */
     .home-side { display: grid; gap: 20px; min-width: 0; }
@@ -99,19 +98,23 @@
     .prompt-line b { font-weight: 700; }
     .prompt-line .link-arrow { margin: 0; white-space: nowrap; }
     .news-row { grid-template-columns: minmax(0, 1fr) auto; margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: var(--r-sm); transition: background var(--dur-2) var(--ease); }
-    .news-row:hover { background: rgba(75, 42, 130, 0.05); }
     .news-row .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .news-row .row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-row .row-meta { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-row .row-state { align-self: center; }
     .rm-sub + .rm-who::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: var(--line-strong); vertical-align: -1px; }
     .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
-    .live-empty { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 16px; }
+    .live-empty { border-bottom: 1px solid var(--line); padding: 28px 16px; }   /* 위 선은 제목 줄 선과 겹쳐 두 줄로 보였다 */
     .live-empty .empty-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
     @media (max-width: 600px) {
       .news-row .row-title, .news-row .row-meta { white-space: normal; }
       .rm-sub { display: block; }
       .rm-sub + .rm-who::before { content: none; }
+    }
+    /* 좁은 화면: 행 선을 제목 줄 선과 같은 폭으로. 종류 알약은 묶음 제목과 겹쳐 뺀다 */
+    @media (max-width: 860px) {
+      .news-row { margin: 0; padding-left: 0; padding-right: 0; border-radius: 0; }
+      .home-live .news-row .type-tag { display: none; }
     }
 
     /* ── D. 최근 맛집 기록 — 화면 끝까지 차는 라벤더 띠 위에 카드 셋 ── */
@@ -119,8 +122,7 @@
     .places-band .sec-bar { border-bottom-color: rgba(75, 42, 130, 0.14); }
     .place-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
     @media (min-width: 534px) and (max-width: 787px) { .place-cards { grid-template-columns: 1fr; } }   /* 카드 3장이 2열이면 하나가 홀로 남는다 */
-    .place-card { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 14px; padding: 18px; border: 1px solid rgba(75, 42, 130, 0.10); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
-    .place-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px rgba(75, 42, 130, 0.45); }
+    .place-card { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 14px; padding: 18px; border: 1px solid rgba(75, 42, 130, 0.10); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
     /* 종류 타일 — 2세대 음식 그림(48px). 못 읽으면 종류색 옅은 면 위에 선 아이콘 */
     .place-card .pc-ic { grid-row: 1 / span 2; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 13px; color: var(--cat, var(--brand)); background: color-mix(in srgb, var(--cat, var(--brand)) 12%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat, var(--brand)) 22%, transparent); }
     .place-card .pc-ic.has-img { border: 1px solid var(--line); }
@@ -134,10 +136,16 @@
     .place-card .pc-by { grid-column: 1 / -1; margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .place-card .pc-price { margin-left: auto; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
     .place-card .stretch::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-    .place-card:hover .pc-name { color: var(--brand); }
     .places-band .band-foot { margin: 16px 0 0; color: var(--ink-2); font-size: var(--fs-caption); }
-    .places-band .band-foot a { color: var(--brand); font-weight: 600; }
+    .places-band .band-foot a { color: var(--brand); font-weight: 600; white-space: nowrap; }   /* 링크 글이 두 줄로 갈리지 않게 */
     @media (max-width: 860px) { .places-band { padding: var(--sp-6) 0; } }
+    /* 좁은 화면: 전체 보기 링크를 제목 오른쪽 위에 두고 설명은 아래 줄로 */
+    @media (max-width: 640px) {
+      .places-band .sec-bar, .home-report .sec-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; align-items: center; }
+      .places-band .sec-bar .sb-l, .home-report .sec-bar .sb-l { display: contents; }
+      .places-band .sec-bar .sb-note, .home-report .sec-bar .sb-note { grid-column: 1 / -1; grid-row: 2; }
+      .places-band .sec-bar > .link-arrow, .home-report .sec-bar > .link-arrow { grid-column: 2; grid-row: 1; }
+    }
 
     /* ── E. 지난달 활동 한눈에 — 발행된 통계가 있을 때만 ── */
     .home-report { margin-top: var(--section-gap); }
@@ -154,6 +162,15 @@
     .hours i { display: block; min-height: 2px; border-radius: 2px 2px 0 0; background: #CFC1E6; }
     .hours i.is-peak { background: linear-gradient(180deg, #6D4AAE, var(--brand)); }
     .hours-lab { display: flex; justify-content: space-between; margin-top: 4px; color: var(--ink-2); font-size: var(--fs-micro); font-variant-numeric: tabular-nums; }
+
+    /* 마우스에서만 떠오름과 옅은 면. 폰에서는 탭한 뒤에도 남아 있었다 */
+    @media (hover: hover) and (pointer: fine) {
+      .tab-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -20px rgba(75, 42, 130, 0.5); border-color: rgba(75, 42, 130, 0.25); }
+      .tab-card:hover .tc-title { color: var(--brand); }
+      .news-row:hover { background: rgba(75, 42, 130, 0.05); }
+      .place-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -20px rgba(75, 42, 130, 0.45); }
+      .place-card:hover .pc-name { color: var(--brand); }
+    }
   </style>
   <script src="assets/site-core.js?v=8"></script>
   <script src="assets/icons.js?v=2"></script>
@@ -217,32 +234,6 @@
     <!-- ══ 계절 대표 소개 끝 ══ -->
 
     <div class="container home-grid">
-      <!-- B. 참여 흐름 -->
-      <aside class="home-side" aria-label="참여 흐름">
-        <section class="panel join-panel" aria-labelledby="joinTitle">
-          <h2 id="joinTitle"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>처음 참여한다면</h2>
-          <!-- 선 아이콘 원판. 2세대 단계 그림은 이 좁은 칸(44px)에서 어두운 얼룩으로 보여 뺐다 — 이용 안내의 '처음 2주' 카드에서 크게 쓴다 -->
-          <ol class="flow" aria-label="참여 흐름 네 단계">
-            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span><div><p class="fl-t">오픈채팅에 들어오기</p><p class="fl-d">닉네임은 <b>닉네임 지역 성별 출생 연도 입장일</b> 순서로 정합니다.</p></div></li>
-            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-calendar"/></svg></span><div><p class="fl-t">2주 안에 첫 모임</p><p class="fl-d">모임 공지의 <b>참석 버튼</b>을 누르면 신청됩니다.</p></div></li>
-            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span><div><p class="fl-t">모임 뒤 정산</p><p class="fl-d">1/N 금액을 확인하고 입금합니다. 계산은 모임 정산에서.</p></div></li>
-            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-pencil"/></svg></span><div><p class="fl-t">기록 남기기</p><p class="fl-d">다녀온 식당의 한줄평과 모임 후기를 남깁니다.</p></div></li>
-          </ol>
-          <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
-        </section>
-      </aside>
-
-      <!-- 주요 기능 — 탭 그림 카드 넷. PC 에서는 두 열 아래 한 줄(grid-area feat), 좁은 화면은 참여 흐름 다음. 그림을 못 읽으면 크림 타일만 남고 이름·설명은 그대로 -->
-      <section class="home-feat" aria-labelledby="featTitle">
-        <div class="sec-bar"><div class="sb-l"><h2 class="lead-h" id="featTitle">주요 기능</h2></div></div>
-          <ul class="tab-cards">
-            <li><a class="tab-card" href="places.html"><span class="tc-img is-scene"><img src="assets/img/places-banner-720.webp?v=2" width="720" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">맛집</span><span class="tc-sub">다녀온 식당과 한줄평</span></a></li>
-            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지, 모집, 후기</span></a></li>
-            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
-            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
-          </ul>
-      </section>
-
       <!-- C. 실제 공지 한 건, 다가오는 모임(최대 2건), 최근 모임 후기 한 건. 데이터가 없으면 다음 행동을 안내 -->
       <section class="home-live" aria-labelledby="liveTitle">
         <div class="sec-bar">
@@ -264,6 +255,32 @@
           <span>이번 주 글감 <b id="homePrompt"></b></span>
           <a class="link-arrow" href="news.html#write-prompt">글 쓰러 가기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </p>
+      </section>
+
+      <!-- B. 참여 흐름 -->
+      <aside class="home-side" aria-label="참여 흐름">
+        <section class="panel join-panel" aria-labelledby="joinTitle">
+          <h2 id="joinTitle"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>처음 참여한다면</h2>
+          <!-- 선 아이콘 원판. 2세대 단계 그림은 이 좁은 칸(44px)에서 어두운 얼룩으로 보여 뺐다 — 이용 안내의 '처음 2주' 카드에서 크게 쓴다 -->
+          <ol class="flow" aria-label="참여 흐름 네 단계">
+            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-chat"/></svg></span><div><p class="fl-t">오픈채팅에 들어오기</p><p class="fl-d">닉네임은 <b>닉네임 지역 성별 출생 연도 입장일</b> 순서로 정합니다.</p></div></li>
+            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-calendar"/></svg></span><div><p class="fl-t">2주 안에 첫 모임</p><p class="fl-d">모임 공지의 <b>참석 버튼</b>을 누르면 신청됩니다.</p></div></li>
+            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-receipt"/></svg></span><div><p class="fl-t">모임 뒤 정산</p><p class="fl-d">1/N 금액을 확인하고 입금합니다.</p></div></li>
+            <li><span class="fl-n has-ic" aria-hidden="true"><svg class="ic"><use href="#i-pencil"/></svg></span><div><p class="fl-t">기록 남기기</p><p class="fl-d">다녀온 식당의 한줄평과 모임 후기를 남깁니다.</p></div></li>
+          </ol>
+          <div class="panel-act"><a class="link-arrow" href="guide.html">이용 안내 보기 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a></div>
+        </section>
+      </aside>
+
+      <!-- 주요 기능 — 탭 그림 카드 넷. PC 에서는 두 열 아래 한 줄(grid-area feat), 좁은 화면은 참여 흐름 다음. 그림을 못 읽으면 크림 타일만 남고 이름·설명은 그대로 -->
+      <section class="home-feat" aria-labelledby="featTitle">
+        <div class="sec-bar"><div class="sb-l"><h2 class="lead-h" id="featTitle">주요 기능</h2></div></div>
+          <ul class="tab-cards">
+            <li><a class="tab-card" href="places.html"><span class="tc-img is-scene"><img src="assets/img/places-banner-720.webp?v=2" width="720" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">맛집</span><span class="tc-sub">다녀온 식당과 한줄평</span></a></li>
+            <li><a class="tab-card" href="news.html"><span class="tc-img"><img src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">소식<span class="new-badge" id="newsBadge" hidden></span></span><span class="tc-sub">공지, 모집, 후기</span></a></li>
+            <li><a class="tab-card" href="calculator.html"><span class="tc-img"><img src="assets/img/settle-spot-240.webp?v=2" srcset="assets/img/settle-spot-240.webp?v=2 240w, assets/img/settle-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">모임 정산</span><span class="tc-sub">1/N 계산과 입금 확인</span></a></li>
+            <li><a class="tab-card" href="report.html"><span class="tc-img"><img src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(min-width: 961px) 200px, 120px" width="480" height="480" alt="" loading="lazy" decoding="async" onerror="this.closest('.tc-img').hidden = true" /></span><span class="tc-title">활동 통계</span><span class="tc-sub">우리 방의 대화 흐름</span></a></li>
+          </ul>
       </section>
     </div>
 
@@ -403,7 +420,7 @@
         if (review) html += '<div class="group-h">' + icon("sparkle") + '최근 모임 후기</div><div class="rows">' + rowHTML(review) + "</div>";
         if (!html) {
           html = '<div class="empty-state live-empty"><span class="empty-ic">' + icon("calendar") + '</span><strong>고정된 공지와 예정된 모임이 없습니다.</strong>' +
-            '<p>새 모임은 오픈채팅 공지로 먼저 올라옵니다. 소식에서 지난 글을 보거나 오픈채팅에 참여해 주세요.</p>' +
+            '<p>새 모임은 오픈채팅 공지로 먼저 올라옵니다.</p>' +
             '<div class="empty-acts"><a class="btn btn-primary is-sm" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a><a class="btn btn-secondary is-sm" href="news.html">소식 보기</a></div></div>';
         }
         host.innerHTML = html;
@@ -437,7 +454,7 @@
         if (!pick.length) { $("placesBand").hidden = true; return; }
         $("recentPlaces").innerHTML = pick.map(placeCard).join("");
         var noteCount = views.reduce(function (s, v) { return s + v.notes.length; }, 0);
-        $("placesFoot").innerHTML = "등록된 식당 " + num(views.length) + "곳, 한줄평 " + num(noteCount) + '건. 다녀온 식당이 있다면 <a href="places.html">맛집</a>에 한줄평을 남겨 주세요. 뭘 먹을지 못 정했다면 <a href="places.html#pick">오늘 뭐 먹지</a>에서 하나 골라 드립니다.';
+        $("placesFoot").innerHTML = "등록된 식당 " + num(views.length) + "곳, 한줄평 " + num(noteCount) + '건. 뭘 먹을지 못 정했다면 <a href="places.html#pick">오늘 뭐 먹지</a>에서 하나 골라 드립니다.';
         $("placesBand").hidden = false;
       }
       function loadPlaces() {

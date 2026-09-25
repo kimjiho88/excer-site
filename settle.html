@@ -56,6 +56,8 @@
       margin: 14px 0 0; font-size: clamp(24px, 5.6vw, 31px); line-height: 1.12; letter-spacing: -0.05em; font-weight: 700;
       color: var(--ink);
     }
+    /* 윗줄(이 기기에서만 표시)이 없으면 제목이 카드 맨 위에 붙는다 */
+    .s-head-inner > .s-title:first-child { margin-top: 0; }
     .s-meta { margin: 10px 0 0; color: var(--gray); font-size: 13px; font-weight: 700; }
     .s-total {
       display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
@@ -87,7 +89,7 @@
       position: relative; overflow: hidden; text-align: center;
       padding: 26px 20px 24px;
       background: var(--surface);
-      border-color: rgba(18, 147, 106, 0.28);
+      border-color: rgba(75, 42, 130, 0.22);
     }
     .celebrate .cel-emoji { display: grid; place-items: center; line-height: 1; color: var(--brand); }
     .celebrate .cel-emoji .ic { width: 40px; height: 40px; }
@@ -107,14 +109,10 @@
     .deposit-rows { display: grid; gap: 8px; }
     .deposit-row {
       display: flex; justify-content: space-between; align-items: center; gap: 12px;
-      padding: 12px 14px; border-radius: 13px; background: var(--offwhite); border: 1px solid var(--line);
+      padding: 12px 14px; border-radius: var(--r-sm); background: var(--offwhite); border: 1px solid var(--line);
     }
     .deposit-row span { color: var(--gray); font-size: 13px; font-weight: 600; flex: none; }
     .deposit-row b { font-size: 15px; letter-spacing: -0.01em; word-break: break-all; text-align: right; color: var(--ink); }
-    .kakao-badge {
-      display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-pill);
-      background: var(--pastel-cream); color: #7A4A32; font-size: 13px; font-weight: 600;
-    }
     .deposit-actions { margin-top: 12px; }
     .deposit-actions .btn { width: 100%; }
 
@@ -139,57 +137,64 @@
     .m-name b { font-size: 15px; letter-spacing: -0.02em; overflow-wrap: anywhere; color: var(--ink); }
     .me-chip {
       flex: none; display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--r-pill);
-      background: var(--grad-brand); color: #fff; font-size: 11px; font-weight: 700;
+      background: var(--grad-brand); color: #fff; font-size: var(--fs-micro); font-weight: 700;
     }
     .wait-tag {
       flex: none; display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--r-pill);
-      background: var(--pastel-blush); color: var(--danger); font-size: 11px; font-weight: 700;
+      background: var(--pastel-blush); color: var(--danger); font-size: var(--fs-micro); font-weight: 700;
     }
     .m-amt { display: block; margin-top: 3px; color: var(--primary-700); font-size: 17px; letter-spacing: -0.03em; font-weight: 700; font-variant-numeric: tabular-nums; }
     .m-parts { display: flex; margin-top: 2px; color: var(--gray); font-size: 12px; font-weight: 700; }
     .m-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+    /* 사이트 버튼과 같은 모양(40px, 8px 모서리)으로 맞춘다 */
     .m-btn {
-      min-height: 34px; padding: 0 13px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer;
+      min-height: 40px; padding: 0 14px; border-radius: var(--r-btn); font-size: 14px; font-weight: 600; cursor: pointer;
       transition: transform 0.16s var(--ease), background 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
     .m-btn:hover { transform: none; }
     .m-send { background: var(--pastel-mint); color: var(--brand); }
     .m-send:hover { background: var(--brand-soft); }
     .m-toggle { background: #fff; color: var(--primary); border: 1px solid var(--line-strong); }
-    .m-toggle:hover { border-color: rgba(40, 82, 68, 0.34); }
+    .m-toggle:hover { border-color: var(--brand); }
     /* 끝난 줄을 흐리게(opacity 0.62) 처리하고 있었는데, 그 안의 글자 대비까지 같이
        내려가서 '✓ 입금 완료' 배지가 2.26:1 까지 떨어졌다. 칠한 픽셀에서 잰 값이다.
-       흐리게 하는 대신 초록 바탕과 취소선으로 끝났음을 보이고, 글자색은 또렷이 둔다. */
-    .m-row.is-paid { background: rgba(18, 147, 106, 0.05); border-color: rgba(18, 147, 106, 0.22); }
+       흐리게 하는 대신 눌린 면 바탕과 취소선으로 끝났음을 보이고, 글자색은 또렷이 둔다. */
+    .m-row.is-paid { background: var(--surface-2); border-color: var(--line); }
     .m-row.is-paid .m-name b { text-decoration: line-through; color: var(--gray); }
     .m-row.is-paid .m-amt { color: var(--gray); }
     /* --mint(var(--brand))에 흰 글자는 3.88:1 로 모자란다 — 한 단계 짙은 초록을 쓴다 */
     .m-row.is-paid .m-toggle {
       background: var(--brand); color: #fff; border-color: var(--brand);
     }
-    .m-row.is-me { border-color: rgba(40, 82, 68, 0.38); background: #fff; }
-    .m-hint { margin: 12px 0 0; color: var(--gray); font-size: 13px; line-height: 1.55; font-weight: 600; }
+    /* 내 줄은 테두리로만 띄운다. 바탕을 덮으면 입금 완료 바탕이 안 보인다 */
+    .m-row.is-me { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+    /* 명단 위, 대기 중 바로 앞에 둔다 */
+    .m-hint { margin: 0 0 12px; color: var(--gray); font-size: 13px; line-height: 1.55; font-weight: 600; }
     .m-hint b { color: var(--ink-2); }
 
     /* ── 결제자별 정리 ── */
     .payer-rows { display: grid; gap: 8px; }
     .payer-row {
       display: flex; justify-content: space-between; align-items: center; gap: 10px;
-      padding: 11px 14px; border-radius: 13px; background: var(--soft-lavender); border: 1px solid rgba(40, 82, 68, 0.1);
+      padding: 11px 14px; border-radius: var(--r-sm); background: var(--soft-lavender); border: 1px solid rgba(75, 42, 130, 0.10);
     }
     .payer-row b { color: var(--primary-700); font-size: 14px; }
     .payer-row small { color: var(--gray); font-size: 12px; font-weight: 700; }
     .payer-row strong { color: var(--deep-1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    /* 이름이 길어도 합계 금액은 한 줄로 둔다. 줄바꿈 대신 이름 목록을 블록으로 내린다 */
+    .payer-row > div { min-width: 0; line-height: 1.4; }
+    .payer-row strong { flex: none; white-space: nowrap; }
+    .payer-row small { display: block; margin-top: 2px; line-height: 1.45; }
 
     /* ── 추가·차감 ── */
     .adjlines { display: grid; gap: 7px; }
-    .adjline { display: flex; justify-content: space-between; gap: 10px; padding: 10px 13px; border-radius: 12px; background: var(--offwhite); border: 1px solid var(--line); font-size: 13px; }
+    .adjline { display: flex; justify-content: space-between; gap: 10px; padding: 10px 13px; border-radius: var(--r-sm); background: var(--offwhite); border: 1px solid var(--line); font-size: 13px; }
     .adjline b { color: var(--ink); font-weight: 600; }
     .adjline small { color: var(--gray-2); font-size: 12px; font-weight: 700; }
     /* 어느 차수 것인지는 사유와 헷갈리면 안 되므로 따로 칸을 만들어 띄운다 */
     .adjline .adj-scope {
       display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: var(--r-pill);
-      background: var(--pastel-lavender); color: var(--primary-700); font-size: 11px; font-weight: 600;
+      background: var(--pastel-lavender); color: var(--primary-700); font-size: var(--fs-micro); font-weight: 600;
     }
     .adjline strong { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
     .adjline strong.is-plus { color: var(--brand); }
@@ -200,7 +205,7 @@
     .notice-line { position: relative; padding-left: 11px; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.55; font-weight: 600; }
     .notice-line::before { content: ""; position: absolute; left: 0; top: 0.64em; width: 4px; height: 4px; border-radius: 50%; background: var(--brand); }
     .s-receipts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-    .s-receipt { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }
+    .s-receipt { width: 100%; border-radius: var(--r-sm); border: 1px solid var(--line); display: block; }
 
     /* ── 차수별 내역 (접기) ── */
     .s-details { padding: 0; overflow: hidden; }
@@ -210,19 +215,19 @@
       font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink);
       transition: background 0.18s var(--ease);
     }
-    .s-details summary:hover { background: rgba(234, 240, 233, 0.5); }
+    .s-details summary:hover { background: var(--surface-2); }
     .s-details summary::-webkit-details-marker { display: none; }
     .s-details summary::after { content: "펼치기"; color: var(--primary); font-size: 12px; font-weight: 600; }
     .s-details[open] summary::after { content: "접기"; }
     .s-details-body { padding: 0 20px 18px; }
-    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px dashed rgba(40, 82, 68, 0.16); }
+    .detail-line { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px dashed var(--line); }
     .detail-line b { display: block; margin-bottom: 3px; letter-spacing: -0.02em; color: var(--ink); }
     .detail-line span { display: block; color: var(--gray); font-size: 12px; line-height: 1.4; }
     .detail-line .sep-row { display: flex; }
     .detail-line .round-who { margin-top: 1px; color: var(--gray); }
     .detail-line strong { white-space: nowrap; color: var(--primary-700); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
     .verify-line {
-      margin: 12px 0 0; padding: 11px 13px; border-radius: 12px;
+      margin: 12px 0 0; padding: 11px 13px; border-radius: var(--r-sm);
       background: var(--pastel-mint); color: var(--brand); font-size: 12px; line-height: 1.6; font-weight: 600;
     }
     .verify-line b { display: block; margin-bottom: 2px; font-weight: 700; }
@@ -259,6 +264,36 @@
       .s-card { padding: 17px 16px; }
       .m-row { flex-wrap: wrap; }
       .m-actions { width: 100%; justify-content: flex-end; }
+      /* 요약 카드와 접기 내역도 다른 카드와 같은 글자 선(16px)에서 시작한다 */
+      .s-head.card.is-lg { padding: 20px 16px; }
+      .s-details summary { padding: 17px 16px; }
+      .s-details-body { padding: 0 16px 18px; }
+    }
+
+    @media (max-width: 640px) {
+      /* 총 비용은 요약 카드에 다시 나오므로 커버에서는 뺀다. 명단이 두 번째 화면에 닿도록
+         진행 카드와 명단 뒤 카드들은 명단 아래로 보낸다 */
+      .cover .hero-signal { display: none; }
+      .settle-wrap > [aria-label="입금 진행 상황"], .settle-wrap > [aria-label="입금 명단"] ~ * { order: 1; }
+
+      /* 멤버 줄: 이름 오른쪽에 금액, 받는 사람은 한 줄에 한 명 */
+      .m-row { row-gap: 8px; padding: 12px 14px; }
+      .m-left { flex: 1 1 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+      .m-name { grid-column: 1; grid-row: 1; }
+      .m-amt { grid-column: 2; grid-row: 1; margin-top: 0; }
+      .m-parts { grid-column: 1 / -1; flex-direction: column; align-items: flex-start; margin-top: 4px; font-size: 13px; color: var(--ink-2); }
+      .m-parts > * + *::before { display: none; }
+      .m-actions { gap: 8px; }
+
+      /* 입금 정보는 칸마다 상자를 두지 않고 한 표로 묶는다 */
+      .deposit-rows { gap: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--offwhite); }
+      .deposit-row { border: 0; border-radius: 0; background: none; padding: 10px 14px; }
+      .deposit-row + .deposit-row { border-top: 1px solid var(--line); }
+
+      /* 줄이 넘어가도 새 줄 앞에 구분선이 남지 않게, 선을 항목 왼쪽에 두고 글자 선 밖은 잘라 낸다 */
+      .s-meta.sep-row { margin-left: -17px; clip-path: inset(0 0 0 17px); }
+      .s-meta.sep-row > * { padding-left: 17px; }
+      .s-meta.sep-row > *::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px 0 -9px; background: currentColor; opacity: 0.35; vertical-align: middle; }
     }
   </style>
   <script src="assets/site-core.js?v=8"></script>
@@ -652,6 +687,7 @@
     }
     function setHeroStats(total, done, count) {
       const t = $("heroTotal"), pc = $("heroPaid");
+      const hs = document.querySelector(".cover .hero-signal"); if (hs) hs.hidden = total == null;
       if (t) t.textContent = total == null ? "-" : formatWon(total);
       if (pc) pc.textContent = (done == null || count == null) ? "-" : `${done}/${count}명`;
     }
@@ -661,7 +697,6 @@
         <section class="s-status card is-lg">
           <div class="spinner" aria-hidden="true"></div>
           <h2>정산을 불러오는 중입니다.</h2>
-          <p>잠시만 기다려 주세요.</p>
         </section>`;
     }
 
@@ -777,10 +812,7 @@
         <section class="s-head card is-lg" aria-label="정산 요약">
           <i class="glow-orb" style="--orb-size:280px; right:-100px; top:-120px" aria-hidden="true"></i>
           <div class="s-head-inner">
-            <div class="s-head-top">
-              <span class="kicker">정산 안내</span>
-              ${mode === "local" ? `<span class="local-badge">이 기기에서만 표시</span>` : ""}
-            </div>
+            ${mode === "local" ? `<div class="s-head-top"><span class="local-badge">이 기기에서만 표시</span></div>` : ""}
             <h2 class="s-title">${escapeHTML(payload.title)}</h2>
             <p class="s-meta sep-row">${payload.date ? `<span>${escapeHTML(payload.date)}</span>` : ""}<span>모임장 ${escapeHTML(payload.host || "-")}</span>${payload.hostBurden ? `<span>${payload.payerCount > 1 ? "결제자" : "모임장"} 부담 ${formatWon(payload.hostBurden)}</span>` : ""}</p>
             <div class="s-total"><span>총 비용</span><strong>${formatWon(payload.total)}</strong></div>
@@ -799,6 +831,7 @@
           <p>${rows.length}명 모두 입금 완료를 표시했습니다.</p>
         </section>` : ""}
 
+        ${!complete || mode === "local" ? `
         <section class="s-card card" aria-label="입금 진행 상황">
           <div class="progress-row">
             <b><em>${paidCount}</em>/${rows.length}명 입금 완료</b>
@@ -811,7 +844,7 @@
             ${waiting.map((r) => `<span class="wait-chip">${escapeHTML(r.name)}</span>`).join("")}
           </div>` : ""}
           ${mode === "local" ? `<p class="s-note">이 링크의 입금 완료 표시는 이 기기에만 저장되며 모임장에게 전달되지 않습니다. 입금 후 채팅으로 알려 주세요.</p>` : ""}
-        </section>
+        </section>` : ""}
 
         ${hasPayInfo ? `
         <section class="s-card card" aria-label="입금 정보">
@@ -820,11 +853,10 @@
             ${pay.bank.trim() ? `<div class="deposit-row"><span>은행</span><b>${escapeHTML(pay.bank.trim())}</b></div>` : ""}
             ${pay.account.trim() ? `<div class="deposit-row"><span>계좌번호</span><b>${escapeHTML(pay.account.trim())}</b></div>` : ""}
             ${pay.holder.trim() ? `<div class="deposit-row"><span>예금주</span><b>${escapeHTML(pay.holder.trim())}</b></div>` : ""}
+            ${pay.kakao ? `<div class="deposit-row"><span>카카오페이</span><b>송금 가능</b></div>` : ""}
           </div>
-          ${pay.kakao ? `<span class="kakao-badge"><svg class="ic is-sm" aria-hidden="true"><use href="#i-wallet"/></svg> 카카오페이 송금 가능</span>` : ""}
           ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
-          ${otherPayers.length ? `<p class="s-note">이 계좌는 ${escapeHTML(accountOwner)} 님 계좌입니다.
-            ${escapeHTML(otherPayers.join(", "))} 님에게 보낼 금액은 계좌를 따로 확인해 주세요.</p>` : ""}
+          ${otherPayers.length ? `<p class="s-note">${pay.holder.trim() ? "" : `이 계좌는 ${escapeHTML(accountOwner)} 님 계좌입니다. `}${escapeHTML(otherPayers.join(", "))} 님에게 보낼 금액은 계좌를 따로 확인해 주세요.</p>` : ""}
         </section>` : `
         <section class="s-card card" aria-label="입금 정보">
           <h2>입금 정보</h2>
@@ -833,11 +865,11 @@
 
         <section class="s-card card" aria-label="입금 명단">
           <h2>입금 명단</h2>
+          ${mode === "live" ? `<p class="m-hint">입금 완료를 누르면 모임장과 멤버 화면에 함께 반영됩니다.</p>` : ""}
           ${waiting.length ? `<div class="m-group-head is-wait">대기 중 <b>${waiting.length}명</b><i></i></div>
           <div class="m-list">${waiting.map(memberRow).join("")}</div>` : ""}
           ${done.length ? `<div class="m-group-head is-done">${icon("checkCircle","is-sm")} 입금 완료 <b>${done.length}명</b><i></i></div>
           <div class="m-list">${done.map(memberRow).join("")}</div>` : ""}
-          <p class="m-hint">입금한 뒤 내 이름 옆 입금 완료를 눌러 주세요.${mode === "live" ? " 모임장과 멤버 화면에 함께 반영됩니다." : ""}</p>
         </section>
 
         ${multiGroups ? `
@@ -846,7 +878,7 @@
           <div class="payer-rows">
             ${payload.groups.map((g) => `
             <div class="payer-row">
-              <div><b>${escapeHTML(g.payer)}에게</b><br /><small>${escapeHTML(g.rows.map((r) => r.name).join(", "))}</small></div>
+              <div><b>${escapeHTML(g.payer)}에게</b><small>${escapeHTML(g.rows.map((r) => r.name).join(", "))}</small></div>
               <strong>${formatWon(g.amount)}</strong>
             </div>`).join("")}
           </div>
@@ -886,7 +918,7 @@
         </details>` : ""}
 
         <div class="s-promo">
-          <a href="calculator.html">모임 정산 페이지에서 만든 정산서입니다.</a>
+          <a href="calculator.html">모임 정산 열기</a>
         </div>`;
       if (keep) {
         const el = keep[0] === "toggle"
@@ -907,6 +939,18 @@
       } else {
         wasComplete = complete;
       }
+    }
+
+    /* 입금 완료를 누르면 그 줄이 대기 중에서 입금 완료 묶음으로 옮겨 간다.
+       다시 그린 뒤 그 줄이 손가락 밑에 그대로 있도록 옮겨 간 만큼 스크롤한다.
+       site.css 가 html 에 부드러운 스크롤을 걸어 두어서 behavior: "instant" 로 바로 맞춘다 */
+    function renderKeepRow(name) {
+      const sel = `[data-toggle-name="${CSS.escape(name)}"]`;
+      const before = app.querySelector(sel);
+      const y0 = before ? before.closest(".m-row").getBoundingClientRect().top : null;
+      renderView();
+      const after = app.querySelector(sel);
+      if (after && y0 !== null) window.scrollBy({ top: after.closest(".m-row").getBoundingClientRect().top - y0, behavior: "instant" });
     }
 
     /* ============================================================
@@ -942,7 +986,7 @@
       if (mode === "local") {
         if (next) paid[name] = true; else delete paid[name];
         persistLocalPaid();
-        renderView();
+        renderKeepRow(name);
         showToast(next ? "입금 완료로 표시했습니다. 이 기기에서만 보입니다." : "입금 완료 표시를 해제했습니다.");
         return;
       }
@@ -952,18 +996,18 @@
       inflightNames.add(name);
       const prev = !!paid[name];
       if (next) paid[name] = true; else delete paid[name];
-      renderView();
+      renderKeepRow(name);
       pendingOps += 1;
       try {
         const res = await supaFetch("/rest/v1/rpc/settle_set_paid", {
           method: "POST",
           body: JSON.stringify({ p_id: settleId, p_name: name, p_paid: next })
         });
-        if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderView(); }
+        if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderKeepRow(name); }
         showToast(next ? "입금 완료로 표시했습니다. 모임장 화면에도 반영됩니다." : "입금 완료 표시를 해제했습니다. 모임장 화면에도 반영됩니다.");
       } catch (err) {
         if (prev) paid[name] = true; else delete paid[name];
-        renderView();
+        renderKeepRow(name);
         const msg = String((err && err.message) || "");
         showToast(msg.indexOf("NOT_FOUND") >= 0
           ? "정산을 찾을 수 없습니다. 모임장에게 새 링크를 요청해 주세요."

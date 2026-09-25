@@ -303,7 +303,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
   .topnav-visits .tv-ic, .topnav-visits .tv-sep { display: none; }
 }
 /* 359px 이하(320·344 폰): 로고·알약·오픈채팅 버튼이 한 줄에 다 들어가지 않는다(알약이 로고 위로 겹침) — 알약은 뺀다 */
-@media (max-width: 359px) { .topnav-visits:not([hidden]) { display: none; } .topnav-visits ~ .topnav-cta { margin-left: auto; } }
+@media (max-width: 359px) { .topnav-visits:not([hidden]) { display: none; } .topnav-visits:not([hidden]) ~ .topnav-cta { margin-left: auto; } }   /* :not([hidden]): 앞 규칙과 같은 세기로 나중에 와야 버튼이 오른쪽 끝에 붙는다 */
 
 /* ============================================================
    제목 영역
@@ -415,6 +415,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 .card.is-soft { background: var(--brand-soft); border-color: transparent; }
 .card.is-warm { background: var(--surface); }
 @media (min-width: 861px) { .card.is-lg { padding: 28px; } }
+@media (max-width: 640px) { .card.is-lg { padding: 20px 16px; } }   /* 폰: 큰 카드 안 여백을 줄여 입력칸 폭을 넓힌다 */
 
 /* 상태 한 줄 — 비어 있음·실패 안내를 목록 자리에 */
 .status-line {
@@ -562,6 +563,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 }
 .tab-row::-webkit-scrollbar { display: none; }
 @media (max-width: 480px) { .tab-row.type-tabs { flex-wrap: wrap; overflow: visible; } .tab-row.type-tabs > button { flex: 1 1 auto; justify-content: center; padding: 0 10px; } }   /* 폰에서 '자유' 탭이 화면 밖에 있던 것 → 두 줄로 */
+@media (max-width: 408px) { .tab-row.type-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } }   /* 408 이하: 3칸씩 두 줄로 고르게(4개 + 2개로 삐뚤던 것) */
 .tab-row > button, .tab-row > a {
   flex: none; display: inline-flex; align-items: center; gap: 6px;
   min-height: 38px; padding: 0 14px; border-radius: var(--r-xs);
@@ -700,6 +702,12 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 @media (max-width: 860px) {
   .footer-grid { flex-direction: column; gap: var(--sp-4); }
   .site-footer { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  /* 폰: 마지막 글에서 푸터까지 모든 페이지 40px(80~200px 로 제각각이던 것), 푸터 안 간격도 좁게 */
+  .site-footer { margin-top: 0; padding-top: 24px; }
+  .page-main > .section:last-child { margin-bottom: 0; }
+  .footer-grid { gap: 12px; }
+  .footer-tagline { margin-top: 6px; }
+  .footer-bottom { margin-top: 12px; padding-top: 12px; }
 }
 
 /* ============================================================
@@ -725,7 +733,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 }
 /* 글을 입력하는 동안에는 탭바를 숨긴다(site-core.js 가 html 에 is-typing 을 붙인다) — 키보드가 화면을 줄이는 안드로이드 카카오톡에서
    탭바가 키보드 위에 올라앉아 입력칸과 검색 결과를 가리던 것 */
-@media (max-width: 860px) { html.is-typing .bottom-tabbar { display: none; } }
+@media (max-width: 860px) { html.is-typing .bottom-tabbar, html.is-typing .fab { display: none; } }   /* 떠 있는 글쓰기 버튼도 숨긴다. 입력칸(댓글 등록)을 가리던 것 */
 
 /* ============================================================
    모션 최소화
@@ -1013,12 +1021,22 @@ body { background: radial-gradient(1100px 520px at 50% -180px, #EFE9F7 0%, rgba(
   .cover-lead { font-size: 15px; }
   .cover.is-spot .cover-inner { column-gap: 16px; min-height: 200px; padding-top: 26px; padding-bottom: 26px; }
   .cover-spot { width: 112px; height: 112px; border-radius: 28px; box-shadow: 0 20px 36px -20px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.10); }
-  .cover.is-home .cover-inner { min-height: 520px; padding-bottom: 36px; }
+  /* 폰 홈 커버: 짧은 화면에서도 참여 버튼이 탭바 위에, 아래 섹션 머리가 첫 화면에 보이게(190 = 위 메뉴 56 + 탭바 74 + 다음 섹션 60).
+     그림과 어둠 층은 520px 그대로 아래에 붙여, 커버가 낮아지면 하늘만 잘린다 */
+  .cover.is-home .cover-inner { min-height: clamp(380px, calc(100vh - 190px), 520px); padding-bottom: 36px; }
+  .cover.is-home .cover-inner { min-height: clamp(380px, calc(100svh - 190px - env(safe-area-inset-bottom)), 520px); }
+  .cover.is-home .cover-img, .cover.is-home::after { top: auto; height: max(100%, 520px); }
   .cover.is-home.no-image .cover-inner { min-height: 320px; }
   .cover.is-home .cover-title { font-size: 40px; }
   .cover.is-home .cover-lead { font-size: 16px; }
 }
 @media (max-width: 360px) { .cover-spot { width: 88px; height: 88px; border-radius: 22px; } }
+/* 폰: 홈 말고는 커버를 낮게(160). 탭마다 커버 높이가 160~520 으로 들쭉날쭉하고 첫 화면을 커버가 다 차지하던 것. 알약은 뺀다 */
+@media (max-width: 640px) {
+  .cover:not(.is-home) .cover-kicker { display: none; }
+  .cover:not(.is-home) .cover-title { margin-top: 0; }
+  .cover.is-spot .cover-inner { min-height: 160px; padding-top: 20px; padding-bottom: 18px; }
+}
 /* 커버 바로 아래의 첫 내용은 커버에 붙지 않되, 첫 섹션의 자기 여백과 겹치지 않게 */
 .cover + .container, .cover + .page-main, .cover + main { padding-top: var(--sp-5); }
 .cover + .page-main > .section:first-child { margin-top: 0; }

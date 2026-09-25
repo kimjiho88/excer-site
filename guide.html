@@ -48,6 +48,8 @@
     .guide-search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--ink-2); pointer-events: none; }
     .guide-search input { width: 100%; min-height: 44px; padding: 0 12px 0 36px; border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--surface); color: var(--ink); font-size: 16px; outline: none; transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease); }
     .guide-search input:focus { border-color: var(--brand); box-shadow: var(--ring); }
+    /* 지우기(x) 버튼: 안드로이드 크롬의 파란 x 대신 보조 글과 같은 회색 x */
+    .guide-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; cursor: pointer; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23625A6C' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E") center / 18px no-repeat; }
     .search-count { margin: -2px 4px 0; color: var(--ink-2); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; }
     .search-count[hidden] { display: none; }
 
@@ -128,6 +130,7 @@
       .qt-k { margin-top: 2px; padding-top: 0; }   /* 옆 타일 제목이 두 줄이어도 힌트가 제목 바로 아래에 */
       .qt-img { display: none; }   /* 그림은 각 장 머리에서 한 번 — 첫 화면에 장 타일이 다 들어온다(느린 불러오기라 폰에서는 받지도 않는다) */
       .qt-q { font-size: 15px; }   /* 16 이면 타일이 한 줄씩 높아져 첫 화면에서 두 장이 잘린다 */
+      .qt-grid > li:first-child { grid-column: 1 / -1; }   /* 타일이 7장이라 첫 장을 한 줄 전체로. 두 칸 격자 끝에 빈칸이 남지 않게 */
     }
     @media (max-width: 330px) { .qt-q { font-size: 14px; } }
 
@@ -225,6 +228,8 @@
       .rb-img { width: 88px; height: 88px; }
       .cat-body .rb-big { font-size: 18px; line-height: 26px; }
     }
+    /* 굵은 말(2개월에 1회 이상)은 가운데서 나누지 않는다. 줄을 고르게 나누는 브라우저에서만 */
+    @supports (text-wrap: pretty) { .cat-body .rb-big b { white-space: nowrap; } }
 
     /* 2장 닉네임 다섯 칸 — 카드 한 장을 칸선으로 나눈다 */
     .nick-dg { display: grid; gap: 10px; }
@@ -235,6 +240,8 @@
     .nick-part .np-k { color: var(--ink-2); font-size: 13px; font-weight: 700; line-height: 18px; white-space: nowrap; }
     .nick-part .np-n { color: var(--ink-2); font-size: 13px; font-weight: 400; line-height: 18px; white-space: nowrap; }
     @media (max-width: 420px) { .nick-part .np-n { white-space: normal; } }   /* 기기 글꼴로 보일 때(글꼴이 늦게 오거나 막힐 때) '월일 네 자리'가 칸 모서리에 잘리던 것 — 필요할 때만 띄어쓰기에서 줄바꿈 */
+    /* 360~374px: 칸 폭을 글 길이대로. 다섯 칸이 같은 폭이면 '월일 네 자리'만 두 줄이 되어 카드가 높아지던 것 */
+    @media (min-width: 360px) and (max-width: 374px) { .cat-body .nick-parts { grid-template-columns: repeat(5, auto); } }
     @media (max-width: 359px) {
       /* 아주 좁은 폰: 3칸 + 2칸, 둘째 줄 두 칸이 폭을 나눠 가진다 */
       .cat-body .nick-parts { grid-template-columns: repeat(6, minmax(0, 1fr)); }
@@ -381,6 +388,7 @@
       .toc-box[open] > summary .toc-chev { transform: rotate(180deg); }
       .toc-box[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 8px; }
       .toc-list a { min-height: 44px; }
+      .toc-list a, #tocFaq a { color: var(--ink); font-size: 16px; }   /* 펼친 목차 줄은 본문 글과 같은 크기와 색. 작은 회색 글은 폰에서 흐렸다 */
       .toc-inner nav { display: flex; flex-direction: column; }
       .toc-inner .tg-faq, #tocFaq { order: -1; }
       #tocStart { display: none; }
@@ -409,6 +417,12 @@
       .ch-key { grid-column: 1 / -1; margin: 0; }
       .ch-key .ks { text-wrap: balance; }
       .ch-art { width: 88px; height: 88px; }
+      /* 가로로 긴 그림은 칸 아래쪽 선에 붙인다. 그림과 제목 아래쪽 선이 맞고, 그림과 단계 사이가 두 레인 모두 12 */
+      .ch-art, .lane-img { object-position: left bottom; }
+      .cat-body .lane-h { align-self: end; }
+      .lanes { row-gap: 20px; }   /* 레인 사이는 블록 사이와 같은 20 */
+      /* 검색 중: 처음 보이는 장은 위 선과 여백 없이 검색칸 바로 아래에서 시작 */
+      .quick[hidden] + #catsHost > .guide-cat:not(.guide-cat:not([hidden]) ~ *) { margin-top: 0; padding-top: 0; border-top: 0; }
       .doc-updated { margin-top: 40px; }
     }
     @media (max-width: 359px) { .cat-body .list-title, .cat-body .rt-h, .cat-body .lane-h, .cat-body .tool-h { font-size: 17px; } }
@@ -643,13 +657,13 @@
                 { title: "빠짐없이 적기", chips: ["날짜", "참여자", "금액", "계좌", "참석자 태그"] },
                 { title: "모임 공지 댓글에 남기기" } ] },
               { title: "참여자가 할 일", img: "calc-payment", steps: [
-                { anchor: "rule-settle-check", title: "모임이 끝나면 정산 내용 확인", text: "금액이 불명확하거나 빠진 사람이 있으면 **입금 전에** 모임장에게 확인합니다." },
+                { anchor: "rule-settle-check", title: "모임이 끝나면 정산 내용 확인", text: "금액이 불명확하거나 빠진 사람이 있으면 **입금 전에** 모임장에게 확인합니다." },
                 { title: "신속히 입금" },
                 { title: "내 이름의 입금\u00a0완료 누르기", text: "모임장이 입금 확인 링크를 올린 경우에만 누릅니다.", note: true } ] } ] },
             { type: "tool", anchor: "rule-calc", title: "모임 정산 페이지", href: "calculator.html", label: "모임 정산 열기",
               keywords: ["정산기", "카카오톡 공유", "카카오톡으로 보내기", "카톡", "링크 복사", "정산 결과"],
-              text: "차수별 1/N 금액과 입금 확인 링크를 만들고, **카카오톡으로 보내기**를 누르면 카카오톡 공유 창이 열립니다.",
-              sub: "공유 창이 열리지 않는 브라우저에서는 링크가 복사되거나 직접 복사할 창이 뜨니, 채팅창에 붙여넣습니다." }
+              text: "차수별 1/N 금액과 입금 확인 링크를 만들고, **카카오톡으로 보내기**로 공유 창을 엽니다.",
+              sub: "공유 창이 열리지 않으면 링크가 복사되거나 직접 복사할 창이 뜨니, 채팅창에 붙여넣습니다." }
           ] },
         { id: "cat-ban", title: "금지 행동", q: "금지 행동", k: "예외 없이 금지", img: "rules-boundaries",
           key: "아래 행동은 **예외 없이** 금지합니다. 음주 여부와 관계없이 같은 기준입니다.",
@@ -687,7 +701,7 @@
               rule: "방 안 멤버 **두 명 이상**이 만나면 공식\u00a0모임으로 엽니다.", ex: ["가족이나 친척", "직장, 학교, 오래된 친구처럼 방 밖에서 알던\u00a0사이", "방 안 공식 커플"] },
             { type: "path", anchor: "rule-make", title: "만드는 법", keywords: ["벙 만들기", "모임 만들기", "캘린더", "모집 글"],
               steps: ["채팅 우측 상단 메뉴", "캘린더", "연필 아이콘", "제목, 날짜, 시간, 위치, 참석 여부 입력", "확인 후 올리기"],
-              after: "올릴 때 필요한 안내도 함께 남깁니다. 올린 뒤에는 시간을 지키고, 바뀌면 **참여자에게 먼저** 알립니다.",
+              after: "올릴 때 필요한 안내도 함께 남깁니다. 올린 뒤에는 시간을 지키고, 바뀌면 **참여자에게 먼저** 알립니다.",
               cta: { text: "소식에도 모집 글을 올릴 수 있습니다.", href: "news.html", label: "소식 열기" } },
             { type: "rulecards", anchor: "rule-dup", title: "같은 시간대 중복 모임", keywords: ["중복 벙", "중복 모임"],
               rule: "중복 개설은 원칙적으로 **금지**합니다.", ex: ["기존 모임 정원 마감", "기존 모임의 설정 마감 시간이 지남", "기존 모임장이 사전에 동의"] },
@@ -892,7 +906,7 @@
       }, { passive: true });
 
       /* ── 목차: PC에서는 항상 펼침, 폰·태블릿에서는 접힘 ── */
-      var wide = window.matchMedia("(min-width: 960px)");
+      var wide = window.matchMedia("(min-width: 960px)"), phone = window.matchMedia("(max-width: 640px)");
       var tocSummary = tocBox.querySelector("summary");
       /* 넓은 화면에서는 목차가 늘 펼쳐져 있어 '목차' 머리는 누를 수 없는 버튼 — 탭 순서에서 뺀다 */
       function syncToc() {
@@ -978,15 +992,16 @@
         });
         if (kw) links[0].setAttribute("aria-describedby", "tocNoMatch"); else links[0].removeAttribute("aria-describedby");
         markHits(kw);
-        searchCount.hidden = !kw;
-        searchCount.textContent = kw ? "검색 결과 " + chapters + "개 장" + (items ? ", 항목 " + items + "개" : "") : "";
+        // 결과가 없으면 아래 '검색 결과가 없습니다.' 상자만 보이고, 이 줄은 화면 읽기에만 남는다
+        searchCount.hidden = !kw; searchCount.classList.toggle("sr-only", !!kw && chapters === 0); searchCount.textContent = !kw ? "" : chapters ? "검색 결과 장 " + chapters + "개, 항목 " + items + "개" : "검색 결과가 없습니다.";
         noResults.hidden = !kw || chapters !== 0;
         pinned = null;
         spyNow();
         // 넓은 화면에서 아래쪽을 읽다가 검색하면 글이 줄어 검색칸·결과가 위 메뉴 뒤로 올라간다 — 검색칸이 보이게 되돌린다
         if (!opt.quiet) {
           var r = searchInput.getBoundingClientRect();
-          if (r.top < navH + 4) {
+          if (kw && r.top > navH + 16 && phone.matches) window.scrollTo({ top: window.pageYOffset + r.top - navH - 8, behavior: "auto" });   // 폰: 검색을 시작하면 검색칸을 위 메뉴 바로 아래로
+          else if (r.top < navH + 4) {
             var lay = document.querySelector(".guide-layout").getBoundingClientRect();
             window.scrollTo({ top: Math.max(0, window.pageYOffset + lay.top - navH - 16), behavior: "auto" });
           }
