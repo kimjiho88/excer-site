@@ -28,8 +28,8 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=19" />
-  <script src="assets/site-core.js?v=8"></script>
+  <link rel="stylesheet" href="assets/site.css?v=20" />
+  <script src="assets/site-core.js?v=9"></script>
   <script src="assets/icons.js?v=2"></script>
   <script src="assets/content.js?v=5"></script>
   <style>
@@ -60,6 +60,7 @@
     .places-count { color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
     .places-note { color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; }
     .reset-btn { margin-left: auto; }
+    .explore-foot .btn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }   /* 내 주변, 지도 보기가 켜져 있는지 버튼에서 보이게 */
     .cond-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .cond-row[hidden] { display: none; }
     .cond { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px 0 12px; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600; }
@@ -72,6 +73,31 @@
       .filter-panel .select-wrap { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; }
       .filter-panel .select { width: 100%; }
       .reset-btn { margin-left: 0; }
+      .search-box { flex: 1 1 0; }   /* 검색칸과 필터 버튼을 한 줄에 */
+      .filter-toggle { padding: 0 12px; }
+      .search-box input:placeholder-shown::-webkit-search-cancel-button { display: none; }   /* 빈 칸에서는 지우기 x 가 글자 자리를 먹지 않게 */
+    }
+    /* 폰 커버는 160px 로 낮추고 맛집 등록은 제목 옆에. 그림은 아래쪽(골목과 사람)을 보여 제목이 등불 위에 놓이지 않게(흰 글자 대비 4.5 이상) */
+    @media (max-width: 640px) {
+      .cover-inner { min-height: 160px; padding-top: 20px; padding-bottom: 18px; }
+      .cover-inner.has-actions { grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 12px; }
+      .cover-inner.has-actions .cover-actions { margin-top: 0; }
+      .cover .cover-img img, .cover img.cover-img { object-position: 50% 75%; }
+    }
+    /* 펼친 필터는 두 열로. 칸 이름은 첫 선택지(지역 전체 등)가 대신하니 화면 읽기용으로만 두고, 마지막 정렬만 이름을 달고 한 줄 전체 */
+    @media (min-width: 360px) and (max-width: 700px) {
+      .filter-panel.is-open { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filter-panel .select-wrap { display: block; }
+      .filter-panel .select-wrap > label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .filter-panel .select { padding: 0 26px 0 10px; background-position: right 8px center; }
+      .filter-panel .select-wrap:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; }
+      .filter-panel .select-wrap:last-child > label { position: static; width: auto; height: auto; clip: auto; }
+    }
+    /* 폰: 개수와 안내가 첫 줄, 오늘 뭐 먹지 / 내 주변 / 지도 보기가 둘째 줄에 들게 */
+    @media (max-width: 640px) {
+      .explore-foot { gap: 8px 6px; margin-top: 12px; }
+      .places-note { flex: 1 1 60%; }
+      .explore-foot .btn.is-sm { padding: 0 10px; }
     }
 
     /* ── 목록: 한 행 = [종류 아이콘] 식당명·지역·종류·등록자 | 가격 | 한줄평·작성자 | 동작 ── */
@@ -140,11 +166,25 @@
       .pr-ic { width: 44px; height: 44px; border-radius: 12px; }
       .pr-ic .ic { width: 18px; height: 18px; }
     }
+    /* 폰: 한줄평 작성자와 자세히 / 지도 검색을 한 줄에 두어 행을 낮춘다. 등록자 칩은 빼고 상세의 작성 정보에만(같은 사람이 두 번 보이지 않게) */
+    @media (max-width: 640px) {
+      .place-row { display: flex; flex-wrap: wrap; align-items: flex-start; column-gap: 10px; row-gap: 2px; }
+      .pr-head { flex: 1 1 0; min-width: 0; }
+      .pr-price { flex: none; }
+      .pr-review { display: contents; }
+      .pr-menu, .pr-text { flex: 0 0 100%; }
+      .pr-menu { margin: 4px 0 0; }
+      .pr-text { margin-top: 2px; }
+      .pr-by { flex: 1 1 auto; min-width: 0; align-self: center; margin-top: 2px; }
+      .pr-by .by-btn { min-height: 32px; }
+      .pr-acts { flex: none; margin: 0 -4px 0 auto; }
+      .pr-reg { display: none; }
+    }
 
     /* ── 지도 패널: PC 는 목록 옆에 고정, 모바일은 목록 위 카드 ──
        카카오맵 SDK 는 KAKAO.jsKey 가 있고 서버가 좌표를 줄 때만 읽는다. 없으면 버튼째 숨는다 */
     .places-body.has-map { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-    .map-panel { border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
+    .map-panel { border: 1px solid rgba(75, 42, 130, 0.12); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
     .map-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 12px 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); font-weight: 600; color: var(--ink); }
     .map-head small { color: var(--ink-2); font-weight: 500; }
     .map-head .text-btn { min-height: 32px; }
@@ -192,7 +232,7 @@
     .cat-bar.has-on span:not(.is-on) { opacity: 0.28; }
     .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .cat-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px 0 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; cursor: pointer; transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
-    @media (max-width: 768px) { .cat-chip { min-height: 34px; } }   /* 손가락으로 누르는 화면에서는 조금 높게(30 → 34px). 기본 규칙 뒤에 두어야 이긴다 */
+    @media (max-width: 768px) { .cat-chip { min-height: 36px; } }   /* 손가락으로 누르는 화면에서는 조금 높게(30에서 36px). 기본 규칙 뒤에 두어야 이긴다 */
     .cat-chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--cat, var(--brand)); flex: none; }
     .cat-chip b { color: var(--ink-2); font-weight: 600; }
     .cat-chip:hover { border-color: var(--cat, var(--brand)); }
@@ -203,12 +243,14 @@
       .cat-chips { flex-wrap: wrap; }   /* 옆으로 밀어야 보이던 3개(술집·카페·분식)를 두 줄로 — 스크롤 단서가 없어 종류가 4개뿐인 줄 알았다 */
       .cat-chips::-webkit-scrollbar { display: none; }
     }
+    /* 폰: 제목 줄과 색 띠는 빼고 칩만. 칩마다 개수가 있고, 제목의 곳 수(영업 종료 제외)가 위의 전체 곳 수와 달라 헷갈렸다 */
+    @media (max-width: 640px) { .ov-head, .cat-bar { display: none; } .overview { margin-top: 12px; } }
 
     /* ── 오늘 뭐 먹지: 조건에 맞는 곳 가운데 하나를 골라 카드로 ── */
-    .pick-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; margin-top: 12px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #FFF7EC, #FBEBD7); border: 1px solid rgba(169, 80, 45, 0.16); }
+    .pick-card { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; margin-top: 12px; padding: 14px 16px; border-radius: var(--r-md); background: linear-gradient(160deg, #FFF7EC, #FBEBD7); border: 1px solid rgba(169, 80, 45, 0.16); }
     .pick-card[hidden] { display: none; }
     /* 뽑기판 그림(크림 배경으로 생성됨) — 같은 색 원판 안에. 못 읽으면 숨고 종류 아이콘이 나온다 */
-    .pick-img { display: block; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(169, 80, 45, 0.18); background: #F7F6F2; object-fit: cover; }
+    .pick-img { display: block; width: 88px; height: 88px; border-radius: 50%; border: 1px solid rgba(169, 80, 45, 0.18); background: #F7F6F2; object-fit: cover; }
     .pick-img[hidden] { display: none; }
     .pick-ic { display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto; border-radius: 12px; background: #fff; color: var(--cat, var(--rust)); box-shadow: inset 0 0 0 1px rgba(169, 80, 45, 0.18); }
     .pick-ic[hidden] { display: none; }
@@ -220,7 +262,7 @@
     .pick-m { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; line-height: 1.5; }
     .pick-q { display: block; margin-top: 4px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.55; overflow-wrap: anywhere; }
     .pick-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-    @media (max-width: 600px) { .pick-card { grid-template-columns: 64px minmax(0, 1fr); } .pick-acts { grid-column: 1 / -1; justify-content: flex-start; } }
+    @media (max-width: 600px) { .pick-card { grid-template-columns: 88px minmax(0, 1fr); } .pick-acts { grid-column: 1 / -1; justify-content: flex-start; } }
     /* 가까운 순일 때 행에 거리 */
     .pr-dist { color: var(--brand); font-weight: 600; }
     /* 고대비 모드: 색으로만 뜻을 전하는 점·띠는 색을 지키고, 켜진 칩·핀은 테두리로 */
@@ -243,6 +285,13 @@
     .pd-chip.is-cat { background: color-mix(in srgb, var(--cat, var(--brand)) 12%, #fff); color: var(--cat, var(--brand)); }
     .pd-chip.is-quiet { color: var(--ink-2); font-weight: 500; }
     .pd-chip .ic { width: 14px; height: 14px; }
+    /* 폰: 펼친 행 머리에서 아래 칩과 겹치는 등록자, 가격, 방문 표시, 지역 줄은 뺀다(사실은 칩에 한 번씩). 두 줄로 접힌 칩은 둥근 상자로 */
+    @media (max-width: 640px) {
+      .place-row.is-open .pr-reg, .place-row.is-open .pr-price, .place-row.is-open .pr-name .type-tag { display: none; }
+      .pd-chip { border-radius: 14px; }
+    }
+    /* :has 를 모르는 브라우저는 이 규칙만 버리게 따로. 가까운 순의 거리는 칩에 없어 남긴다 */
+    @media (max-width: 640px) { .place-row.is-open .pr-meta:not(:has(.pr-dist)) { display: none; } }
 
     /* ── 장소 검색(등록·수정 폼) ── */
     .search-inline { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
@@ -266,7 +315,7 @@
     .geo-progress { color: var(--ink-2); font-size: var(--fs-caption); margin: 8px 0 0; }
 
     /* ── 펼친 상세: 행 아래 흰 면 하나. 옆 행의 읽기 흐름은 그대로 ── */
-    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); }
+    .place-detail { margin: 0 0 16px; padding: 20px 24px 8px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
     /* PC 두 열: 왼쪽은 사실(추천 메뉴 → 위치와 지도 → 작성 정보)이 차례로 쌓이고, 오른쪽은 후기·팁이 세 줄을 통째로 쓴다.
        추천 메뉴가 없으면 그 칸 자체를 내보내지 않아 왼쪽 위가 비지 않는다 */
     .pd-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0 40px; align-items: start; }
@@ -281,6 +330,8 @@
     .pd-note-meta { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; margin-top: 4px; color: var(--ink-2); font-size: var(--fs-caption); }
     .pd-note-meta b { color: var(--ink); font-weight: 500; }
     .pd-note-meta .text-btn { min-height: 32px; font-size: var(--fs-caption); }
+    .pd-note-acts { display: inline-flex; gap: 8px; }   /* 수정과 삭제가 줄바꿈에서 갈라지지 않게 한 묶음으로 */
+    @media (max-width: 640px) { .pd-note-acts { margin-left: auto; } }
     .pd-tips { margin: 0; padding-left: 18px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.6; }
     .pd-tips li + li { margin-top: 4px; }
     .pd-tips small { color: var(--ink-2); }
@@ -320,6 +371,16 @@
       .field-grid { grid-template-columns: 1fr; }
       .field-grid .is-wide { grid-column: span 1; }
       .modal-danger { margin-right: 0; }
+    }
+    /* 폰 시트(등록, 한줄평): 폼이 길어 버튼이 맨 아래에 묻혔다. 버튼 줄을 시트 아래에 붙여 늘 보이게, 버튼은 한 줄로 */
+    @media (max-width: 640px) {
+      .place-modal, .note-modal { scroll-padding-bottom: 84px; }   /* 오류로 초점이 간 칸이 버튼 줄 뒤에 숨지 않게 */
+      .modal-backdrop.is-sheet .place-modal .modal-foot, .modal-backdrop.is-sheet .note-modal .modal-foot {
+        position: sticky; bottom: calc(-20px - env(safe-area-inset-bottom)); z-index: 1; flex-direction: row;
+        margin: 16px -24px calc(-20px - env(safe-area-inset-bottom)); padding: 10px 24px calc(10px + env(safe-area-inset-bottom));
+        background: var(--surface); border-top: 1px solid var(--line); }
+      .modal-backdrop.is-sheet .place-modal .modal-foot .btn, .modal-backdrop.is-sheet .note-modal .modal-foot .btn { flex: 1 1 0; width: auto; }
+      .modal-backdrop.is-sheet .place-modal .modal-foot .btn-primary, .modal-backdrop.is-sheet .note-modal .modal-foot .btn-primary { flex-grow: 2; }
     }
   </style>
 </head>
@@ -367,7 +428,7 @@
         <div class="explore-row">
           <label class="search-box">
             <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-            <input id="placeSearch" class="input" type="search" placeholder="식당 이름, 메뉴, 한줄평 검색" aria-label="맛집 검색" autocomplete="off" />
+            <input id="placeSearch" class="input" type="search" placeholder="식당, 메뉴, 한줄평" aria-label="맛집 검색" autocomplete="off" />
           </label>
           <button class="btn btn-secondary filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
             필터 <svg class="ic is-sm" aria-hidden="true"><use href="#i-chevDown"/></svg>
@@ -378,10 +439,10 @@
             <span class="select-wrap"><label for="fPrice">가격</label>
               <select id="fPrice" class="select" aria-label="1인 가격대">
                 <option value="전체">가격 전체</option>
-                <option value="1">1인 1만원 이하</option>
-                <option value="2">1인 1만원대</option>
-                <option value="3">1인 2만원대</option>
-                <option value="4">1인 3만원 이상</option>
+                <option value="1">1만원 이하</option>
+                <option value="2">1만원대</option>
+                <option value="3">2만원대</option>
+                <option value="4">3만원 이상</option>
               </select></span>
             <span class="select-wrap"><label for="fBy">기록</label><select id="fBy" class="select" aria-label="기록한 사람"></select></span>
             <span class="select-wrap"><label for="fSort">정렬</label>
@@ -409,7 +470,7 @@
       <!-- 오늘 뭐 먹지: 지금 조건에 맞는 곳 가운데 하나를 무작위로. 다시 뽑기는 직전 것을 피한다 -->
       <div class="pick-card" id="pickCard" hidden role="status" aria-live="polite">
         <!-- 뽑기판 그림 — 못 읽으면 종류 아이콘(pickIc)으로 되돌아감 -->
-        <img class="pick-img" src="assets/img/places-pick-240.webp?v=2" srcset="assets/img/places-pick-240.webp?v=2 240w, assets/img/places-pick-480.webp?v=2 480w" sizes="64px" width="480" height="480" alt="" decoding="async" onerror="this.hidden = true; document.getElementById('pickIc').hidden = false" />
+        <img class="pick-img" src="assets/img/places-pick-240.webp?v=2" srcset="assets/img/places-pick-240.webp?v=2 240w, assets/img/places-pick-480.webp?v=2 480w" sizes="88px" width="480" height="480" alt="" decoding="async" onerror="this.hidden = true; document.getElementById('pickIc').hidden = false" />
         <span class="pick-ic" id="pickIc" aria-hidden="true" hidden></span>
         <span>
           <span class="pick-k">오늘의 추천 <small id="pickFrom"></small></span>
@@ -490,7 +551,7 @@
         <div class="field is-wide" data-field="pName">
           <label for="pName">식당 이름</label>
           <input id="pName" class="input" type="text" maxlength="40" placeholder="예: 우래옥 강남점" />
-          <span class="field-hint">지점이 있으면 이름 뒤에 붙여 주세요. 예: 마담밍 선릉점</span>
+          <span class="field-hint">지점이 있으면 이름 뒤에 붙여 주세요.</span>
           <span class="field-error" hidden></span>
         </div>
         <div class="field" data-field="pArea">
@@ -546,12 +607,12 @@
         </div>
         <!-- 첫 한줄평(선택) — 한줄평 남기기 폼과 같은 항목·같은 규칙. 등록할 때만 보이고, 저장은 place_note_create 를 그대로 쓴다 -->
         <div class="field-group" id="pFirst">
-          <div class="form-sec is-wide">첫 한줄평 <small>선택</small></div>
+          <div class="form-sec is-wide">첫 한줄평</div>
           <p class="form-note is-wide" id="pFirstCapsNote" hidden>추천 메뉴와 방문 팁 칸은 서버 업데이트 뒤에 열립니다. 지금은 한줄평에 함께 적어 주세요.</p>
           <div class="field is-wide" data-field="pBody">
             <label for="pBody">한줄평 <small>선택</small></label>
             <textarea id="pBody" class="textarea" maxlength="120" rows="2" placeholder="예: 고기 질이 좋고 밑반찬이 계속 나옵니다."></textarea>
-            <span class="field-hint">다녀온 분이면 여기서 바로 남길 수 있습니다. 비워 두면 식당 정보만 등록됩니다.</span>
+            <span class="field-hint">비워 두면 식당 정보만 등록됩니다.</span>
             <span class="field-error" hidden></span>
           </div>
           <div class="field" data-field="pNoteNick">
@@ -797,7 +858,7 @@
         var raw = String((err && err.message) || "");
         for (var k in ERRORS) if (raw.indexOf(k) >= 0) return ERRORS[k];
         if (err && err.status === 404) return "서버 기능을 찾지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
-        return "요청을 처리하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.";
+        return "요청을 처리하지 못했습니다. 다시 시도해 주세요.";
       }
 
       /* ── 폼 오류: 그 항목 아래에 표시하고 첫 오류로 포커스 ── */
@@ -919,7 +980,7 @@
         }
         $("fArea").innerHTML = '<option value="전체">지역 전체</option>' + AREAS.map(function (a) { return opt(a, C.areaLabel(a), byArea[a], state.area === a); }).join("");
         $("fCat").innerHTML = '<option value="전체">종류 전체</option>' + CATS.map(function (c) { return opt(c, c, byCat[c], state.cat === c); }).join("");
-        $("fPrice").innerHTML = '<option value="전체">가격 전체</option>' + [1, 2, 3, 4].map(function (l) { return opt(String(l), C.priceText(l), byPrice[l], state.price === String(l)); }).join("");
+        $("fPrice").innerHTML = '<option value="전체">가격 전체</option>' + [1, 2, 3, 4].map(function (l) { return opt(String(l), C.priceText(l).replace(/^1인 /, ""), byPrice[l], state.price === String(l)); }).join("");
         var people = peopleList();
         $("fBy").innerHTML = '<option value="전체">기록한 사람 전체</option>' + people.map(function (p) { return opt(p.name, p.name, p.n, state.by === p.name); }).join("");
         $("fBy").closest(".select-wrap").hidden = !people.length;
@@ -958,7 +1019,7 @@
         if (v.closed) tags += '<span class="type-tag is-closed">영업 종료</span>';
         else if (v.visitCount >= 2) tags += '<span class="type-tag">방문 ' + v.visitCount + "회</span>";
         if (!v.closed && v.again && v.again.yes >= 2) tags += '<span class="type-tag is-again">다시 가고 싶음 ' + v.again.yes + "</span>";
-        var by = [line.by ? whoBtn(line.by, "") : "", line.date ? esc(C.dateText(line.date)) + " 방문" : (v.lastVisit ? "마지막 방문 " + esc(C.dateText(v.lastVisit)) : "")].filter(Boolean).join(", ");
+        var by = [line.by ? whoBtn(line.by, "") : "", line.date ? esc(C.dateText(line.date)) + " 방문" : (v.lastVisit ? "마지막 방문 " + esc(C.dateText(v.lastVisit)) : "")].filter(Boolean).join(" ");   // 칩 뒤에 쉼표를 두지 않는다
         var priceHTML = v.priceLevel
           ? '<div class="pr-price">' + esc(v.priceText.replace(/^1인 /, "")) + (v.priceNote ? "<small>" + esc(v.priceNote) + "</small>" : "") + "</div>"
           : '<div class="pr-price is-none">가격 미등록</div>';
@@ -992,8 +1053,7 @@
         if (n.per_person) meta.push("<span>1인 " + Number(n.per_person).toLocaleString("ko-KR") + "원</span>");
         if (n.again) meta.push("<span>다시 가고 싶음</span>");
         if (n.menu && n.review && v && v.notes.length >= 2 && !C.menusIn(n.review, n.menu)) meta.push("<span>추천 메뉴 " + esc(n.menu) + "</span>");
-        var acts = (state.caps >= 2 ? '<button type="button" class="text-btn is-quiet" data-editnote="' + n.id + '">수정</button>' : "") +
-          '<button type="button" class="text-btn is-quiet" data-delnote="' + n.id + '">삭제</button>';
+        var acts = '<span class="pd-note-acts">' + (state.caps >= 2 ? '<button type="button" class="text-btn is-quiet" data-editnote="' + n.id + '">수정</button>' : "") + '<button type="button" class="text-btn is-quiet" data-delnote="' + n.id + '">삭제</button></span>';
         var text = C.noteText(n);
         return '<div class="pd-note">' +
           (text ? '<p class="pd-note-text">' + esc(text) + "</p>" : "") +
@@ -1058,9 +1118,7 @@
 
       function emptyHTML() {
         if (state.views.length && hasCondition()) {
-          var labels = conditionList().map(function (c) { return c.label; }).join(", ");
           return '<div class="empty-state" style="border-top:1px solid var(--line)"><strong>검색 결과가 없습니다.</strong>' +
-            "<p>조건: " + esc(labels) + " (전체 " + state.views.length + "곳). 다른 검색어나 필터를 골라 주세요.</p>" +
             '<button type="button" class="btn btn-secondary is-sm" data-reset="1">조건 초기화</button></div>';
         }
         return '<div class="empty-state" style="border-top:1px solid var(--line)">' +
@@ -1070,7 +1128,7 @@
           '<button type="button" class="btn btn-primary is-sm" data-add="1">맛집 등록</button></div>';
       }
       function errorHTML() {
-        return '<div class="status-line"><span>맛집 목록을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.</span>' +
+        return '<div class="status-line"><span>맛집 목록을 불러오지 못했습니다.</span>' +
           '<button type="button" class="btn btn-secondary is-sm" data-retry="1">다시 시도</button></div>';
       }
       function skeletonHTML() {
@@ -1138,7 +1196,7 @@
         $("catChips").innerHTML = cats.map(function (c) {
           return '<button type="button" class="cat-chip' + (state.cat === c ? " is-on" : "") + '" data-cat-pick="' + esc(c) + '" aria-pressed="' + (state.cat === c) + '" style="--cat:' + esc(C.CAT_COLOR[c] || "#4B2A82") + '"><i></i>' + esc(c) + " <b>" + count[c] + "</b></button>";
         }).join("");
-        $("ovNote").textContent = on ? state.cat + "만 보는 중, 칩을 다시 누르면 전체" : views.length + "곳, 칩을 누르면 그 종류만";
+        $("ovNote").textContent = on ? state.cat + "만 보는 중, 칩을 다시 누르면 전체" : "칩을 누르면 그 종류만";
       }
 
       /* ── 오늘 뭐 먹지: 지금 조건에서 문 연 곳 가운데 하나. 다시 뽑기는 직전 것을 피한다 ── */
@@ -1527,6 +1585,9 @@
          SDK 는 지도를 처음 열 때 한 번만 읽는다(autoload=false → kakao.maps.load). */
       var MAP = { ready: false, loading: null, failed: false, map: null, pins: [], places: null, bounds: null, me: null };
       var MAP_KEY = "excer_places_map";
+      /* 위치 잡기는 운영진 기기에서만 보인다. 표시는 통계 발행 화면에서 운영진 비밀번호가 서버에서 맞았을 때 남는다(비밀번호는 저장하지 않는다) */
+      var ADMIN_DEVICE_KEY = "excer_admin_device";
+      function isAdminDevice() { try { return localStorage.getItem(ADMIN_DEVICE_KEY) === "1"; } catch (e) { return false; } }
       var SEOUL_GANGNAM = { lat: 37.4979, lng: 127.0276 };
       function mapAvailable() { return !!(state.loc && window.KAKAO && KAKAO.jsKey); }
       function loadKakao() {
@@ -1549,7 +1610,7 @@
       function syncMapButtons() {
         var on = mapAvailable() && !MAP.failed;
         $("mapToggle").hidden = !on;
-        $("geoBtn").hidden = !on || !state.views.some(function (v) { return !v.hasCoords && !v.closed; });
+        $("geoBtn").hidden = !on || !isAdminDevice() || !state.views.some(function (v) { return !v.hasCoords && !v.closed; });
         if (on && state.mapOn) openMap();
       }
       function openMap() {
@@ -1626,8 +1687,9 @@
           it.el.classList.toggle("is-dot", hit);
           if (hit) dots++; else taken.push(r);
         });
+        var touch = window.matchMedia && matchMedia("(hover: none)").matches;
         if (items.length) $("mapNote").textContent = dots
-          ? "핀을 누르면 목록에서 그 식당이 펼쳐집니다. 겹치는 이름표 " + dots + "개는 점으로 접혀 있습니다. 확대하거나 점에 마우스를 올리면 보입니다."
+          ? "핀을 누르면 목록에서 그 식당이 펼쳐집니다. 겹치는 이름표 " + dots + "개는 점으로 접혀 있습니다. " + (touch ? "확대하면 보입니다." : "확대하거나 점에 마우스를 올리면 보입니다.")
           : "핀을 누르면 목록에서 그 식당이 펼쳐집니다.";
       }
       /* 내 위치 점 — 가까운 순을 켠 뒤 지도가 열려 있을 때 */

@@ -28,7 +28,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=19" />
+  <link rel="stylesheet" href="assets/site.css?v=20" />
   <script defer src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
@@ -48,7 +48,7 @@
     .period-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
     .range-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .range-chip {
-      display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: var(--r-btn);
+      display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: var(--r-pill);
       border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 500; cursor: pointer;
     }
     .range-chip:hover { border-color: var(--ink-2); }
@@ -61,14 +61,44 @@
     .period-text { margin-left: auto; color: var(--ink); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
     .period-text b { font-weight: 600; }
     @media (max-width: 767px) { .period-text { margin-left: 0; width: 100%; } }
+    /* 폰: 첫 화면에 첫 숫자가 보이게. 출처 줄은 한 줄로 줄이고, 기간 칩은 한 줄에서 옆으로 민다. 기간 글은 칩과 요약 범위가 이미 알려 준다 */
+    @media (max-width: 640px) {
+      .source-line { gap: 4px 12px; }
+      #sourceBadge { order: 1; }
+      #reportSelect { order: 1; }
+      #shareReportBtn { order: 2; margin-left: auto; }
+      #metaLine { order: 4; width: 100%; }
+      .period-bar { gap: 8px; padding: 10px 0; }
+      .range-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-right: calc(-1 * var(--container-pad)); padding-right: var(--container-pad); }
+      .range-filter::-webkit-scrollbar { display: none; }
+      .range-chip { flex: none; padding: 0 10px; }
+      #periodText { display: none; }
+      #secSummary.section { margin-top: var(--sp-4); }
+    }
+    /* 발행본 고르기가 보이면 같은 이름을 두 번 쓰지 않게 글 배지를 뺀다 */
+    @media (max-width: 640px) { .source-line:has(#reportSelect:not([hidden])) #sourceBadge { display: none; } }
+    /* 직접 선택: 두 날짜를 한 줄에, 적용은 아래 한 줄 전체로. 320은 한 줄에 못 넣어 그대로 */
+    @media (min-width: 360px) and (max-width: 640px) {
+      .range-custom { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; width: 100%; }
+      .range-custom input[type="date"] { width: 100%; min-width: 0; }
+      .range-custom .mini-btn { grid-column: 1 / -1; }
+    }
 
     .note-line { display: flex; gap: 8px; align-items: flex-start; margin-top: var(--sp-3); padding: 10px 14px; border-left: 3px solid var(--brand); background: var(--surface-2); color: var(--ink); font-size: var(--fs-sm); line-height: 1.6; border-radius: 0 var(--r-sm) var(--r-sm) 0; }
 
     /* ── 섹션 머리: 제목 + 집계 범위 + 접기 ── */
-    .sec-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 4px 12px; margin-bottom: var(--sp-4); padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
+    .sec-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 4px 12px; margin-bottom: var(--sp-4); padding-bottom: 12px; border-bottom: 1px solid var(--line); }
     .sec-head h2 { margin: 0; font-size: var(--fs-title); font-weight: 700; color: var(--ink); }
+    /* 홈 섹션 제목과 같은 표시: 옅은 선 위에 짧은 보라 막대 */
+    .sec-head h2 { position: relative; padding-bottom: 10px; }
+    .sec-head h2::after { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
     .sec-head .scope { display: inline-block; margin-left: 10px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; font-variant-numeric: tabular-nums; vertical-align: 2px; }
     .sec-head p { grid-column: 1 / -1; margin: 2px 0 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; max-width: 46em; }
+    /* 폰: 균형 줄바꿈이 제목을 가운데서 끊지 않게. 제목은 첫 줄에 온전히, 범위 글은 통째로 다음 줄 */
+    @media (max-width: 640px) {
+      .sec-head h2 { text-wrap: wrap; }
+      .sec-head .scope { white-space: nowrap; }
+    }
     .sec-toggle { flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 500; cursor: pointer; }
     .sec-toggle:hover { color: var(--ink); }
     .sec-toggle .chev { display: inline-grid; place-items: center; transition: transform 0.2s var(--ease); }
@@ -95,16 +125,17 @@
     /* ── 차트 공통 ── */
     .chart-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
     .chart-svg { width: 100%; height: auto; display: block; }
-    /* 좁은 화면의 축 글자 크기·여백은 그릴 때 정한다(renderHours·renderTrend 의 isMobileChart) — viewBox 축소 비율(760 → 350px)만큼 키우고 왼쪽 여백을 넓힌다 */
+    /* 좁은 화면의 차트는 그릴 때 정한다(renderHours, renderTrend 의 isMobileChart). 실제 폭으로 그려 축 글자가 11px 그대로 */
     .chart-anim { opacity: 0; transition: opacity 0.4s var(--ease-out); }
     .chart-anim.is-in { opacity: 1; }
     .chart-tip {
       position: fixed; z-index: 300; pointer-events: none;
       transform: translate(-50%, calc(-100% - 10px));
       padding: 8px 12px; border-radius: var(--r-sm);
-      background: rgba(36, 40, 36, 0.94); color: #fff;
+      background: rgba(46, 27, 69, 0.95); color: #fff;
       opacity: 0; transition: opacity 0.14s var(--ease);
       text-align: center; max-width: 240px;
+      white-space: nowrap;   /* '21시 ~ 22시'가 두 줄로 갈리지 않게 */
     }
     .chart-tip.is-visible { opacity: 1; }
     .chart-tip .tv { display: block; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -135,6 +166,11 @@
     .hour-seg .seg-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 40px; gap: 8px; align-items: center; font-size: var(--fs-caption); color: var(--ink-2); white-space: nowrap; }
     .hour-seg .seg-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
     .side-title { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--ink); }
+    /* 한 줄로 쌓이는 폭: 시간대 요약은 위 요약 숫자와 겹쳐 뺀다. 둘째 제목의 인라인 여백을 없애려 !important */
+    @media (max-width: 860px) {
+      .hours-layout .chart-card > .side-title:first-child, #hoursFacts { display: none; }
+      #hoursFacts + .side-title { margin-top: 0 !important; }
+    }
 
     /* ── 히트맵 ── */
     .hm-scroll { overflow-x: auto; padding-bottom: 4px; }
@@ -155,6 +191,10 @@
       .hm-hour, .hm-day { font-size: 10px; }
       .hm-hour { overflow: visible; white-space: nowrap; }
       .hm-hour:nth-child(25) { text-align: right; }   /* 마지막 '23'이 칸 밖으로 삐져나오지 않게 */
+      /* 정사각 칸이 요일 글자 줄보다 낮아 세로 틈만 벌어졌다. 칸과 요일 줄을 16px로 맞춰 가로세로 틈을 같게 */
+      .hm-cell { aspect-ratio: auto; height: 16px; }
+      .hm-cell::before { content: none; }
+      .hm-day { line-height: 16px; }
     }
 
     /* ── 멤버 순위 ── */
@@ -183,16 +223,33 @@
       .rank-main .rank-count { order: 1; }
       .rank-main .rank-track { order: 2; grid-column: 1 / -1; }
     }
+    /* 폰: 순위 숫자를 이름 줄 높이에 맞추고, 비율은 수 옆에 붙여 줄을 낮춘다. 도구 줄은 한 줄로 */
+    @media (max-width: 640px) {
+      .rank-row { align-items: start; padding: 6px 0 10px; }
+      .rank-no { line-height: 32px; }
+      .rank-main { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
+      .rank-count { line-height: 32px; }
+      .rank-count small { display: inline; margin-left: 6px; white-space: nowrap; }
+      .rank-toolbar .spacer { display: none; }
+      .rank-toolbar .search-input { flex: 1 1 100px; min-width: 0; }
+    }
 
     /* ── 멤버 상세 ── */
     .member-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
     @media (max-width: 860px) { .member-layout { grid-template-columns: 1fr; } }
     .member-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-    .member-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--ink); cursor: pointer; }
+    .member-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--ink); cursor: pointer; }
     .member-pill b { color: var(--ink-2); font-weight: 500; font-variant-numeric: tabular-nums; }
     .member-pill:hover { border-color: var(--ink-2); }
     .member-pill[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
     .member-pill[aria-pressed="true"] b { color: rgba(255,255,255,0.8); }
+    /* 폰: 이름 칩을 한 줄에서 옆으로 민다. 칩 더미가 상세 카드를 화면 밖으로 밀어내지 않게 */
+    @media (max-width: 640px) {
+      .member-layout { grid-template-columns: minmax(0, 1fr); }
+      .member-grid { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+      .member-grid::-webkit-scrollbar { display: none; }
+      .member-pill { flex: none; }
+    }
     .member-detail-card { position: sticky; top: calc(var(--nav-h) + 16px); }
     .md-head b { display: block; font-size: 17px; font-weight: 700; color: var(--ink); }
     .md-head small { display: block; margin-top: 2px; color: var(--ink-2); font-size: var(--fs-caption); }
@@ -206,7 +263,7 @@
 
     /* ── 자주 나온 단어 ── */
     .kw-cats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-    .kw-cat-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line-strong); background: var(--surface); font-size: 13px; color: var(--ink); cursor: pointer; }
+    .kw-cat-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); font-size: 13px; color: var(--ink); cursor: pointer; }
     .kw-cat-chip i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
     .kw-cat-chip b { font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; }
     .kw-cat-chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
@@ -219,6 +276,9 @@
     .kw-list .kw small { font-weight: 500; color: var(--ink-2); font-size: 12px; }
     .kw-list .kc { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
     @media (max-width: 640px) { .kw-list { grid-template-columns: 1fr; } }
+    /* 폰: 한 줄씩 쌓이면 목록이 너무 길어 10개만 보이고 나머지는 전체 보기로 */
+    .kw-foot { display: none; }
+    @media (max-width: 640px) { .kw-foot { display: flex; } .kw-list:not(.is-open) li:nth-child(n+11) { display: none; } }
     .kw-weekly { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
     .kw-weekly th { padding: 8px; text-align: left; color: var(--ink-2); font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
     .kw-weekly td { padding: 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
@@ -237,6 +297,7 @@
     .bar-row .bar-track { height: 10px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
     .bar-row .bar-fill { display: block; height: 100%; width: 0; background: var(--brand); transition: width 0.5s var(--ease-out); }
     .big-num { font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .stat-card h3 + .big-num { margin-top: 12px; }   /* 설명 줄이 없는 카드도 제목과 숫자 사이를 띄운다 */
     .big-num small { font-size: 0.5em; color: var(--ink-2); font-weight: 500; margin-left: 4px; }
     .legend-dots { display: grid; gap: 4px; margin-top: 10px; font-size: var(--fs-caption); color: var(--ink-2); }
     .legend-dots i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
@@ -262,7 +323,7 @@
     .badge-card .b-title { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); }
     .badge-card .b-name { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--ink); }
     .badge-card .b-desc { display: block; margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
-    @media (max-width: 640px) { .badge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .badge-card .bc-img { width: 72px; height: 72px; } }
+    @media (max-width: 640px) { .badge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .badge-card .bc-img { width: 80px; height: 80px; } }
     @media (forced-colors: active) { .badge-card { border: 1px solid CanvasText; } }
     .badge-list .b-title { display: block; font-size: 13px; font-weight: 500; color: var(--ink-2); }
     .badge-list .b-name { font-size: 14px; font-weight: 600; color: var(--ink); }
@@ -291,6 +352,16 @@
     .recap-kws { display: flex; flex-wrap: wrap; gap: 6px; }
     .recap-kw { padding: 4px 10px; border-radius: var(--r-xs); background: rgba(255, 255, 255, 0.12); color: var(--on-dark-body); font-size: 12px; }
     .recap-foot { display: flex; justify-content: space-between; gap: 10px; color: var(--on-dark-body); font-size: 12px; }
+    /* 공용 .who 의 머리글자 원은 여기서 빈 원으로만 보여 뺀다. 끝의 '동네친구들'은 한 줄로 */
+    .recap-row .who::before { content: none; }
+    .recap-foot span:last-child { flex: none; white-space: nowrap; }
+    /* 좁은 폰: 숫자와 이름표가 두 줄로 갈리지 않게 여백을 줄이고 줄바꿈을 막는다 */
+    @media (max-width: 400px) {
+      .recap-card { padding: 20px 16px; }
+      .recap-kpis { gap: 6px; }
+      .recap-kpi { padding: 10px; }
+      .recap-kpi span, .recap-kpi strong { white-space: nowrap; }
+    }
     .recap-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
     /* ── 상태 ── */
@@ -305,7 +376,7 @@
     .admin-entry a:hover { color: var(--brand); }
     [hidden] { display: none !important; }
   </style>
-  <script src="assets/site-core.js?v=8"></script>
+  <script src="assets/site-core.js?v=9"></script>
   <script src="assets/icons.js?v=2"></script>
 </head>
 <body>
@@ -336,7 +407,7 @@
       <div>
         <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>우리 방이 이야기하는 시간</p>
         <h1 class="cover-title" id="pageTitle">활동 통계</h1>
-        <p class="cover-lead">오픈채팅 대화를 기간별로 집계했습니다. 숫자와 단어 빈도만 다루고 원문은 저장하지 않습니다.</p>
+        <p class="cover-lead">오픈채팅 대화를 기간별로 집계했습니다. 원문은 저장하지 않습니다.</p>
       </div>
       <img class="cover-spot" src="assets/img/report-spot-240.webp?v=2" srcset="assets/img/report-spot-240.webp?v=2 240w, assets/img/report-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
@@ -391,7 +462,7 @@
       <div class="status-box">
         <img class="empty-img" src="assets/img/report-empty-320.webp?v=2" srcset="assets/img/report-empty-320.webp?v=2 320w, assets/img/report-empty-640.webp?v=2 640w" sizes="240px" width="640" height="427" alt="" loading="lazy" decoding="async" onerror="this.classList.add('no-image')" />
         <strong id="emptyTitle">통계를 불러오지 못했습니다.</strong>
-        <p id="emptyText">연결을 확인한 뒤 다시 시도해 주세요.</p>
+        <p id="emptyText" hidden></p>
         <button class="btn btn-secondary is-sm" type="button" id="retryBtn">다시 시도</button>
       </div>
     </div>
@@ -416,7 +487,7 @@
           <div class="sec-head">
             <h2>주간 추이<span class="scope" id="scopeTrend"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyTrend">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>발행 기간 전체를 월요일 시작 주 단위로 묶은 메시지 수입니다. 음영은 현재 선택한 기간입니다.</p>
+            <p>월요일 시작 주 단위로 묶은 메시지 수입니다. 음영은 선택한 기간입니다.</p>
           </div>
           <div class="sec-body" id="bodyTrend">
 
@@ -433,7 +504,7 @@
           <div class="sec-head">
             <h2>시간대별 메시지<span class="scope" id="scopeHours"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHours">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>0시부터 23시까지 시간대별 메시지 수입니다. 막대를 짚으면 정확한 수가 표시됩니다.</p>
+            <p>막대를 누르면 정확한 수가 표시됩니다.</p>
           </div>
           <div class="sec-body" id="bodyHours">
 
@@ -457,7 +528,7 @@
           <div class="sec-head">
             <h2>요일과 시간대<span class="scope" id="scopeHeatmap"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyHeatmap">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>진한 칸일수록 메시지가 많은 때입니다. 칸을 짚으면 정확한 수가 표시됩니다.</p>
+            <p>칸을 누르면 정확한 수가 표시됩니다.</p>
           </div>
           <div class="sec-body" id="bodyHeatmap">
 
@@ -506,7 +577,6 @@
           <div class="sec-head">
             <h2>멤버별 상세<span class="scope" id="scopeMembers"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyMembers">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>멤버를 선택하면 선택 기간의 메시지 수, 활동일, 일별 추이를 표시합니다.</p>
           </div>
           <div class="sec-body" id="bodyMembers">
 
@@ -517,18 +587,39 @@
           </div>
         </div>
       </section>
+      <section class="section" id="secIndex">
+        <div class="container">
+          <div class="sec-head">
+            <h2>활동 지수와 칭호<span class="scope" id="scopeIndex"></span></h2>
+            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyIndex">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
+            
+          </div>
+          <div class="sec-body" id="bodyIndex">
+
+            <div class="index-layout">
+              <div class="stat-card" id="tempCard"></div>
+              <div class="stat-card">
+                <h3>칭호</h3>
+                <p class="cap" id="badgeCap">활약왕과 성장왕은 선택 기간, 나머지는 발행 기간 전체 기준입니다.</p>
+                <ul class="badge-cards" id="badgeCards" aria-label="메달 칭호" hidden></ul>
+                <ul class="badge-list" id="badgeList"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="section" id="secKeywords">
         <div class="container">
           <div class="sec-head">
             <h2>자주 나온 단어<span class="scope" id="scopeKeywords"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyKeywords">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>발행 기간 전체에서 자주 나온 단어를 빈도순으로 정리했습니다. 문장이 아니라 단어 빈도만 셉니다.</p>
           </div>
           <div class="sec-body" id="bodyKeywords">
 
             <div class="chart-card">
               <div class="kw-cats" id="kwCats" role="group" aria-label="단어 분류 선택"></div>
               <ol class="kw-list chart-anim" id="kwList"></ol>
+              <div class="rank-foot kw-foot"><button class="mini-btn" type="button" id="kwMore" hidden></button></div>
             </div>
             <div class="chart-card" style="margin-top:12px">
               <h3 class="side-title">주별 상위 단어</h3>
@@ -554,33 +645,12 @@
           </div>
         </div>
       </section>
-      <section class="section" id="secIndex">
-        <div class="container">
-          <div class="sec-head">
-            <h2>활동 지수와 칭호<span class="scope" id="scopeIndex"></span></h2>
-            <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyIndex">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            
-          </div>
-          <div class="sec-body" id="bodyIndex">
-
-            <div class="index-layout">
-              <div class="stat-card" id="tempCard"></div>
-              <div class="stat-card">
-                <h3>칭호</h3>
-                <p class="cap" id="badgeCap">조건을 충족한 멤버에게만 표시합니다. 활약왕과 성장왕은 선택 기간, 나머지는 발행 기간 전체를 기준으로 합니다.</p>
-                <ul class="badge-cards" id="badgeCards" aria-label="메달 칭호" hidden></ul>
-                <ul class="badge-list" id="badgeList"></ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
       <section class="section" id="secRecap">
         <div class="container">
           <div class="sec-head">
             <h2>요약 카드<span class="scope" id="scopeRecap"></span></h2>
             <button class="sec-toggle" type="button" aria-expanded="true" aria-controls="bodyRecap">접기 <span class="chev" aria-hidden="true"><svg class="ic"><use href="#i-chevDown"/></svg></span></button>
-            <p>선택 기간의 핵심 숫자를 한 장으로 정리한 카드입니다. 이미지로 저장해 채팅방에 공유할 수 있습니다.</p>
+            <p>이미지로 저장해 채팅방에 올릴 수 있습니다.</p>
           </div>
           <div class="sec-body" id="bodyRecap">
 
@@ -595,7 +665,7 @@
       </section>
 
       <div class="container">
-        <p class="data-note" id="dataNote">이 통계는 오픈채팅 대화를 집계한 메시지 수와 단어 빈도만 담습니다. 대화 원문은 저장하지 않으며, 닉네임은 앞부분만 표시합니다. 질문 수는 물음표나 질문 형태의 문장을, 반응 수는 5분 안에 이어진 응답과 ㅋㅋ나 굿 같은 짧은 반응을 센 값입니다.</p>
+        <p class="data-note" id="dataNote">닉네임은 앞부분만 표시합니다. 질문 수는 물음표나 질문 형태의 문장을, 반응 수는 5분 안에 이어진 응답과 ㅋㅋ나 굿 같은 짧은 반응을 센 값입니다.</p>
       </div>
     </div>
     <!-- 운영진 입구 — 발행 페이지(비밀번호로 보호, 검색 제외)로 가는 작은 글 링크. 자료를 못 불러와도 보이게 본문 틀 밖에 둔다 -->
@@ -984,7 +1054,7 @@
           sums.forEach(function (v) { totalAll += v; });
           M.forEach(function (m, i) {
             if (sums[i] <= 0) return;
-            list.push({ idx: i, name: m.name, value: sums[i], extra: totalAll ? (Math.round((sums[i] / totalAll) * 1000) / 10) + "%" : null });
+            list.push({ idx: i, name: m.name, value: sums[i], extra: totalAll ? ((sums[i] / totalAll) * 100).toFixed(1) + "%" : null });
           });
           list.sort(function (a, b) { return b.value - a.value; });
         }
@@ -1107,7 +1177,8 @@
       /* ── 공유 툴팁 ── */
       const tipEl = $("chartTip");
       let tipHideTimer = null;
-      function showTip(x, y, value, label) {
+      function showTip(x, y, value, label, owner) {
+        tipEl.dataset.owner = owner || "";
         $("tipValue").textContent = value;
         $("tipLabel").textContent = label;
         tipEl.style.left = Math.min(Math.max(x, 84), window.innerWidth - 84) + "px";
@@ -1116,13 +1187,15 @@
         tipEl.setAttribute("aria-hidden", "false");
         clearTimeout(tipHideTimer);
       }
-      function hideTip(delay) {
+      function hideTip(delay, owner) {
+        if (owner && tipEl.dataset.owner !== owner) return;
         clearTimeout(tipHideTimer);
         tipHideTimer = setTimeout(() => {
           tipEl.classList.remove("is-visible");
           tipEl.setAttribute("aria-hidden", "true");
         }, delay || 0);
       }
+      window.addEventListener("scroll", () => hideTip(0), { passive: true });
       function animateIn(el) {
         if (!el) return;
         el.classList.remove("is-in");
@@ -1147,7 +1220,7 @@
         data: null, source: "none", row: null, legacy: false, current: true,
         preset: "week", slice: null, prev: null,
         rankMetric: "total", search: "", rankOpen: false,
-        selectedMember: -1, kwCat: "all", badgeList: []
+        selectedMember: -1, kwCat: "all", badgeList: [], kwOpen: false
       };
       let liveRows = [];
 
@@ -1264,7 +1337,7 @@
         const ago = genDays === null ? "" : genDays === 0 ? " (오늘)" : genDays === 1 ? " (어제)" : " (" + genDays + "일 전)";
         const tr = st.meta && st.meta.truncated;
         const trTxt = tr ? (tr.days ? ", 800일을 넘는 앞부분은 빠져 있습니다" : "") + (tr.members ? ", 활동 순위 120명 밖 멤버는 멤버 목록에 없습니다" : "") : "";
-        $("metaLine").textContent = "발행 기간 " + fmtDateFull(st.range.from) + " ~ " + fmtDateFull(st.range.to) + (genTxt ? ", 발행일 " + genTxt + ago : "") + trTxt;
+        $("metaLine").textContent = "발행 기간 " + fmtDateK(st.range.from) + "~" + fmtDateK(st.range.to) + (genTxt ? ", " + fmtDateK(gen) + " 발행" + ago : "") + trTxt;
 
         const sel = $("reportSelect");
         if (state.source === "live" && liveRows.length >= 2) {
@@ -1355,7 +1428,7 @@
           RM.hasJoinData(st)
             ? kpiTile("신규 멤버", nf(kpi.joins), "명", "입장 기록 기준")
             : kpiTile("신규 멤버", nf(newIdx.length), "명", "첫 메시지 기준"),
-          kpiTile("복귀 멤버", state.prev ? nf(retIdx.length) : "-", state.prev ? "명" : "", state.prev ? "직전 기간에 메시지가 없던 멤버" : "직전 기간 데이터가 없습니다."),
+          kpiTile("복귀 멤버", state.prev ? nf(retIdx.length) : "-", state.prev ? "명" : "", state.prev ? "직전 기간에 없던 멤버" : "직전 기간 데이터가 없습니다."),
           kpiTile("가장 활발한 요일", WEEK_KO[pkW.i] + "요일", "", nf(pkW.v) + "건", "is-text"),
           kpiTile("가장 활발한 시간대", pkH.i + "시", "", nf(pkH.v) + "건", "is-text"),
           kpiTile("가장 조용한 시간대", qtH.i + "시", "", nf(qtH.v) + "건", "is-text")
@@ -1364,7 +1437,7 @@
 
       /* ── 멤버 순위 ── */
       const RANK_NOTES = {
-        total: "막대는 선택 기간의 메시지 수, 아래 작은 숫자는 전체 메시지에서 차지하는 비율입니다.",
+        total: "막대는 선택 기간의 메시지 수, 작은 숫자는 전체 메시지에서 차지하는 비율입니다.",
         rise: "선택 기간 메시지 수에서 직전 같은 길이 기간의 메시지 수를 뺀 값입니다. 직전 기간이 더 짧으면 같은 길이로 환산합니다.",
         steady: "선택 기간에 메시지를 남긴 날의 수입니다. 연속 일수는 발행 기간 전체 기준입니다.",
         question: "질문 수는 발행 기간 전체 기준입니다. 물음표나 질문 형태의 문장을 셉니다.",
@@ -1493,23 +1566,23 @@
         $("scopeHours").textContent = state.legacy ? scopeAll() : scopeSel();
         const max = Math.max(...hourly, 1);
         const pk = RM.peakOf(hourly), qt = RM.quietOf(hourly);
-        // 좁은 화면: SVG 가 절반 크기로 줄어드니 글자를 24로(화면에서 약 11px), 왼쪽 여백도 그만큼
+        // 좁은 화면: 차트를 실제 폭으로 그려 글자가 11px 그대로 보인다(접힌 섹션은 폭이 0이라 창 폭으로 대신)
         const MB = isMobileChart();
-        const W = 760, H = MB ? 250 : 240, Lm = MB ? 80 : 44, Rm = 12, T = 12, B = MB ? 40 : 30, FS = MB ? 24 : 11;
+        const W = MB ? Math.max(240, Math.round($("hoursWrap").getBoundingClientRect().width || innerWidth - 80)) : 760, H = MB ? 180 : 240, Lm = MB ? 34 : 44, Rm = MB ? 2 : 12, T = 12, B = MB ? 24 : 30, FS = 11;
         const pw = W - Lm - Rm, ph = H - T - B;
         const ax = niceAxis(max), ymax = ax.ymax;
-        const slot = pw / 24, bw = slot - 3;
+        const slot = pw / 24, bw = slot - (MB ? 2 : 3);
         let grid = "", yt = "";
         for (let g = 0; g <= ax.ticks; g++) {
           const gv = ax.step * g, gy = T + ph - (gv / ymax) * ph;
           grid += `<line x1="${Lm}" y1="${gy.toFixed(1)}" x2="${W - Rm}" y2="${gy.toFixed(1)}" stroke="#E3DFE4" stroke-width="1"/>`;
-          yt += `<text x="${Lm - 8}" y="${(gy + (MB ? 8 : 4)).toFixed(1)}" text-anchor="end" font-size="${FS}" fill="#625A6C">${nf(gv)}</text>`;
+          yt += `<text x="${Lm - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="${FS}" fill="#625A6C">${nf(gv)}</text>`;
         }
         let bars = "", xl = "";
         for (let h = 0; h < 24; h++) {
           const v = hourly[h];
           const bh = Math.max(v > 0 ? 2 : 0, (v / ymax) * ph);
-          const x = Lm + h * slot + 1.5, y = T + ph - bh;
+          const x = Lm + h * slot + (MB ? 1 : 1.5), y = T + ph - bh;
           bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${h === pk.i ? RAMP[4] : RAMP[3]}" data-h="${h}" data-v="${v}" tabindex="0" role="img" aria-label="${h}시 ${nf(v)}건"><title>${h}시 ${nf(v)}건</title></rect>`;
           if (h % 3 === 0) xl += `<text x="${(Lm + h * slot + slot / 2).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="${FS}" fill="#625A6C">${h}시</text>`;
         }
@@ -1518,15 +1591,15 @@
         const svg = $("hoursWrap").querySelector("svg");
         const onPoint = (e) => {
           const t = e.target.closest("rect[data-h]");
-          if (!t) { hideTip(80); return; }
+          if (!t) { hideTip(80, "hours"); return; }
           const rect = t.getBoundingClientRect();
-          showTip(rect.left + rect.width / 2, rect.top, nf(t.dataset.v) + "건", t.dataset.h + "시 ~ " + ((+t.dataset.h + 1) % 24) + "시");
+          showTip(rect.left + rect.width / 2, rect.top, nf(t.dataset.v) + "건", t.dataset.h + "시 ~ " + ((+t.dataset.h + 1) % 24) + "시", "hours");
         };
         svg.addEventListener("pointermove", onPoint);
         svg.addEventListener("pointerdown", onPoint);
-        svg.addEventListener("pointerleave", () => hideTip(120));
+        svg.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2500 : 120, "hours"));
         svg.addEventListener("focusin", onPoint);
-        svg.addEventListener("focusout", () => hideTip(120));
+        svg.addEventListener("focusout", () => hideTip(120, "hours"));
 
         $("hoursTable").innerHTML = `<table><thead><tr><th scope="col">시간대</th><th scope="col">메시지</th></tr></thead><tbody>${
           hourly.map((v, h) => `<tr><td>${h}시</td><td>${nf(v)}</td></tr>`).join("")}</tbody></table>`;
@@ -1577,11 +1650,11 @@
         $("hmLegend").innerHTML = `<span>적음</span><i style="background:${ZERO_COLOR}"></i>` + RAMP.map((c) => `<i style="background:${c}"></i>`).join("") + `<span>많음</span>`;
         const onPoint = (e) => {
           const cell = e.target.closest(".hm-cell");
-          if (!cell) { hideTip(80); return; }
+          if (!cell) { hideTip(80, "heat"); return; }
           const rect = cell.getBoundingClientRect();
-          showTip(rect.left + rect.width / 2, rect.top, nf(cell.dataset.v) + "건", WEEK_KO[+cell.dataset.d] + "요일 " + cell.dataset.h + "시");
+          showTip(rect.left + rect.width / 2, rect.top, nf(cell.dataset.v) + "건", WEEK_KO[+cell.dataset.d] + "요일 " + cell.dataset.h + "시", "heat");
         };
-        host.onpointermove = onPoint; host.onpointerdown = onPoint; host.onpointerleave = () => hideTip(120);
+        host.onpointermove = onPoint; host.onpointerdown = onPoint; host.onpointerleave = (e) => hideTip(e.pointerType === "touch" ? 2500 : 120, "heat");
         const daySum = grid.map((r) => r.reduce((s, x) => s + x, 0));
         const hourSum = [];
         for (let h = 0; h < 24; h++) hourSum.push(grid.reduce((s, r) => s + (r[h] || 0), 0));
@@ -1602,7 +1675,7 @@
           return;
         }
         const MB = isMobileChart();
-        const W = 760, H = MB ? 262 : 250, Lm = MB ? 84 : 48, Rm = MB ? 36 : 18, T = 16, B = MB ? 44 : 34, FS = MB ? 24 : 11, FSB = MB ? 26 : 12;
+        const W = MB ? Math.max(240, Math.round(wrap.getBoundingClientRect().width || innerWidth - 80)) : 760, H = MB ? 180 : 250, Lm = MB ? 40 : 48, Rm = MB ? 14 : 18, T = 16, B = MB ? 26 : 34, FS = 11, FSB = 12;
         const pw = W - Lm - Rm, ph = H - T - B;
         const ax = niceAxis(Math.max(...weeks.map((w) => w.total), 1)), ymax = ax.ymax;
         const x = (i) => Lm + (weeks.length === 1 ? pw / 2 : (i * pw) / (weeks.length - 1));
@@ -1620,12 +1693,12 @@
         for (let g = 0; g <= ax.ticks; g++) {
           const gv = ax.step * g, gy = y(gv);
           gridL += `<line x1="${Lm}" y1="${gy.toFixed(1)}" x2="${W - Rm}" y2="${gy.toFixed(1)}" stroke="#E3DFE4" stroke-width="1"/>`;
-          yt += `<text x="${Lm - 8}" y="${(gy + (MB ? 8 : 4)).toFixed(1)}" text-anchor="end" font-size="${FS}" fill="#625A6C">${nf(gv)}</text>`;
+          yt += `<text x="${Lm - 8}" y="${(gy + 4).toFixed(1)}" text-anchor="end" font-size="${FS}" fill="#625A6C">${nf(gv)}</text>`;
         }
         let lineP = "";
         weeks.forEach((w, i) => { lineP += (i ? " L " : "M ") + x(i).toFixed(1) + " " + y(w.total).toFixed(1); });
         let xLabels = "";
-        const step = weeks.length > 10 ? 2 : 1;
+        const step = weeks.length > (MB ? 6 : 10) ? 2 : 1;
         weeks.forEach((w, i) => {
           if (i % step !== 0 && i !== weeks.length - 1) return;
           xLabels += `<text x="${x(i).toFixed(1)}" y="${H - 12}" text-anchor="middle" font-size="${FS}" fill="#625A6C">${fmtDateK(w.from)}</text>`;
@@ -1637,7 +1710,7 @@
             <path d="${lineP}" fill="none" stroke="#4B2A82" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
             <line id="trendHair" x1="0" y1="${T}" x2="0" y2="${T + ph}" stroke="#625A6C" stroke-width="1" opacity="0"/>
             ${weeks.map((w, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(w.total).toFixed(1)}" r="3.5" fill="#4B2A82" stroke="#fff" stroke-width="2"/>`).join("")}
-            <text x="${(x(weeks.length - 1) - 8).toFixed(1)}" y="${(y(last.total) - 10).toFixed(1)}" text-anchor="end" font-size="${FSB}" font-weight="600" fill="#241E2C">${nf(last.total)}</text>
+            ${MB ? "" : `<text x="${(x(weeks.length - 1) - 8).toFixed(1)}" y="${(y(last.total) - 10).toFixed(1)}" text-anchor="end" font-size="${FSB}" font-weight="600" fill="#241E2C">${nf(last.total)}</text>`}
             ${xLabels}
           </svg>`;
         animateIn(wrap);
@@ -1651,11 +1724,11 @@
           hair.setAttribute("x1", x(bi).toFixed(1)); hair.setAttribute("x2", x(bi).toFixed(1));
           hair.setAttribute("opacity", "1");
           const cy = (y(weeks[bi].total) / H) * rect.height + rect.top;
-          showTip((x(bi) / W) * rect.width + rect.left, cy, nf(weeks[bi].total) + "건", fmtDateK(weeks[bi].from) + "~" + fmtDateK(weeks[bi].to) + (weeks[bi].days < 7 ? " (" + weeks[bi].days + "일)" : ""));
+          showTip((x(bi) / W) * rect.width + rect.left, cy, nf(weeks[bi].total) + "건", fmtDateK(weeks[bi].from) + "~" + fmtDateK(weeks[bi].to) + (weeks[bi].days < 7 ? " (" + weeks[bi].days + "일)" : ""), "trend");
         };
         svg.addEventListener("pointermove", onPoint);
         svg.addEventListener("pointerdown", onPoint);
-        svg.addEventListener("pointerleave", () => { hair.setAttribute("opacity", "0"); hideTip(120); });
+        svg.addEventListener("pointerleave", (e) => { const d = e.pointerType === "touch" ? 2500 : 120; clearTimeout(hair._t); hair._t = setTimeout(() => hair.setAttribute("opacity", "0"), d); hideTip(d, "trend"); });
 
         const fullWeeks = weeks.filter((w) => w.days === 7);
         let deltaTxt = "";
@@ -1691,11 +1764,16 @@
             return `<li><span class="kn">${i + 1}</span><span class="kw">${cat ? `<i style="background:${CAT_COLOR[cat]}"></i>` : ""}${escapeHTML(k.w)}${cat ? `<small>${catLabel(cat)}</small>` : ""}</span><span class="kc">${nf(k.c)}회</span></li>`;
           }).join("");
         }
+        list.classList.toggle("is-open", state.kwOpen);
+        const kwMore = $("kwMore");
+        kwMore.hidden = shown.length <= 10;
+        kwMore.textContent = state.kwOpen ? "10개만 보기" : `전체 보기 (${shown.length}개)`;
+        kwMore.setAttribute("aria-expanded", String(state.kwOpen));
         animateIn(list);
         const weekly = st.weeklyKeywords || [];
         $("kwWeekly").innerHTML = weekly.length
           ? `<table class="kw-weekly"><thead><tr><th scope="col">주</th><th scope="col">1위</th><th scope="col">2위</th><th scope="col">3위</th></tr></thead><tbody>${
-              weekly.map((w, i) => `<tr${i === weekly.length - 1 ? ' class="is-now"' : ""}><td>${escapeHTML(w.week)}</td>${[0, 1, 2].map((j) => `<td>${escapeHTML((w.top || [])[j] || "-")}</td>`).join("")}</tr>`).join("")}</tbody></table>`
+              weekly.map((w, i) => `<tr${i === weekly.length - 1 ? ' class="is-now"' : ""}><td>${escapeHTML(String(w.week).replace(/\//g, "."))}</td>${[0, 1, 2].map((j) => `<td>${escapeHTML((w.top || [])[j] || "-")}</td>`).join("")}</tr>`).join("")}</tbody></table>`
           : emptyBox(NO_ITEM);
       }
 
@@ -1707,7 +1785,7 @@
         if (es && (es.laugh || es.cheer || es.heart)) {
           const totalE = (es.laugh || 0) + (es.cheer || 0) + (es.heart || 0) || 1;
           const rows = [{ lb: "웃음", v: es.laugh || 0 }, { lb: "응원", v: es.cheer || 0 }, { lb: "하트", v: es.heart || 0 }];
-          $("moodEmoji").innerHTML = `<h3>이모지 반응</h3><p class="cap">발행 기간 전체에서 웃음, 응원, 하트 이모지가 쓰인 횟수입니다.</p>` +
+          $("moodEmoji").innerHTML = `<h3>이모지 반응</h3><p class="cap">웃음, 응원, 하트 이모지가 쓰인 횟수입니다.</p>` +
             rows.map((r) => `<div class="bar-row"><span>${r.lb}</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((r.v / totalE) * 100)}"></span></span><em>${nf(r.v)}</em></div>`).join("");
           requestAnimationFrame(() => { $("moodEmoji").querySelectorAll(".bar-fill").forEach((b) => { b.style.width = b.dataset.w + "%"; }); });
         } else {
@@ -1716,7 +1794,7 @@
         const qa = RM.qaRatio(st);
         if (qa.q > 0 || qa.a > 0) {
           const maxQa = Math.max(qa.q, qa.a, 1);
-          $("moodQa").innerHTML = `<h3>질문과 응답</h3><p class="cap">발행 기간 전체의 질문 수와 응답 수입니다.</p>
+          $("moodQa").innerHTML = `<h3>질문과 응답</h3>
             <div class="big-num">${qa.ratio == null ? "-" : "질문 1건당 " + nf1(qa.ratio)}<small>응답</small></div>
             <div class="bar-row"><span>질문</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.q / maxQa) * 100)}" style="background:#4E6E86"></span></span><em>${nf(qa.q)}</em></div>
             <div class="bar-row"><span>응답</span><span class="bar-track"><span class="bar-fill" data-w="${Math.round((qa.a / maxQa) * 100)}"></span></span><em>${nf(qa.a)}</em></div>`;
@@ -1740,7 +1818,7 @@
             off += sg.v / totalS;
             return el;
           }).join("");
-          $("moodGini").innerHTML = `<h3>대화 집중도</h3><p class="cap">${escapeHTML(scopeSel())} 기준. 지니계수가 0에 가까울수록 고르게, 1에 가까울수록 소수에게 집중된 대화입니다.</p>
+          $("moodGini").innerHTML = `<h3>대화 집중도</h3><p class="cap">${escapeHTML(scopeSel())} 기준. 0에 가까울수록 고르게, 1에 가까울수록 소수에게 집중된 대화입니다.</p>
             <div class="gini-wrap">
               <svg class="gini-donut" viewBox="0 0 84 84" role="img" aria-label="멤버별 메시지 점유율 도넛 차트">${circles}<text x="42" y="46" text-anchor="middle" font-size="14" font-weight="700" fill="#241E2C">${conc.gini.toFixed(2)}</text></svg>
               <div class="legend-dots">${segs.map((sg) => `<span><i style="background:${sg.c}"></i>${sg.lb} <b>${Math.round((sg.v / totalS) * 100)}%</b></span>`).join("")}</div>
@@ -1760,7 +1838,7 @@
         }
         const temp = RM.temperature(st, state.slice);
         const pct = Math.round((temp.ratio - 1) * 100);
-        card.innerHTML = `<h3>활동 지수</h3><p class="cap">선택 기간의 하루 평균 메시지 수를 발행 기간 전체의 하루 평균과 비교한 값입니다. 같으면 36.5, 2배면 44.5로 표시합니다.</p>
+        card.innerHTML = `<h3>활동 지수</h3><p class="cap">선택 기간 하루 평균을 발행 기간 하루 평균과 비교한 값입니다. 같으면 36.5, 2배면 44.5입니다.</p>
           <div class="big-num">${nf1(temp.temp)}<small>기준 36.5</small></div>
           <div class="legend-dots" style="margin-top:12px">
             <span>선택 기간 하루 평균 <b>${nf1(temp.avg)}건</b></span>
@@ -1829,16 +1907,18 @@
         host.innerHTML = `
           <div class="md-head">
             <b>${escapeHTML(m.name)}</b>
-            <small>${tt ? tt.label + " (새벽, 아침, 점심, 저녁 중 메시지가 가장 많은 구간), " : "시간 유형 미판정 (30건 이상부터), "}평균 ${nf1(m.avgLen || 0)}자</small>
+            <small>${tt ? tt.label + ", " : "시간 유형 미판정 (30건 이상부터), "}평균 ${nf1(m.avgLen || 0)}자</small>
           </div>
           <div class="md-stats">
-            <div class="md-stat"><span>기간 메시지</span><strong>${nf(periodCount)}</strong></div>
-            <div class="md-stat"><span>기간 활동일</span><strong>${nf(actDays)}일</strong></div>
+            <div class="md-stat"><span>메시지</span><strong>${nf(periodCount)}</strong></div>
+            <div class="md-stat"><span>활동일</span><strong>${nf(actDays)}일</strong></div>
             <div class="md-stat"><span>최장 연속</span><strong>${nf(m.streak || 0)}일</strong></div>
           </div>
           ${myBadges.length ? `<div class="md-badges">${myBadges.map((b) => `<span class="title-badge"><span class="tb-ic" aria-hidden="true"><svg class="ic"><use href="#i-${b.icon}"/></svg></span>${escapeHTML(badgeText(b.title))}</span>`).join("")}</div>` : `<p class="chart-note" style="margin-top:2px">선택 기간에 받은 칭호가 없습니다.</p>`}
           <div class="md-spark">${sparkSVG(series, fmtDateK(st.days[s0].d), fmtDateK(st.days[s1].d))}<div class="spark-cap">${sparkNote} (${fmtDateK(st.days[s0].d)}~${fmtDateK(st.days[s1].d)})</div></div>`;
         $("memberGrid").querySelectorAll("[data-open-member]").forEach((b) => { b.setAttribute("aria-pressed", String(+b.dataset.openMember === i)); });
+        const g = $("memberGrid"), on = g.querySelector('[aria-pressed="true"]');
+        if (on) g.scrollLeft += on.getBoundingClientRect().left - g.getBoundingClientRect().left - 8;
       }
 
       /* ── 요약 카드 ── */
@@ -1995,6 +2075,7 @@
           const detail = $("memberDetail");
           if (b.closest("#rankList") && detail) detail.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
         });
+        $("kwMore").addEventListener("click", () => { state.kwOpen = !state.kwOpen; renderKeywords(); });
         $("recapSaveBtn").addEventListener("click", saveRecap);
         $("retryBtn").addEventListener("click", () => { location.reload(); });
         $("reportSelect").addEventListener("change", () => {
@@ -2057,7 +2138,8 @@
           $("emptyWrap").hidden = false;
           const failed = source === "error";
           $("emptyTitle").textContent = failed ? "통계를 불러오지 못했습니다." : "발행된 통계가 없습니다.";
-          $("emptyText").textContent = failed ? "연결을 확인한 뒤 다시 시도해 주세요." : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
+          $("emptyText").textContent = failed ? "" : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
+          $("emptyText").hidden = failed;   // 실패일 때는 제목과 다시 시도 버튼만
           $("sourceBadge").textContent = failed ? "불러오기 실패" : "통계 없음";
           return;
         }

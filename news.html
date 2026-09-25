@@ -28,7 +28,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=19" />
+  <link rel="stylesheet" href="assets/site.css?v=20" />
 
   <style>
     /* ============================================================
@@ -39,6 +39,7 @@
     .search-box { position: relative; flex: 1 1 220px; min-width: 0; display: flex; align-items: center; }
     .search-box .ic { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--ink-2); pointer-events: none; }
     .search-box input { padding-left: 38px; }
+    .search-box input:placeholder-shown::-webkit-search-cancel-button { display: none; }   /* 빈 칸에서는 지우기 x 가 안내 글 자리를 먹지 않게(맛집과 같게) */
     .sort-select {
       min-height: 44px; padding: 0 32px 0 12px; border-radius: var(--r-btn); border: 1px solid var(--line-strong);
       background: var(--surface) no-repeat right 10px center; color: var(--ink); font-size: 14px; -webkit-appearance: none; appearance: none;
@@ -71,13 +72,17 @@
       .post-head .row-title, .post-head .row-meta { white-space: normal; }
       .rm-sub { display: block; }
       .rm-sub + .rm-who::before { content: none; }
+      /* 제목이 여러 줄이어도 종류 표시와 상태 배지는 첫 줄 높이에 둔다 */
+      .post-head .nr-line { align-items: flex-start; }
+      .post-head .type-tag { margin-top: 1px; }
+      .post-head .row-state { align-self: start; margin-top: 1px; }
     }
     .post-row.is-linked .post-head { background: var(--brand-soft); }
     .day-head { margin: 16px 0 0; padding-bottom: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .day-head:first-child { margin-top: 0; }
 
     /* ── 펼친 글 ── */
-    .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-card); }
+    .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
     .pd-lead { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--r-sm); background: linear-gradient(135deg, #F1ECF8, #E7DFF3); border-left: 3px solid var(--brand); color: var(--ink); font-size: 15px; line-height: 1.6; }
     .post-detail .kv { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
     .post-body { color: var(--ink); font-size: var(--fs-body); line-height: 1.75; overflow-wrap: anywhere; }
@@ -125,7 +130,7 @@
     .draft-note .ic { width: 16px; height: 16px; color: var(--gold, #7E5F25); flex: none; }
     .draft-note > span { flex: 1 1 200px; min-width: 0; }
     .draft-note .text-btn { min-height: 30px; }
-    .prompt-card { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
+    .prompt-card { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: var(--r-md); background: linear-gradient(160deg, #F6F2FB, #EDE7F5); border: 1px solid rgba(75, 42, 130, 0.10); }
     .prompt-card .pc-art { width: 96px; height: 96px; border-radius: 20px; box-shadow: var(--shadow-card); }
     .prompt-card .pc-ic { display: none; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--brand); box-shadow: var(--shadow-card); }
     .prompt-card .pc-ic .ic { width: 22px; height: 22px; }
@@ -134,9 +139,17 @@
     .prompt-card.no-image .pc-ic { display: grid; }
     .prompt-card .pc-k { display: block; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .prompt-card .pc-t { display: block; margin-top: 2px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.4; }
-    @media (max-width: 600px) { .prompt-card { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; } .prompt-card .pc-art { width: 80px; height: 80px; border-radius: 16px; } .prompt-card.no-image { grid-template-columns: 44px minmax(0, 1fr); } .prompt-card .btn { grid-column: 1 / -1; width: 100%; } }
+    /* 폰: 그림은 왼쪽에 두 줄 높이로, 버튼은 글감 제목 아래에 붙여 카드 높이를 줄인다 */
+    @media (max-width: 600px) {
+      .prompt-card { grid-template-columns: 80px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px 12px; align-items: start; }
+      .prompt-card .pc-art { width: 80px; height: 80px; border-radius: 16px; grid-row: 1 / span 2; }
+      .prompt-card .pc-ic { grid-row: 1 / span 2; }
+      .prompt-card.no-image { grid-template-columns: 44px minmax(0, 1fr); }
+      .prompt-card > span:not(.pc-ic) { align-self: end; }
+      .prompt-card .btn { grid-column: 2; justify-self: start; }
+    }
     /* ── 이번 주 인기 글 ── */
-    .popular { margin: 14px 0 8px; padding: 12px 16px 6px; border-radius: 14px; background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
+    .popular { margin: 14px 0 8px; padding: 12px 16px 6px; border-radius: var(--r-md); background: var(--surface); border: 1px solid rgba(75, 42, 130, 0.10); box-shadow: var(--shadow-card); }
     .popular .pop-h { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: var(--ink); font-size: var(--fs-sm); font-weight: 700; }
     .popular .pop-h .ic { width: 16px; height: 16px; color: var(--rust); }
     .popular .pop-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); color: inherit; }
@@ -170,8 +183,31 @@
     }
     /* 이 페이지에는 떠 있는 글쓰기 버튼이 늘 있으므로 알림을 그 위로 — site.css 의 body:has() 규칙을 모르는 브라우저(iOS 15.3 이하)를 위한 직접 규칙 */
     @media (max-width: 860px) { .toast { bottom: calc(144px + env(safe-area-inset-bottom)); } }
+    /* 폰에서는 떠 있는 글쓰기 버튼 하나만 둔다 */
+    @media (max-width: 860px) { .cover .cover-actions { display: none; } }
+    /* 폰: 글 목록을 먼저 보이고 글감과 인기 글은 목록 뒤로 */
+    @media (max-width: 640px) {
+      #board > .container { display: flex; flex-direction: column; }
+      #promptCard, #popularWrap { order: 1; }
+      #promptCard { margin-top: 24px; }
+    }
+    /* 폰 글쓰기 시트: 취소와 등록을 시트 아래에 붙여 늘 보이게, 나란히 */
+    @media (max-width: 640px) {
+      .modal-backdrop.is-sheet .write-modal { padding-bottom: 0; scroll-padding-bottom: 84px; }
+      .modal-backdrop.is-sheet .write-modal .modal-foot { position: sticky; bottom: 0; z-index: 1; flex-direction: row; margin: 16px -24px 0; padding: 12px 24px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+      .modal-backdrop.is-sheet .write-modal .modal-foot .btn { width: auto; flex: 1 1 0; }
+    }
+    /* 검색과 정렬을 한 줄에 */
+    @media (max-width: 480px) { .tools-row { flex-wrap: nowrap; } .search-box { flex: 1 1 0; } }
+    /* 펼친 글의 항목: 좁은 폰에서도 이름과 값을 나란히 */
+    @media (max-width: 420px) {
+      .post-detail .kv { grid-template-columns: 6.5em minmax(0, 1fr); gap: 8px 12px; }
+      .post-detail .kv dt { margin-top: 0; }
+    }
+    /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
+    @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=8"></script>
+  <script src="assets/site-core.js?v=9"></script>
   <script src="assets/icons.js?v=2"></script>
   <script src="assets/content.js?v=5"></script>
 </head>
@@ -217,12 +253,12 @@
           <div class="tools-row">
             <label class="search-box">
               <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-              <input id="searchInput" class="input" type="search" placeholder="제목이나 내용 검색" aria-label="소식 검색" autocomplete="off" />
+              <input id="searchInput" class="input" type="search" placeholder="제목, 내용 검색" aria-label="소식 검색" autocomplete="off" />
             </label>
             <label class="sr-only" for="sortSelect">정렬</label>
             <select id="sortSelect" class="sort-select">
               <option value="latest">최신순</option>
-              <option value="popular">반응 많은 순</option>
+              <option value="popular">반응순</option>
             </select>
           </div>
           <div class="tab-row type-tabs" id="filterChips" role="group" aria-label="글 종류">
@@ -246,7 +282,7 @@
         <div class="board-foot"><span id="listNote" aria-live="polite"></span></div>
 
         <div id="setupBanner" class="status-line is-warn" hidden>
-          <span>소식을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.</span>
+          <span>소식을 불러오지 못했습니다.</span>
           <button id="retryBtn" class="btn btn-secondary is-sm" type="button">다시 시도</button>
         </div>
 
@@ -440,7 +476,7 @@
     function typeDesc(cat) {
       if (cat === "벙 소식") {
         const items = state.caps >= 2 ? "날짜, 시간, 장소, 인원, 비용" : "날짜, 시간, 장소, 인원";
-        return items + "을 항목으로 적으면 글을 펼쳤을 때 표로 보이고, 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+        return items + "을 항목으로 적으면 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
       if (state.caps < 2 && (cat === "후기" || cat === "정보" || cat === "공지")) {
@@ -450,7 +486,7 @@
         "자유": "제목과 내용만 있으면 됩니다.",
         "후기": "어떤 모임이었는지와 날짜, 장소를 항목으로 적고, 후기는 내용에 씁니다.",
         "정보": "핵심 내용 한 줄과 출처, 링크, 유효 기간을 항목으로 적습니다.",
-        "공지": "운영진 비밀번호가 필요합니다. 적용 대상, 적용일, 필요한 행동을 항목으로 적으면 목록 맨 위에 고정되고 홈에도 한 건 보입니다."
+        "공지": "운영진 비밀번호가 필요합니다. 목록 맨 위에 고정되고 홈에도 한 건 보입니다."
       }[cat] || "";
     }
     const TYPE_FIELDS = {
@@ -462,10 +498,10 @@
         { key: "to", label: "종료일", type: "date" }
       ],
       "벙 소식": [
-        { key: "date", label: "모임 날짜", type: "date", hint: "오늘 이후 날짜면 홈의 다가오는 모임에 보입니다. 지나면 '지난 모임'으로 표시됩니다." },
+        { key: "date", label: "모임 날짜", type: "date", hint: "날짜가 지나면 '지난 모임'으로 표시됩니다." },
         { key: "time", label: "시간", type: "time" },
         { key: "place", label: "장소", type: "text", max: 60, ph: "예: 강남역 3번 출구" },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다. 참석 신청은 오픈채팅에서 받습니다." },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
         { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
@@ -545,7 +581,7 @@
       const msg = String((err && err.message) || "");
       for (const code of Object.keys(ERROR_MAP)) if (msg.includes(code)) return ERROR_MAP[code];
       if (err && err.status === 404) return OFFLINE_MSG;
-      return "요청을 처리하지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.";
+      return "요청을 처리하지 못했습니다. 다시 시도해 주세요.";
     }
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) {} }
@@ -795,7 +831,7 @@
       const show = list.length && state.category === "전체" && !state.search && !state.degraded;
       w.hidden = !show;
       if (!show) return;
-      w.innerHTML = `<p class="pop-h">${icon("flame")}이번 주 인기 글</p>` + list.map((r, i) => `<a class="pop-row" href="#post-${r.id}" data-act="goto" data-id="${r.id}"><span class="pop-n">${i + 1}</span><span class="pop-t">${esc(r.title || "제목 없음")}</span><span class="pop-m">반응 ${Number(r.reaction_count) || 0}, 댓글 ${Number(r.comment_count) || 0}</span></a>`).join("");
+      w.innerHTML = `<p class="pop-h">${icon("flame")}이번 주 인기 글</p>` + list.map((r, i) => `<a class="pop-row" href="#post-${r.id}" data-act="goto" data-id="${r.id}"><span class="pop-n">${i + 1}</span><span class="pop-t">${esc(r.title || "제목 없음")}</span><span class="pop-m">${[Number(r.reaction_count) ? "반응 " + Number(r.reaction_count) : "", Number(r.comment_count) ? "댓글 " + Number(r.comment_count) : ""].filter(Boolean).join(", ")}</span></a>`).join("");
     }
     function renderList() {
       const posts = state.posts;
@@ -912,7 +948,7 @@
       $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
       $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
       $("wBodyLabel").textContent = cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
-      $("wPassHint").textContent = cat === "공지" ? "공지는 운영진 비밀번호로만 올리며 목록 맨 위에 고정됩니다." : "글을 수정하거나 삭제할 때 필요합니다.";
+      $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
     }
     function readMeta() {
@@ -1153,9 +1189,23 @@
       if (state.commentsCache[id] === undefined) loadComments(id);
       focusPostCard(id);
     }
+    // 펼치거나 접은 뒤에도 누른 글의 제목 줄이 손가락 아래에 남게 한다. 64 는 site.css 의 scroll-padding-top
+    function keepHeadInPlace(id, fn) {
+      const sel = "#post-" + id + " .post-head";
+      const h0 = document.querySelector(sel);
+      const y0 = h0 ? h0.getBoundingClientRect().top : null;
+      fn();
+      const h1 = document.querySelector(sel);
+      if (y0 === null || !h1) return;
+      const target = Math.max(64, Math.min(y0, innerHeight - 160));
+      const dy = h1.getBoundingClientRect().top - target;
+      if (Math.abs(dy) < 2) return;
+      const root = document.documentElement, prev = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto"; window.scrollBy(0, dy); root.style.scrollBehavior = prev;
+    }
     function toggleExpand(id) {
-      if (state.expandedId === id) { state.expandedId = null; syncHash(null); renderList(); return; }
-      state.expandedId = id; syncHash(id); renderList();
+      if (state.expandedId === id) { keepHeadInPlace(id, () => { state.expandedId = null; syncHash(null); renderList(); }); return; }
+      keepHeadInPlace(id, () => { state.expandedId = id; syncHash(id); renderList(); });
       if (state.commentsCache[id] === undefined) loadComments(id);
     }
     function refetchList() {
@@ -1199,7 +1249,7 @@
         refetchList();
       });
       $("moreBtn").addEventListener("click", () => loadPosts(false));
-      $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true).then(openFromHash).then(openPromptFromHash).then(loadPopular); });
+      $("retryBtn").addEventListener("click", () => { renderListLoading(); loadPosts(true).then(openPromptFromHash).then(loadPopular).then(openFromHash); });
 
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
@@ -1252,7 +1302,7 @@
     renderTypeFields("자유", null);
     C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta()); });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
     renderListLoading();
-    loadPosts(true).then(openFromHash).then(openPromptFromHash).then(loadPopular);
+    loadPosts(true).then(openPromptFromHash).then(loadPopular).then(openFromHash);
     window.addEventListener("hashchange", openFromHash);
   </script>
 </body>
