@@ -283,7 +283,7 @@
     .field-hint .text-btn, #reuseLabelBtn { min-height: 32px; padding: 0 6px; vertical-align: middle; }
     .auto-note summary { display: inline-flex; align-items: center; min-height: 32px; }
   </style>
-  <script src="assets/site-core.js?v=9"></script>
+  <script src="assets/site-core.js?v=10"></script>
   <script src="assets/icons.js?v=2"></script>
 </head>
 <body>
@@ -1216,7 +1216,7 @@
         const btn = $("notifyBtn"); btn.disabled = true;
         const url = location.origin + "/report.html";
         try {
-          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계" + (st.periodLabel ? " (" + st.periodLabel + ")" : ""), description: publishedSummary(st), url, buttonTitle: "통계 보기" }) : "fail";
+          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계" + (st.periodLabel ? " (" + st.periodLabel + ")" : ""), description: publishedSummary(st), url, imageUrl: location.origin + "/assets/og-report.jpg?v=3", buttonTitle: "통계 보기" }) : "fail";
           if (r === "copy") EXCER.toast("카카오톡 공유 창을 열지 못해 통계 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
           else if (r === "fail") EXCER.toast("복사에 실패했습니다. 주소창의 report.html 링크를 직접 올려 주세요.");
         } finally { btn.disabled = false; }
@@ -1487,7 +1487,10 @@
         try {
           await supaFetch("/rest/v1/rpc/report_delete", { method: "POST", body: JSON.stringify({ p_pass: pass, p_id: -1 }) });
           gateFails = 0; gateMessage("");
-          try { localStorage.setItem("excer_admin_device", "1"); } catch (e) {}   // 이 기기를 운영진 기기로 표시(맛집 위치 잡기 버튼). 비밀번호는 저장하지 않는다
+          try {
+            localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(맛집 위치 잡기 버튼, 글 비밀번호 저장 안 함). 비밀번호는 저장하지 않는다
+            if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 예전에 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
+          } catch (e) {}
           unlock(pass);
         } catch (err) {
           const m = String((err && err.message) || "");

@@ -81,7 +81,9 @@
     function share(opts) {
       opts = opts || {};
       var url = opts.url || location.href;
-      var image = opts.imageUrl || (location.origin + "/assets/og.jpg?v=2");
+      // 카드 그림: 따로 주지 않으면 그 페이지의 미리보기 그림(og:image)을 쓴다. 붙여 넣은 링크 미리보기와 같은 그림이 되게
+      var og = document.querySelector('meta[property="og:image"]');
+      var image = opts.imageUrl || (og && og.content) || (location.origin + "/assets/og.jpg?v=3");
       return loadSdk().then(function (Kakao) {
         Kakao.Share.sendDefault({
           objectType: "feed",
