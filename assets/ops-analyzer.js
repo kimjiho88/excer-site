@@ -299,7 +299,15 @@
         var out = lastLeave && lastLeave.t > p.lastT && (!lastJoin || lastLeave.t > lastJoin.t);
         var status = out ? (lastLeave.how === "kick" ? "kicked" : "left") : "in";
         var joinedAt = lastJoin ? lastJoin.date : "";
-        var kickedThenBack = leaves.some(function (l) { return l.how === "kick" && (l.gapAfter || joins.some(function (j) { return j.t > l.t; })); });
+        // 내보낸 뒤 다시 들어온 때(규칙 기준일과 견주려고 날짜를 남긴다)
+        var kickReturns = [];
+        leaves.forEach(function (l) {
+          if (l.how !== "kick") return;
+          var back = null; for (var i = 0; i < joins.length; i++) if (joins[i].t > l.t) { back = joins[i].date; break; }
+          if (!back && l.gapAfter) back = l.gapAfter;
+          if (back) kickReturns.push({ kick: l.date, back: back });
+        });
+        var kickedThenBack = kickReturns.length > 0;
         var sysNames = evs.map(function (e) { return e.name; }).filter(function (x, i, a) { return x !== n && a.indexOf(x) === i; });
         var roleHist = roles.filter(function (r) { return r.name === n || r.from === n; }).map(function (r) { return { d: r.d, act: r.name === n ? r.act : "owner_off" }; });
         var parts = nickParts(n);
@@ -343,7 +351,7 @@
         return {
           name: n, head: p.head, dflt: isDefaultName(n), parts: { region: parts.region, sex: parts.sex, birth: parts.birth, birthYear: parts.birthYear || null, day: parts.day, heart: parts.heart, heartKind: parts.heartKind },
           fmtOk: parts.ok, fmtIssues: parts.issues, limit: limit,
-          status: status, outDate: out ? lastLeave.date : "", outBy: out && lastLeave.by ? lastLeave.by : "", joinedAt: joinedAt, joinedBeforeFile: !lastJoin && p.firstT <= fileStartT + 7 * DAY, kickedThenBack: kickedThenBack,
+          status: status, outDate: out ? lastLeave.date : "", outBy: out && lastLeave.by ? lastLeave.by : "", joinedAt: joinedAt, joinedBeforeFile: !lastJoin && p.firstT <= fileStartT + 7 * DAY, kickedThenBack: kickedThenBack, kickReturns: kickReturns,
           role: owner === n && status === "in" ? "owner" : subs[n] && status === "in" ? "sub" : "", roles: roleHist,
           reentries: re.sort(function (a, b) { return a.d < b.d ? -1 : 1; }), sysNames: sysNames,
           events: evs.slice(-20).map(function (e) { return { k: e.kind, d: e.date, t: e.hm, how: e.how, by: e.by, name: e.name, via: e.via, key: e.key }; }),

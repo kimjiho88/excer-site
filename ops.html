@@ -303,15 +303,31 @@
     const members = () => people().filter((p) => p.status === "in" && !p.dflt);
     const byPid = (pid) => people().find((p) => p.pid === pid);
     const exc = (pid) => S.records.exceptions[pid] || {};
+    /* 규칙 기준일(운영자 결정 2025-06-12): 재입장과 내보낸 뒤 다시 들어옴은 이 날부터 센다 */
+    const RULE_FROM = "2025-06-12";
+    const ruleFrom = () => (S.records.settings && S.records.settings.ruleFrom) || RULE_FROM;
+    const reAfter = (p) => (p.reentries || []).filter((r) => r.d >= ruleFrom());
     function effFlags(p) {
       const e = exc(p.pid);
       const awayOn = e.awayUntil && e.awayUntil >= todayKST();
-      return (p.flags || []).filter((f) => {
+      const out = (p.flags || []).filter((f) => {
         if (awayOn && (f.c === "silent" || f.c === "drop")) return false;
-        if (f.c === "reentry" && p.limit != null && p.reentries.length <= p.limit + (+e.reentry || 0)) return false;
+        if (f.c === "reentry" || f.c === "reentry_info") return false;   // 아래에서 기준일로 다시 센다
+        if (f.c === "kick_return" && p.kickReturns && !p.kickReturns.some((k) => k.back >= ruleFrom())) return false;
         if (f.c === "day_missing") { const from = S.records.settings && S.records.settings.dayFrom; if (!from || !p.joinedAt || p.joinedAt < from) return false; }
         return true;
+      }).map((f) => {
+        if (f.c !== "kick_return" || !p.kickReturns) return f;
+        const k = p.kickReturns.filter((x) => x.back >= ruleFrom());
+        return Object.assign({}, f, { x: k.map((x) => "내보냄 " + md(x.kick) + ", 다시 " + md(x.back)).join(" / ") });
       });
+      const n = reAfter(p).length, lim = p.limit;
+      if (n) {
+        const allow = lim != null ? lim + (+e.reentry || 0) : null;
+        if (allow != null && n > allow) out.unshift({ c: "reentry", l: "rule", t: "재입장 한도 초과", x: n + "회, 한도 " + lim + "회" + (+e.reentry ? "(예외 +" + e.reentry + ")" : "") });
+        else out.push({ c: "reentry_info", l: "info", t: "재입장 " + n + "회" + (allow != null && n === allow ? "(한도에 닿음)" : ""), x: n + "회, " + (lim != null ? "한도 " + lim + "회" : "출생연도를 몰라 한도 판정 못 함") + (allow != null && n === allow ? ", 한도에 닿음" : "") });
+      }
+      return out;
     }
     const QUIET = ["silent", "drop"];   // 대기열과 신호 탭에서 빼고 점검에만
     function pending(p) {
@@ -436,8 +452,11 @@
         });
         const dayFrom = S.records.settings.dayFrom || "";
         rulesHtml = `<div class="panel"><h2>규칙 점검</h2><p class="sub">지금 방에 있는 사람만 봅니다. 재입장은 같은 이름의 들어옴, 나감 줄로 세고, 닉네임 변경은 지난 저장본과 비교합니다.</p>
-          <label class="field"><span>입장일 칸 적용 시작일</span><input id="dayFrom" class="input" type="date" value="${esc(dayFrom)}" /></label>
-          <p class="sub">이 날부터 들어온 사람만 입장일 칸 없음으로 봅니다.${dayFrom ? "" : " 비워 두면 보지 않습니다."}</p>
+          <div class="form-row">
+            <label class="field"><span>규칙 기준일</span><input id="ruleFrom" class="input" type="date" value="${esc(ruleFrom())}" /></label>
+            <label class="field"><span>입장일 칸 적용 시작일</span><input id="dayFrom" class="input" type="date" value="${esc(dayFrom)}" /></label>
+          </div>
+          <p class="sub">재입장과 내보낸 뒤 다시 들어옴은 규칙 기준일부터 셉니다. 입장일 칸은 적용 시작일부터 들어온 사람만 봅니다${dayFrom ? "" : "(비워 두면 보지 않음)"}.</p>
           ${groups.join("")}</div>`;
         const un = S.ledger.unlinked || [];
         const ug = unlinkedGroups();
@@ -474,6 +493,8 @@
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) { view.open.add(k); view.closed.delete(k); } else { view.open.delete(k); view.closed.add(k); } }));
       const df = $("dayFrom");
       if (df) df.addEventListener("change", () => { S.records.settings.dayFrom = df.value; saveRecords(); renderAll(); });
+      const rf = $("ruleFrom");
+      if (rf) rf.addEventListener("change", () => { if (rf.value) S.records.settings.ruleFrom = rf.value; else delete S.records.settings.ruleFrom; saveRecords(); renderAll(); });
       host.querySelectorAll("[data-link]").forEach((b) => b.addEventListener("click", () => {
         const key = b.dataset.link, head = b.dataset.head;
         const sel = document.createElement("select");
@@ -522,7 +543,7 @@
       return [...g.entries()].map(([name, lines]) => {
         lines.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
         const joins = lines.filter((l) => l.k === "join");
-        const re = joins.filter((j) => lines.some((l) => l.d + l.t < j.d + j.t)).length;
+        const re = joins.filter((j) => j.d >= ruleFrom() && lines.some((l) => l.d + l.t < j.d + j.t)).length;
         const limit = OpsAnalyzer.nickParts(name).reentryLimit || null;
         return { name, lines, joins: joins.length, leaves: lines.filter((l) => l.k === "leave" && l.how !== "kick").length, kicks: lines.filter((l) => l.how === "kick").length, re, limit, over: limit != null && re > limit };
       }).sort((a, b) => (b.over - a.over) || (b.re - a.re) || b.lines[b.lines.length - 1].d.localeCompare(a.lines[a.lines.length - 1].d));
@@ -644,10 +665,10 @@
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
           ${pend.length ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
         </div>
-        <div class="panel"><h2>들어옴, 나감 <small>재입장 ${p.reentries.length}회${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 예외 +" + e.reentry : ""}</small></h2>
+        <div class="panel"><h2>들어옴, 나감 <small>재입장 ${reAfter(p).length}회(기준일 뒤)${p.reentries.length !== reAfter(p).length ? ", 전체 " + p.reentries.length + "회" : ""}${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 예외 +" + e.reentry : ""}</small></h2>
           ${evs ? `<ul class="timeline">${evs}</ul>` : `<p class="sub">이 파일에 이 사람의 들어옴, 나감 줄이 없습니다.</p>`}
           ${(p.roles || []).length ? `<p class="sub">운영진 기록: ${p.roles.map((r) => esc(md(r.d)) + " " + ({ sub_on: "부방장이 됨", sub_off: "부방장 해제", owner: "방장이 됨", owner_off: "방장을 넘김" }[r.act] || "")).join(", ")}</p>` : ""}
-          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.via === "gap" ? "(들어옴 줄 없음)" : "") + (r.stay != null ? "(앞 머묾 " + r.stay + "일)" : "")).join(", ")}</p>` : ""}
+          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.d < ruleFrom() ? "(기준일 전)" : "") + (r.via === "gap" ? "(들어옴 줄 없음)" : "") + (r.stay != null ? "(앞 머묾 " + r.stay + "일)" : "")).join(", ")}</p>` : ""}
         </div>
         <div class="panel"><h2>닉네임 이력</h2>
           ${names ? `<ul class="timeline">${names}</ul><p class="sub">날짜는 그 이름이 보인 파일의 마지막 대화 날짜입니다.</p>` : ""}
