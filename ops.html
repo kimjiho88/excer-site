@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="only light" />
+  <meta name="theme-color" content="#F7F5EF" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <title>운영 대시보드</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=20" />
+  <script src="assets/chat-parser.js?v=7"></script>
+  <script src="assets/ops-analyzer.js?v=1"></script>
+  <style>
+    /* 운영 대시보드(운영자 전용). 폰에서 먼저 보기 좋게 */
+    body { background: var(--bg, #F7F5EF); }
+    .ops-top { position: sticky; top: 0; z-index: 20; background: rgba(247, 245, 239, 0.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
+    .ops-top-in { display: flex; align-items: center; gap: 10px; min-height: 52px; }
+    .ops-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .ops-stamp { flex: 1; min-width: 0; color: var(--ink-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ops-tabs { position: sticky; top: 52px; z-index: 19; background: rgba(247, 245, 239, 0.96); border-bottom: 1px solid var(--line); }
+    .ops-tabs-in { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-top: 8px; padding-bottom: 8px; }
+    .ops-tabs-in::-webkit-scrollbar { display: none; }
+    .ops-tabs button { flex: none; min-height: 36px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 14px; font-weight: 600; }
+    .ops-tabs button[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .ops-tabs button b { margin-left: 4px; font-variant-numeric: tabular-nums; }
+    .ops-body { padding-top: 16px; padding-bottom: 64px; display: grid; gap: 14px; }
+    .ops-body > section[hidden] { display: none; }
+    .ops-gate { min-height: 70vh; display: grid; place-items: center; }
+    .gate-card { width: 100%; max-width: 400px; display: grid; gap: 12px; }
+    .gate-card h1 { margin: 0; font-size: 20px; }
+    .gate-msg { margin: 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--danger-soft); color: var(--ink); font-size: 14px; }
+    .gate-msg[hidden] { display: none; }
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+    .panel h2 { margin: 0; font-size: 16px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .panel h2 small { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+    .panel .sub { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+    .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    @media (min-width: 720px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .tile { padding: 12px; border-radius: var(--r-sm); background: var(--surface-2); display: grid; gap: 2px; }
+    .tile span { color: var(--ink-2); font-size: 12px; }
+    .tile strong { font-size: 22px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .tile small { color: var(--ink-2); font-size: 12px; }
+    .rows { display: grid; gap: 6px; }
+    .prow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; text-align: left; width: 100%; font: inherit; color: inherit; cursor: pointer; }
+    @media (hover: hover) { .prow:hover { border-color: var(--line-strong); } }
+    .prow .pn { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; }
+    .prow .pm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; color: var(--ink-2); font-size: 12px; }
+    .prow .pr { text-align: right; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .prow .pr b { display: block; color: var(--ink); font-size: 14px; }
+    .tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--surface-2); color: var(--ink); }
+    .tag.rule { background: var(--danger-soft); color: var(--danger); }
+    .tag.watch { background: #FFF1D6; color: #7A4A00; }
+    .tag.good { background: #E4F4EA; color: #1F6B3A; }
+    .tag.out { background: #EEE; color: #555; }
+    .tag.in { background: var(--brand-soft); color: var(--brand); }
+    .tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips button { min-height: 32px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: #fff; font-size: 13px; font-weight: 600; color: var(--ink); }
+    .chips button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .chips button b { margin-left: 4px; font-variant-numeric: tabular-nums; }
+    .empty { margin: 0; padding: 12px; color: var(--ink-2); font-size: 13px; text-align: center; }
+    .group { display: grid; gap: 8px; }
+    .group > h3, details.group > summary h3 { margin: 6px 0 0; font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; overflow-wrap: anywhere; }
+    details.group > summary { list-style: none; cursor: pointer; }
+    details.group > summary::-webkit-details-marker { display: none; }
+    details.group > summary h3 { margin: 6px 0 0; min-height: 32px; }
+    details.group > summary h3::after { content: ""; width: 7px; height: 7px; margin: 0 4px 0 auto; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg) translate(-2px, -2px); flex: none; }
+    details.group[open] > summary h3::after { transform: rotate(-135deg) translate(-2px, -2px); }
+    details.group[open] > summary { margin-bottom: 8px; }
+    .ev { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+    .ev li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; font-size: 13px; padding: 6px 8px; border-radius: var(--r-sm); background: var(--surface-2); }
+    .ev li time { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ev li span { overflow-wrap: anywhere; }
+    .ev li b { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .tbl th, .tbl td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    .tbl th:first-child, .tbl td:first-child { text-align: left; }
+    .tbl th { color: var(--ink-2); font-weight: 600; font-size: 12px; }
+    .tbl-wrap { overflow-x: auto; }
+    .bars { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; align-items: end; height: 80px; }
+    .bars i { display: block; background: var(--brand); border-radius: 2px 2px 0 0; min-height: 1px; }
+    .bars-x { display: grid; grid-template-columns: repeat(4, 1fr); color: var(--ink-2); font-size: 11px; }
+    .bars.is-week { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+    .bars-x.is-week { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; text-align: center; }
+    .kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; }
+    @media (min-width: 720px) { .kv { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .kv div { display: grid; gap: 1px; }
+    .kv dt { color: var(--ink-2); font-size: 12px; }
+    .kv dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+    .nick-cells { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+    .nick-cells div { padding: 8px 4px; text-align: center; border-left: 1px solid var(--line); display: grid; gap: 2px; min-width: 0; }
+    .nick-cells div:first-child { border-left: 0; }
+    .nick-cells span { color: var(--ink-2); font-size: 11px; }
+    .nick-cells b { font-size: 14px; overflow-wrap: anywhere; }
+    .nick-cells b.miss { color: var(--danger); }
+    .timeline { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+    .timeline li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+    .timeline time { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .form-row { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-row .wide { grid-column: 1 / -1; }
+    .save-state { color: var(--ink-2); font-size: 12px; }
+    .dropzone { border: 2px dashed var(--line-strong); border-radius: var(--r-md); padding: 24px 16px; text-align: center; background: var(--surface-2); cursor: pointer; }
+    .dropzone.is-over { border-color: var(--brand); background: var(--brand-soft); }
+    .notice { padding: 10px 12px; border-radius: var(--r-sm); background: #FFF1D6; color: #5A3A00; font-size: 13px; line-height: 1.55; }
+    .notice[hidden] { display: none; }
+    .ops-sheet { position: fixed; inset: 0; z-index: 50; background: rgba(20, 16, 28, 0.45); display: flex; justify-content: flex-end; }
+    .ops-sheet[hidden] { display: none; }
+    .sheet-in { width: min(640px, 100%); height: 100%; overflow-y: auto; background: var(--bg, #F7F5EF); padding: 0 16px 48px; overscroll-behavior: contain; }
+    .sheet-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 12px 0; background: var(--bg, #F7F5EF); border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+    .sheet-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 17px; overflow-wrap: anywhere; }
+    .sheet-body { display: grid; gap: 12px; }
+    details.more > summary { cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 700; min-height: 28px; display: flex; align-items: center; }
+  </style>
+</head>
+<body>
+  <header class="ops-top">
+    <div class="container ops-top-in">
+      <b class="ops-title">운영 대시보드</b>
+      <span id="opsStamp" class="ops-stamp" aria-live="polite"></span>
+      <button id="lockBtn" class="mini-btn" type="button" hidden>잠그기</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="gate" class="container ops-gate">
+      <form id="gateForm" class="panel gate-card" autocomplete="on">
+        <h1>운영 대시보드</h1>
+        <div class="field">
+          <label for="gatePass">운영진 비밀번호</label>
+          <input id="gatePass" class="input" type="password" autocomplete="current-password" required />
+        </div>
+        <p id="gateMsg" class="gate-msg" role="alert" hidden></p>
+        <button id="gateBtn" class="btn btn-primary" type="submit">열기</button>
+        <button id="localBtn" class="btn btn-secondary" type="button" hidden>저장 없이 파일로 보기</button>
+      </form>
+    </section>
+
+    <div id="app" hidden>
+      <nav class="ops-tabs" aria-label="운영 대시보드"><div class="container ops-tabs-in" role="tablist">
+        <button type="button" role="tab" data-tab="home" aria-selected="true">한눈에</button>
+        <button type="button" role="tab" data-tab="members" aria-selected="false">멤버</button>
+        <button type="button" role="tab" data-tab="checks" aria-selected="false">점검 <b id="tbChecks"></b></button>
+        <button type="button" role="tab" data-tab="signals" aria-selected="false">신호</button>
+        <button type="button" role="tab" data-tab="flow" aria-selected="false">흐름</button>
+        <button type="button" role="tab" data-tab="records" aria-selected="false">기록</button>
+        <button type="button" role="tab" data-tab="files" aria-selected="false">파일</button>
+      </div></nav>
+      <div class="container ops-body">
+        <p id="unsavedNote" class="notice" hidden>새로 분석한 결과를 아직 서버에 저장하지 않았습니다. 파일 탭에서 저장하면 다른 기기에서도 보입니다.</p>
+        <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 파일 탭에서 카카오톡 대화 내보내기 파일을 올려 주세요.</p>
+        <section data-panel="home"></section>
+        <section data-panel="members" hidden></section>
+        <section data-panel="checks" hidden></section>
+        <section data-panel="signals" hidden></section>
+        <section data-panel="flow" hidden></section>
+        <section data-panel="records" hidden></section>
+        <section data-panel="files" hidden>
+          <div class="panel">
+            <h2>대화 파일</h2>
+            <p class="sub">카카오톡 채팅방 메뉴의 대화 내보내기로 받은 .txt 파일입니다. 여러 파일을 함께 올리면 겹치는 부분은 한 번만 셉니다. 파일은 이 기기 안에서만 읽고, 서버에는 분석 결과와 신호에 걸린 줄의 짧은 발췌만 저장합니다.</p>
+            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 끌어다 놓기"><b>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</b></div>
+            <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" aria-label="대화 파일 선택" />
+            <div id="fileInfo" class="rows"></div>
+            <div class="chips">
+              <button id="saveBtn" class="btn btn-primary" type="button" disabled>서버에 저장</button>
+            </div>
+            <p id="saveState" class="save-state"></p>
+          </div>
+          <div class="panel" id="unreadPanel" hidden>
+            <h2>읽지 못한 줄 <small id="unreadCount"></small></h2>
+            <p class="sub">시스템 알림 가운데 뜻을 알지 못한 줄입니다. 대화 내용이 아니라 알림 문구입니다. 비어 있으면 모두 읽은 것입니다.</p>
+            <ul id="unreadList" class="ev"></ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="sheet" class="ops-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-in">
+      <div class="sheet-head"><h2 id="sheetTitle"></h2><button id="sheetClose" class="mini-btn" type="button">닫기</button></div>
+      <div id="sheetBody" class="sheet-body"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/site-core.js?v=10"></script>
+  <script>
+  (function () {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const nf = (n) => Number(n || 0).toLocaleString("ko-KR");
+    const SUPA = window.SUPA;
+    let toastTimer = null;
+    function toast(msg) { const el = $("toast"); if (!el) return; el.textContent = msg; el.classList.add("is-visible"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("is-visible"), 2600); }
+    function todayKST() { try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+    function md(d) { if (!d) return ""; const [y, m, dd] = d.split("-").map(Number); return y + "." + m + "." + dd; }
+    function dnum(d) { return Math.floor(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 86400000); }
+
+    /* ── 상태: 비밀번호는 이 탭의 메모리에만 ── */
+    let PASS = "";
+    let localOnly = false;
+    const S = { ledger: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {} }, history: { people: [] }, savedAt: "", unsaved: false };
+    let parsedFiles = [];
+    let tab = "home";
+    const view = { q: "", filter: "all", sort: "count", sigSide: "bad", open: new Set(["fmt", "day", "reentry", "kick_return", "name_change", "deleted"]) };
+
+    /* ── 서버 ── */
+    async function rpc(name, body) {
+      const res = await fetch(SUPA.url + "/rest/v1/rpc/" + name, { method: "POST", headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) { let msg = ""; try { const j = await res.json(); msg = (j.code || "") + " " + (j.message || ""); } catch (e) {} const err = new Error(msg || "HTTP " + res.status); err.status = res.status; throw err; }
+      return res.json();
+    }
+    const missingFn = (e) => e && (e.status === 404 || /PGRST202|Could not find the function|does not exist/i.test(e.message || ""));
+    async function opsGet(keys) { const r = await rpc("ops_get", { p_pass: PASS, p_keys: keys || null }); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r.data || {}; }
+    async function opsPut(key, value) { if (localOnly) return null; const r = await rpc("ops_put", { p_pass: PASS, p_key: key, p_value: value }); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r.updated_at; }
+    let recTimer = null;
+    function saveRecords() {
+      if (localOnly) return;
+      clearTimeout(recTimer);
+      setStamp("기록 저장 중");
+      recTimer = setTimeout(async () => {
+        try { await opsPut("records", S.records); setStamp("기록 저장함"); }
+        catch (e) { setStamp("기록 저장 실패"); toast(e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "기록을 저장하지 못했습니다. 연결을 확인해 주세요."); }
+      }, 500);
+    }
+    function setStamp(extra) {
+      const L = S.ledger;
+      const base = L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) + (S.savedAt ? ", 저장 " + S.savedAt.slice(0, 10) : "") : "";
+      $("opsStamp").textContent = [base, extra].filter(Boolean).join(", ");
+    }
+
+    /* ── 문 ── */
+    $("gateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pass = $("gatePass").value;
+      if (!pass) return;
+      const btn = $("gateBtn"); btn.disabled = true; btn.textContent = "확인 중";
+      const msg = $("gateMsg"); msg.hidden = true;
+      try {
+        PASS = pass;
+        const data = await opsGet(null);
+        S.ledger = data.ledger ? data.ledger.value : null;
+        S.savedAt = data.ledger ? data.ledger.updated_at : "";
+        if (data.records) S.records = Object.assign({ actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {} }, data.records.value);
+        if (data.history) S.history = data.history.value;
+        $("gatePass").value = "";
+        openApp();
+      } catch (err) {
+        PASS = "";
+        msg.hidden = false;
+        if (err.code === "BAD_PASS") msg.textContent = "비밀번호가 맞지 않습니다.";
+        else if (err.code === "LOCKED") msg.textContent = "여러 번 틀려서 이 연결을 잠시 막았습니다. 15분 뒤 다시 시도해 주세요.";
+        else if (missingFn(err)) { msg.textContent = "서버 설정이 아직 없습니다. Supabase SQL Editor 에서 sql/2026-09-27-ops-store.sql 을 한 번 실행해 주세요. 그 전에는 저장 없이 파일로만 볼 수 있습니다."; $("localBtn").hidden = false; }
+        else msg.textContent = "서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.";
+      } finally { btn.disabled = false; btn.textContent = "열기"; }
+    });
+    $("localBtn").addEventListener("click", () => { localOnly = true; openApp(); setTab("files"); });
+    $("lockBtn").addEventListener("click", () => { PASS = ""; location.reload(); });
+    function openApp() {
+      $("gate").hidden = true; $("app").hidden = false; $("lockBtn").hidden = false;
+      $("saveBtn").textContent = localOnly ? "저장 안 함(서버 설정 전)" : "서버에 저장";
+      renderAll();
+    }
+
+    /* ── 탭 ── */
+    document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+    function setTab(t) {
+      tab = t;
+      document.querySelectorAll("[data-tab]").forEach((b) => { b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"); if (b.dataset.tab === t) try { b.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {} });
+      document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== t; });
+      window.scrollTo({ top: 0 });
+    }
+
+    /* ── 사람 보조 ── */
+    const people = () => (S.ledger && S.ledger.people) || [];
+    const byPid = (pid) => people().find((p) => p.pid === pid);
+    const exc = (pid) => S.records.exceptions[pid] || {};
+    function effFlags(p) {
+      const e = exc(p.pid);
+      const awayOn = e.awayUntil && e.awayUntil >= todayKST();
+      return (p.flags || []).filter((f) => {
+        if (awayOn && (f.c === "silent" || f.c === "drop")) return false;
+        if (f.c === "reentry" && p.limit != null && p.reentries.length <= p.limit + (+e.reentry || 0)) return false;
+        return true;
+      });
+    }
+    const QUIET = ["silent", "drop"];   // 대기열과 신호 탭에서 빼고 점검에만
+    function pending(p) {
+      const rv = S.records.reviewed[p.pid] || {};
+      return effFlags(p).filter((f) => (f.l === "rule" || f.l === "watch") && !QUIET.includes(f.c) && rv[f.c] !== f.x);
+    }
+    function statusTag(p) {
+      if (p.status === "kicked") return `<span class="tag out">내보냄 ${esc(md(p.outDate))}</span>`;
+      if (p.status === "left") return `<span class="tag out">나감 ${esc(md(p.outDate))}</span>`;
+      return `<span class="tag in">방에 있음</span>`;
+    }
+    function flagTags(list) { return list.map((f) => `<span class="tag ${esc(f.l)}">${esc(f.t)}</span>`).join(""); }
+    function personRow(p, extra) {
+      const fl = effFlags(p).filter((f) => f.l !== "info");
+      return `<button class="prow" type="button" data-person="${esc(p.pid)}">
+        <span class="pn">${esc(p.name)}</span>
+        <span class="pr"><b>${nf(p.d30)}</b>최근 30일</span>
+        <span class="pm">${statusTag(p)}${p.joinedAt ? `<span>들어옴 ${esc(md(p.joinedAt))}</span>` : ""}<span>마지막 ${esc(md(p.last))}</span>${extra || ""}${flagTags(fl.slice(0, 4))}${fl.length > 4 ? `<span>외 ${fl.length - 4}</span>` : ""}</span>
+      </button>`;
+    }
+    document.addEventListener("click", (e) => { const b = e.target.closest("[data-person]"); if (b) openPerson(b.dataset.person); });
+
+    /* ── 한눈에 ── */
+    function renderHome() {
+      const host = document.querySelector('[data-panel="home"]');
+      const L = S.ledger;
+      if (!L) { host.innerHTML = ""; return; }
+      const end = L.range.to, endN = dnum(end);
+      const lastM = L.months[L.months.length - 1] || { joins: 0, leaves: 0, kicks: 0, net: 0 };
+      const queue = people().map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length).sort((a, b) => b.list.filter((f) => f.l === "rule").length - a.list.filter((f) => f.l === "rule").length || b.list.length - a.list.length);
+      const kickBack = queue.filter((x) => x.list.some((f) => f.c === "kick_return"));
+      const newbies = people().filter((p) => p.status === "in" && p.joinedAt && endN - dnum(p.joinedAt) <= 30).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+      const gone = people().filter((p) => p.status !== "in" && p.outDate && endN - dnum(p.outDate) <= 30).sort((a, b) => b.outDate.localeCompare(a.outDate));
+      host.innerHTML = `
+        <div class="panel">
+          <h2>한눈에 <small>대화 ${esc(md(L.range.from))} ~ ${esc(md(end))} 기준</small></h2>
+          <div class="tiles">
+            <div class="tile"><span>방에 있는 사람</span><strong>${nf(L.inRoom)}</strong><small>말한 적 있는 사람 중</small></div>
+            <div class="tile"><span>${esc(lastM.m || "")} 들어옴</span><strong>${nf(lastM.joins)}</strong><small>나감 ${nf(lastM.leaves)}, 내보냄 ${nf(lastM.kicks)}</small></div>
+            <div class="tile"><span>확인할 사람</span><strong>${nf(queue.length)}</strong><small>규칙 ${nf(queue.filter((x) => x.list.some((f) => f.l === "rule")).length)}명</small></div>
+            <div class="tile"><span>신입(30일 안)</span><strong>${nf(newbies.length)}</strong><small>들어온 뒤 말한 사람</small></div>
+          </div>
+        </div>
+        ${kickBack.length ? `<div class="panel"><h2>내보낸 뒤 다시 들어온 사람 <small>${kickBack.length}명</small></h2><div class="rows">${kickBack.map((x) => personRow(x.p)).join("")}</div></div>` : ""}
+        <div class="panel">
+          <h2>확인할 사람 <small>${queue.length}명</small></h2>
+          <p class="sub">규칙과 신호에 걸린 사람입니다. 상세에서 확인함을 누르면, 새로 걸리거나 횟수가 늘 때만 다시 올라옵니다.</p>
+          <div class="rows">${queue.length ? queue.slice(0, 60).map((x) => personRow(x.p)).join("") : `<p class="empty">확인할 사람이 없습니다.</p>`}</div>
+        </div>
+        <div class="panel">
+          <h2>신입 <small>들어온 지 30일 안, ${newbies.length}명</small></h2>
+          <div class="rows">${newbies.length ? newbies.map((p) => personRow(p, `<span>${endN - dnum(p.joinedAt)}일째</span>`)).join("") : `<p class="empty">없습니다.</p>`}</div>
+        </div>
+        <div class="panel">
+          <h2>최근 나간 사람 <small>30일 안, ${gone.length}명</small></h2>
+          <div class="rows">${gone.length ? gone.map((p) => personRow(p)).join("") : `<p class="empty">없습니다.</p>`}</div>
+        </div>`;
+    }
+
+    /* ── 멤버 ── */
+    function renderMembers() {
+      const host = document.querySelector('[data-panel="members"]');
+      if (!S.ledger) { host.innerHTML = ""; return; }
+      const all = people();
+      const endN = dnum(S.ledger.range.to);
+      const F = {
+        all: () => true, in: (p) => p.status === "in", left: (p) => p.status === "left", kicked: (p) => p.status === "kicked",
+        newbie: (p) => p.status === "in" && p.joinedAt && endN - dnum(p.joinedAt) <= 30,
+        acted: (p) => S.records.actions.some((a) => a.pid === p.pid), flagged: (p) => effFlags(p).some((f) => f.l === "rule" || f.l === "watch")
+      };
+      const labels = { all: "전체", in: "방에 있음", left: "나감", kicked: "내보냄", newbie: "신입", acted: "조치 있음", flagged: "신호 있음" };
+      const q = view.q.trim().toLowerCase();
+      let list = all.filter(F[view.filter]).filter((p) => !q || p.name.toLowerCase().includes(q) || (p.sysNames || []).some((n) => n.toLowerCase().includes(q)) || (p.nameHistory || []).some((n) => n.n.toLowerCase().includes(q)));
+      if (view.sort === "quiet") list.sort((a, b) => a.last.localeCompare(b.last));
+      else if (view.sort === "joined") list.sort((a, b) => (b.joinedAt || "").localeCompare(a.joinedAt || ""));
+      else if (view.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      else list.sort((a, b) => b.n - a.n);
+      host.innerHTML = `<div class="panel">
+        <div class="tools">
+          <input id="mq" class="input" type="search" placeholder="이름 찾기(예전 이름 포함)" value="${esc(view.q)}" aria-label="멤버 찾기" />
+          <select id="ms" class="input" aria-label="정렬">
+            <option value="count"${view.sort === "count" ? " selected" : ""}>메시지 많은 순</option>
+            <option value="quiet"${view.sort === "quiet" ? " selected" : ""}>마지막 대화 오래된 순</option>
+            <option value="joined"${view.sort === "joined" ? " selected" : ""}>최근 들어온 순</option>
+            <option value="name"${view.sort === "name" ? " selected" : ""}>이름순</option>
+          </select>
+        </div>
+        <div class="chips" role="group" aria-label="보기">${Object.keys(F).map((k) => `<button type="button" data-mf="${k}" aria-pressed="${view.filter === k}">${labels[k]} <b>${all.filter(F[k]).length}</b></button>`).join("")}</div>
+        <div class="rows">${list.length ? list.map((p) => personRow(p)).join("") : `<p class="empty">해당하는 사람이 없습니다.</p>`}</div>
+      </div>`;
+      $("mq").addEventListener("input", (e) => { view.q = e.target.value; const pos = e.target.selectionStart; renderMembers(); const el = $("mq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} });
+      $("ms").addEventListener("change", (e) => { view.sort = e.target.value; renderMembers(); });
+      host.querySelectorAll("[data-mf]").forEach((b) => b.addEventListener("click", () => { view.filter = b.dataset.mf; renderMembers(); }));
+    }
+
+    /* ── 점검 ── */
+    const CHECKS = [
+      ["fmt", "닉네임 양식"], ["day", "입장일 불일치"], ["reentry", "재입장 한도 초과"], ["kick_return", "내보낸 뒤 다시 들어옴"],
+      ["name_change", "닉네임 변경 2회 이상"], ["deleted", "메시지 삭제"], ["silent", "60일 넘게 대화 없음"], ["drop", "대화 급감"], ["reentry_info", "재입장 기록(한도 안)"], ["names", "다른 이름 기록"]
+    ];
+    function renderChecks() {
+      const host = document.querySelector('[data-panel="checks"]');
+      if (!S.ledger) { host.innerHTML = ""; $("tbChecks").textContent = ""; return; }
+      let ruleN = 0;
+      const groups = CHECKS.map(([code, label]) => {
+        const list = people().filter((p) => effFlags(p).some((f) => f.c === code));
+        if (["fmt", "day", "reentry", "kick_return", "name_change", "deleted"].includes(code)) ruleN += list.length;
+        const detail = (p) => { const f = effFlags(p).find((x) => x.c === code); return f && f.x && code !== "silent" ? `<span>${esc(f.x)}</span>` : ""; };
+        if (!list.length) return `<div class="group"><h3>${esc(label)} <span class="tag">0명</span></h3></div>`;
+        return `<details class="group" data-open="${code}"${view.open.has(code) ? " open" : ""}><summary><h3>${esc(label)} <span class="tag">${list.length}명</span></h3></summary><div class="rows">${list.slice(0, 200).map((p) => personRow(p, detail(p))).join("")}</div>${list.length > 200 ? `<p class="sub">200명까지 보여 줍니다. 전체는 멤버 탭에서 찾습니다.</p>` : ""}</details>`;
+      });
+      const un = S.ledger.unlinked || [];
+      const ug = unlinkedGroups();
+      ruleN += ug.filter((g) => g.over).length;
+      $("tbChecks").textContent = ruleN || "";
+      const canLink = parsedFiles.length > 0;
+      host.innerHTML = `<div class="panel"><h2>규칙 점검</h2><p class="sub">재입장과 닉네임 변경은 들어옴, 나감 줄과 지난 저장본을 비교한 추정입니다. 상세의 근거 날짜를 보고 판단해 주세요.</p>${groups.join("")}</div>
+        <div class="panel"><h2>누구인지 정하지 못한 들어옴, 나감 <small>${un.length}줄, 이름 ${ug.length}개</small></h2>
+          <p class="sub">말한 적 없이 드나든 사람이거나, 이름이 달라 누구인지 정하지 못한 줄입니다. 같은 이름끼리 모았습니다.${canLink ? "" : " 사람에게 잇기는 이 기기에서 파일을 올린 뒤에 할 수 있습니다."}</p>
+          ${ug.length ? ug.slice(0, 120).map((g) => `<details class="group" data-open="u:${esc(g.name)}"${g.over || view.open.has("u:" + g.name) ? " open" : ""}><summary><h3>${esc(g.name)}${g.over ? `<span class="tag rule">재입장 한도 초과</span>` : ""}<span class="tag">들어옴 ${g.joins}${g.leaves ? ", 나감 " + g.leaves : ""}${g.kicks ? ", 내보냄 " + g.kicks : ""}</span>${g.re ? `<span class="tag">재입장 ${g.re}회${g.limit != null ? ", 한도 " + g.limit + "회" : ""}</span>` : ""}</h3></summary>
+            <ul class="ev">${g.lines.map((u) => `<li><time>${esc(md(u.d))} ${esc(u.t)}</time><span>${u.k === "join" ? "들어옴" : u.how === "kick" ? "내보냄" : "나감"}${canLink && u.key ? ` <button class="text-btn" type="button" data-link="${esc(u.key)}" data-head="${esc(g.name.split(" ")[0])}">사람에게 잇기</button>` : ""}</span></li>`).join("")}</ul></details>`).join("") : `<p class="empty">없습니다.</p>`}
+          ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
+      host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { if (d.open) view.open.add(d.dataset.open); else view.open.delete(d.dataset.open); }));
+      host.querySelectorAll("[data-link]").forEach((b) => b.addEventListener("click", () => {
+        const key = b.dataset.link, head = b.dataset.head;
+        const sel = document.createElement("select");
+        sel.className = "input"; sel.setAttribute("aria-label", "누구의 줄인지 고르기");
+        const opts = people().slice().sort((a, c) => ((c.name.split(" ")[0] === head) - (a.name.split(" ")[0] === head)) || a.name.localeCompare(c.name, "ko"));
+        sel.innerHTML = `<option value="">누구의 줄인가요</option>` + opts.map((p) => `<option value="${esc(p.pid)}">${esc(p.name)}</option>`).join("");
+        b.replaceWith(sel); sel.focus();
+        sel.addEventListener("change", () => { if (!sel.value) return; S.records.links[key] = sel.value; saveRecords(); runAnalysis("이었습니다. 저장하면 다른 기기에서도 보입니다."); });
+      }));
+    }
+    /* 누구인지 정하지 못한 줄을 같은 이름끼리: 말 없이 드나든 사람의 재입장도 센다 */
+    function unlinkedGroups() {
+      const g = new Map();
+      ((S.ledger && S.ledger.unlinked) || []).forEach((u) => { if (!g.has(u.name)) g.set(u.name, []); g.get(u.name).push(u); });
+      return [...g.entries()].map(([name, lines]) => {
+        lines.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
+        const joins = lines.filter((l) => l.k === "join");
+        const re = joins.filter((j) => lines.some((l) => l.d + l.t < j.d + j.t)).length;
+        const limit = OpsAnalyzer.nickParts(name).reentryLimit || null;
+        return { name, lines, joins: joins.length, leaves: lines.filter((l) => l.k === "leave" && l.how !== "kick").length, kicks: lines.filter((l) => l.how === "kick").length, re, limit, over: limit != null && re > limit };
+      }).sort((a, b) => (b.over - a.over) || (b.re - a.re) || b.lines[b.lines.length - 1].d.localeCompare(a.lines[a.lines.length - 1].d));
+    }
+
+    /* ── 신호 ── */
+    const SIG_ORDER = ["other_room", "promo", "contact", "private", "bibung", "married", "abuse", "sexual", "flood", "conflict", "mention_focus", "welcomer", "thanked", "organizer", "sharer", "steady"];
+    const sigRank = (c) => { const i = SIG_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+    function renderSignals() {
+      const host = document.querySelector('[data-panel="signals"]');
+      if (!S.ledger) { host.innerHTML = ""; return; }
+      const side = view.sigSide;
+      const codes = {};
+      people().forEach((p) => effFlags(p).forEach((f) => { if ((side === "bad" && f.l === "watch" && !QUIET.includes(f.c)) || (side === "good" && f.l === "good")) (codes[f.c] = codes[f.c] || { t: f.t, list: [] }).list.push({ p, f }); }));
+      const keys = Object.keys(codes).sort((a, b) => sigRank(a) - sigRank(b));
+      const evOf = (p, c) => (p.ev || []).filter((e) => e.c === c || (c === "organizer" && e.c === "meetup"));
+      const L = S.ledger;
+      host.innerHTML = `<div class="panel">
+        <div class="chips" role="group" aria-label="신호 종류"><button type="button" data-side="bad" aria-pressed="${side === "bad"}">살필 신호</button><button type="button" data-side="good" aria-pressed="${side === "good"}">좋은 신호</button></div>
+        <p class="sub">${side === "bad" ? "단어와 행동 모양으로 찾은 것이라 틀릴 수 있습니다. 근거 줄을 보고 판단해 주세요." : "환영, 감사 받음, 모임 제안, 정보 공유, 꾸준함입니다."}</p>
+        ${keys.length ? keys.map((c) => `<div class="group"><h3>${esc(codes[c].t)} <span class="tag">${codes[c].list.length}명</span></h3><div class="rows">${codes[c].list.sort((a, b) => b.p.n - a.p.n).map(({ p, f }) => {
+          const ev = evOf(p, c);
+          return personRow(p, `<span>${esc(f.x)}</span>`) + (ev.length ? `<details class="more"><summary>근거 줄 ${ev.length}개</summary><ul class="ev">${ev.map((e) => `<li><time>${esc(md(e.d))} ${esc(e.t)}</time><span>${esc(e.x)}</span></li>`).join("")}</ul></details>` : "");
+        }).join("")}</div></div>`).join("") : `<p class="empty">없습니다.</p>`}
+      </div>
+      ${side === "bad" ? `<div class="panel"><h2>감정싸움 후보 <small>${(L.conflicts || []).length}건</small></h2>${(L.conflicts || []).length ? `<ul class="ev">${L.conflicts.slice().reverse().map((c) => `<li><time>${esc(md(c.d))} ${esc(c.t)}</time><span>${esc(c.a)}, ${esc(c.b)}: ${c.n}번 주고받음, 부정 표현 ${c.neg}번</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>
+      <div class="panel"><h2>답 없는 질문 <small>30분 안에 아무도 답하지 않음, ${nf(L.unanswered.count)}건</small></h2>${L.unanswered.recent.length ? `<ul class="ev">${L.unanswered.recent.slice().reverse().map((q) => `<li><time>${esc(md(q.d))} ${esc(q.t)}</time><span>${esc(q.name)}: ${esc(q.x)}</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>` : ""}`;
+      host.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { view.sigSide = b.dataset.side; renderSignals(); }));
+    }
+
+    /* ── 흐름 ── */
+    function pct(a, b) { return b ? Math.round((a / b) * 100) + "%" : "-"; }
+    function wbars(arr) { const max = Math.max(1, ...arr); const W = ["월", "화", "수", "목", "금", "토", "일"]; return `<div class="bars is-week" aria-hidden="true">${arr.map((v) => `<i style="height:${Math.round((v / max) * 100)}%"></i>`).join("")}</div><div class="bars-x is-week">${W.map((d) => `<span>${d}</span>`).join("")}</div>`; }
+    function bars(arr) { const max = Math.max(1, ...arr); return `<div class="bars" aria-hidden="true">${arr.map((v) => `<i style="height:${Math.round((v / max) * 100)}%"></i>`).join("")}</div><div class="bars-x"><span>0시</span><span>6시</span><span>12시</span><span>18시</span></div>`; }
+    function renderFlow() {
+      const host = document.querySelector('[data-panel="flow"]');
+      const L = S.ledger; if (!L) { host.innerHTML = ""; return; }
+      const f = L.funnel;
+      host.innerHTML = `<div class="panel"><h2>월별 인원 변화</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td></tr>`).join("")}</tbody></table></div></div>
+        <div class="panel"><h2>신입 흐름 <small>파일 안의 들어옴 ${nf(f.joined)}건</small></h2>
+          <dl class="kv">
+            <div><dt>60분 안에 환영 인사</dt><dd>${pct(f.welcomed, f.joined)}</dd></div>
+            <div><dt>7일 안에 첫 대화</dt><dd>${pct(f.spoke7, f.joined)}</dd></div>
+            <div><dt>7일 안에 나감</dt><dd>${nf(f.left7)}명</dd></div>
+            <div><dt>말 없이 나감</dt><dd>${nf(f.silentLeft)}명</dd></div>
+            <div><dt>30일 뒤 남음</dt><dd>${pct(f.stay30, f.base30)}</dd></div>
+            <div><dt>60일 뒤 남음</dt><dd>${pct(f.stay60, f.base60)}</dd></div>
+            <div><dt>90일 뒤 남음</dt><dd>${pct(f.stay90, f.base90)}</dd></div>
+          </dl></div>
+        <div class="panel"><h2>시간대별 메시지</h2>${bars(L.hours)}</div>
+        <div class="panel"><h2>요일별 메시지</h2>${wbars(L.weekdays)}</div>
+        <div class="panel"><h2>답 없는 질문 시간대</h2>${bars(L.unanswered.byHour)}</div>
+        <div class="panel"><h2>그 밖</h2><dl class="kv">
+          <div><dt>상위 10% 사람이 차지한 메시지</dt><dd>${L.concentration}%</dd></div>
+          <div><dt>운영진이 가린 메시지</dt><dd>${nf(L.sys.hidden)}건</dd></div>
+          <div><dt>공지 등록</dt><dd>${nf(L.sys.notice)}건</dd></div>
+          <div><dt>전체 메시지</dt><dd>${nf(L.totals.messages)}건</dd></div>
+          <div><dt>말한 사람(누적)</dt><dd>${nf(L.totals.people)}명</dd></div>
+          <div><dt>들어옴, 나감, 내보냄(누적)</dt><dd>${nf(L.totals.joins)}, ${nf(L.totals.leaves)}, ${nf(L.totals.kicks)}</dd></div>
+        </dl></div>`;
+    }
+
+    /* ── 기록 ── */
+    const KIND = { rule: "금지 행동", bibung: "비벙", etc: "그 밖" };
+    const STEP = { warn: "구두 경고", talk: "면담", kick: "강제퇴장", etc: "그 밖" };
+    function nextStep(pid) {
+      const acts = S.records.actions.filter((a) => a.pid === pid);
+      const rule = acts.filter((a) => a.kind === "rule"), bib = acts.filter((a) => a.kind === "bibung");
+      const out = [];
+      if (rule.length) out.push(rule.some((a) => a.step === "kick") ? "금지 행동: 강제퇴장까지 함" : "금지 행동: 재적발 시 강제퇴장");
+      if (bib.length) { const n = bib.filter((a) => a.step !== "etc").length; out.push(bib.some((a) => a.step === "kick") ? "비벙: 강제퇴장까지 함" : n >= 2 ? "비벙: 다음은 강제퇴장" : "비벙: 다음은 운영진 면담"); }
+      return out;
+    }
+    function renderRecords() {
+      const host = document.querySelector('[data-panel="records"]');
+      const acts = S.records.actions.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const name = (pid) => { const p = byPid(pid); return p ? p.name : (acts.find((a) => a.pid === pid) || {}).name || pid; };
+      const pids = [...new Set(acts.map((a) => a.pid))];
+      host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건</small></h2>
+        ${acts.length ? `<ul class="ev">${acts.map((a) => `<li><time>${esc(md(a.date))}</time><span><b style="display:inline;color:var(--ink)">${esc(name(a.pid))}</b> ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>`).join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
+        ${pids.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}</div></div>` : ""}`;
+    }
+
+    /* ── 사람 상세 ── */
+    let sheetPid = null, lastFocus = null;
+    function openPerson(pid) {
+      const p = byPid(pid); if (!p) return;
+      sheetPid = pid; lastFocus = document.activeElement;
+      $("sheetTitle").textContent = p.name;
+      renderSheet(p);
+      $("sheet").hidden = false;
+      document.body.style.overflow = "hidden";
+      $("sheetClose").focus();
+    }
+    function closeSheet() {
+      const pid = sheetPid;
+      $("sheet").hidden = true; document.body.style.overflow = ""; sheetPid = null;
+      let el = lastFocus && lastFocus.isConnected ? lastFocus : null;
+      if (!el && pid) el = [...document.querySelectorAll(`[data-panel="${tab}"] [data-person]`)].find((b) => b.dataset.person === pid) || null;
+      if (el) try { el.focus(); } catch (e) {}
+    }
+    $("sheetClose").addEventListener("click", closeSheet);
+    $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+    function renderSheet(p) {
+      const e = exc(p.pid);
+      const fl = effFlags(p);
+      const pend = pending(p);
+      const pr = p.parts || {};
+      const cell = (label, v, need) => `<div><span>${label}</span><b class="${!v && need ? "miss" : ""}">${esc(v || "없음")}</b></div>`;
+      const acts = S.records.actions.filter((a) => a.pid === p.pid).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      const VIA = { name: "같은 이름", head: "앞 이름으로 이음", time: "시점으로 이음(추정)", manual: "직접 이음" };
+      const evs = (p.events || []).map((x) => `<li><time>${esc(md(x.d))} ${esc(x.t)}</time><span>${x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" + (x.by ? "(" + esc(x.by) + ")" : "") : "나감"}</span>${x.name !== p.name ? `<span class="tag">줄 이름: ${esc(x.name)}</span>` : ""}<span class="tag">${esc(VIA[x.via] || "")}</span>${x.via === "manual" && parsedFiles.length ? `<button class="text-btn is-quiet" type="button" data-unlink="${esc(x.key)}">풀기</button>` : ""}</li>`).join("");
+      const kinds = p.kinds || {};
+      const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}</span></li>`).join("");
+      $("sheetBody").innerHTML = `
+        <div class="panel">
+          <div class="chips">${statusTag(p)}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : `<span class="tag">파일 시작 전부터 있음</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}</div>
+          <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
+          ${pend.length ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
+        </div>
+        <div class="panel"><h2>들어옴, 나감 <small>재입장 ${p.reentries.length}회${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 예외 +" + e.reentry : ""}</small></h2>
+          ${evs ? `<ul class="timeline">${evs}</ul>` : `<p class="sub">이 파일에 이 사람의 들어옴, 나감 줄이 없습니다.</p>`}
+          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.via === "gap" ? "(들어옴 줄 없음)" : "")).join(", ")}</p>` : ""}
+        </div>
+        <div class="panel"><h2>닉네임 이력</h2>
+          ${names ? `<ul class="timeline">${names}</ul><p class="sub">날짜는 그 이름이 보인 파일의 마지막 대화 날짜입니다.</p>` : ""}
+          ${(p.sysNames || []).length ? `<p class="sub">들어옴, 나감 줄에 남은 다른 이름: ${p.sysNames.map(esc).join(", ")}</p>` : ""}
+        </div>
+        <div class="panel"><h2>활동</h2><dl class="kv">
+          <div><dt>메시지</dt><dd>${nf(p.n)}건(${p.share}%)</dd></div><div><dt>최근 30, 60, 90일</dt><dd>${nf(p.d30)}, ${nf(p.d60)}, ${nf(p.d90)}</dd></div>
+          <div><dt>활동한 날</dt><dd>${nf(p.activeDays)}일</dd></div><div><dt>첫 대화, 마지막</dt><dd>${esc(md(p.first))}, ${esc(md(p.last))}</dd></div>
+          <div><dt>가장 긴 침묵</dt><dd>${nf(p.maxGap)}일</dd></div><div><dt>새벽(1시에서 5시)</dt><dd>${p.nightShare}%</dd></div>
+          <div><dt>대화 시작</dt><dd>${nf(p.starts)}번</dd></div><div><dt>5분 안에 답</dt><dd>${nf(p.replies)}번</dd></div>
+          <div><dt>신입 환영</dt><dd>${nf(p.welcomes)}번</dd></div><div><dt>감사 받음, 보냄</dt><dd>${nf(p.thanksGot)}, ${nf(p.thanksGiven)}</dd></div>
+          <div><dt>멘션 받음</dt><dd>${nf(p.mentionsIn)}번</dd></div><div><dt>멘션 보냄</dt><dd>${(p.mentionsOut || []).length ? p.mentionsOut.map((m) => esc(m.to.split(" ")[0]) + " " + m.c).join(", ") : "없음"}</dd></div>
+          <div><dt>모임 제안, 정보 공유</dt><dd>${nf(p.meetup)}, ${nf(p.info)}</dd></div><div><dt>평균 글 길이</dt><dd>${nf(p.avgLen)}자</dd></div>
+          <div><dt>사진, 동영상, 이모티콘</dt><dd>${nf(kinds.photo)}, ${nf(kinds.video)}, ${nf(kinds.emoticon)}</dd></div><div><dt>링크, 파일, 음성</dt><dd>${nf(kinds.link)}, ${nf(kinds.file)}, ${nf(kinds.voice)}</dd></div>
+          <div><dt>삭제한 메시지</dt><dd>${nf(kinds.deleted)}건</dd></div>
+        </dl></div>
+        <div class="panel"><h2>신호 <small>${fl.filter((f) => f.l !== "info").length}개</small></h2>
+          ${fl.length ? `<div class="chips">${flagTags(fl)}</div>` : `<p class="sub">없습니다.</p>`}
+          ${(p.ev || []).length ? `<ul class="ev">${p.ev.map((x) => `<li><time>${esc(md(x.d))} ${esc(x.t)}</time><span>${esc(x.x)}</span></li>`).join("")}</ul>` : ""}
+        </div>
+        <div class="panel"><h2>조치</h2>
+          ${nextStep(p.pid).length ? `<div class="chips">${nextStep(p.pid).map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")}</div>` : ""}
+          ${acts.length ? `<ul class="ev">${acts.map((a) => `<li><time>${esc(md(a.date))}</time><span>${esc(KIND[a.kind])} ${esc(STEP[a.step])}${a.reason ? ": " + esc(a.reason) : ""} <button class="text-btn is-quiet" type="button" data-del-act="${esc(a.id)}">지우기</button></span></li>`).join("")}</ul>` : ""}
+          <div class="form-row">
+            <select id="actKind" class="input" aria-label="종류"><option value="rule">금지 행동</option><option value="bibung">비벙</option><option value="etc">그 밖</option></select>
+            <select id="actStep" class="input" aria-label="단계"><option value="warn">구두 경고</option><option value="talk">면담</option><option value="kick">강제퇴장</option><option value="etc">그 밖</option></select>
+            <input id="actDate" class="input" type="date" value="${todayKST()}" aria-label="날짜" />
+            <input id="actReason" class="input" type="text" maxlength="200" placeholder="사유" aria-label="사유" />
+            <button id="actAdd" class="btn btn-primary is-sm wide" type="button">조치 적기</button>
+          </div>
+        </div>
+        <div class="panel"><h2>메모와 예외</h2>
+          <textarea id="noteText" class="textarea" rows="3" maxlength="2000" placeholder="메모" aria-label="메모">${esc(S.records.notes[p.pid] || "")}</textarea>
+          <div class="form-row">
+            <label class="field"><span>재입장 예외(더 허용할 횟수)</span><input id="excRe" class="input" type="number" min="0" max="5" value="${+e.reentry || 0}" /></label>
+            <label class="field"><span>장기 미참여 알림(이 날까지)</span><input id="excAway" class="input" type="date" value="${esc(e.awayUntil || "")}" /></label>
+          </div>
+          <button id="noteSave" class="btn btn-secondary is-sm" type="button">메모와 예외 저장</button>
+        </div>`;
+      $("sheetBody").querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => { delete S.records.links[b.dataset.unlink]; saveRecords(); runAnalysis("풀었습니다. 저장하면 다른 기기에서도 보입니다."); }));
+      const rb = $("reviewBtn");
+      if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
+      $("actAdd").addEventListener("click", () => {
+        S.records.actions.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pid: p.pid, name: p.name, kind: $("actKind").value, step: $("actStep").value, date: $("actDate").value || todayKST(), reason: $("actReason").value.trim().slice(0, 200) });
+        saveRecords(); renderAll(); renderSheet(p); toast("조치를 적었습니다.");
+      });
+      $("sheetBody").querySelectorAll("[data-del-act]").forEach((b) => b.addEventListener("click", () => {
+        if (!window.confirm("이 조치 기록을 지울까요?")) return;
+        S.records.actions = S.records.actions.filter((a) => a.id !== b.dataset.delAct); saveRecords(); renderAll(); renderSheet(p);
+      }));
+      $("noteSave").addEventListener("click", () => {
+        const t = $("noteText").value.trim();
+        if (t) S.records.notes[p.pid] = t; else delete S.records.notes[p.pid];
+        const re = Math.max(0, Math.min(5, +$("excRe").value || 0)), aw = $("excAway").value;
+        if (re || aw) S.records.exceptions[p.pid] = { reentry: re, awayUntil: aw }; else delete S.records.exceptions[p.pid];
+        saveRecords(); renderAll(); renderSheet(p); toast("저장했습니다.");
+      });
+    }
+
+    /* ── 파일: 읽기, 분석, 지난 저장본과 잇기, 저장 ── */
+    const dz = $("dropzone"), fi = $("fileInput");
+    dz.addEventListener("click", () => fi.click());
+    dz.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fi.click(); } });
+    dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("is-over"); });
+    dz.addEventListener("dragleave", () => dz.classList.remove("is-over"));
+    dz.addEventListener("drop", (e) => { e.preventDefault(); dz.classList.remove("is-over"); addFiles(e.dataTransfer && e.dataTransfer.files); });
+    fi.addEventListener("change", () => { addFiles(fi.files); fi.value = ""; });
+    async function addFiles(list) {
+      const arr = Array.from(list || []).filter((f) => /\.txt$/i.test(f.name) || (f.type || "").startsWith("text/"));
+      if (!arr.length) { toast(".txt 파일만 올릴 수 있습니다."); return; }
+      for (const f of arr) {
+        if (parsedFiles.some((x) => x.name === f.name && x.size === f.size)) continue;
+        const text = await f.text();
+        parsedFiles.push({ name: f.name, size: f.size, parsed: ChatParser.parse(text, { keepSystem: true }) });
+      }
+      runAnalysis();
+    }
+    function runAnalysis(doneMsg) {
+      const lists = parsedFiles.map((f) => f.parsed.messages);
+      const messages = lists.length > 1 ? ChatParser.mergeMessages(lists) : lists[0];
+      const seen = new Set(), sys = [];
+      parsedFiles.forEach((f) => (f.parsed.meta.sys || []).forEach((s) => { const k = s.date + "|" + s.hour + "|" + s.min + "|" + s.text; if (!seen.has(k)) { seen.add(k); sys.push(s); } }));
+      let r = OpsAnalyzer.analyze({ messages, sys });
+      if (!r) { toast("대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
+      resolvePeople(r);
+      const lk = S.records.links || {}, links = {};
+      const nameOf = new Map(r.people.map((p) => [p.pid, p.name]));
+      Object.keys(lk).forEach((k) => { const n = nameOf.get(lk[k]); if (n) links[k] = n; });
+      if (Object.keys(links).length) { r = OpsAnalyzer.analyze({ messages, sys, links }); resolvePeople(r); }
+      S.ledger = r; S.unsaved = true; S.savedAt = S.savedAt || "";
+      $("fileInfo").innerHTML = parsedFiles.map((f) => `<div class="prow" style="cursor:default"><span class="pn">${esc(f.name)}</span><span class="pr">${nf(f.parsed.messages.length)}줄</span></div>`).join("") +
+        `<p class="sub">대화 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, 메시지 ${nf(r.totals.messages)}건, 말한 사람 ${nf(r.totals.people)}명, 들어옴 ${nf(r.totals.joins)}, 나감 ${nf(r.totals.leaves)}, 내보냄 ${nf(r.totals.kicks)}</p>`;
+      $("saveBtn").disabled = localOnly;
+      renderAll();
+      toast(doneMsg || "분석했습니다. 저장하면 다른 기기에서도 보입니다.");
+    }
+    /* 지난 저장본의 사람과 잇기: 지문, 겹치는 메시지, 같은 이름 순서. 이어지면 같은 사람 열쇠(pid)를 쓰고 이름이 바뀌었으면 이력에 남긴다 */
+    function resolvePeople(r) {
+      const prev = (S.history && S.history.people) || [];
+      const byFp = new Map(prev.map((h) => [h.fp, h]));
+      const byName = new Map(prev.map((h) => [(h.names[h.names.length - 1] || {}).n, h]));
+      const sigIdx = new Map(); prev.forEach((h) => (h.sig || []).forEach((s) => { if (!sigIdx.has(s)) sigIdx.set(s, []); sigIdx.get(s).push(h); }));
+      const used = new Set();
+      const snapTo = r.range.to;
+      const nextHist = [];
+      r.people.forEach((p) => {
+        let h = byFp.get(p.fp);
+        if (!h) { const votes = new Map(); (p.sig || []).forEach((s) => (sigIdx.get(s) || []).forEach((c) => votes.set(c, (votes.get(c) || 0) + 1))); let best = null, bn = 0; votes.forEach((n, c) => { if (n > bn) { bn = n; best = c; } }); if (best && bn >= 5) h = best; }
+        if (!h) { const c = byName.get(p.name); if (c) h = c; }
+        if (h && used.has(h.pid)) h = null;
+        let pid;
+        if (h) { pid = h.pid; used.add(pid); }
+        else { pid = p.fp; let k = 2; while (used.has(pid) || prev.some((x) => x.pid === pid)) { pid = p.fp + "_" + k; k += 1; } used.add(pid); }
+        const names = h ? h.names.map((n) => Object.assign({}, n)) : [];
+        const lastN = names[names.length - 1];
+        // 오픈채팅은 예전 메시지도 지금 이름으로 보이므로, 이름마다 그 이름이 보인 파일의 마지막 대화 날짜만 안다
+        if (lastN && lastN.n === p.name) { if (snapTo > lastN.last) lastN.last = snapTo; } else names.push({ n: p.name, first: snapTo, last: snapTo });
+        p.pid = pid;
+        p.nameHistory = names;
+        p.nameChanges = names.length - 1;
+        if (p.nameChanges >= 2) p.flags.push({ c: "name_change", l: "rule", t: "닉네임 변경 2회 이상", x: p.nameChanges + "회" });
+        else if (p.nameChanges === 1) p.flags.push({ c: "name_change1", l: "info", t: "닉네임 변경 1회", x: names[0].n + "에서" });
+        nextHist.push({ pid, fp: p.fp, sig: p.sig, names });
+      });
+      // 이번 파일에 없는 사람(오래 전에 나간 사람 등)의 이력도 남긴다
+      prev.forEach((h) => { if (!used.has(h.pid)) nextHist.push(h); });
+      S.pendingHistory = { people: nextHist.slice(-5000) };
+    }
+    $("saveBtn").addEventListener("click", async () => {
+      if (!S.ledger || localOnly) return;
+      const btn = $("saveBtn"); btn.disabled = true; btn.textContent = "저장 중";
+      try {
+        const ledger = Object.assign({}, S.ledger, { people: S.ledger.people.map((p) => { const q = Object.assign({}, p); delete q.sig; return q; }) });
+        const at = await opsPut("ledger", ledger);
+        if (S.pendingHistory) { await opsPut("history", S.pendingHistory); S.history = S.pendingHistory; S.pendingHistory = null; }
+        await opsPut("records", S.records);
+        S.savedAt = at || new Date().toISOString(); S.unsaved = false;
+        $("saveState").textContent = "저장했습니다. 다른 기기에서 열면 이 결과가 보입니다.";
+        toast("서버에 저장했습니다.");
+        renderAll();
+      } catch (e) {
+        $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요.";
+      } finally { btn.disabled = false; btn.textContent = "서버에 저장"; }
+    });
+
+    function renderFilesExtra() {
+      const L = S.ledger;
+      const un = L ? L.unread || [] : [];
+      $("unreadPanel").hidden = !L;
+      $("unreadCount").textContent = un.length ? un.length + "건" : "없음";
+      $("unreadList").innerHTML = un.map((u) => `<li><time>${esc(md(u.d))}</time><span>${esc(u.x)}</span></li>`).join("");
+    }
+    function renderAll() {
+      $("unsavedNote").hidden = !(S.unsaved && !localOnly);
+      $("noDataNote").hidden = !!S.ledger;
+      setStamp();
+      renderHome(); renderMembers(); renderChecks(); renderSignals(); renderFlow(); renderRecords(); renderFilesExtra();
+      if (sheetPid && !$("sheet").hidden) { const p = byPid(sheetPid); if (p) renderSheet(p); }
+    }
+    window.__ops = { S };   // 시험용
+    $("gatePass").focus();
+  })();
+  </script>
+</body>
+</html>
