@@ -80,7 +80,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 오늘 뭐 먹지 | `assets/img/places-pick-240.webp`(13 KB)·`-480.webp`(40 KB, 2세대). 카드 왼쪽 64px 원판(크림 배경 + 녹슨 주황 테두리). 못 읽으면 숨고 종류 아이콘(`#pickIc`)이 나옴 |
+| 오늘 뭐 먹지 | `assets/img/places-pick-240.webp`(13 KB)·`-480.webp`(40 KB, 2세대). 카드 왼쪽 88px 원판(크림 배경 + 녹슨 주황 테두리, 19차에 64px에서 키움). 못 읽으면 숨고 종류 아이콘(`#pickIc`)이 나옴 |
 | 오프라인 | `assets/img/offline-spot-240.webp`(3 KB)·`-480.webp`(7 KB, 2세대). `offline.html` 의 아이콘 자리에 150px. 서비스 워커(`sw.js`, VERSION 2026-09-21b)가 offline.html 과 함께 저장하고 그 요청만 저장본 우선으로 돌려줌. 못 읽으면 원래 아이콘 |
 
 ## 8. 홈 계절 그림 — 겨울·봄·여름 (파일 준비됨, 교체는 수동)
@@ -117,7 +117,7 @@
 | 안내 타일·장 머리 7 | `rules-{eligibility,nickname,meetup,manners,boundaries}`, `settle-spot`(정산), `posts-meetup`(모임 열기). `rules-faq` 는 18차에 사이트 사용 장을 빼면서 이용 안내에서 쓰지 않음(원판은 남김) | 이용 안내 **장 타일 7장**(`.qt`, '한눈에 보기' — PC·태블릿 88px, 16차부터 폰은 글만)과 같은 파일로 **장 머리**(`.cat-head .ch-art`, PC 112 · 폰 88px). 머리 그림은 2·3·5·6·7장만(1장은 장면 그림, 4장은 역할 그림이 바로 아래에 있어서), 그래서 폰에서는 한 그림이 한 번씩만 보인다. 4장 정산 레인에 역할 그림 한 쌍 `calc-rounds`(모임장)·`calc-payment`(참여자) 88px. 크림 그림은 틀·그림자 없이 가장자리를 바탕에 녹인다(mask, 17차부터 3%, 자른 판은 11절). 한 묶음 안에 어두운 장면화와 크림 스팟을 섞지 않는다(12차, `REDESIGN_CHECKLIST.md` 17절, 21절) | 88~112px | 글이 전체 폭으로 |
 | 글 종류 4 | `posts-{notice,meetup,info,free}` (후기는 `flow-record`) | 소식 **이번 주 글감 카드**(`#promptArt`, 글감의 종류대로)와 **종류별 빈 상태**("정보 글이 없습니다" 위 120px, `.empty-spot`). 글쓰기 창의 종류 선택 옆·목록 줄에는 없음 | 96/80px · 120px | 전구 아이콘 / 문장만 |
 | 정산 단계 3 + 공유 1 | `calc-{members,rounds,payment,share}` | 정산 **진행 stepper 카드**(`.stepper.is-cards`, 모임과 멤버 → 차수 금액 → 입금 정보 → 결과 공유) — 넓은 화면(≥ 768px)에서만 그림, 좁은 화면은 점 stepper 그대로. 단계 제목·카톡 안내 상자에는 없음 | 80px | 글만 |
-| 칭호 메달 6 | `badge-{active,growth,guardian,welcome,sharing,reaction}-128/256.webp`(투명) | 통계 **메달 카드**(`#badgeCards`, 활약왕·성장왕·모임 지킴이·환영요정·정보공유왕·리액션왕). 나머지 칭호(새벽반·아침반·퇴근반·나들이 대장·맛집 탐험가·꾸준함)는 아래 목록에 선 아이콘 | PC 88 · 폰 72px, `contain` | 선 아이콘 |
+| 칭호 메달 6 | `badge-{active,growth,guardian,welcome,sharing,reaction}-128/256.webp`(투명) | 통계 **메달 카드**(`#badgeCards`, 활약왕·성장왕·모임 지킴이·환영요정·정보공유왕·리액션왕). 나머지 칭호(새벽반·아침반·퇴근반·나들이 대장·맛집 탐험가·꾸준함)는 아래 목록에 선 아이콘 | PC 88, 폰 80px(19차에 72px에서 키움), `contain` | 선 아이콘 |
 | 404 1 | `notfound-empty-640/320.webp` | `404.html`(정적 배포에서 Vercel 이 404 상태로 내보냄, `noindex`, robots 제외) | 300px 3:2 | 돋보기 아이콘 |
 
 미사용: `rules-faq`(18차에 이용 안내 사이트 사용 장을 빼면서 자리 없음, 원판만 남김). 나머지 33장은 자리 있음. `posts-notice`·`posts-meetup` 는 공지·모집 글감이나 그 종류의 빈 상태에서만 나온다. 검사는 `scratchpad/img2test.js`(1440·390, 자리·크기·실패 경로·`?v=2`), `imgtest.js`(커버·빈 상태 3:2).

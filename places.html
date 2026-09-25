@@ -28,8 +28,8 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=19" />
-  <script src="assets/site-core.js?v=8"></script>
+  <link rel="stylesheet" href="assets/site.css?v=20" />
+  <script src="assets/site-core.js?v=9"></script>
   <script src="assets/icons.js?v=2"></script>
   <script src="assets/content.js?v=5"></script>
   <style>
@@ -232,7 +232,7 @@
     .cat-bar.has-on span:not(.is-on) { opacity: 0.28; }
     .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .cat-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px 0 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; cursor: pointer; transition: border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
-    @media (max-width: 768px) { .cat-chip { min-height: 36px; } }   /* 손가락으로 누르는 화면에서는 조금 높게(30 → 36px). 기본 규칙 뒤에 두어야 이긴다 */
+    @media (max-width: 768px) { .cat-chip { min-height: 36px; } }   /* 손가락으로 누르는 화면에서는 조금 높게(30에서 36px). 기본 규칙 뒤에 두어야 이긴다 */
     .cat-chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--cat, var(--brand)); flex: none; }
     .cat-chip b { color: var(--ink-2); font-weight: 600; }
     .cat-chip:hover { border-color: var(--cat, var(--brand)); }
@@ -1019,7 +1019,7 @@
         if (v.closed) tags += '<span class="type-tag is-closed">영업 종료</span>';
         else if (v.visitCount >= 2) tags += '<span class="type-tag">방문 ' + v.visitCount + "회</span>";
         if (!v.closed && v.again && v.again.yes >= 2) tags += '<span class="type-tag is-again">다시 가고 싶음 ' + v.again.yes + "</span>";
-        var by = [line.by ? whoBtn(line.by, "") : "", line.date ? esc(C.dateText(line.date)) + " 방문" : (v.lastVisit ? "마지막 방문 " + esc(C.dateText(v.lastVisit)) : "")].filter(Boolean).join(", ");
+        var by = [line.by ? whoBtn(line.by, "") : "", line.date ? esc(C.dateText(line.date)) + " 방문" : (v.lastVisit ? "마지막 방문 " + esc(C.dateText(v.lastVisit)) : "")].filter(Boolean).join(" ");   // 칩 뒤에 쉼표를 두지 않는다
         var priceHTML = v.priceLevel
           ? '<div class="pr-price">' + esc(v.priceText.replace(/^1인 /, "")) + (v.priceNote ? "<small>" + esc(v.priceNote) + "</small>" : "") + "</div>"
           : '<div class="pr-price is-none">가격 미등록</div>';

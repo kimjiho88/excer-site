@@ -271,6 +271,8 @@
           }
         } else if (beforeModal && document.body.contains(beforeModal)) {
           // 닫으면 열기 전 자리로 돌려준다. 안 그러면 포커스가 문서 맨 앞으로 튄다.
+          // 창 안 입력칸이 focusout 없이 숨으면 is-typing 이 남아 떠 있는 글쓰기 버튼이 숨은 채라 포커스를 못 받는다
+          if (!isTyping(beforeModal)) setTyping(false);
           beforeModal.focus();
           beforeModal = null;
         }
