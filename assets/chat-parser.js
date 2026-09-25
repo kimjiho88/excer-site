@@ -102,7 +102,7 @@
     }
 
     function pushSystem(dateStr, hour, min, body) {
-      var kind = null, who = "";
+      var kind = null, who = "", how = "";
       if (RE_JOIN.test(body)) {
         meta.joins += 1; kind = "join";
         // 입장자 닉네임 추출 (초대 문구 포함) — welcome '본인 제외' 판정 전용
@@ -114,9 +114,11 @@
         // 퇴장/강퇴자 닉네임 추출 — '현재 방 멤버 자동 감지'(membership) 전용.
         // 이 이름은 parse() 내부 메시지 객체에만 남고, aggregate() 통계 JSON 에는
         // 절대 노출되지 않는다(aggregate 는 leave 를 세지도 출력하지도 않음).
-        var lm = body.match(/^(.+?)님이\s*나갔습니다/) ||
-                 body.match(/^(.+?)님을\s*내보냈습니다/);
-        if (lm) who = lm[1].trim();
+        // 내보냄은 "OO님을 내보냈습니다" 와 "방장님이 OO님을 내보냈습니다" 두 꼴이 있다. 앞의 '누가' 부분은 떼고 나간 사람만 잡는다
+        var lm = body.match(/^(.+?)님이\s*나갔습니다/);
+        var km = lm ? null : body.match(/^(?:.+?님이\s*)?(.+?)님을\s*내보냈습니다/);
+        if (lm) { who = lm[1].trim(); how = "left"; }
+        else if (km) { who = km[1].trim(); how = "kick"; }
       }
       if (kind && dateStr) {
         // 시각이 없는 줄(PC 형식의 입장·퇴장)은 같은 날 바로 앞 메시지의 시각을 이어받는다.
@@ -130,6 +132,7 @@
           weekday: weekdayOf(dateStr),
           name: who, kind: kind, len: 0, text: ""
         };
+        if (how) ev.how = how;   // 나감(left), 내보냄(kick). 발행 화면의 멤버 확인에만 쓰고 통계 JSON 에는 싣지 않는다
         messages.push(ev);
         if (hour == null && !sameDay) pendingSys.push(ev);
       } else if (kind) {

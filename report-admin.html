@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=20" />
-  <script src="assets/chat-parser.js?v=4"></script>
+  <script src="assets/chat-parser.js?v=5"></script>
 
   <style>
     /* ============================================================
@@ -148,33 +148,55 @@
     .roster-status.warn { color: #7A4A32; }
     .roster-status b { font-weight: 700; }
 
-    /* ── 멤버 표 ── */
-    .member-table { display: grid; gap: 4px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
+    /* ── 멤버 확인 ──
+       한 사람씩 보고 고르는 표. 표시 이름(발행되는 이름) 아래에 원래 닉네임 전체와 마지막 대화, 나감 기록을 함께 보여 준다 */
+    .member-summary { margin: 12px 0 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+    .member-summary span { color: var(--ink-2); font-weight: 600; }
+    .member-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 12px; }
+    .member-search { position: relative; display: flex; align-items: center; }
+    .member-search .ic { position: absolute; left: 12px; color: var(--ink-2); pointer-events: none; }
+    .member-search input { padding-left: 36px; }
+    .member-search input:placeholder-shown::-webkit-search-cancel-button { display: none; }
+    .member-tools select { width: auto; min-width: 0; }
+    .member-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .member-filters .chip { border-radius: var(--r-pill); }
+    .member-filters .chip b { margin-left: 4px; font-variant-numeric: tabular-nums; }
+    .member-filters .chip[hidden] { display: none; }
+    .member-table { display: grid; gap: 6px; max-height: min(560px, 70vh); overflow-y: auto; margin-top: 10px; padding-right: 4px; overscroll-behavior: contain; }
     .member-row {
-      display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center;
-      padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff;
-      font-size: 13px; cursor: pointer; transition: background 0.14s var(--ease), opacity 0.14s var(--ease);
+      display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: start;
+      padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: #fff;
+      font-size: 13px; cursor: pointer; transition: background 0.14s var(--ease);
     }
-    .member-row:hover { background: rgba(234, 240, 233, 0.55); border-color: var(--line-strong); }
-    .member-row input { width: 17px; height: 17px; accent-color: var(--primary); flex: none; }
-    .member-row.is-excluded { opacity: 0.5; }
-    .m-left-tag {
-      display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
-      background: rgba(192, 57, 43, 0.12); color: var(--danger); font-size: 11px; font-weight: 700;
-      vertical-align: middle; text-decoration: none;
-    }
-    .auto-left-note {
-      margin: 12px 0 0; padding: 11px 13px; border-radius: 12px;
-      background: rgba(255, 244, 214, 0.7); border: 1px solid rgba(201, 162, 39, 0.28);
-      color: #7A4A32; font-size: 13px; font-weight: 700; line-height: 1.6;
-    }
-    .auto-left-note b { font-weight: 700; }
-    .m-name { font-weight: 600; min-width: 0; display: flex; align-items: center; gap: 6px; }
-    .m-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    @media (hover: hover) { .member-row:hover { background: var(--surface-2); border-color: var(--line-strong); } }
+    .member-row input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--brand); flex: none; }
+    .member-row.is-excluded { background: var(--surface-2); }
+    .member-row.is-excluded .m-name, .member-row.is-excluded .m-raw { color: var(--ink-2); }
     .member-row.is-excluded .m-name-text { text-decoration: line-through; }
-    .m-left-tag { flex: none; }
-    .m-count { font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
-    .m-share { color: var(--gray); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
+    .m-body { min-width: 0; display: grid; gap: 3px; }
+    .m-name { font-weight: 700; font-size: 14px; min-width: 0; display: flex; align-items: center; gap: 6px; }
+    .m-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .m-raw { color: var(--ink-2); font-size: 13px; overflow-wrap: anywhere; }
+    .m-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: var(--ink-2); font-size: 12px; }
+    .m-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--surface-2); color: var(--ink); }
+    .m-tag.is-out { background: var(--danger-soft); color: var(--danger); }
+    .m-tag.is-back { background: var(--brand-soft); color: var(--brand); }
+    .m-tag.is-new { background: var(--pastel-lavender); color: var(--deep-1); }
+    .m-num { text-align: right; display: grid; gap: 2px; }
+    .m-count { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .m-share { color: var(--ink-2); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .member-empty { padding: 14px; color: var(--ink-2); font-size: 13px; text-align: center; }
+    .member-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .member-foot[hidden] { display: none; }
+    .roster-details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .roster-details > summary { cursor: pointer; font-size: 14px; font-weight: 700; color: var(--brand); min-height: 32px; display: flex; align-items: center; }
+    .roster-details .roster-tool { margin-top: 8px; }
+    .publish-check { margin: 10px 0 0; padding: 8px 12px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.5; }
+    .label-exists { margin: 8px 0 0; padding: 8px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 13px; line-height: 1.5; }
+    .kw-dropped { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .kw-dropped > span { font-size: 13px; font-weight: 700; color: var(--ink-2); margin-right: 2px; }
+    .kw-dropped button { min-height: 32px; padding: 0 12px; border-radius: var(--r-pill); border: 1px dashed var(--line-strong); background: #fff; color: var(--ink-2); font-size: 13px; font-weight: 600; text-decoration: line-through; }
+    .kw-dropped button:hover { color: var(--brand); border-color: var(--brand); text-decoration: none; }
 
     /* ── 키워드 칩 ── */
     .kw-edit { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -191,22 +213,6 @@
     }
     .kw-edit-chip button:hover { background: rgba(192, 57, 43, 0.15); color: var(--danger); }
 
-    /* ── 마스킹 토글 ── */
-    .mask-row { display: flex; align-items: flex-start; gap: 12px; }
-    .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: none; margin-top: 2px; }
-    .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
-    .switch .knob {
-      position: absolute; inset: 0; border-radius: var(--r-pill);
-      background: var(--lavender-2); transition: background 0.2s var(--ease);
-      pointer-events: none;
-    }
-    .switch .knob::after {
-      content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
-      background: #fff; transition: transform 0.2s var(--ease);
-    }
-    .switch input:checked + .knob { background: var(--grad-brand); }
-    .switch input:checked + .knob::after { transform: translateX(20px); }
-    .switch input:focus-visible + .knob { outline: 3px solid rgba(40, 82, 68, 0.34); outline-offset: 2px; }
     /* 운영진 확인 화면 — 비밀번호를 서버에서 확인해야 도구가 열린다 */
     .gate { display: grid; place-items: center; padding: var(--sp-6) 0 var(--sp-7); }
     .gate[hidden] { display: none; }
@@ -218,15 +224,10 @@
     .gate-msg[hidden] { display: none; }
     .gate-ok { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 13px; }
     .tool-section[hidden] { display: none; }
-    .mask-copy > b { display: block; font-size: 14px; letter-spacing: -0.02em; color: var(--ink); }
-    .mask-copy p b { color: var(--ink); }
     .mini-summary.is-busy { opacity: 0.45; transition: opacity 0.15s; }
     .range-note { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink); font-size: 13px; line-height: 1.55; }
     .range-note.is-warn { background: var(--danger-soft); }
     .range-note .text-btn { margin-left: 6px; }
-    .mask-copy p { margin: 4px 0 0; color: var(--gray); font-size: 13px; line-height: 1.6; font-weight: 700; }
-    .mask-preview { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .mask-preview code { padding: 3px 10px; border-radius: 9px; background: var(--offwhite); font-size: 12px; font-weight: 600; color: var(--deep-1); }
 
     /* ── 발행 사이드 ── */
     .publish-stack { position: sticky; top: calc(var(--nav-h) + 16px); display: grid; gap: 14px; min-width: 0; }
@@ -420,52 +421,57 @@
             <!-- 3) 멤버 -->
             <section id="memberCard" class="card is-lg" aria-labelledby="stepMember" hidden>
               <div class="step-head"><h2 class="step-title" id="stepMember"><span class="step-no">3</span>멤버 확인</h2></div>
-              <p class="step-note">지금 방에 없는 사람(나갔거나 내보낸 사람)은 통계에서 빼는 것이 좋습니다. 아래에 <b>현재 방 멤버 명단</b>을 붙여넣으면 그 사람들만 남깁니다.</p>
+              <p class="step-note">체크를 끈 사람은 통계에서 빠집니다. 나감 기록이 있는 사람은 미리 꺼 두었습니다. 직접 바꾼 것은 이 브라우저에 기억해 다음 달에도 그대로 적용합니다.</p>
+              <p id="memberSummary" class="member-summary" role="status" aria-live="polite"></p>
 
-              <div class="roster-tool">
-                <label class="roster-label" for="rosterInput">현재 방에 있는 멤버 명단 (한 줄에 한 명, 선택)</label>
-                <textarea id="rosterInput" class="textarea" rows="4" placeholder="예:&#10;엑서 논현 남 88 0125&#10;민지 강남 여 95 0312&#10;(또는 닉네임만: 엑서, 민지)"></textarea>
-                <div class="roster-actions">
-                  <button id="rosterApply" class="btn btn-primary is-sm" type="button">이 명단만 남기기</button>
-                  <button id="rosterClear" class="mini-btn" type="button">전체 포함(초기화)</button>
+              <div class="member-tools">
+                <div class="member-search">
+                  <svg class="ic is-sm" aria-hidden="true"><use href="#i-search"/></svg>
+                  <input id="memberSearch" class="input" type="search" placeholder="이름 찾기" aria-label="멤버 이름 찾기" autocomplete="off" />
                 </div>
-                <p id="rosterStatus" class="roster-status" hidden></p>
+                <select id="memberSort" class="input" aria-label="멤버 정렬">
+                  <option value="count">메시지 많은 순</option>
+                  <option value="quiet">마지막 대화 오래된 순</option>
+                  <option value="name">이름순</option>
+                </select>
+              </div>
+              <div class="member-filters" role="group" aria-label="멤버 보기">
+                <button class="chip is-on" type="button" data-mf="all" aria-pressed="true">전체 <b id="mfAll">0</b></button>
+                <button class="chip" type="button" data-mf="off" aria-pressed="false">제외 <b id="mfOff">0</b></button>
+                <button class="chip" type="button" data-mf="left" aria-pressed="false">나감 기록 <b id="mfLeft">0</b></button>
+                <button class="chip" type="button" data-mf="new" aria-pressed="false" hidden>새 이름 <b id="mfNew">0</b></button>
+                <button class="chip" type="button" data-mf="mine" aria-pressed="false" hidden>직접 정함 <b id="mfMine">0</b></button>
+              </div>
+              <div id="memberTable" class="member-table" aria-label="멤버별 메시지 수"></div>
+              <div class="member-foot" id="memberFoot" hidden>
+                <button id="decisionsClear" class="mini-btn" type="button" hidden>직접 정한 것 모두 지우기</button>
               </div>
 
-              <p id="autoLeftNote" class="auto-left-note" hidden></p>
-              <p class="step-note" style="margin-top:10px">운영봇이나 공지 계정처럼 통계에서 뺄 사람은 아래에서 체크를 해제합니다. 비중(%)은 체크된 멤버 기준으로 계산합니다.</p>
-              <div id="memberTable" class="member-table" aria-label="멤버별 메시지 수"></div>
+              <details class="roster-details" id="rosterDetails">
+                <summary>현재 방 명단으로 한 번에 정하기</summary>
+                <div class="roster-tool">
+                  <label class="roster-label" for="rosterInput">현재 방에 있는 멤버 명단 (한 줄에 한 명)</label>
+                  <textarea id="rosterInput" class="textarea" rows="4" placeholder="예:&#10;엑서 논현 남 88 0125&#10;민지 강남 여 95 0312&#10;(또는 닉네임만: 엑서, 민지)"></textarea>
+                  <div class="roster-actions">
+                    <button id="rosterApply" class="btn btn-primary is-sm" type="button">이 명단만 남기기</button>
+                    <button id="rosterClear" class="mini-btn" type="button">명단 적용 취소</button>
+                  </div>
+                  <p id="rosterStatus" class="roster-status" hidden></p>
+                </div>
+              </details>
             </section>
 
             <!-- 4) 키워드 -->
             <section id="kwEditCard" class="card is-lg" aria-labelledby="stepKw" hidden>
               <div class="step-head">
                 <h2 class="step-title" id="stepKw"><span class="step-no">4</span>키워드 다듬기</h2>
-                <button id="kwRestoreBtn" class="mini-btn" type="button" hidden>뺀 키워드 되살리기</button>
+                <button id="kwRestoreBtn" class="mini-btn" type="button" hidden>뺀 단어 모두 되살리기</button>
               </div>
               <p class="step-note">통계에 보여 주기 어려운 단어(민감한 단어, 장소 등)는 ×로 뺍니다. 색점은 자동으로 나눈 분류입니다.</p>
               <div id="kwEdit" class="kw-edit"></div>
+              <div id="kwDropped" class="kw-dropped" hidden></div>
             </section>
 
-            <!-- 5) 닉네임 마스킹 -->
-            <section id="maskCard" class="card is-lg" aria-labelledby="stepMask" hidden>
-              <div class="step-head"><h2 class="step-title" id="stepMask"><span class="step-no">5</span>닉네임 마스킹</h2></div>
-              <div class="mask-row">
-                <label class="switch">
-                  <input type="checkbox" id="maskChk" role="switch" aria-label="닉네임 마스킹" />
-                  <span class="knob" aria-hidden="true"></span>
-                </label>
-                <div class="mask-copy">
-                  <b>닉네임을 첫 글자만 남기기</b>
-                  <p>이 설정을 켜지 않아도 <b>닉네임 뒷부분(지역, 성별, 출생 연도)은 발행되지 않습니다.</b>
-                  공백, 괄호, 밑줄 앞 첫 토막만 저장됩니다. 예를 들어 "엑서 논현 남 88" 과 "엑서[논현]" 은 "엑서" 로 저장됩니다.</p>
-                  <p>닉네임을 한 단계 더 가리고 싶을 때 켭니다. 켜면 발행되는 데이터 자체가
-                  "첫 글자 + *" 로 저장됩니다. 서버에도 원래 닉네임이 남지 않아 발행 후에는
-                  되돌릴 수 없습니다. 미리보기와 JSON에도 똑같이 적용됩니다.</p>
-                  <div class="mask-preview" id="maskPreview" hidden></div>
-                </div>
-              </div>
-            </section>
           </div>
 
           <!-- 발행 사이드 -->
@@ -478,11 +484,13 @@
                 <div class="mini-stat"><span>하루 평균</span><strong id="sumAvg">-</strong></div>
                 <div class="mini-stat"><span>새 멤버</span><strong id="sumJoin">-</strong></div>
               </div>
+              <p id="publishCheck" class="publish-check" hidden></p>
               <div class="field" style="margin-top:14px">
                 <label for="labelInput">통계 제목 (기간 이름)</label>
                 <input id="labelInput" class="input" type="text" placeholder="예: 2026년 6월" maxlength="40" />
                 <span class="field-hint">같은 제목으로 다시 발행하면 이전 내용을 교체합니다. 매달 최신 전체 파일을 <b>같은 제목</b>으로 발행하면 통계 하나에 계속 쌓입니다. <button type="button" class="text-btn is-quiet" id="reuseLabelBtn" hidden>지난 제목 그대로 쓰기</button></span>
               </div>
+              <p id="labelExists" class="label-exists" hidden>이미 발행된 제목입니다. 발행하면 그 통계가 이 내용으로 바뀝니다.</p>
               <p id="truncNote" class="hint" style="margin-top:8px;color:var(--danger)" hidden></p>
               <div class="field" id="passField" style="margin-top:10px" hidden>
                 <label for="passInput">운영진 비밀번호</label>
@@ -712,30 +720,81 @@
       let mergedMeta = { format: "unknown", files: 0 };
       let overlapDates = [];        // 파일 간 겹침 날짜
       let dataMin = null, dataMax = null;
-      const excluded = new Set();   // 통계 제외 멤버 — 표시 이름(민지·민지2) 하나로만 다룬다(멤버 표·명단·나감 감지가 모두 같은 이름)
-      let dispMap = Object.create(null);   // 원본 닉네임 → 표시 이름(ChatParser.displayNames)
-      let rawOfDisp = Object.create(null); // 표시 이름 → 원본 닉네임들
-      let leftRawNames = [];               // 나감 감지된 원본 닉네임 — 단어 목록에 이름이 오르지 않게 막는 데만 쓴다
-      let baseCache = { key: "", agg: null }; // 제외 전 집계(멤버 표용) — 기간이 같으면 다시 계산하지 않는다
+      const excluded = new Set();   // 통계 제외 멤버. 표시 이름(민지, 민지2) 하나로만 다룬다(멤버 표, 명단, 나감 감지가 모두 같은 이름)
+      let dispMap = Object.create(null);   // 원본 닉네임 -> 표시 이름(ChatParser.displayNames)
+      let rawOfDisp = Object.create(null); // 표시 이름 -> 원본 닉네임들
+      let rawInfo = Object.create(null);   // 원본 닉네임 -> { said: 마지막 대화일, left: 마지막 나감일, how: left|kick, joined: 마지막 입장일 }
+      let leftRawNames = [];               // 나감 감지된 원본 닉네임. 단어 목록에 이름이 오르지 않게 막는 데도 쓴다
+      let baseCache = { key: "", agg: null }; // 제외 전 집계(멤버 표용). 기간이 같으면 다시 계산하지 않는다
       const dropped = new Set();    // 삭제한 키워드
       let labelDirty = false;
       let currentStats = null;      // 발행/미리보기 대상 (v2)
       let lastMembers = [];         // 최근 집계된 전체 멤버(제외 판단용)
-      let rosterAutoApplied = false; // 저장된 명단 자동 적용은 세션당 한 번만
-      let detectedLeft = new Set(); // 채팅 분석으로 '나간 것으로 감지된' 닉네임
-      const manualOff = new Set();  // 운영진이 직접 '제외'한 닉네임(파일 추가·재집계에도 유지)
-      const manualOn = new Set();   // 운영진이 직접 '다시 포함'한 닉네임(자동 제외 무시)
+      let lastTotal = 0;
+      let detectedLeft = new Set(); // 채팅 분석으로 '나간 것으로 감지된' 표시 이름
+      const rosterOff = new Set();  // 명단 적용으로 뺀 표시 이름(이번 화면에서만)
+      const rosterOn = new Set();   // 명단 적용으로 남긴 표시 이름
+      /* 운영진이 직접 정한 것. 원본 닉네임 전체를 열쇠로 이 브라우저에 기억해 다음 달에도 적용한다.
+         { "민지 강남 여 95 0312": { off: true, at: "2026-09-25" } }
+         포함으로 정한 사람이 그 뒤에 나간 기록이 생기면 나감 기록을 따른다 */
+      let decisions = Object.create(null);
+      let seenRaw = new Set();      // 지난 발행 때 파일에 있던 원본 닉네임. 처음 보는 이름을 '새 이름'으로 표시한다
+      let memberFilter = "all", memberSort = "count", memberQuery = "";
+      let publishedLabels = new Set();
 
-      // 자동 감지 + 운영진 수동 결정을 합쳐 excluded 를 다시 계산
+      function todayKST() {
+        try { return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); }
+        catch (e) { return ymd(new Date()); }
+      }
+      function rawsOf(d) { return rawOfDisp[d] || [d]; }
+      function infoOf(d) {
+        const out = { said: "", left: "", how: "", joined: "" };
+        rawsOf(d).forEach((r) => {
+          const x = rawInfo[r]; if (!x) return;
+          if (x.said > out.said) out.said = x.said;
+          if (x.left > out.left) { out.left = x.left; out.how = x.how; }
+          if (x.joined > out.joined) out.joined = x.joined;
+        });
+        return out;
+      }
+      function decisionOf(d) {
+        let best = null;
+        rawsOf(d).forEach((r) => { const x = decisions[r]; if (x && (!best || String(x.at) > String(best.at))) best = x; });
+        return best;
+      }
+      // 자동(나감 기록)과 명단만으로 정한 상태. 직접 정한 것은 빼고 본다
+      function autoOff(d) {
+        if (rosterOn.has(d)) return false;
+        if (rosterOff.has(d)) return true;
+        return detectedLeft.has(d);
+      }
+      // 최종 상태와 그 이유: user-off, user-on, roster-off, roster-on, left, (빈 값 = 기본 포함)
+      function stateOf(d) {
+        const dec = decisionOf(d);
+        if (dec) {
+          if (dec.off) return { off: true, why: "user-off" };
+          const inf = infoOf(d);
+          if (!(detectedLeft.has(d) && inf.left && inf.left > String(dec.at))) return { off: false, why: "user-on" };
+        }
+        if (rosterOn.has(d)) return { off: false, why: "roster-on" };
+        if (rosterOff.has(d)) return { off: true, why: "roster-off" };
+        if (detectedLeft.has(d)) return { off: true, why: "left" };
+        return { off: false, why: "" };
+      }
       function recomputeExcluded() {
         excluded.clear();
-        detectedLeft.forEach((n) => excluded.add(n));
-        manualOff.forEach((n) => excluded.add(n));
-        manualOn.forEach((n) => excluded.delete(n));
+        Object.keys(rawOfDisp).forEach((d) => { if (stateOf(d).off) excluded.add(d); });
       }
+      // 체크를 바꾸면: 자동, 명단 판정과 같아지면 직접 정한 것을 지우고, 다르면 원본 닉네임마다 기억한다
+      function setDecision(d, off) {
+        const same = autoOff(d) === off;
+        rawsOf(d).forEach((r) => { if (same) delete decisions[r]; else decisions[r] = { off: off, at: todayKST() }; });
+        savePreset();
+      }
+      function isNewName(d) { return seenRaw.size > 0 && rawsOf(d).every((r) => !seenRaw.has(r)); }
 
       /* 현재 방 멤버 명단으로 "그 사람만 남기기".
-         닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. */
+         닉네임(첫 단어) 기준으로 매칭해 붙여넣기 양식이 조금 달라도 잘 잡히게 한다. 직접 정한 것이 명단보다 앞선다 */
       function normName(s) { return String(s || "").trim().replace(/\s+/g, " "); }
       function firstTok(s) { return ChatParser.headName(normName(s)).toLowerCase(); }   // 파서의 앞 토막과 같은 규칙
       function applyRoster() {
@@ -748,57 +807,52 @@
           return;
         }
         if (!lastMembers.length) return;
-        // 붙여넣은 명단: 전체 문자열 + 첫 단어(닉네임) 두 형태로 색인
         const full = new Set(lines.map((l) => l.toLowerCase()));
         const nick = new Set(lines.map(firstTok));
-        const matchedRosterFull = new Set();  // 매칭된 붙여넣기 항목(오탈자 확인용)
-        // 앞 토막이 같은 멤버(민지·민지2)는 앞 토막만으로는 누구인지 모른다 — 명단에 전체 닉네임이 있으면 그 사람만, 앞 토막만 적었으면 모두 남긴다
+        const matchedRosterFull = new Set();
+        // 앞 토막이 같은 멤버(민지, 민지2)는 앞 토막만으로는 누구인지 모른다. 명단에 전체 닉네임이 있으면 그 사람만, 앞 토막만 적었으면 모두 남긴다
         const headCount = Object.create(null);
-        lastMembers.forEach((m) => { const h = firstTok((rawOfDisp[m.name] || [m.name])[0]); headCount[h] = (headCount[h] || 0) + 1; });
+        lastMembers.forEach((m) => { const h = firstTok(rawsOf(m.name)[0]); headCount[h] = (headCount[h] || 0) + 1; });
         const headOnly = new Set(lines.filter((l) => normName(l).toLowerCase() === firstTok(l)).map(firstTok));
         let keep = 0;
-        // 명단이 이번 결정을 대체 — 매칭=포함 고정, 비매칭=제외 고정(파일 추가에도 유지)
-        manualOff.clear(); manualOn.clear();
+        rosterOn.clear(); rosterOff.clear();
         lastMembers.forEach((m) => {
-          const raws = (rawOfDisp[m.name] || [m.name]).map((r) => normName(r).toLowerCase());
+          const raws = rawsOf(m.name).map((r) => normName(r).toLowerCase());
           const nk = firstTok(raws[0]);
           const exact = raws.some((r) => full.has(r)) || full.has(normName(m.name).toLowerCase());
           const hit = exact || (headCount[nk] > 1 ? headOnly.has(nk) : (nick.has(nk) || full.has(nk)));
           if (hit) {
             keep += 1;
-            manualOn.add(m.name);
+            rosterOn.add(m.name);
             lines.forEach((l) => { const ll = l.toLowerCase(); if (raws.includes(ll) || firstTok(l) === nk) matchedRosterFull.add(l); });
           } else {
-            manualOff.add(m.name);
+            rosterOff.add(m.name);
           }
         });
-        recomputeExcluded();
-        const offCount = lastMembers.filter((m) => excluded.has(m.name)).length;
         const unmatched = lines.filter((l) => !matchedRosterFull.has(l));
         statusEl.hidden = false;
         if (keep === 0) {
+          rosterOn.clear(); rosterOff.clear();
           statusEl.className = "roster-status warn";
           statusEl.innerHTML = "명단과 일치하는 멤버가 없습니다. 대화 내역의 닉네임과 같은지 확인해 주세요.";
         } else {
           statusEl.className = "roster-status ok";
-          let msg = `현재 멤버 <b>${keep}명</b>만 남기고, 나머지 <b>${offCount}명</b>(나가거나 내보낸 사람)은 통계에서 제외했습니다.`;
+          let msg = `명단에 있는 <b>${keep}명</b>을 남기고 <b>${lastMembers.length - keep}명</b>을 뺐습니다. 직접 정한 사람은 그대로 둡니다.`;
           if (unmatched.length) {
             const show = unmatched.slice(0, 8).map(escapeHTML).join(", ");
             msg += `<br><span class="warn">명단에 있지만 대화 내역에서 못 찾은 이름 ${unmatched.length}개: ${show}${unmatched.length > 8 ? ` 외 ${unmatched.length - 8}개` : ""} (오탈자이거나 그 기간에 메시지가 없는 사람일 수 있습니다)</span>`;
           }
           statusEl.innerHTML = msg;
         }
+        recomputeExcluded();
         recompute();
       }
       function clearRoster() {
-        // 전원 포함 — 자동 감지된 나간 사람까지 포함으로 고정(파일 추가에도 유지)
-        manualOff.clear();
-        manualOn.clear();
-        detectedLeft.forEach((n) => manualOn.add(n));
+        rosterOn.clear(); rosterOff.clear();
         recomputeExcluded();
         const statusEl = $("rosterStatus");
         statusEl.hidden = false; statusEl.className = "roster-status ok";
-        statusEl.textContent = "모든 멤버를 다시 포함했습니다.";
+        statusEl.textContent = "명단 적용을 취소했습니다. 나감 기록과 직접 정한 것만 남습니다.";
         recompute();
       }
 
@@ -865,7 +919,7 @@
           merged = null; currentStats = null; dataMin = dataMax = null; overlapDates = [];
           $("parseInfo").hidden = true;
           $("overlapBox").hidden = true;
-          ["rangeCard", "memberCard", "kwEditCard", "maskCard"].forEach((id) => { $(id).hidden = true; });
+          ["rangeCard", "memberCard", "kwEditCard"].forEach((id) => { $(id).hidden = true; });
           updateActions();
           renderMiniSummary(null);
           return;
@@ -938,7 +992,7 @@
 
         if (!normal) {
           EXCER.toast("메시지를 찾지 못했습니다. 카카오톡 내보내기 원본 .txt인지 확인해 주세요.");
-          ["rangeCard", "memberCard", "kwEditCard", "maskCard"].forEach((id) => { $(id).hidden = true; });
+          ["rangeCard", "memberCard", "kwEditCard"].forEach((id) => { $(id).hidden = true; });
           currentStats = null; updateActions(); renderMiniSummary(null);
           return;
         }
@@ -953,11 +1007,19 @@
         Object.keys(dispMap).forEach((raw) => { const d = dispMap[raw]; if (d) (rawOfDisp[d] = rawOfDisp[d] || []).push(raw); });
         leftRawNames = ChatParser.membership(merged).leftNames;
         detectedLeft = new Set(leftRawNames.map((n) => dispMap[n]).filter(Boolean));
+        // 원본 닉네임마다 마지막 대화일, 마지막 나감(나감, 내보냄), 마지막 입장일. 멤버 표에서 사람을 가려내는 데 쓴다(발행되지 않는다)
+        rawInfo = Object.create(null);
+        merged.forEach((m) => {
+          if (!m.name) return;
+          const r = rawInfo[m.name] || (rawInfo[m.name] = { said: "", left: "", how: "", joined: "" });
+          if (m.kind === "leave") { if (m.date >= r.left) { r.left = m.date; r.how = m.how || "left"; } }
+          else if (m.kind === "join") { if (m.date > r.joined) r.joined = m.date; }
+          else if (m.date > r.said) r.said = m.date;
+        });
         baseCache = { key: "", agg: null };
         recomputeExcluded();
 
         $("rangeCard").hidden = false;
-        $("maskCard").hidden = false;
         applyDefaultRange();
         recompute();
       }
@@ -1026,21 +1088,16 @@
           return;
         }
 
-        // 멤버 표는 "제외 전·마스킹 전" 집계 기준으로 그려야 다시 체크할 수 있다. 기간이 같으면 다시 계산하지 않는다(체크 하나에 1년치를 두 번 집계하던 것)
+        // 멤버 표는 제외 전 집계 기준으로 그려야 다시 체크할 수 있다. 기간이 같으면 다시 계산하지 않는다(체크 하나에 1년치를 두 번 집계하던 것)
         const key = from + "|" + to;
         if (baseCache.key !== key) {
           baseCache = { key, agg: ChatParser.aggregate(merged, { from, to, format: mergedMeta.format, files: mergedMeta.files, stopNames: leftRawNames }) };
         }
         const baseAgg = baseCache.agg;
         lastMembers = baseAgg.members || [];
-        // 저장된 명단이 있으면 첫 집계 직후 한 번 자동 적용한다.
-        // 매달 같은 명단을 다시 붙여넣던 단계가 이걸로 사라진다.
-        if (!rosterAutoApplied && lastMembers.length && ($("rosterInput").value || "").trim()) {
-          rosterAutoApplied = true;
-          applyRoster();
-          return;   // applyRoster 가 recompute 를 다시 부른다
-        }
-        renderMemberTable(baseAgg.members, baseAgg.meta.totalMessages);
+        lastTotal = baseAgg.meta.totalMessages;
+        recomputeExcluded();
+        renderMemberTable();
 
         currentStats = ChatParser.aggregate(merged, {
           from, to,
@@ -1048,7 +1105,6 @@
           stopNames: leftRawNames,
           dropKeywords: [...dropped],
           keywordLimit: 40,
-          maskNames: $("maskChk").checked,
           format: mergedMeta.format,
           files: mergedMeta.files
         });
@@ -1057,46 +1113,78 @@
         currentStats.periodLabel = $("labelInput").value.trim() || currentStats.periodLabel;
 
         renderKwEdit(currentStats.keywords);
-        renderMaskPreview(baseAgg.members);
         renderMiniSummary(currentStats);
+        updateLabelNote();
         updateActions();
       }
 
-      function renderMemberTable(members, totalMessages) {
+      function md(date) {
+        if (!date) return "";
+        const [y, m, d] = date.split("-").map(Number);
+        const thisYear = (dataMax || todayKST()).slice(0, 4);
+        return (String(y) !== thisYear ? y + "년 " : "") + m + "월 " + d + "일";
+      }
+      /* 멤버 표: 발행되는 이름(앞 토막) 아래에 원래 닉네임 전체, 마지막 대화, 나감 기록, 새 이름, 직접 정함을 함께 보여 준다.
+         보기(전체, 제외, 나감 기록, 새 이름, 직접 정함), 이름 찾기, 정렬은 표만 다시 그린다 */
+      function memberView(m) {
+        const st = stateOf(m.name), inf = infoOf(m.name);
+        return { m, st, inf, left: !!inf.left, out: detectedLeft.has(m.name), isNew: isNewName(m.name), mine: !!decisionOf(m.name) };
+      }
+      function renderMemberTable() {
         const card = $("memberCard");
-        const list = members || [];
+        const list = lastMembers || [];
         card.hidden = list.length === 0;
+        if (!list.length) return;
+        const views = list.map(memberView);
+        const includedTotal = views.reduce((s, v) => s + (v.st.off ? 0 : v.m.count), 0);
+        const cnt = {
+          all: views.length, off: views.filter((v) => v.st.off).length, left: views.filter((v) => v.left).length,
+          new: views.filter((v) => v.isNew).length, mine: views.filter((v) => v.mine).length
+        };
+        $("mfAll").textContent = cnt.all; $("mfOff").textContent = cnt.off; $("mfLeft").textContent = cnt.left;
+        $("mfNew").textContent = cnt.new; $("mfMine").textContent = cnt.mine;
+        document.querySelector('[data-mf="new"]').hidden = cnt.new === 0 && memberFilter !== "new";
+        document.querySelector('[data-mf="mine"]').hidden = cnt.mine === 0 && memberFilter !== "mine";
+        $("memberSummary").innerHTML = `포함 ${nf(cnt.all - cnt.off)}명, 제외 ${nf(cnt.off)}명` +
+          (cnt.left || cnt.new ? ` <span>(${[cnt.left ? "나감 기록 " + nf(cnt.left) + "명" : "", cnt.new ? "새 이름 " + nf(cnt.new) + "명" : ""].filter(Boolean).join(", ")})</span>` : "");
+        $("memberFoot").hidden = cnt.mine === 0;
+        $("decisionsClear").hidden = cnt.mine === 0;
 
-        // 비중(%)은 '포함된(현재) 멤버' 메시지 합을 분모로 — 나간 사람은 분모에서 제외
-        const includedTotal = list.reduce((s, m) => s + (excluded.has(m.name) ? 0 : m.count), 0);
+        const q = memberQuery.trim().toLowerCase();
+        let shown = views.filter((v) => {
+          if (memberFilter === "off" && !v.st.off) return false;
+          if (memberFilter === "left" && !v.left) return false;
+          if (memberFilter === "new" && !v.isNew) return false;
+          if (memberFilter === "mine" && !v.mine) return false;
+          if (q && !(v.m.name.toLowerCase().includes(q) || rawsOf(v.m.name).some((r) => r.toLowerCase().includes(q)))) return false;
+          return true;
+        });
+        if (memberSort === "quiet") shown.sort((a, b) => (a.inf.said || "").localeCompare(b.inf.said || "") || a.m.count - b.m.count);
+        else if (memberSort === "name") shown.sort((a, b) => a.m.name.localeCompare(b.m.name, "ko"));
 
-        // 자동 감지 요약: 감지된 나간 사람이 멤버 목록에 실제로 있는 경우만
-        const detectedInList = list.filter((m) => detectedLeft.has(m.name)).length;
-        const note = $("autoLeftNote");
-        if (note) {
-          if (detectedInList > 0) {
-            note.hidden = false;
-            note.innerHTML = `<svg class="ic is-sm" aria-hidden="true"><use href="#i-search"/></svg> 채팅의 나감과 내보냄 기록을 살펴 <b>${nf(detectedInList)}명</b>을 나간 것으로 보고 미리 제외했습니다. ` +
-              `아래에서 확인하고, 아직 방에 있는 사람이면 체크를 다시 켜 주세요.`;
-          } else {
-            note.hidden = false;
-            note.innerHTML = `<svg class="ic is-sm" aria-hidden="true"><use href="#i-search"/></svg> 채팅에서 나가거나 내보낸 기록을 찾지 못했습니다. 오래된 내역이면 기록이 없을 수 있으니 ` +
-              `위 명단 붙여넣기로 현재 멤버만 남겨 주세요.`;
-          }
-        }
-
-        $("memberTable").innerHTML = list.map((m) => {
-          const off = excluded.has(m.name);
-          const isLeft = detectedLeft.has(m.name);
+        const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.member : null;
+        const WHY = { "user-off": "직접 제외", "user-on": "직접 포함", "roster-off": "명단에 없음" };
+        $("memberTable").innerHTML = shown.length ? shown.map((v) => {
+          const m = v.m, off = v.st.off;
           const share = (!off && includedTotal) ? Math.round((m.count / includedTotal) * 1000) / 10 : 0;
+          const raws = rawsOf(m.name).filter((r) => r !== m.name);
+          const tags = [];
+          if (v.out) tags.push(`<span class="m-tag is-out">${v.inf.how === "kick" ? "내보냄" : "나감"} ${escapeHTML(md(v.inf.left))}</span>`);
+          else if (v.left) tags.push(`<span class="m-tag is-back">다시 들어옴${v.inf.joined ? " " + escapeHTML(md(v.inf.joined)) : ""}</span>`);
+          if (v.isNew) tags.push(`<span class="m-tag is-new">새 이름</span>`);
+          if (WHY[v.st.why]) tags.push(`<span class="m-tag">${WHY[v.st.why]}</span>`);
           return `
           <label class="member-row${off ? " is-excluded" : ""}">
-            <input type="checkbox" data-member="${escapeHTML(m.name)}" ${off ? "" : "checked"} />
-            <span class="m-name"><span class="m-name-text">${escapeHTML(m.name)}</span>${isLeft ? `<span class="m-left-tag">나감 감지</span>` : ""}</span>
-            <span class="m-count">${nf(m.count)}</span>
-            <span class="m-share">${off ? "제외" : share + "%"}</span>
+            <input type="checkbox" data-member="${escapeHTML(m.name)}" ${off ? "" : "checked"} aria-label="${escapeHTML(rawsOf(m.name).join(", "))} 통계에 포함" />
+            <span class="m-body">
+              <span class="m-name"><span class="m-name-text">${escapeHTML(m.name)}</span></span>
+              ${raws.length ? `<span class="m-raw">${raws.map(escapeHTML).join(", ")}</span>` : ""}
+              <span class="m-meta">${v.inf.said ? `<span>마지막 대화 ${escapeHTML(md(v.inf.said))}</span>` : ""}${tags.join("")}</span>
+            </span>
+            <span class="m-num"><span class="m-count">${nf(m.count)}</span><span class="m-share">${off ? "제외" : share + "%"}</span></span>
           </label>`;
-        }).join("");
+        }).join("") : `<p class="member-empty">해당하는 멤버가 없습니다.</p>`;
+        if (focused) { const el = $("memberTable").querySelector(`input[data-member="${CSS.escape(focused)}"]`); if (el) el.focus({ preventScroll: true }); }
       }
 
       function renderKwEdit(keywords) {
@@ -1112,21 +1200,9 @@
               <button type="button" data-drop="${escapeHTML(k.w)}" aria-label="키워드 ${escapeHTML(k.w)} 빼기">×</button>
             </span>`).join("")
           : `<span class="hint">남은 키워드가 없습니다.</span>`;
-      }
-
-      function renderMaskPreview(members) {
-        const host = $("maskPreview");
-        if (!$("maskChk").checked || !members || !members.length) { host.hidden = true; return; }
-        host.hidden = false;
-        const used = Object.create(null);
-        const samples = members.slice(0, 3).map((m) => {
-          const base = (Array.from(String(m.name).trim())[0] || "?") + "*";
-          let out = base, n = 2;
-          while (used[out]) { out = base + n; n += 1; }
-          used[out] = 1;
-          return `<code>${escapeHTML(m.name)} 대신 ${escapeHTML(out)}</code>`;
-        });
-        host.innerHTML = samples.join("");
+        const dh = $("kwDropped");
+        dh.hidden = dropped.size === 0;
+        dh.innerHTML = dropped.size ? `<span>뺀 단어</span>` + [...dropped].map((w) => `<button type="button" data-restore="${escapeHTML(w)}" aria-label="${escapeHTML(w)} 되살리기">${escapeHTML(w)}</button>`).join("") : "";
       }
 
       function renderMiniSummary(st) {
@@ -1136,6 +1212,13 @@
         $("sumMember").textContent = st ? nf(st.members.length) + "명" : "-";
         $("sumAvg").textContent = st && daysN ? nf(total / daysN) + "건" : "-";
         $("sumJoin").textContent = st ? nf(st.newMembers.count) + "명" : "-";
+        const pc = $("publishCheck");
+        if (pc) {
+          const offN = st ? lastMembers.filter((m) => excluded.has(m.name)).length : 0;
+          const bits = st ? [offN ? "제외 " + nf(offN) + "명" : "", dropped.size ? "뺀 단어 " + nf(dropped.size) + "개" : ""].filter(Boolean) : [];
+          pc.hidden = !bits.length;
+          pc.textContent = bits.join(", ");
+        }
         /* 잘림은 소리 내서 알린다 — 조용히 잘린 발행본은 나중에 아무도 이유를 모른다 */
         const tn = $("truncNote");
         if (tn) {
@@ -1157,6 +1240,10 @@
         $("downloadBtn").disabled = !ready;
       }
 
+      function updateLabelNote() {
+        const el = $("labelExists"); if (!el) return;
+        el.hidden = !(currentStats && publishedLabels.has($("labelInput").value.trim()));
+      }
       function finalizedStats() {
         if (!currentStats) return null;
         const label = $("labelInput").value.trim();
@@ -1189,6 +1276,8 @@
           });
           EXCER.toast(`"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다.`);
           lastPublished = st;
+          Object.keys(dispMap).forEach((raw) => seenRaw.add(raw));
+          savePreset();
           $("afterPublishText").textContent = `"${(r && r.periodLabel) || st.periodLabel}" 통계를 발행했습니다. 채팅방에 알릴까요?`;
           $("afterPublish").hidden = false;
           loadReportList();
@@ -1235,7 +1324,7 @@
 
       /* ── 발행 프리셋 ──────────────────────────────────────────
          발행은 매달 반복되는데, 매번 같은 결정을 처음부터 다시 내리고 있었다.
-         멤버 명단을 다시 붙여넣고, 같은 단어를 또 빼고, 마스킹을 또 켜는 식이다.
+         멤버 명단을 다시 붙여넣고, 같은 단어를 또 빼는 식이다. 직접 정한 멤버 포함, 제외도 여기에 기억한다.
          그 '매번 같은 결정'만 이 브라우저에 기억시킨다.
 
          비밀번호는 저장하지 않는다. 한 번 새면 공지 작성·발행·글 강제삭제가
@@ -1247,7 +1336,8 @@
           localStorage.setItem(PRESET_KEY, JSON.stringify({
             roster: $("rosterInput").value || "",
             dropped: [...dropped],
-            mask: !!$("maskChk").checked,
+            decisions: decisions,
+            seen: [...seenRaw].slice(-3000),
             at: new Date().toISOString()
           }));
         } catch (e) { /* 저장소를 못 쓰면 그냥 기억하지 않는다 */ }
@@ -1259,18 +1349,21 @@
         if (!p || typeof p !== "object") return;
 
         if (p.roster) $("rosterInput").value = p.roster;
-        if (p.mask) $("maskChk").checked = true;
         // 뺀 키워드는 집계가 끝난 뒤에 적용해야 의미가 있으므로 여기서는 담아만 둔다
         if (Array.isArray(p.dropped)) p.dropped.forEach((k) => dropped.add(k));
+        if (p.decisions && typeof p.decisions === "object") {
+          Object.keys(p.decisions).forEach((r) => { const x = p.decisions[r]; if (x && typeof x.off === "boolean") decisions[r] = { off: x.off, at: String(x.at || "") }; });
+        }
+        if (Array.isArray(p.seen)) seenRaw = new Set(p.seen.map(String));
 
         const bar = $("presetBar");
         const bits = [];
-        if (p.roster) bits.push("멤버 명단");
+        const nDec = Object.keys(decisions).length;
+        if (nDec) bits.push("직접 정한 멤버 " + nDec + "명");
         if (Array.isArray(p.dropped) && p.dropped.length) bits.push("뺀 단어 " + p.dropped.length + "개");
-        if (p.mask) bits.push("닉네임 가리기");
+        if (p.roster) bits.push("멤버 명단(3단계에서 적용)");
         if (!bits.length) return;
-        $("presetText").textContent = "지난번 설정을 불러왔습니다. " + bits.join(", ") +
-          ". 파일을 올리면 명단이 자동으로 적용됩니다.";
+        $("presetText").textContent = "지난번 설정을 불러왔습니다. " + bits.join(", ") + ".";
         bar.hidden = false;
       }
 
@@ -1324,6 +1417,8 @@
         try {
           const rows = await supaFetch("/rest/v1/site_reports_v?select=id,period_label,updated_at,range:stats->range");
           $("setupBox").hidden = true;
+          publishedLabels = new Set((rows || []).map((r) => String(r.period_label || "")));
+          updateLabelNote();
           renderCheckStrip(rows);
           host.innerHTML = (rows && rows.length)
             ? rows.map((r) => `
@@ -1389,7 +1484,6 @@
         });
 
         $("autoMergeChk").addEventListener("change", rebuild);
-        $("maskChk").addEventListener("change", () => { recompute(); savePreset(); });
 
         $("rangeNote").addEventListener("click", (e) => { if (e.target.closest("#rangeResetBtn")) { setRange(dataMin, dataMax, "all"); recompute(); } });
         $("fromDate").addEventListener("change", () => { setRange($("fromDate").value, $("toDate").value, null); recompute(); });
@@ -1413,9 +1507,23 @@
         $("memberTable").addEventListener("change", (e) => {
           const cb = e.target.closest("input[data-member]");
           if (!cb) return;
-          const name = cb.dataset.member;
-          if (cb.checked) { excluded.delete(name); manualOn.add(name); manualOff.delete(name); }
-          else { excluded.add(name); manualOff.add(name); manualOn.delete(name); }
+          setDecision(cb.dataset.member, !cb.checked);
+          recomputeExcluded();
+          recompute();
+        });
+        document.querySelectorAll("[data-mf]").forEach((b) => b.addEventListener("click", () => {
+          memberFilter = b.dataset.mf;
+          document.querySelectorAll("[data-mf]").forEach((x) => { const on = x === b; x.classList.toggle("is-on", on); x.setAttribute("aria-pressed", on ? "true" : "false"); });
+          renderMemberTable();
+        }));
+        $("memberSearch").addEventListener("input", () => { memberQuery = $("memberSearch").value; renderMemberTable(); });
+        $("memberSort").addEventListener("change", () => { memberSort = $("memberSort").value; renderMemberTable(); });
+        $("decisionsClear").addEventListener("click", () => {
+          const n = Object.keys(decisions).length;
+          if (!n || !window.confirm(`직접 정한 ${n}명의 포함, 제외를 지우고 나감 기록 기준으로 되돌릴까요?`)) return;
+          decisions = Object.create(null);
+          savePreset();
+          recomputeExcluded();
           recompute();
         });
 
@@ -1429,6 +1537,13 @@
           recompute();
           savePreset();
         });
+        $("kwDropped").addEventListener("click", (e) => {
+          const b = e.target.closest("[data-restore]");
+          if (!b) return;
+          dropped.delete(b.dataset.restore);
+          recompute();
+          savePreset();
+        });
         $("kwRestoreBtn").addEventListener("click", () => {
           dropped.clear();
           recompute();
@@ -1438,11 +1553,13 @@
         $("labelInput").addEventListener("input", () => {
           labelDirty = $("labelInput").value.trim().length > 0;
           if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+          updateLabelNote();
         });
         $("reuseLabelBtn").addEventListener("click", () => {
           $("labelInput").value = $("reuseLabelBtn").dataset.label || "";
           labelDirty = true;
           if (currentStats) currentStats.periodLabel = $("labelInput").value.trim();
+          updateLabelNote();
           EXCER.toast("지난 제목을 그대로 씁니다. 발행하면 이전 통계가 이 내용으로 교체됩니다.");
         });
 
@@ -1451,9 +1568,13 @@
         $("notifyBtn").addEventListener("click", notifyChat);
         $("downloadBtn").addEventListener("click", doDownload);
         $("presetClear").addEventListener("click", () => {
+          if (!window.confirm("직접 정한 멤버, 뺀 단어, 명단, 본 이름 기록을 모두 지웁니다. 계속할까요?")) return;
           try { localStorage.removeItem(PRESET_KEY); } catch (e) {}
+          decisions = Object.create(null); seenRaw = new Set(); dropped.clear();
+          rosterOn.clear(); rosterOff.clear(); $("rosterInput").value = "";
           $("presetBar").hidden = true;
-          EXCER.toast("저장된 설정을 지웠습니다. 다음 발행부터는 처음부터 설정합니다.");
+          if (merged) { recomputeExcluded(); recompute(); }
+          EXCER.toast("저장된 설정을 지웠습니다.");
         });
         $("reloadListBtn").addEventListener("click", loadReportList);
         $("reportList").addEventListener("click", (e) => {
