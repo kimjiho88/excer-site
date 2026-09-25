@@ -207,7 +207,7 @@
     /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=9"></script>
+  <script src="assets/site-core.js?v=10"></script>
   <script src="assets/icons.js?v=2"></script>
   <script src="assets/content.js?v=5"></script>
 </head>
@@ -586,9 +586,11 @@
     function savedNick() { try { return localStorage.getItem(NICK_KEY) || ""; } catch (e) { return ""; } }
     function saveNick(nick) { try { localStorage.setItem(NICK_KEY, nick); } catch (e) {} }
     /* 글 비밀번호는 '내 글 열쇠'다. 이 브라우저에 기억해 두 번째 글부터는 입력이 0회가 되게 한다.
-       공지(운영진 비밀번호)는 저장하지 않는다. */
+       공지(운영진 비밀번호)는 저장하지 않는다. 운영진 기기(통계 발행 화면에서 확인된 기기)에서는 아무 비밀번호도 저장하지 않는다.
+       운영진이 댓글이나 일반 글에 운영진 비밀번호를 쓰면 그대로 기기에 남기 때문이다. */
     function savedPass() { try { return localStorage.getItem(PASS_KEY) || ""; } catch (e) { return ""; } }
-    function savePass(pass, category) { if (category === "공지") return; try { localStorage.setItem(PASS_KEY, pass); } catch (e) {} }
+    function isAdminDevice() { try { return localStorage.getItem("excer_admin_device") === "1"; } catch (e) { return false; } }
+    function savePass(pass, category) { if (category === "공지" || isAdminDevice()) return; try { localStorage.setItem(PASS_KEY, pass); } catch (e) {} }
     function forgetPass() {
       try { localStorage.removeItem(PASS_KEY); } catch (e) {}
       $("wPass").value = "";
