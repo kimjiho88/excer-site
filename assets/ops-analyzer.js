@@ -290,10 +290,10 @@
         joins.forEach(function (j) {
           var spokeBefore = p.firstT < j.t;
           var leftBefore = leaves.some(function (l) { return l.t < j.t; });
-          if (spokeBefore || leftBefore) re.push({ d: j.date, via: j.via, name: j.name, stay: stayBefore(j.t) });
+          if (spokeBefore || leftBefore) re.push({ d: j.date, via: j.via, name: j.name, stay: stayBefore(j.t), key: j.key });
         });
         // 나감 줄 뒤에 들어옴 줄 없이 다시 말했으면 들어옴 줄 없는 재입장
-        leaves.forEach(function (l) { if (l.gapAfter && !joins.some(function (j) { return j.t > l.t && j.date <= l.gapAfter; })) re.push({ d: l.gapAfter, via: "gap", name: "", stay: stayBefore(l.t + 1) }); });
+        leaves.forEach(function (l) { if (l.gapAfter && !joins.some(function (j) { return j.t > l.t && j.date <= l.gapAfter; })) re.push({ d: l.gapAfter, via: "gap", name: "", stay: stayBefore(l.t + 1), key: l.key + "|gap" }); });
         var lastLeave = leaves.length ? leaves[leaves.length - 1] : null;
         var lastJoin = joins.length ? joins[joins.length - 1] : null;
         var out = lastLeave && lastLeave.t > p.lastT && (!lastJoin || lastLeave.t > lastJoin.t);
@@ -317,11 +317,10 @@
         var flags = [];
         function F(code, level, label, extra) { flags.push({ c: code, l: level, t: label, x: extra || "" }); }
         if (!parts.ok) F("fmt", "rule", "닉네임 양식", parts.issues.join(", "));
-        if (parts.dayMissing) F("day_missing", "rule", "입장일 칸 없음", joinedAt ? "들어옴 " + dot(joinedAt) : "");
         if (joinedAt && parts.day) {
           var real = joinedAt.slice(5, 7) + joinedAt.slice(8, 10);
           var diff = Math.abs(dnum(joinedAt) - dnum(joinedAt.slice(0, 4) + "-" + parts.day.slice(0, 2) + "-" + parts.day.slice(2)));
-          if (real !== parts.day && diff > 1) F("day", "rule", "입장일 불일치", "닉네임 " + parts.day + ", 실제 들어옴 " + dot(joinedAt));
+          if (real !== parts.day && diff > 1) F("day", "info", "닉네임 입장일과 실제가 다름", "닉네임 " + parts.day + ", 실제 들어옴 " + dot(joinedAt));
         }
         var limit = parts.reentryLimit || null;
         if (re.length && limit != null && re.length > limit) F("reentry", "rule", "재입장 한도 초과", re.length + "회, 한도 " + limit + "회");
@@ -351,10 +350,10 @@
         return {
           name: n, head: p.head, dflt: isDefaultName(n), parts: { region: parts.region, sex: parts.sex, birth: parts.birth, birthYear: parts.birthYear || null, day: parts.day, heart: parts.heart, heartKind: parts.heartKind },
           fmtOk: parts.ok, fmtIssues: parts.issues, limit: limit,
-          status: status, outDate: out ? lastLeave.date : "", outBy: out && lastLeave.by ? lastLeave.by : "", joinedAt: joinedAt, joinedBeforeFile: !lastJoin && p.firstT <= fileStartT + 7 * DAY, kickedThenBack: kickedThenBack, kickReturns: kickReturns,
+          status: status, outDate: out ? lastLeave.date : "", outBy: out && lastLeave.by ? lastLeave.by : "", joinedAt: joinedAt, firstJoin: joins.length ? joins[0].date : "", joins: joins.length, joinedBeforeFile: !lastJoin && p.firstT <= fileStartT + 7 * DAY, kickedThenBack: kickedThenBack, kickReturns: kickReturns,
           role: owner === n && status === "in" ? "owner" : subs[n] && status === "in" ? "sub" : "", roles: roleHist,
           reentries: re.sort(function (a, b) { return a.d < b.d ? -1 : 1; }), sysNames: sysNames,
-          events: evs.slice(-20).map(function (e) { return { k: e.kind, d: e.date, t: e.hm, how: e.how, by: e.by, name: e.name, via: e.via, key: e.key }; }),
+          events: evs.slice(-40).map(function (e) { return { k: e.kind, d: e.date, t: e.hm, how: e.how, by: e.by, name: e.name, via: e.via, key: e.key }; }),
           first: p.firstDate, last: p.lastDate, n: p.n, d30: d30, d60: d60, d90: d90, activeDays: p.days, maxGap: p.maxGap,
           kinds: p.kinds, avgLen: p.textN ? Math.round(p.textLen / p.textN) : 0, nightShare: p.n ? Math.round((p.night / p.n) * 100) : 0,
           starts: p.starts, replies: p.replies, welcomes: p.welcomes, thanksGot: p.thanksGot, thanksGiven: p.thanksGiven,

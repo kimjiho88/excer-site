@@ -106,6 +106,10 @@
     .timeline { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
     .timeline li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
     .timeline time { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .timeline .io-note { flex-basis: 100%; padding: 4px 8px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; overflow-wrap: anywhere; }
+    .timeline .io-edit { flex-basis: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+    .timeline .io-edit .io-chk { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 13px; }
+    .timeline .io-edit .io-chk input { width: 18px; height: 18px; }
     .form-row { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .form-row .wide { grid-column: 1 / -1; }
     .save-state { color: var(--ink-2); font-size: 12px; }
@@ -224,10 +228,10 @@
     /* ── 상태: 비밀번호는 이 탭의 메모리에만 ── */
     let PASS = "";
     let localOnly = false;
-    const S = { ledger: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {} }, history: { people: [] }, roster: null, savedAt: "", unsaved: false };
+    const S = { ledger: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {} }, history: { people: [] }, roster: null, savedAt: "", unsaved: false };
     let srcFiles = [], busy = false;
     let tab = "home";
-    const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "day", "day_missing", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set() };
+    const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set(), memberMode: "list", ioEdit: "" };
 
     /* ── 서버 ── */
     async function rpc(name, body) {
@@ -266,7 +270,7 @@
         const data = await opsGet(null);
         S.ledger = data.ledger ? data.ledger.value : null;
         S.savedAt = data.ledger ? data.ledger.updated_at : "";
-        if (data.records) S.records = Object.assign({ actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {} }, data.records.value);
+        if (data.records) S.records = Object.assign({ actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {} }, data.records.value);
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
@@ -306,7 +310,12 @@
     /* 규칙 기준일(운영자 결정 2025-06-12): 재입장과 내보낸 뒤 다시 들어옴은 이 날부터 센다 */
     const RULE_FROM = "2025-06-12";
     const ruleFrom = () => (S.records.settings && S.records.settings.ruleFrom) || RULE_FROM;
-    const reAfter = (p) => (p.reentries || []).filter((r) => r.d >= ruleFrom());
+    // 입퇴장 특이사항: 사람마다 메모 하나, 들어옴, 나감 줄마다 메모와 '한도에서 뺌'
+    const ioOf = (pid) => (S.records.io && S.records.io[pid]) || { note: "", ev: {} };
+    const hasIo = (pid) => { const x = ioOf(pid); return !!(x.note || Object.keys(x.ev || {}).length); };
+    const excused = (p, key) => { const x = ioOf(p.pid).ev || {}; return !!(key && x[key] && x[key].excuse); };
+    const reAfterAll = (p) => (p.reentries || []).filter((r) => r.d >= ruleFrom());
+    const reAfter = (p) => reAfterAll(p).filter((r) => !excused(p, r.key));
     function effFlags(p) {
       const e = exc(p.pid);
       const awayOn = e.awayUntil && e.awayUntil >= todayKST();
@@ -314,7 +323,6 @@
         if (awayOn && (f.c === "silent" || f.c === "drop")) return false;
         if (f.c === "reentry" || f.c === "reentry_info") return false;   // 아래에서 기준일로 다시 센다
         if (f.c === "kick_return" && p.kickReturns && !p.kickReturns.some((k) => k.back >= ruleFrom())) return false;
-        if (f.c === "day_missing") { const from = S.records.settings && S.records.settings.dayFrom; if (!from || !p.joinedAt || p.joinedAt < from) return false; }
         return true;
       }).map((f) => {
         if (f.c !== "kick_return" || !p.kickReturns) return f;
@@ -350,7 +358,7 @@
       return `<button class="prow" type="button" data-person="${esc(p.pid)}">
         <span class="pn">${esc(p.name)}</span>
         <span class="pr"><b>${nf(p.d30)}</b>최근 30일</span>
-        <span class="pm">${statusTag(p)}${p.joinedAt ? `<span>들어옴 ${esc(md(p.joinedAt))}</span>` : ""}<span>마지막 ${esc(md(p.last))}</span>${extra || ""}${flagTags(fl.slice(0, 4))}${fl.length > 4 ? `<span>외 ${fl.length - 4}</span>` : ""}</span>
+        <span class="pm">${statusTag(p)}${p.joinedAt ? `<span>들어옴 ${esc(md(p.joinedAt))}</span>` : ""}<span>마지막 ${esc(md(p.last))}</span>${hasIo(p.pid) ? `<span class="tag">입퇴장 메모</span>` : ""}${extra || ""}${flagTags(fl.slice(0, 4))}${fl.length > 4 ? `<span>외 ${fl.length - 4}</span>` : ""}</span>
       </button>`;
     }
     document.addEventListener("click", (e) => { const b = e.target.closest("[data-person]"); if (b) openPerson(b.dataset.person); });
@@ -409,6 +417,7 @@
       let list = all.filter(F[view.filter]).filter((p) => !q || p.name.toLowerCase().includes(q) || (p.sysNames || []).some((n) => n.toLowerCase().includes(q)) || (p.nameHistory || []).some((n) => n.n.toLowerCase().includes(q)));
       if (view.sort === "quiet") list.sort((a, b) => a.last.localeCompare(b.last));
       else if (view.sort === "joined") list.sort((a, b) => (b.joinedAt || "").localeCompare(a.joinedAt || ""));
+      else if (view.sort === "joined_old") list.sort((a, b) => (a.joinedAt || "0").localeCompare(b.joinedAt || "0"));
       else if (view.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name, "ko"));
       else list.sort((a, b) => b.n - a.n);
       host.innerHTML = `<div class="panel">
@@ -418,21 +427,43 @@
             <option value="count"${view.sort === "count" ? " selected" : ""}>메시지 많은 순</option>
             <option value="quiet"${view.sort === "quiet" ? " selected" : ""}>마지막 대화 오래된 순</option>
             <option value="joined"${view.sort === "joined" ? " selected" : ""}>최근 들어온 순</option>
+            <option value="joined_old"${view.sort === "joined_old" ? " selected" : ""}>오래 머문 순</option>
             <option value="name"${view.sort === "name" ? " selected" : ""}>이름순</option>
           </select>
         </div>
         <div class="chips" role="group" aria-label="보기">${Object.keys(F).map((k) => `<button type="button" data-mf="${k}" aria-pressed="${view.filter === k}">${labels[k]} <b>${all.filter(F[k]).length}</b></button>`).join("")}</div>
-        <div class="rows">${list.length ? list.map((p) => personRow(p)).join("") : `<p class="empty">해당하는 사람이 없습니다.</p>`}</div>
+        <div class="chips" role="group" aria-label="보는 방식"><button type="button" data-mm="list" aria-pressed="${view.memberMode === "list"}">목록</button><button type="button" data-mm="join" aria-pressed="${view.memberMode === "join"}">입장일</button></div>
+        ${view.memberMode === "join" ? joinView(list, endN) : `<div class="rows">${list.length ? list.map((p) => personRow(p)).join("") : `<p class="empty">해당하는 사람이 없습니다.</p>`}</div>`}
       </div>`;
       $("mq").addEventListener("input", (e) => { view.q = e.target.value; const pos = e.target.selectionStart; renderMembers(); const el = $("mq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} });
       $("ms").addEventListener("change", (e) => { view.sort = e.target.value; renderMembers(); });
       host.querySelectorAll("[data-mf]").forEach((b) => b.addEventListener("click", () => { view.filter = b.dataset.mf; renderMembers(); }));
+      host.querySelectorAll("[data-mm]").forEach((b) => b.addEventListener("click", () => { view.memberMode = b.dataset.mm; if (b.dataset.mm === "join" && !/^joined/.test(view.sort)) view.sort = "joined"; renderMembers(); }));
+    }
+    /* 입장일: 닉네임 규칙과 별개로 실제 들어옴 줄 기준. 마지막으로 들어온 날, 처음 들어온 날, 머문 날 */
+    function joinView(list, endN) {
+      const from = S.ledger.range.from;
+      const byMonth = {};
+      let before = 0, none = 0;
+      list.forEach((p) => { if (p.joinedAt) { const k = p.joinedAt.slice(0, 7); byMonth[k] = (byMonth[k] || 0) + 1; } else if (p.joinedBeforeFile) before += 1; else none += 1; });
+      const months = Object.keys(byMonth).sort().reverse().map((m) => m + " " + byMonth[m] + "명");
+      if (before) months.push(md(from) + " 전부터 " + before + "명");
+      if (none) months.push("들어옴 줄 없음 " + none + "명");
+      const row = (p) => {
+        const pr = p.parts || {};
+        const nick = pr.day ? `<span>닉네임 ${esc(pr.day)}</span>${p.joinedAt && pr.day !== p.joinedAt.slice(5, 7) + p.joinedAt.slice(8, 10) ? `<span class="tag watch">닉네임과 다름</span>` : ""}` : "";
+        const since = p.joinedAt ? `<span>들어옴 ${esc(md(p.joinedAt))}</span>` : `<span>${p.joinedBeforeFile ? esc(md(from)) + " 전부터" : "들어옴 줄 없음"}</span>`;
+        const first = p.firstJoin && p.firstJoin !== p.joinedAt ? `<span>처음 ${esc(md(p.firstJoin))}</span><span>들어옴 ${p.joins}번</span>` : "";
+        return `<button class="prow" type="button" data-person="${esc(p.pid)}"><span class="pn">${esc(p.name)}</span><span class="pr">${p.joinedAt ? `<b>${nf(endN - dnum(p.joinedAt))}</b>일째` : ""}</span><span class="pm">${statusTag(p)}${since}${first}${nick}${hasIo(p.pid) ? `<span class="tag">입퇴장 메모</span>` : ""}</span></button>`;
+      };
+      return `<p class="sub">실제 들어옴 줄 기준입니다(대화 ${esc(md(from))}부터). 들어온 달: ${months.map(esc).join(", ")}</p>
+        <div class="rows">${list.length ? list.map(row).join("") : `<p class="empty">해당하는 사람이 없습니다.</p>`}</div>`;
     }
 
     /* ── 점검 ── */
-    const RULE_CODES = ["fmt", "day", "day_missing", "reentry", "kick_return", "name_change", "deleted"];
+    const RULE_CODES = ["fmt", "reentry", "kick_return", "name_change", "deleted"];
     const CHECKS = [
-      ["fmt", "닉네임 양식"], ["day", "입장일 불일치"], ["day_missing", "입장일 칸 없음"], ["reentry", "재입장 한도 초과"], ["kick_return", "내보낸 뒤 다시 들어옴"],
+      ["fmt", "닉네임 양식"], ["reentry", "재입장 한도 초과"], ["kick_return", "내보낸 뒤 다시 들어옴"],
       ["name_change", "닉네임 변경 2회 이상"], ["deleted", "메시지 삭제"], ["silent", "60일 넘게 대화 없음"], ["drop", "대화 급감"], ["reentry_info", "재입장 기록(한도 안)"], ["names", "다른 이름 기록"]
     ];
     const HEART_LABEL = { in: "방 안 커플", out: "방 밖 사람과 만남" };
@@ -450,13 +481,9 @@
           const detail = (p) => { const f = effFlags(p).find((x) => x.c === code); return f && f.x && code !== "silent" ? `<span>${esc(f.x)}</span>` : ""; };
           return detailsGroup(code, esc(label), `<div class="rows">${list.slice(0, 200).map((p) => personRow(p, detail(p))).join("")}</div>${list.length > 200 ? `<p class="sub">200명까지 보여 줍니다. 전체는 멤버 탭에서 찾습니다.</p>` : ""}`, list.length, false);
         });
-        const dayFrom = S.records.settings.dayFrom || "";
         rulesHtml = `<div class="panel"><h2>규칙 점검</h2><p class="sub">지금 방에 있는 사람만 봅니다. 재입장은 같은 이름의 들어옴, 나감 줄로 세고, 닉네임 변경은 지난 저장본과 비교합니다.</p>
-          <div class="form-row">
-            <label class="field"><span>규칙 기준일</span><input id="ruleFrom" class="input" type="date" value="${esc(ruleFrom())}" /></label>
-            <label class="field"><span>입장일 칸 적용 시작일</span><input id="dayFrom" class="input" type="date" value="${esc(dayFrom)}" /></label>
-          </div>
-          <p class="sub">재입장과 내보낸 뒤 다시 들어옴은 규칙 기준일부터 셉니다. 입장일 칸은 적용 시작일부터 들어온 사람만 봅니다${dayFrom ? "" : "(비워 두면 보지 않음)"}.</p>
+          <label class="field"><span>규칙 기준일</span><input id="ruleFrom" class="input" type="date" value="${esc(ruleFrom())}" /></label>
+          <p class="sub">재입장과 내보낸 뒤 다시 들어옴은 규칙 기준일부터 셉니다. 한도에서 뺀 재입장(입퇴장 메모)은 세지 않습니다. 입장일은 규칙과 별개로 멤버 탭의 입장일에서 봅니다.</p>
           ${groups.join("")}</div>`;
         const un = S.ledger.unlinked || [];
         const ug = unlinkedGroups();
@@ -491,8 +518,6 @@
       $("tbChecks").textContent = ruleN || "";
       host.innerHTML = rulesHtml + rosterHtml + heartHtml + unHtml;
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) { view.open.add(k); view.closed.delete(k); } else { view.open.delete(k); view.closed.add(k); } }));
-      const df = $("dayFrom");
-      if (df) df.addEventListener("change", () => { S.records.settings.dayFrom = df.value; saveRecords(); renderAll(); });
       const rf = $("ruleFrom");
       if (rf) rf.addEventListener("change", () => { if (rf.value) S.records.settings.ruleFrom = rf.value; else delete S.records.settings.ruleFrom; saveRecords(); renderAll(); });
       host.querySelectorAll("[data-link]").forEach((b) => b.addEventListener("click", () => {
@@ -624,14 +649,28 @@
       const pids = [...new Set(acts.map((a) => a.pid))];
       host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건</small></h2>
         ${acts.length ? `<ul class="ev">${acts.map((a) => `<li><time>${esc(md(a.date))}</time><span><b style="display:inline;color:var(--ink)">${esc(name(a.pid))}</b> ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>`).join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
-        ${pids.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}</div></div>` : ""}`;
+        ${pids.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}</div></div>` : ""}
+        ${ioPanel()}`;
+    }
+    /* 입퇴장 메모 모아 보기: 사람 메모와 줄마다 메모(날짜 순) */
+    function ioPanel() {
+      const all = S.records.io || {};
+      const pids = Object.keys(all).filter((pid) => hasIo(pid));
+      const evLabel = (key) => { const [k, d, t] = String(key).split("|"); return md(d) + " " + (/\|gap$/.test(key) ? "다시 말함(들어옴 줄 없음)" : k === "join" ? "들어옴" : "나감") + (t && !/\|gap$/.test(key) ? " " + t : ""); };
+      return `<div class="panel"><h2>입퇴장 메모 <small>${pids.length}명</small></h2>
+        ${pids.length ? pids.map((pid) => {
+          const p = byPid(pid), io = all[pid], keys = Object.keys(io.ev || {}).sort((a, b) => a.split("|")[1].localeCompare(b.split("|")[1]));
+          return `<div class="group">${p ? personRow(p) : `<p class="sub">${esc(pid)}(이번 파일에 없음)</p>`}
+            ${io.note ? `<p class="sub">${esc(io.note)}</p>` : ""}
+            ${keys.length ? `<ul class="ev">${keys.map((k) => `<li><time>${esc(evLabel(k))}</time><span>${esc(io.ev[k].note || "")}${io.ev[k].excuse ? ` <span class="tag good">한도에서 뺌</span>` : ""}</span></li>`).join("")}</ul>` : ""}</div>`;
+        }).join("") : `<p class="empty">아직 없습니다. 멤버 상세의 들어옴, 나감에서 적습니다.</p>`}</div>`;
     }
 
     /* ── 사람 상세 ── */
     let sheetPid = null, lastFocus = null;
     function openPerson(pid) {
       const p = byPid(pid); if (!p) return;
-      sheetPid = pid; lastFocus = document.activeElement;
+      sheetPid = pid; lastFocus = document.activeElement; view.ioEdit = "";
       $("sheetTitle").textContent = p.name;
       renderSheet(p);
       $("sheet").hidden = false;
@@ -642,8 +681,10 @@
       const pid = sheetPid;
       $("sheet").hidden = true; document.body.style.overflow = ""; sheetPid = null;
       let el = lastFocus && lastFocus.isConnected ? lastFocus : null;
-      if (!el && pid) el = [...document.querySelectorAll(`[data-panel="${tab}"] [data-person]`)].find((b) => b.dataset.person === pid) || null;
+      if (!el && pid) el = [...document.querySelectorAll(`[data-panel="${tab}"] [data-person]`)].find((b) => b.dataset.person === pid && b.closest("details:not([open])") === null && b.getClientRects().length) || null;
       if (el) try { el.focus(); } catch (e) {}
+      // 그 사람이 목록에서 빠졌거나 접힌 묶음 안이면 탭으로
+      if (!el || document.activeElement !== el) { const t = document.querySelector(`[data-tab="${tab}"]`); if (t) t.focus(); }
     }
     $("sheetClose").addEventListener("click", closeSheet);
     $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
@@ -656,7 +697,25 @@
       const cell = (label, v, need) => `<div><span>${label}</span><b class="${!v && need ? "miss" : ""}">${esc(v || "없음")}</b></div>`;
       const acts = S.records.actions.filter((a) => a.pid === p.pid).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       const VIA = { name: "", head: "앞 이름으로 이음", time: "시점으로 이음(추정)", manual: "직접 이음" };
-      const evs = (p.events || []).map((x) => `<li><time>${esc(md(x.d))} ${esc(x.t)}</time><span>${x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" + (x.by ? "(" + esc(x.by) + ")" : "") : "나감"}</span>${x.name !== p.name ? `<span class="tag">줄 이름: ${esc(x.name)}</span>` : ""}${VIA[x.via] ? `<span class="tag">${esc(VIA[x.via])}</span>` : ""}${x.via === "manual" && srcFiles.length ? `<button class="text-btn is-quiet" type="button" data-unlink="${esc(x.key)}">풀기</button>` : ""}</li>`).join("");
+      // 들어옴, 나감 줄과 '들어옴 줄 없이 다시 말함'을 한 줄씩. 줄마다 메모와 '한도에서 뺌'
+      const io = ioOf(p.pid), ioEv = io.ev || {};
+      const reByKey = new Map((p.reentries || []).map((r) => [r.key, r]));
+      const items = (p.events || []).map((x) => ({ key: x.key, d: x.d, t: x.t, x }))
+        .concat((p.reentries || []).filter((r) => r.via === "gap").map((r) => ({ key: r.key, d: r.d, t: "", gap: true })))
+        .sort((a, b) => (a.d + (a.t || "99")).localeCompare(b.d + (b.t || "99")));
+      const evs = items.map((it) => {
+        const x = it.x, re = reByKey.get(it.key), note = ioEv[it.key] || {};
+        const label = it.gap ? "다시 말함(들어옴 줄 없음)" : x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" + (x.by ? "(" + esc(x.by) + ")" : "") : "나감";
+        const tags = (x && x.name !== p.name ? `<span class="tag">줄 이름: ${esc(x.name)}</span>` : "") + (x && VIA[x.via] ? `<span class="tag">${esc(VIA[x.via])}</span>` : "")
+          + (re ? `<span class="tag ${re.d >= ruleFrom() && !note.excuse ? "watch" : ""}">재입장${re.d < ruleFrom() ? "(기준일 전)" : ""}${re.stay != null ? ", 앞 머묾 " + re.stay + "일" : ""}</span>` : "")
+          + (note.excuse ? `<span class="tag good">한도에서 뺌</span>` : "");
+        const editing = view.ioEdit === it.key;
+        return `<li${editing ? ' class="is-editing"' : ""}><time>${esc(md(it.d))}${it.t ? " " + esc(it.t) : ""}</time><span>${label}</span>${tags}
+          ${x && x.via === "manual" && srcFiles.length ? `<button class="text-btn is-quiet" type="button" data-unlink="${esc(x.key)}">풀기</button>` : ""}
+          <button class="text-btn is-quiet" type="button" data-io-edit="${esc(it.key)}">${note.note || note.excuse ? "메모 고치기" : "메모"}</button>
+          ${note.note && !editing ? `<span class="io-note">${esc(note.note)}</span>` : ""}
+          ${editing ? `<span class="io-edit"><input class="input" type="text" maxlength="200" id="ioEvText" value="${esc(note.note || "")}" placeholder="예: 기기 교체로 미리 알림" aria-label="이 줄 메모" />${re ? `<label class="io-chk"><input type="checkbox" id="ioEvExcuse"${note.excuse ? " checked" : ""} /> 한도에서 뺌</label>` : ""}<button class="btn btn-secondary is-sm" type="button" data-io-save="${esc(it.key)}">저장</button></span>` : ""}</li>`;
+      }).join("");
       const kinds = p.kinds || {};
       const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}</span></li>`).join("");
       $("sheetBody").innerHTML = `
@@ -665,10 +724,12 @@
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
           ${pend.length ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
         </div>
-        <div class="panel"><h2>들어옴, 나감 <small>재입장 ${reAfter(p).length}회(기준일 뒤)${p.reentries.length !== reAfter(p).length ? ", 전체 " + p.reentries.length + "회" : ""}${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 예외 +" + e.reentry : ""}</small></h2>
+        <div class="panel"><h2>들어옴, 나감 <small>재입장 ${reAfter(p).length}회(기준일 뒤)${reAfterAll(p).length !== reAfter(p).length ? ", 한도에서 뺌 " + (reAfterAll(p).length - reAfter(p).length) + "회" : ""}${p.reentries.length !== reAfterAll(p).length ? ", 전체 " + p.reentries.length + "회" : ""}${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 미리 허용 +" + e.reentry : ""}</small></h2>
+          <p class="sub">실제 입장일 ${p.joinedAt ? esc(md(p.joinedAt)) : p.joinedBeforeFile ? esc(md(S.ledger.range.from)) + " 전부터" : "기록 없음"}${p.firstJoin && p.firstJoin !== p.joinedAt ? ", 처음 들어옴 " + esc(md(p.firstJoin)) : ""}</p>
           ${evs ? `<ul class="timeline">${evs}</ul>` : `<p class="sub">이 파일에 이 사람의 들어옴, 나감 줄이 없습니다.</p>`}
           ${(p.roles || []).length ? `<p class="sub">운영진 기록: ${p.roles.map((r) => esc(md(r.d)) + " " + ({ sub_on: "부방장이 됨", sub_off: "부방장 해제", owner: "방장이 됨", owner_off: "방장을 넘김" }[r.act] || "")).join(", ")}</p>` : ""}
-          ${p.reentries.length ? `<p class="sub">재입장 날짜: ${p.reentries.map((r) => esc(md(r.d)) + (r.d < ruleFrom() ? "(기준일 전)" : "") + (r.via === "gap" ? "(들어옴 줄 없음)" : "") + (r.stay != null ? "(앞 머묾 " + r.stay + "일)" : "")).join(", ")}</p>` : ""}
+          <label class="field"><span>입퇴장 메모</span><textarea id="ioNote" class="textarea" rows="2" maxlength="1000" placeholder="예: 기기 교체로 나갔다 들어옴, 미리 알림">${esc(io.note || "")}</textarea></label>
+          <button id="ioNoteSave" class="btn btn-secondary is-sm" type="button">입퇴장 메모 저장</button>
         </div>
         <div class="panel"><h2>닉네임 이력</h2>
           ${names ? `<ul class="timeline">${names}</ul><p class="sub">날짜는 그 이름이 보인 파일의 마지막 대화 날짜입니다.</p>` : ""}
@@ -703,11 +764,20 @@
         <div class="panel"><h2>메모와 예외</h2>
           <textarea id="noteText" class="textarea" rows="3" maxlength="2000" placeholder="메모" aria-label="메모">${esc(S.records.notes[p.pid] || "")}</textarea>
           <div class="form-row">
-            <label class="field"><span>재입장 예외(더 허용할 횟수)</span><input id="excRe" class="input" type="number" min="0" max="5" value="${+e.reentry || 0}" /></label>
+            <label class="field"><span>미리 허용한 재입장(회)</span><input id="excRe" class="input" type="number" min="0" max="5" value="${+e.reentry || 0}" /></label>
             <label class="field"><span>장기 미참여 알림(이 날까지)</span><input id="excAway" class="input" type="date" value="${esc(e.awayUntil || "")}" /></label>
           </div>
           <button id="noteSave" class="btn btn-secondary is-sm" type="button">메모와 예외 저장</button>
         </div>`;
+      const ioSet = (fn) => { const all = S.records.io || (S.records.io = {}); const cur = all[p.pid] || { note: "", ev: {} }; fn(cur); if (!cur.note && !Object.keys(cur.ev).length) delete all[p.pid]; else all[p.pid] = cur; saveRecords(); renderAll(); renderSheet(p); };
+      $("sheetBody").querySelectorAll("[data-io-edit]").forEach((b) => b.addEventListener("click", () => { view.ioEdit = view.ioEdit === b.dataset.ioEdit ? "" : b.dataset.ioEdit; renderSheet(p); const t = $("ioEvText"); if (t) t.focus(); }));
+      $("sheetBody").querySelectorAll("[data-io-save]").forEach((b) => b.addEventListener("click", () => {
+        const key = b.dataset.ioSave, text = $("ioEvText").value.trim().slice(0, 200), ex = $("ioEvExcuse") ? $("ioEvExcuse").checked : false;
+        view.ioEdit = "";
+        ioSet((cur) => { if (text || ex) cur.ev[key] = { note: text, excuse: ex }; else delete cur.ev[key]; });
+        toast("저장했습니다.");
+      }));
+      $("ioNoteSave").addEventListener("click", () => { const t = $("ioNote").value.trim(); ioSet((cur) => { cur.note = t; }); toast("입퇴장 메모를 저장했습니다."); });
       $("sheetBody").querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => { delete S.records.links[b.dataset.unlink]; saveRecords(); runAnalysis("풀었습니다. 저장하면 다른 기기에서도 보입니다."); }));
       const rb = $("reviewBtn");
       if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.k || f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
