@@ -32,10 +32,18 @@
   }
   function hash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 
-  /* ── 닉네임 양식: 닉네임 지역 성별 출생연도(두 자리) 입장일(월일 네 자리) ── */
+  /* ── 닉네임 양식: 닉네임 지역 성별 출생연도(두 자리) 입장일(월일 네 자리) ──
+     끝의 하트는 양식 밖의 표시다(색 하트는 방 안 커플, 흰 하트는 방 밖 사람과 만남).
+     입장일 칸이 없는 것은 따로 표시만 하고, 적용 시작일 뒤에 들어온 사람만 규칙으로 본다(대시보드 설정) */
+  var HEART_RE = /\s*((?:\u2764\uFE0F?|\u2665\uFE0F?|\uD83E\uDDE1|\uD83D\uDC9B|\uD83D\uDC9A|\uD83D\uDC99|\uD83D\uDC9C|\uD83E\uDD0E|\uD83D\uDDA4|\uD83E\uDD0D|\uD83E\uDE77|\uD83E\uDE75|\uD83E\uDE76|\uD83D\uDC97|\uD83D\uDC96|\uD83D\uDC95|\uD83D\uDC98|\uD83D\uDC9D|\uD83D\uDC93|\uD83D\uDC9E)+)\s*$/;
+  var WHITE_HEART = "\uD83E\uDD0D";
+  function isBot(name) { var n = norm(name); return /(^|[\s_])bot$/i.test(n) || /봇$/.test(n); }
   function nickParts(name) {
-    var t = norm(name).split(" ").filter(Boolean);
-    var out = { tokens: t.length, nick: t[0] || "", region: "", sex: "", birth: "", day: "", issues: [] };
+    var raw = norm(name), heart = "";
+    var hm = raw.match(HEART_RE);
+    if (hm && hm.index > 0) { heart = hm[1].replace(/\uFE0F/g, ""); raw = raw.slice(0, hm.index).trim(); }
+    var t = raw.split(" ").filter(Boolean);
+    var out = { tokens: t.length, nick: t[0] || "", region: "", sex: "", birth: "", day: "", heart: heart, heartKind: heart ? (heart.indexOf(WHITE_HEART) >= 0 ? "out" : "in") : "", issues: [] };
     var sexI = t.findIndex(function (x) { return x === "남" || x === "여"; });
     var birthI = t.findIndex(function (x) { return /^\d{2}$/.test(x); });
     var dayI = t.findIndex(function (x) { return /^\d{4}$/.test(x); });
@@ -43,14 +51,14 @@
     if (birthI >= 0) out.birth = t[birthI];
     if (dayI >= 0) out.day = t[dayI];
     if (t.length >= 2 && sexI !== 1 && birthI !== 1 && dayI !== 1) out.region = t[1];
-    if (!/[가-힣A-Za-z0-9]/.test(name)) out.issues.push("글자 없이 기호나 이모지만");
+    if (!/[가-힣A-Za-z0-9]/.test(raw)) out.issues.push("글자 없이 기호나 이모지만");
     if (t.length === 1) out.issues.push("이름만");
-    else if (t.length !== 5) out.issues.push("칸 " + t.length + "개(다섯 칸이어야 함)");
+    else if (t.length !== (out.day ? 5 : 4)) out.issues.push("칸 " + t.length + "개");
     if (!out.sex) out.issues.push("성별 칸 없음");
     if (!out.birth) out.issues.push("출생연도 두 자리 없음");
-    if (!out.day) out.issues.push("입장일 네 자리 없음");
-    else { var mm = +out.day.slice(0, 2), dd = +out.day.slice(2); if (mm < 1 || mm > 12 || dd < 1 || dd > 31) out.issues.push("입장일 날짜가 아님"); }
-    if (t.length === 5 && !(sexI === 2 && birthI === 3 && dayI === 4)) out.issues.push("순서가 다름");
+    if (out.day) { var mm = +out.day.slice(0, 2), dd = +out.day.slice(2); if (mm < 1 || mm > 12 || dd < 1 || dd > 31) out.issues.push("입장일 날짜가 아님"); }
+    if (out.sex && out.birth && t.length >= 4 && !(sexI === 2 && birthI === 3 && (!out.day || dayI === 4))) out.issues.push("순서가 다름");
+    out.dayMissing = t.length > 1 && !out.day;
     out.ok = out.issues.length === 0;
     if (out.birth) { var yy = +out.birth; out.birthYear = yy >= 30 ? 1900 + yy : 2000 + yy; out.reentryLimit = out.birthYear <= 1981 ? 1 : 3; }
     return out;
@@ -89,6 +97,8 @@
     var people = Object.create(null);
     var events = [];   // 들어옴, 나감
     var normal = [];
+    list = list.filter(function (x) { return !isBot(x.m.name); });
+    if (!list.length) return null;
     list.forEach(function (x) {
       var m = x.m;
       if (m.kind === "join" || m.kind === "leave") { events.push({ kind: m.kind, name: norm(m.name), how: m.how || "", by: m.by || "", date: m.date, t: x.t, hm: hm(m) }); return; }
@@ -321,6 +331,7 @@
       var flags = [];
       function F(code, level, label, extra) { flags.push({ c: code, l: level, t: label, x: extra || "" }); }
       if (!parts.ok) F("fmt", "rule", "닉네임 양식", parts.issues.join(", "));
+      if (parts.dayMissing) F("day_missing", "rule", "입장일 칸 없음", p.joinedAt ? "들어옴 " + dot(p.joinedAt) : "");
       if (p.joinedAt && parts.day) {
         var real = p.joinedAt.slice(5, 7) + p.joinedAt.slice(8, 10);
         var diff = Math.abs(dnum(p.joinedAt) - dnum(p.joinedAt.slice(0, 4) + "-" + parts.day.slice(0, 2) + "-" + parts.day.slice(2)));
@@ -349,7 +360,7 @@
       var streak = 0, best = 0; weeks.forEach(function (w, i) { streak = i && w === weeks[i - 1] + 1 ? streak + 1 : 1; if (streak > best) best = streak; });
       if (best >= 8) F("steady", "good", "꾸준함", best + "주 연속");
       return {
-        name: n, head: p.head, parts: { region: parts.region, sex: parts.sex, birth: parts.birth, birthYear: parts.birthYear || null, day: parts.day },
+        name: n, head: p.head, parts: { region: parts.region, sex: parts.sex, birth: parts.birth, birthYear: parts.birthYear || null, day: parts.day, heart: parts.heart, heartKind: parts.heartKind },
         fmtOk: parts.ok, fmtIssues: parts.issues, limit: limit,
         status: p.status, outDate: p.outDate, outBy: p.outBy, joinedAt: p.joinedAt, joinedBeforeFile: p.joinedBeforeFile, kickedThenBack: p.kickedThenBack,
         reentries: p.reentries, sysNames: p.sysNames, events: p.events.slice(-20),
@@ -427,7 +438,7 @@
     });
   }
 
-  var OpsAnalyzer = { analyze: analyze, nickParts: nickParts, matchPrevious: matchPrevious, SIG: SIG };
+  var OpsAnalyzer = { analyze: analyze, nickParts: nickParts, isBot: isBot, matchPrevious: matchPrevious, SIG: SIG };
   global.OpsAnalyzer = OpsAnalyzer;
   if (typeof module !== "undefined" && module.exports) module.exports = OpsAnalyzer;
 })(typeof window !== "undefined" ? window : globalThis);
