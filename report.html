@@ -491,7 +491,7 @@
     :where(.rp-sec, .titles-band, .rp-top, dialog.sheet) :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     [hidden] { display: none !important; }
   </style>
-  <script src="assets/site-core.js?v=10"></script>
+  <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=2"></script>
 </head>
 <body>
@@ -1245,7 +1245,7 @@
         "나도 내가 나는 저는 저도 제가 우리 아니 그래 하나 한번 원래 이미 사실 갑자기 생각 아님 하지 가면 거의 담에 시에 있는데 집에 아하 언제 " +
         "너무 진짜 근데 그냥 오늘 내일 지금 이제 다들 혹시 아직 계속 요즘 정말 완전 많이 조금 다시 역시 그럼 그리고 그래서 같은데 있어 없어 이거 그거 저거 " +
         "언니 누나 오빠 형 형님 동생 남자 여자 친구 사람 사진 동영상 이모티콘 파일 삭제된 " +
-        "이런 있음 근대 다른 아주 했는데 집에서 요기 오호 좋아 나중 느낌 맨날 예전").split(" ");
+        "이런 있음 근대 다른 아주 했는데 집에서 요기 오호 좋아 나중 느낌 맨날 예전 메시지").split(" ");
       function cleanKeywords(list) {
         return (list || []).filter(function (k) { return k && KW_STOP.indexOf(k.w) < 0 && String(k.w).length >= 2 && !/^[ㄱ-ㅎㅏ-ㅣ]+$/.test(k.w); });
       }
@@ -1268,11 +1268,24 @@
         });
         return out.filter(function (w) { return w.top.length >= 2; }).length >= 2 ? out : [];
       }
+      /* 비중을 반올림해도 합이 100 이 되게(나머지가 큰 것부터 1씩 더한다) */
+      function roundShares(vals) {
+        var tot = sumArr(vals);
+        if (!tot) return vals.map(function () { return 0; });
+        var raw = vals.map(function (v) { return ((v || 0) / tot) * 100; });
+        var out = raw.map(Math.floor), left = 100 - sumArr(out);
+        raw.map(function (r, k) { return { k: k, f: r - Math.floor(r) }; }).sort(function (x, y) { return y.f - x.f; })
+          .slice(0, Math.max(0, left)).forEach(function (x) { out[x.k] += 1; });
+        return out;
+      }
+      /* 기간 이름: 1일에 시작하면 달(9월, 8월~9월), 아니면 날짜 범위(6.27~9.26). 해가 다르면 연도를 붙인다 */
       function pubShort(data) {
         var a = String(data.range.from || "").split("-"), b = String(data.range.to || "").split("-");
         if (a.length < 3 || b.length < 3) return "이번";
-        if (a[0] === b[0] && a[1] === b[1]) return (+a[1]) + "월";
-        return (+a[1]) + "월~" + (+b[1]) + "월";
+        var sameY = a[0] === b[0];
+        if (+a[2] !== 1) return sameY ? (+a[1]) + "." + (+a[2]) + "~" + (+b[1]) + "." + (+b[2]) : a[0] + "." + (+a[1]) + "." + (+a[2]) + "~" + b[0] + "." + (+b[1]) + "." + (+b[2]);
+        if (sameY && a[1] === b[1]) return (+a[1]) + "월";
+        return sameY ? (+a[1]) + "월~" + (+b[1]) + "월" : a[0] + "년 " + (+a[1]) + "월~" + b[0] + "년 " + (+b[1]) + "월";
       }
       /* 축 눈금: 1만 미만은 5,000, 1만 이상은 1만, 1.5만 */
       function fmtAxis(n) {
@@ -1312,11 +1325,11 @@
          비율 칭호는 최소 표본(메시지 pubMin 건) 이상인 멤버끼리 자기 메시지 가운데의 비중으로 겨룬다(표시 순서와 겨룬 값이 같게).
          배정: 칭호마다 상위 3명 후보를 1위 대비 강도로 줄 세워 칭호도 사람도 비어 있을 때 준다. 활약왕은 늘 실제 1위 */
       var TITLE_DEFS = [
-        { id: "active", title: "활약왕", group: "medal", img: "badge-active", icon: "trophy", crit: "발행 기간 메시지 수" },
+        { id: "active", title: "활약왕", group: "medal", img: "badge-active", icon: "trophy", crit: "메시지 수" },
         { id: "growth", title: "성장왕", group: "medal", img: "badge-growth", icon: "trendUp", crit: "최근 7일과 그 앞 7일의 메시지 차이" },
         { id: "burst", title: "폭풍 수다", group: "medal", img: "badge-reaction", icon: "bolt", crit: "하루 최다 메시지" },
         { id: "meet", title: "모임 지킴이", group: "medal", img: "badge-guardian", icon: "glass", crit: "모임 이야기 비중" },
-        { id: "welcome", title: "환영요정", group: "medal", img: "badge-welcome", icon: "users", crit: "입장 1시간 안 환영 수" },
+        { id: "welcome", title: "환영요정", group: "medal", img: "badge-welcome", icon: "users", crit: "입장 뒤 1시간 안의 환영 수" },
         { id: "info", title: "정보통", group: "medal", img: "badge-sharing", icon: "link", crit: "링크와 정보 이야기 비중" },
         { id: "morning", title: "아침반", group: "time", icon: "sunrise", band: 0, crit: "아침 6~10시 비중" },
         { id: "lunch", title: "점심반", group: "time", icon: "sun", band: 1, crit: "점심 11~13시 비중" },
@@ -1331,7 +1344,7 @@
         { id: "photo", title: "사진 기록가", group: "talk", icon: "frame", crit: "사진과 영상 비중" },
         { id: "emoticon", title: "이모티콘 장인", group: "talk", icon: "sparkle", crit: "이모티콘 비중" },
         { id: "writer", title: "이야기꾼", group: "talk", icon: "book", crit: "한 번에 쓰는 글자 수" },
-        { id: "opener", title: "첫 마디", group: "talk", icon: "megaphone", crit: "1시간 조용한 뒤 먼저 말한 수" }
+        { id: "opener", title: "첫 마디", group: "talk", icon: "megaphone", crit: "1시간 넘게 조용한 뒤 먼저 말한 수" }
       ];
       /* 칭호 값 한 줄(메달 카드, 멤버 카드, 칭호 상세). c = { v, p } */
       function shortOf(id, c, data) {
@@ -1341,16 +1354,16 @@
         if (bi >= 0) return BANDS6[bi].label + " " + (c.p != null ? c.p : 0) + "%";
         switch (id) {
           case "active": return "메시지 " + fmt(v) + "건";
-          case "growth": return "지난주보다 +" + fmt(v) + "건";
+          case "growth": return "최근 7일 +" + fmt(v) + "건";
           case "burst": return "하루 " + fmt(v) + "건";
           case "meet": return "모임 이야기 " + fmt(v) + "번";
           case "welcome": return "새 멤버 환영 " + fmt(v) + "번";
-          case "info": return (legacy ? "링크 " : "링크와 정보 ") + fmt(v) + "건";
+          case "info": return (legacy ? "링크 " : "링크와 정보 ") + fmt(v) + "번";
           case "weekend": return "주말 " + (c.p != null ? c.p : 0) + "%";
           case "food": return "맛집 이야기 " + fmt(v) + "번";
           case "outing": return "나들이 이야기 " + fmt(v) + "번";
           case "question": return "질문 " + fmt(v) + "번";
-          case "photo": return "사진과 영상 " + fmt(v) + "장";
+          case "photo": return "사진과 영상 " + fmt(v) + "번";
           case "emoticon": return "이모티콘 " + fmt(v) + "번";
           case "writer": return "한 번에 평균 " + Math.round(v || 0) + "자";
           case "opener": return "첫 마디 " + fmt(v) + "번";
@@ -1416,7 +1429,7 @@
         add("info", function (m) {
           var x = ((m.media || {}).link || 0) + (legacy ? 0 : ((m.kw || {})["정보"] || 0));
           var r = ratioT(x, m, (legacy ? room.link : room.info) / (room.c || 1), 15);
-          if (r) r.desc = (legacy ? "링크 " : "링크와 정보 ") + fmt(x) + "건, 비중 " + r.p + "%";
+          if (r) r.desc = (legacy ? "링크 " : "링크와 정보 ") + fmt(x) + "번, 비중 " + r.p + "%";
           return r;
         });
         if (room.hSum > 0) BANDS6.forEach(function (band, bi) {
@@ -1439,7 +1452,7 @@
           add("outing", function (m) { var x = (m.kw || {})["나들이"] || 0, r = ratioT(x, m, room.kw["나들이"] / (room.c || 1), 10); if (r) r.desc = "나들이 이야기 " + fmt(x) + "번, 비중 " + r.p + "%"; return r; });
         }
         add("question", function (m) { var x = m.q || 0, r = ratioT(x, m, room.q / (room.c || 1), 20); if (r) r.desc = "질문 " + fmt(x) + "번, 비중 " + r.p + "%"; return r; });
-        add("photo", function (m) { var md = m.media || {}, x = (md.photo || 0) + (md.video || 0), r = ratioT(x, m, room.pv / (room.c || 1), 20); if (r) r.desc = "사진과 영상 " + fmt(x) + "장, 비중 " + r.p + "%"; return r; });
+        add("photo", function (m) { var md = m.media || {}, x = (md.photo || 0) + (md.video || 0), r = ratioT(x, m, room.pv / (room.c || 1), 20); if (r) r.desc = "사진과 영상 " + fmt(x) + "번, 비중 " + r.p + "%"; return r; });
         add("emoticon", function (m) { var x = (m.media || {}).emoticon || 0, r = ratioT(x, m, room.emo / (room.c || 1), 20); if (r) r.desc = "이모티콘 " + fmt(x) + "번, 비중 " + r.p + "%"; return r; });
         if (!legacy && room.avgLen > 0) add("writer", function (m) { return (m.textCount || 0) >= pubMin && (m.avgLen || 0) >= 1.25 * room.avgLen ? { s: m.avgLen, v: m.avgLen, desc: "한 번에 평균 " + (Math.round(m.avgLen * 10) / 10) + "자" } : null; });
         if (!legacy) add("opener", function (m) { return (m.starts || 0) >= 3 ? { s: m.starts, v: m.starts, desc: "조용하던 방에 첫 마디 " + fmt(m.starts) + "번" } : null; });
@@ -1580,7 +1593,7 @@
         dailyActive: dailyActive, longestRun: longestRun, bestDay: bestDay, movingAvg: movingAvg, topicTotals: topicTotals,
         cleanKeywords: cleanKeywords, cleanWeekly: cleanWeekly, pubShort: pubShort, fmtAxis: fmtAxis, roomStats: roomStats,
         titlesV3: titlesV3, memberTypes: memberTypes, lensRank: lensRank, kstDate: kstDate,
-        shortOf: shortOf, compareIssues: compareIssues, firstDay: firstDay, nickHeads: nickHeads,
+        shortOf: shortOf, compareIssues: compareIssues, firstDay: firstDay, nickHeads: nickHeads, roundShares: roundShares,
         pad2: pad2, addDays: addDays, dayDiff: dayDiff, weekdayOf: weekdayOf, medianOf: medianOf,
         presetRange: presetRange, sliceIdx: sliceIdx,
         periodKPI: periodKPI, memberSums: memberSums,

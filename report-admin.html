@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=20" />
-  <script src="assets/chat-parser.js?v=9"></script>
+  <script src="assets/chat-parser.js?v=10"></script>
 
   <style>
     .page-head .page-actions { flex-wrap: wrap; }
@@ -305,7 +305,7 @@
     .field-hint .text-btn, #reuseLabelBtn { min-height: 32px; padding: 0 6px; vertical-align: middle; }
     .auto-note summary { display: inline-flex; align-items: center; min-height: 32px; }
   </style>
-  <script src="assets/site-core.js?v=10"></script>
+  <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=2"></script>
 </head>
 <body>
@@ -504,7 +504,7 @@
               <div class="step-head"><h2 class="step-title"><span class="step-no ic-tile"><svg class="ic is-sm" aria-hidden="true"><use href="#i-check"/></svg></span>확인 후 발행</h2></div>
               <div id="miniSummary" class="mini-summary">
                 <div class="mini-stat"><span>기간 내 메시지</span><strong id="sumMsg">-</strong></div>
-                <div class="mini-stat"><span>활동 멤버</span><strong id="sumMember">-</strong></div>
+                <div class="mini-stat"><span>이야기한 멤버</span><strong id="sumMember">-</strong></div>
                 <div class="mini-stat"><span>하루 평균</span><strong id="sumAvg">-</strong></div>
                 <div class="mini-stat"><span>새 멤버</span><strong id="sumJoin">-</strong></div>
               </div>
@@ -800,6 +800,8 @@
         return detectedLeft.has(d);
       }
       // 최종 상태와 그 이유: user-off, user-on, roster-off, roster-on, left, (빈 값 = 기본 포함)
+      /* 봇: 이름 끝이 bot 이거나 오픈채팅봇(통계 화면과 같은 규칙). 직접 포함하지 않으면 뺀다 */
+      const isBotName = (n) => /(^|[_\s-])bot$/i.test(String(n || "")) || /오픈채팅봇$/.test(String(n || ""));
       function stateOf(d) {
         const dec = decisionOf(d);
         if (dec) {
@@ -807,6 +809,7 @@
           const inf = infoOf(d);
           if (!(detectedLeft.has(d) && inf.left && inf.left > String(dec.at))) return { off: false, why: "user-on" };
         }
+        if (isBotName(d)) return { off: true, why: "bot" };
         if (rosterOn.has(d)) return { off: false, why: "roster-on" };
         if (rosterOff.has(d)) return { off: true, why: "roster-off" };
         if (detectedLeft.has(d)) return { off: true, why: "left" };
@@ -1291,7 +1294,7 @@
         else if (memberSort === "name") shown.sort((a, b) => a.m.name.localeCompare(b.m.name, "ko"));
 
         const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.member : null;
-        const WHY = { "user-off": "직접 제외", "user-on": "직접 포함", "roster-off": "명단에 없음" };
+        const WHY = { "user-off": "직접 제외", "user-on": "직접 포함", "roster-off": "명단에 없음", "bot": "봇" };
         $("memberTable").innerHTML = shown.length ? shown.map((v) => {
           const m = v.m, off = v.st.off;
           const share = (!off && includedTotal) ? Math.round((m.count / includedTotal) * 1000) / 10 : 0;
