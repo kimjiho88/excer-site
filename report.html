@@ -14,7 +14,7 @@
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="활동 통계 | 동네친구들" />
   <meta property="og:description" content="한 달 메시지 수, 칭호, 순위, 붐빈 날과 시간. 대화 원문은 저장하지 않습니다." />
-  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-report.jpg?v=3" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-report.jpg?v=4" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -32,7 +32,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 
   <style>
-    /* 활동 통계(31차). 매달 링크를 누른 멤버가 폰으로 1분 안에 이번 달 우리 방이 얼마나 붐볐는지, 누가 무엇으로 이름이 올랐는지, 나는 어땠는지를 본다.
+    /* 활동 통계(32차). 매달 링크를 누른 멤버가 폰으로 1분 안에 이번 달 우리 방이 얼마나 붐볐는지, 누가 무엇으로 이름이 올랐는지, 나는 어땠는지를 본다.
        발행본 하나에 기간 하나. 섹션은 칭호, 순위, 흐름, 평소. 칸 맞춤은 구조로(숫자 칸 줄 고정, 메달과 작은 칭호는 subgrid, 홀수 칸 늘리기와 줄바꿈 칩 없음).
        차트 색은 역할별 토큰으로만 쓴다. 글자는 잉크색만 */
     :root {
@@ -43,7 +43,7 @@
       --viz-zero: #F1EEF3;
       --viz-band: #F4F1F7;
       --viz-ref: #625A6C;
-      --viz-seq-1: #BDA9DB; --viz-seq-2: #9373C4; --viz-seq-3: #6A45A8; --viz-seq-4: #3E2270;
+      --viz-seq-1: #BDA9DB; --viz-seq-2: #9C7ECB; --viz-seq-3: #6A45A8; --viz-seq-4: #3E2270;
       /* 주제 4색: validate_palette.js --pairs all 통과(대비 WARN 은 범례 글과 아이콘으로 보완) */
       --topic-food: #eda100; --topic-meet: #2a78d6; --topic-out: #199e70; --topic-info: #e87ba4;
       /* 간격과 크기(허용 간격: 0, 4, 8, 12, 16, 24, 32, 40. 768 이상 48, 64) */
@@ -68,10 +68,11 @@
     .hero-num .lb { font-size: 15px; font-weight: 700; color: var(--on-dark-body); }
     .hero-num b { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: #fff; }
     .hero-num small { font-size: 20px; font-weight: 700; color: var(--on-dark-body); }
+    .hero-num .hn { display: inline-flex; align-items: baseline; column-gap: 6px; white-space: nowrap; }
     .hero-line { margin: 10px 0 0; color: #fff; font-size: 17px; font-weight: 600; line-height: 1.5; }
     .hero-cmp { display: flex; align-items: center; gap: 4px; margin: 4px 0 0; color: #fff; font-size: 13px; line-height: 18px; font-weight: 700; }
     .hero-cmp .ic { width: 14px; height: 14px; flex: none; }
-    .hero-meta { margin: 6px 0 0; color: var(--on-dark-muted); font-size: 13px; line-height: 1.5; }
+    .hero-meta { margin: 6px 0 0; color: var(--on-dark-body); font-size: 13px; line-height: 1.5; }
     .rp-hero .cover-spot { width: 160px; height: 160px; border-radius: 40px; }
     @media (min-width: 768px) {
       .rp-hero.cover.is-spot .cover-inner { min-height: 220px; padding-top: 32px; padding-bottom: 32px; }
@@ -126,9 +127,10 @@
     .card-foot .table-twin[open] { grid-column: 1 / -1; margin-top: 8px; }
     @media (min-width: 768px) { .rp-head h2 { font-size: 26px; line-height: 34px; } }
     @media (min-width: 900px) { .rp-grid.is-8-4 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; } }
+    @media (min-width: 900px) { .rp-pair { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 24px; align-items: start; } }
     @media (min-width: 1080px) {
-      .rp-sec, .titles-band { scroll-margin-top: var(--rp-jump-h); }
-      .rp-pair { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 32px; align-items: start; }
+      html { scroll-padding-top: calc(var(--nav-h) + var(--rp-jump-h) + 8px); }   /* 붙어 있는 바로가기 아래로 */
+      .rp-pair { column-gap: 32px; }
     }
 
     /* ── 숫자 칸 묶음(머리 칸, 평일과 주말, 멤버 카드): 라벨 18, 값 30, 보조 18 ── */
@@ -137,13 +139,13 @@
       border: 1px solid var(--line); border-radius: var(--rp-r); background: var(--surface); overflow: hidden; }
     .rp-strip.is-2 { --cols: 2; }
     .rp-strip.is-stack { --cols: 1; }
-    .rp-strip > .cell { display: grid; grid-template-rows: 18px 30px 18px; row-gap: 2px; align-content: start; min-width: 0; padding: 12px; color: var(--ink); text-decoration: none; }
-    .rp-strip.no-sub > .cell { grid-template-rows: 18px 30px; }
+    .rp-strip > .cell { position: relative; display: grid; grid-template-rows: minmax(18px, auto) minmax(30px, auto) minmax(18px, auto); row-gap: 2px; align-content: start; min-width: 0; padding: 12px; color: var(--ink); text-decoration: none; }
+    .rp-strip.no-sub > .cell { grid-template-rows: minmax(18px, auto) minmax(30px, auto); }
     .rp-strip > .cell + .cell { box-shadow: inset 1px 0 0 var(--line); }
     .rp-strip.is-stack > .cell + .cell { box-shadow: inset 0 1px 0 var(--line); }
     .rp-strip .tl, .rp-strip .ts { font-size: 12px; line-height: 18px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
     .rp-strip .tv { font-size: 22px; line-height: 30px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .rp-strip .tv small { margin-left: 2px; font-size: 12px; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+    .rp-strip .tv small { margin-left: 2px; font-size: 12px; line-height: 1; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }   /* 단위의 줄 높이가 값 줄을 늘리지 않게 */
     .rp-strip a.cell .ts { display: flex; align-items: center; gap: 2px; color: var(--brand); }
     .rp-strip a.cell .ts .ic { width: 14px; height: 14px; flex: none; }
     .rp-strip a.cell:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
@@ -152,26 +154,34 @@
     .rp-strip.is-sheet .tv { font-size: 20px; }
     @media (max-width: 374px) { .rp-strip .tv { font-size: 20px; } }
     @media (min-width: 768px) {
-      .rp-strip:not(.is-sheet) > .cell { grid-template-rows: 20px 40px 20px; padding: 16px 24px; }
-      .rp-strip:not(.is-sheet).no-sub > .cell { grid-template-rows: 20px 40px; }
+      .rp-strip:not(.is-sheet) > .cell { grid-template-rows: minmax(20px, auto) minmax(40px, auto) minmax(20px, auto); padding: 16px 24px; }
+      .rp-strip:not(.is-sheet).no-sub > .cell { grid-template-rows: minmax(20px, auto) minmax(40px, auto); }
       .rp-strip:not(.is-sheet) .tv { font-size: 32px; line-height: 40px; }
       .rp-strip:not(.is-sheet) .tl, .rp-strip:not(.is-sheet) .ts { font-size: 13px; line-height: 20px; }
     }
     @media (min-width: 900px) { #weekdayStrip { --cols: 1; } #weekdayStrip > .cell + .cell { box-shadow: inset 0 1px 0 var(--line); } }
-    @media (min-width: 1080px) { .rp-top { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: 16px; align-items: end; margin-top: 16px; } }
+    @media (min-width: 900px) {
+      .rp-top { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: 16px; align-items: end; margin-top: 16px; }
+      /* 찾기 칸의 제목을 숫자 칸의 라벨 줄에, 입력 칸을 숫자 칸의 아래 끝에 맞춘다 */
+      .rp-top .find-bar { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; padding-top: calc(16px + 1px); }   /* 숫자 칸의 안쪽 여백 16 + 테두리 1 */
+    }
+    @media (max-width: 899px) { .find-bar { max-width: 480px; } }
 
     /* ── 내 카드 찾기 ── */
     .find-bar > label { display: block; margin: 0 0 8px; color: var(--brand); font-size: 13px; line-height: 18px; font-weight: 700; }
     .combo { position: relative; }
     .combo .search-ic { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--ink-2); pointer-events: none; }
-    .combo input { width: 100%; min-height: var(--rp-field-h); padding: 0 14px 0 42px; border-radius: var(--r-btn); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 16px; }
+    .combo input { width: 100%; min-height: var(--rp-field-h); padding: 0 14px 0 42px; border-radius: var(--r-btn); border: 1px solid #8C8494; background: var(--surface); color: var(--ink); font-size: 16px; }
+    .combo input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+      background: var(--ink-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M7 7l10 10M17 7 7 17'/%3E%3C/svg%3E") center / 10px no-repeat; }
     .combo input:focus { border-color: var(--brand); outline: 2px solid var(--brand); outline-offset: 1px; }
-    .combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: min(336px, 45dvh); margin: 0; padding: 4px; list-style: none; border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-float); overflow-y: auto; }
+    .combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: min(336px, calc(100dvh - 150px)); margin: 0; padding: 4px; list-style: none; border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-float); overflow-y: auto; }
     .combo-list li { display: grid; align-content: center; row-gap: 0; min-height: 56px; padding: 8px 12px; border-radius: var(--r-sm); color: var(--ink); cursor: pointer; }
     .combo-list li .cn { font-size: 15px; line-height: 22px; font-weight: 700; word-break: keep-all; overflow-wrap: anywhere; }
     .combo-list li small { display: flex; align-items: center; gap: 4px; font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink-2); }
     .combo-list li small .ic { width: 14px; height: 14px; flex: none; color: var(--brand); }
     .combo-list li[aria-selected="true"], .combo-list li:hover { background: var(--brand-soft); }
+    .combo-list li[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--brand); }
     .combo-list .combo-empty { min-height: 44px; color: var(--ink-2); font-size: 14px; font-weight: 500; cursor: default; }
     .combo-list .combo-empty:hover { background: none; }
     .nw { white-space: nowrap; }
@@ -187,7 +197,12 @@
     .jump-bar a[aria-current="true"] .ic { color: #fff; }
     @media (max-width: 359px) { .jump-bar a .ic { display: none; } }
     @media (min-width: 768px) { .jump-bar ul { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: max-content; } .jump-bar a { padding: 0 16px; } }
-    @media (min-width: 1080px) { .jump-bar { position: sticky; top: var(--nav-h); z-index: 20; box-shadow: 0 1px 0 var(--line); } }
+    @media (hover: hover) and (pointer: fine) { .jump-bar a:not([aria-current="true"]):hover { background: var(--brand-soft); } }
+    @media (min-width: 1080px) {
+      .jump-bar { position: sticky; top: var(--nav-h); z-index: 20; transition: background-color 0.2s var(--ease), box-shadow 0.2s var(--ease); }
+      /* 위에 붙으면 윗줄과 같은 반투명 바탕과 아래 선 */
+      .jump-bar.is-stuck { background: rgba(247, 245, 239, 0.9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--line); }
+    }
 
     /* ── 칭호 띠와 메달(4조각 subgrid: 그림, 칭호, 이름, 값) ── */
     .titles-band { margin-top: 16px; padding: var(--rp-band-pad) 0; background: var(--brand-soft); }
@@ -199,8 +214,9 @@
     .medal-card .mc-ic { display: none; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); }
     .medal-card .mc-ic .ic { width: 28px; height: 28px; }
     .medal-card.no-image .mc-ic { display: grid; }
-    .medal-card .mc-title { margin: 0; color: var(--ink); font-size: 16px; line-height: 22px; font-weight: 700; white-space: nowrap; }
-    .mc-hit { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .medal-card .mc-title { margin: 0; color: var(--brand); font-size: 16px; line-height: 22px; font-weight: 700; white-space: nowrap; }
+    .mc-hit { display: inline-flex; align-items: center; gap: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .mc-hit .mc-chev { width: 14px; height: 14px; flex: none; }
     .mc-hit::after { content: ""; position: absolute; inset: 0; border-radius: var(--rp-r); }
     .mc-hit:focus-visible { outline: none; }
     .mc-hit:focus-visible::after { outline: 2px solid var(--brand); outline-offset: 2px; }
@@ -211,13 +227,13 @@
     .mc-runners li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; grid-template-rows: auto 4px; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 13px; line-height: 18px; }
     .mc-runners .rn { color: var(--ink-2); font-size: 12px; text-align: right; }
     .mc-runners .rw { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
-    .mc-runners .rv { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .mc-runners .rv { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .mc-runners .rb { grid-column: 2 / -1; height: 4px; border-radius: 2px; background: var(--viz-context); }
     .mc-runners li.is-holder .rb { background: var(--viz-accent); }
     .mc-runners li.is-holder .rw { font-weight: 700; }
     @media (hover: hover) and (pointer: fine) { .medal-card:hover { border-color: var(--brand); } .tt-row:hover .tt-title { color: var(--brand); } }
     @media (max-width: 359px) { .medal-card { padding: 12px 8px; } .medal-card .mc-desc { font-size: 12px; } }
-    @supports not (grid-template-rows: subgrid) { .medal-card { grid-row: auto; grid-template-rows: 80px 22px 44px 18px; } }
+    @supports not (grid-template-rows: subgrid) { .medal-card { grid-row: auto; grid-template-rows: 80px 22px minmax(44px, auto) 18px; } }
     @media (min-width: 768px) { .medal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .medal-card { padding: 16px; } }
     @media (min-width: 1080px) { .medal-card { grid-row: span 5; } .mc-runners { display: grid; } }
 
@@ -233,6 +249,7 @@
     .tt-ic { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; color: var(--brand); }
     .tt-ic .ic { width: 14px; height: 14px; }
     .tt-hit { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .tt-hit .tt-chev { width: 12px; height: 12px; flex: none; margin-left: -4px; color: var(--brand); }
     .tt-hit::after { content: ""; position: absolute; inset: 0; }
     .tt-hit:focus-visible { outline: none; }
     .tt-hit:focus-visible::after { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: 4px; }
@@ -247,7 +264,8 @@
     .tt-ic[data-band="dawn"] { background: #E6E0F3; }
     .tt-ic[data-band="weekend"] { background: #E3F1EA; }
     @supports not (grid-template-rows: subgrid) { .tt-col, .tt-list { display: block; } .tt-row { min-height: 88px; } }
-    @media (min-width: 768px) { .tt-row { grid-template-rows: none; grid-template-columns: 152px minmax(0, 1fr); column-gap: 12px; align-items: center; min-height: 48px; padding: 8px 0; } }
+    @media (min-width: 768px) { .tt-row { grid-template-rows: none; grid-template-columns: 152px minmax(0, 1fr); column-gap: 12px; align-items: center; align-content: center; min-height: 48px; padding: 8px 0; } }
+    @media (min-width: 768px) and (max-width: 899px) { .tt-row { grid-template-columns: 128px minmax(0, 1fr); } }
 
     /* ── 차트 공통 ── */
     .viz { margin: 0; }
@@ -259,9 +277,11 @@
     .viz-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
     .viz-legend i.is-line { height: 2px; border-radius: 1px; }
     .viz-legend i.is-hollow { background: #fff; box-shadow: inset 0 0 0 1.5px var(--viz-context); }
+    .viz-legend i.is-dash { height: 2px; border-radius: 0; background: repeating-linear-gradient(90deg, var(--viz-ref) 0 4px, transparent 4px 7px); }
+    .viz-legend i.is-strip { height: 3px; border-radius: 1px; }
     .viz-read { min-height: 20px; margin: 12px 0 0; color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
     .viz-read b { font-weight: 700; }
-    .viz-read span { color: var(--ink-2); }
+    .viz-read .x { color: var(--ink-2); }
     .chart-tip {
       position: fixed; z-index: 300; pointer-events: none; transform: translate(-50%, calc(-100% - 10px));
       padding: 8px 12px; border-radius: var(--r-sm); background: rgba(46, 27, 69, 0.95); color: #fff;
@@ -277,7 +297,9 @@
     .table-twin caption { text-align: left; padding: 4px 0 6px; color: var(--ink-2); font-size: 12px; }
     .table-twin th, .table-twin td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; color: var(--ink-2); white-space: nowrap; }
     .table-twin td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
-    .table-twin .twin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .table-twin th.n { text-align: right; }
+    .table-twin .twin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: start; }
+    .table-twin[open] .tw-scroll { max-height: 360px; overflow: auto; overscroll-behavior: contain; }
     .bar-in { transform-box: fill-box; transform-origin: 50% 100%; animation: barIn 0.32s var(--ease-out) both; }
     @keyframes barIn { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
@@ -293,6 +315,7 @@
     .topic-legend .ic { width: 16px; height: 16px; color: var(--ink-2); }
     .topic-legend b { min-width: 0; font-weight: 500; }
     .topic-legend .p { font-weight: 700; font-variant-numeric: tabular-nums; }
+    @media (max-width: 359px), (min-width: 900px) and (max-width: 1079px) { #topicLegend { grid-template-columns: minmax(0, 1fr); } }
 
     /* ── 순위: 메시지(10위, 30위까지), 함께한 날(날 수 묶음과 2열 이름) ── */
     .lens { display: flex; gap: 8px; margin: 0 0 var(--rp-blk); }
@@ -300,6 +323,9 @@
     .seg-chip { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 16px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .seg-chip::after { content: ""; position: absolute; inset: -4px 0; }
     .seg-chip[aria-pressed="true"], .seg-chip[aria-checked="true"] { background: var(--brand); border-color: var(--brand); color: #fff; }
+    @media (hover: hover) and (pointer: fine) {
+      .seg-chip:not([aria-pressed="true"]):not([aria-checked="true"]):hover, .more-btn:hover { background: var(--brand-soft); }
+    }
     .rank-list { margin: 0; padding: 0; list-style: none; }
     .rank-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-rows: minmax(22px, auto) 6px; column-gap: 12px; row-gap: 4px; align-items: start;
       width: 100%; min-height: 48px; padding: 8px 0; border: 0; box-shadow: inset 0 -1px 0 var(--line); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
@@ -314,7 +340,11 @@
     .rank-bar { grid-row: 2; grid-column: 2 / -1; align-self: center; height: 6px; border-radius: 3px; background: var(--viz-track); }
     .rank-bar > span { display: block; height: 100%; min-width: 2px; border-radius: inherit; background: var(--viz-context); }
     .rank-row.is-first .rank-bar > span, .rank-row.is-focus .rank-bar > span { background: var(--viz-accent); }
-    .rank-row.is-focus { background: var(--brand-soft); }
+    /* 찾은 멤버: 칸 밖으로 8px 넓혀 글자가 가장자리에 붙지 않게 */
+    .rank-row.is-focus { width: calc(100% + 16px); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; background: var(--brand-soft); box-shadow: none; }
+    .rank-row.is-top.is-focus .rank-no { background: var(--surface); }
+    .rank-row.is-first.is-focus .rank-no { background: var(--viz-accent); }
+    .rank-group { margin: var(--rp-blk) 0 0; padding: 8px 0; box-shadow: inset 0 1px 0 var(--line); color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 700; }
     .rank-foot { display: flex; justify-content: center; margin-top: var(--rp-blk); }
     .more-btn { position: relative; display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 13px; line-height: 18px; font-weight: 700; cursor: pointer; }
     .more-btn::after { content: ""; position: absolute; inset: -4px 0; }
@@ -324,7 +354,7 @@
     .name-grid li { display: grid; min-width: 0; }
     .name-grid button { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 0; border: 0; box-shadow: inset 0 1px 0 var(--line); background: none;
       color: var(--ink); font: inherit; font-size: 15px; line-height: 22px; font-weight: 700; text-align: left; word-break: keep-all; overflow-wrap: anywhere; cursor: pointer; }
-    .name-grid button.is-focus { background: var(--brand-soft); }
+    .name-grid button.is-focus { width: calc(100% + 16px); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; background: var(--brand-soft); }
     .name-grid .dv { margin-left: auto; padding-left: 8px; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; white-space: nowrap; }
     @media (hover: hover) and (pointer: fine) { .name-grid button:hover { color: var(--brand); } }
 
@@ -356,10 +386,13 @@
 
     /* ── 시트(멤버 카드, 칭호 상세, 공유 카드) ── */
     dialog.sheet { position: fixed; inset: auto 0 0 0; width: 100%; max-width: 100%; max-height: 90dvh; margin: 0; padding: 0; border: 0; border-radius: 16px 16px 0 0; background: var(--surface); color: var(--ink); overflow: hidden; box-shadow: 0 -12px 40px rgba(36, 30, 44, 0.25); }
+    dialog:not([open]) { display: none; }
     dialog.sheet[open] { display: flex; flex-direction: column; animation: sheetUp 0.24s var(--ease-out); }
     dialog.sheet::backdrop { background: rgba(36, 30, 44, 0.45); }
     @keyframes sheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
     .sheet-top { position: relative; flex: none; display: flex; justify-content: flex-end; padding: 6px 12px 0; }
+    dialog.sheet.is-member .sheet-top { background: var(--brand-soft); }
+    @media (max-width: 767px) { .sheet-top { touch-action: none; } }
     .sheet-top::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); transform: translateX(-50%); }
     .sheet-close { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: none; color: var(--ink-2); cursor: pointer; }
     .sheet-close .ic { width: 20px; height: 20px; }
@@ -372,28 +405,34 @@
       dialog.sheet[open] { animation-name: sheetIn; }
       @keyframes sheetIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
       .sheet-top::before { content: none; }
-      dialog.sheet.is-center { inset: 0; width: 480px; height: auto; max-height: 90dvh; margin: auto; border-radius: 16px; }
+      dialog.sheet.is-center { inset: 0; width: 480px; height: fit-content; max-height: 90dvh; margin: auto; border-radius: 16px; }
     }
     .sheet-actions { display: flex; gap: 8px; margin-top: 24px; }
     .sheet-actions.is-sticky { position: sticky; bottom: 0; z-index: 2; justify-content: center; margin: 24px -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
-    .sheet-actions.is-sticky .btn { flex: 1 1 auto; max-width: 360px; min-height: 44px; gap: 4px; }
+    .sheet-actions.is-sticky .btn { flex: 1 1 auto; min-height: 44px; gap: 4px; }
+    .btn[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
     #shareSheet .sheet-actions.is-sticky { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 8px; }
     #shareSheet .sheet-actions .btn { min-height: 44px; max-width: none; }
     /* 멤버 카드 */
     .mcard-head { margin: 0 -20px; padding: 16px 20px; background: var(--brand-soft); }
     .mcard-head h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
     .mcard-head .rk { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; }
-    .mcard-title { display: grid; grid-template-columns: 80px minmax(0, 1fr); column-gap: 12px; align-items: center; margin-top: 12px; }
+    .mcard-title { display: grid; grid-template-columns: 80px minmax(0, 1fr) 16px; column-gap: 12px; align-items: center; width: 100%; margin-top: 12px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+    .mcard-title .mt-chev { width: 16px; height: 16px; color: var(--brand); }
+    .mcard-title:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 8px; }
+    @media (hover: hover) and (pointer: fine) { .mcard-title:hover b { color: var(--brand); } }
     .mcard-title .mt-art { display: grid; place-items: center; width: 80px; height: 80px; }
     .mcard-title img { width: 80px; height: 80px; object-fit: contain; }
     .mt-ic { display: none; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--surface); color: var(--brand); }
     .mt-ic .ic { width: 28px; height: 28px; }
     .no-image .mt-ic { display: grid; }
+    .mcard-title .mt-txt { min-width: 0; }
     .mcard-title b { display: block; font-size: 16px; line-height: 22px; font-weight: 700; }
     .mcard-title span.v { display: block; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; white-space: nowrap; }
     .rec-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; margin: 16px 0 0; padding: 0; list-style: none; }
     .rec-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; padding: 8px 0; box-shadow: inset 0 1px 0 var(--line); color: var(--ink-2); font-size: 13px; line-height: 20px; font-weight: 500; }
     .rec-list li b { color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; }
+    .rec-list li.is-fill { padding: 0; }
     .msec { margin-top: 24px; }
     .msec h3 { margin: 0 0 8px; font-size: 16px; line-height: 22px; font-weight: 700; }
     .msec .ans { margin: 0 0 8px; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; }
@@ -408,17 +447,19 @@
     .cal .cd.s2 { background: var(--viz-seq-2); color: var(--ink); }
     .cal .cd.s3 { background: var(--viz-seq-3); color: #fff; }
     .cal .cd.s4 { background: var(--viz-seq-4); color: #fff; }
-    .cal.is-weeks { grid-auto-flow: column; grid-template-columns: none; grid-template-rows: repeat(7, 14px); grid-auto-columns: 14px; gap: 3px; overflow-x: auto; }
+    .cal.is-weeks { grid-auto-flow: column; grid-template-columns: none; grid-template-rows: repeat(7, 20px); grid-auto-columns: 20px; gap: 4px; overflow-x: auto; }
     .cal.is-weeks .cd { min-height: 0; aspect-ratio: auto; border-radius: 3px; }
     .cal-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 8px 0 0; color: var(--ink-2); font-size: 12px; }
     .cal-legend i { width: 12px; height: 12px; border-radius: 3px; }
+    .cal-legend i.is-hollow { background: #fff; box-shadow: inset 0 0 0 1.5px var(--viz-context); }
+    .cal-legend .gap { margin-left: 8px; }
     .cal-cap { margin: 8px 0 0; color: var(--ink-2); font-size: 12px; line-height: 18px; }
     /* 칭호 상세 */
     .tdetail-head { display: grid; justify-items: center; gap: 4px; padding: 8px 0 16px; text-align: center; }
     .tdetail-head .mt-art { display: grid; place-items: center; width: 96px; height: 96px; }
     .tdetail-head img { width: 96px; height: 96px; object-fit: contain; }
     .tdetail-head .mt-ic { background: var(--brand-soft); }
-    .tdetail-head h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 700; }
+    .tdetail-head h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 800; }
     .tdetail-head p { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; }
     .tdetail-list { display: grid; margin: 0; padding: 0; list-style: none; }
     .tdetail-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: minmax(22px, auto) auto 4px; column-gap: 12px; row-gap: 2px; padding: 8px 0; box-shadow: inset 0 -1px 0 var(--line); }
@@ -428,20 +469,24 @@
     .tdetail-list .rv { grid-column: 2; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; }
     .tdetail-list .rb { grid-column: 2; height: 4px; border-radius: 2px; background: var(--viz-context); }
     .tdetail-list li.is-holder .rb { background: var(--viz-accent); }
+    .tdetail-list li.is-holder { margin: 0 -12px; padding: 8px 12px; border-radius: 8px; background: var(--brand-soft); box-shadow: none; }
     @media (hover: hover) and (pointer: fine) { .tdetail-list .rw:hover { color: var(--brand); } }
     .tdetail-note { margin: 12px 0 0; color: var(--ink-2); font-size: 13px; line-height: 18px; }
     /* 공유 카드: 시트 높이에 맞춰 줄인다(저장 그림은 원래 크기) */
-    .share-tabs { display: flex; gap: 8px; margin: 0 0 12px; }
+    .share-tabs { display: flex; gap: 8px; width: min(360px, 100%); margin: 0 auto 12px; }
     .recap-fit { display: grid; justify-items: center; height: calc(var(--card-h, 0px) * var(--fit, 1)); overflow: visible; }
     .recap-fit.is-free { height: auto; }
     .recap-scale { width: min(360px, 100%); transform: scale(var(--fit, 1)); transform-origin: top center; }
     .recap-card { width: 100%; margin: 0 auto; padding: 24px 20px; border-radius: var(--r-lg); background: var(--brand); color: #fff; display: grid; gap: 14px; }
     .recap-card .rc-brand { display: flex; justify-content: space-between; gap: 8px; color: var(--on-dark-muted); font-size: 12px; font-weight: 600; }
     .recap-card .rc-title { margin: 0; font-size: 22px; font-weight: 800; color: #fff; word-break: keep-all; overflow-wrap: anywhere; }
+    .recap-card .rc-lb { margin-bottom: 4px; color: var(--on-dark-body); font-size: 13px; font-weight: 700; }
     .recap-card .rc-num { font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
     .recap-card .rc-num small { font-size: 16px; font-weight: 700; color: var(--on-dark-body); margin-left: 2px; }
     .recap-card .rc-line { margin-top: 4px; color: var(--on-dark-body); font-size: 13px; }
-    .rc-bars { display: flex; align-items: flex-end; gap: 2px; height: 48px; }
+    .recap-card .rc-cmp { display: flex; align-items: center; gap: 4px; margin-top: 6px; color: #fff; font-size: 13px; font-weight: 700; }
+    .recap-card .rc-cmp .ic { width: 14px; height: 14px; flex: none; }
+    .rc-bars { display: flex; align-items: flex-end; gap: 2px; height: 48px; overflow: hidden; }
     .rc-bars i { flex: 1; min-height: 2px; border-radius: 2px 2px 0 0; background: rgba(255, 255, 255, 0.55); }
     .rc-bars i.is-peak { background: #fff; }
     .rc-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -456,7 +501,6 @@
     .rc-row b { display: block; font-weight: 700; word-break: keep-all; overflow-wrap: anywhere; }
     .rc-row .rt { display: block; color: var(--on-dark-body); font-size: 12px; }
     .rc-recs { margin: 0; color: var(--on-dark-body); font-size: 13px; }
-    .rc-foot { display: flex; justify-content: flex-end; gap: 8px; color: var(--on-dark-muted); font-size: 12px; }
     .rc-medal { display: flex; align-items: center; gap: 12px; }
     .rc-medal img { width: 88px; height: 88px; object-fit: contain; flex: none; }
     .rc-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
@@ -466,6 +510,10 @@
     .rc-cal i.on3 { background: rgba(255, 255, 255, 0.85); }
     .rc-cal i.on4 { background: #fff; }
     .rc-cal i.is-out, .rc-cal i.is-before { background: none; }
+    .rc-cal i.is-before { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+    .rc-medal .rc-mt { display: block; font-size: 18px; }
+    .rc-mic { display: grid; place-items: center; width: 56px; height: 56px; flex: none; border-radius: 50%; background: var(--on-dark-glass); }
+    .rc-mic .ic { width: 28px; height: 28px; color: #fff; }
     .rc-cal b { color: var(--on-dark-muted); font-size: 12px; font-weight: 600; text-align: center; }
     .rc-legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: -6px; color: var(--on-dark-muted); font-size: 12px; }
     .rc-legend i { width: 12px; height: 12px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
@@ -473,8 +521,9 @@
     .rc-legend i.on2 { background: rgba(255, 255, 255, 0.65); }
     .rc-legend i.on3 { background: rgba(255, 255, 255, 0.85); }
     .rc-legend i.on4 { background: #fff; }
-    .rc-empty { padding: 24px 8px; text-align: center; color: var(--ink-2); font-size: 14px; }
-    .rc-empty .btn { min-height: 44px; margin-top: 10px; }
+    .rc-legend .gap { margin-left: 6px; }
+    .recap-card .rc-empty { padding: 24px 8px; text-align: center; color: var(--on-dark-body); font-size: 15px; font-weight: 600; }
+    .recap-card .rc-empty .btn { min-height: 44px; margin-top: 12px; }
 
     .fade-up { animation: fadeUp 0.24s var(--ease-out) both; }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -487,6 +536,20 @@
     @media (forced-colors: active) {
       .rp-card, .rp-strip, .medal-card, .tt-card, .rank-row, .rec-list li { border: 1px solid CanvasText; }
       .cal .cd, .stack100 span, .rank-bar > span { forced-color-adjust: none; }
+      dialog.sheet { border: 1px solid CanvasText; }
+      .seg-chip[aria-pressed="true"], .seg-chip[aria-checked="true"], .jump-bar a[aria-current="true"], .combo-list li[aria-selected="true"] { forced-color-adjust: none; background: Highlight; border-color: Highlight; color: HighlightText; }
+      .seg-chip[aria-checked="true"] .ic, .jump-bar a[aria-current="true"] .ic { color: HighlightText; }
+      .rank-row.is-focus, .name-grid button.is-focus, .tdetail-list li.is-holder { outline: 2px solid Highlight; outline-offset: -2px; }
+    }
+    /* 300 미만(접는 폰 겉화면): 두 단을 한 단으로 */
+    @media (max-width: 299px) {
+      .medal-grid { grid-template-columns: minmax(0, 1fr); }
+      .rp-strip:not(.is-2) { --cols: 1; }
+      .rp-strip:not(.is-2) > .cell + .cell { box-shadow: inset 0 1px 0 var(--line); }
+      .tt-cols, .tt-col, .tt-list { display: block; }
+      .rec-list { grid-template-columns: minmax(0, 1fr); }
+      .rec-list li.is-fill { display: none; }
+      .name-grid { grid-template-columns: minmax(0, 1fr); }
     }
     :where(.rp-sec, .titles-band, .rp-top, dialog.sheet) :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     [hidden] { display: none !important; }
@@ -522,8 +585,8 @@
       <div>
         <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>활동 통계</p>
         <h1 class="cover-title" id="pageTitle">활동 통계</h1>
-        <p class="cover-lead" id="heroLead">오픈채팅 대화를 기간별로 집계했습니다. 원문은 저장하지 않습니다.</p>
-        <div class="hero-num" id="heroNum" hidden><span class="lb">메시지</span><b id="heroTotal">0</b><small>건</small></div>
+        <p class="cover-lead" id="heroLead">오픈채팅 메시지를 숫자로만 집계합니다. 원문은 저장하지 않습니다.</p>
+        <div class="hero-num" id="heroNum" hidden><span class="lb">메시지</span><span class="hn"><b id="heroTotal">0</b><small>건</small></span></div>
         <p class="hero-line" id="heroLine" hidden></p>
         <p class="hero-cmp" id="heroCmp" hidden></p>
         <p class="hero-meta" id="metaLine"></p>
@@ -533,7 +596,7 @@
   </section>
   <div class="page-head rp-source">
     <div class="container">
-      <div class="source-line">
+      <div class="source-line" id="sourceLine">
         <span class="src-badge" id="sourceBadge">통계를 불러오는 중입니다.</span>
         <label class="sr-only" for="reportSelect">통계 선택</label>
         <select id="reportSelect" class="report-select" hidden></select>
@@ -569,8 +632,9 @@
           <div class="combo">
             <svg class="ic search-ic" aria-hidden="true"><use href="#i-search"/></svg>
             <input id="memberSearch" type="search" placeholder="닉네임 검색" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="searchList" />
-            <ul class="combo-list" id="searchList" role="listbox" aria-label="찾은 멤버" hidden></ul>
+            <ul class="combo-list" id="searchList" role="listbox" aria-label="검색 결과" hidden></ul>
           </div>
+          <p class="sr-only" id="comboStatus" role="status" aria-live="polite"></p>
         </div>
       </div>
 
@@ -580,10 +644,10 @@
       </nav>
 
       <!-- 칭호: 메달 6, 작은 칭호(시간대, 이야기) -->
-      <section class="titles-band" id="secTitles" aria-labelledby="titlesH">
+      <section class="titles-band" id="secTitles" aria-labelledby="titlesL titlesH">
         <div class="container">
           <div class="rp-head">
-            <p class="rp-label"><svg class="ic" aria-hidden="true"><use href="#i-medal"/></svg>칭호</p>
+            <p class="rp-label" id="titlesL"><svg class="ic" aria-hidden="true"><use href="#i-medal"/></svg>칭호</p>
             <h2 id="titlesH">칭호</h2>
             <p class="rp-sub" id="titlesSub"></p>
           </div>
@@ -594,9 +658,9 @@
 
       <!-- 순위와 흐름(넓은 화면은 나란히) -->
       <div class="container rp-pair">
-        <section class="rp-sec" id="secRank" aria-labelledby="rankH">
+        <section class="rp-sec" id="secRank" aria-labelledby="rankL rankH">
           <div class="rp-head">
-            <p class="rp-label"><svg class="ic" aria-hidden="true"><use href="#i-trophy"/></svg>순위</p>
+            <p class="rp-label" id="rankL"><svg class="ic" aria-hidden="true"><use href="#i-trophy"/></svg>순위</p>
             <h2 id="rankH">순위</h2>
             <p class="rp-sub" id="rankSub"></p>
           </div>
@@ -607,20 +671,20 @@
           </div>
         </section>
 
-        <section class="rp-sec" id="secFlow" aria-labelledby="flowH">
+        <section class="rp-sec" id="secFlow" aria-labelledby="flowL flowH">
           <div class="rp-head">
-            <p class="rp-label"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>흐름</p>
+            <p class="rp-label" id="flowL"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg>흐름</p>
             <h2 id="flowH">흐름</h2>
             <p class="rp-sub" id="flowSub"></p>
           </div>
           <div class="rp-grid">
             <div class="rp-card" id="flowCard">
               <h3>날짜별 메시지</h3>
-              <figure class="viz" id="flowViz" tabindex="0"></figure>
+              <div class="viz" id="flowViz" tabindex="0" role="slider" aria-label="날짜별 메시지" aria-describedby="vizHint"></div>
               <ul class="viz-legend" id="flowLegend"></ul>
               <div class="card-foot">
-                <p class="viz-read" id="flowRead" aria-live="polite"></p>
-                <details class="table-twin"><summary>표로 보기</summary><div class="tw-scroll" id="flowTable"></div></details>
+                <p class="viz-read" id="flowRead"></p>
+                <details class="table-twin"><summary>표로 보기<span class="sr-only">, 날짜별 메시지</span></summary><div class="tw-scroll" id="flowTable"></div></details>
               </div>
             </div>
             <div class="rp-card" id="weekCard" hidden>
@@ -633,20 +697,20 @@
       </div>
 
       <!-- 평소: 24시간, 평일과 주말, 주제 비중 -->
-      <section class="rp-sec" id="secRhythm" aria-labelledby="rhythmH">
+      <section class="rp-sec" id="secRhythm" aria-labelledby="rhythmL rhythmH">
         <div class="container">
           <div class="rp-head">
-            <p class="rp-label"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>평소</p>
+            <p class="rp-label" id="rhythmL"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>평소</p>
             <h2 id="rhythmH">평소</h2>
             <p class="rp-sub" id="rhythmSub"></p>
           </div>
           <div class="rp-grid is-8-4">
             <div class="rp-card" id="hourCard">
               <h3>시간별 하루 평균</h3>
-              <figure class="viz" id="hourViz" tabindex="0"></figure>
+              <div class="viz" id="hourViz" tabindex="0" role="slider" aria-label="시간별 하루 평균 메시지" aria-describedby="vizHint"></div>
               <div class="card-foot">
-                <p class="viz-read" id="hourRead" aria-live="polite"></p>
-                <details class="table-twin"><summary>표로 보기</summary><div class="tw-scroll twin-grid" id="hourTable"></div></details>
+                <p class="viz-read" id="hourRead"></p>
+                <details class="table-twin"><summary>표로 보기<span class="sr-only">, 시간별 하루 평균</span></summary><div class="tw-scroll twin-grid" id="hourTable"></div></details>
               </div>
             </div>
             <div class="rp-grid" id="rhythmSide">
@@ -661,6 +725,7 @@
         </div>
       </section>
 
+      <p class="sr-only" id="vizHint">화살표 키로 옮깁니다.</p>
       <div class="container">
         <details class="data-note" id="dataNote">
           <summary>집계 기준<svg class="ic" aria-hidden="true"><use href="#i-chevDown"/></svg></summary>
@@ -686,7 +751,7 @@
         <button class="seg-chip" type="button" id="tabRoom" aria-pressed="true" aria-controls="recapCard" data-card="room">방 카드</button>
         <button class="seg-chip" type="button" id="tabMember" aria-pressed="false" aria-controls="recapCard" data-card="member">멤버 카드</button>
       </div>
-      <div class="recap-fit" id="recapFit"><div class="recap-scale"><div class="recap-card" id="recapCard" aria-live="polite"></div></div></div>
+      <div class="recap-fit" id="recapFit"><div class="recap-scale"><div class="recap-card" id="recapCard"></div></div></div>
       <div class="sheet-actions is-sticky" id="shareActions">
         <button class="btn btn-kakao" type="button" id="kakaoShareBtn" hidden><svg class="ic is-sm" aria-hidden="true"><use href="#i-chat"/></svg>카카오톡 공유</button>
         <button class="btn btn-primary" type="button" id="recapSaveBtn">이미지로 저장</button>
@@ -730,7 +795,7 @@
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div class="chart-tip" id="chartTip" role="status" aria-hidden="true"><span class="tv" id="tipValue"></span><span class="tl" id="tipLabel"></span></div>
+  <div class="chart-tip" id="chartTip" aria-hidden="true"><span class="tv" id="tipValue"></span><span class="tl" id="tipLabel"></span></div>
 
   <!-- 공통 셸 JS (v2-shell 그대로) -->
   <script>
@@ -751,6 +816,8 @@
       var toastTimer = null;
       function toast(msg) {
         if (!toastEl) return;
+        var host = document.querySelector("dialog[open]") || document.body;   // 모달이 열려 있으면 그 안에(바깥은 가려진다)
+        if (toastEl.parentNode !== host) host.appendChild(toastEl);
         toastEl.textContent = msg;
         toastEl.classList.add("is-visible");
         clearTimeout(toastTimer);
@@ -1610,7 +1677,7 @@
   </script>
   <!-- ═══ REPORT-METRICS-END ═══ -->
 
-  <!-- 페이지 로직 (렌더링, 31차) -->
+  <!-- 페이지 로직 (렌더링, 32차) -->
   <script>
     (function () {
       "use strict";
@@ -1628,12 +1695,20 @@
       const nf = (n) => Math.round(Number(n) || 0).toLocaleString("ko-KR");
       const WEEK_KO = ["월", "화", "수", "목", "금", "토", "일"];
       const ic = (name, cls) => `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+      /* 저장 그림용 아이콘: 그림 라이브러리가 <use> 참조를 따라가지 못해 기호의 선을 그대로 넣는다 */
+      function icIn(name, cls) {
+        const sym = document.getElementById("i-" + name);
+        if (!sym) return "";
+        const at = (k, d) => sym.getAttribute(k) || d;
+        return `<svg class="ic${cls ? " " + cls : ""}" viewBox="${at("viewBox", "0 0 24 24")}" fill="${at("fill", "none")}" stroke="${at("stroke", "currentColor")}" stroke-width="${at("stroke-width", "1.75")}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${sym.innerHTML}</svg>`;
+      }
       function parts(d) { const p = String(d || "").split("-"); return p.length === 3 ? { y: +p[0], m: +p[1], d: +p[2] } : null; }
       function fmtK(d) { const p = parts(d); return p ? `${p.m}.${p.d}` : String(d || ""); }
       function fmtMD(d) { const p = parts(d); return p ? `${p.m}월 ${p.d}일` : String(d || ""); }
       function fmtMDW(d) { const p = parts(d); return p ? `${p.m}월 ${p.d}일 (${WEEK_KO[RM.weekdayOf(d)]})` : String(d || ""); }
       function x1(n) { return (Math.round(n * 10) / 10).toFixed(1); }
-      function pct(v, t) { if (!t) return "0%"; const p = (v / t) * 100; return p > 0 && p < 1 ? "1% 미만" : Math.round(p) + "%"; }
+      function pct(v, t) { if (!t) return "0%"; return pctOf((v / t) * 100); }
+      function pctOf(p) { return p > 0 && p < 1 ? "1% 미만" : Math.round(p) + "%"; }
       /* y축: 정수 step 을 먼저 고르고 ymax 를 그 배수로 맞춘다. 라벨이 곧 격자선 값이다 */
       function niceAxis(max, want) {
         const m = Math.max(1, max);
@@ -1653,24 +1728,37 @@
         r = Math.min(r, w / 2, h);
         return `M${x.toFixed(1)},${(y + h).toFixed(1)}V${(y + r).toFixed(1)}Q${x.toFixed(1)},${y.toFixed(1)} ${(x + r).toFixed(1)},${y.toFixed(1)}H${(x + w - r).toFixed(1)}Q${(x + w).toFixed(1)},${y.toFixed(1)} ${(x + w).toFixed(1)},${(y + r).toFixed(1)}V${(y + h).toFixed(1)}Z`;
       }
+      const HALO = "paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round";
+      const navH = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-h")) || 60;
 
-      /* ── 공유 툴팁 ── */
+      /* ── 대화상자를 모르는 옛 브라우저: 열고 닫기만 흉내 낸다 ── */
+      ["sheet", "shareSheet"].forEach((id) => {
+        const d = $(id);
+        if (!d || typeof d.showModal === "function") return;
+        d.showModal = function () { this.setAttribute("open", ""); };
+        d.close = function () { if (!this.hasAttribute("open")) return; this.removeAttribute("open"); this.dispatchEvent(new Event("close")); };
+        try { Object.defineProperty(d, "open", { get() { return this.hasAttribute("open"); }, configurable: true }); } catch (e) {}
+        d.addEventListener("keydown", (e) => { if (e.key === "Escape") d.close(); });
+      });
+
+      /* ── 공유 툴팁: 열린 대화상자가 있으면 그 안에 둔다(모달 바깥은 가려진다) ── */
       const tipEl = $("chartTip");
       let tipHideTimer = null;
       function showTip(x, y, value, label, owner) {
+        const host = document.querySelector("dialog[open]") || document.body;
+        if (tipEl.parentNode !== host) host.appendChild(tipEl);
         tipEl.dataset.owner = owner || "";
         $("tipValue").textContent = value;
         $("tipLabel").textContent = label;
         tipEl.style.left = Math.min(Math.max(x, 96), window.innerWidth - 96) + "px";
         tipEl.style.top = Math.max(y, 64) + "px";
         tipEl.classList.add("is-visible");
-        tipEl.setAttribute("aria-hidden", "false");
         clearTimeout(tipHideTimer);
       }
       function hideTip(delay, owner) {
         if (owner && tipEl.dataset.owner !== owner) return;
         clearTimeout(tipHideTimer);
-        tipHideTimer = setTimeout(() => { tipEl.classList.remove("is-visible"); tipEl.setAttribute("aria-hidden", "true"); }, delay || 0);
+        tipHideTimer = setTimeout(() => { tipEl.classList.remove("is-visible"); }, delay || 0);
       }
       window.addEventListener("scroll", () => hideTip(0), { passive: true });
       function emptyBox(text) { return `<div class="empty-state">${esc(text)}</div>`; }
@@ -1791,16 +1879,19 @@
       }
       function twinTable(caption, head, rows, numCols) {
         const nc = numCols || [];
-        return `<table><caption>${esc(caption)}</caption><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${
-          rows.map((r) => `<tr>${r.map((c, k) => `<td${nc.indexOf(k) >= 0 ? ' class="n"' : ""}>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+        const n = (k) => (nc.indexOf(k) >= 0 ? ' class="n"' : "");
+        return `<table><caption>${esc(caption)}</caption><thead><tr>${head.map((h, k) => `<th scope="col"${n(k)}>${esc(h)}</th>`).join("")}</tr></thead><tbody>${
+          rows.map((r) => `<tr>${r.map((c, k) => `<td${n(k)}>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
       }
-      /* 숫자 칸 묶음: 칸마다 라벨, 값, 보조. 한 칸이라도 보조가 없으면 묶음 전체에서 보조 줄을 뺀다 */
+      /* 숫자 칸 묶음: 칸마다 라벨, 값, 보조. 한 칸이라도 보조가 없으면 묶음 전체에서 보조 줄을 뺀다.
+         읽기 프로그램에는 조각 사이에 쉼표를 넣는다 */
+      const SR_COMMA = `<span class="sr-only">, </span>`;
       function stripCells(cells) {
         const noSub = cells.some((c) => !c.ts && !c.tsHTML);
         return {
           noSub,
           html: cells.map((c) => {
-            const inner = `<span class="tl">${esc(c.tl)}</span><span class="tv">${c.tv}</span>${noSub ? "" : `<span class="ts">${c.tsHTML || esc(c.ts)}</span>`}`;
+            const inner = `<span class="tl">${esc(c.tl)}${SR_COMMA}</span><span class="tv">${c.tv}${noSub ? "" : SR_COMMA}</span>${noSub ? "" : `<span class="ts">${c.tsHTML || esc(c.ts)}</span>`}`;
             return c.href ? `<a class="cell" href="${c.href}"${c.attrs || ""}>${inner}</a>` : `<div class="cell">${inner}</div>`;
           }).join("")
         };
@@ -1836,6 +1927,20 @@
       const showCmp = () => !!(state.cmp && state.cmp.pct >= 5);
 
       /* ═══════════ 머리 띠와 숫자 칸 ═══════════ */
+      let countTok = 0;
+      function countUpTo(el, to) {
+        const tok = ++countTok;
+        if (reduceMotion) { el.textContent = nf(to); return; }
+        let t0 = null;
+        const step = (ts) => {
+          if (tok !== countTok) return;   // 그사이 다른 발행본을 골랐으면 멈춘다
+          if (t0 === null) t0 = ts;
+          const p = Math.min((ts - t0) / 700, 1);
+          el.textContent = nf(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
       function renderHero() {
         const st = state.data;
         document.title = "활동 통계 " + (st.periodLabel || "") + " | 동네친구들";
@@ -1845,8 +1950,8 @@
         const avg = state.legacy ? (st.days.length ? total / st.days.length : 0) : avgPerDay();
         $("heroNum").hidden = false;
         const heroTotal = $("heroTotal");
-        if (!state.countedUp && window.EXCER && EXCER.countUp) { EXCER.countUp(heroTotal, total, { duration: 700 }); state.countedUp = true; }
-        else heroTotal.textContent = nf(total);
+        if (!state.countedUp) { countUpTo(heroTotal, total); state.countedUp = true; }
+        else { countTok += 1; heroTotal.textContent = nf(total); }
         let line = "";
         if (avg > 0) {
           const sec = Math.round(86400 / avg);
@@ -1859,16 +1964,13 @@
         const gen = RM.kstDate(st.generatedAt) || String(st.generatedAt || "").slice(0, 10);
         const genOk = /^\d{4}-\d{2}-\d{2}$/.test(gen);
         const P = state.partial, lastD = parts(st.range.to);
-        const partTxt = P.partial && lastD && P.lastHour >= 6 ? `, ${lastD.d}일은 ${P.lastHour}시까지` : "";   // 0~5시는 전날 밤의 끝(하루는 6시 시작)
-        const tr = st.meta && st.meta.truncated;
-        const trTxt = tr ? (tr.days ? ", 800일을 넘는 앞부분은 빠져 있습니다" : "") + (tr.members ? ", 활동 순위 120명 밖 멤버는 멤버 목록에 없습니다" : "") : "";
+        const partTxt = P.partial && lastD ? (P.lastHour >= 6 ? `, ${lastD.d}일은 ${P.lastHour}시까지` : `, ${lastD.d}일은 일부만`) : "";
         const v1Txt = state.legacy ? `, 이야기한 멤버 ${nf((st.totalsV1 && st.totalsV1.activeMembers) || state.vis.length)}명` : "";
-        $("metaLine").textContent = fmtK(st.range.from) + "~" + fmtK(st.range.to) + (genOk ? ", " + fmtK(gen) + " 발행" : "") + partTxt + trTxt + v1Txt;
+        $("metaLine").textContent = fmtK(st.range.from) + "~" + fmtK(st.range.to) + (genOk ? ", " + fmtK(gen) + " 발행" : "") + partTxt + v1Txt;
 
+        // 출처: 미리보기만 배지(예시는 아래 안내 한 줄로)
         const badge = $("sourceBadge");
-        if (state.source === "sample") badge.innerHTML = "<strong>예시 데이터</strong>";
-        else if (state.source === "preview") badge.innerHTML = "<strong>미리보기 초안</strong>";
-        else badge.innerHTML = "";
+        badge.innerHTML = state.source === "preview" ? "<strong>미리보기 초안</strong>" : "";
         badge.hidden = !badge.innerHTML;
         $("maskNote").hidden = !st.maskNames;
         const sel = $("reportSelect");
@@ -1876,27 +1978,28 @@
           sel.hidden = false;
           sel.innerHTML = liveRows.map((r) => `<option value="${esc(r.id)}"${state.row && r.id === state.row.id ? " selected" : ""}>${esc(r.period_label)}</option>`).join("");
         } else sel.hidden = true;
+        $("sourceLine").hidden = false;
         $("shareBtn").hidden = false;
-        $("kakaoShareBtn").hidden = state.source !== "live";
       }
 
-      /* 숫자 칸 3개: 이야기한 멤버, 하루 평균 인원, 매일 이야기 */
+      /* 숫자 칸 3개: 이야기한 멤버, 하루 평균 인원, 매일 이야기한 */
       function renderStrip() {
         const st = state.data, host = $("heroTiles"), T = state.titles, f = state.full, F = f.len;
-        if (state.legacy) { host.hidden = true; host.innerHTML = ""; return; }
+        if (state.legacy || !state.vis.length) { host.hidden = true; host.innerHTML = ""; return; }
         host.hidden = false;
         const cells = [{ tl: "이야기한 멤버", tv: tvHTML(state.vis.length, "명"), ts: RM.pubShort(st) + " 동안" }];
         if (F >= 3) {
           const act = RM.dailyActive(st, f, state.vis);
           const avgAct = act.length ? act.reduce((a, b) => a + b, 0) / act.length : 0;
           const c = state.cmp;
-          const sub = showCmp() && Math.round(c.actCur) > Math.round(c.actPrev) ? `${RM.pubShort(state.prev.stats)} ${nf(c.actPrev)}명` : `많은 날 ${nf(Math.max(...act))}명`;
+          const sub = showCmp() && Math.round(c.actCur) > Math.round(c.actPrev) ? `${RM.pubShort(state.prev.stats)} ${nf(c.actPrev)}명` : `최다 ${nf(Math.max(...act))}명`;
           cells.push({ tl: "하루 평균 인원", tv: tvHTML(avgAct, "명"), ts: sub });
         }
         if (F >= 5 && T.everyDay.length) {
-          cells.push({ tl: "매일 이야기", tv: tvHTML(T.everyDay.length, "명"), tsHTML: `${nf(F)}일 모두${ic("chevRight")}`, href: "#secRank", attrs: ` data-lens-jump="days"` });
+          cells.push({ tl: "매일 이야기한", tv: tvHTML(T.everyDay.length, "명"), tsHTML: `${nf(F)}일 모두${ic("chevRight")}`, href: "#secRank",
+            attrs: ` data-lens-jump="days" aria-label="매일 이야기한 멤버 ${nf(T.everyDay.length)}명, 순위에서 보기"` });
         } else if (F >= 7 && T.streak7.length) {
-          cells.push({ tl: "7일 이상 연속", tv: tvHTML(T.streak7.length, "명"), ts: "이어서 이야기" });
+          cells.push({ tl: "연속 이야기한", tv: tvHTML(T.streak7.length, "명"), ts: "7일 이상" });
         }
         host.innerHTML = stripHTML(cells, cells.length === 1 ? "is-stack" : "");
       }
@@ -1907,16 +2010,22 @@
         if (!T || !T.awards.length) { sec.hidden = true; return; }
         sec.hidden = false;
         $("titlesH").textContent = RM.pubShort(state.data) + " 칭호";
-        $("titlesSub").textContent = `${nf(T.awards.length)}개, 한 사람에 하나씩`;
+        const nA = T.awards.length;
+        $("titlesSub").textContent = nA === 1 ? "1개" : `${nf(nA)}개, 한 사람에 하나씩`;
         const names = (a) => a.holders.map((i) => `<span class="nm">${nameHTML(i)}</span>`).join("");
         const medals = T.awards.filter((a) => a.group === "medal");
+        const runVal = (a, c) => {
+          const v = (a.id === "growth" ? "+" : "") + shortVal(a.id, c);
+          const o = T.byMember[c.idx];
+          return o && o.id !== a.id ? `${v}, ${o.title} 받음` : v;
+        };
         $("medalGrid").innerHTML = medals.map((a, k) => {
           const top = T.table[a.id] || [];
           const mx = top.length ? top[0].s || 1 : 1;
-          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${1 + top.filter((y) => y.s > c.s).length}</span><span class="rw" title="${esc(nameOf(c.idx))}">${esc(nameOf(c.idx))}</span><span class="rv">${esc(shortVal(a.id, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
+          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${1 + top.filter((y) => y.s > c.s).length}</span><span class="rw" title="${esc(nameOf(c.idx))}">${esc(nameOf(c.idx))}</span><span class="rv">${esc(runVal(a, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
           return `<li class="medal-card fade-up${a.img ? "" : " no-image"}" data-medal style="animation-delay:${reduceMotion ? 0 : k * 40}ms">
             <span class="mc-art">${a.img ? medalImg(a.img, 80, "mc-img") : ""}<span class="mc-ic">${ic(a.icon)}</span></span>
-            <h3 class="mc-title"><button class="mc-hit" type="button" data-open-title="${a.id}" aria-describedby="mcN${k} mcV${k}">${esc(a.title)}</button></h3>
+            <h3 class="mc-title"><button class="mc-hit" type="button" data-open-title="${a.id}" aria-describedby="mcN${k} mcV${k}">${esc(a.title)}${ic("chevRight", "mc-chev")}</button></h3>
             <span class="mc-names" id="mcN${k}">${names(a)}</span>
             <span class="mc-desc" id="mcV${k}">${esc(a.short || "")}</span>
             ${runners}
@@ -1928,15 +2037,14 @@
         box.hidden = false;
         const rows = Math.max(...cols.map((c) => c[1].length));
         box.innerHTML = `<div class="tt-cols${cols.length === 1 ? " is-one" : ""}" style="--rows:${rows}">${cols.map((c) => `<div class="tt-col"><h3 class="tt-colh" id="${c[2]}">${c[0]}</h3><ul class="tt-list" aria-labelledby="${c[2]}">${c[1].map((a) =>
-          `<li class="tt-row"><p class="tt-title"><button class="tt-hit" type="button" data-open-title="${a.id}" aria-describedby="ttN_${a.id}"><span class="tt-ic" data-band="${a.id}">${ic(a.icon)}</span>${esc(a.title)}</button></p><span class="tt-name" id="ttN_${a.id}">${names(a)}</span></li>`).join("")}</ul></div>`).join("")}</div>`;
+          `<li class="tt-row"><p class="tt-title"><button class="tt-hit" type="button" data-open-title="${a.id}" aria-describedby="ttN_${a.id}"><span class="tt-ic" data-band="${a.id}">${ic(a.icon)}</span>${esc(a.title)}${ic("chevRight", "tt-chev")}</button></p><span class="tt-name" id="ttN_${a.id}">${names(a)}</span></li>`).join("")}</ul></div>`).join("")}</div>`;
       }
+      /* 칭호 값의 짧은 꼴(순위 줄, 상위 목록) */
       function shortVal(id, c) {
-        const v = c.v;
         if (c.p != null) return c.p + "%";
-        if (id === "writer") return Math.round(v) + "자";
-        if (id === "question" || id === "welcome" || id === "meet" || id === "food" || id === "outing" || id === "emoticon" || id === "opener") return nf(v) + "번";
-        if (id === "photo") return nf(v) + "장";
-        return nf(v) + "건";
+        if (id === "writer") return Math.round(c.v) + "자";
+        if (id === "active" || id === "growth" || id === "burst") return nf(c.v) + "건";
+        return nf(c.v) + "번";
       }
 
       /* ═══════════ 순위: 발행 기간 전체(메시지, 함께한 날) ═══════════ */
@@ -1956,20 +2064,21 @@
           list = state.vis.map((i) => ({ idx: i, v: M()[i].count })).sort((a, b) => b.v - a.v || String(nameOf(a.idx)).localeCompare(nameOf(b.idx), "ko"));
           let rank = 0, pv = null; list.forEach((x, k) => { if (x.v !== pv) { rank = k + 1; pv = x.v; } x.rank = rank; });
         } else list = RM.lensRank(st, { i0: 0, i1: n - 1, len: n }, state.full, "msg") || [];
-        if (!list.length) { body.innerHTML = emptyBox("이 기간에 대화가 없습니다."); foot.hidden = true; return; }
+        if (!list.length) { body.innerHTML = emptyBox("메시지가 없습니다."); foot.hidden = true; return; }
         if (state.lens === "days") { renderDays(list, F); return; }
         const cap = state.rankOpen ? 30 : 10, shown = list.slice(0, cap);
         const mx = Math.max(list[0].v, 1);
-        const row = (x, noRank) => `<li><button class="rank-row${!noRank && x.rank <= 3 ? " is-top" : ""}${!noRank && x.rank === 1 ? " is-first" : ""}${x.idx === state.findIdx ? " is-focus" : ""}" type="button" data-open-member="${x.idx}" aria-label="${noRank ? "찾은 멤버" : (list.filter((y) => y.rank === x.rank).length > 1 ? "공동 " : "") + x.rank + "위"} ${esc(nameOf(x.idx))} ${nf(x.v)}건">
-            <span class="rank-no">${noRank ? "" : x.rank}</span><span class="rank-name">${nameHTML(x.idx)}</span><span class="rank-val">${nf(x.v)}건</span><span class="rank-bar"><span style="width:${Math.max(1, (x.v / mx) * 100).toFixed(1)}%"></span></span></button></li>`;
-        let html = shown.map((x) => row(x)).join("");
+        const tie = (x) => list.filter((y) => y.rank === x.rank).length > 1;
+        const row = (x) => `<li><button class="rank-row${x.rank <= 3 ? " is-top" : ""}${x.rank === 1 ? " is-first" : ""}${x.idx === state.findIdx ? " is-focus" : ""}" type="button" data-open-member="${x.idx}" aria-label="${tie(x) ? "공동 " : ""}${x.rank}위 ${esc(nameOf(x.idx))}, 메시지 ${nf(x.v)}건">
+            <span class="rank-no">${x.rank}</span><span class="rank-name">${nameHTML(x.idx)}</span><span class="rank-val">${nf(x.v)}건</span><span class="rank-bar"><span style="width:${Math.max(1, (x.v / mx) * 100).toFixed(1)}%"></span></span></button></li>`;
+        let html = `<ol class="rank-list">${shown.map(row).join("")}</ol>`;
         if (state.findIdx >= 0 && !shown.some((x) => x.idx === state.findIdx)) {
           const me = list.find((x) => x.idx === state.findIdx);
-          if (me) html += row(me, true);
+          if (me) html += `<h3 class="rank-group">찾은 멤버</h3><ol class="rank-list">${row(me)}</ol>`;
         }
-        body.innerHTML = `<ol class="rank-list">${html}</ol>`;
+        body.innerHTML = html;
         foot.hidden = list.length <= 10;
-        toggle.textContent = state.rankOpen ? "10위까지 보기" : "30위까지 보기";
+        toggle.textContent = state.rankOpen ? "접기" : list.length <= 30 ? "모두 보기" : "30위까지 보기";
         toggle.setAttribute("aria-expanded", String(state.rankOpen));
       }
       /* 함께한 날: 같은 날 수끼리 묶어 두 단 이름 목록으로. 접으면 첫 묶음 전부와 10명이 찰 때까지 */
@@ -1988,7 +2097,7 @@
           return { out, count };
         };
         const shut = pick(false), open = pick(true), cur = state.daysOpen ? open : shut;
-        const head = (g) => (g.v === F ? `${nf(F)}일 모두 ${nf(g.items.length)}명` : `${nf(g.v)}일 ${nf(g.items.length)}명`);
+        const head = (g) => (g.v === F ? `${nf(F)}일 모두 ${nf(g.items.length)}명` : `${nf(F)}일 중 ${nf(g.v)}일, ${nf(g.items.length)}명`);
         const btn = (x, withDays) => `<li><button type="button" class="${x.idx === state.findIdx ? "is-focus" : ""}" data-open-member="${x.idx}" aria-label="${esc(nameOf(x.idx))}, 함께한 날 ${nf(x.v)}일"><span>${nameHTML(x.idx)}</span>${withDays ? `<span class="dv">${nf(x.v)}일</span>` : ""}</button></li>`;
         let html = cur.out.map((s) => `<div class="day-group"><h3>${head(s.g)}</h3><ul class="name-grid">${s.items.map((x) => btn(x)).join("")}</ul></div>`).join("");
         if (state.findIdx >= 0 && !cur.out.some((s) => s.items.some((x) => x.idx === state.findIdx))) {
@@ -2017,7 +2126,7 @@
         if (F > 45) {
           const avgOf = (a, b) => { let t = 0; for (let k = a; k <= b; k++) t += days[k].c; return t / (b - a + 1); };
           const r = avgOf(0, 27) > 0 ? avgOf(F - 28, F - 1) / avgOf(0, 27) : 0;
-          if (r >= 1.3) { h2 = `처음 4주보다 ${x1(r)}배`; sub = `가장 붐빈 날 ${fmtMD(days[pk].d)} ${nf(days[pk].c)}건`; }
+          if (r >= 1.3) { h2 = `최근 4주가 처음 4주의 ${x1(r)}배`; sub = `가장 붐빈 날 ${fmtMD(days[pk].d)} ${nf(days[pk].c)}건`; }
         }
         if (!h2) {
           h2 = `가장 붐빈 날 ${fmtMD(days[pk].d)}`;
@@ -2028,20 +2137,29 @@
         state.flow = { pk, act, F, h2 };
         drawFlow();
         const partial = state.partial.partial;
-        const rows = days.map((d, k) => [fmtK(d.d), WEEK_KO[RM.weekdayOf(d.d)], nf(d.c)].concat(act ? [nf(act[k])] : []).concat([partial && k === n - 1 ? "집계 중" : ""]));
+        const rows = days.map((d, k) => [fmtK(d.d), WEEK_KO[RM.weekdayOf(d.d)], nf(d.c)].concat(act ? [nf(act[k])] : []).concat([partial && k === n - 1 ? "일부만 집계" : ""]));
         $("flowTable").innerHTML = twinTable("날짜별 메시지" + (act ? "와 이야기한 멤버" : ""), ["날짜", "요일", "메시지"].concat(act ? ["이야기한 멤버"] : []).concat(["비고"]), rows, act ? [2, 3] : [2]);
-        setFlowRead(pk);
+        setFlowRead(state.flowK != null ? state.flowK : pk);
         renderWeekWords();
       }
-      function setFlowRead(k) {
+      function flowText(k) {
         const st = state.data, d = st.days[k], f = state.flow;
-        if (!d) return;
+        if (!d || !f) return null;
         const isPart = state.partial.partial && k === st.days.length - 1;
-        $("flowRead").innerHTML = `${esc(fmtMDW(d.d))} <b>${nf(d.c)}건</b>` + (f.act && !isPart ? `<span>, 이야기한 멤버 ${nf(f.act[k])}명</span>` : "") + (isPart ? `<span>, 집계 중</span>` : "");
+        return { date: fmtMDW(d.d), val: nf(d.c) + "건", extra: isPart ? "일부만 집계" : f.act ? `이야기한 멤버 ${nf(f.act[k])}명` : "" };
+      }
+      function setFlowRead(k) {
+        const t = flowText(k);
+        if (!t) return;
+        $("flowRead").innerHTML = `<span class="nw">${esc(t.date)}</span> <b>${esc(t.val)}</b>` + (t.extra ? `<span class="x">, ${esc(t.extra)}</span>` : "");
+        const fig = $("flowViz");
+        fig.setAttribute("aria-valuenow", String(k + 1));
+        fig.setAttribute("aria-valuetext", `${t.date} ${t.val}` + (t.extra ? `, ${t.extra}` : ""));
       }
       function drawFlow() {
         const st = state.data, days = st.days, n = days.length, f = state.flow, fig = $("flowViz");
         if (!f) return;
+        fig.dataset.w = String(fig.clientWidth || 0);
         const W = Math.max(260, Math.round(fig.clientWidth || fig.getBoundingClientRect().width || 320));
         const MB = PHONE.matches;
         const partial = state.partial.partial;
@@ -2056,14 +2174,14 @@
         const yA = (v) => TOP + PA - (v / ax.ymax) * PA;
         const xc = (k) => L + slot * (k + 0.5);
         let g = "";
-        // 주말 띠
-        if (!long) days.forEach((d, k) => { if (RM.weekdayOf(d.d) >= 5) g += `<rect x="${(L + slot * k).toFixed(1)}" y="${TOP}" width="${slot.toFixed(1)}" height="${PA}" style="fill:var(--viz-band)"/>`; });
         // 격자와 y 눈금
         for (let t = 0; t <= ax.ticks; t++) {
           const v = ax.step * t, y = yA(v);
           g += `<line class="grid-line" x1="${L}" x2="${W - R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(--line)" stroke-width="1"/>`;
           g += `<text x="${L - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--ink-2)">${RM.fmtAxis(v)}</text>`;
         }
+        // 주말: 축 아래 짧은 띠
+        if (!long) days.forEach((d, k) => { if (RM.weekdayOf(d.d) >= 5) g += `<rect x="${(L + slot * k + 1).toFixed(1)}" y="${TOP + PA + 3}" width="${Math.max(1, slot - 2).toFixed(1)}" height="3" rx="1" style="fill:var(--viz-ref)"/>`; });
         let marks = "";
         const bw = Math.max(2, Math.min(24, slot - 2));
         if (!long) {
@@ -2075,28 +2193,33 @@
               marks += `<path class="bar-in" d="${barPath(x, y, bw, h, h <= 8 ? 2 : 4)}" style="fill:var(${k === f.pk ? "--viz-accent" : "--viz-context"})"/>`;
             }
           });
-          const pky = yA(days[f.pk].c);
-          const lbl = nf(days[f.pk].c), lw = textW(lbl, "600 12px Pretendard, sans-serif");
-          const lx = Math.min(Math.max(xc(f.pk), L + lw / 2), W - R - lw / 2);
-          marks += `<text x="${lx.toFixed(1)}" y="${(pky - 6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" style="fill:var(--ink)">${lbl}</text>`;
           // 평균선(온전한 날)
           let t = 0; for (let k = 0; k < f.F; k++) t += days[k].c;
           const avg = t / Math.max(1, f.F), ya = yA(avg), xe = L + slot * f.F;
-          marks += `<line x1="${L}" x2="${xe.toFixed(1)}" y1="${ya.toFixed(1)}" y2="${ya.toFixed(1)}" style="stroke:var(--viz-ref)" stroke-width="1"/>`;
+          marks += `<line x1="${L}" x2="${xe.toFixed(1)}" y1="${ya.toFixed(1)}" y2="${ya.toFixed(1)}" style="stroke:var(--viz-ref)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
           f.avg = avg;
+          const pky = yA(days[f.pk].c);
+          const lbl = nf(days[f.pk].c), lw = textW(lbl, "600 12px Pretendard, sans-serif");
+          const lx = Math.min(Math.max(xc(f.pk), L + lw / 2), W - R - lw / 2);
+          marks += `<text x="${lx.toFixed(1)}" y="${(pky - 6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" style="fill:var(--ink);${HALO}">${lbl}</text>`;
         } else {
-          let area = `M${xc(0).toFixed(1)},${(TOP + PA).toFixed(1)}`;
-          days.forEach((d, k) => { area += `L${xc(k).toFixed(1)},${yA(d.c).toFixed(1)}`; });
-          area += `L${xc(n - 1).toFixed(1)},${(TOP + PA).toFixed(1)}Z`;
+          const last = Math.max(0, f.F - 1), base = (TOP + PA).toFixed(1);
+          let area = `M${xc(0).toFixed(1)},${base}`;
+          for (let k = 0; k <= last; k++) area += `L${xc(k).toFixed(1)},${yA(days[k].c).toFixed(1)}`;
+          area += `L${xc(last).toFixed(1)},${base}Z`;
           marks += `<path d="${area}" style="fill:var(--viz-accent)" fill-opacity="0.1"/>`;
-          const ma = RM.movingAvg(days.slice(0, f.F).map((d) => d.c), 7);
-          marks += `<polyline points="${ma.map((v, k) => xc(k).toFixed(1) + "," + yA(v).toFixed(1)).join(" ")}" fill="none" style="stroke:var(--viz-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+          if (f.F >= 7) {
+            const ma = RM.movingAvg(days.slice(0, f.F).map((d) => d.c), 7);
+            const pts = []; for (let k = 6; k < ma.length; k++) pts.push(xc(k).toFixed(1) + "," + yA(ma[k]).toFixed(1));
+            marks += `<polyline points="${pts.join(" ")}" fill="none" style="stroke:var(--viz-accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+          }
+          if (partial) marks += `<circle cx="${xc(n - 1).toFixed(1)}" cy="${yA(days[n - 1].c).toFixed(1)}" r="3.5" fill="#fff" style="stroke:var(--viz-context)" stroke-width="1.5"/>`;
           const px = xc(f.pk), py = yA(days[f.pk].c);
           marks += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4" style="fill:var(--viz-accent)" stroke="#fff" stroke-width="2"/>`;
           const anchor = px > W - 60 ? "end" : px < L + 40 ? "start" : "middle";
-          marks += `<text x="${px.toFixed(1)}" y="${(py - 8).toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="600" style="fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:3px">${nf(days[f.pk].c)}</text>`;
+          marks += `<text x="${px.toFixed(1)}" y="${(py - 8).toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="600" style="fill:var(--ink);${HALO}">${nf(days[f.pk].c)}</text>`;
         }
-        // x 눈금
+        // x 눈금(주말 띠 아래)
         let xl = "", lastX = -99;
         days.forEach((d, k) => {
           const p = parts(d.d), wd = RM.weekdayOf(d.d);
@@ -2105,28 +2228,26 @@
           const x = xc(k);
           if (x - lastX < (long ? 36 : 34)) return;
           lastX = x;
-          xl += `<text x="${x.toFixed(1)}" y="${(TOP + PA + 17).toFixed(1)}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${long ? p.m + "월" : fmtK(d.d)}</text>`;
+          xl += `<text x="${x.toFixed(1)}" y="${(TOP + PA + 19).toFixed(1)}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${long ? p.m + "월" : fmtK(d.d)}</text>`;
         });
         // 누름 영역과 보조선
         let hits = "";
         days.forEach((d, k) => { hits += `<rect class="hit" data-k="${k}" x="${(L + slot * k).toFixed(1)}" y="${TOP}" width="${slot.toFixed(1)}" height="${(H - TOP).toFixed(1)}"/>`; });
-        const label = f.h2 + ", 날짜별 메시지 막대";
-        fig.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">${g}${marks}${xl}<line id="flowHair" x1="0" x2="0" y1="${TOP}" y2="${TOP + PA}" style="stroke:var(--ink-2)" stroke-opacity="0.4" stroke-width="1" visibility="hidden"/>${hits}</svg>`;
-        fig.setAttribute("aria-label", label);
+        fig.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false">${g}${marks}${xl}<line id="flowHair" x1="0" x2="0" y1="${TOP}" y2="${TOP + PA}" style="stroke:var(--ink-2)" stroke-opacity="0.4" stroke-width="1" visibility="hidden"/>${hits}</svg>`;
+        fig.setAttribute("aria-valuemin", "1");
+        fig.setAttribute("aria-valuemax", String(n));
         const legend = [];
         if (!long) {
-          legend.push(`<li><i class="is-line" style="background:var(--viz-ref)"></i>평균 ${nf(f.avg || 0)}</li>`, `<li><i style="background:var(--viz-band)"></i>주말</li>`);
-          if (partial) legend.push(`<li><i class="is-hollow"></i>집계 중</li>`);
+          legend.push(`<li><i class="is-dash"></i>평균 ${nf(f.avg || 0)}</li>`, `<li><i class="is-strip" style="background:var(--viz-ref)"></i>주말</li>`);
         } else legend.push(`<li><i class="is-line" style="background:var(--viz-accent)"></i>7일 평균</li>`);
+        if (partial) legend.push(`<li><i class="is-hollow"></i>일부만 집계</li>`);
         $("flowLegend").innerHTML = legend.join("");
         const svg = fig.querySelector("svg"), hair = svg.querySelector("#flowHair");
         const pick = (k, clientY) => {
           const d = days[k]; if (!d) return;
           hair.setAttribute("x1", xc(k).toFixed(1)); hair.setAttribute("x2", xc(k).toFixed(1)); hair.setAttribute("visibility", "visible");
-          const isPart = partial && k === n - 1;
-          const rect = svg.getBoundingClientRect();
-          showTip(rect.left + (xc(k) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (yA(d.c) / H) * rect.height, nf(d.c) + "건",
-            fmtMDW(d.d) + (isPart ? ", 집계 중" : f.act ? `, 이야기한 멤버 ${nf(f.act[k])}명` : ""), "flow");
+          const t = flowText(k), rect = svg.getBoundingClientRect();
+          showTip(rect.left + (xc(k) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (yA(d.c) / H) * rect.height, t.val, t.date + (t.extra ? ", " + t.extra : ""), "flow");
           setFlowRead(k);
           state.flowK = k;
         };
@@ -2135,8 +2256,10 @@
         svg.addEventListener("pointerleave", (e) => { const d = e.pointerType === "touch" ? 2500 : 120; setTimeout(() => hair.setAttribute("visibility", "hidden"), d); hideTip(d, "flow"); });
         fig.onkeydown = (e) => {
           let k = state.flowK != null ? state.flowK : f.pk;
-          if (e.key === "ArrowRight") k = Math.min(n - 1, k + 1);
-          else if (e.key === "ArrowLeft") k = Math.max(0, k - 1);
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") k = Math.min(n - 1, k + 1);
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") k = Math.max(0, k - 1);
+          else if (e.key === "PageUp") k = Math.min(n - 1, k + 7);
+          else if (e.key === "PageDown") k = Math.max(0, k - 7);
           else if (e.key === "Home") k = 0;
           else if (e.key === "End") k = n - 1;
           else return;
@@ -2158,6 +2281,16 @@
       }
 
       /* ═══════════ 평소: 24시간(6시 시작), 평일과 주말, 주제 비중 ═══════════ */
+      function hourText(h) {
+        const r = state.rhythm;
+        return { date: `${h}시`, val: `하루 평균 ${nf(r.h24[h])}건`, extra: `전체의 ${pct(r.h24[h], r.total)}` };
+      }
+      function setHourRead(h) {
+        const t = hourText(h), fig = $("hourViz");
+        $("hourRead").innerHTML = `${esc(t.date)} <b>${esc(t.val)}</b><span class="x">, ${esc(t.extra)}</span>`;
+        fig.setAttribute("aria-valuenow", String(RM.HOUR_ORDER.indexOf(h) + 1));
+        fig.setAttribute("aria-valuetext", `${t.date} ${t.val}, ${t.extra}`);
+      }
       function renderRhythm() {
         const st = state.data, sec = $("secRhythm");
         let h24;
@@ -2175,16 +2308,17 @@
         $("hourCard").hidden = !total;
         if (total) {
           let pk = 0; h24.forEach((v, h) => { if (v > h24[pk]) pk = h; });
-          const shares = RM.BANDS6.map((b) => RM.bandSum(h24, b) / total);
-          let bb = 0; shares.forEach((s, k) => { if (s > shares[bb]) bb = k; });
+          const bandV = RM.BANDS6.map((b) => RM.bandSum(h24, b));
+          const shares = RM.roundShares(bandV);   // 구간 비중은 합이 100 이 되게
+          let bb = 0; bandV.forEach((v, k) => { if (v > bandV[bb]) bb = k; });
           const band = RM.BANDS6[bb];
           $("rhythmH").textContent = `가장 붐비는 시간 ${pk}시`;
-          $("rhythmSub").textContent = `${band.range}가 하루의 ${Math.round(shares[bb] * 100)}%`;
+          $("rhythmSub").textContent = `${band.range}에 하루 메시지의 ${shares[bb]}%`;
           state.rhythm = { h24, pk, total, shares };
           drawHours();
-          $("hourRead").innerHTML = `${pk}시 <b>하루 평균 ${nf(h24[pk])}건</b><span>, 전체의 ${pct(h24[pk], total)}</span>`;
-          $("hourTable").innerHTML = twinTable("시각별 하루 평균 메시지", ["시각", "하루 평균", "비중"], RM.HOUR_ORDER.map((h) => [h + "시", nf(h24[h]), pct(h24[h], total)]), [1, 2])
-            + twinTable("구간별 비중", ["구간", "시각", "비중"], RM.BANDS6.map((b, k) => [b.label, b.range, Math.round(shares[k] * 100) + "%"]), [2]);
+          setHourRead(state.hourK != null ? RM.HOUR_ORDER[state.hourK] : pk);
+          $("hourTable").innerHTML = twinTable("시간별 하루 평균 메시지", ["시간", "하루 평균", "비중"], RM.HOUR_ORDER.map((h) => [h + "시", nf(h24[h]), pct(h24[h], total)]), [1, 2])
+            + twinTable("구간별 비중", ["구간", "시간", "비중"], RM.BANDS6.map((b, k) => [b.label, b.range, shares[k] + "%"]), [2]);
         } else state.rhythm = null;
         // 평일과 주말(평일 온전한 날 3일, 주말 2일 이상일 때)
         let wa;
@@ -2210,6 +2344,7 @@
       function drawHours() {
         const r = state.rhythm, fig = $("hourViz");
         if (!r) return;
+        fig.dataset.w = String(fig.clientWidth || 0);
         const W = Math.max(260, Math.round(fig.clientWidth || 320));
         const MB = PHONE.matches;
         const ax = niceAxis(Math.max(...r.h24, 1), 4);
@@ -2239,30 +2374,30 @@
         const lbl = nf(r.h24[r.pk]);
         const lw = textW(lbl, "600 12px Pretendard, sans-serif");
         const lx = Math.min(Math.max(pkX, L + lw / 2), W - R - lw / 2);
-        bars += `<text x="${lx.toFixed(1)}" y="${(y(r.h24[r.pk]) - 7).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" style="fill:var(--ink)">${lbl}</text>`;
+        bars += `<text x="${lx.toFixed(1)}" y="${(y(r.h24[r.pk]) - 7).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="600" style="fill:var(--ink);${HALO}">${lbl}</text>`;
         let xl = "";
         [6, 12, 18, 0].forEach((h) => { const k = order.indexOf(h); xl += `<text x="${(L + slot * k + slot / 2).toFixed(1)}" y="${TOP + PH + 15}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${h}시</text>`; });
-        // 구간 띠
+        // 구간 띠: 이름은 칸에 들어갈 때만
         let strip = "", sx = L;
         const by = TOP + PH + XL;
         RM.BANDS6.forEach((b, k) => {
           const bwid = slot * b.hours.length;
           strip += `<rect x="${(sx + 1).toFixed(1)}" y="${by}" width="${(bwid - 2).toFixed(1)}" height="${BAND}" rx="4" style="fill:var(--viz-band)"/>`;
-          const cx = sx + bwid / 2, p = Math.round(r.shares[k] * 100) + "%";
-          if (bwid >= 30) {
+          const cx = sx + bwid / 2, p = r.shares[k] + "%";
+          if (textW(b.label, "600 12px Pretendard, sans-serif") + 8 <= bwid) {
             strip += `<text x="${cx.toFixed(1)}" y="${by + 16}" text-anchor="middle" font-size="12" font-weight="600" style="fill:var(--ink)">${b.label}</text>`;
             strip += `<text x="${cx.toFixed(1)}" y="${by + 32}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${p}</text>`;
           } else strip += `<text x="${cx.toFixed(1)}" y="${by + 25}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${p}</text>`;
           sx += bwid;
         });
-        const label = `가장 붐비는 시간 ${r.pk}시, 6시부터 다음 날 5시까지 시각별 하루 평균 메시지 막대`;
-        fig.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(label)}">${g}${bars}${xl}${strip}${hits}</svg>`;
-        fig.setAttribute("aria-label", label);
+        fig.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false">${g}${bars}${xl}${strip}${hits}</svg>`;
+        fig.setAttribute("aria-valuemin", "1");
+        fig.setAttribute("aria-valuemax", "24");
         const svg = fig.querySelector("svg");
         const pick = (h, clientY) => {
-          const k = order.indexOf(h), rect = svg.getBoundingClientRect();
-          showTip(rect.left + ((L + slot * (k + 0.5)) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (y(r.h24[h]) / H) * rect.height, nf(r.h24[h]) + "건", `${h}시 하루 평균, 전체의 ${pct(r.h24[h], r.total)}`, "hours");
-          $("hourRead").innerHTML = `${h}시 <b>하루 평균 ${nf(r.h24[h])}건</b><span>, 전체의 ${pct(r.h24[h], r.total)}</span>`;
+          const k = order.indexOf(h), rect = svg.getBoundingClientRect(), t = hourText(h);
+          showTip(rect.left + ((L + slot * (k + 0.5)) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (y(r.h24[h]) / H) * rect.height, nf(r.h24[h]) + "건", `${h}시 하루 평균, ${t.extra}`, "hours");
+          setHourRead(h);
           state.hourK = k;
         };
         svg.addEventListener("pointermove", (e) => { const t = e.target.closest(".hit"); if (t) pick(+t.dataset.h); });
@@ -2270,7 +2405,8 @@
         svg.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2500 : 120, "hours"));
         fig.onkeydown = (e) => {
           let k = state.hourK != null ? state.hourK : pkK;
-          if (e.key === "ArrowRight") k = Math.min(23, k + 1); else if (e.key === "ArrowLeft") k = Math.max(0, k - 1);
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") k = Math.min(23, k + 1);
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") k = Math.max(0, k - 1);
           else if (e.key === "Home") k = 0; else if (e.key === "End") k = 23; else return;
           e.preventDefault(); pick(order[k]);
         };
@@ -2281,7 +2417,7 @@
         const tot = RM.TOPICS.reduce((a, t) => a + (tt[t.key] || 0), 0) || 1;
         return `<div class="stack100${thin ? " is-thin" : ""}" aria-hidden="true">${RM.TOPICS.filter((t) => tt[t.key] > 0).map((t) => {
           const p = (tt[t.key] / tot) * 100;
-          return `<span style="flex:${p.toFixed(2)} 1 0;background:var(${TOPIC_VAR[t.key]})" data-topic="${t.key}" data-tip="${esc(t.label)} ${Math.round(p)}%"></span>`;
+          return `<span style="flex:${p.toFixed(2)} 1 0;background:var(${TOPIC_VAR[t.key]})" data-topic="${t.key}" data-tl="${esc(t.label)}" data-tv="${pctOf(p)}"></span>`;
         }).join("")}</div>`;
       }
       const pctMin1 = (v, t) => (t ? Math.max(v > 0 ? 1 : 0, Math.round((v / t) * 100)) : 0) + "%";
@@ -2297,74 +2433,171 @@
         if (stack) bindStackTips(stack, "topic");
       }
       function bindStackTips(stack, owner) {
-        const on = (e) => { const s = e.target.closest("[data-tip]"); if (!s) return; const r = s.getBoundingClientRect(); const tp = s.dataset.tip.split(" "); showTip(r.left + r.width / 2, r.top, tp.pop(), tp.join(" "), owner); };
+        const on = (e) => { const s = e.target.closest("[data-tv]"); if (!s) return; const r = s.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top, s.dataset.tv, s.dataset.tl, owner); };
         stack.addEventListener("pointermove", on); stack.addEventListener("pointerdown", on);
         stack.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2000 : 100, owner));
       }
 
       /* ═══════════ 바로가기와 집계 기준 ═══════════ */
+      const JUMPS = [["secTitles", "칭호", "medal"], ["secRank", "순위", "trophy"], ["secFlow", "흐름", "chart"], ["secRhythm", "평소", "clock"]];
+      function setJumpCur(id) { $("jumpList").querySelectorAll("a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.jump === id))); }
       function renderJump() {
-        const items = [["secTitles", "칭호", "medal"], ["secRank", "순위", "trophy"], ["secFlow", "흐름", "chart"], ["secRhythm", "평소", "clock"]]
-          .filter((x) => { const el = $(x[0]); return el && !el.hidden; });
+        const items = JUMPS.filter((x) => { const el = $(x[0]); return el && !el.hidden; });
         const ul = $("jumpList");
         ul.style.setProperty("--n", items.length);
         ul.innerHTML = items.map((x) => `<li><a href="#${x[0]}" data-jump="${x[0]}">${ic(x[2])}${x[1]}</a></li>`).join("");
         if (state.jumpObs) { state.jumpObs.disconnect(); state.jumpObs = null; }
+        state.jumpSeen = new Set();
         if (WIDE.matches && "IntersectionObserver" in window) {
+          const order = items.map((x) => x[0]);
+          const topM = Math.round(navH() + 44 + 8);
+          // 보이는 섹션을 모두 기억하고, 방금 누른 것이 보이면 그것, 아니면 위에서 첫 번째
           state.jumpObs = new IntersectionObserver((ents) => {
-            ents.forEach((en) => { if (en.isIntersecting) ul.querySelectorAll("a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.jump === en.target.id))); });
-          }, { rootMargin: "-110px 0px -60% 0px" });
+            ents.forEach((en) => { if (en.isIntersecting) state.jumpSeen.add(en.target.id); else state.jumpSeen.delete(en.target.id); });
+            const cur = state.jumpPick && state.jumpSeen.has(state.jumpPick) ? state.jumpPick : order.find((id) => state.jumpSeen.has(id));
+            setJumpCur(cur || "");
+          }, { rootMargin: `-${topM}px 0px -55% 0px` });
           items.forEach((x) => state.jumpObs.observe($(x[0])));
         }
+        syncStuck();
+      }
+      /* 1080 이상에서 바로가기가 위에 붙으면 윗줄처럼 반투명 바탕과 선 */
+      let stuckRaf = 0;
+      function syncStuck() {
+        stuckRaf = 0;
+        const jb = $("jumpBar");
+        if (!jb) return;
+        jb.classList.toggle("is-stuck", WIDE.matches && window.scrollY > 0 && jb.getBoundingClientRect().top <= navH() + 0.5);
+      }
+      window.addEventListener("scroll", () => { if (!stuckRaf) stuckRaf = requestAnimationFrame(syncStuck); }, { passive: true });
+      ["wheel", "touchstart", "keydown"].forEach((ev) => window.addEventListener(ev, () => { state.jumpPick = null; }, { passive: true }));
+      function focusSection(sec) {
+        const h = sec.querySelector("h2");
+        if (!h) return;
+        h.setAttribute("tabindex", "-1");
+        try { h.focus({ preventScroll: true }); } catch (e) {}
       }
       function renderDataNote() {
         const T = state.titles, st = state.data;
         const lines = [];
-        if (!state.legacy) lines.push("하루 평균과 매일 이야기는 하루가 다 찬 날로만 셉니다.");
-        lines.push("하루는 6시부터 다음 날 5시까지로 봅니다.");
-        if (T && T.awards.length) lines.push("칭호는 발행 기간 전체 기준이고 한 사람에 하나입니다. 성장왕만 최근 7일을 그 앞 7일과 비교합니다.");
-        if (T && T.awards.length && T.pubMin && !state.legacy) lines.push(`비율 칭호는 메시지 ${nf(T.pubMin)}건 이상인 멤버가 대상입니다.`);
-        if (showCmp()) lines.push("지난 발행과는 하루 평균끼리 비교합니다.");
+        if (!state.legacy) lines.push("하루 평균과 매일 이야기한 멤버는 하루가 다 찬 날로만 셉니다.");
+        lines.push("날짜는 0시에 바뀌고, 시간 막대만 6시부터 그립니다.");
+        if (T && T.awards.length) {
+          lines.push("칭호는 한 사람에 하나입니다." + (T.awards.some((a) => a.id === "growth") ? " 성장왕만 최근 7일을 그 앞 7일과 비교합니다." : ""));
+          if (T.pubMin && !state.legacy && T.awards.some((a) => a.p != null)) lines.push(`비중으로 뽑는 칭호는 메시지 ${nf(T.pubMin)}건 이상인 멤버끼리 겨룹니다.`);
+        }
+        if (showCmp()) lines.push("지난 통계와는 하루 평균끼리 비교합니다.");
         lines.push("질문은 물음표나 질문 형태의 문장을 센 값입니다.");
         if (!$("weekCard").hidden) lines.push("주마다 많이 나온 말은 호칭, 말버릇, 닉네임, 봇 단어를 빼고 보여 줍니다.");
         if ((st.members || []).some((m) => RM.isBot(m.name))) lines.push("봇 계정은 목록에서 뺐습니다.");
+        const tr = st.meta && st.meta.truncated;
+        if (tr && tr.days) lines.push("800일이 넘는 앞부분은 빠져 있습니다.");
+        if (tr && tr.members) lines.push("메시지 120위 밖 멤버는 목록에 없습니다.");
         lines.push("원문은 저장하지 않습니다.");
         $("dataNoteList").innerHTML = lines.map((l) => `<li>${esc(l)}</li>`).join("");
       }
 
-      /* ═══════════ 시트: 멤버 카드, 칭호 상세 ═══════════ */
+      /* ═══════════ 시트: 보기를 쌓고, 뒤로 가기는 앞 보기로 ═══════════
+         보기 하나 = 기록 한 칸(rpSheet: 깊이). 닫기, 뒤 배경, Esc 는 쌓인 보기를 모두 닫고 기록도 되돌린다 */
       const sheet = $("sheet"), shareSheet = $("shareSheet");
-      let lastOpener = null, sheetPushed = false;
-      function openDialog(dlg, opener) {
-        if (opener && !dlg.open) lastOpener = opener;
-        if (!dlg.open) {
-          if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } }
-          else dlg.setAttribute("open", "");
-        }
-        if (!sheetPushed) { try { history.pushState({ rpSheet: 1 }, ""); sheetPushed = true; } catch (e) {} }
+      let views = [], popped = [], lastOpener = null, unwinding = false, goSearch = false;
+      const dlgOf = (v) => (v.type === "share" ? shareSheet : sheet);
+      const sameView = (a, b) => a && b && a.type === b.type && a.idx === b.idx && a.id === b.id && a.kind === b.kind;
+      function renderView(v) {
+        if (v.type === "member") renderMember(v.idx);
+        else if (v.type === "title") renderTitle(v.id);
+        else renderShare(v);
+      }
+      function closeQuiet(d) { if (d.open) { d._quiet = true; d.close(); } }
+      function showDialog(dlg) {
+        const other = dlg === sheet ? shareSheet : sheet;
+        if (other.open) closeQuiet(other);
+        if (!dlg.open) { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } }
+        const body = dlg.querySelector(".sheet-body"); if (body) body.scrollTop = 0;
         const h = dlg.querySelector("h2"); if (h) { h.setAttribute("tabindex", "-1"); try { h.focus({ preventScroll: true }); } catch (e) {} }
       }
-      /* close 이벤트는 나중에 오므로 조용히 닫을 때는 대화상자에 표시를 남긴다(다른 시트로 바꾸기, 뒤로 가기) */
-      function closeQuiet(d) { if (d.open) { d._quiet = true; d.close(); } }
-      function switchDialog(from, to) { closeQuiet(from); openDialog(to); }
+      function present(v) {
+        renderView(v);
+        showDialog(dlgOf(v));
+        if (v.type === "share") fitRecap();
+      }
+      function openView(v, opener) {
+        const anyOpen = sheet.open || shareSheet.open;
+        if (!anyOpen) { views = []; if (opener) lastOpener = opener; }
+        // 바로 앞 보기로 되돌아가는 누름(멤버 카드에서 칭호, 다시 그 멤버)은 기록을 늘리지 않고 뒤로 간다
+        if (anyOpen && views.length >= 2 && sameView(views[views.length - 2], v)) { history.back(); return; }
+        views.push(v); popped = [];
+        const depth = views.length;
+        try {
+          if (depth === 1 && history.state && history.state.rpSheet) history.replaceState({ rpSheet: 1 }, "");   // 새로고침 뒤 남은 칸은 다시 쓴다
+          else history.pushState({ rpSheet: depth }, "");
+        } catch (e) {}
+        present(v);
+      }
+      function restoreFocus() { if (lastOpener && document.contains(lastOpener)) { try { lastOpener.focus({ preventScroll: true }); } catch (e) {} } }
+      function afterCloseAll() {
+        if (goSearch) {
+          goSearch = false;
+          setTimeout(() => { $("findBar").scrollIntoView({ block: "start" }); $("memberSearch").focus({ preventScroll: true }); }, 30);
+        } else restoreFocus();
+      }
       [sheet, shareSheet].forEach((dlg) => {
         dlg.addEventListener("close", () => {
           hideTip(0);
+          dlg.style.transform = "";
           if (dlg._quiet) { dlg._quiet = false; return; }
-          if (sheetPushed) { sheetPushed = false; if (history.state && history.state.rpSheet) history.back(); }
-          if (lastOpener && document.contains(lastOpener)) { try { lastOpener.focus(); } catch (e) {} }
+          const depth = history.state && history.state.rpSheet ? history.state.rpSheet : 0;
+          views = []; popped = [];
+          if (depth) { unwinding = true; try { history.go(-depth); } catch (e) { unwinding = false; } }
+          afterCloseAll();
         });
         dlg.addEventListener("click", (e) => {
           if (e.target.closest("[data-close-sheet]")) dlg.close();
           else if (e.target === dlg) dlg.close();   // 뒤 배경을 누르면 닫기
         });
+        bindSwipe(dlg);
+        const body = dlg.querySelector(".sheet-body");
+        if (body) body.addEventListener("scroll", () => hideTip(0), { passive: true });
       });
-      window.addEventListener("popstate", () => {
-        if (!sheetPushed) return;
-        sheetPushed = false;
-        [sheet, shareSheet].forEach(closeQuiet);
-        if (lastOpener && document.contains(lastOpener)) { try { lastOpener.focus(); } catch (e) {} }
+      window.addEventListener("popstate", (e) => {
+        if (unwinding) { unwinding = false; return; }
+        const d = (e.state && e.state.rpSheet) || 0;
+        if (d === views.length) return;
+        if (d < views.length) {
+          popped = views.slice(d).concat(popped);
+          views = views.slice(0, d);
+          if (!d) { [sheet, shareSheet].forEach(closeQuiet); afterCloseAll(); return; }
+          present(views[d - 1]);
+          return;
+        }
+        const need = d - views.length;   // 앞으로 가기: 되돌린 보기를 다시 연다
+        if (popped.length >= need) { views = views.concat(popped.slice(0, need)); popped = popped.slice(need); present(views[d - 1]); }
       });
+      /* 폰: 시트 윗부분을 아래로 끌면 닫는다 */
+      function bindSwipe(dlg) {
+        const top = dlg.querySelector(".sheet-top");
+        if (!top || !window.PointerEvent) return;
+        let y0 = null, dy = 0, pid = null;
+        top.addEventListener("pointerdown", (e) => {
+          if (!PHONE.matches || e.pointerType === "mouse" || e.target.closest("button")) return;
+          y0 = e.clientY; dy = 0; pid = e.pointerId;
+          try { top.setPointerCapture(pid); } catch (err) {}
+          dlg.style.transition = "none";
+        });
+        top.addEventListener("pointermove", (e) => {
+          if (y0 == null || e.pointerId !== pid) return;
+          dy = Math.max(0, e.clientY - y0);
+          dlg.style.transform = dy ? `translateY(${dy}px)` : "";
+        });
+        const end = (cancel) => {
+          if (y0 == null) return;
+          const far = !cancel && dy > 80;
+          y0 = null; pid = null; dlg.style.transition = "";
+          if (far) dlg.close(); else dlg.style.transform = "";
+        };
+        top.addEventListener("pointerup", () => end(false));
+        top.addEventListener("pointercancel", () => end(true));
+      }
 
       /* 멤버 한 사람의 숫자(시트와 공유 카드가 같이 쓴다) */
       function memberFacts(i) {
@@ -2377,70 +2610,93 @@
         const base = late ? F - first : F;
         let fs = 0, days = 0; for (let k = 0; k < F; k++) { fs += m.daily[k] || 0; if (m.daily[k] > 0) days += 1; }
         const best = RM.bestDay(m, { i0: 0, i1: F - 1 });
-        if (!days) {   // 집계 중인 마지막 날에만 말한 멤버: 그날까지 세어 보여 준다
+        if (!days) {   // 일부만 집계된 마지막 날에만 말한 멤버: 그날까지 세어 보여 준다
           const n = st.days.length, b2 = RM.bestDay(m, { i0: 0, i1: n - 1 });
           let d2 = 0; for (let k = 0; k < n; k++) if (m.daily[k] > 0) d2 += 1;
           return { legacy: false, count: m.count || 0, avg: (m.count || 0) / Math.max(1, d2), days: d2, base: d2, all: false, late: false, first: -1, onlyLast: true, best: b2, run: { len: 0, from: -1, to: -1 } };
         }
-        return { legacy: false, count: m.count || 0, avg: base ? fs / base : 0, days, base, all: days === F && F > 0, late, first, best, run: RM.longestRun(m.daily, 0, F - 1) };
+        return { legacy: false, count: m.count || 0, avg: base ? fs / base : 0, days, base, all: base > 0 && days === base, late, first, best, run: RM.longestRun(m.daily, 0, F - 1) };
       }
-      /* 기록 목록: 다른 칭호 부문 3위 안(2개까지), 사진과 영상, 이모티콘, 질문, 링크, 환영. 0은 뺀다 */
+      /* 기록: 다른 칭호 부문 3위 안(활약왕은 머리의 순위와 겹쳐 빼고, 2개까지), 사진과 영상, 이모티콘, 질문, 링크, 환영.
+         0과 자기 칭호의 값(칭호 줄과 겹침)은 뺀다 */
+      const OWN_STAT = { photo: "pv", emoticon: "emo", question: "q", info: "link", welcome: "welcome" };
       function memberRecords(i) {
         const m = M()[i], T = state.titles, out = [];
         const aw = T && T.byMember[i];
         if (T) {
           const other = [];
           T.defs.forEach((d) => {
-            if (aw && aw.id === d.id) return;
+            if (d.id === "active" || (aw && aw.id === d.id)) return;
             const top = T.table[d.id] || [];
             const c = top.find((x) => x.idx === i);
             if (c && T.awards.some((a) => a.id === d.id)) other.push({ label: d.title, value: (1 + top.filter((y) => y.s > c.s).length) + "위" });
           });
           out.push(...other.slice(0, 2));
         }
+        const own = aw ? OWN_STAT[aw.id] : null;
         const md = m.media || {};
         const pv = (md.photo || 0) + (md.video || 0);
-        if (pv) out.push({ label: "사진과 영상", value: nf(pv) + "장" });
-        if (md.emoticon) out.push({ label: "이모티콘", value: nf(md.emoticon) + "번" });
-        if (m.q) out.push({ label: "질문", value: nf(m.q) + "번" });
-        if (md.link) out.push({ label: "링크", value: nf(md.link) + "건" });
-        if (m.welcome) out.push({ label: "환영", value: nf(m.welcome) + "번" });
+        if (pv && own !== "pv") out.push({ label: "사진과 영상", value: nf(pv) + "번" });
+        if (md.emoticon && own !== "emo") out.push({ label: "이모티콘", value: nf(md.emoticon) + "번" });
+        if (m.q && own !== "q") out.push({ label: "질문", value: nf(m.q) + "번" });
+        if (md.link && own !== "link") out.push({ label: "링크", value: nf(md.link) + "번" });
+        if (m.welcome && own !== "welcome") out.push({ label: "환영", value: nf(m.welcome) + "번" });
         return out.slice(0, 6);
       }
+      /* 멤버 카드의 칭호 값: 메시지 수와 하루 최고는 숫자 칸과 겹쳐 뺀다. 시간대 칭호(값이 %)는 방 전체 비중을 붙인다 */
+      function memberTitleVal(aw, i) {
+        const T = state.titles;
+        if (!aw || aw.id === "active" || aw.id === "burst") return "";
+        const c = (T.table[aw.id] || []).find((x) => x.idx === i) || { short: aw.short, p: aw.p };
+        const rp = T.roomPct ? T.roomPct[aw.id] : null;
+        if (TIME_T.indexOf(aw.id) >= 0 && rp != null) return `${c.short}, 방 전체 ${rp}%`;
+        if (aw.id === "writer" && T.roomAvgLen) return `${c.short}, 방 평균 ${nf(T.roomAvgLen)}자`;
+        return c.short || "";
+      }
       function memberStripCells(i) {
-        const fx = memberFacts(i), F = state.full.len;
+        const fx = memberFacts(i), st = state.data;
+        const avgTs = (a) => (a > 0 && a < 0.5 ? "하루 1건 미만" : `하루 평균 ${nf(a)}건`);
         if (fx.legacy) return [
-          { tl: "메시지", tv: tvHTML(fx.count, "건"), ts: `하루 평균 ${nf(fx.avg)}건` },
+          { tl: "메시지", tv: tvHTML(fx.count, "건"), ts: avgTs(fx.avg) },
           { tl: "함께한 날", tv: tvHTML(fx.days, "일"), ts: `${nf(fx.base)}일 중` },
-          { tl: "최장 연속", tv: tvHTML(fx.run.len, "일"), ts: "연속" }
+          { tl: "최장 연속", tv: tvHTML(fx.run.len, "일"), ts: `${nf(fx.base)}일 중` }
+        ];
+        if (fx.onlyLast) return [
+          { tl: "메시지", tv: tvHTML(fx.count, "건"), ts: avgTs(fx.avg) },
+          { tl: "함께한 날", tv: tvHTML(fx.days, "일"), ts: fmtMD(st.days[fx.best.i].d) },
+          { tl: "하루 최고", tv: tvHTML(fx.best.v, "건"), ts: "일부만 집계" }
         ];
         return [
-          { tl: "메시지", tv: tvHTML(fx.count, "건"), ts: `하루 평균 ${nf(fx.avg)}건` },
-          { tl: "함께한 날", tv: tvHTML(fx.days, "일"), ts: fx.onlyLast ? fmtMD(state.data.days[fx.best.i].d) : fx.all ? `${nf(F)}일 모두` : `${nf(fx.base)}일 중` },
-          { tl: "하루 최고", tv: tvHTML(fx.best.v, "건"), ts: fx.best.i >= 0 ? fmtMD(state.data.days[fx.best.i].d) : "" }
+          { tl: "메시지", tv: tvHTML(fx.count, "건"), ts: avgTs(fx.avg) },
+          { tl: "함께한 날", tv: tvHTML(fx.days, "일"), ts: fx.all ? `${nf(fx.base)}일 모두` : `${nf(fx.base)}일 중` },
+          { tl: "하루 최고", tv: tvHTML(fx.best.v, "건"), ts: fx.best.i >= 0 ? fmtMD(st.days[fx.best.i].d) : "" }
         ];
       }
-      function openMember(i, opener) {
+      function renderMember(i) {
         const st = state.data, m = M()[i];
         if (!m) return;
         state.focusIdx = i;
+        sheet.classList.add("is-member");
         const T = state.titles, fx = memberFacts(i);
         const N = state.vis.length, rk = memberRankMap()[i];
         let rkTxt = "";
         if (rk <= 3) rkTxt = `메시지 ${rk}위`;
-        else if (rk <= Math.ceil(0.1 * N)) rkTxt = "상위 10%";
-        else if (rk <= Math.ceil(0.25 * N)) rkTxt = "상위 25%";
+        else if (N && rk / N <= 0.1) rkTxt = "상위 10%";
+        else if (N && rk / N <= 0.25) rkTxt = "상위 25%";
         const aw = T && T.byMember[i];
         let html = `<div class="mcard-head"><h2 id="sheetTitle">${nameTxtHTML(m.name)}</h2>${rkTxt ? `<p class="rk">${rkTxt}</p>` : ""}`;
-        if (aw) html += `<div class="mcard-title${aw.img ? "" : " no-image"}" data-medal><span class="mt-art">${aw.img ? medalImg(aw.img, 80, "") : ""}<span class="mt-ic">${ic(aw.icon)}</span></span><div><b>${esc(aw.title)}</b><span class="v">${esc(aw.short || "")}</span></div></div>`;
+        if (aw) {
+          const v = memberTitleVal(aw, i);
+          html += `<button class="mcard-title${aw.img ? "" : " no-image"}" type="button" data-open-title="${aw.id}" data-medal><span class="mt-art">${aw.img ? medalImg(aw.img, 80, "") : ""}<span class="mt-ic">${ic(aw.icon)}</span></span><span class="mt-txt"><b>${esc(aw.title)}</b>${v ? `<span class="v">${esc(v)}</span>` : ""}</span>${ic("chevRight", "mt-chev")}</button>`;
+        }
         html += `</div>`;
         html += stripHTML(memberStripCells(i), "is-sheet");
         const recs = memberRecords(i);
-        if (recs.length) html += `<ul class="rec-list">${recs.map((r) => `<li>${esc(r.label)}<b>${esc(r.value)}</b></li>`).join("")}</ul>`;
-        // 함께한 날: 5일 이상이면 달력, 4일 이하면 글 한 줄
-        if (!fx.legacy && fx.days >= 5) html += `<div class="msec"><h3>함께한 날</h3>${calendarHTML(m, fx)}</div>`;
-        else if (!fx.legacy && fx.days > 0) {
-          const ds = []; for (let k = 0; k < (fx.onlyLast ? st.days.length : state.full.len); k++) if (m.daily[k] > 0) ds.push(fmtMD(st.days[k].d));
+        if (recs.length) html += `<ul class="rec-list">${recs.map((r) => `<li>${esc(r.label)}<b>${esc(r.value)}</b></li>`).join("")}${recs.length % 2 ? `<li class="is-fill" aria-hidden="true"></li>` : ""}</ul>`;
+        // 함께한 날: 5일 이상이면 달력, 4일 이하면 글 한 줄(마지막 날에만 말했으면 숫자 칸에 있어 뺀다)
+        if (!fx.legacy && !fx.onlyLast && fx.days >= 5) html += `<div class="msec"><h3>함께한 날</h3>${calendarHTML(m, fx)}</div>`;
+        else if (!fx.legacy && !fx.onlyLast && fx.days > 0) {
+          const ds = []; for (let k = 0; k < state.full.len; k++) if (m.daily[k] > 0) ds.push(fmtMD(st.days[k].d));
           html += `<div class="msec"><h3>함께한 날</h3><p class="day-line">${esc(ds.join(", "))}</p></div>`;
         }
         // 시간대(메시지 50건 이상)
@@ -2452,13 +2708,9 @@
         }
         html += `<div class="sheet-actions is-sticky"><button class="btn btn-primary" type="button" data-member-card="${i}">${ic("send")}공유</button></div>`;
         $("sheetBody").innerHTML = html;
-        $("sheetBody").scrollTop = 0;
         bindCalendar();
         const hs = $("sheetBody").querySelector(".m-hours"); if (hs) bindMemberHours(hs);
         const st2 = $("sheetBody").querySelector(".stack100"); if (st2) bindStackTips(st2, "mtopic");
-        if (shareSheet.open) switchDialog(shareSheet, sheet);
-        else openDialog(sheet, opener);
-        refreshFocus();
       }
       function sumOf(a) { return (a || []).reduce((x, y) => x + (y || 0), 0); }
       function calendarHTML(m, fx) {
@@ -2473,7 +2725,7 @@
         const cell = (k, withNum) => {
           const v = m.daily[k] || 0, d = parts(days[k].d);
           if (k < first) return `<span class="cd is-before" aria-hidden="true">${withNum ? d.d : ""}</span>`;
-          if (partial && k === n - 1) return `<span class="cd is-partial" role="button" tabindex="-1" data-k="${k}" aria-label="${esc(fmtMDW(days[k].d))} 집계 중">${withNum ? d.d : ""}</span>`;
+          if (partial && k === n - 1) return `<span class="cd is-partial" role="button" tabindex="-1" data-k="${k}" aria-label="${esc(fmtMDW(days[k].d))} ${nf(v)}건, 일부만 집계">${withNum ? d.d : ""}</span>`;
           return `<span class="cd${lvl(v) ? " s" + lvl(v) : ""}" role="button" tabindex="${k === best.k ? 0 : -1}" data-k="${k}" aria-label="${esc(fmtMDW(days[k].d))} ${nf(v)}건">${withNum ? d.d : ""}</span>`;
         };
         const lead = RM.weekdayOf(days[0].d);
@@ -2482,16 +2734,19 @@
           : `<div class="cal is-weeks">${"<span class=\"cd is-out\" aria-hidden=\"true\"></span>".repeat(lead)}${days.map((_, k) => cell(k, false)).join("")}</div>`;
         const capParts = [];
         if (first >= 0) capParts.push(`처음 말한 날 ${fmtMD(days[first].d)}`);
-        if (run && run.len >= 2 && run.from >= 0) capParts.push(`최장 연속 ${nf(run.len)}일, ${fmtMD(days[run.from].d)}~${fmtMD(days[run.to].d)}`);
+        if (run && run.len >= 2 && run.from >= 0) capParts.push(`최장 연속 ${nf(run.len)}일, ${fmtK(days[run.from].d)}~${fmtK(days[run.to].d)}`);
         const cap = capParts.length ? `<p class="cal-cap">${esc(capParts.join(", "))}</p>` : "";
-        const legend = `<div class="cal-legend" aria-hidden="true"><i style="background:var(--viz-zero)"></i>0<span style="margin-left:8px">적음</span><i style="background:var(--viz-seq-1)"></i><i style="background:var(--viz-seq-2)"></i><i style="background:var(--viz-seq-3)"></i><i style="background:var(--viz-seq-4)"></i>많음</div>`;
-        return `${grid}${legend}${cap}<p class="viz-read" id="calRead" aria-live="polite">${esc(fmtMDW(days[best.k].d))} <b>${nf(best.v)}건</b></p>`;
+        const legend = `<div class="cal-legend" aria-hidden="true"><i style="background:var(--viz-zero)"></i>0<span class="gap">적음</span><i style="background:var(--viz-seq-1)"></i><i style="background:var(--viz-seq-2)"></i><i style="background:var(--viz-seq-3)"></i><i style="background:var(--viz-seq-4)"></i>많음${partial ? `<span class="gap"></span><i class="is-hollow"></i>일부만 집계` : ""}</div>`;
+        return `${grid}${legend}${cap}<p class="viz-read" id="calRead">${esc(fmtMDW(days[best.k].d))} <b>${nf(best.v)}건</b></p>`;
       }
       function bindCalendar() {
         const cal = $("sheetBody").querySelector(".cal");
         if (!cal) return;
         const st = state.data, m = M()[state.focusIdx], n = st.days.length;
-        const read = (k) => { const isPart = state.partial.partial && k === n - 1; $("calRead").innerHTML = `${esc(fmtMDW(st.days[k].d))} <b>${isPart ? "집계 중" : nf(m.daily[k] || 0) + "건"}</b>`; };
+        const read = (k) => {
+          const isPart = state.partial.partial && k === n - 1;
+          $("calRead").innerHTML = `<span class="nw">${esc(fmtMDW(st.days[k].d))}</span> <b>${nf(m.daily[k] || 0)}건</b>` + (isPart ? `<span class="x">, 일부만 집계</span>` : "");
+        };
         cal.addEventListener("click", (e) => { const c = e.target.closest(".cd[data-k]"); if (c) read(+c.dataset.k); });
         cal.addEventListener("pointermove", (e) => { const c = e.target.closest(".cd[data-k]"); if (c) read(+c.dataset.k); });
         cal.addEventListener("keydown", (e) => {
@@ -2508,7 +2763,7 @@
           next.setAttribute("tabindex", "0"); next.focus(); read(k);
         });
       }
-      /* 시간대: 막대는 이 멤버, 선은 방 전체. 답 줄은 자기 비중이 가장 큰 구간 */
+      /* 시간대: 막대는 이 멤버, 선은 방 전체. 답 줄은 자기 비중이 가장 큰 구간. 실제 폭으로 그려 글자가 줄지 않게 */
       function memberHoursHTML(m) {
         const room = new Array(24).fill(0);
         state.vis.forEach((i) => (M()[i].hours || []).forEach((v, h) => { room[h] += v || 0; }));
@@ -2518,7 +2773,7 @@
         RM.BANDS6.forEach((b, k) => { const v = RM.bandSum(m.hours, b); if (v > bv) { bv = v; bb = k; } });
         const b = RM.BANDS6[bb];
         const ans = `${b.label} ${b.range} ${Math.round((bv / ms) * 100)}%, 방 전체 ${Math.round((RM.bandSum(room, b) / rs) * 100)}%`;
-        const W = 400, H = 96, L = 4, R = 4, TOP = 6, PH = 70;
+        const W = Math.max(240, Math.round(PHONE.matches ? Math.min(window.innerWidth, 767) - 40 : 400)), H = 96, L = 4, R = 4, TOP = 6, PH = 70;
         const mx = Math.max(...me, ...rp, 1), slot = (W - L - R) / 24, order = RM.HOUR_ORDER;
         let pk = 0; me.forEach((v, h) => { if (v > me[pk]) pk = h; });
         const y = (v) => TOP + PH - (v / mx) * PH;
@@ -2533,27 +2788,33 @@
         [6, 12, 18, 0].forEach((h) => { const k = order.indexOf(h); xl += `<text x="${(L + slot * k + slot / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="12" style="fill:var(--ink-2)">${h}시</text>`; });
         let hits = ""; order.forEach((h, k) => { hits += `<rect class="hit" data-h="${h}" x="${(L + slot * k).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${TOP + PH}"/>`; });
         state.mh = { me, rp };
-        return `<p class="ans">${esc(ans)}</p><figure class="viz m-hours"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ans)}">${bars}<path d="${step}" fill="none" style="stroke:var(--viz-ref)" stroke-width="1.5"/>${xl}${hits}</svg></figure>
+        return `<p class="ans">${esc(ans)}</p><figure class="viz m-hours"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(ans)}">${bars}<path d="${step}" fill="none" style="stroke:var(--viz-ref)" stroke-width="1.5"/>${xl}${hits}</svg></figure>
           <ul class="viz-legend"><li><i style="background:var(--viz-context)"></i>이 멤버</li><li><i class="is-line" style="background:var(--viz-ref)"></i>방 전체</li></ul>`;
       }
       function bindMemberHours(fig) {
-        const on = (e) => { const t = e.target.closest(".hit"); if (!t) return; const h = +t.dataset.h, r = t.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top + 20, `${Math.round(state.mh.me[h])}%`, `${h}시, 방 전체 ${Math.round(state.mh.rp[h])}%`, "mh"); };
+        const on = (e) => { const t = e.target.closest(".hit"); if (!t) return; const h = +t.dataset.h, r = t.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top + 20, pctOf(state.mh.me[h]), `${h}시, 방 전체 ${pctOf(state.mh.rp[h])}`, "mh"); };
         fig.addEventListener("pointermove", on); fig.addEventListener("pointerdown", on);
         fig.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2000 : 100, "mh"));
       }
       const RATIO_T = ["meet", "info", "food", "outing", "question", "photo", "emoticon"];
       const TIME_T = ["morning", "lunch", "afternoon", "evening", "night", "dawn", "weekend"];
-      function openTitle(id, opener) {
+      function renderTitle(id) {
         const T = state.titles, a = T.awards.find((x) => x.id === id), d = T.defs.find((x) => x.id === id);
         if (!a || !d) return;
+        sheet.classList.remove("is-member");
         const top = T.table[id] || [];
         const mx = top.length ? top[0].s || 1 : 1;
+        const isRatio = RATIO_T.indexOf(id) >= 0, isTime = TIME_T.indexOf(id) >= 0;
         let crit = d.crit;
-        if ((RATIO_T.indexOf(id) >= 0 || TIME_T.indexOf(id) >= 0) && T.roomPct && T.roomPct[id] != null) crit += `, 방 전체 ${T.roomPct[id]}%`;
+        if ((isRatio || isTime) && T.roomPct && T.roomPct[id] != null) crit += `, 방 전체 메시지의 ${T.roomPct[id]}%`;
         else if (id === "writer" && T.roomAvgLen) crit += `, 방 평균 ${nf(T.roomAvgLen)}자`;
+        // 이웃한 두 줄의 반올림 비중이 같으면 소수 한 자리까지
+        const pOf = (c) => (typeof c.s === "number" && c.s <= 1 ? c.s * 100 : c.p || 0);
+        const tieP = (isRatio || isTime) && top.some((c, k) => k > 0 && c.s !== top[k - 1].s && Math.round(pOf(c)) === Math.round(pOf(top[k - 1])));
+        const pTxt = (c) => (tieP ? x1(pOf(c)) : String(c.p != null ? c.p : Math.round(pOf(c)))) + "%";
         const valOf = (c) => {
-          if (RATIO_T.indexOf(id) >= 0 && c.p != null) return `${c.short}, 메시지의 ${c.p}%`;
-          if (TIME_T.indexOf(id) >= 0) return `${c.short}, ${nf(c.v)}건`;
+          if (isTime) return `${id === "weekend" ? "주말" : RM.BANDS6[TIME_T.indexOf(id)].label} ${nf(c.v)}건, 메시지의 ${pTxt(c)}`;
+          if (isRatio && c.p != null) return `${c.short}, 메시지의 ${pTxt(c)}`;
           if (id === "burst") return c.desc || c.short;
           return c.short || shortVal(id, c);
         };
@@ -2567,9 +2828,6 @@
         }).join("")}</ol>`;
         if (a.rank >= 2 || other) html += `<p class="tdetail-note">칭호는 한 사람에 하나입니다.</p>`;
         $("sheetBody").innerHTML = html;
-        $("sheetBody").scrollTop = 0;
-        if (shareSheet.open) switchDialog(shareSheet, sheet);
-        else openDialog(sheet, opener);
       }
       /* 찾은 멤버 강조(이번 방문 동안만, 저장하지 않음) */
       function refreshFocus() {
@@ -2582,137 +2840,169 @@
         const st = state.data, T = state.titles, total = totalMessages();
         const days = st.days, n = days.length, F = state.legacy ? n : state.full.len;
         let pk = 0; for (let k = 0; k < F; k++) if (days[k].c > days[pk].c) pk = k;
-        const mx = Math.max(...days.slice(0, F).map((d) => d.c), 1);
-        const bars = days.slice(0, F).map((d, k) => `<i${k === pk ? ' class="is-peak"' : ""} style="height:${Math.max(4, (d.c / mx) * 100).toFixed(1)}%"></i>`).join("");
+        // 막대는 60개까지: 넘으면 며칠씩 묶는다
+        const vals = days.slice(0, F).map((d) => d.c), per = Math.max(1, Math.ceil(vals.length / 60));
+        const bins = []; for (let k = 0; k < vals.length; k += per) bins.push(vals.slice(k, k + per).reduce((a, b) => a + b, 0));
+        const mx = Math.max(...bins, 1), pkBin = Math.floor(pk / per);
+        const bars = bins.map((v, k) => `<i${k === pkBin ? ' class="is-peak"' : ""} style="height:${Math.max(4, (v / mx) * 100).toFixed(1)}%"></i>`).join("");
         const avg = state.legacy ? total / Math.max(1, n) : avgPerDay();
         const facts = [];
-        if (showCmp()) facts.push([`${RM.pubShort(state.prev.stats)}보다`, `+${state.cmp.pct}%`]);
-        else if (avg > 0) facts.push(["하루 평균", nf(avg) + "건"]);
-        if (n) facts.push(["가장 붐빈 날", fmtMD(days[pk].d)]);
+        if (avg > 0) facts.push(["하루 평균", nf(avg) + "건"]);
+        if (F) facts.push(["가장 붐빈 날", fmtMD(days[pk].d)]);
         if (state.rhythm) facts.push(["붐비는 시간", state.rhythm.pk + "시"]);
+        const cmp = showCmp() ? `<div class="rc-cmp">${icIn("trendUp")}${esc(RM.pubShort(state.prev.stats))}보다 하루 평균 +${state.cmp.pct}%</div>` : "";
         let rows = "";
         if (T && T.awards.length) {
           const medals = T.awards.filter((a) => a.group === "medal");
           const act = medals.find((a) => a.id === "active");
           const others = medals.filter((a) => a.id !== "active").map((a) => { const top = T.table[a.id] || []; return { a, gap: top.length > 1 ? (top[0].v - top[1].v) / (top[0].v || 1) : 1 }; }).sort((x, y) => y.gap - x.gap).map((x) => x.a);
           const pick = (act ? [act] : []).concat(others).slice(0, 3);
-          rows = `<div class="rc-rows">${pick.map((a) => `<div class="rc-row"><span class="ri">${ic(a.icon)}</span><div><b>${a.holders.map(nameHTML).join(", ")}</b><span class="rt">${esc(a.title)}</span></div></div>`).join("")}</div>`;
+          rows = `<div class="rc-rows">${pick.map((a) => `<div class="rc-row"><span class="ri">${icIn(a.icon)}</span><div><b>${a.holders.map(nameHTML).join(", ")}</b><span class="rt">${esc(a.title)}</span></div></div>`).join("")}</div>`;
         }
         return `<div class="rc-brand"><span>동네친구들 활동 통계</span><span>${esc(st.periodLabel || "")}</span></div>
           <h3 class="rc-title">${esc(RM.pubShort(st))} 우리 방</h3>
-          <div><div class="rc-num">${nf(total)}<small>건</small></div><div class="rc-line">${nf(state.vis.length)}명, ${esc(fmtK(st.range.from))}~${esc(fmtK(st.range.to))}</div></div>
+          <div><div class="rc-lb">메시지</div><div class="rc-num">${nf(total)}<small>건</small></div><div class="rc-line">이야기한 멤버 ${nf(state.vis.length)}명, ${esc(fmtK(st.range.from))}~${esc(fmtK(st.range.to))}</div>${cmp}</div>
           <div class="rc-bars" aria-hidden="true">${bars}</div>
           ${facts.length ? `<div class="rc-facts">${facts.map((x) => `<div><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join("")}</div>` : ""}
-          ${rows}
-          <div class="rc-foot"><span>동네친구들</span></div>`;
+          ${rows}`;
       }
       function memberCardHTML(i) {
         const st = state.data, m = M()[i];
-        if (!m) return `<div class="rc-empty">이름을 먼저 고르세요.<br /><button class="btn btn-primary is-sm" type="button" data-go-search>이름 찾기</button></div>`;
+        if (!m) return `<div class="rc-empty">멤버를 먼저 고르세요.<br /><button class="btn btn-secondary is-sm" type="button" data-go-search>내 카드 찾기</button></div>`;
         const T = state.titles, aw = T && T.byMember[i], f = state.full, fx = memberFacts(i);
         let cal = "";
-        if (!fx.legacy && st.days.length <= 45) {
+        if (!fx.legacy && !fx.onlyLast && fx.days >= 5 && st.days.length <= 45) {
           const vals = []; for (let k = 0; k < f.len; k++) if (m.daily[k] > 0) vals.push(m.daily[k]);
           vals.sort((a, b) => a - b); const q = (p) => vals[Math.floor((vals.length - 1) * p)] || 0;
           const lvl = (v) => (v <= 0 ? 0 : v <= q(0.25) ? 1 : v <= q(0.5) ? 2 : v <= q(0.75) ? 3 : 4);
           const first = fx.late ? fx.first : -1;
           cal = `<div class="rc-cal" aria-hidden="true">${WEEK_KO.map((w) => `<b>${w}</b>`).join("")}${"<i class=\"is-out\"></i>".repeat(RM.weekdayOf(st.days[0].d))}${st.days.map((d, k) => `<i class="${k < first ? "is-before" : k < f.len && lvl(m.daily[k]) ? "on" + lvl(m.daily[k]) : ""}"></i>`).join("")}</div>
-            <div class="rc-legend" aria-hidden="true">적음<i></i><i class="on1"></i><i class="on2"></i><i class="on3"></i><i class="on4"></i>많음</div>`;
+            <div class="rc-legend" aria-hidden="true"><i></i>0<span class="gap">적음</span><i class="on1"></i><i class="on2"></i><i class="on3"></i><i class="on4"></i>많음</div>`;
         }
         const cells = memberStripCells(i);
         const recs = memberRecords(i).slice(0, 2);
+        const tv = aw ? memberTitleVal(aw, i) : "";
         return `<div class="rc-brand"><span>동네친구들 활동 통계</span><span>${esc(st.periodLabel || "")}</span></div>
           <h3 class="rc-title">${nameTxtHTML(m.name)}</h3>
-          ${aw ? `<div class="rc-medal">${aw.img ? `<img src="assets/img/${aw.img}-256.webp" width="256" height="256" alt="" />` : `<span class="ri" style="display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--on-dark-glass)">${ic(aw.icon)}</span>`}<div><b style="font-size:18px">${esc(aw.title)}</b><div class="rc-line">${esc(aw.short || "")}</div></div></div>` : ""}
+          ${aw ? `<div class="rc-medal">${aw.img ? `<img src="assets/img/${aw.img}-256.webp" width="256" height="256" alt="" />` : `<span class="rc-mic">${icIn(aw.icon)}</span>`}<div><b class="rc-mt">${esc(aw.title)}</b>${tv ? `<div class="rc-line">${esc(tv)}</div>` : ""}</div></div>` : ""}
           <div class="rc-facts">${cells.map((c) => `<div><span>${esc(c.tl)}</span><b>${c.tv.replace(/<small>|<\/small>/g, "")}</b></div>`).join("")}</div>
           ${cal}
-          ${recs.length ? `<p class="rc-recs">${esc(recs.map((r) => `${r.label} ${r.value}`).join(", "))}</p>` : ""}
-          <div class="rc-foot"><span>동네친구들</span></div>`;
+          ${recs.length ? `<p class="rc-recs">${esc(recs.map((r) => `${r.label} ${r.value}`).join(", "))}</p>` : ""}`;
       }
-      function renderShareCard() {
-        const card = $("recapCard");
+      function renderShare(v) {
+        state.shareCard = v.kind === "member" ? "member" : "room";
+        if (v.idx != null) state.cardIdx = v.idx;
         const isMember = state.shareCard === "member";
         $("tabRoom").setAttribute("aria-pressed", String(!isMember));
         $("tabMember").setAttribute("aria-pressed", String(isMember));
-        card.innerHTML = isMember ? memberCardHTML(state.cardIdx) : roomCardHTML();
+        $("recapCard").innerHTML = isMember ? memberCardHTML(state.cardIdx) : roomCardHTML();
         const saveOk = !(isMember && !M()[state.cardIdx]);
+        const kakaoOk = state.source === "live" && !isMember;   // 카카오톡 공유는 방 링크라 방 카드에서만
         $("recapSaveBtn").hidden = !saveOk;
-        $("kakaoShareBtn").hidden = state.source !== "live";
-        const nBtn = (saveOk ? 1 : 0) + (state.source === "live" ? 1 : 0);
+        $("kakaoShareBtn").hidden = !kakaoOk;
+        const nBtn = (saveOk ? 1 : 0) + (kakaoOk ? 1 : 0);
         $("shareActions").style.setProperty("--n", Math.max(1, nBtn));
         $("shareActions").hidden = !nBtn;
         fitRecap();
       }
-      /* 카드가 시트 한 화면에 들게 줄인다(0.8배까지). 저장 그림은 카드 원래 크기로 만든다 */
+      /* 카드가 시트 한 화면에 들면 그대로, 10% 안으로 넘치면 줄이고, 더 넘치면 원래 크기로 두고 시트를 스크롤한다.
+         저장 그림은 늘 카드 원래 크기로 만든다 */
       function fitRecap() {
         if (!shareSheet.open) return;
-        const fit = $("recapFit"), card = $("recapCard");
+        const fit = $("recapFit"), card = $("recapCard"), body = $("shareBody");
         fit.classList.add("is-free");
         fit.style.setProperty("--fit", "1");
         const ch = card.offsetHeight;
-        const topH = shareSheet.querySelector(".sheet-top").offsetHeight;
-        const maxH = Math.min(window.innerHeight * 0.9, PHONE.matches ? Infinity : window.innerHeight * 0.9);
-        const avail = maxH - topH - $("shareTabs").offsetHeight - 12 - ($("shareActions").hidden ? 0 : $("shareActions").offsetHeight) - 16;
-        const f = ch > 0 ? Math.max(0.8, Math.min(1, avail / ch)) : 1;
+        const px = (el, k) => parseFloat(getComputedStyle(el)[k]) || 0;
+        const tabs = $("shareTabs"), acts = $("shareActions");
+        const used = shareSheet.querySelector(".sheet-top").offsetHeight + px(body, "paddingTop") + px(body, "paddingBottom")
+          + tabs.offsetHeight + px(tabs, "marginTop") + px(tabs, "marginBottom")
+          + (acts.hidden ? 0 : acts.offsetHeight + px(acts, "marginTop"));
+        const avail = window.innerHeight * 0.9 - used;
+        const f0 = ch > 0 ? avail / ch : 1;
+        const f = f0 >= 1 ? 1 : f0 >= 0.9 ? f0 : 1;
         fit.style.setProperty("--card-h", ch + "px");
         fit.style.setProperty("--fit", f.toFixed(3));
         fit.classList.remove("is-free");
       }
       function openShare(kind, idx, opener) {
-        state.shareCard = kind || "room";
-        if (idx != null) state.cardIdx = idx;
-        else if (state.cardIdx < 0 && state.focusIdx >= 0) state.cardIdx = state.focusIdx;
-        if (sheet.open) switchDialog(sheet, shareSheet);
-        else openDialog(shareSheet, opener);
-        renderShareCard();
+        if (idx == null && state.cardIdx < 0 && state.focusIdx >= 0) state.cardIdx = state.focusIdx;
+        openView({ type: "share", kind: kind || "room", idx: idx != null ? idx : null }, opener);
       }
-      let cachedFontCSS = null;
+      /* 저장 그림: 가변 글꼴 파일을 한 번 받아 그림 안에 넣는다(글꼴을 못 받으면 기기 글꼴로) */
+      const FONT_URL = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2";
+      let fontCSS = null, saving = false;
+      async function fontEmbed() {
+        if (fontCSS !== null) return fontCSS;
+        try {
+          const res = await fetch(FONT_URL, { mode: "cors" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const blob = await res.blob();
+          const url = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+          fontCSS = `@font-face{font-family:"Pretendard Variable";font-style:normal;font-weight:45 920;font-display:block;src:url(${url}) format("woff2-variations"),url(${url}) format("woff2");}`;
+        } catch (e) { fontCSS = ""; }
+        return fontCSS;
+      }
       async function saveRecap() {
         const target = $("recapCard"), btn = $("recapSaveBtn");
+        if (saving) return;
         if (!window.htmlToImage) { EXCER.toast("이미지 저장 기능을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."); return; }
+        saving = true; btn.setAttribute("aria-disabled", "true"); btn.textContent = "저장 중";
         try {
-          btn.disabled = true; btn.textContent = "저장 중";
           if (document.fonts && document.fonts.ready) await document.fonts.ready;
-          if (cachedFontCSS === null && typeof window.htmlToImage.getFontEmbedCSS === "function") {
-            try { cachedFontCSS = await window.htmlToImage.getFontEmbedCSS(target); } catch (e) { cachedFontCSS = ""; }
-          }
-          const options = { pixelRatio: 2, cacheBust: true, backgroundColor: "#4B2A82" };
-          if (cachedFontCSS) options.fontEmbedCSS = cachedFontCSS;
-          await window.htmlToImage.toPng(target, options);
+          const options = { pixelRatio: 2, cacheBust: true, backgroundColor: "#4B2A82", fontEmbedCSS: await fontEmbed() };
+          await window.htmlToImage.toPng(target, options);   // 첫 그림은 이미지 적재용(사파리)
           const dataUrl = await window.htmlToImage.toPng(target, options);
+          const p = String(state.data.range.to || state.data.range.from || "").split("-");
           const a = document.createElement("a");
-          const label = String(state.data.periodLabel || "report").replace(/[\\/:*?"<>|\s]+/g, "_");
-          a.download = (state.shareCard === "member" ? "excer-card-" : "excer-stats-") + label + ".png";
+          a.download = `excer-${p.length >= 2 ? p[0] + "-" + p[1] : "report"}-${state.shareCard === "member" ? "card" : "room"}.png`;
           a.href = dataUrl;
           a.click();
           EXCER.toast("이미지를 저장했습니다.");
         } catch (e) {
           EXCER.toast("이미지 저장에 실패했습니다. 다시 시도해 주세요.");
         } finally {
-          btn.disabled = false; btn.textContent = "이미지로 저장";
+          saving = false; btn.removeAttribute("aria-disabled"); btn.textContent = "이미지로 저장";
         }
       }
 
       /* ═══════════ 멤버 찾기(콤보박스) ═══════════ */
       function normName(s) { return String(s || "").normalize("NFC").toLowerCase().replace(/[\s‍️]/g, "").replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu, ""); }
-      let comboItems = [], comboSel = -1;
+      let comboItems = [], comboSel = -1, statusT = null;
+      function comboStatus(text) {
+        clearTimeout(statusT);
+        statusT = setTimeout(() => { $("comboStatus").textContent = text; }, text ? 400 : 0);   // 글자마다 읽지 않게 잠깐 기다린다
+      }
+      function closeCombo() {
+        $("searchList").hidden = true;
+        $("memberSearch").setAttribute("aria-expanded", "false");
+        $("memberSearch").removeAttribute("aria-activedescendant");
+      }
       function renderCombo() {
         const input = $("memberSearch"), list = $("searchList");
         const q = normName(input.value);
-        if (!q) { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); comboItems = []; return; }
-        const T = state.titles, st = state.data, F = state.full.len;
+        if (!q) { closeCombo(); comboItems = []; comboStatus(""); return; }
+        const T = state.titles, st = state.data;
         comboItems = state.vis.filter((i) => normName(nameOf(i)).indexOf(q) >= 0)
           .sort((a, b) => (normName(nameOf(b)).indexOf(q) === 0) - (normName(nameOf(a)).indexOf(q) === 0) || String(nameOf(a)).localeCompare(nameOf(b), "ko"))
           .slice(0, 8);
         comboSel = comboItems.length ? 0 : -1;
         list.innerHTML = comboItems.length ? comboItems.map((i, k) => {
           const aw = T && T.byMember[i], m = M()[i];
-          const tag = aw ? `${ic(aw.icon)}${esc(aw.title)}` : !state.legacy && m.daily ? (RM.activeDaysOf(st, i, state.full) ? `함께한 날 ${nf(RM.activeDaysOf(st, i, state.full))}일` : `메시지 ${nf(m.count)}건`) : `메시지 ${nf(m.count)}건`;
+          let tag = `메시지 ${nf(m.count)}건`;
+          if (aw) tag = `${ic(aw.icon)}${esc(aw.title)}`;
+          else if (!state.legacy && m.daily) {
+            const dn = RM.activeDaysOf(st, i, state.full) || RM.activeDaysOf(st, i, { i0: 0, i1: st.days.length - 1 });
+            if (dn) tag = `함께한 날 ${nf(dn)}일`;
+          }
           return `<li role="option" id="opt-${k}" data-i="${i}" aria-selected="${k === comboSel}"><span class="cn">${nameHTML(i)}</span><small>${tag}</small></li>`;
-        }).join("") : `<li class="combo-empty" role="option" aria-disabled="true">맞는 이름이 없습니다.</li>`;
+        }).join("") : `<li class="combo-empty" role="option" aria-disabled="true">맞는 닉네임이 없습니다.</li>`;
         list.hidden = false;
         input.setAttribute("aria-expanded", "true");
         if (comboSel >= 0) input.setAttribute("aria-activedescendant", "opt-" + comboSel); else input.removeAttribute("aria-activedescendant");
+        comboStatus(comboItems.length ? `${nf(comboItems.length)}명 찾았습니다.` : "맞는 닉네임이 없습니다.");
+        // 폰: 처음 목록이 열릴 때 찾기 칸을 위로 올려 키보드 위에 목록 자리를 만든다
+        if (PHONE.matches && !state.comboScrolled) { state.comboScrolled = true; $("findBar").scrollIntoView({ block: "start" }); }
       }
       function comboMove(d) {
         if (!comboItems.length) return;
@@ -2721,13 +3011,11 @@
         $("memberSearch").setAttribute("aria-activedescendant", "opt-" + comboSel);
         const el = $("opt-" + comboSel); if (el) el.scrollIntoView({ block: "nearest" });
       }
-      let comboQuiet = false;
       function comboPick(i) {
-        comboQuiet = true;   // 카드를 닫고 초점이 검색 칸으로 돌아올 때 목록을 다시 열지 않는다
-        $("searchList").hidden = true; $("memberSearch").setAttribute("aria-expanded", "false");
+        closeCombo();
         state.findIdx = i;
-        openMember(i, $("memberSearch"));
         state.cardIdx = i;
+        openView({ type: "member", idx: i }, $("memberSearch"));
         safe("rank", renderRank);
         refreshFocus();
       }
@@ -2745,6 +3033,9 @@
       }
 
       /* ── 이벤트 ── */
+      function scrollToSec(el) {
+        el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      }
       function bindEvents() {
         const setLens = (lens) => { state.lens = lens; state.rankOpen = false; state.daysOpen = false; renderRank(); const nb = $("lensChips").querySelector(`[data-lens="${state.lens}"]`); if (nb) nb.focus({ preventScroll: true }); };
         $("lensChips").addEventListener("click", (e) => { const b = e.target.closest("[data-lens]"); if (b) setLens(b.dataset.lens); });
@@ -2754,61 +3045,91 @@
           const nk = (k + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length;
           e.preventDefault(); setLens(bs[nk].dataset.lens);
         });
+        // 펼치기와 접기: 접을 때는 단추가 화면의 같은 자리에 남게 스크롤을 맞춘다
         $("rankToggle").addEventListener("click", () => {
+          const t = $("rankToggle"), closing = state.lens === "days" ? state.daysOpen : state.rankOpen, y0 = t.getBoundingClientRect().top;
           if (state.lens === "days") state.daysOpen = !state.daysOpen; else state.rankOpen = !state.rankOpen;
-          renderRank(); $("rankToggle").focus({ preventScroll: true });
+          renderRank();
+          if (closing) {
+            const dy = t.getBoundingClientRect().top - y0;
+            if (Math.abs(dy) > 1) { try { window.scrollBy({ top: dy, behavior: "instant" }); } catch (e) { window.scrollBy(0, dy); } }
+          }
+          t.focus({ preventScroll: true });
         });
-        $("weekMore").addEventListener("click", () => { state.weekOpen = !state.weekOpen; renderWeekWords(); $("weekMore").focus({ preventScroll: true }); });
+        $("weekMore").addEventListener("click", () => {
+          const t = $("weekMore"), closing = state.weekOpen, y0 = t.getBoundingClientRect().top;
+          state.weekOpen = !state.weekOpen; renderWeekWords();
+          if (closing) { const dy = t.getBoundingClientRect().top - y0; if (Math.abs(dy) > 1) { try { window.scrollBy({ top: dy, behavior: "instant" }); } catch (e) { window.scrollBy(0, dy); } } }
+          t.focus({ preventScroll: true });
+        });
         // 이름이 나오는 곳 어디서 눌러도 같은 멤버 카드
         document.addEventListener("click", (e) => {
           const t = e.target.closest("[data-open-title]");
-          if (t) { e.preventDefault(); openTitle(t.dataset.openTitle, t); return; }
+          if (t) { e.preventDefault(); openView({ type: "title", id: t.dataset.openTitle }, t); return; }
           const b = e.target.closest("[data-open-member]");
-          if (b) { e.preventDefault(); openMember(+b.dataset.openMember, b); return; }
+          if (b) { e.preventDefault(); openView({ type: "member", idx: +b.dataset.openMember }, b); return; }
           const mc = e.target.closest("[data-member-card]");
-          if (mc) { openShare("member", +mc.dataset.memberCard); return; }
+          if (mc) { openShare("member", +mc.dataset.memberCard, mc); return; }
           const gs = e.target.closest("[data-go-search]");
-          if (gs) { closeQuiet(shareSheet); if (sheetPushed) { sheetPushed = false; history.back(); } setTimeout(() => { $("findBar").scrollIntoView({ block: "start" }); $("memberSearch").focus(); }, 30); return; }
+          if (gs) { goSearch = true; const d = gs.closest("dialog"); if (d) d.close(); return; }
           const lj = e.target.closest("[data-lens-jump]");
           if (lj) {
             e.preventDefault();
             state.lens = lj.dataset.lensJump; state.daysOpen = false; state.rankOpen = false;
             renderRank();
-            $("secRank").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+            state.jumpPick = "secRank";
+            scrollToSec($("secRank"));
             const nb = $("lensChips").querySelector('[aria-checked="true"]'); if (nb) nb.focus({ preventScroll: true });
             return;
           }
           const j = e.target.closest("[data-jump]");
-          if (j) { const tgt = $(j.dataset.jump); if (tgt) { e.preventDefault(); tgt.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }); history.replaceState(history.state, "", "#" + j.dataset.jump); } }
+          if (j) {
+            const tgt = $(j.dataset.jump);
+            if (tgt) { e.preventDefault(); state.jumpPick = j.dataset.jump; if (WIDE.matches) setJumpCur(j.dataset.jump); scrollToSec(tgt); focusSection(tgt); }
+          }
         });
         $("shareBtn").addEventListener("click", (e) => openShare("room", null, e.currentTarget));
-        document.querySelectorAll(".share-tabs [data-card]").forEach((b) => b.addEventListener("click", () => { state.shareCard = b.dataset.card; if (state.shareCard === "member" && state.cardIdx < 0) state.cardIdx = state.focusIdx; renderShareCard(); }));
+        document.querySelectorAll(".share-tabs [data-card]").forEach((b) => b.addEventListener("click", () => {
+          const v = views[views.length - 1];
+          if (!v || v.type !== "share") return;
+          v.kind = b.dataset.card;
+          if (v.kind === "member" && state.cardIdx < 0) state.cardIdx = state.focusIdx;
+          v.idx = null;
+          renderShare(v);
+        }));
         $("recapSaveBtn").addEventListener("click", saveRecap);
         $("kakaoShareBtn").addEventListener("click", kakaoShare);
         $("retryBtn").addEventListener("click", () => { location.reload(); });
         $("reportSelect").addEventListener("change", () => {
           const row = liveRows.find((r) => String(r.id) === $("reportSelect").value);
-          if (row) bootWith(row.stats, "live", row);
+          if (!row) return;
+          // 고른 발행본을 주소에 남긴다(새로고침과 링크 복사에 그대로)
+          try {
+            const u = new URL(location.href);
+            if (row === liveRows[0]) u.searchParams.delete("report"); else u.searchParams.set("report", row.id);
+            history.replaceState(history.state, "", u.pathname + u.search + u.hash);
+          } catch (e) {}
+          bootWith(row.stats, "live", row);
         });
         const input = $("memberSearch");
         input.addEventListener("input", renderCombo);
-        input.addEventListener("focus", () => { if (comboQuiet) { comboQuiet = false; return; } if (input.value) renderCombo(); });
-        input.addEventListener("input", () => { comboQuiet = false; });
+        input.addEventListener("click", () => { if ($("searchList").hidden && normName(input.value)) renderCombo(); });
         input.addEventListener("keydown", (e) => {
-          if (e.key === "ArrowDown") { e.preventDefault(); if ($("searchList").hidden) renderCombo(); else comboMove(1); }
-          else if (e.key === "ArrowUp") { e.preventDefault(); comboMove(-1); }
-          else if (e.key === "Enter") { if (normName(input.value) && comboSel >= 0 && comboItems[comboSel] != null) { e.preventDefault(); comboPick(comboItems[comboSel]); } }
-          else if (e.key === "Escape") { $("searchList").hidden = true; input.setAttribute("aria-expanded", "false"); }
+          const open = !$("searchList").hidden;
+          if (e.key === "ArrowDown") { e.preventDefault(); if (!open) renderCombo(); else comboMove(1); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); if (open) comboMove(-1); }
+          else if (e.key === "Enter") { if (open && comboSel >= 0 && comboItems[comboSel] != null) { e.preventDefault(); comboPick(comboItems[comboSel]); } }
+          else if (e.key === "Escape") { if (open) { e.preventDefault(); closeCombo(); } }   // 목록만 닫고 입력은 남긴다
         });
         $("searchList").addEventListener("mousedown", (e) => e.preventDefault());
         $("searchList").addEventListener("click", (e) => { const li = e.target.closest("[data-i]"); if (li) comboPick(+li.dataset.i); });
-        input.addEventListener("blur", () => setTimeout(() => { $("searchList").hidden = true; input.setAttribute("aria-expanded", "false"); }, 120));
-        // 차트는 실제 폭으로 다시 그린다
-        let rzT = null, lastW = { flow: 0, hour: 0 };
+        input.addEventListener("blur", () => setTimeout(closeCombo, 120));
+        // 차트는 실제 폭으로 다시 그린다(그린 폭과 같으면 건너뛴다)
+        let rzT = null;
         const redraw = () => {
-          const fw = $("flowViz").clientWidth, hw = $("hourViz").clientWidth;
-          if (state.flow && fw && fw !== lastW.flow) { lastW.flow = fw; safe("flow", drawFlow); }
-          if (state.rhythm && hw && hw !== lastW.hour) { lastW.hour = hw; safe("hours", drawHours); }
+          const fv = $("flowViz"), hv = $("hourViz");
+          if (state.flow && fv.clientWidth && String(fv.clientWidth) !== fv.dataset.w) safe("flow", drawFlow);
+          if (state.rhythm && hv.clientWidth && String(hv.clientWidth) !== hv.dataset.w) safe("hours", drawHours);
         };
         if ("ResizeObserver" in window) {
           const ro = new ResizeObserver(() => { clearTimeout(rzT); rzT = setTimeout(redraw, 120); });
@@ -2819,26 +3140,31 @@
         (WIDE.addEventListener ? WIDE.addEventListener.bind(WIDE, "change") : WIDE.addListener.bind(WIDE))(onWide);
       }
 
-      /* ── 카카오톡 공유: 기간, 메시지 수, 멤버 수, 칭호 수 ── */
-      function shareSummary(st) {
-        const total = (st.meta && Number(st.meta.totalMessages)) || (st.days || []).reduce((a, d) => a + (Number(d.c) || 0), 0);
-        const members = RM.visibleIdx(st).length || (st.members || []).length;
-        let peak = null;
-        try { if (Array.isArray(st.days) && st.days.length) peak = RM.peakOf(RM.hourlyOf(st, { i0: 0, i1: st.days.length - 1 })); } catch (e) {}
-        const nT = state.titles && state.data === st ? state.titles.awards.length : 0;
-        return [total ? `메시지 ${nf(total)}건` : "", members ? `이야기한 멤버 ${members}명` : "", peak && peak.v ? `가장 활발한 시간 ${peak.i}시` : "", nT ? `칭호 ${nT}개` : ""].filter(Boolean).join(", ");
+      /* ── 카카오톡 공유: 메시지 수, 지난 통계 비교 또는 이야기한 멤버와 붐비는 시간, 칭호 수 ── */
+      function shareSummary() {
+        const total = totalMessages(), nT = state.titles ? state.titles.awards.length : 0;
+        const out = [total ? `메시지 ${nf(total)}건` : ""];
+        if (showCmp()) out.push(`${RM.pubShort(state.prev.stats)}보다 하루 평균 +${state.cmp.pct}%`);
+        else {
+          if (state.vis.length) out.push(`이야기한 멤버 ${nf(state.vis.length)}명`);
+          if (state.rhythm) out.push(`가장 붐비는 시간 ${state.rhythm.pk}시`);
+        }
+        if (nT) out.push(`칭호 ${nT}개`);
+        return out.filter(Boolean).join(", ");
       }
       async function kakaoShare() {
         const st = state.data; if (!st) return;
-        const btn = $("kakaoShareBtn"); btn.disabled = true;
+        const btn = $("kakaoShareBtn");
+        if (btn.getAttribute("aria-disabled") === "true") return;
+        btn.setAttribute("aria-disabled", "true");
         const notNewest = state.row && liveRows.length > 1 && liveRows[0] && liveRows[0].id !== state.row.id;
         const url = location.origin + location.pathname + (notNewest ? "?report=" + encodeURIComponent(state.row.id) : "");
         const say = (m) => { if (window.EXCER && EXCER.toast) EXCER.toast(m); };
         try {
-          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계" + (st.periodLabel ? " (" + st.periodLabel + ")" : ""), description: shareSummary(st), url, buttonTitle: "통계 보기" }) : "fail";
+          const r = window.KSHARE ? await KSHARE.share({ title: "동네친구들 활동 통계" + (st.periodLabel ? " (" + st.periodLabel + ")" : ""), description: shareSummary(), url, buttonTitle: "통계 보기" }) : "fail";
           if (r === "copy") say("카카오톡 공유 창을 열지 못해 통계 링크를 복사했습니다. 채팅창에 붙여넣어 주세요.");
-          else if (r === "fail") say("복사에 실패했습니다. 주소창에서 직접 복사해 주세요.");
-        } finally { btn.disabled = false; }
+          else if (r === "fail") say("공유 창을 열지 못했습니다. 주소창의 링크를 복사해 주세요.");
+        } finally { btn.removeAttribute("aria-disabled"); }
       }
 
       /* ── 부트 ── */
@@ -2846,7 +3172,8 @@
         state.source = source;
         state.row = row || null;
         state.focusIdx = -1; state.findIdx = -1; state.cardIdx = -1; state.flowK = null; state.hourK = null;
-        comboItems = []; comboSel = -1; comboQuiet = false;
+        state.jumpPick = null; state.comboScrolled = false;
+        comboItems = []; comboSel = -1;
         $("searchList").hidden = true; $("searchList").innerHTML = ""; $("memberSearch").setAttribute("aria-expanded", "false"); $("memberSearch").removeAttribute("aria-activedescendant");
         state.rhythm = null; state.flow = null; state.lens = "msg"; state.rankOpen = false; state.daysOpen = false; state.weekOpen = false;
         $("memberSearch").value = "";
@@ -2879,11 +3206,18 @@
           $("emptyTitle").textContent = failed ? "통계를 불러오지 못했습니다." : "발행된 통계가 없습니다.";
           $("emptyText").textContent = failed ? "" : "운영진이 통계를 발행하면 이 페이지에 표시됩니다.";
           $("emptyText").hidden = failed;
-          $("sourceBadge").textContent = failed ? "불러오기 실패" : "통계 없음";
+          $("retryBtn").hidden = !failed;   // 발행본이 없으면 다시 시도해도 같다
+          $("sourceLine").hidden = true;    // 같은 말을 두 번 하지 않게 출처 줄은 숨긴다
           $("shareBtn").hidden = true;
           return;
         }
         bootWith(stats, source, row);
+        // 주소에 섹션이 있으면(#secRank 같은) 그린 뒤에 그 자리로
+        const hash = decodeURIComponent(location.hash.slice(1));
+        if (hash && JUMPS.some((x) => x[0] === hash) || hash === "dataNote") {
+          const t = $(hash);
+          if (t && !t.hidden) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
+        }
         if (previewMissing && source === "live") EXCER.toast("미리보기 초안이 없어 발행된 통계를 표시합니다.");
         if (previewMissing && source === "sample") EXCER.toast("미리보기 초안이 없어 예시 데이터를 표시합니다.");
       }
