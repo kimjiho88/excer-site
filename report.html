@@ -42,9 +42,9 @@
       --viz-zero: #F1EEF3;
       --viz-band: #F4F1F7;
       --viz-ref: #625A6C;
-      --viz-seq-1: #B9A5D6; --viz-seq-2: #A387C6; --viz-seq-3: #6D4AAE; --viz-seq-4: #4B2A82;
+      --viz-seq-1: #BDA9DB; --viz-seq-2: #9373C4; --viz-seq-3: #6A45A8; --viz-seq-4: #3E2270;
       /* 주제 4색: validate_palette.js --pairs all 통과(대비 WARN 은 범례 글, 아이콘, 표로 보기로 보완) */
-      --topic-food: #eda100; --topic-meet: #2a78d6; --topic-out: #008300; --topic-info: #e87ba4;
+      --topic-food: #eda100; --topic-meet: #2a78d6; --topic-out: #199e70; --topic-info: #e87ba4;
     }
 
     /* ── 머리 띠: 기간 이름, 대표 숫자, 한 줄 ── */
@@ -62,7 +62,7 @@
       .rp-hero.cover.is-spot .cover-inner { min-height: 0; padding-top: 16px; padding-bottom: 16px; column-gap: 12px; align-items: start; }
       .rp-hero .cover-title { margin-top: 0; font-size: 17px; font-weight: 700; color: var(--on-dark-body); text-shadow: none; }
       .hero-num { margin-top: 4px; }
-      .hero-num .lb { display: none; }
+      .hero-num .lb { font-size: 13px; }
       .hero-num b { font-size: 38px; }
       .hero-num small { font-size: 16px; }
       .hero-line { margin-top: 4px; font-size: 14px; }
@@ -146,7 +146,7 @@
     .tile.is-button .more .ic { width: 14px; height: 14px; transition: transform 0.2s var(--ease); }
     .tile.is-button[aria-expanded="true"] .more .ic { transform: rotate(180deg); }
     @media (hover: hover) and (pointer: fine) { .tile.is-button:hover { border-color: var(--brand); } }
-    .dots-meter { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; }
+    .dots-meter { display: grid; gap: 2px; margin-top: 6px; }
     .dots-meter i { width: 6px; height: 6px; border-radius: 50%; background: var(--viz-track); }
     .dots-meter i.on { background: var(--viz-accent); }
     .tile-panel { margin-top: 12px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
@@ -572,6 +572,13 @@
     .rc-cal i.on3 { background: rgba(255, 255, 255, 0.85); }
     .rc-cal i.on4 { background: #fff; }
     .rc-cal i.is-out { background: none; }
+    .rc-cal b { color: var(--on-dark-muted); font-size: 12px; font-weight: 600; text-align: center; }
+    .rc-legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: -6px; color: var(--on-dark-muted); font-size: 12px; }
+    .rc-legend i { width: 12px; height: 12px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+    .rc-legend i.on1 { background: rgba(255, 255, 255, 0.4); }
+    .rc-legend i.on2 { background: rgba(255, 255, 255, 0.65); }
+    .rc-legend i.on3 { background: rgba(255, 255, 255, 0.85); }
+    .rc-legend i.on4 { background: #fff; }
     .rc-empty { padding: 24px 8px; text-align: center; color: var(--ink-2); font-size: 14px; }
     .rc-empty .btn { margin-top: 10px; }
 
@@ -585,6 +592,44 @@
       .type-dot::before, .heat .hc, .cal .cd, .stack100 span { forced-color-adjust: none; }
     }
     :where(.rp-sec, .titles-band, dialog.sheet) :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    /* 30차 검토 반영 */
+    .sheet-top { padding: 6px 12px 0; }
+    dialog.sheet h2:focus { outline: none; }
+    .sheet-actions.is-sticky { position: sticky; bottom: 0; z-index: 2; justify-content: center; margin: 24px -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+    .sheet-body:has(> .sheet-actions.is-sticky) { padding-bottom: 0; }
+    .sheet-actions.is-sticky .btn { flex: 1 1 auto; max-width: 360px; }
+    .tag-chip.is-rec { background: var(--bg); }
+    .rw-other { display: inline-flex; vertical-align: -2px; color: var(--brand); }
+    .rw-other .ic { width: 13px; height: 13px; }
+    .mc-desc, .tt-desc { word-break: keep-all; text-wrap: balance; }
+    .kw-bars .hw i { box-shadow: none; }
+    .week-words .ww-legend { color: var(--ink-2); font-size: 12px; gap: 4px; }
+    .week-words .ww-legend .ic { width: 12px; height: 12px; color: var(--brand); }
+    .period-divider span { border: 0; background: none; padding: 0 4px; }
+    .data-note summary { gap: 4px; }
+    .data-note summary .ic { width: 16px; height: 16px; transition: transform 0.2s var(--ease); }
+    .data-note[open] summary .ic { transform: rotate(180deg); }
+    .data-note { margin-top: var(--sp-7); }
+    @media (max-width: 479px) {
+      .mood-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .mood { align-content: start; }
+    .mood .mv { white-space: nowrap; }
+    @media (max-width: 767px) {
+      .tt-grid > li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    }
+    /* 시간대 칭호: 그 시간의 하늘빛(장식) */
+    #timeTitles .tt-ic[data-band="morning"] { background: #FFF1CC; }
+    #timeTitles .tt-ic[data-band="lunch"] { background: #FFF6D6; }
+    #timeTitles .tt-ic[data-band="afternoon"] { background: #FDEBD9; }
+    #timeTitles .tt-ic[data-band="evening"] { background: #F9DFD6; }
+    #timeTitles .tt-ic[data-band="night"] { background: #E1E4F4; }
+    #timeTitles .tt-ic[data-band="dawn"] { background: #E6E0F3; }
+    #timeTitles .tt-ic[data-band="weekend"] { background: #E3F1EA; }
+    /* 칭호 그림은 시트가 열릴 때 한 번 반짝 */
+    .tdetail-head img, .mcard-title img { animation: medalIn 0.5s var(--ease-out) both; }
+    @keyframes medalIn { from { transform: scale(0.85) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .tdetail-head img, .mcard-title img { animation: none; } }
     [hidden] { display: none !important; }
   </style>
   <script src="assets/site-core.js?v=10"></script>
@@ -770,15 +815,15 @@
                 <h3 class="rp-h3" style="margin-top:24px">많이 나온 말</h3>
                 <ol class="hbars kw-bars" id="kwBars"></ol>
               </div>
-              <div id="weekWordsBlock" hidden>
-                <h3 class="rp-h3" style="margin-top:24px">주별로 많이 나온 말</h3>
-                <ul class="week-words" id="weekWords"></ul>
-              </div>
               <details class="table-twin"><summary>표로 보기</summary><div class="tw-scroll twin-grid" id="talkTable"></div></details>
             </div>
             <div class="rp-card" id="moodCard">
               <h3>분위기</h3>
               <div class="mood-grid" id="moodGrid"></div>
+              <div id="weekWordsBlock" hidden>
+                <h3 class="rp-h3" style="margin-top:24px">주별로 많이 나온 말</h3>
+                <ul class="week-words" id="weekWords"></ul>
+              </div>
             </div>
           </div>
         </div>
@@ -790,7 +835,7 @@
           <div class="share-row">
             <div>
               <h2 id="shareH">요약 카드</h2>
-              <p>이미지로 저장해 채팅방에 올릴 수 있습니다.</p>
+              <p>이미지로 저장해 채팅방에 올리기</p>
             </div>
             <div class="btns"><button class="btn btn-primary" type="button" id="openShareBtn">요약 카드 보기</button></div>
           </div>
@@ -825,7 +870,7 @@
           <div class="container">
             <div class="rp-head">
               <p class="rp-label"><svg class="ic" aria-hidden="true"><use href="#i-trophy"/></svg>순위</p>
-              <h2 id="rankH">순위</h2>
+              <h2 id="rankH">최근 7일 순위</h2>
             </div>
             <div class="rp-card">
               <div class="lens" role="radiogroup" aria-label="순위 기준" id="lensChips"></div>
@@ -855,7 +900,7 @@
 
       <div class="container">
         <details class="data-note" id="dataNote">
-          <summary>집계 기준</summary>
+          <summary>집계 기준<svg class="ic" aria-hidden="true"><use href="#i-chevDown"/></svg></summary>
           <ul id="dataNoteList"></ul>
         </details>
       </div>
@@ -879,7 +924,7 @@
         <button class="seg-chip" type="button" role="tab" id="tabMember" aria-selected="false" aria-controls="recapCard" data-card="member">멤버 카드</button>
       </div>
       <div class="recap-card" id="recapCard" role="tabpanel"></div>
-      <div class="sheet-actions" style="justify-content:center">
+      <div class="sheet-actions is-sticky">
         <button class="btn btn-primary" type="button" id="recapSaveBtn">이미지로 저장</button>
       </div>
     </div>
@@ -1924,7 +1969,7 @@
         const ago = genDays === null ? "" : genDays === 0 ? " (오늘)" : genDays === 1 ? " (어제)" : " (" + genDays + "일 전)";
         const P = state.partial;
         const lastD = parts(st.range.to);
-        const partTxt = P.partial && lastD && P.lastHour >= 0 ? `, ${lastD.d}일은 ${P.lastHour}시까지` : "";
+        const partTxt = P.partial && lastD ? `, ${lastD.d}일은 집계 중` : "";
         const tr = st.meta && st.meta.truncated;
         const trTxt = tr ? (tr.days ? ", 800일을 넘는 앞부분은 빠져 있습니다" : "") + (tr.members ? ", 활동 순위 120명 밖 멤버는 멤버 목록에 없습니다" : "") : "";
         $("metaLine").textContent = fmtK(st.range.from) + "~" + fmtK(st.range.to) + (genOk ? ", " + fmtK(gen) + " 발행" + ago : "") + partTxt + trTxt;
@@ -1963,7 +2008,7 @@
         if (f.len >= 5 && every.length) {
           third = `<button class="tile is-button" type="button" id="everyBtn" aria-expanded="false" aria-controls="everyPanel">
             <span class="tl">매일 출석</span><span class="tv">${nf(every.length)}<small>명</small></span><span class="ts">${nf(f.len)}일 모두</span>
-            <span class="dots-meter" aria-hidden="true">${state.vis.map((_, k) => `<i${k < every.length ? ' class="on"' : ""}></i>`).join("")}</span>
+            <span class="dots-meter" aria-hidden="true" style="grid-template-columns:repeat(${Math.ceil(state.vis.length / (state.vis.length <= 30 ? 1 : state.vis.length <= 60 ? 2 : 3))}, 6px)">${state.vis.map((_, k) => `<i${k < every.length ? ' class="on"' : ""}></i>`).join("")}</span>
             <span class="more">이름 보기${ic("chevDown")}</span></button>`;
         } else if (f.len >= 7 && s7.length) {
           third = `<button class="tile is-button" type="button" id="everyBtn" aria-expanded="false" aria-controls="everyPanel">
@@ -1974,11 +2019,11 @@
           const W = 120, H = 26, mx = Math.max(...act, 1);
           const pts = act.map((v, k) => `${((k / (act.length - 1)) * (W - 8) + 4).toFixed(1)},${(H - 4 - (v / mx) * (H - 8)).toFixed(1)}`);
           const last = pts[pts.length - 1].split(",");
-          return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.join(" ")}" fill="none" stroke="var(--viz-context)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="var(--viz-accent)" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+          return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts.join(" ")}" fill="none" stroke="var(--viz-context)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><line x1="${last[0]}" y1="${last[1]}" x2="${last[0]}" y2="${last[1]}" stroke="var(--viz-accent)" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
         })() : "";
         host.innerHTML = `<div class="tiles3${third ? "" : " is-2"}">
-          <div class="tile"><span class="tl">이야기한 멤버</span><span class="tv">${nf(state.vis.length)}<small>명</small></span>${state.types && state.types.n ? `<span class="ts is-opt">50건 넘게 ${nf(state.types.n)}명</span>` : ""}</div>
-          <div class="tile"><span class="tl">하루 평균 대화</span><span class="tv">${nf(avgAct)}<small>명</small></span>${spark}</div>
+          <div class="tile"><span class="tl">이야기한 멤버</span><span class="tv">${nf(state.vis.length)}<small>명</small></span>${state.types && state.types.n ? `<span class="ts is-opt">50건 이상 ${nf(state.types.n)}명</span>` : ""}</div>
+          <div class="tile"><span class="tl">하루 말한 멤버</span><span class="tv">${nf(avgAct)}<small>명</small></span><span class="ts is-opt">하루 평균</span>${spark}</div>
           ${third}</div>
           <div class="tile-panel" id="everyPanel" hidden></div>`;
         const btn = $("everyBtn");
@@ -2026,7 +2071,7 @@
         grid.innerHTML = medals.map((a, k) => {
           const top = (T.table[a.id] || []);
           const mx = top.length ? top[0].s || 1 : 1;
-          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${r + 1}</span><span class="rw">${esc(nameOf(c.idx))}</span><span class="rv">${esc(shortVal(a.id, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
+          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${r + 1}</span><span class="rw">${esc(nameOf(c.idx))}${(() => { const o = T.byMember[c.idx]; return o && o.id !== a.id ? ` <span class="rw-other" title="${esc(o.title)}">${ic(o.icon)}</span>` : ""; })()}</span><span class="rv">${esc(shortVal(a.id, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
           return `<li class="medal-card fade-up" data-medal style="animation-delay:${reduceMotion ? 0 : k * 40}ms">
             <button class="mc-open" type="button" data-open-title="${a.id}" aria-label="${esc(a.title)} 기준 보기">${medalImg(a.img, PHONE.matches ? 80 : 96, "mc-img")}<span class="mc-ic">${ic(a.icon)}</span><span class="mc-body"><span class="mc-title">${esc(a.title)}</span></span></button>
             <span class="mc-names">${a.holders.map((i) => nameBtn(i, "mc-name")).join("")}</span>
@@ -2044,7 +2089,7 @@
           return (a.joint ? "공동 " : "") + t + (a.rank >= 2 ? `, 부문 ${a.rank}위` : "");
         };
         const cell = (a) => `<li class="tt-cell">
-            <button class="tt-open" type="button" data-open-title="${a.id}" aria-label="${esc(a.title)} 기준 보기"><span class="tt-ic">${ic(a.icon)}</span><span class="tt-title">${esc(a.title)}</span></button>
+            <button class="tt-open" type="button" data-open-title="${a.id}" aria-label="${esc(a.title)} 기준 보기"><span class="tt-ic" data-band="${a.id}">${ic(a.icon)}</span><span class="tt-title">${esc(a.title)}</span></button>
             ${a.holders.map((i) => nameBtn(i, "tt-name")).join("")}
             <span class="tt-desc">${esc(shortDesc(a))}</span></li>`;
         const time = T.awards.filter((a) => a.group === "time"), talk = T.awards.filter((a) => a.group === "talk");
@@ -2122,7 +2167,7 @@
         const st = state.data, d = st.days[k], f = state.flow;
         if (!d) return;
         const isPart = state.partial.partial && k === st.days.length - 1;
-        $("flowRead").innerHTML = `${esc(fmtMDW(d.d))} <b>${nf(d.c)}건</b>` + (f.act && !isPart ? ` <span>이야기한 멤버 ${nf(f.act[k])}명</span>` : "") + (isPart ? ` <span>${state.partial.lastHour}시까지 집계</span>` : "");
+        $("flowRead").innerHTML = `${esc(fmtMDW(d.d))} <b>${nf(d.c)}건</b>` + (f.act && !isPart ? `<span>, 이야기한 멤버 ${nf(f.act[k])}명</span>` : "") + (isPart ? `<span>, 집계 중</span>` : "");
       }
       function drawFlow() {
         const st = state.data, days = st.days, n = days.length, f = state.flow, fig = $("flowViz");
@@ -2170,7 +2215,7 @@
           let t = 0; for (let k = 0; k < f.F; k++) t += days[k].c;
           const avg = t / Math.max(1, f.F), ya = yA(avg), xe = L + slot * f.F;
           marks += `<line x1="${L}" x2="${xe.toFixed(1)}" y1="${ya.toFixed(1)}" y2="${ya.toFixed(1)}" style="stroke:var(--viz-ref)" stroke-width="1"/>`;
-          marks += `<text x="${(xe - 2).toFixed(1)}" y="${(ya - 5).toFixed(1)}" text-anchor="end" font-size="12" style="fill:var(--ink-2);paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round">평균 ${nf(avg)}</text>`;
+          f.avg = avg;
         } else {
           let area = `M${xc(0).toFixed(1)},${(TOP + PA).toFixed(1)}`;
           days.forEach((d, k) => { area += `L${xc(k).toFixed(1)},${yA(d.c).toFixed(1)}`; });
@@ -2222,9 +2267,8 @@
         fig.setAttribute("aria-label", label);
         const legend = [];
         if (!long) {
-          legend.push(`<li><i style="background:var(--viz-context)"></i>하루 메시지</li>`, `<li><i style="background:var(--viz-accent)"></i>가장 많은 날</li>`, `<li><i style="background:var(--viz-band)"></i>주말</li>`);
+          legend.push(`<li><i style="background:var(--viz-context)"></i>하루 메시지</li>`, `<li><i class="is-line" style="background:var(--viz-ref)"></i>평균 ${nf(f.avg || 0)}</li>`, `<li><i style="background:var(--viz-band)"></i>주말</li>`);
           if (partial) legend.push(`<li><i class="is-hollow"></i>집계 중</li>`);
-          legend.push(`<li><i class="is-line" style="background:var(--viz-ref)"></i>평균</li>`);
         } else {
           legend.push(`<li><i style="background:var(--viz-accent);opacity:0.18"></i>하루 메시지</li>`, `<li><i class="is-line" style="background:var(--viz-accent)"></i>7일 평균</li>`);
           if (f.act) legend.push(`<li><i class="is-line" style="background:var(--viz-series)"></i>이야기한 멤버 7일 평균</li>`);
@@ -2277,7 +2321,7 @@
         $("rhythmSub").textContent = `${band.label} ${band.range}에 ${Math.round(shares[bb] * 100)}%`;
         state.rhythm = { h24, pk, total, shares };
         drawHours();
-        $("hourRead").innerHTML = `${pk}시 <b>하루 평균 ${nf(h24[pk])}건</b> <span>전체의 ${pct(h24[pk], total)}</span>`;
+        $("hourRead").innerHTML = `${pk}시 <b>하루 평균 ${nf(h24[pk])}건</b><span>, 전체의 ${pct(h24[pk], total)}</span>`;
         $("hourTable").innerHTML = twinTable("시각별 하루 평균 메시지", ["시각", "하루 평균", "비중"], RM.HOUR_ORDER.map((h) => [h + "시", nf(h24[h]), pct(h24[h], total)]), [1, 2])
           + twinTable("구간별 비중", ["구간", "시각", "비중"], RM.BANDS6.map((b, k) => [b.label, b.range, Math.round(shares[k] * 100) + "%"]), [2]);
         // 요일
@@ -2354,7 +2398,7 @@
         const pick = (h, clientY) => {
           const k = order.indexOf(h), rect = svg.getBoundingClientRect();
           showTip(rect.left + ((L + slot * (k + 0.5)) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (y(r.h24[h]) / H) * rect.height, nf(r.h24[h]) + "건", `${h}시 하루 평균, 전체의 ${pct(r.h24[h], r.total)}`, "hours");
-          $("hourRead").innerHTML = `${h}시 <b>하루 평균 ${nf(r.h24[h])}건</b> <span>전체의 ${pct(r.h24[h], r.total)}</span>`;
+          $("hourRead").innerHTML = `${h}시 <b>하루 평균 ${nf(r.h24[h])}건</b><span>, 전체의 ${pct(r.h24[h], r.total)}</span>`;
           state.hourK = k;
         };
         svg.addEventListener("pointermove", (e) => { const t = e.target.closest(".hit"); if (t) pick(+t.dataset.h); });
@@ -2371,7 +2415,7 @@
 
       /* 이야기: 주제 비중, 많이 나온 말, 분위기 */
       const TOPIC_VAR = { "맛집": "--topic-food", "벙": "--topic-meet", "나들이": "--topic-out", "정보": "--topic-info" };
-      const TOPIC_ON_DARK = { "벙": true, "나들이": true };
+      const TOPIC_ON_DARK = { "벙": true };
       function topicStackHTML(tt, thin, minLabelW) {
         const tot = RM.TOPICS.reduce((a, t) => a + (tt[t.key] || 0), 0) || 1;
         return `<div class="stack100${thin ? " is-thin" : ""}" aria-hidden="true">${RM.TOPICS.filter((t) => tt[t.key] > 0).map((t) => {
@@ -2400,7 +2444,7 @@
         $("kwBlock").hidden = !hasKw;
         if (hasKw) {
           const mx = kws[0].c || 1;
-          $("kwBars").innerHTML = kws.map((k, i) => `<li class="hbar"><span class="hn">${i + 1}</span><span class="hw">${k.cat && TOPIC_VAR[k.cat] ? `<i style="background:var(${TOPIC_VAR[k.cat]})" aria-hidden="true"></i>` : ""}${esc(k.w)}</span><span class="ht"><span class="hf" style="width:${((k.c / mx) * 100).toFixed(1)}%"></span></span><span class="hv">${nf(k.c)}번</span></li>`).join("");
+          $("kwBars").innerHTML = kws.map((k, i) => `<li class="hbar"><span class="hn">${i + 1}</span><span class="hw"><i style="background:${k.cat && TOPIC_VAR[k.cat] ? `var(${TOPIC_VAR[k.cat]})` : "transparent"}" aria-hidden="true"></i>${esc(k.w)}</span><span class="ht"><span class="hf" style="width:${((k.c / mx) * 100).toFixed(1)}%"></span></span><span class="hv">${nf(k.c)}번</span></li>`).join("");
           if (!hasTopic) $("kwBlock").querySelector("h3").style.marginTop = "0";
         }
         $("weekWordsBlock").hidden = !weekly.length;
@@ -2410,9 +2454,9 @@
             const html = `<li><span>${esc(String(w.week).replace(/\//g, "."))}</span>${w.top.map((x) => `<span class="word-chip">${prevSet && !prevSet.has(x) ? ic("sparkle") : ""}${esc(x)}</span>`).join("")}</li>`;
             prevSet = new Set(w.top);
             return html;
-          }).join("");
+          }).join("") + `<li class="ww-legend">${ic("sparkle")}새로 나온 말</li>`;
         }
-        $("moodCard").hidden = !moods.length;
+        $("moodCard").hidden = !moods.length && !weekly.length;
         $("moodGrid").innerHTML = moods.map((m) => `<div class="mood"><span class="mi" aria-hidden="true">${ic(m.icon)}</span><span class="ml">${esc(m.lb)}</span><span class="mv">${esc(m.v)}<small>${esc(m.u)}</small></span>${m.s ? `<span class="ms">${esc(m.s)}</span>` : ""}</div>`).join("");
         const tables = [];
         if (hasTopic) tables.push(twinTable("주제별 언급", ["주제", "횟수", "비중"], RM.TOPICS.map((t) => [t.label, nf(tt[t.key]), pct(tt[t.key], ttot)]), [1, 2]));
@@ -2538,11 +2582,11 @@
         if (prev == null || !isFinite(prev)) return "";
         if (unit === "명") {
           const d = cur - prev;
-          return `<span class="delta-chip"><b>${ic(d >= 0 ? "trendUp" : "arrowDown")}${d >= 0 ? "+" : "-"}${nf(Math.abs(d))}명</b><span>${esc(basisTxt)}</span></span>`;
+          return `<span class="delta-chip"><b>${d >= 0 ? "+" : "-"}${nf(Math.abs(d))}명</b><span>${esc(basisTxt)}</span></span>`;
         }
         if (prev <= 0) return "";
         const p = Math.round(((cur - prev) / prev) * 100);
-        return `<span class="delta-chip"><b>${ic(p >= 0 ? "trendUp" : "arrowDown")}${p >= 0 ? "+" : "-"}${Math.abs(p)}%</b><span>${esc(basisTxt)}</span></span>`;
+        return `<span class="delta-chip"><b>${p >= 0 ? "+" : "-"}${Math.abs(p)}%</b><span>${esc(basisTxt)}</span></span>`;
       }
       function renderPeriodTiles() {
         const st = state.data, s = state.slice, sf = state.sFull, prev = state.prev;
@@ -2565,7 +2609,7 @@
           else basis = `직전 ${nf(prev.len)}일 하루 평균보다`;
         }
         const msgDelta = prev ? (prev.partial ? deltaChip(avg, prevAvg, basis) : deltaChip(total, prevTotal, basis)) : "";
-        const avgDelta = prev ? deltaChip(avg, prevAvg, prev.partial ? basis : `직전 ${nf(s.len)}일 평균보다`) : "";
+        const avgDelta = "";   // 길이가 같은 두 기간이면 합계와 평균의 증감이 같아 한 번만 보인다
         $("periodTiles").innerHTML = `
           <div class="tile"><span class="tl">메시지</span><span class="tv">${nf(total)}<small>건</small></span>${msgDelta}</div>
           <div class="tile"><span class="tl">하루 평균</span><span class="tv">${nf(avg)}<small>건</small></span>${avgDelta}</div>
@@ -2575,6 +2619,7 @@
       const LENSES = [["msg", "메시지"], ["days", "함께한 날"], ["rise", "늘어난"]];
       function renderRank() {
         const st = state.data, s = state.slice, sf = state.sFull, host = $("rankList");
+        $("rankH").textContent = (state.preset === "custom" ? `${fmtK(s.from)}~${fmtK(s.to)}` : presetLabel(state.preset)) + " 순위";
         const avail = LENSES.filter((l) => state.legacy ? l[0] === "msg" : l[0] === "days" ? sf && sf.len >= 2 : l[0] === "rise" ? !!state.prev : true);
         if (!avail.some((l) => l[0] === state.lens)) state.lens = "msg";
         $("lensChips").innerHTML = avail.map((l) => `<button class="seg-chip" type="button" role="radio" aria-checked="${state.lens === l[0]}" tabindex="${state.lens === l[0] ? 0 : -1}" data-lens="${l[0]}">${l[1]}</button>`).join("");
@@ -2649,12 +2694,10 @@
           const r = RM.heatAvg(st, sf, bin); grid = r.grid; cols = r.cols; nDays = r.n;
         }
         sec.hidden = false;
-        // 결론은 모든 폭에서 7x24 기준
         const full24 = state.legacy ? st.heatmap : RM.heatAvg(st, sf, 1).grid;
-        let best = { w: 0, c: 0, v: -1 };
-        full24.forEach((row, w) => row.forEach((v, c) => { if (v > best.v) best = { w, c, v }; }));
-        const bestH = state.legacy ? best.c : RM.HOUR_ORDER[best.c];
-        $("heatH").textContent = `가장 붐비는 때 ${WEEK_KO[best.w]} ${bestH}시`;
+        // 요일마다 하루뿐이면(최근 7일) '하루 평균'이 아니라 그날의 건수다
+        const perDay = !isSum && Math.max(...nDays) > 1;
+        const unitTxt = isSum ? "합계" : perDay ? "하루 평균" : "";
         const nz = []; grid.forEach((row) => row.forEach((v) => { if (v > 0) nz.push(v); }));
         nz.sort((a, b) => a - b);
         const q = (p) => nz.length ? nz[Math.floor((nz.length - 1) * p)] : 0;
@@ -2665,6 +2708,8 @@
         let pb = { w: 0, c: 0, v: -1 };
         grid.forEach((row, w) => row.forEach((v, c) => { if (v > pb.v) pb = { w, c, v }; }));
         const colLabel = (hs) => hs.length === 1 ? hs[0] + "시" : `${hs[0]}~${hs[hs.length - 1]}시`;
+        // 결론 제목은 칸과 같은 묶음으로(폰은 세 시간 묶음)
+        $("heatH").textContent = `가장 붐비는 때 ${WEEK_KO[pb.w]} ${colLabel(cols[pb.c])}`;
         host.style.gridTemplateColumns = `24px repeat(${cols.length}, minmax(0, 1fr))`;
         let html = `<span aria-hidden="true"></span>`;
         cols.forEach((hs, c) => { const show = bin === 3 || hs[0] % 3 === 0; html += `<span class="hh" aria-hidden="true">${show ? hs[0] + "시" : ""}</span>`; });
@@ -2673,17 +2718,17 @@
           html += `<span class="hd" aria-hidden="true">${WEEK_KO[w]}</span>`;
           row.forEach((v, c) => {
             const t = first ? 0 : -1; first = false;
-            html += `<span class="hc${w === pb.w && c === pb.c ? " is-peak" : ""}" role="button" tabindex="${t}" data-w="${w}" data-c="${c}" style="background:${COL[lvl(v)]}" aria-label="${WEEK_KO[w]}요일 ${colLabel(cols[c])} ${isSum ? "합계" : "하루 평균"} ${nf(v)}건"></span>`;
+            html += `<span class="hc${w === pb.w && c === pb.c ? " is-peak" : ""}" role="button" tabindex="${t}" data-w="${w}" data-c="${c}" style="background:${COL[lvl(v)]}" aria-label="${WEEK_KO[w]}요일 ${colLabel(cols[c])} ${unitTxt ? unitTxt + " " : ""}${nf(v)}건"></span>`;
           });
         });
         host.innerHTML = html;
-        const legend = [`<li class="lt">${isSum ? "합계" : "하루 평균"} 건수</li>`];
+        const legend = [`<li class="lt">${unitTxt ? unitTxt + " " : ""}건수</li>`];
         if (grid.some((row) => row.some((v) => v <= 0))) legend.push(`<li><i style="background:${COL[0]}"></i>0</li>`);
         legend.push(`<li><i style="background:${COL[1]}"></i>${nf(b1)} 미만</li>`, `<li><i style="background:${COL[2]}"></i>${nf(b1)}~${nf(b2)}</li>`, `<li><i style="background:${COL[3]}"></i>${nf(b2)}~${nf(b3)}</li>`, `<li><i style="background:${COL[4]}"></i>${nf(b3)} 이상</li>`);
         $("heatLegend").innerHTML = legend.join("");
-        const read = (w, c) => { $("heatRead").innerHTML = `${WEEK_KO[w]}요일 ${colLabel(cols[c])}, <b>${isSum ? "합계" : "하루 평균"} ${nf(grid[w][c])}건</b>${isSum ? "" : ` <span>(${nf(nDays[w])}일)</span>`}`; };
+        const read = (w, c) => { $("heatRead").innerHTML = `${WEEK_KO[w]}요일 ${colLabel(cols[c])}, <b>${unitTxt ? unitTxt + " " : ""}${nf(grid[w][c])}건</b>${perDay ? ` <span>(${nf(nDays[w])}일)</span>` : ""}`; };
         read(pb.w, pb.c);
-        const onPoint = (e) => { const cell = e.target.closest(".hc"); if (!cell) return; const w = +cell.dataset.w, c = +cell.dataset.c; read(w, c); const r = cell.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top, nf(grid[w][c]) + "건", `${WEEK_KO[w]}요일 ${colLabel(cols[c])}${isSum ? " 합계" : " 하루 평균"}`, "heat"); };
+        const onPoint = (e) => { const cell = e.target.closest(".hc"); if (!cell) return; const w = +cell.dataset.w, c = +cell.dataset.c; read(w, c); const r = cell.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top, nf(grid[w][c]) + "건", `${WEEK_KO[w]}요일 ${colLabel(cols[c])}${unitTxt ? " " + unitTxt : ""}`, "heat"); };
         host.onpointermove = onPoint; host.onpointerdown = onPoint;
         host.onpointerleave = (e) => hideTip(e.pointerType === "touch" ? 2000 : 100, "heat");
         host.onkeydown = (e) => {
@@ -2699,7 +2744,7 @@
           next.setAttribute("tabindex", "0"); next.focus(); read(w, c);
         };
         const g24 = full24;
-        $("heatTable").innerHTML = `<table><caption>요일과 시각별 ${isSum ? "합계" : "하루 평균"} 메시지</caption><thead><tr><th scope="col">요일</th>${(state.legacy ? Array.from({ length: 24 }, (_, h) => h) : RM.HOUR_ORDER).map((h) => `<th scope="col">${h}시</th>`).join("")}</tr></thead><tbody>${
+        $("heatTable").innerHTML = `<table><caption>요일과 시각별 ${unitTxt ? unitTxt + " " : ""}메시지</caption><thead><tr><th scope="col">요일</th>${(state.legacy ? Array.from({ length: 24 }, (_, h) => h) : RM.HOUR_ORDER).map((h) => `<th scope="col">${h}시</th>`).join("")}</tr></thead><tbody>${
           g24.map((row, w) => `<tr><th scope="row">${WEEK_KO[w]}</th>${row.map((v) => `<td class="n">${nf(v)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
       }
 
@@ -2713,6 +2758,7 @@
           else dlg.setAttribute("open", "");
         }
         if (!sheetPushed) { try { history.pushState({ rpSheet: 1 }, ""); sheetPushed = true; } catch (e) {} }
+        const h = dlg.querySelector("h2"); if (h) { h.setAttribute("tabindex", "-1"); try { h.focus({ preventScroll: true }); } catch (e) {} }
       }
       /* close 이벤트는 나중에 오므로 조용히 닫을 때는 대화상자에 표시를 남긴다(다른 시트로 바꾸기, 뒤로 가기) */
       function closeQuiet(d) { if (d.open) { d._quiet = true; d.close(); } }
@@ -2736,14 +2782,15 @@
         if (lastOpener && document.contains(lastOpener)) { try { lastOpener.focus(); } catch (e) {} }
       });
 
-      function memberRecords(i) {
+      function memberRecords(i, forSheet) {
         const m = M()[i], T = state.titles, out = [], f = state.full;
+        const aw = T && T.byMember[i];
         if (!state.legacy && T.everyDay.indexOf(i) >= 0) out.push({ icon: "checkCircle", t: "매일 출석" });
         const run = !state.legacy && m.daily ? RM.longestRun(m.daily, 0, f.len - 1).len : (m.streak || 0);
-        if (run >= 7 && T.everyDay.indexOf(i) < 0) out.push({ icon: "flame", t: `${nf(run)}일 연속` });
+        if (!forSheet && run >= 7 && T.everyDay.indexOf(i) < 0) out.push({ icon: "flame", t: `${nf(run)}일 연속` });
         const th = [10000, 5000, 3000, 1000, 300, 100].find((x) => (m.count || 0) >= x);
         if (th) out.push({ icon: "medal", t: `${nf(th)}건 넘김` });
-        if (!state.legacy && m.daily) { const b = RM.bestDay(m, { i0: 0, i1: f.len - 1 }); if (b.v >= 20) out.push({ icon: "bolt", t: `하루 최고 ${nf(b.v)}건` }); }
+        if (!state.legacy && m.daily) { const b = RM.bestDay(m, { i0: 0, i1: f.len - 1 }); if (b.v >= 20 && !(aw && aw.id === "burst")) out.push({ icon: "bolt", t: `하루 최고 ${nf(b.v)}건` }); }
         if ((m.welcome || 0) >= 3) out.push({ icon: "users", t: `환영 ${nf(m.welcome)}번` });
         if ((m.q || 0) >= 20) out.push({ icon: "chat", t: `질문 ${nf(m.q)}번` });
         const pv = ((m.media || {}).photo || 0) + ((m.media || {}).video || 0);
@@ -2777,8 +2824,8 @@
         html += `<div class="mnums"><div><span class="ml">메시지</span><span class="mv">${nf(m.count)}<small>건</small></span></div>
           <div><span class="ml">함께한 날</span><span class="mv">${nf(actDays)}<small>일</small></span>${!state.legacy ? `<span class="sub">${nf(f.len)}일 중</span>` : ""}</div>
           <div><span class="ml">최장 연속</span><span class="mv">${nf(run.len)}<small>일</small></span></div></div>`;
-        const recs = memberRecords(i);
-        if (recs.length) html += `<ul class="chip-row">${recs.map((r) => `<li class="tag-chip is-line">${ic(r.icon)}${esc(r.t)}</li>`).join("")}</ul>`;
+        const recs = memberRecords(i, true);
+        if (recs.length) html += `<ul class="chip-row">${recs.map((r) => `<li class="tag-chip is-rec">${ic(r.icon)}${esc(r.t)}</li>`).join("")}</ul>`;
         // 함께한 날 달력
         if (!state.legacy && m.daily && actDays >= 5) html += `<div class="msec"><h3>함께한 날</h3>${calendarHTML(m, run)}</div>`;
         else if (!state.legacy && m.daily && actDays > 0) {
@@ -2808,9 +2855,9 @@
             const r = top.findIndex((c) => c.idx === i);
             if (r >= 0 && T.awards.some((a) => a.id === d.id)) other.push({ t: d.title, r: r + 1, icon: d.icon });
           });
-          if (other.length) html += `<ul class="chip-row">${other.slice(0, 3).map((o) => `<li class="tag-chip is-line">${ic(o.icon)}${esc(o.t)} 부문 ${o.r}위</li>`).join("")}</ul>`;
+          if (other.length) html += `<ul class="chip-row">${other.slice(0, 3).map((o) => `<li class="tag-chip is-rec">${ic(o.icon)}${esc(o.t)} 부문 ${o.r}위</li>`).join("")}</ul>`;
         }
-        html += `<div class="sheet-actions"><button class="btn btn-secondary" type="button" data-member-card="${i}">카드 이미지로 저장</button></div>`;
+        html += `<div class="sheet-actions is-sticky"><button class="btn btn-primary" type="button" data-member-card="${i}">카드 이미지로 저장</button></div>`;
         $("sheetBody").innerHTML = html;
         $("sheetBody").scrollTop = 0;
         bindCalendar();
@@ -2929,7 +2976,7 @@
         const mx = Math.max(...days.slice(0, F).map((d) => d.c), 1);
         const bars = days.slice(0, F).map((d, k) => `<i${k === pk ? ' class="is-peak"' : ""} style="height:${Math.max(4, (d.c / mx) * 100).toFixed(1)}%"></i>`).join("");
         const facts = [];
-        if (!state.legacy) { const act = RM.dailyActive(st, state.full, state.vis); facts.push(["하루 평균 대화", nf(act.reduce((a, b) => a + b, 0) / Math.max(1, act.length)) + "명"]); }
+        if (!state.legacy) { const act = RM.dailyActive(st, state.full, state.vis); facts.push(["하루 말한 멤버", nf(act.reduce((a, b) => a + b, 0) / Math.max(1, act.length)) + "명"]); }
         if (state.rhythm) facts.push(["가장 붐비는 시간", state.rhythm.pk + "시"]);
         const tt = state.legacy ? null : RM.topicTotals(st, state.vis);
         if (tt) { const tot = RM.TOPICS.reduce((a, t) => a + tt[t.key], 0); if (tot >= 20) { let b = RM.TOPICS[0]; RM.TOPICS.forEach((t) => { if (tt[t.key] > tt[b.key]) b = t; }); facts.push([b.label + " 이야기", pct(tt[b.key], tot)]); } }
@@ -2949,7 +2996,7 @@
           ${facts.length ? `<div class="rc-facts">${facts.map((x) => `<div><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join("")}</div>` : ""}
           ${rows}
           ${kws.length >= 3 ? `<div class="rc-tags">${kws.map((k) => `<span>#${esc(k.w)}</span>`).join("")}</div>` : ""}
-          <div class="rc-foot"><span>원문 없이 숫자만 담았습니다</span><span>동네친구들</span></div>`;
+          <div class="rc-foot"><span>원문 없이 숫자만</span><span>동네친구들</span></div>`;
       }
       function memberCardHTML(i) {
         const st = state.data, m = M()[i];
@@ -2962,9 +3009,10 @@
           const vals = []; for (let k = 0; k < f.len; k++) if (m.daily[k] > 0) vals.push(m.daily[k]);
           vals.sort((a, b) => a - b); const q = (p) => vals[Math.floor((vals.length - 1) * p)] || 0;
           const lvl = (v) => (v <= 0 ? 0 : v <= q(0.25) ? 1 : v <= q(0.5) ? 2 : v <= q(0.75) ? 3 : 4);
-          cal = `<div class="rc-cal" aria-hidden="true">${"<i class=\"is-out\"></i>".repeat(RM.weekdayOf(st.days[0].d))}${st.days.map((d, k) => `<i class="${k < f.len && lvl(m.daily[k]) ? "on" + lvl(m.daily[k]) : ""}"></i>`).join("")}</div>`;
+          cal = `<div class="rc-cal" aria-hidden="true">${WEEK_KO.map((w) => `<b>${w}</b>`).join("")}${"<i class=\"is-out\"></i>".repeat(RM.weekdayOf(st.days[0].d))}${st.days.map((d, k) => `<i class="${k < f.len && lvl(m.daily[k]) ? "on" + lvl(m.daily[k]) : ""}"></i>`).join("")}</div>
+            <div class="rc-legend" aria-hidden="true">적음<i></i><i class="on1"></i><i class="on2"></i><i class="on3"></i><i class="on4"></i>많음</div>`;
         }
-        const recs = memberRecords(i).slice(0, 3);
+        const recs = memberRecords(i, true).slice(0, 3);
         return `<div class="rc-brand"><span>동네친구들 활동 통계</span><span>${esc(st.periodLabel || "")}</span></div>
           <h3 class="rc-title">${esc(m.name)}</h3>
           ${aw ? `<div class="rc-medal">${aw.img ? `<img src="assets/img/${aw.img}-256.webp" width="256" height="256" alt="" />` : `<span class="ri" style="display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--on-dark-glass)">${ic(aw.icon)}</span>`}<div><b style="font-size:18px">${esc(aw.title)}</b><div class="rc-line">${esc(aw.desc)}</div></div></div>` : ""}
@@ -2972,7 +3020,7 @@
           <div class="rc-facts"><div><span>메시지</span><b>${nf(m.count)}건</b></div><div><span>함께한 날</span><b>${nf(actDays)}일</b></div><div><span>최장 연속</span><b>${nf(run)}일</b></div></div>
           ${cal}
           ${recs.length ? `<div class="rc-tags">${recs.map((r) => `<span>${esc(r.t)}</span>`).join("")}</div>` : ""}
-          <div class="rc-foot"><span>원문 없이 숫자만 담았습니다</span><span>동네친구들</span></div>`;
+          <div class="rc-foot"><span>원문 없이 숫자만</span><span>동네친구들</span></div>`;
       }
       function renderShareCard() {
         const card = $("recapCard");
