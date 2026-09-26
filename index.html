@@ -482,30 +482,44 @@
       function totalOf(s) {
         return Number((s.meta && s.meta.totalMessages) || 0) || (Array.isArray(s.days) ? s.days.reduce(function (a, d) { return a + (Number(d.c) || 0); }, 0) : 0);
       }
+      /* 활동 통계 화면과 같은 기준: 봇 계정은 빼고, 집계 중인 마지막 날(발행을 그날 했거나 20시 전에 끝나고 평소의 30%도 안 되는 날)은 평균에서 뺀다 */
+      function isBotName(n) { return /(^|[_\s-])bot$/i.test(String(n || "")) || /오픈채팅봇$/.test(String(n || "")); }
+      function fullDayCount(s) {
+        var d = s.days || [], n = d.length;
+        if (n < 2) return n;
+        var last = d[n - 1], lastHour = -1;
+        (last.byHour || []).forEach(function (v, h) { if (v > 0) lastHour = h; });
+        var prev = d.slice(Math.max(0, n - 8), n - 1).map(function (x) { return Number(x.c) || 0; }).sort(function (a, b) { return a - b; });
+        var mid = prev.length >> 1, base = !prev.length ? 0 : prev.length % 2 ? prev[mid] : (prev[mid - 1] + prev[mid]) / 2;
+        var t = Date.parse(s.generatedAt || ""), gen = isNaN(t) ? "" : new Date(t + 9 * 3600 * 1000).toISOString().slice(0, 10);
+        var byShape = n >= 3 && !!last.byHour && lastHour < 20 && base > 0 && (Number(last.c) || 0) < 0.3 * base;
+        return gen === last.d || byShape ? n - 1 : n;
+      }
       function renderReport(row) {
-        // 날짜별 자료(v2)가 있는 발행본만 — 옛 형식(v1)은 통계 페이지에서만 본다
+        // 날짜별 자료(v2)가 있는 발행본만. 옛 형식(v1)은 통계 페이지에서만 본다
         if (!row || !row.stats || !Array.isArray(row.stats.days)) { $("homeReport").hidden = true; return; }
         var s = row.stats;
         $("reportTitle").textContent = periodWord(row.period_label).k + " 활동 한눈에";
         var total = totalOf(s);
-        var members = Array.isArray(s.members) ? s.members.length : 0;
-        var days = Array.isArray(s.days) ? s.days.length : 0;
-        var activeDays = Array.isArray(s.days) ? s.days.filter(function (d) { return Number(d.c) > 0; }).length : 0;
-        var newN = s.newMembers && Number(s.newMembers.count) || 0;
+        var vis = (Array.isArray(s.members) ? s.members : []).filter(function (m) { return m && (Number(m.count) || 0) > 0 && !isBotName(m.name); });
+        var days = s.days.length, F = fullDayCount(s);
+        var fullTotal = 0; for (var k = 0; k < F; k++) fullTotal += Number(s.days[k].c) || 0;
+        var act = 0; if (F && vis.length && Array.isArray(vis[0].daily)) { for (var k2 = 0; k2 < F; k2++) vis.forEach(function (m) { if ((m.daily[k2] || 0) > 0) act += 1; }); act = act / F; }
+        var activeDays = s.days.filter(function (d) { return Number(d.c) > 0; }).length;
         var tiles = [];
-        if (total) tiles.push({ k: "대화", ic: "chat", v: num(total), u: "건", sub: days ? "하루 평균 " + num(Math.round(total / days)) + "건" : "" });
-        if (members) tiles.push({ k: "이야기한 멤버", ic: "users", v: num(members), u: "명", sub: newN ? "새로 온 멤버 " + newN + "명" : "" });
+        if (total) tiles.push({ k: "메시지", ic: "chat", v: num(total), u: "건", sub: F ? "하루 평균 " + num(Math.round(fullTotal / F)) + "건" : "" });
+        if (vis.length) tiles.push({ k: "이야기한 멤버", ic: "users", v: num(vis.length), u: "명", sub: act ? "하루 평균 " + num(Math.round(act)) + "명" : "" });
         if (activeDays && days) tiles.push({ k: "대화가 있던 날", ic: "calendar", v: num(activeDays), u: "일", sub: days + "일 중" });
         var busiest = null;
-        if (Array.isArray(s.days) && s.days.length) { busiest = s.days.slice().sort(function (a, b) { return (Number(b.c) || 0) - (Number(a.c) || 0); })[0]; }
-        if (busiest && busiest.d) tiles.push({ k: "가장 활발한 날", ic: "flame", v: esc(C.dateText(busiest.d)), u: "", sub: num(busiest.c) + "건" });
+        for (var k3 = 0; k3 < (F || days); k3++) { var dd = s.days[k3]; if (!busiest || (Number(dd.c) || 0) > (Number(busiest.c) || 0)) busiest = dd; }
+        if (busiest && busiest.d) tiles.push({ k: "가장 붐빈 날", ic: "flame", v: esc(C.dateText(busiest.d)), u: "", sub: num(busiest.c) + "건" });
         $("reportKv").innerHTML = tiles.slice(0, 4).map(function (t) {
           return '<div class="st"><span class="st-k">' + icon(t.ic) + esc(t.k) + '</span><span class="st-v">' + t.v + (t.u ? "<small>" + t.u + "</small>" : "") + '</span><span class="st-sub">' + esc(t.sub || "") + "</span></div>";
         }).join("");
-        // 시간대: heatmap(7×24) 합 또는 days.byHour 합
+        // 시간대: 날마다 시간 자료가 있으면 온전한 날의 합, 없으면 heatmap(요일 x 시간) 합
         var hours = new Array(24).fill(0);
-        if (Array.isArray(s.heatmap)) s.heatmap.forEach(function (rowH) { (rowH || []).forEach(function (c, h) { hours[h] += Number(c) || 0; }); });
-        else if (Array.isArray(s.days)) s.days.forEach(function (d) { (d.byHour || []).forEach(function (c, h) { hours[h] += Number(c) || 0; }); });
+        if (s.days.some(function (d) { return Array.isArray(d.byHour); })) s.days.slice(0, F || days).forEach(function (d) { (d.byHour || []).forEach(function (c, h) { hours[h] += Number(c) || 0; }); });
+        else if (Array.isArray(s.heatmap)) s.heatmap.forEach(function (rowH) { (rowH || []).forEach(function (c, h) { hours[h] += Number(c) || 0; }); });
         var max = Math.max.apply(null, hours), peak = hours.indexOf(max);
         if (max > 0) {
           $("hoursBar").innerHTML = hours.map(function (c, h) { return '<i style="height:' + Math.max(4, Math.round(c / max * 100)) + '%"' + (h === peak ? ' class="is-peak"' : "") + "></i>"; }).join("");
