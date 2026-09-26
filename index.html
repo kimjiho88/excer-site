@@ -512,7 +512,11 @@
           $("peakNote").textContent = peak + "시에 가장 활발";
           $("hoursBar").setAttribute("aria-label", "0시부터 23시까지 시간대별 대화 분포. " + peak + "시에 가장 활발, 가장 조용한 시간 " + hours.indexOf(Math.min.apply(null, hours)) + "시");
         } else { $("hoursWrap").hidden = true; }
-        var kws = Array.isArray(s.keywords) ? s.keywords.slice(0, 8) : [];
+        // 활동 통계 화면과 같은 목록으로 말버릇, 호칭, 봇과 시스템 단어를 거른다(이미 발행된 통계에도)
+        var KW_STOP = ("샵검색 톡게시판 성공 단어 맞히기 정답 힌트 나도 내가 나는 저는 저도 제가 우리 아니 그래 하나 한번 원래 이미 사실 갑자기 생각 아님 하지 가면 거의 담에 시에 있는데 집에 아하 언제 " +
+          "너무 진짜 근데 그냥 오늘 내일 지금 이제 다들 혹시 아직 계속 요즘 정말 완전 많이 조금 다시 역시 그럼 그리고 그래서 같은데 있어 없어 이거 그거 저거 " +
+          "언니 누나 오빠 형 형님 동생 남자 여자 친구 사람 사진 동영상 이모티콘 파일 삭제된 이런 있음 근대 다른 아주 했는데 집에서 요기 오호 좋아 나중 느낌 맨날 예전").split(" ");
+        var kws = (Array.isArray(s.keywords) ? s.keywords : []).filter(function (k) { return k && KW_STOP.indexOf(k.w) < 0 && String(k.w).length >= 2; }).slice(0, 8);
         if (kws.length) $("kwChips").innerHTML = kws.map(function (k) { return '<span class="kw">' + esc(k.w) + "<small>" + num(k.c) + "</small></span>"; }).join("");
         else $("kwWrap").hidden = true;
         $("reportNote").textContent = row.period_label ? row.period_label + " 오픈채팅 대화를 집계한 것입니다. 개인 메시지 원문은 저장하지 않습니다." : "";
