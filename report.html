@@ -919,11 +919,11 @@
     <div class="sheet-top"><button class="sheet-close" type="button" data-close-sheet aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></div>
     <div class="sheet-body">
       <h2 class="sr-only" id="shareSheetTitle">요약 카드</h2>
-      <div class="share-tabs seg-chips" role="tablist" aria-label="카드 고르기">
-        <button class="seg-chip" type="button" role="tab" id="tabRoom" aria-selected="true" aria-controls="recapCard" data-card="room">방 카드</button>
-        <button class="seg-chip" type="button" role="tab" id="tabMember" aria-selected="false" aria-controls="recapCard" data-card="member">멤버 카드</button>
+      <div class="share-tabs seg-chips" role="group" aria-label="카드 고르기">
+        <button class="seg-chip" type="button" id="tabRoom" aria-pressed="true" aria-controls="recapCard" data-card="room">방 카드</button>
+        <button class="seg-chip" type="button" id="tabMember" aria-pressed="false" aria-controls="recapCard" data-card="member">멤버 카드</button>
       </div>
-      <div class="recap-card" id="recapCard" role="tabpanel"></div>
+      <div class="recap-card" id="recapCard" aria-live="polite"></div>
       <div class="sheet-actions is-sticky">
         <button class="btn btn-primary" type="button" id="recapSaveBtn">이미지로 저장</button>
       </div>
@@ -1393,12 +1393,12 @@
          '집계 중'으로 보고 평균과 날 단위 계산에서 뺀다 */
       function partialInfo(data) {
         var days = data.days || [], n = days.length;
-        if (n < 3 || data.legacy) return { partial: false, lastHour: -1 };
+        if (n < 2 || data.legacy) return { partial: false, lastHour: -1 };
         var last = days[n - 1], lastHour = -1;
         (last.byHour || []).forEach(function (v, h) { if (v > 0) lastHour = h; });
         var base = medianOf(days.slice(Math.max(0, n - 8), n - 1).map(function (d) { return d.c; }));
         var byGen = kstDate(data.generatedAt) === last.d;
-        var byShape = !!last.byHour && lastHour < 20 && base > 0 && last.c < 0.3 * base;
+        var byShape = n >= 3 && !!last.byHour && lastHour < 20 && base > 0 && last.c < 0.3 * base;
         return { partial: byGen || byShape, lastHour: lastHour };
       }
       /* 온전한 날의 범위(발행 전체에서 반쪽 날만 뺀 것) */
@@ -1963,7 +1963,7 @@
           line = `하루 평균 ${nf(avg)}건` + (sec >= 60 ? `, ${Math.round(sec / 60)}분마다 한 마디` : `, ${sec}초마다 한 마디`);
         }
         $("heroLine").textContent = line; $("heroLine").hidden = !line;
-        const gen = String(st.generatedAt || "").slice(0, 10);
+        const gen = RM.kstDate(st.generatedAt) || String(st.generatedAt || "").slice(0, 10);
         const genOk = /^\d{4}-\d{2}-\d{2}$/.test(gen);
         const genDays = genOk ? Math.max(0, Math.round((Date.parse(kstToday() + "T00:00:00Z") - Date.parse(gen + "T00:00:00Z")) / 86400000)) : null;
         const ago = genDays === null ? "" : genDays === 0 ? " (오늘)" : genDays === 1 ? " (어제)" : " (" + genDays + "일 전)";
@@ -2050,9 +2050,9 @@
         }
         panel.innerHTML = html;
         const more = panel.querySelector("[data-every-more]");
-        if (more) more.addEventListener("click", () => renderEveryPanel(true, showS7));
+        if (more) more.addEventListener("click", () => { renderEveryPanel(true, showS7); const c = panel.querySelectorAll(".name-chip")[12]; if (c) c.focus(); });
         const s7 = panel.querySelector("[data-s7-toggle]");
-        if (s7) s7.addEventListener("click", () => renderEveryPanel(allEvery, !showS7));
+        if (s7) s7.addEventListener("click", () => { renderEveryPanel(allEvery, !showS7); const t = panel.querySelector("[data-s7-toggle]"); if (t) t.focus(); });
       }
 
       /* 칭호 전당 */
@@ -2071,7 +2071,7 @@
         grid.innerHTML = medals.map((a, k) => {
           const top = (T.table[a.id] || []);
           const mx = top.length ? top[0].s || 1 : 1;
-          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${r + 1}</span><span class="rw">${esc(nameOf(c.idx))}${(() => { const o = T.byMember[c.idx]; return o && o.id !== a.id ? ` <span class="rw-other" title="${esc(o.title)}">${ic(o.icon)}</span>` : ""; })()}</span><span class="rv">${esc(shortVal(a.id, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
+          const runners = top.length > 1 ? `<ol class="mc-runners" aria-label="${esc(a.title)} 부문 상위">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${1 + top.filter((y) => y.s > c.s).length}</span><span class="rw">${esc(nameOf(c.idx))}${(() => { const o = T.byMember[c.idx]; return o && o.id !== a.id ? ` <span class="rw-other" title="${esc(o.title)}">${ic(o.icon)}</span>` : ""; })()}</span><span class="rv">${esc(shortVal(a.id, c))}</span><span class="rb" style="width:${Math.max(4, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>` : "";
           return `<li class="medal-card fade-up" data-medal style="animation-delay:${reduceMotion ? 0 : k * 40}ms">
             <button class="mc-open" type="button" data-open-title="${a.id}" aria-label="${esc(a.title)} 기준 보기">${medalImg(a.img, PHONE.matches ? 80 : 96, "mc-img")}<span class="mc-ic">${ic(a.icon)}</span><span class="mc-body"><span class="mc-title">${esc(a.title)}</span></span></button>
             <span class="mc-names">${a.holders.map((i) => nameBtn(i, "mc-name")).join("")}</span>
@@ -2281,7 +2281,7 @@
           const isPart = partial && k === n - 1;
           const rect = svg.getBoundingClientRect();
           showTip(rect.left + (xc(k) / W) * rect.width, clientY != null ? clientY - 12 : rect.top + (yA(d.c) / H) * rect.height, nf(d.c) + "건",
-            fmtMDW(d.d) + (isPart ? `, ${state.partial.lastHour}시까지 집계` : f.act ? `, 이야기한 멤버 ${nf(f.act[k])}명` : ""), "flow");
+            fmtMDW(d.d) + (isPart ? ", 집계 중" : f.act ? `, 이야기한 멤버 ${nf(f.act[k])}명` : ""), "flow");
           setFlowRead(k);
           state.flowK = k;
         };
@@ -2445,7 +2445,7 @@
         if (hasKw) {
           const mx = kws[0].c || 1;
           $("kwBars").innerHTML = kws.map((k, i) => `<li class="hbar"><span class="hn">${i + 1}</span><span class="hw"><i style="background:${k.cat && TOPIC_VAR[k.cat] ? `var(${TOPIC_VAR[k.cat]})` : "transparent"}" aria-hidden="true"></i>${esc(k.w)}</span><span class="ht"><span class="hf" style="width:${((k.c / mx) * 100).toFixed(1)}%"></span></span><span class="hv">${nf(k.c)}번</span></li>`).join("");
-          if (!hasTopic) $("kwBlock").querySelector("h3").style.marginTop = "0";
+          $("kwBlock").querySelector("h3").style.marginTop = hasTopic ? "24px" : "0";
         }
         $("weekWordsBlock").hidden = !weekly.length;
         if (weekly.length) {
@@ -2555,7 +2555,8 @@
         state.preset = key;
         state.slice = s;
         state.sFull = state.legacy ? s : RM.fullPart(st, s);
-        state.prev = state.legacy ? null : RM.prevWindow(st, s);
+        // 직전 기간과 증감은 온전한 날끼리 비교한다(집계 중인 마지막 날을 빼고)
+        state.prev = state.legacy || !state.sFull ? null : RM.prevWindow(st, state.sFull);
         state.rankOpen = false;
         if (state.lens === "rise" && !state.prev) state.lens = "msg";
         document.querySelectorAll(".range-chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === key)));
@@ -2595,25 +2596,29 @@
         const avg = sf && sf.len ? fullT / sf.len : 0;
         let pk = s.i0; const pkEnd = sf ? sf.i1 : s.i1;
         for (let k = s.i0; k <= pkEnd; k++) if (st.days[k].c > st.days[pk].c) pk = k;
-        let members = 0, prevMembers = null;
+        let members = 0, prevMembers = null, curMembersFull = 0;
         if (state.legacy) members = state.vis.length;
         else {
           const sums = RM.memberSums(st, s); state.vis.forEach((i) => { if (sums[i] > 0) members += 1; });
-          if (prev && !prev.partial) { const ps = RM.memberSums(st, prev); prevMembers = 0; state.vis.forEach((i) => { if (ps[i] > 0) prevMembers += 1; }); }
+          if (prev && !prev.partial && sf) {
+            const cs = RM.memberSums(st, sf), ps = RM.memberSums(st, prev);
+            curMembersFull = 0; prevMembers = 0;
+            state.vis.forEach((i) => { if (cs[i] > 0) curMembersFull += 1; if (ps[i] > 0) prevMembers += 1; });
+          }
         }
         let prevTotal = null, prevAvg = null, basis = "";
         if (prev) {
           let t = 0; for (let k = prev.i0; k <= prev.i1; k++) t += st.days[k].c;
           prevAvg = t / prev.len;
-          if (!prev.partial) { prevTotal = t; basis = `직전 ${nf(s.len)}일보다`; }
+          if (!prev.partial) { prevTotal = t; basis = `직전 ${nf(prev.len)}일보다`; }
           else basis = `직전 ${nf(prev.len)}일 하루 평균보다`;
         }
-        const msgDelta = prev ? (prev.partial ? deltaChip(avg, prevAvg, basis) : deltaChip(total, prevTotal, basis)) : "";
+        const msgDelta = prev ? (prev.partial ? deltaChip(avg, prevAvg, basis) : deltaChip(fullT, prevTotal, basis)) : "";
         const avgDelta = "";   // 길이가 같은 두 기간이면 합계와 평균의 증감이 같아 한 번만 보인다
         $("periodTiles").innerHTML = `
           <div class="tile"><span class="tl">메시지</span><span class="tv">${nf(total)}<small>건</small></span>${msgDelta}</div>
-          <div class="tile"><span class="tl">하루 평균</span><span class="tv">${nf(avg)}<small>건</small></span>${avgDelta}</div>
-          <div class="tile"><span class="tl">이야기한 멤버</span><span class="tv">${nf(members)}<small>명</small></span>${prevMembers != null ? deltaChip(members, prevMembers, `직전 ${nf(s.len)}일보다`, "명") : ""}</div>
+          <div class="tile"><span class="tl">하루 평균</span>${sf ? `<span class="tv">${nf(avg)}<small>건</small></span>` : `<span class="tv is-date">집계 중</span>`}${avgDelta}</div>
+          <div class="tile"><span class="tl">이야기한 멤버</span><span class="tv">${nf(members)}<small>명</small></span>${prevMembers != null ? deltaChip(curMembersFull, prevMembers, `직전 ${nf(prev.len)}일보다`, "명") : ""}</div>
           <div class="tile"><span class="tl">가장 붐빈 날</span><span class="tv is-date">${esc(fmtMD(st.days[pk].d))}</span><span class="ts">${nf(st.days[pk].c)}건</span></div>`;
       }
       const LENSES = [["msg", "메시지"], ["days", "함께한 날"], ["rise", "늘어난"]];
@@ -2627,7 +2632,7 @@
         if (state.legacy) {
           list = state.vis.map((i) => ({ idx: i, v: M()[i].count })).sort((a, b) => b.v - a.v || String(nameOf(a.idx)).localeCompare(nameOf(b.idx), "ko"));
           let rank = 0, pv = null; list.forEach((x, k) => { if (x.v !== pv) { rank = k + 1; pv = x.v; } x.rank = rank; });
-        } else list = RM.lensRank(st, s, sf, state.lens, state.prev) || [];
+        } else list = RM.lensRank(st, state.lens === "rise" ? sf : s, sf, state.lens, state.prev) || [];
         const unit = state.lens === "days" ? "일" : "건";
         const valTxt = (x) => (state.lens === "rise" ? "+" : "") + nf(x.v) + unit;
         $("rankTop").innerHTML = "";
@@ -2642,10 +2647,10 @@
           rest = list.filter((x) => x.rank !== 1);
           const tieAll = state.tieOpen;
           const names = tieAll ? topTie : topTie.slice(0, 12);
-          $("rankTop").innerHTML = `<div class="tie-card"><h3>${ic("checkCircle")}${state.lens === "days" ? `${nf(topTie[0].v)}일 모두 ${nf(topTie.length)}명` : `공동 1위 ${nf(topTie.length)}명, ${valTxt(topTie[0])}`}</h3>
+          $("rankTop").innerHTML = `<div class="tie-card"><h3>${ic("checkCircle")}${state.lens === "days" && sf && topTie[0].v === sf.len ? `${nf(topTie[0].v)}일 모두 ${nf(topTie.length)}명` : `공동 1위 ${nf(topTie.length)}명, ${valTxt(topTie[0])}`}</h3>
             <ul class="name-chips">${names.map((x) => `<li><button class="name-chip${x.idx === state.focusIdx ? " is-focus" : ""}" type="button" data-open-member="${x.idx}">${esc(nameOf(x.idx))}</button></li>`).join("")}</ul>
             ${topTie.length > 12 ? `<p style="margin:0"><button class="more-btn" type="button" id="tieMore" aria-expanded="${!!tieAll}">${tieAll ? "접기" : "모두 보기"}</button></p>` : ""}</div>`;
-          const tm = $("tieMore"); if (tm) tm.addEventListener("click", () => { state.tieOpen = !state.tieOpen; renderRank(); });
+          const tm = $("tieMore"); if (tm) tm.addEventListener("click", () => { state.tieOpen = !state.tieOpen; renderRank(); const t2 = $("tieMore"); if (t2) t2.focus(); });
         }
         const cap = state.rankOpen ? 30 : 10;
         const shown = rest.slice(0, cap);
@@ -2669,7 +2674,7 @@
           if (me) html += row(me, rest.indexOf(me) >= 30);
         }
         host.innerHTML = html;
-        if (isRise) $("rankTop").insertAdjacentHTML("afterbegin", `<ul class="viz-legend" style="margin:0 0 10px"><li><i class="dot-prev"></i>직전 ${nf(s.len)}일</li><li><i class="dot-cur"></i>이번 ${nf(s.len)}일</li></ul>`);
+        if (isRise) $("rankTop").insertAdjacentHTML("afterbegin", `<ul class="viz-legend" style="margin:0 0 10px"><li><i class="dot-prev"></i>직전 ${nf(state.prev ? state.prev.len : s.len)}일</li><li><i class="dot-cur"></i>이번 ${nf(sf ? sf.len : s.len)}일</li></ul>`);
         const toggle = $("rankToggle");
         if (rest.length > 10) {
           toggle.hidden = false;
@@ -2699,6 +2704,7 @@
         const perDay = !isSum && Math.max(...nDays) > 1;
         const unitTxt = isSum ? "합계" : perDay ? "하루 평균" : "";
         const nz = []; grid.forEach((row) => row.forEach((v) => { if (v > 0) nz.push(v); }));
+        if (!nz.length) { sec.hidden = true; return; }
         nz.sort((a, b) => a - b);
         const q = (p) => nz.length ? nz[Math.floor((nz.length - 1) * p)] : 0;
         const round2 = (v) => { if (v <= 0) return 0; const e = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1)); return Math.round(v / e) * e; };
@@ -2953,7 +2959,7 @@
         const top = T.table[id] || [];
         const mx = top.length ? top[0].s || 1 : 1;
         let html = `<div class="tdetail-head" data-medal>${a.img ? medalImg(a.img, 96, "") : ""}<span class="mt-ic"${a.img ? " hidden" : ""}>${ic(a.icon)}</span><h2 id="sheetTitle">${esc(a.title)}</h2><p>${esc(d.crit)}</p></div>`;
-        html += `<ol class="tdetail-list">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${r + 1}</span><button class="rw" type="button" data-open-member="${c.idx}">${esc(nameOf(c.idx))}</button><span class="rv">${esc(c.desc || shortVal(id, c))}</span><span class="rb" style="width:${Math.max(3, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>`;
+        html += `<ol class="tdetail-list">${top.map((c, r) => `<li class="${a.holders.indexOf(c.idx) >= 0 ? "is-holder" : ""}"><span class="rn">${1 + top.filter((y) => y.s > c.s).length}</span><button class="rw" type="button" data-open-member="${c.idx}">${esc(nameOf(c.idx))}</button><span class="rv">${esc(c.desc || shortVal(id, c))}</span><span class="rb" style="width:${Math.max(3, (c.s / mx) * 100).toFixed(1)}%"></span></li>`).join("")}</ol>`;
         if (a.rank >= 2) html += `<p class="tdetail-note">칭호는 한 사람에 하나입니다.</p>`;
         $("sheetBody").innerHTML = html;
         $("sheetBody").scrollTop = 0;
@@ -3025,8 +3031,8 @@
       function renderShareCard() {
         const card = $("recapCard");
         const isMember = state.shareCard === "member";
-        $("tabRoom").setAttribute("aria-selected", String(!isMember));
-        $("tabMember").setAttribute("aria-selected", String(isMember));
+        $("tabRoom").setAttribute("aria-pressed", String(!isMember));
+        $("tabMember").setAttribute("aria-pressed", String(isMember));
         card.innerHTML = isMember ? memberCardHTML(state.cardIdx) : roomCardHTML();
         $("recapSaveBtn").hidden = isMember && !M()[state.cardIdx];
       }
@@ -3093,7 +3099,9 @@
         $("memberSearch").setAttribute("aria-activedescendant", "opt-" + comboSel);
         const el = $("opt-" + comboSel); if (el) el.scrollIntoView({ block: "nearest" });
       }
+      let comboQuiet = false;
       function comboPick(i) {
+        comboQuiet = true;   // 카드를 닫고 초점이 검색 칸으로 돌아올 때 목록을 다시 열지 않는다
         $("searchList").hidden = true; $("memberSearch").setAttribute("aria-expanded", "false");
         openMember(i, $("memberSearch"));
         state.cardIdx = i;
@@ -3125,9 +3133,9 @@
         $("customApply").addEventListener("click", () => applyPreset("custom", $("customFrom").value, $("customTo").value));
         $("lensChips").addEventListener("click", (e) => { const b = e.target.closest("[data-lens]"); if (!b) return; state.lens = b.dataset.lens; state.rankOpen = false; renderRank(); const nb = $("lensChips").querySelector(`[data-lens="${state.lens}"]`); if (nb) nb.focus(); });
         $("lensChips").addEventListener("keydown", (e) => {
-          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].indexOf(e.key) < 0) return;
           const bs = [...$("lensChips").querySelectorAll("[data-lens]")], k = bs.findIndex((b) => b.dataset.lens === state.lens);
-          const nk = (k + (e.key === "ArrowRight" ? 1 : -1) + bs.length) % bs.length;
+          const nk = (k + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length;
           e.preventDefault(); state.lens = bs[nk].dataset.lens; state.rankOpen = false; renderRank();
           const nb = $("lensChips").querySelector(`[data-lens="${state.lens}"]`); if (nb) nb.focus();
         });
@@ -3175,7 +3183,8 @@
         });
         const input = $("memberSearch");
         input.addEventListener("input", renderCombo);
-        input.addEventListener("focus", () => { if (input.value) renderCombo(); });
+        input.addEventListener("focus", () => { if (comboQuiet) { comboQuiet = false; return; } if (input.value) renderCombo(); });
+        input.addEventListener("input", () => { comboQuiet = false; });
         input.addEventListener("keydown", (e) => {
           if (e.key === "ArrowDown") { e.preventDefault(); if ($("searchList").hidden) renderCombo(); else comboMove(1); }
           else if (e.key === "ArrowUp") { e.preventDefault(); comboMove(-1); }
@@ -3227,6 +3236,8 @@
         state.source = source;
         state.row = row || null;
         state.focusIdx = -1; state.cardIdx = -1; state.tieOpen = false; state.flowK = null; state.hourK = null; state.bDrawn = false;
+        state.rhythm = null; state.flow = null; state.rankOpen = false;
+        $("customFrom").value = ""; $("customTo").value = "";
         $("memberSearch").value = "";
         $("loadingWrap").hidden = true;
         $("emptyWrap").hidden = true;
