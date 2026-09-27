@@ -369,9 +369,10 @@
       }).sort(function (a, b) { return b.n - a.n; });
 
       var monthList = Object.keys(months).sort().map(function (k) { var r = months[k]; return { m: k, joins: r.joins, leaves: r.leaves, kicks: r.kicks, net: r.joins - r.leaves - r.kicks, msgs: r.msgs, hidden: r.hidden, speakers: Object.keys(r.speakers).length }; });
-      // 신입 흐름: 파일 안의 들어옴마다
-      var joinsAll = events.filter(function (e) { return e.kind === "join"; });
-      var funnel = { joined: joinsAll.length, spoke7: 0, stay30: 0, base30: 0, stay60: 0, base60: 0, stay90: 0, base90: 0, left7: 0, silentLeft: 0, welcomed: 0 };
+      // 신입 흐름: 파일 안의 들어옴마다. 기본 프로필 이름(여러 사람이 같은 이름)은 누가 말하고 나갔는지 섞이므로 뺀다
+      var dfltJoin = function (e) { return e.kind === "join" && e.via !== "manual" && isDefaultName(e.name); };
+      var joinsAll = events.filter(function (e) { return e.kind === "join" && !dfltJoin(e); });
+      var funnel = { dfltJoins: events.filter(dfltJoin).length, joined: joinsAll.length, spoke7: 0, stay30: 0, base30: 0, stay60: 0, base60: 0, stay90: 0, base90: 0, left7: 0, silentLeft: 0, welcomed: 0 };
       joinsAll.forEach(function (j) {
         if (j.welcomed) funnel.welcomed += 1;
         if (j.spoke) funnel.spoke7 += 1;

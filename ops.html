@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=20" />
   <script src="assets/chat-parser.js?v=10"></script>
-  <script src="assets/ops-analyzer.js?v=4"></script>
+  <script src="assets/ops-analyzer.js?v=5"></script>
   <script src="assets/ops-sheet.js?v=4"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
@@ -634,11 +634,11 @@
       return `<span class="tag in">방에 있음</span>`;
     }
     function flagTags(list) { return list.map((f) => `<span class="tag ${esc(f.l)}">${esc(f.t)}</span>`).join(""); }
-    function personRow(p, extra) {
+    function personRow(p, extra, right) {
       const fl = effFlags(p).filter((f) => f.l !== "info");
       return `<button class="prow" type="button" data-person="${esc(p.pid)}">
         <span class="pn">${esc(p.name)}</span>
-        <span class="pr"><b>${nf(p.d30)}</b>최근 30일</span>
+        <span class="pr">${right ? `<b>${esc(right[0])}</b>${esc(right[1])}` : `<b>${nf(p.d30)}</b>최근 30일`}</span>
         <span class="pm">${statusTag(p)}${p.joinedAt ? `<span>들어옴 ${esc(md(p.joinedAt))}</span>` : ""}<span>마지막 ${esc(md(p.last))}</span>${hasIo(p.pid) ? `<span class="tag">입퇴장 메모</span>` : ""}${extra || ""}${flagTags(fl.slice(0, 4))}${fl.length > 4 ? `<span>외 ${fl.length - 4}</span>` : ""}</span>
       </button>`;
     }
@@ -688,6 +688,8 @@
       }).sort((a, b) => (b.over - a.over) || (b.re - a.re) || b.lines[b.lines.length - 1].d.localeCompare(a.lines[a.lines.length - 1].d));
     }
 
+    // 대화 기록 이름을 누르면 상세(같은 이름이 없으면 글자만)
+    const nameBtn = (n) => { const p = people().find((q) => q.name === n); return p ? `<button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(n)}</button>` : esc(n); };
     /* ── 신호 ── */
     const SIG_ORDER = ["other_room", "promo", "contact", "private", "bibung", "married", "abuse", "sexual", "flood", "conflict", "mention_focus", "welcomer", "thanked", "organizer", "sharer", "steady"];
     const sigRank = (c) => { const i = SIG_ORDER.indexOf(c); return i < 0 ? 99 : i; };
@@ -708,7 +710,7 @@
           return personRow(p, `<span>${esc(f.x)}</span>`) + (ev.length ? `<details class="more"><summary>근거 줄 ${ev.length}개</summary><ul class="ev">${ev.map((e) => `<li><time>${esc(md(e.d))} ${esc(e.t)}</time><span>${esc(e.x)}</span></li>`).join("")}</ul></details>` : "");
         }).join("")}</div></div>`).join("") : `<p class="empty">없습니다.</p>`}
       </div>
-      ${side === "bad" ? `<div class="panel"><h2>감정싸움 후보 <small>${(L.conflicts || []).length}건</small></h2>${(L.conflicts || []).length ? `<ul class="ev">${L.conflicts.slice().reverse().map((c) => `<li><time>${esc(md(c.d))} ${esc(c.t)}</time><span>${esc(c.a)}, ${esc(c.b)}: ${c.n}번 주고받음, 부정 표현 ${c.neg}번</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>
+      ${side === "bad" ? `<div class="panel"><h2>감정싸움 후보 <small>${(L.conflicts || []).length}건</small></h2>${(L.conflicts || []).length ? `<ul class="ev">${L.conflicts.slice().reverse().map((c) => `<li><time>${esc(md(c.d))} ${esc(c.t)}</time><span>${nameBtn(c.a)}, ${nameBtn(c.b)}: ${c.n}번 주고받음, 부정 표현 ${c.neg}번</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>
       <div class="panel"><h2>답 없는 질문 <small>30분 안에 아무도 답하지 않음, ${nf(L.unanswered.count)}건</small></h2>${L.unanswered.recent.length ? `<ul class="ev">${L.unanswered.recent.slice().reverse().map((q) => `<li><time>${esc(md(q.d))} ${esc(q.t)}</time><span>${esc(q.name)}: ${esc(q.x)}</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>` : ""}`;
       host.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { view.sigSide = b.dataset.side; renderSignals(); }));
     }
@@ -716,19 +718,26 @@
     /* ── 기록 ── */
     const KIND = { rule: "금지 행동", bibung: "비벙", etc: "그 밖" };
     const STEP = { warn: "구두 경고", talk: "면담", kick: "강제퇴장", etc: "그 밖" };
+    const STEP_LV = { warn: 1, talk: 2, kick: 3 };
+    // 금지 행동과 비벙은 같은 3단계: 1차 구두 경고, 2차 운영진 면담, 3차 강제퇴장. 지금 단계는 적은 횟수(그 밖 제외)와 적은 단계 중 높은 쪽
+    function ladderLv(list) { return Math.max(list.filter((a) => a.step !== "etc").length, ...list.map((a) => STEP_LV[a.step] || 0), 0); }
+    const nextStepOf = (lv) => (lv >= 2 ? "kick" : lv === 1 ? "talk" : "warn");
     function nextStep(pid) {
       const acts = S.records.actions.filter((a) => a.pid === pid);
-      // 시트의 경고는 대화 기록에 없는 손 기록이라 단계에 넣지 않고 참고로 따로 보인다. 같은 날짜의 조치 기록과 겹치면 뺀다
+      // 시트의 경고는 대화 기록에 없는 손 기록이라 단계에 넣지 않고 참고로 따로 보인다. 조치 기록과 같은 날짜(또는 같은 사유)는 뺀다
       const sm = typeof sheetOf === "function" ? sheetOf(pid) : null;
-      const sw = sm ? sm.warnings.filter((w) => !acts.some((a) => a.kind === "rule" && w.date && a.date === w.date)) : [];
+      const sw = sm ? sheetOnlyWarnings(sm, acts) : [];
       const rule = acts.filter((a) => a.kind === "rule"), bib = acts.filter((a) => a.kind === "bibung");
       const out = [];
-      // 금지 행동과 비벙은 같은 3단계: 1차 구두 경고, 2차 운영진 면담, 3차 강제퇴장
-      const next = (label, list) => { const n = list.filter((a) => a.step !== "etc").length; return list.some((a) => a.step === "kick") ? label + ": 강제퇴장까지 함" : n >= 3 ? label + ": 강제퇴장 단계" : n >= 2 ? label + ": 다음은 강제퇴장" : label + ": 다음은 운영진 면담"; };
+      const next = (label, list) => { const lv = ladderLv(list); return list.some((a) => a.step === "kick") ? label + ": 강제퇴장까지 함" : lv >= 3 ? label + ": 강제퇴장 단계" : lv === 2 ? label + ": 다음은 강제퇴장" : lv === 1 ? label + ": 다음은 운영진 면담" : label + ": 다음은 구두 경고"; };
       if (rule.length) out.push(next("금지 행동", rule));
       if (bib.length) out.push(next("비벙", bib));
       if (sw.length) out.push("시트 경고 " + sw.length + "회(참고)");
       return out;
+    }
+    // 시트 경고 가운데 조치 기록에 이미 있는 것(같은 날짜, 날짜가 없으면 같은 사유)을 뺀 것
+    function sheetOnlyWarnings(m, acts) {
+      return m.warnings.filter((w) => !acts.some((a) => (w.date && a.date === w.date) || (!w.date && w.reason && a.reason && tightK(a.reason) === tightK(w.reason))));
     }
     function renderRecords() {
       const host = document.querySelector('[data-panel="records"]');
@@ -736,14 +745,17 @@
       const name = (pid) => { const p = byPid(pid); return p ? p.name : (acts.find((a) => a.pid === pid) || {}).name || pid; };
       // 시트의 경고(멤버 탭 경고여부, 경고사유, 경고일)도 함께. 시트에서 고치면 여기서도 바뀐다
       const sheetW = SH.parsed ? SH.parsed.members.filter((m) => m.warnings.length) : [];
-      const items = acts.map((a) => ({ d: a.date || "", h: `<li><time>${esc(md(a.date))}</time><span><b style="display:inline;color:var(--ink)">${esc(name(a.pid))}</b> ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>` }))
-        .concat(sheetW.flatMap((m) => m.warnings.map((w) => ({ d: w.date || "", h: `<li><time>${w.date ? esc(md(w.date)) : "날짜 없음"}</time><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(m.name)}</button> 경고 ${w.n}차${w.reason ? ": " + esc(w.reason) : ""} <span class="tag">시트(참고)</span></span></li>` }))))
+      const who = (pid) => (byPid(pid) ? `<button type="button" class="linkish" data-person="${esc(pid)}">${esc(name(pid))}</button>` : `<b style="display:inline;color:var(--ink)">${esc(name(pid))}</b>`);
+      const items = acts.map((a) => ({ d: a.date || "", h: `<li><time>${esc(md(a.date))}</time><span>${who(a.pid)} ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>` }))
+        .concat(sheetW.flatMap((m) => { const pid = SH.links.m2p.get(m.id); return sheetOnlyWarnings(m, pid ? acts.filter((a) => a.pid === pid) : []).map((w) => ({ d: w.date || "", h: `<li><time>${w.date ? esc(md(w.date)) : "날짜 없음"}</time><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(m.name)}</button> 경고 ${w.n}차${w.reason ? ": " + esc(w.reason) : ""} <span class="tag">시트(참고)</span></span></li>` })); }))
         .sort((a, b) => b.d.localeCompare(a.d));
-      const pids = [...new Set(acts.map((a) => a.pid).concat(sheetW.map((m) => SH.links.m2p.get(m.id)).filter(Boolean)))];
+      // 다음 단계는 지금 방에 있는 사람만
+      const pidsAll = [...new Set(acts.map((a) => a.pid).concat(sheetW.map((m) => SH.links.m2p.get(m.id)).filter(Boolean)))];
+      const pids = pidsAll.filter((pid) => { const p = byPid(pid); return p && p.status === "in"; }), outN = pidsAll.length - pids.length;
       const sheetOnly = sheetW.filter((m) => !SH.links.m2p.has(m.id) && m.status !== "left" && m.status !== "kicked");
       host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건${sheetW.length ? ", 시트 경고 " + sheetW.reduce((a, m) => a + m.warnings.length, 0) + "건(참고)" : ""}</small></h2>
         ${items.length ? `<ul class="ev">${items.map((x) => x.h).join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
-        ${pids.length || sheetOnly.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}
+        ${pids.length || sheetOnly.length ? `<div class="panel"><h2>다음 단계 <small>지금 방에 있는 사람${outN ? ", 나간 사람 " + nf(outN) + "명은 뺌" : ""}</small></h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); const n = S.records.actions.filter((a) => a.pid === pid).length; return personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join(""), [n + "건", "조치"]); }).join("")}
           ${sheetOnly.map((m) => `<button class="prow" type="button" data-smember="${esc(m.id)}"><span class="pn">${esc(m.name)}</span><span class="pr"><b>${m.warnings.length}회</b>시트 경고</span><span class="pm">${stTag(m)}<span class="tag">시트 경고 ${m.warnings.length}회(참고)</span><span>대화 기록과 잇지 못함</span></span></button>`).join("")}</div></div>` : ""}
         ${ioPanel()}`;
     }
@@ -780,32 +792,34 @@
     const sheetOf = (pid) => { const id = SH.links.p2m.get(pid); return id ? shMember(id) : null; };
     /* 대화 기록의 사람과 잇기: 직접 이은 것 먼저, 아니면 닉네임 첫 칸과 출생연도(성별이 있으면 성별도)가 같은 사람이 하나일 때 */
     function sheetLinkMaps() {
-      const m2p = new Map(), p2m = new Map(), P = SH.parsed;
-      if (!P || !S.ledger) return { m2p, p2m };
+      const m2p = new Map(), p2m = new Map(), clash = new Map(), P = SH.parsed;
+      if (!P || !S.ledger) return { m2p, p2m, clash };
       const rec = sheetRec(), idx = new Map();
       people().filter((p) => !p.dflt).forEach((p) => { const np = OpsAnalyzer.nickParts(p.name); const k = tightK(np.nick) + "|" + (np.birth || ""); if (!idx.has(k)) idx.set(k, []); idx.get(k).push(p); });
-      P.members.forEach((m) => {
-        const man = rec.link[m.id];
-        if (man === "none") return;
-        let p = man ? byPid(man) : null;
-        if (!man) {
-          let c = (idx.get(tightK(m.name) + "|" + (m.birth || "")) || []).filter((q) => { const sx = OpsAnalyzer.nickParts(q.name).sex; return !m.sex || !sx || sx === m.sex; });
-          if (c.length > 1) { const inRoom = c.filter((q) => q.status === "in"); if (inRoom.length === 1) c = inRoom; }
-          if (c.length === 1) p = c[0];
-        }
-        if (p && !p2m.has(p.pid)) { m2p.set(m.id, p.pid); p2m.set(p.pid, m.id); }
+      const put = (m, p) => { if (p2m.has(p.pid)) { clash.set(m.id, p2m.get(p.pid)); return; } m2p.set(m.id, p.pid); p2m.set(p.pid, m.id); };
+      // 1) 직접 이은 것 먼저
+      P.members.forEach((m) => { const man = rec.link[m.id]; if (man && man !== "none") { const p = byPid(man); if (p) put(m, p); } });
+      // 2) 닉네임 첫 칸과 출생연도(성별이 있으면 성별도)가 같은 사람이 하나일 때. 같은 사람의 옛 줄(나감, 강퇴)이 지금 줄을 가로채지 않게 시트에서 지금 멤버인 줄부터
+      const sOut = (m) => { const st = m.sheet0 ? m.sheet0.status : m.status; return st === "left" || st === "kicked" ? 1 : 0; };
+      P.members.filter((m) => !rec.link[m.id]).sort((a, b) => sOut(a) - sOut(b) || a.row - b.row).forEach((m) => {
+        let c = (idx.get(tightK(m.name) + "|" + (m.birth || "")) || []).filter((q) => { const sx = OpsAnalyzer.nickParts(q.name).sex; return !m.sex || !sx || sx === m.sex; });
+        if (c.length > 1) { const inRoom = c.filter((q) => q.status === "in"); if (inRoom.length === 1) c = inRoom; }
+        if (c.length === 1) put(m, c[0]);
       });
-      return { m2p, p2m };
+      return { m2p, p2m, clash };
     }
     /* 대화 기록이 원본: 이은 사람은 입퇴장, 입장일, 재입장, 닉네임의 지역과 하트를 대화 기록으로 맞추고(OpsSheet.applyChat)
        시트 값은 보조로 남긴다. 벙, 경고처럼 대화 기록에 없는 것은 시트 값을 참고로 쓴다 */
     function chatFacts() {
       const F = {};
       if (!S.ledger) return F;
+      const rn = rosterNames(), rNew = rn.length && S.roster.at && S.roster.at > S.ledger.range.to ? new Set(rn.map(norm)) : null;
       SH.links.m2p.forEach((pid, id) => {
         const p = byPid(pid); if (!p) return;
-        const pr = p.parts || {};
-        F[id] = { status: p.status === "in" ? "in" : p.status === "kicked" ? "kicked" : "left", out: p.outDate || "", join: p.joinedBeforeFile ? "" : p.joinedAt || "", re: reAfter(p).length, limit: p.limit != null ? p.limit : null, region: pr.region || "", heart: pr.heart || "", heartKind: pr.heartKind || "" };
+        const pr = p.parts || {}, lim = p.limit != null ? p.limit + (+exc(p.pid).reentry || 0) : null;
+        let st = p.status === "in" ? "in" : p.status === "kicked" ? "kicked" : "left", via = "";
+        if (rNew) { const inR = rNew.has(norm(p.name)); if (inR !== (st === "in")) { st = inR ? "in" : "left"; via = "roster"; } }
+        F[id] = { status: st, out: via ? "" : p.outDate || "", join: p.joinedBeforeFile ? "" : p.joinedAt || "", re: reAfter(p).length, limit: lim, region: pr.region || "", heart: pr.heart || "", heartKind: pr.heartKind || "", via, at: via ? S.roster.at : "" };
       });
       return F;
     }
@@ -917,7 +931,7 @@
     const SBOARD = [
       { key: "first_late", t: (s) => "첫 모임 " + s.firstMeetDays + "일 넘김", l: "rule", codes: ["first_late"], ord: (m) => m.joinDate, chip: (m, P) => mdS(m.joinDate) + " 입장, " + (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate)) + "일" },
       { key: "regular", t: (s) => s.regularDays + "일 넘게 벙 없음", l: "rule", codes: ["regular"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음"), none: (P, s) => (P.cover.days < s.regularDays ? "기록 " + (P.cover.from ? P.cover.days + 1 : 0) + "일치" : "") },
-      { key: "warn", t: () => "경고 2회 이상", l: "watch", codes: ["warn3", "warn2"], ord: (m) => -m.warnings.length, chip: (m) => m.warnings.length + "회" },
+      { key: "warn", t: () => "시트 경고 2회 이상(참고)", l: "watch", codes: ["warn3", "warn2"], ord: (m) => -m.warnings.length, chip: (m) => m.warnings.length + "회" },
       { key: "noshow", t: () => "노쇼", l: "watch", codes: ["noshow", "noshow1"], ord: (m) => -m.noshows.length, chip: (m) => m.noshows.length + "회" },
       { key: "outs", t: () => (S.ledger ? "재입장 한도 초과" : "나간횟수 한도 초과"), l: "rule", codes: ["outs"], hideZero: true, ord: (m) => -m.outs, chip: (m) => m.outs + "/" + m.outLimit },
       { key: "first_wait", t: () => "첫 모임 기다림", l: "watch", codes: ["first_wait"], ord: (m) => m.joinDate, chip: (m, P, s) => Math.max(0, s.firstMeetDays - (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate))) + "일 남음" },
@@ -952,7 +966,7 @@
       const todo = SBOARD.map((b) => ({ b, rows: pool.map((m) => ({ m, c: m.checks.find((c) => b.codes.includes(c.c)) })).filter((x) => x.c).sort(cmp(b.ord)) }));
       const todoN = new Set(todo.flatMap((t) => t.rows.map((x) => x.m.id))).size;
       const ins = OpsSheet.insights(P, { joins });
-      SH.calc = { P, links: SH.links, set, joins, wk, ins, todo, todoN, liveIds: Object.fromEntries(pool.map((m) => [m.id, 1])) };
+      SH.calc = { P, links: SH.links, set, joins, wk, ins, todo, todoN, liveIds: Object.fromEntries(pool.filter((m) => m.status !== "away").map((m) => [m.id, 1])) };
       return SH.calc;
     }
 
@@ -1036,11 +1050,11 @@
       const wkMax = Math.max(1, ...I.weeks.map((x) => x.bungs));
       const mini = `<div class="wmini-w"><div class="wmini" role="img" aria-label="주마다 벙 수, 8주">${I.weeks.map((x) => `<i class="${x.partial ? "part" : ""}" style="height:${Math.max(3, (x.bungs / wkMax) * 100)}%"${tipAttr(mdS(x.from) + "~" + mdS(x.to) + ": 벙 " + x.bungs + "개" + (x.partial ? ", 기록이 일부" : ""))}></i>`).join("")}</div><span>주마다 벙, 8주</span></div>`;
       const vb = vsPrev(w.bungs, w.prevBungs, w.curDays, w.prevDays, "개"), vh = vsPrev(w.heads, w.prevHeads, w.curDays, w.prevDays, "번");
-      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : "판 " + esc(rec.acceptedId || SH.latestId)}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지)` : "대화 기록 없음"}, 벙은 시트(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
+      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : "판 " + esc(rec.acceptedId || SH.latestId)}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지${rosterNames().length && S.roster.at > S.ledger.range.to ? ", 명단 " + esc(mdS(S.roster.at)) : ""})` : "대화 기록 없음"}, 벙은 시트(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
         <div class="kpi hero"><div><span class="k-l">최근 30일 벙</span><strong class="k-v">${nf(w.bungs)}<small>개</small></strong><span class="k-s">${vb.html}</span></div>${mini}</div>
         <div class="kpi"><span class="k-l">참석 합계</span><strong class="k-v">${nf(w.heads)}<small>번</small></strong><span class="k-s">벙 한 번에 ${nf(w.avgSize)}명</span><span class="k-s">${vh.html}</span></div>
         <div class="kpi"><span class="k-l">벙에 온 멤버</span><strong class="k-v">${pctN(came, actIn.length)}<small>%</small></strong><span class="k-s">활동 멤버 ${nf(actIn.length)}명 중 ${nf(came)}명</span></div>
-        <div class="kpi"><span class="k-l">활동 멤버</span><strong class="k-v">${nf(actIn.length)}<small>명</small></strong><span class="k-s">외출 ${nf(M.filter((m) => m.status === "away").length)}, 비활성 ${nf(M.filter((m) => m.status === "inactive").length)}${S.ledger ? (sheetOnlyN ? `, 대화 기록에 없는 ${nf(sheetOnlyN)}명은 시트 기준` : "") : ", 시트 기준"}</span></div>
+        <div class="kpi"><span class="k-l">활동 멤버</span><strong class="k-v">${nf(actIn.length)}<small>명</small></strong><span class="k-s">비활성 ${nf(M.filter((m) => m.status === "inactive").length)}, 외출 ${nf(M.filter((m) => m.status === "away").length)}(방 밖)${S.ledger ? (sheetOnlyN ? `, 대화 기록에 없는 ${nf(sheetOnlyN)}명은 시트 기준` : "") : ", 시트 기준"}</span>${S.ledger ? (() => { const inR = members(), lk = inR.filter((p) => SH.links.p2m.has(p.pid)).map((p) => shMember(SH.links.p2m.get(p.pid))).filter(Boolean), a = lk.filter((m) => m.status === "active" || m.status === "other").length, iv = lk.filter((m) => m.status === "inactive").length, no = inR.length - lk.length; return `<span class="k-s">대화 기록 방 인원 ${nf(inR.length)}명: 활동 ${nf(a)}, 비활성 ${nf(iv)}${no ? ", 시트에 없음 " + nf(no) : ""}</span>`; })() : ""}</div>
         <div class="kpi"><span class="k-l">신입(날떼 전)</span><strong class="k-v">${nf(newb)}<small>명</small></strong><span class="k-s">${late ? `${ICON.rule}첫 모임 ${nf(set.firstMeetDays)}일 넘김 ${nf(late)}명` : `첫 모임 기한 ${nf(set.firstMeetDays)}일`}</span></div>
         <div class="kpi is-link" data-jump="sh-todo" tabindex="0" role="button"><span class="k-l">할 일</span><strong class="k-v">${nf(X.todoN)}<small>명</small></strong><span class="k-s">입력 확인 ${nf(fixable)}건${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}</span></div>
       </div></section>`;
@@ -1293,14 +1307,14 @@
       const unlinked = live.filter((m) => !SH.links.m2p.has(m.id) && sheetRec().link[m.id] !== "none");
       const notIn = members().filter((p) => !SH.links.p2m.has(p.pid));
       return `<section class="dsec" id="sh-link"><h2>대화 기록과 잇기 <small>이은 시트 멤버 ${nf(SH.links.m2p.size)}명, 대화 기록 ${esc(mdS(S.ledger.range.to))}까지</small></h2><div class="cgrid">
-        <article class="card span-6"><h3>잇지 못한 시트 멤버 <small class="cap">${nf(unlinked.length)}명, 이름과 출생연도로 하나를 찾지 못함</small></h3>${unlinked.length ? `<ul class="plist">${unlinked.map((m) => `<li><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(mLabel(m))}</button> ${stTag(m)}</span><span class="fixes">${SH.fixOpen === "link:" + m.id ? linkSelect(m) : `<button type="button" class="fx" data-linkpick="${esc(m.id)}">사람 고르기</button><button type="button" class="fx" data-linknone="${esc(m.id)}">잇지 않음</button>`}</span></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article>
+        <article class="card span-6"><h3>잇지 못한 시트 멤버 <small class="cap">${nf(unlinked.length)}명, 이름과 출생연도로 하나를 찾지 못함</small></h3>${unlinked.length ? `<ul class="plist">${unlinked.map((m) => `<li><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(mLabel(m))}</button> ${stTag(m)}${SH.links.clash && SH.links.clash.has(m.id) ? ` <span class="tag watch">같은 대화 기록 사람이 ${esc(String(shMember(SH.links.clash.get(m.id)) ? shMember(SH.links.clash.get(m.id)).row : ""))}행과 이어짐</span>` : ""}</span><span class="fixes">${SH.fixOpen === "link:" + m.id ? linkSelect(m) : `<button type="button" class="fx" data-linkpick="${esc(m.id)}">사람 고르기</button><button type="button" class="fx" data-linknone="${esc(m.id)}">잇지 않음</button>`}</span></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article>
         <article class="card span-6"><h3>시트에 없는 방 멤버 <small class="cap">${nf(notIn.length)}명</small></h3>${notIn.length ? `<div class="nchips">${notIn.map((p) => `<button type="button" class="nchip" data-person="${esc(p.pid)}">${esc(p.name)}</button>`).join("")}</div>` : `<p class="cap">없습니다.</p>`}</article>
       </div></section>`;
     }
     function linkSelect(m) {
       const head = tightK(m.name);
       const opts = people().filter((p) => !p.dflt).slice().sort((a, b) => ((tightK(OpsAnalyzer.nickParts(b.name).nick) === head) - (tightK(OpsAnalyzer.nickParts(a.name).nick) === head)) || (b.status === "in") - (a.status === "in") || a.name.localeCompare(b.name, "ko"));
-      return `<select class="input" data-linkto="${esc(m.id)}" aria-label="${esc(m.name)}와 이을 사람"><option value="">누구와 이을까요</option>${opts.map((p) => `<option value="${esc(p.pid)}">${esc(p.name)}${p.status === "in" ? "" : " (" + (p.status === "kicked" ? "내보냄" : "나감") + ")"}</option>`).join("")}</select>`;
+      return `<select class="input" data-linkto="${esc(m.id)}" aria-label="${esc(m.name)}와 이을 사람"><option value="">누구와 이을까요</option>${opts.map((p) => `<option value="${esc(p.pid)}">${esc(p.name)}${p.status === "in" ? "" : " (" + (p.status === "kicked" ? "내보냄" : "나감") + ")"}${SH.links.p2m.has(p.pid) && SH.links.p2m.get(p.pid) !== m.id ? " (" + idName(SH.links.p2m.get(p.pid)) + "와 이어짐)" : ""}</option>`).join("")}</select>`;
     }
 
 
@@ -1377,7 +1391,7 @@
           ${m.calcDiff.length ? `<p class="sub">시트 계산 값과 다름: ${esc(m.calcDiff.join(", "))}</p>` : ""}
           ${m.note ? `<p class="sub" style="white-space:pre-wrap;color:var(--ink)">${esc(m.note)}</p>` : ""}
           ${(m.older || []).length ? `<p class="sub">같은 사람의 다른 줄: ${m.older.map((o) => esc(o.row + "행 " + (o.statusRaw || "활동") + (o.joinMD ? ", 입장 " + o.joinMD : ""))).join(", ")}</p>` : ""}</div>
-        <div class="panel"><h2>경고 <small>${nf(m.warnings.length)}회${m.warnings.length ? ", " + (m.warnings.length >= 3 ? "강제퇴장 단계" : m.warnings.length === 2 ? "다음은 강제퇴장" : "다음은 운영진 면담") : ""}</small></h2>
+        <div class="panel"><h2>시트 경고 <small>${nf(m.warnings.length)}회, 참고(조치 단계는 기록 탭)</small></h2>
           ${m.warnings.length ? `<ul class="ev">${m.warnings.map((w) => `<li><time>${w.date ? esc(mdS(w.date)) : "날짜 없음"}</time><span>${w.n}차 ${esc(w.reason || "사유 없음")}</span></li>`).join("")}</ul>` : `<p class="sub">없습니다.</p>`}
           ${m.issues.length ? `<p class="sub">이슈 탭: ${m.issues.map((e) => esc(mdS(e.date) + " " + (e.action || ""))).join(", ")}</p>` : ""}
           ${acts.length ? `<p class="sub">대시보드 조치 기록 ${nf(acts.length)}건(대화 기록 쪽 상세에서 봅니다)</p>` : ""}</div>
@@ -1453,7 +1467,7 @@
     });
     document.addEventListener("change", (e) => {
       const at = e.target.closest && e.target.closest("[data-aliasto]"); if (at && at.value) { sheetRec().alias[tightK(at.dataset.aliasto)] = at.value; SH.fixOpen = ""; fixChanged("'" + at.dataset.aliasto + "'를 " + at.value + "(으)로 읽습니다."); return; }
-      const lt = e.target.closest && e.target.closest("[data-linkto]"); if (lt && lt.value) { sheetRec().link[lt.dataset.linkto] = lt.value; SH.fixOpen = ""; fixChanged("이었습니다."); }
+      const lt = e.target.closest && e.target.closest("[data-linkto]"); if (lt && lt.value) { const id = lt.dataset.linkto, rec = sheetRec(), other = [...Object.keys(rec.link)].find((k) => k !== id && rec.link[k] === lt.value); if (other) { toast("이미 " + idName(other) + "(" + (shMember(other) ? shMember(other).row + "행" : "다른 줄") + ")과 직접 이은 사람입니다. 그쪽을 먼저 풀어 주세요."); lt.value = ""; return; } rec.link[id] = lt.value; SH.fixOpen = ""; fixChanged("이었습니다."); }
     });
     document.addEventListener("input", (e) => {
       if (e.target && e.target.id === "shMq") { SH.mq = e.target.value; renderSheetTab(); }
@@ -1566,7 +1580,7 @@
           ${acts.length ? `<ul class="ev">${acts.map((a) => `<li><time>${esc(md(a.date))}</time><span>${esc(KIND[a.kind])} ${esc(STEP[a.step])}${a.reason ? ": " + esc(a.reason) : ""} <button class="text-btn is-quiet" type="button" data-del-act="${esc(a.id)}">지우기</button></span></li>`).join("")}</ul>` : ""}
           <div class="form-row">
             <select id="actKind" class="input" aria-label="종류"><option value="rule">금지 행동</option><option value="bibung">비벙</option><option value="etc">그 밖</option></select>
-            <select id="actStep" class="input" aria-label="단계"><option value="warn">구두 경고</option><option value="talk">면담</option><option value="kick">강제퇴장</option><option value="etc">그 밖</option></select>
+            <select id="actStep" class="input" aria-label="단계">${[["warn", "구두 경고"], ["talk", "면담"], ["kick", "강제퇴장"], ["etc", "그 밖"]].map(([v, t]) => `<option value="${v}"${v === nextStepOf(ladderLv(S.records.actions.filter((a) => a.pid === p.pid && a.kind === "rule"))) ? " selected" : ""}>${t}</option>`).join("")}</select>
             <input id="actDate" class="input" type="date" value="${todayKST()}" aria-label="날짜" />
             <input id="actReason" class="input" type="text" maxlength="200" placeholder="사유" aria-label="사유" />
             <button id="actAdd" class="btn btn-primary is-sm wide" type="button">조치 적기</button>
@@ -1592,6 +1606,7 @@
       $("sheetBody").querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => { delete S.records.links[b.dataset.unlink]; saveRecords(); runAnalysis("풀었습니다. 저장하면 다른 기기에서도 보입니다."); }));
       const rb = $("reviewBtn");
       if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.k || f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
+      $("actKind").addEventListener("change", () => { const k = $("actKind").value; if (k !== "etc") $("actStep").value = nextStepOf(ladderLv(S.records.actions.filter((a) => a.pid === p.pid && a.kind === k))); });
       $("actAdd").addEventListener("click", () => {
         S.records.actions.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pid: p.pid, name: p.name, kind: $("actKind").value, step: $("actStep").value, date: $("actDate").value || todayKST(), reason: $("actReason").value.trim().slice(0, 200) });
         saveRecords(); renderAll(); renderSheet(p); toast("조치를 적었습니다.");
@@ -1862,7 +1877,8 @@
       const lastM = L.months[L.months.length - 1] || { m: "", joins: 0, leaves: 0, kicks: 0, net: 0 };
       const queue = M.map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length);
       const ruleN = queue.filter((x) => x.list.some((f) => f.l === "rule")).length;
-      const newbies = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) <= 30);
+      const newbies = M.filter((p) => !p.joinedBeforeFile && (p.firstJoin || p.joinedAt) && E - dnum(p.firstJoin || p.joinedAt) < 30);
+      const rejoin30 = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) < 30 && !newbies.includes(p)).length;
       const talk30 = M.filter((p) => p.d30 > 0).length, msg30 = M.reduce((a, p) => a + (p.d30 || 0), 0);
       const f = L.funnel, rn = rosterNames().length;
       const staff = L.staff && (L.staff.owner || L.staff.subs.length) ? (L.staff.owner ? "방장 " + L.staff.owner : "") + (L.staff.subs.length ? (L.staff.owner ? ", " : "") + "부방장 " + L.staff.subs.join(", ") : "") : "";
@@ -1872,7 +1888,7 @@
         <div class="kpi hero"><div><span class="k-l">지금 인원</span><strong class="k-v">${nf(rn || M.length)}</strong><span class="k-s">${rn ? "명단 " + esc(md(S.roster.at)) + " 기준" : "대화 기록 기준"}${staff ? "<br />" + esc(staff) : ""}</span></div>${art("rules-nickname", "hero-art")}</div>
         <div class="kpi"><span class="k-l">${esc(lastM.m)} 들어옴</span><strong class="k-v">${nf(lastM.joins)}</strong><span class="k-s">나감 ${nf(lastM.leaves)}, 내보냄 ${nf(lastM.kicks)}, 순증 ${lastM.net > 0 ? "+" : ""}${nf(lastM.net)}</span>${miniFlow(L.months)}</div>
         <div class="kpi is-link" data-jump="d-check"><span class="k-l">확인할 사람</span><strong class="k-v">${nf(queue.length)}</strong><span class="k-s">${lvl("rule")} ${nf(ruleN)}명, 나머지는 살펴보기</span></div>
-        <div class="kpi"><span class="k-l">신입(30일 안)</span><strong class="k-v">${nf(newbies.length)}</strong><span class="k-s">들어온 사람 중 7일 안 첫 대화 ${pctN(f.spoke7, f.joined)}%</span></div>
+        <div class="kpi"><span class="k-l">신입(처음 들어옴, 30일 안)</span><strong class="k-v">${nf(newbies.length)}</strong><span class="k-s">${rejoin30 ? "다시 들어옴 " + nf(rejoin30) + "명, " : ""}들어온 사람 중 7일 안 첫 대화 ${pctN(f.spoke7, f.joined)}%</span></div>
         <div class="kpi"><span class="k-l">최근 30일 말한 멤버</span><strong class="k-v">${pctN(talk30, M.length)}<small>%</small></strong><span class="k-s">${nf(talk30)}명, 메시지 ${nf(msg30)}건</span></div>
         <div class="kpi"><span class="k-l">90일 뒤까지 남는 비율</span><strong class="k-v">${pctN(f.stay90, f.base90)}<small>%</small></strong><span class="k-s">7일 안에 나감 ${pctN(f.left7, f.joined)}%</span></div>
       </div>`;
@@ -1928,8 +1944,8 @@
       const good = GOOD.map(([t, img, k]) => { const list = M.filter((p) => p[k] > 0).sort((a, b) => b[k] - a[k]).slice(0, 5); return `<article class="card span-good gcard">${badge(img)}<div><h3>${t}</h3>${list.length ? `<ol class="glist">${list.map((p) => `<li><button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(p.name)}</button><b>${nf(p[k])}</b></li>`).join("")}</ol>` : `<p class="cap">없습니다.</p>`}</div></article>`; }).join("");
 
       // 7) 최근 30일 드나듦
-      const inList = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) <= 30).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
-      const outList = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && E - dnum(p.outDate) <= 30).sort((a, b) => b.outDate.localeCompare(a.outDate));
+      const inList = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) < 30).sort((a, b) => b.joinedAt.localeCompare(a.joinedAt));
+      const outList = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && E - dnum(p.outDate) < 30).sort((a, b) => b.outDate.localeCompare(a.outDate));
       const hg = heartGroups();
 
       host.innerHTML = `
@@ -1969,7 +1985,7 @@
       let list;
       if (fl.startsWith("chk:")) { const set = new Set(boardRows(fl.slice(4)).map((x) => x.p.pid)); list = members().filter((p) => set.has(p.pid)); }
       else if (fl === "check") list = members().filter((p) => pending(p).length);
-      else if (fl === "new") list = members().filter((p) => p.joinedAt && E - dnum(p.joinedAt) <= 30);
+      else if (fl === "new") list = members().filter((p) => !p.joinedBeforeFile && (p.firstJoin || p.joinedAt) && E - dnum(p.firstJoin || p.joinedAt) < 30);
       else if (fl === "quiet") list = members().filter((p) => effFlags(p).some((f) => f.c === "silent" || f.c === "drop"));
       else if (fl === "out") list = people().filter((p) => p.status !== "in" && !p.dflt);
       else if (fl === "all") list = people().filter((p) => !p.dflt);
@@ -2035,7 +2051,7 @@
         </div>
         <div class="gridwrap"><table class="grid"><thead><tr>${cols.map((c) => `<th class="${c.cls || ""}${c.num ? " num" : ""}" aria-sort="${view.sheet.sort === c.k ? (dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-sort="${c.k}">${c.t}</button></th>`).join("")}</tr></thead>
         <tbody>${list.length ? list.map((p) => `<tr data-person="${esc(p.pid)}" tabindex="0">${cols.map((c) => cell(p, c.k, E)).join("")}</tr>`).join("") : `<tr><td colspan="${cols.length}" class="empty">해당하는 사람이 없습니다.</td></tr>`}</tbody></table></div>
-        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 최근 30일 메시지, 12주 추이는 주마다 메시지 수입니다.${SH.parsed ? " 벙 30일과 마지막 벙은 시트 기록(참고)입니다." : ""}</p>`;
+        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 대화 기록 끝(${esc(md(S.ledger.range.to))})까지 30일 메시지, 12주 추이는 주마다 메시지 수입니다.${SH.parsed ? " 벙 30일과 마지막 벙은 시트 기록(참고)이고 오늘(" + esc(md(todayKST())) + ")까지 셉니다." : ""}</p>`;
       if (focusQ) { const el = $("sq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} }
     }
     function csv() {

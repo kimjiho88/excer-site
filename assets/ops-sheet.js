@@ -189,10 +189,11 @@
       var why = splitList(g("warnWhy"));
       var atRaw = clean(g("warnAt")).split(/[,，\s]+/).filter(Boolean), at = [];
       atRaw.forEach(function (x) { var d = parseDate(x); if (d) at.push(d); else P({ tab: TN, row: r + 1, col: colName(mh.map.warnAt), level: "watch", code: "m_warnat", msg: "경고일을 날짜로 읽지 못함", value: x, who: name }); });
-      var wN = Math.max(wn || 0, why.length, at.length);
+      // 경고여부에 수가 있으면 그것이 횟수(사유 칸의 쉼표로 늘리지 않음, 남는 사유는 마지막 경고에 붙임). 비었으면 사유와 경고일 중 많은 쪽
+      var wN = wn > 0 ? wn : Math.max(why.length, at.length);
       m.warnN = wn || 0;
       m.warnings = [];
-      for (var w = 0; w < wN; w++) m.warnings.push({ n: w + 1, reason: why[w] || "", date: at[w] || "" });
+      for (var w = 0; w < wN; w++) m.warnings.push({ n: w + 1, reason: (w === wN - 1 ? why.slice(w) : why.slice(w, w + 1)).join(", "), date: at[w] || "" });
       if ((wn || 0) && why.length && why.length !== wn) P({ tab: TN, row: r + 1, col: colName(mh.map.warnWhy), level: "info", code: "m_warn_n", msg: "경고 " + wn + "회인데 사유 " + why.length + "개", who: name });
       if ((wn || 0) && at.length < wn) P({ tab: TN, row: r + 1, col: colName(mh.map.warnAt), level: "info", code: "m_warn_at", msg: "경고일이 " + (wn - at.length) + "개 비어 있음", who: name });
       if (!wn && (why.length || at.length)) P({ tab: TN, row: r + 1, col: colName(mh.map.warn), level: "watch", code: "m_warn_0", msg: "경고사유나 경고일은 있는데 경고여부가 비었음", who: name });
@@ -439,10 +440,10 @@
         else if (!m.last) ck.push({ c: "no_record", l: "watch", t: "벙 기록 없음", x: "기록 " + (coverFrom || "없음") + "부터 " + out.cover.days + "일" });
         else if (gap > set.regularDays - 15) ck.push({ c: "regular_soon", l: "watch", t: "곧 " + set.regularDays + "일", x: "마지막 " + m.last + ", " + gap + "일" });
       }
-      var wn2 = Math.max(m.warnN, m.warnings.length);
-      if (wn2 >= 3) ck.push({ c: "warn3", l: "rule", t: "경고 " + wn2 + "회(강제퇴장 단계)", x: m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ") });
-      else if (wn2 === 2) ck.push({ c: "warn2", l: "watch", t: "경고 2회(다음은 강제퇴장)", x: m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ") });
-      else if (wn2 === 1) ck.push({ c: "warn1", l: "info", t: "경고 1회(다음은 면담)", x: m.warnings[0] && m.warnings[0].reason || "" });
+      // 시트 경고는 대화 기록에 없는 손 기록이라 참고: 단계(면담, 강제퇴장)는 붙이지 않는다
+      var wn2 = m.warnings.length, wx = m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ");
+      if (wn2 >= 2) ck.push({ c: wn2 >= 3 ? "warn3" : "warn2", l: "watch", t: "시트 경고 " + wn2 + "회", x: wx });
+      else if (wn2 === 1) ck.push({ c: "warn1", l: "info", t: "시트 경고 1회", x: wx });
       if (m.noshows.length >= 2) ck.push({ c: "noshow", l: "watch", t: "노쇼 " + m.noshows.length + "회", x: m.noshows.map(function (n) { return n.date; }).join(", ") });
       else if (m.noshows.length === 1) ck.push({ c: "noshow1", l: "info", t: "노쇼 1회", x: m.noshows[0].date });
       if (m.outLimit != null && m.outs > m.outLimit) ck.push({ c: "outs", l: "rule", t: m.chat ? "재입장 한도 초과" : "나간횟수 한도 초과", x: m.outs + "회, 한도 " + m.outLimit + "회" + (m.chat ? "(대화 기록)" : "") });
@@ -452,7 +453,8 @@
   /* ── 대화 기록 기준으로 맞추기 ──
      사람, 입퇴장, 입장일, 재입장 횟수, 닉네임의 지역과 하트는 대화 기록이 원본이고 시트는 보조다.
      벙, 벙주, 경고, 노쇼, 비고, 싫어하는 사람, 이슈처럼 대화 기록에 없는 것은 시트 값을 참고로 그대로 쓴다.
-     facts[id] = { status: "in"|"left"|"kicked", out, join, re, limit, region, heart, heartKind }. 대화 기록과 잇지 못한 사람은 시트 값 그대로.
+     facts[id] = { status: "in"|"left"|"kicked", out, join, re, limit, region, heart, heartKind, via, at }. 대화 기록과 잇지 못한 사람은 시트 값 그대로.
+     via: "roster" 는 대화 기록보다 새 명단으로 방에 있는지를 정한 것(at: 명단 날짜).
      시트와 다른 값은 시트에서 고칠 것(c_ 로 시작하는 입력 확인)으로 올린다. 여러 번 불러도 같은 결과(시트 원래 값은 m.sheet0) */
   var ST_WORD = { active: "활동", away: "외출", inactive: "비활성", left: "나감", kicked: "강퇴", other: "모름" };
   function mdot(d, today) { return d ? (d.slice(0, 4) !== String(today || "").slice(0, 4) ? d.slice(0, 4) + "." : "") + +d.slice(5, 7) + "." + +d.slice(8, 10) : ""; }
@@ -480,16 +482,20 @@
       };
       var sw = m.statusRaw || ST_WORD[s0.status], sOut = s0.status === "left" || s0.status === "kicked" || s0.status === "away";
       // 입퇴장: 방에 있는지와 나간 날은 대화 기록. 시트의 외출(잠시 나감)은 나가 있는 것과 맞는다
-      if (f.status === "in" && sOut) { m.status = "active"; gap("status", "status", "watch", "시트는 " + sw + "인데 대화 기록에서는 방에 있음"); }
-      else if (f.status !== "in" && !sOut) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "watch", "시트는 " + sw + "인데 대화 기록에서는 " + mdot(f.out, P.today) + "에 " + (f.status === "kicked" ? "내보냄" : "나감")); }
+      var src = f.via === "roster" ? "명단(" + mdot(f.at, P.today) + ")" : "대화 기록";
+      var outWhen = f.via === "roster" ? "명단(" + mdot(f.at, P.today) + ")에는 없음" : "대화 기록에서는 " + (f.out ? mdot(f.out, P.today) + "에 " : "") + (f.status === "kicked" ? "내보냄" : "나감");
+      if (f.status === "in" && sOut) { m.status = "active"; gap("status", "status", "watch", "시트는 " + sw + "인데 " + src + (f.via === "roster" ? "에는 있음" : "에서는 방에 있음")); }
+      else if (f.status !== "in" && !sOut) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "watch", "시트는 " + sw + "인데 " + outWhen); }
+      else if (f.status === "kicked" && s0.status === "away") { m.status = "kicked"; gap("status", "status", "info", "시트는 " + sw + "인데 대화 기록에서는 " + (f.out ? mdot(f.out, P.today) + "에 " : "") + "내보냄"); }
       else if (f.status !== "in" && s0.status !== "away" && (f.status === "kicked") !== (s0.status === "kicked")) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "info", "시트는 " + sw + "인데 대화 기록에서는 " + (f.status === "kicked" ? "내보냄" : "스스로 나감")); }
+      var gone = m.status === "left" || m.status === "kicked";   // 나간 사람은 값만 맞추고 다른 점은 올리지 않음
       // 입장일: 날떼 전 신입의 입장일
-      if (m.newbie && f.join) { if (f.join !== s0.joinDate) gap("join", "nalte", "watch", "입장일 시트 " + mdot(s0.joinDate, P.today) + ", 대화 기록 " + mdot(f.join, P.today)); m.joinDate = f.join; }
+      if (m.newbie && f.join) { if (f.join !== s0.joinDate && !gone) gap("join", "nalte", "watch", "입장일 시트 " + mdot(s0.joinDate, P.today) + ", 대화 기록 " + mdot(f.join, P.today)); m.joinDate = f.join; }
       // 재입장 횟수와 한도
-      if (f.re != null) { if (f.re !== s0.outs) gap("outs", "outs", "info", "나간횟수 시트 " + s0.outs + "회, 대화 기록 재입장 " + f.re + "회"); m.outs = f.re; if (f.limit != null) m.outLimit = f.limit; }
+      if (f.re != null) { if (f.re !== s0.outs && !gone) gap("outs", "outs", "info", "나간횟수 시트 " + s0.outs + "회, 대화 기록 재입장 " + f.re + "회"); m.outs = f.re; if (f.limit != null) m.outLimit = f.limit; }
       // 닉네임의 지역과 하트
-      if (f.region) { if (s0.region && regionKey(f.region) !== regionKey(s0.region)) gap("region", "region", "info", "거주지 시트 " + s0.region + ", 닉네임 " + f.region); m.region = f.region; }
-      if (f.heart != null) { var h = !!f.heart; if (h !== !!s0.couple) gap("couple", "couple", "info", h ? "닉네임에 하트가 있는데 커플여부가 비었음" : "커플여부는 있는데 닉네임에 하트가 없음"); m.couple = h; m.heart = f.heart || ""; m.heartKind = f.heartKind || ""; }
+      if (f.region) { if (s0.region && regionKey(f.region) !== regionKey(s0.region) && !gone) gap("region", "region", "info", "거주지 시트 " + s0.region + ", 닉네임 " + f.region); m.region = f.region; }
+      if (f.heart != null) { var h = !!f.heart; if (h !== !!s0.couple && !gone) gap("couple", "couple", "info", h ? "닉네임에 하트가 있는데 커플여부가 비었음" : "커플여부는 있는데 닉네임에 하트가 없음"); m.couple = h; m.heart = f.heart || ""; m.heartKind = f.heartKind || ""; }
     });
     checkMembers(P);
     return P;
@@ -586,7 +592,7 @@
   function insights(P, o) {
     o = o || {};
     var today = o.today || P.today, T = dnum(today), B = okBungs(P), C0 = P.cover && P.cover.from ? dnum(P.cover.from) : T;
-    var live = P.members.filter(function (m) { return m.status !== "left" && m.status !== "kicked" && !(o.gone && o.gone[m.id]); });
+    var live = P.members.filter(function (m) { return m.status !== "left" && m.status !== "kicked" && m.status !== "away" && !(o.gone && o.gone[m.id]); });
     var act = live.filter(function (m) { return m.status === "active" || m.status === "other"; });
     var isLive = {}; live.forEach(function (m) { isLive[m.id] = 1; });
     var within = function (days, off) { return B.filter(function (b) { var n = dnum(b.date); return n > T - days - off && n <= T - off; }); };
@@ -655,7 +661,7 @@
     out.placeN = Object.keys(pl).length;
     // 신입 첫 벙: 기록 기간 안에 들어온 멤버(시트 입장일, 없으면 대화 기록의 입장일)
     var joins = o.joins || {};
-    var nw = P.members.filter(function (m) { return m.status !== "kicked"; }).map(function (m) { var j = m.joinDate || joins[m.id] || ""; return { m: m, j: j }; }).filter(function (x) { return x.j && dnum(x.j) >= C0 && x.j <= today; });
+    var nw = P.members.filter(function (m) { return m.status !== "kicked"; }).map(function (m) { var j = joins[m.id] || m.joinDate || ""; return { m: m, j: j }; }).filter(function (x) { return x.j && dnum(x.j) >= C0 && x.j <= today; });
     var gaps = [];
     out.newbies = nw.map(function (x) { var f = x.m.attend.filter(function (a) { return a.date >= x.j; })[0]; var g = f ? dnum(f.date) - dnum(x.j) : null; if (g != null) gaps.push(g); return { id: x.m.id, join: x.j, first: f ? f.date : "", gap: g, gone: x.m.status === "left" || !!(o.gone && o.gone[x.m.id]) }; })
       .sort(function (a, b) { return b.join.localeCompare(a.join); });
