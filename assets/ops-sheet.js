@@ -484,8 +484,8 @@
       if (!f) return;
       P.chatN += 1;
       var gap = function (k, col, level, msg, value) {
-        m.gaps.push({ k: k, level: level, msg: msg });
         var q = { tab: tab, row: m.row, col: cols[col] || cols.name || "", level: level, code: "c_" + k, msg: msg, value: value == null ? "" : String(value), who: m.name };
+        m.gaps.push({ k: k, level: level, msg: msg, where: q.tab + " " + q.row + "행 " + q.col + "열" });
         q.id = [q.tab, q.row, q.col, q.code, q.value].join("|");
         P.problems.push(q);
       };

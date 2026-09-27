@@ -348,7 +348,7 @@
     .rk .bar i { display: block; height: 100%; background: var(--s-violet); border-radius: 0 4px 4px 0; }
     .rk .v { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
     .rk .v small { color: var(--ink-2); font-weight: 500; margin-left: 4px; }
-    @media (min-width: 1000px) { .rk { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; } }
+    @media (min-width: 1000px) { .rk { display: block; columns: 2; column-gap: 32px; } .rk li { break-inside: avoid; margin-bottom: 4px; } }
     .chg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .chg h4 { margin: 0 0 6px; font-size: 13px; display: flex; align-items: center; gap: 4px; }
     .chg h4 svg { width: 10px; height: 10px; }
@@ -369,6 +369,7 @@
     .td-h h3 { margin: 0; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
     .td-h .n { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .td-h .text-btn { margin-left: auto; min-height: 32px; }
+    .td-h .text-btn + .text-btn { margin-left: 0; }
     .cap.zero { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .fx { min-height: 30px; padding: 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: #fff; font-size: 12px; font-weight: 700; color: var(--ink); }
     .fx.pri { border-color: var(--brand); color: var(--brand); }
@@ -444,7 +445,7 @@
         <button type="button" role="tab" id="tab-dash" aria-controls="panel-dash" tabindex="0" data-tab="dash" aria-selected="true">대시보드</button>
         <button type="button" role="tab" id="tab-sheet" aria-controls="panel-sheet" tabindex="-1" data-tab="sheet" aria-selected="false">시트</button>
         <button type="button" role="tab" id="tab-signals" aria-controls="panel-signals" tabindex="-1" data-tab="signals" aria-selected="false">신호 근거</button>
-        <button type="button" role="tab" id="tab-records" aria-controls="panel-records" tabindex="-1" data-tab="records" aria-selected="false">기록</button>
+        <button type="button" role="tab" id="tab-records" aria-controls="panel-records" tabindex="-1" data-tab="records" aria-selected="false">조치</button>
         <button type="button" role="tab" id="tab-data" aria-controls="panel-data" tabindex="-1" data-tab="data" aria-selected="false">데이터</button>
       </div></nav>
       <div class="wrap ops-body">
@@ -524,7 +525,7 @@
     async function opsPut(key, value) { if (localOnly) return null; const r = await rpc("ops_put", { p_pass: PASS, p_key: key, p_value: value }); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r.updated_at; }
     /* 기록 저장: 다른 탭이나 기기에서 그사이 저장한 것을 지우지 않게, 서버 것을 받아 세 갈래로 합친 뒤 쓴다
        (마지막으로 맞춘 것에서 여기서 바꾼 칸만 여기 것). 한 번에 하나만 보내고, 실패하면 남겨 두고 다시 시도 */
-    const RECORDS0 = () => ({ actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {} });
+    const RECORDS0 = () => ({ actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {}, contact: {} });
     const jclone = (x) => (x === undefined ? undefined : JSON.parse(JSON.stringify(x)));
     const jsame = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     function merge3(base, ours, theirs) {
@@ -639,6 +640,8 @@
     function openApp() {
       $("gate").hidden = true; $("app").hidden = false; $("opsActs").hidden = false; setTopH();
       $("saveBtn").textContent = localOnly ? "저장 안 함(서버 설정 전)" : "서버에 저장";
+      // 지난번 연 때를 기억(한 시간 안에 다시 열면 그대로)
+      if (!localOnly) { const st = S.records.settings = S.records.settings || {}; S.prevSeen = st.lastSeen || ""; if (!st.lastSeen || Date.now() - new Date(st.lastSeen).getTime() > 3600000) { st.lastSeen = new Date().toISOString(); saveRecords(); } }
       renderAll();
       if (!localOnly) { sheetLoad(); sheetStartPoll(); }
     }
@@ -1048,9 +1051,9 @@
     const SBOARD = [
       { key: "first_late", t: (s) => "첫 모임 " + s.firstMeetDays + "일 넘김", l: "rule", codes: ["first_late"], ord: (m) => m.joinDate, chip: (m, P) => mdS(m.joinDate) + " 입장, " + (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate)) + "일" },
       { key: "regular", t: (s) => s.regularDays + "일 넘게 벙 없음", l: "rule", codes: ["regular"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음"), none: (P, s) => (P.cover.days < s.regularDays ? "기록 " + (P.cover.from ? P.cover.days + 1 : 0) + "일치" : "") },
-      { key: "warn", t: () => "시트 경고 2회 이상(참고)", l: "watch", codes: ["warn3", "warn2"], ord: (m) => -m.warnings.length, chip: (m) => m.warnings.length + "회" },
+      { key: "warn", noTodo: true, t: () => "시트 경고 2회 이상(참고)", l: "watch", codes: ["warn3", "warn2"], ord: (m) => -m.warnings.length, chip: (m) => m.warnings.length + "회" },
       { key: "noshow", t: () => "노쇼", l: "watch", codes: ["noshow", "noshow1"], ord: (m) => -m.noshows.length, chip: (m) => m.noshows.length + "회" },
-      { key: "outs", t: () => (S.ledger ? "재입장 한도 초과" : "나간횟수 한도 초과"), l: "rule", codes: ["outs"], hideZero: true, ord: (m) => -m.outs, chip: (m) => m.outs + "/" + m.outLimit },
+      { key: "outs", noTodo: () => !!S.ledger, t: () => (S.ledger ? "재입장 한도 초과" : "나간횟수 한도 초과"), l: "rule", codes: ["outs"], hideZero: true, ord: (m) => -m.outs, chip: (m) => m.outs + "/" + m.outLimit },
       { key: "first_wait", t: () => "첫 모임 기다림", l: "watch", codes: ["first_wait"], ord: (m) => m.joinDate, chip: (m, P, s) => Math.max(0, s.firstMeetDays - (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate))) + "일 남음" },
       { key: "no_record", t: () => "벙 기록 없음, 곧 기한", l: "watch", codes: ["no_record", "regular_soon"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음") },
       { key: "nalte", t: () => "벙에 왔는데 날떼여부에 입장일이 남아 있음", l: "watch", codes: ["nalte"], hideZero: true, ord: (m) => m.joinDate, chip: (m) => mdS(m.joinDate) + " 입장" }
@@ -1081,7 +1084,7 @@
       const set = shSet(), pool = P.members.filter(liveM);
       const cmp = (f) => (a, b) => { const x = f(a.m), y = f(b.m); return x < y ? -1 : x > y ? 1 : a.m.name.localeCompare(b.m.name, "ko"); };
       const todo = SBOARD.map((b) => ({ b, rows: pool.map((m) => ({ m, c: m.checks.find((c) => b.codes.includes(c.c)) })).filter((x) => x.c).sort(cmp(b.ord)) }));
-      const todoN = new Set(todo.flatMap((t) => t.rows.map((x) => x.m.id))).size;
+      const todoN = new Set(todo.filter((t) => !(typeof t.b.noTodo === "function" ? t.b.noTodo() : t.b.noTodo)).flatMap((t) => t.rows.map((x) => x.m.id))).size;
       const ins = OpsSheet.insights(P, { joins });
       SH.calc = { P, links: SH.links, set, joins, wk, ins, todo, todoN, liveIds: Object.fromEntries(pool.filter((m) => m.status !== "away").map((m) => [m.id, 1])) };
       return SH.calc;
@@ -1125,7 +1128,7 @@
       const pers = rankPeriods(P);
       const has = (p) => P.bungs.some((b) => b.state === "ok" && b.date >= p.from && b.date <= p.to);
       let per = pers.find((p) => p.k === SH.rk.p);
-      if (!per) per = pers.find((p) => p.k[0] === "m" && has(p)) || pers[pers.length - 2];
+      if (!per) { const ms = pers.filter((p) => p.k[0] === "m" && has(p)); per = (+P.today.slice(8, 10) <= 7 && ms[1] && ms[0].k === pers[0].k ? ms[1] : ms[0]) || pers[pers.length - 2]; }   // 달 초에는 지난달(발표용)
       const by = SH.rk.by === "days" ? "days" : "count";
       const list = OpsSheet.rank(P, { from: per.from, to: per.to, by, ids: SH.rk.live ? X.liveIds : null, nameOf: idName });
       const bs = P.bungs.filter((b) => b.state === "ok" && b.date >= per.from && b.date <= per.to);
@@ -1167,7 +1170,7 @@
       const wkMax = Math.max(1, ...I.weeks.map((x) => x.bungs));
       const mini = `<div class="wmini-w"><div class="wmini" role="img" aria-label="주마다 벙 수, 8주">${I.weeks.map((x) => `<i class="${x.partial ? "part" : ""}" style="height:${Math.max(3, (x.bungs / wkMax) * 100)}%"${tipAttr(mdS(x.from) + "~" + mdS(x.to) + ": 벙 " + x.bungs + "개" + (x.partial ? ", 기록이 일부" : ""))}></i>`).join("")}</div><span>주마다 벙, 8주</span></div>`;
       const vb = vsPrev(w.bungs, w.prevBungs, w.curDays, w.prevDays, "개"), vh = vsPrev(w.heads, w.prevHeads, w.curDays, w.prevDays, "번");
-      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : "판 " + esc(rec.acceptedId || SH.latestId)}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지${rosterNames().length && S.roster.at > S.ledger.range.to ? ", 명단 " + esc(mdS(S.roster.at)) : ""})` : "대화 기록 없음"}, 벙은 시트(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
+      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : (() => { const sn = SH.snaps.get(rec.acceptedId || SH.latestId); return sn ? "시트 " + esc(mdS(kstDate(sn.at))) + " " + esc(kstHM(sn.at)) + " 판" : "판 " + esc(rec.acceptedId || SH.latestId); })()}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지${rosterNames().length && S.roster.at > S.ledger.range.to ? ", 명단 " + esc(mdS(S.roster.at)) : ""})` : "대화 기록 없음"}, 벙은 시트(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
         <div class="kpi hero"><div><span class="k-l">최근 30일 벙</span><strong class="k-v">${nf(w.bungs)}<small>개</small></strong><span class="k-s">${vb.html}</span></div>${mini}</div>
         <div class="kpi"><span class="k-l">참석 합계</span><strong class="k-v">${nf(w.heads)}<small>번</small></strong><span class="k-s">벙 한 번에 ${nf(w.avgSize)}명</span><span class="k-s">${vh.html}</span></div>
         <div class="kpi"><span class="k-l">벙에 온 멤버</span><strong class="k-v">${pctN(came, actIn.length)}<small>%</small></strong><span class="k-s">활동 멤버 ${nf(actIn.length)}명 중 ${nf(came)}명</span></div>
@@ -1218,8 +1221,10 @@
       const row = (l, title, n, chips, tail) => `<div class="td lv-${l}"><div class="td-h"><h3>${l === "info" ? "" : ICON[l] + `<span class="sr-only">${LVL[l]}</span>`}${esc(title)}</h3><span class="n">${nf(n)}명</span>${tail || ""}</div>${chips ? `<div class="nchips">${chips}</div>` : ""}</div>`;
       const chips = (list, fn) => list.slice(0, 16).map(fn).join("") + (list.length > 16 ? `<span class="more">외 ${list.length - 16}명</span>` : "");
       X.todo.forEach(({ b, rows: r }) => {
+        if (typeof b.noTodo === "function" ? b.noTodo() : b.noTodo) return;   // 대시보드 탭 '확인할 것'에서 본다
         if (!r.length) { if (!b.hideZero) { const nn = b.none ? b.none(P, set) : ""; if (nn) wait.push(b.t(set) + "(" + nn + ")"); else zero.push(b.t(set)); } return; }
-        rows.push(row(b.l, b.t(set), r.length, chips(r, (x) => mChip(x.m.id, b.chip(x.m, P, set))), `<button type="button" class="text-btn" data-mfilter="chk:${b.key}">표에서 보기</button>`));
+        const ct = (m) => { const d = (S.records.contact || {})[m.id]; return d ? ", 연락 " + mdS(d) : ""; };
+        rows.push(row(b.l, b.t(set), r.length, chips(r, (x) => mChip(x.m.id, b.chip(x.m, P, set) + ct(x.m))), `<button type="button" class="text-btn" data-copynames="${esc(b.key)}">이름 복사</button><button type="button" class="text-btn" data-mfilter="chk:${b.key}">표에서 보기</button>`));
       });
       if (S.ledger) {
         const unlinked = P.members.filter((m) => liveM(m) && !SH.links.m2p.has(m.id) && sheetRec().link[m.id] !== "none").length;
@@ -1252,14 +1257,14 @@
         host.innerHTML = h + syncSecHtml(); renderSyncLine(); bindSheetTab(); return;
       }
       const X = sheetCalc(P), fixable = P.problems.filter((p) => p.level !== "info").length;
-      const J = [["sh-glance", "한눈에"], ["sh-rank", "벙 순위"], ["sh-insight", "인사이트"], ["sh-todo", "할 일", X.todoN], ["sh-input", "입력 확인", fixable], ["sh-members", "멤버"], ["sh-bung", "벙 기록"], ["sh-issue", "이슈"]].concat(S.ledger ? [["sh-link", "잇기"]] : [], [["sh-sync", "연동"]]);
+      const J = [["sh-glance", "한눈에"], ["sh-todo", "할 일", X.todoN], ["sh-input", "입력 확인", fixable], ["sh-rank", "벙 순위"], ["sh-insight", "인사이트"], ["sh-members", "멤버"], ["sh-bung", "벙 기록"], ["sh-issue", "이슈"]].concat(S.ledger ? [["sh-link", "잇기"]] : [], [["sh-sync", "연동"]]);
       h += `<nav class="jump" aria-label="시트 탭 안에서 이동">${J.map(([id, t, n]) => `<button type="button" data-jump="${id}">${t}${n ? ` <b>${nf(n)}</b>` : ""}</button>`).join("")}</nav>`;
       h += glanceHtml(P, X);
-      h += `<section class="dsec" id="sh-rank"><h2>벙 순위</h2><div class="cgrid">${rankHtml(P, X)}</div></section>`;
-      h += insightHtml(P, X);
       h += todoHtml(P, X);
       h += `<section class="dsec" id="sh-input"><h2>입력 확인 <small>시트에서 고치면 다음 판에서 사라집니다. 여기서 정한 규칙은 다음 판에도 적용됩니다.</small></h2>${problemsHtml(P)}</section>`;
-      h += `<section class="dsec" id="sh-members"><h2>멤버 <small>벙 횟수는 벙 탭에서 다시 셈</small></h2>${memberTableHtml(P, X)}</section>`;
+      h += `<section class="dsec" id="sh-rank"><h2>벙 순위</h2><div class="cgrid">${rankHtml(P, X)}</div></section>`;
+      h += insightHtml(P, X);
+      h += `<section class="dsec" id="sh-members"><h2>멤버 <small>벙 횟수는 시트의 벙 탭에서 다시 셈</small></h2>${memberTableHtml(P, X)}</section>`;
       h += `<section class="dsec" id="sh-bung"><h2>벙 기록 <small>${nf(P.counted)}줄 셈${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}${P.ignored.length ? ", 뺀 줄 " + nf(P.ignored.length) : ""}</small></h2>${bungHtml(P)}</section>`;
       h += issueHtml(P);
       if (S.ledger) h += linkHtml(P);
@@ -1327,13 +1332,13 @@
       const a = keys.filter((k) => k[0] === "a"), b = keys.filter((k) => k[0] === "b");
       const fixes = Object.keys(rec.alias).map((k) => ({ t: "alias", k, x: k + " 를 " + (shMember(rec.alias[k]) ? mLabel(shMember(rec.alias[k])) : /^m:/.test(rec.alias[k]) ? idName(rec.alias[k]) + "(멤버 탭에서 나이나 성별이 바뀌어 맞는 줄 없음)" : rec.alias[k]) + "(으)로 읽기" }))
         .concat(Object.keys(rec.ignore).map((k) => ({ t: "ignore", k, x: "뺀 줄: " + ((rec.ignore[k] && rec.ignore[k].text) || k.split("|").slice(1).join(" ")) })));
-      return `<div class="cgrid"><article class="card span-8"><h3>고칠 것 <small class="cap">${nf(a.reduce((n, k) => n + groups.get(k).length, 0))}건</small></h3>${a.length ? a.map(grp).join("") : `<p class="cap">없습니다.</p>`}</article>
+      return `<div class="cgrid"><article class="card span-8"><h3>고칠 것 <small class="cap">${nf(a.reduce((n, k) => n + groups.get(k).length, 0))}건</small>${a.length ? `<button type="button" class="text-btn" data-copyfix>고칠 것 복사</button>` : ""}</h3>${a.length ? a.map(grp).join("") : `<p class="cap">없습니다.</p>`}</article>
         <article class="card span-4"><h3>참고 <small class="cap">세지 않았거나 시트 값과 다른 것</small></h3>${b.length ? b.map(grp).join("") : `<p class="cap">없습니다.</p>`}
           ${fixes.length ? `<h3>여기서 정한 규칙 <small class="cap">${nf(fixes.length)}개</small></h3><ul class="plist">${fixes.map((f) => `<li><span>${esc(f.x)}</span><button type="button" class="fx" data-unfix="${esc(f.t)}" data-key="${esc(f.k)}">풀기</button></li>`).join("")}</ul>` : ""}</article></div>`;
     }
 
     /* 멤버 표 */
-    const MFILTERS = [["active", "활동"], ["newbie", "신입"], ["check", "확인 필요"], ["rest", "외출, 비활성"], ["out", "나감, 강퇴"], ["all", "전체"]];
+    const MFILTERS = [["active", "활동"], ["newbie", "신입"], ["check", "시트 확인 필요"], ["rest", "외출, 비활성"], ["out", "나감, 강퇴"], ["all", "전체"]];
     function mList(P, f) {
       const M = P.members;
       if (f.startsWith("chk:")) { const b = SBOARD.find((x) => "chk:" + x.key === f); return M.filter((m) => liveM(m) && m.checks.some((c) => b && b.codes.includes(c.c))); }
@@ -1500,17 +1505,18 @@
       const RS = rankState(P, X), per = RS.per, inLive = !!X.liveIds[m.id], rl = OpsSheet.rank(P, { from: per.from, to: per.to, by: RS.by, ids: inLive ? X.liveIds : null, nameOf: idName }), me = rl.find((x) => x.id === m.id);
       const wk = X.wk.get(m.id) || [], T = OpsSheet.dnum(P.today);
       $("sheetBody").innerHTML = `
-        <div class="panel"><div class="chips">${stTag(m)}${m.newbie ? `<span class="tag watch">날떼 전, 입장 ${esc(mdS(m.joinDate))}</span>` : ""}${m.couple ? `<span class="tag">${m.heart ? esc(m.heart) + " " : ""}커플</span>` : ""}${S.ledger && !m.chat ? `<span class="tag">대화 기록과 잇지 못해 시트 값</span>` : ""}${Object.keys(m.extra).map((k) => `<span class="tag">${esc(k)}열 ${esc(m.extra[k])}</span>`).join("")}<span class="tag">멤버 ${esc(m.rows.join(", "))}행</span></div>
+        <div class="panel"><div class="chips">${stTag(m)}${m.newbie ? `<span class="tag watch">날떼 전, 입장 ${esc(mdS(m.joinDate))}</span>` : ""}${m.couple ? `<span class="tag">${m.heart ? esc(m.heart) + " " : ""}커플</span>` : ""}${S.ledger && !m.chat ? `<span class="tag">대화 기록과 잇지 못해 시트 값</span>` : ""}${Object.keys(m.extra).map((k) => `<span class="tag">${esc(k)}열(제목 없음) ${esc(m.extra[k])}</span>`).join("")}<span class="tag">멤버 ${esc(m.rows.join(", "))}행</span></div>
           ${m.checks.length ? `<div class="chips">${m.checks.map((c) => `<span class="tag ${c.l === "info" ? "" : c.l}"${tipAttr(c.x || "")}>${esc(c.t)}</span>`).join("")}</div>` : ""}
           <dl class="kv"><div><dt>최근 30일 벙</dt><dd>${nf(m.d30)}번</dd></div><div><dt>${esc(per.l)} 순위(${RS.by === "days" ? "간 날 수" : "벙 수"})</dt><dd>${me ? `${me.tie ? "공동 " : ""}${nf(me.rank)}등, ${nf(me[RS.by])}${rankUnit(RS.by)}${inLive ? "" : "(나간 사람도 셈)"}` : "기록 없음"}</dd></div><div><dt>전체 벙</dt><dd>${nf(m.total)}번, 벙주 ${nf(m.hosted)}번</dd></div>
             <div><dt>처음, 마지막 벙</dt><dd>${m.first ? esc(mdS(m.first)) + ", " + esc(mdS(m.last)) : "없음"}</dd></div><div><dt>${m.chat ? "재입장(대화 기록)" : "나간횟수(시트)"}</dt><dd>${nf(m.outs)}회${m.outLimit != null ? ", 한도 " + m.outLimit + "회" : ""}</dd></div><div><dt>노쇼</dt><dd>${m.noshows.length ? m.noshows.map((n) => esc(mdS(n.date))).join(", ") : "없음"}</dd></div>
             <div><dt>${m.chat && m.chat.region ? "지역(닉네임)" : "거주지(시트)"}</dt><dd>${esc(m.region || "없음")}</dd></div></dl>
-          ${(m.gaps || []).length ? `<div class="sub-h">시트에서 고칠 것(대화 기록 ${esc(mdS(SH.parsed.chatTo))}까지 기준)</div><ul class="ev">${m.gaps.map((g) => `<li><span>${g.level === "watch" ? ICON.watch + " " : ""}${esc(g.msg)}</span></li>`).join("")}</ul>` : ""}
+          ${(m.gaps || []).length ? `<div class="sub-h">시트에서 고칠 것(대화 기록 ${esc(mdS(SH.parsed.chatTo))}까지 기준)</div><ul class="ev">${m.gaps.map((g) => `<li><span>${g.level === "watch" ? ICON.watch + " " : ""}${esc(g.msg)} <span class="cap">${esc(g.where || "")}</span></span></li>`).join("")}</ul>` : ""}
+          <div class="chips">${(S.records.contact || {})[m.id] ? `<span class="tag good">연락함 ${esc(mdS(S.records.contact[m.id]))}</span><button type="button" class="text-btn" data-contact="${esc(m.id)}" data-off="1">풀기</button>` : ""}<button type="button" class="btn btn-secondary is-sm" data-contact="${esc(m.id)}">오늘 연락함</button></div>
           <div class="sub-h">주마다 벙, 8주</div>${vbars(wk.map((v, i) => { const hi = T - 7 * (7 - i); return { l: mdS(OpsSheet.dateOf(hi - 6)), v, tip: mdS(OpsSheet.dateOf(hi - 6)) + "~" + mdS(OpsSheet.dateOf(hi)) + ": " + v + "번" }; }), "sm")}
           ${m.calcDiff.length ? `<p class="sub">시트 계산 값과 다름: ${esc(m.calcDiff.join(", "))}</p>` : ""}
           ${m.note ? `<p class="sub" style="white-space:pre-wrap;color:var(--ink)">${esc(m.note)}</p>` : ""}
           ${(m.older || []).length ? `<p class="sub">같은 사람의 다른 줄: ${m.older.map((o) => esc(o.row + "행 " + (o.statusRaw || "활동") + (o.joinMD ? ", 입장 " + o.joinMD : ""))).join(", ")}</p>` : ""}</div>
-        <div class="panel"><h2>시트 경고 <small>${nf(m.warnings.length)}회, 참고(조치 단계는 기록 탭)</small></h2>
+        <div class="panel"><h2>시트 경고 <small>${nf(m.warnings.length)}회, 참고(조치 단계는 조치 탭)</small></h2>
           ${m.warnings.length ? `<ul class="ev">${m.warnings.map((w) => `<li><time>${w.date ? esc(mdS(w.date)) : "날짜 없음"}</time><span>${w.n}차 ${esc(w.reason || "사유 없음")}</span></li>`).join("")}</ul>` : `<p class="sub">없습니다.</p>`}
           ${m.issues.length ? `<p class="sub">이슈 탭: ${m.issues.map((e) => esc(mdS(e.date) + " " + (e.action || ""))).join(", ")}</p>` : ""}
           ${acts.length ? `<p class="sub">대시보드 조치 기록 ${nf(acts.length)}건(대화 기록 쪽 상세에서 봅니다)</p>` : ""}</div>
@@ -1583,6 +1589,9 @@
       const lc = t.closest("[data-linkclear]"); if (lc) { const rec = sheetRec(); if (rec.link[lc.dataset.linkclear]) { delete rec.link[lc.dataset.linkclear]; fixChanged("직접 이은 것을 풀었습니다."); } else { rec.link[lc.dataset.linkclear] = "none"; fixChanged("풀었습니다. 아래에서 다른 사람을 고를 수 있습니다."); } return; }
       const pn = t.closest("[data-pin]"); if (pn) { const id = +pn.dataset.pin; const rec = sheetRec(); try { if (!SH.snaps.has(id)) { const r = await shCall("ops_sheet_get", { p_since: SH.latestId, p_ids: [id] }); (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s)); } rec.acceptedId = id; rec.pinned = id !== SH.latestId; saveRecords(); sheetProcess(); renderAll(); toast("판 " + id + "을 봅니다."); } catch (err) { toast("불러오지 못했습니다."); } return; }
       const cp = t.closest("[data-copy]"); if (cp) { const el = $(cp.dataset.copy); if (el) copyText(el.value); return; }
+      const ctb = t.closest("[data-contact]"); if (ctb) { const c = S.records.contact = S.records.contact || {}; if (ctb.dataset.off) delete c[ctb.dataset.contact]; else c[ctb.dataset.contact] = todayKST(); fixChanged(ctb.dataset.off ? "연락함을 풀었습니다." : "오늘 연락함으로 적었습니다."); return; }
+      if (t.closest("[data-copyfix]") && SH.parsed) { copyText(SH.parsed.problems.filter((p) => p.level !== "info").map((p) => PWHERE(p) + ": " + ptitle(p) + (p.who ? ", " + p.who : "") + (p.value ? ", " + String(p.value).slice(0, 60) : "") + (p.msg !== ptitle(p) && p.code !== "b_draft" ? " (" + p.msg + ")" : "")).join("\n")); return; }
+      const cn = t.closest("[data-copynames]"); if (cn && SH.parsed) { const X = sheetCalc(SH.parsed), td = X.todo.find((x) => x.b.key === cn.dataset.copynames); if (td) copyText(td.b.t(X.set) + ": " + td.rows.map((x) => x.m.name).join(", ")); return; }
       const cf = t.closest("[data-copyfile]"); if (cf) { try { const r = await fetch(cf.dataset.copyfile, { cache: "no-store" }); if (!r.ok) throw new Error(); copyText(await r.text()); } catch (err) { toast("가져오지 못했습니다."); } return; }
     });
     document.addEventListener("change", (e) => {
@@ -1628,9 +1637,11 @@
       const m = sheetOf(p.pid);
       if (!m) return `<div class="panel"><h2>시트</h2><p class="sub">시트에서 이 사람을 찾지 못했습니다.</p><button type="button" class="text-btn" data-golink="1">시트 탭의 잇기에서 고르기</button></div>`;
       return `<div class="panel"><h2>시트 <small>${esc(mLabel(m))}, 대화 기록에 없는 것은 참고</small></h2>
-        ${(m.gaps || []).length ? `<p class="sub">시트에서 고칠 것: ${esc(m.gaps.map((g) => g.msg).join(", "))}</p>` : ""}
+        ${(m.gaps || []).length ? `<p class="sub">시트에서 고칠 것: ${esc(m.gaps.map((g) => g.msg + "(" + (g.where || "") + ")").join(", "))}</p>` : ""}
         <div class="chips">${m.checks.filter((c) => c.l !== "info").map((c) => `<span class="tag ${c.l}">${esc(c.t)}</span>`).join("")}</div>
-        <dl class="kv"><div><dt>벙 30일, 전체</dt><dd>${nf(m.d30)}, ${nf(m.total)}</dd></div><div><dt>마지막 벙</dt><dd>${m.last ? esc(md(m.last)) : "없음"}</dd></div><div><dt>경고</dt><dd>${m.warnings.length ? m.warnings.length + "회" : "없음"}</dd></div></dl>
+        ${(() => { const X = sheetCalc(SH.parsed), R = rankState(SH.parsed, X), me = OpsSheet.rank(SH.parsed, { from: R.per.from, to: R.per.to, by: R.by, ids: X.liveIds[m.id] ? X.liveIds : null, nameOf: idName }).find((x) => x.id === m.id);
+          return `<dl class="kv"><div><dt>벙 30일, 전체</dt><dd>${nf(m.d30)}, ${nf(m.total)}</dd></div><div><dt>마지막 벙</dt><dd>${m.last ? esc(md(m.last)) : "없음"}</dd></div><div><dt>${esc(R.per.l)} 순위</dt><dd>${me ? (me.tie ? "공동 " : "") + nf(me.rank) + "등" : "기록 없음"}</dd></div>
+            <div><dt>노쇼</dt><dd>${m.noshows.length ? m.noshows.map((n) => esc(mdS(n.date))).join(", ") : "없음"}</dd></div><div><dt>시트 경고(참고)</dt><dd>${m.warnings.length ? m.warnings.map((w) => w.n + "차 " + esc(w.reason || "사유 없음") + (w.date ? "(" + esc(mdS(w.date)) + ")" : "")).join(", ") : "없음"}</dd></div>${(S.records.contact || {})[m.id] ? `<div><dt>연락</dt><dd>${esc(mdS(S.records.contact[m.id]))}</dd></div>` : ""}</dl>`; })()}
         ${m.note ? `<p class="sub" style="white-space:pre-wrap">${esc(m.note)}</p>` : ""}
         <button type="button" class="btn btn-secondary is-sm" data-smember="${esc(m.id)}">시트 정보 보기</button></div>`;
     }
@@ -1667,7 +1678,8 @@
         <div class="panel">
           <div class="chips">${statusTag(p)}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : `<span class="tag">파일 시작 전부터 있음</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}${pr.heart ? `<span class="tag">${esc(pr.heart)} ${esc(HEART_LABEL[pr.heartKind] || "")}${heartPartner(p.name) ? ": " + esc(heartPartner(p.name)) : ""}</span>` : ""}</div>
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
-          ${pend.length ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
+          ${pend.length || BOARD.some((b) => b.pick(p) != null && !boardSeen(p, b.key, b.pick(p))) ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
+          ${(S.records.reviewed[p.pid] || {})._at ? `<div class="chips"><span class="tag good">확인함 ${esc(md(S.records.reviewed[p.pid]._at))}</span><button id="unreviewBtn" class="text-btn" type="button">풀기</button></div>` : ""}
         </div>
         ${sheetPanel(p)}
         <div class="panel"><h2>들어옴, 나감 <small>재입장 ${reAfter(p).length}회(기준일 뒤)${reAfterAll(p).length !== reAfter(p).length ? ", 한도에서 뺌 " + (reAfterAll(p).length - reAfter(p).length) + "회" : ""}${p.reentries.length !== reAfterAll(p).length ? ", 전체 " + p.reentries.length + "회" : ""}${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 미리 허용 +" + e.reentry : ""}</small></h2>
@@ -1711,7 +1723,7 @@
           <textarea id="noteText" class="textarea" rows="3" maxlength="2000" placeholder="메모" aria-label="메모">${esc(S.records.notes[p.pid] || "")}</textarea>
           <div class="form-row">
             <label class="field"><span>미리 허용한 재입장(회)</span><input id="excRe" class="input" type="number" min="0" max="5" value="${+e.reentry || 0}" /></label>
-            <label class="field"><span>장기 미참여 알림(이 날까지)</span><input id="excAway" class="input" type="date" value="${esc(e.awayUntil || "")}" /></label>
+            <label class="field"><span>조용해진 멤버에서 빼기(이 날까지)</span><input id="excAway" class="input" type="date" value="${esc(e.awayUntil || "")}" /></label>
           </div>
           <button id="noteSave" class="btn btn-secondary is-sm" type="button">메모와 예외 저장</button>
         </div>`;
@@ -1725,8 +1737,10 @@
       }));
       $("ioNoteSave").addEventListener("click", () => { const t = $("ioNote").value.trim(); ioSet((cur) => { cur.note = t; }); toast("입퇴장 메모를 저장했습니다."); });
       $("sheetBody").querySelectorAll("[data-unlink]").forEach((b) => b.addEventListener("click", () => { delete S.records.links[b.dataset.unlink]; saveRecords(); runAnalysis("풀었습니다. 저장하면 다른 기기에서도 보입니다."); }));
+      const ub = $("unreviewBtn");
+      if (ub) ub.addEventListener("click", () => { delete S.records.reviewed[p.pid]; saveRecords(); renderAll(); renderSheet(p); toast("확인함을 풀었습니다."); });
       const rb = $("reviewBtn");
-      if (rb) rb.addEventListener("click", () => { const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {}; pending(p).forEach((f) => { rv[f.c] = f.k || f.x; }); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
+      if (rb) rb.addEventListener("click", () => { markReviewed(p); saveRecords(); renderAll(); renderSheet(p); toast("확인함으로 표시했습니다."); });
       $("actKind").addEventListener("change", () => { const k = $("actKind").value; if (k !== "etc") $("actStep").value = nextStepOf(ladderLv(S.records.actions.filter((a) => a.pid === p.pid && a.kind === k))); });
       $("actAdd").addEventListener("click", () => {
         S.records.actions.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), pid: p.pid, name: p.name, kind: $("actKind").value, step: $("actStep").value, date: $("actDate").value || todayKST(), reason: $("actReason").value.trim().slice(0, 200) });
@@ -1996,6 +2010,14 @@
       { key: "sh_warn", t: "경고 2회 이상(시트 참고)", l: "watch", img: "rules-boundaries", hideZero: true, pick: (p) => { const m = sheetOf(p.pid); return m && m.warnings.length >= 2 ? m.warnings.length + "회" : null; } }
     ];
     function boardRows(key) { const b = BOARD.find((x) => x.key === key); return b ? members().map((p) => ({ p, d: b.pick(p) })).filter((x) => x.d != null) : []; }
+    // 확인함: 그 사람의 카드 내용(d)이 그대로면 확인한 것으로 본다. 내용이 바뀌면(재입장이 늘어남 등) 다시 올라온다
+    const boardSeen = (p, key, d) => { const rv = S.records.reviewed[p.pid]; return !!(rv && rv["b:" + key] === String(d)); };
+    function markReviewed(p) {
+      const rv = S.records.reviewed[p.pid] = S.records.reviewed[p.pid] || {};
+      pending(p).forEach((f) => { rv[f.c] = f.k || f.x; });
+      BOARD.forEach((b) => { const d = b.pick(p); if (d != null) rv["b:" + b.key] = String(d); });
+      rv._at = todayKST();
+    }
 
     function renderDash() {
       const host = document.querySelector('[data-panel="dash"]');
@@ -2023,12 +2045,15 @@
 
       // 2) 확인할 것
       const cards = BOARD.map((b) => {
-        const rows = boardRows(b.key);
-        if (!rows.length && b.hideZero) return "";
-        const chips = rows.slice(0, 12).map((x) => `<button type="button" class="nchip" data-person="${esc(x.p.pid)}">${esc(x.p.name)}${x.d ? `<em>${esc(x.d)}</em>` : ""}</button>`).join("");
+        const all = boardRows(b.key);
+        if (!all.length && b.hideZero) return "";
+        const rows = all.filter((x) => !boardSeen(x.p, b.key, x.d)), seen = all.filter((x) => boardSeen(x.p, b.key, x.d));
+        const chip = (x) => `<button type="button" class="nchip" data-person="${esc(x.p.pid)}">${esc(x.p.name)}${x.d ? `<em>${esc(x.d)}</em>` : ""}</button>`;
         return `<article class="bcard lv-${b.l}">
           <div class="b-head"><div><h3>${esc(b.t)}</h3><strong class="b-count">${nf(rows.length)}<small>명</small></strong>${lvl(b.l)}</div>${b.img ? art(b.img) : ""}</div>
-          ${rows.length ? `<div class="nchips">${chips}${rows.length > 12 ? `<span class="more">외 ${rows.length - 12}명</span>` : ""}</div><button type="button" class="text-btn" data-sheetfilter="chk:${b.key}">시트에서 보기</button>` : `<p class="b-none">없습니다.</p>`}
+          ${rows.length ? `<div class="nchips">${rows.slice(0, 12).map(chip).join("")}${rows.length > 12 ? `<span class="more">외 ${rows.length - 12}명</span>` : ""}</div>` : `<p class="b-none">${seen.length ? "모두 확인했습니다." : "없습니다."}</p>`}
+          ${seen.length ? `<details class="more"><summary>확인한 사람 ${nf(seen.length)}명</summary><div class="nchips">${seen.map(chip).join("")}</div></details>` : ""}
+          ${all.length ? `<button type="button" class="text-btn" data-sheetfilter="chk:${b.key}">표에서 보기</button>` : ""}
         </article>`;
       }).join("");
       const rc = rosterCompare();
@@ -2077,12 +2102,12 @@
       const hg = heartGroups();
 
       host.innerHTML = `
-        <nav class="jump" aria-label="대시보드 안에서 이동">${[["d-sum", "요약"], ["d-check", "확인할 것"], ["d-flow", "흐름"], ["d-comp", "구성"], ["d-act", "활동"], ["d-sheet", "멤버 시트"], ["d-good", "좋은 활동"], ["d-recent", "최근 드나듦"]].map(([id, t]) => `<button type="button" data-jump="${id}">${t}</button>`).join("")}</nav>
-        <section class="dsec" id="d-sum"><h2>요약 <small>대화 ${esc(md(L.range.from))} ~ ${esc(md(L.range.to))}</small></h2>${kpis}</section>
+        <nav class="jump" aria-label="대시보드 안에서 이동">${[["d-sum", "요약"], ["d-check", "확인할 것"], ["d-flow", "흐름"], ["d-comp", "구성"], ["d-act", "활동"], ["d-sheet", "멤버 표"], ["d-good", "좋은 활동"], ["d-recent", "최근 드나듦"]].map(([id, t]) => `<button type="button" data-jump="${id}">${t}</button>`).join("")}</nav>
+        <section class="dsec" id="d-sum"><h2>요약 <small>대화 ${esc(md(L.range.from))} ~ ${esc(md(L.range.to))}</small></h2>${S.prevSeen ? (() => { const d0 = kstDate(S.prevSeen), inN = members().filter((p) => p.joinedAt && p.joinedAt >= d0).length, outN = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && p.outDate >= d0).length, bn = SH.parsed ? SH.parsed.bungs.filter((b) => b.state === "ok" && b.date >= d0).length : null; return `<p class="cap">지난번 연 날(${esc(md(d0))} ${esc(kstHM(S.prevSeen))})부터: 들어옴 ${nf(inN)}, 나감 ${nf(outN)}${bn != null ? ", 시트 벙 " + nf(bn) + "줄" : ""}${L.range.to < d0 ? ". 대화 기록은 " + esc(md(L.range.to)) + "까지라 새 파일을 올리면 더 보입니다" : ""}</p>`; })() : ""}${kpis}</section>
         <section class="dsec" id="d-check"><h2>확인할 것 <small>지금 멤버 ${nf(M.length)}명, 규칙 기준일 ${esc(md(ruleFrom()))}</small></h2><div class="board">${cards}${rosterCard}</div></section>
         <section class="dsec" id="d-flow"><h2>흐름</h2><div class="cgrid">
           <article class="card span-8"><h3>월별 들어옴과 나감</h3><p class="cap">막대에 대면 그 달의 수가 보입니다.</p>${monthlyChart(L.months)}
-            <details class="more"><summary>월별 표 보기</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th><th>가림</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td><td>${nf(m.hidden || 0)}</td></tr>`).join("")}</tbody></table></div></details></article>
+            <details class="more"><summary>월별 표 보기</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th><th>가려진 메시지</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td><td>${nf(m.hidden || 0)}</td></tr>`).join("")}</tbody></table></div></details></article>
           <article class="card span-4"><div class="c-head"><div><h3>신입 흐름</h3><p class="cap">들어옴 ${nf(f.joined)}번 기준(같은 사람이 여러 번 들어오면 각각)</p></div>${art("flow-enter")}</div>${funnel}</article>
         </div></section>
         <section class="dsec" id="d-comp"><h2>구성 <small>지금 멤버 ${nf(M.length)}명</small></h2><div class="cgrid">
@@ -2096,7 +2121,7 @@
           <article class="card span-4"><h3>최근 30일 많이 말한 멤버</h3>${hbars(top, { unit: "건", color: "var(--s-violet)" })}</article>
           <article class="card span-4"><h3>요일과 시간대 <small class="cap">${grid ? esc(L.grid.recentFrom) + "부터 3개월" : ""}</small></h3>${grid ? heat(grid) : `<p class="empty">파일을 다시 올리면 보입니다.</p>`}</article>
         </div></section>
-        <section class="dsec" id="d-sheet"><h2>멤버 시트</h2><div id="sheetHost"></div></section>
+        <section class="dsec" id="d-sheet"><h2>멤버 표</h2><div id="sheetHost"></div></section>
         <section class="dsec" id="d-good"><h2>좋은 활동 <small>지금 멤버, 전체 기간</small></h2><div class="cgrid">${good}</div></section>
         <section class="dsec" id="d-recent"><h2>최근 30일 드나듦</h2><div class="cgrid">
           <article class="card span-4"><h3>들어온 사람 <small class="cap">${nf(inList.length)}명</small></h3>${inList.length ? `<ol class="glist">${inList.map((p) => `<li><button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(p.name)}</button><span>${esc(md(p.joinedAt))}, 30일 ${nf(p.d30)}건</span></li>`).join("")}</ol>` : `<p class="cap">없습니다.</p>`}</article>
