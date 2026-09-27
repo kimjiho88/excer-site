@@ -98,6 +98,7 @@
     }
     return best;
   }
+  var EXACT = { member: "멤버", bung: "벙", issue: "이슈" };
   function locate(tabs) {
     var found = {}, used = {};
     ["member", "bung", "issue"].forEach(function (kind) {
@@ -105,9 +106,11 @@
       tabs.forEach(function (t, i) {
         if (used[i] || !t || !Array.isArray(t.values)) return;
         var h = findHeader(t.values, spec);
-        if (h) cands.push({ i: i, h: h, named: spec.tab.test(String(t.name || "")) });
+        var nm = String(t.name || "").replace(/\s+/g, "");
+        // 이름이 딱 맞는 탭(멤버, 벙, 이슈) 먼저, 그다음 이름에 들어 있는 탭. 숨긴 탭('나간 멤버' 보관 탭 등)은 뒤로
+        if (h) cands.push({ i: i, h: h, exact: nm === EXACT[kind] ? 1 : 0, named: spec.tab.test(nm) ? 1 : 0, shown: t.hidden ? 0 : 1 });
       });
-      cands.sort(function (a, b) { return (b.named - a.named) || (b.h.hits - a.h.hits); });
+      cands.sort(function (a, b) { return (b.shown - a.shown) || (b.exact - a.exact) || (b.named - a.named) || (b.h.hits - a.h.hits); });
       if (cands.length) { found[kind] = { tab: tabs[cands[0].i], idx: cands[0].i, h: cands[0].h }; used[cands[0].i] = true; }
     });
     return found;
@@ -219,7 +222,7 @@
     out.members = members;
 
     /* 이름 찾기: 같은 이름이 여럿이면 나가지 않은 사람, 그래도 여럿이면 정하지 않는다 */
-    var byName = {};
+    var byName = Object.create(null);
     members.forEach(function (m) { var k = tight(m.name); (byName[k] = byName[k] || []).push(m); });
     function lookup(t) {
       var c = byName[tight(t)] || [];
@@ -244,7 +247,8 @@
     var memberIds = {}; members.forEach(function (m) { memberIds[m.id] = m; });
     function classify(text) {
       var t = squash(text); if (!t) return null;
-      var raw = t, al = alias[tight(t)];
+      var raw = t, al = Object.prototype.hasOwnProperty.call(alias, tight(t)) ? alias[tight(t)] : null;
+      if (/^\d+\s*명?$/.test(t)) return { k: "note", raw: raw };   // 인원 같은 숫자만 적은 칸
       if (al) { if (memberIds[al]) return { k: "member", id: al, raw: raw, via: "alias" }; t = squash(al); }
       var gm = t.match(/^(게스트|게)\s*(\d*)\s*(?:[(（]\s*(.*?)\s*[)）])?$/);
       if (gm) return { k: "guest", raw: raw, who: gm[3] || "" };
@@ -262,15 +266,20 @@
     /* 벙 */
     var bt = loc.bung, bh = bt.h, bv = bt.tab.values, BN = bt.tab.name;
     var pStart = bh.map.people != null ? bh.map.people : bh.map.host + 1;
-    var bungs = [], seenKey = {};
+    var hdr2 = bv[bh.row] || [], pEnd = Infinity;
+    for (var hc = pStart + 1; hc < hdr2.length; hc++) if (clean(hdr2[hc]) && !/^(참여자|참석자|참가자|멤버)/.test(tight(hdr2[hc]))) { pEnd = hc; break; }
+    Object.keys(bh.map).forEach(function (k) { if (bh.map[k] > pStart && bh.map[k] < pEnd) pEnd = bh.map[k]; });
+    var bungs = [], seenKey = {}, sigN = Object.create(null);
     for (var r2 = bh.row + 1; r2 < bv.length; r2++) {
       var row2 = bv[r2] || [];
       var g2 = function (k) { var i = bh.map[k]; return i == null ? "" : clean(row2[i]); };
       var dateRaw = g2("date"), title = squash(g2("title")), place = squash(g2("place")), hostRaw = squash(g2("host"));
-      var cells = []; for (var c2 = pStart; c2 < row2.length; c2++) cells.push({ c: c2, t: squash(row2[c2]) });
+      var cells = []; for (var c2 = pStart; c2 < Math.min(row2.length, pEnd); c2++) cells.push({ c: c2, t: squash(row2[c2]) });
       var filled = cells.filter(function (x) { return x.t; });
       if (!dateRaw && !title && !place && !hostRaw && !filled.length) continue;
-      var sig = "b|" + tight(dateRaw) + "|" + tight(title) + "|" + tight(hostRaw);
+      var sig0 = "b|" + tight(dateRaw) + "|" + tight(title) + "|" + tight(hostRaw);
+      sigN[sig0] = (sigN[sig0] || 0) + 1;
+      var sig = sigN[sig0] > 1 ? sig0 + "#" + sigN[sig0] : sig0;
       var bg = { row: r2 + 1, sig: sig, dateRaw: dateRaw, date: parseDate(dateRaw), title: title, place: place, hostRaw: hostRaw, host: "", people: [], guests: [], noshows: [], notes: [], unknown: [], amb: [], flags: [] };
       if (ignore[sig]) { bg.state = "ignored"; out.ignored.push(bg); bungs.push(bg); continue; }
       var R = r2 + 1, seen = {};
@@ -542,9 +551,18 @@
     if (!prev || !prev.structure.ok) return { state: "ok" };
     var d = diff(prev, next), why = [];
     var pm = prev.members.length, pb = prev.bungs.filter(function (x) { return x.state !== "draft"; }).length;
-    var rm = d.members.removed.length, rb = d.bungs.removed.length;
-    if (rm >= 3 && rm / Math.max(1, pm) >= 0.1) why.push("멤버 " + rm + "명이 사라짐");
-    if (rb >= 3 && rb / Math.max(1, pb) >= 0.1) why.push("벙 " + rb + "줄이 사라짐");
+    var bad = function (P) { return P.bungs.filter(function (x) { return x.state === "bad"; }).length; };
+    var badUp = Math.max(0, bad(next) - bad(prev));
+    var rm = d.members.removed.length, rb = Math.max(0, d.bungs.removed.length - badUp);
+    var many = function (n, base) { return n >= 10 || (n >= 3 && n / Math.max(1, base) >= 0.1); };
+    if (badUp >= 3) why.push("날짜를 읽지 못한 벙 " + badUp + "줄(날짜 모양이 바뀌었을 수 있음)");
+    if (many(rm, pm)) why.push("멤버 " + rm + "명이 사라짐");
+    if (many(rb, pb)) why.push("벙 " + rb + "줄이 사라짐");
+    var FL = { statusRaw: "활동중 여부", joinMD: "날떼여부", warnN: "경고여부", warnings: "경고", extra: "표시 칸" }, byF = {};
+    d.members.changed.forEach(function (c) { c.fields.forEach(function (f) { byF[f.k] = (byF[f.k] || 0) + 1; }); });
+    Object.keys(byF).forEach(function (k) { if (byF[k] >= 5 && byF[k] / Math.max(1, pm) >= 0.05) why.push("멤버 " + byF[k] + "명의 " + (FL[k] || LABEL[k] || k) + "가 한꺼번에 바뀜"); });
+    var bc = d.bungs.changed.length;
+    if (bc >= 5 && bc / Math.max(1, pb) >= 0.05) why.push("벙 " + bc + "줄의 사람이 한꺼번에 바뀜");
     if (pm && !next.members.length) why.push("멤버가 하나도 없음");
     if (pb && !next.bungs.length) why.push("벙이 하나도 없음");
     return why.length ? { state: "hold", why: why, diff: d } : { state: "ok", diff: d };
@@ -655,8 +673,8 @@
     out.sizes = [["1명", 1, 1], ["2명", 2, 2], ["3~4명", 3, 4], ["5~7명", 5, 7], ["8명 이상", 8, 999]].map(function (t) { return { l: t[0], v: sizes.filter(function (n) { return n >= t[1] && n <= t[2]; }).length }; });
     out.sizeMid = median(sizes);
     // 자주 가는 곳(최근 30일)
-    var pl = {};
-    cur.forEach(function (b) { var k = tight(b.place); if (!k) return; var e = pl[k] || (pl[k] = { n: 0, names: {} }); e.n += 1; e.names[b.place] = (e.names[b.place] || 0) + 1; });
+    var pl = Object.create(null);
+    cur.forEach(function (b) { var k = tight(b.place); if (!k) return; var e = pl[k] || (pl[k] = { n: 0, names: Object.create(null) }); e.n += 1; e.names[b.place] = (e.names[b.place] || 0) + 1; });
     out.places = Object.keys(pl).map(function (k) { var e = pl[k]; var nm = Object.keys(e.names).sort(function (a, b) { return e.names[b] - e.names[a]; })[0]; return { l: nm, n: e.n }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
     out.placeN = Object.keys(pl).length;
     // 신입 첫 벙: 기록 기간 안에 들어온 멤버(시트 입장일, 없으면 대화 기록의 입장일)
