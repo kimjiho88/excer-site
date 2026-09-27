@@ -543,7 +543,8 @@
     var cur = within(30, 0), prv = within(30, 30);
     var prvDays = Math.max(0, Math.min(30, T - 30 - (C0 - 1)));   // 앞 30일 가운데 기록이 있는 날 수
     var out = { today: today, cover: P.cover };
-    out.win = { bungs: cur.length, heads: heads(cur), people: Object.keys(cnt(cur)).length, prevBungs: prv.length, prevHeads: heads(prv), prevDays: prvDays,
+    var curDays = P.cover && P.cover.from ? Math.max(1, Math.min(30, T - C0 + 1)) : 0;   // 최근 30일 가운데 기록이 있는 날 수
+    out.win = { bungs: cur.length, heads: heads(cur), people: Object.keys(cnt(cur)).length, curDays: curDays, prevBungs: prv.length, prevHeads: heads(prv), prevDays: prvDays,
       hosts: Object.keys(cnt(cur, true)).length, avgSize: cur.length ? Math.round((heads(cur) / cur.length) * 10) / 10 : 0 };
     // 주별(최근 8주, 오늘까지 7일씩)
     out.weeks = [];
@@ -559,14 +560,16 @@
     out.weekday = wd.map(function (n, k) { return { n: n, days: wdN[k], avg: wdN[k] ? Math.round((n / wdN[k]) * 10) / 10 : 0, heads: wdH[k] }; });
     // 참여 분포(활동 멤버, 최근 30일)와 쏠림
     var c30 = cnt(cur);
-    var tiers = [["0번", 0, 0], ["1~2번", 1, 2], ["3~5번", 3, 5], ["6~10번", 6, 10], ["11번 넘게", 11, 9999]];
+    var tiers = [["0번", 0, 0], ["1~2번", 1, 2], ["3~5번", 3, 5], ["6~10번", 6, 10], ["11번 이상", 11, 9999]];
     out.tiers = tiers.map(function (t) { return { l: t[0], v: act.filter(function (m) { var n = c30[m.id] || 0; return n >= t[1] && n <= t[2]; }).length }; });
     var memHeads = Object.keys(c30).filter(function (id) { return P.byId[id]; }).map(function (id) { return c30[id]; }).sort(function (a, b) { return b - a; });
     var totHeads = memHeads.reduce(function (a, b) { return a + b; }, 0);
     out.conc = { total: totHeads, people: memHeads.length, top10: memHeads.slice(0, 10).reduce(function (a, b) { return a + b; }, 0) };
-    // 늘어난 멤버, 줄어든 멤버(최근 30일과 앞 30일)
-    var cp = cnt(prv);
-    out.change = live.map(function (m) { return { id: m.id, now: c30[m.id] || 0, before: cp[m.id] || 0 }; }).filter(function (x) { return x.now || x.before; });
+    // 늘어난 멤버, 줄어든 멤버: 같은 길이의 두 기간(최근 L일과 그 앞 L일, L은 30일까지). 기록이 짧으면 L을 줄이고 14일 밑이면 견주지 않음
+    var L = P.cover && P.cover.from ? Math.min(30, Math.floor((T - C0 + 1) / 2)) : 0;
+    out.chgDays = L;
+    var cn = L >= 14 ? cnt(within(L, 0)) : {}, cp = L >= 14 ? cnt(within(L, L)) : {};
+    out.change = L < 14 ? [] : live.map(function (m) { return { id: m.id, now: cn[m.id] || 0, before: cp[m.id] || 0 }; }).filter(function (x) { return x.now || x.before; });
     out.change.forEach(function (x) { x.d = x.now - x.before; });
     out.up = out.change.filter(function (x) { return x.d > 0; }).sort(function (a, b) { return b.d - a.d || b.now - a.now; }).slice(0, 6);
     out.down = out.change.filter(function (x) { return x.d < 0; }).sort(function (a, b) { return a.d - b.d || b.before - a.before; }).slice(0, 6);
@@ -581,7 +584,7 @@
     out.pairs = Object.keys(pc).map(function (k) { var ab = k.split("\u0000"); var mn = Math.min(c30[ab[0]] || 0, c30[ab[1]] || 0); return { a: ab[0], b: ab[1], n: pc[k], share: mn ? Math.round((pc[k] / mn) * 100) : 0 }; })
       .filter(function (x) { return x.n >= 3; }).sort(function (a, b) { return b.n - a.n || b.share - a.share; }).slice(0, 10);
     // 구성: 활동 멤버와 최근 30일 참석의 성별, 나이대
-    var bands = [["80~84", 1980, 1984], ["85~89", 1985, 1989], ["90~94", 1990, 1994], ["95~99", 1995, 1999], ["00 이후", 2000, 2099]];
+    var bands = [["80년생 전", 1900, 1979], ["80~84년생", 1980, 1984], ["85~89년생", 1985, 1989], ["90~94년생", 1990, 1994], ["95~99년생", 1995, 1999], ["00년생 이후", 2000, 2099]];
     var byId = P.byId;
     var headBy = function (fn) { var r = {}; cur.forEach(function (b) { whoOf(b).forEach(function (id) { var m = byId[id]; if (!m) return; var k = fn(m); if (k) r[k] = (r[k] || 0) + 1; }); }); return r; };
     var sexH = headBy(function (m) { return m.sex; });
@@ -591,7 +594,7 @@
     out.bands = bands.map(function (b) { return { l: b[0], members: act.filter(function (m) { return bandOf(m) === b[0]; }).length, heads: bandH[b[0]] || 0 }; });
     // 벙 크기(최근 30일, 게스트 포함)
     var sizes = cur.map(function (b) { return whoOf(b).length + b.guests.length; });
-    out.sizes = [["1명", 1, 1], ["2명", 2, 2], ["3~4명", 3, 4], ["5~7명", 5, 7], ["8명 넘게", 8, 999]].map(function (t) { return { l: t[0], v: sizes.filter(function (n) { return n >= t[1] && n <= t[2]; }).length }; });
+    out.sizes = [["1명", 1, 1], ["2명", 2, 2], ["3~4명", 3, 4], ["5~7명", 5, 7], ["8명 이상", 8, 999]].map(function (t) { return { l: t[0], v: sizes.filter(function (n) { return n >= t[1] && n <= t[2]; }).length }; });
     out.sizeMid = median(sizes);
     // 자주 가는 곳(최근 30일)
     var pl = {};

@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="assets/site.css?v=20" />
   <script src="assets/chat-parser.js?v=10"></script>
   <script src="assets/ops-analyzer.js?v=4"></script>
-  <script src="assets/ops-sheet.js?v=2"></script>
+  <script src="assets/ops-sheet.js?v=3"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
     :root {
@@ -877,7 +877,7 @@
     }
     function syncHelp(s) {
       if (s.t === "멈춤" || s.t === "늦음") return "스크립트가 멈췄을 수 있습니다. 앱스 스크립트의 트리거와 실행 기록을 확인하고 syncNow 를 한 번 실행해 주세요. 통째로 보내므로 다시 돌면 빠진 것 없이 따라잡습니다. 급하면 붙여넣기로 넣을 수 있습니다.";
-      if (s.t === "스크립트 오류") return "스크립트가 시트를 읽거나 보내지 못했습니다. 아래 오류 문구를 보고 스크립트 속성(SHEET_ID, SYNC_TOKEN)과 시트 공유 권한을 확인해 주세요.";
+      if (s.t === "스크립트 오류") return "스크립트가 시트를 읽거나 보내지 못했습니다. 위 오류 문구를 보고 스크립트 속성(SHEET_ID, SYNC_TOKEN)과 시트 공유 권한을 확인해 주세요.";
       return "";
     }
 
@@ -903,13 +903,13 @@
     const r1 = (v) => Math.round(v * 10) / 10;
     const SBOARD = [
       { key: "first_late", t: (s) => "첫 모임 " + s.firstMeetDays + "일 넘김", l: "rule", codes: ["first_late"], ord: (m) => m.joinDate, chip: (m, P) => mdS(m.joinDate) + " 입장, " + (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate)) + "일" },
-      { key: "regular", t: (s) => s.regularDays + "일 넘게 벙 없음", l: "rule", codes: ["regular"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음"), none: (P, s) => (P.cover.days < s.regularDays ? "기록 " + P.cover.days + "일치라 판정 전" : "") },
+      { key: "regular", t: (s) => s.regularDays + "일 넘게 벙 없음", l: "rule", codes: ["regular"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음"), none: (P, s) => (P.cover.days < s.regularDays ? "기록 " + (P.cover.from ? P.cover.days + 1 : 0) + "일치" : "") },
       { key: "warn", t: () => "경고 2회 이상", l: "watch", codes: ["warn3", "warn2"], ord: (m) => -m.warnings.length, chip: (m) => m.warnings.length + "회" },
       { key: "noshow", t: () => "노쇼", l: "watch", codes: ["noshow", "noshow1"], ord: (m) => -m.noshows.length, chip: (m) => m.noshows.length + "회" },
       { key: "outs", t: () => "나간횟수 한도 초과", l: "rule", codes: ["outs"], hideZero: true, ord: (m) => -m.outs, chip: (m) => m.outs + "/" + m.outLimit },
       { key: "first_wait", t: () => "첫 모임 기다림", l: "watch", codes: ["first_wait"], ord: (m) => m.joinDate, chip: (m, P, s) => Math.max(0, s.firstMeetDays - (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate))) + "일 남음" },
       { key: "no_record", t: () => "벙 기록 없음, 곧 기한", l: "watch", codes: ["no_record", "regular_soon"], ord: (m) => m.last || "", chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음") },
-      { key: "nalte", t: () => "벙에 왔는데 입장일이 남음", l: "watch", codes: ["nalte"], hideZero: true, ord: (m) => m.joinDate, chip: (m) => mdS(m.joinDate) + " 입장" }
+      { key: "nalte", t: () => "벙에 왔는데 날떼여부에 입장일이 남아 있음", l: "watch", codes: ["nalte"], hideZero: true, ord: (m) => m.joinDate, chip: (m) => mdS(m.joinDate) + " 입장" }
     ];
     const ST_LABEL = { active: "활동", away: "외출", inactive: "비활성", left: "나감", kicked: "강퇴", other: "모름" };
     const stTag = (m) => `<span class="tag ${m.status === "left" || m.status === "kicked" ? "out" : m.status === "active" ? "in" : ""}">${esc(m.status === "other" ? m.statusRaw : m.statusRaw || ST_LABEL[m.status])}</span>`;
@@ -955,11 +955,11 @@
     const TRI = { up: `<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.5 9 8H1z" fill="currentColor"/></svg>`, down: `<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 8.5 1 2h8z" fill="currentColor"/></svg>` };
     const dlPill = (d, unit) => (d == null ? "" : d === 0 ? `<span class="dl">같음</span>` : `<span class="dl ${d > 0 ? "up" : "down"}">${TRI[d > 0 ? "up" : "down"]}${d > 0 ? "+" : "-"}${nf(Math.abs(d))}${unit || ""}</span>`);
     // 최근 30일과 앞 30일은 하루 평균으로 견준다(앞 기간 기록이 30일보다 짧아도 공평하게). 14일치보다 짧으면 견주지 않음
-    function vsPrev(now, prev, prevDays, unit) {
-      const a = now / 30;
+    function vsPrev(now, prev, curDays, prevDays, unit) {
+      const a = curDays ? now / curDays : 0;
       if (prevDays < 14) return { html: `하루 ${r1(a)}${unit}${prevDays ? `, 앞 기간 기록 ${prevDays}일치` : ""}` };
       const b = prev / prevDays, pct = b ? Math.round((a / b - 1) * 100) : null;
-      return { html: `하루 ${r1(a)}${unit}, 앞 ${prevDays < 30 ? prevDays + "일" : "30일"} ${r1(b)}${unit} ${dlPill(pct, "%")}` };
+      return { html: `하루 ${r1(a)}${unit}, 앞 ${prevDays < 30 ? prevDays + "일" : "30일"}은 하루 ${r1(b)}${unit} ${r1(a) === r1(b) ? "" : dlPill(pct, "%")}` };
     }
     function vbars(items, cls) {
       const max = Math.max(1, ...items.map((x) => x.v));
@@ -970,7 +970,7 @@
       if (!items.length) return `<p class="empty">없습니다.</p>`;
       return `<div class="hbars">${items.map((x) => `<div class="hb" data-smember="${esc(x.id)}" role="button" tabindex="0"${tipAttr(x.tip)}><span class="hb-l">${esc(idName(x.id))}</span><span class="hb-t"><i style="width:${Math.max(1.5, (x.v / max) * 100)}%;background:var(--s-violet)"></i></span><span class="hb-v">${x.vt != null ? esc(x.vt) : nf(x.v)}</span></div>`).join("")}</div>`;
     }
-    const wkSpark = (a) => { const mx = Math.max(1, ...a); return `<span class="wk"${tipAttr("8주, 주마다 벙: " + a.join(", "))}>${a.map((v) => `<i class="${v ? "" : "z"}" style="height:${v ? Math.max(12, (v / mx) * 100) : 0}%"></i>`).join("")}</span>`; };
+    const wkSpark = (a) => { const mx = Math.max(1, ...a); return `<span class="wk" role="img" aria-label="${esc("8주, 주마다 벙 " + a.join(", "))}"${tipAttr("8주, 주마다 벙: " + a.join(", "))}>${a.map((v) => `<i class="${v ? "" : "z"}" style="height:${v ? Math.max(12, (v / mx) * 100) : 0}%"></i>`).join("")}</span>`; };
 
     /* 순위 기간: 기록이 있는 달(최근 달부터), 최근 30일, 전체 */
     function rankPeriods(P) {
@@ -993,9 +993,10 @@
       const by = SH.rk.by === "days" ? "days" : "count";
       const list = OpsSheet.rank(P, { from: per.from, to: per.to, by, ids: SH.rk.live ? X.liveIds : null, nameOf: idName });
       const bs = P.bungs.filter((b) => b.state === "ok" && b.date >= per.from && b.date <= per.to);
-      return { pers, per, by, list, bungs: bs.length, heads: bs.reduce((a, b) => a + (b.host ? 1 : 0) + b.people.length, 0) };
+      return { pers, per, by, list, bungs: bs.length, heads: list.reduce((a, x) => a + x.count, 0) };
     }
     const rankUnit = (by) => (by === "days" ? "일" : "번");
+    const rankSub = (x, by) => (by === "days" ? "벙 " + nf(x.count) + "번" : "간 날 " + nf(x.days) + "일");
     function rankGroups(list, upto) { const g = []; list.filter((x) => x.rank <= upto).forEach((x) => { const last = g[g.length - 1]; if (last && last[0].rank === x.rank) last.push(x); else g.push([x]); }); return g; }
     function rankText(R) {
       const u = rankUnit(R.by);
@@ -1003,18 +1004,18 @@
         .concat(rankGroups(R.list, 3).map((g) => (g.length > 1 ? "공동 " : "") + g[0].rank + "등 " + g.map((x) => idName(x.id)).join(", ") + " " + g[0][R.by] + u)).join("\n");
     }
     function rankHtml(P, X) {
-      const R = rankState(P, X), u = rankUnit(R.by), k2 = R.by === "days" ? "count" : "days", u2 = rankUnit(k2);
+      const R = rankState(P, X), u = rankUnit(R.by);
       const tools = `<div class="rk-tools"><div class="chips" role="group" aria-label="기간">${R.pers.map((p) => `<button type="button" data-rkp="${esc(p.k)}" aria-pressed="${p.k === R.per.k}">${esc(p.l)}</button>`).join("")}</div>
         <div class="chips" role="group" aria-label="기준"><button type="button" data-rkby="count" aria-pressed="${R.by === "count"}">벙 수</button><button type="button" data-rkby="days" aria-pressed="${R.by === "days"}">간 날 수</button><button type="button" data-rklive aria-pressed="${!!SH.rk.live}">지금 멤버만</button></div></div>`;
       if (!R.list.length) return `<article class="card span-12">${tools}<p class="empty">이 기간에 센 벙이 없습니다.</p></article>`;
       const groups = rankGroups(R.list, 3), H = ["h1", "h2", "h3"];
-      const pod = groups.map((g, i) => `<div class="pd r${Math.min(3, g[0].rank)} ${H[i]}"><span class="medal" aria-hidden="true">${g[0].rank}</span>
+      const pod = groups.map((g) => `<div class="pd r${g[0].rank} ${H[g[0].rank - 1]}"><span class="medal" aria-hidden="true">${g[0].rank}</span>
         <div class="pd-who">${g.map((x) => mChip(x.id)).join("")}</div><strong class="pv">${nf(g[0][R.by])}<small>${u}</small></strong>
-        <span class="ps">${g.length === 1 ? `${nf(g[0][k2])}${u2}, 벙주 ${nf(g[0].hosted)}번` : `${nf(g[0][k2])}${u2}`}</span><span class="base">${g.length > 1 ? "공동 " : ""}${g[0].rank}등</span></div>`).join("");
+        <span class="ps">${rankSub(g[0], R.by)}${g.length === 1 ? `, 벙주 ${nf(g[0].hosted)}번` : ""}</span><span class="base">${g.length > 1 ? "공동 " : ""}${g[0].rank}등</span></div>`).join("");
       const rest = R.list.filter((x) => x.rank > 3), top = R.list[0][R.by];
-      const li = (x) => `<li><span class="no">${x.tie ? "공동 " : ""}${x.rank}등</span>${mChip(x.id)}<span class="bar"><i style="width:${Math.max(2, (x[R.by] / top) * 100)}%"></i></span><span class="v">${nf(x[R.by])}${u} <small>${nf(x[k2])}${u2}</small></span></li>`;
+      const li = (x) => `<li><span class="no">${x.tie ? "공동 " : ""}${x.rank}등</span>${mChip(x.id)}<span class="bar"><i style="width:${Math.max(2, (x[R.by] / top) * 100)}%"></i></span><span class="v">${nf(x[R.by])}${u} <small>${rankSub(x, R.by)}</small></span></li>`;
       return `<article class="card span-12 rk-card"><div class="c-head"><div class="rk-head">${tools}
-          <p class="cap">${esc(R.per.l)} ${esc(mdS(R.per.from))}~${esc(mdS(R.per.to))}, 벙 ${nf(R.bungs)}개, 참석 ${nf(R.heads)}번, ${nf(R.list.length)}명. 벙주와 참여자 기준(게스트 제외). ${R.by === "days" ? "간 날 수" : "벙 수"}가 같으면 ${R.by === "days" ? "벙 수" : "간 날 수"}로, 그것도 같으면 공동 순위.</p></div>${badge("badge-active")}</div>
+          <p class="cap">${esc(R.per.l)} ${esc(mdS(R.per.from))}~${esc(mdS(R.per.to))}, 벙 ${nf(R.bungs)}개, ${SH.rk.live ? "지금 멤버 " : ""}${nf(R.list.length)}명이 ${nf(R.heads)}번 참석. 벙주와 참여자 기준(게스트 제외). ${R.by === "days" ? "간 날 수" : "벙 수"}가 같으면 ${R.by === "days" ? "벙 수" : "간 날 수"}로, 그것도 같으면 공동 순위.</p></div>${badge("badge-active")}</div>
         <div class="podium">${pod}</div>
         ${rest.length ? `<ol class="rk">${rest.slice(0, 12).map(li).join("")}</ol>${rest.length > 12 ? `<details class="more"><summary>나머지 ${nf(rest.length - 12)}명</summary><ol class="rk">${rest.slice(12).map(li).join("")}</ol></details>` : ""}` : ""}
         <div class="chips"><button type="button" class="btn btn-secondary is-sm" data-rkcopy>1, 2, 3등 복사</button></div></article>`;
@@ -1029,8 +1030,8 @@
       const fixable = P.problems.filter((p) => p.level !== "info").length;
       const wkMax = Math.max(1, ...I.weeks.map((x) => x.bungs));
       const mini = `<div class="wmini-w"><div class="wmini" role="img" aria-label="주마다 벙 수, 8주">${I.weeks.map((x) => `<i class="${x.partial ? "part" : ""}" style="height:${Math.max(3, (x.bungs / wkMax) * 100)}%"${tipAttr(mdS(x.from) + "~" + mdS(x.to) + ": 벙 " + x.bungs + "개" + (x.partial ? ", 기록이 일부" : ""))}></i>`).join("")}</div><span>주마다 벙, 8주</span></div>`;
-      const vb = vsPrev(w.bungs, w.prevBungs, w.prevDays, "개"), vh = vsPrev(w.heads, w.prevHeads, w.prevDays, "번");
-      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>판 ${esc(rec.acceptedId || SH.latestId)}, 벙 기록 ${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}(${nf(P.cover.days)}일), 최근 30일 기준</small></h2><div class="kpis">
+      const vb = vsPrev(w.bungs, w.prevBungs, w.curDays, w.prevDays, "개"), vh = vsPrev(w.heads, w.prevHeads, w.curDays, w.prevDays, "번");
+      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : "판 " + esc(rec.acceptedId || SH.latestId)}, 벙 기록 ${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}(${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
         <div class="kpi hero"><div><span class="k-l">최근 30일 벙</span><strong class="k-v">${nf(w.bungs)}<small>개</small></strong><span class="k-s">${vb.html}</span></div>${mini}</div>
         <div class="kpi"><span class="k-l">참석 합계</span><strong class="k-v">${nf(w.heads)}<small>번</small></strong><span class="k-s">벙 한 번에 ${nf(w.avgSize)}명</span><span class="k-s">${vh.html}</span></div>
         <div class="kpi"><span class="k-l">벙에 온 멤버</span><strong class="k-v">${pctN(came, actIn.length)}<small>%</small></strong><span class="k-s">활동 멤버 ${nf(actIn.length)}명 중 ${nf(came)}명</span></div>
@@ -1046,7 +1047,7 @@
       const card = (title, cap, body, take, span) => `<article class="card ${span || "span-4"} ins"><h3>${esc(title)}${cap ? ` <small class="cap">${esc(cap)}</small>` : ""}</h3>${body}${take ? `<p class="take">${take}</p>` : ""}</article>`;
       const full = I.weeks.filter((x) => !x.partial), wkAvg = full.length ? r1(full.reduce((a, x) => a + x.bungs, 0) / full.length) : 0, lastW = I.weeks[7];
       const c1 = card("주마다 벙", "8주, 오늘까지 7일씩", vbars(I.weeks.map((x) => ({ l: mdS(x.from), v: x.bungs, cls: x.partial ? "part" : "", tip: mdS(x.from) + "~" + mdS(x.to) + ": 벙 " + x.bungs + "개, 참석 " + x.heads + "번, " + x.people + "명" + (x.partial ? ", 기록이 일부" : "") }))),
-        `최근 7일 ${nf(lastW.bungs)}개, 8주 평균 ${wkAvg}개`);
+        `최근 7일 ${nf(lastW.bungs)}개, ${full.length === 8 ? "8주" : "기록이 온전한 " + full.length + "주"} 평균 ${wkAvg}개`);
       const avgs = I.weekday.map((x) => x.avg), hi = Math.max(...avgs), lo = Math.min(...avgs);
       const c2 = card("요일별 하루 평균", "벙 기록 전체", vbars(I.weekday.map((x, i) => ({ l: WD[i], v: x.avg, vt: x.avg.toFixed(1), cls: x.avg === hi ? "" : "lo", tip: WD[i] + "요일: 하루 평균 " + x.avg + "개(" + x.days + "일에 벙 " + x.n + "개)" }))),
         `가장 많은 요일 ${WD.filter((_, i) => avgs[i] === hi).join(", ")}(${hi.toFixed(1)}개), 가장 적은 요일 ${WD.filter((_, i) => avgs[i] === lo).join(", ")}(${lo.toFixed(1)}개)`);
@@ -1054,13 +1055,13 @@
       const c4 = card("참여 분포", "활동 멤버, 최근 30일 벙 수", hbars(I.tiers.map((t) => ({ l: t.l, v: t.v, tip: t.l + ": " + t.v + "명" })), { unit: "명" })
         + (I.conc.total ? `<div class="sub-h">참석 쏠림</div>${stack([{ l: "상위 10명", v: I.conc.top10, c: "var(--s-violet)" }, { l: "나머지 " + Math.max(0, I.conc.people - 10) + "명", v: I.conc.total - I.conc.top10, c: "#CFC8D2" }], "번")}` : ""),
         I.conc.total ? `상위 10명이 참석의 ${pctN(I.conc.top10, I.conc.total)}%` : "");
-      const pc = (x, key) => `<li>${mChip(x.id)}<span class="cap">${nf(x.before)}에서 ${nf(x.now)}</span>${dlPill(x.d)}</li>`;
-      const c5 = card("늘고 준 멤버", w.prevDays < 14 ? "" : "최근 30일과 앞 " + (w.prevDays < 30 ? w.prevDays + "일" : "30일"), w.prevDays < 14 ? `<p class="cap">앞 30일 기록이 ${nf(w.prevDays)}일치라 견주지 않습니다.</p>`
+      const pc = (x) => `<li>${mChip(x.id)}<span class="cap">${nf(x.before)}번에서 ${nf(x.now)}번</span>${dlPill(x.d)}</li>`;
+      const c5 = card("늘고 준 멤버", I.chgDays < 14 ? "" : "최근 " + I.chgDays + "일과 그 앞 " + I.chgDays + "일", I.chgDays < 14 ? `<p class="cap">벙 기록이 ${nf(P.cover.from ? P.cover.days + 1 : 0)}일치라 견주지 않습니다.</p>`
         : `<div class="chg"><div><h4>${TRI.up}늘어남</h4>${I.up.length ? `<ul>${I.up.map(pc).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</div><div><h4>${TRI.down}줄어듦</h4>${I.down.length ? `<ul>${I.down.map(pc).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</div></div>`, "");
-      const went = I.newbies.filter((x) => x.first).length;
-      const nb = (x) => `<li>${mChip(x.id)}<span class="cap">입장 ${esc(mdS(x.join))}</span>${x.first ? `<span class="cap">첫 벙 ${esc(mdS(x.first))}, ${x.gap ? nf(x.gap) + "일 뒤" : "당일"}</span>` : `<span class="tag watch">아직${T > OpsSheet.dnum(x.join) ? ", " + nf(T - OpsSheet.dnum(x.join)) + "일째" : ""}</span>`}${x.gone ? `<span class="tag out">나감</span>` : ""}</li>`;
-      const c6 = card("신입 첫 벙", mdS(P.cover.from) + " 뒤 들어온 멤버", I.newbies.length ? `<ul class="nb">${I.newbies.slice(0, 8).map(nb).join("")}</ul>${I.newbies.length > 8 ? `<details class="more"><summary>나머지 ${nf(I.newbies.length - 8)}명</summary><ul class="nb">${I.newbies.slice(8).map(nb).join("")}</ul></details>` : ""}` : `<p class="cap">없습니다.</p>`,
-        I.newbies.length ? `${nf(I.newbies.length)}명 중 ${nf(went)}명이 벙에 감${I.newMid != null ? `, 첫 벙까지 가운데값 ${I.newMid}일` : ""}` : "");
+      const went = I.newbies.filter((x) => x.first).length, byChat = Object.keys(X.joins).length > 0;
+      const nb = (x) => `<li>${mChip(x.id)}<span class="cap">입장 ${esc(mdS(x.join))}</span>${x.first ? `<span class="cap">첫 벙 ${esc(mdS(x.first))}, ${x.gap ? nf(x.gap) + "일 뒤" : "당일"}</span>` : `<span class="tag watch">아직${!x.gone && T > OpsSheet.dnum(x.join) ? ", " + nf(T - OpsSheet.dnum(x.join)) + "일째" : ""}</span>`}${x.gone ? `<span class="tag out">나감</span>` : ""}</li>`;
+      const c6 = card(byChat ? "신입 첫 벙" : "날떼 전 신입", P.cover.from ? (byChat ? mdS(P.cover.from) + "부터 들어온 멤버" : "시트 입장일") : "", I.newbies.length ? `<ul class="nb">${I.newbies.slice(0, 8).map(nb).join("")}</ul>${I.newbies.length > 8 ? `<details class="more"><summary>나머지 ${nf(I.newbies.length - 8)}명</summary><ul class="nb">${I.newbies.slice(8).map(nb).join("")}</ul></details>` : ""}` : `<p class="cap">없습니다.</p>`,
+        byChat && I.newbies.length ? `${nf(I.newbies.length)}명 중 ${nf(went)}명이 벙에 감${I.newMid != null ? `, 첫 벙까지 가운데값 ${I.newMid}일` : ""}` : "");
       const c7 = card("벙주", "최근 30일", mbars(I.hosts.slice(0, 5).map((x) => ({ id: x.id, v: x.n, vt: x.n + "번", tip: idName(x.id) + ": 벙주 " + x.n + "번" })))
         + (I.potential.length ? `<div class="sub-h">자주 오지만 벙주 기록 없음</div><div class="nchips">${I.potential.map((x) => mChip(x.id, x.n + "번")).join("")}</div>` : ""),
         w.bungs ? `벙주 ${nf(I.hosts.length)}명, 상위 5명이 벙의 ${pctN(I.hostTop5, w.bungs)}%` : "", "span-3");
@@ -1077,11 +1078,11 @@
 
     /* 할 일: 종류마다 한 줄, 없는 것은 끝에 한 줄로 */
     function todoHtml(P, X) {
-      const set = X.set, rows = [], zero = [];
+      const set = X.set, rows = [], zero = [], wait = [];
       const row = (l, title, n, chips, tail) => `<div class="td lv-${l}"><div class="td-h"><h3>${l === "info" ? "" : ICON[l] + `<span class="sr-only">${LVL[l]}</span>`}${esc(title)}</h3><span class="n">${nf(n)}명</span>${tail || ""}</div>${chips ? `<div class="nchips">${chips}</div>` : ""}</div>`;
       const chips = (list, fn) => list.slice(0, 16).map(fn).join("") + (list.length > 16 ? `<span class="more">외 ${list.length - 16}명</span>` : "");
       X.todo.forEach(({ b, rows: r }) => {
-        if (!r.length) { if (!b.hideZero) { const nn = b.none ? b.none(P, set) : ""; zero.push(b.t(set) + (nn ? "(" + nn + ")" : "")); } return; }
+        if (!r.length) { if (!b.hideZero) { const nn = b.none ? b.none(P, set) : ""; if (nn) wait.push(b.t(set) + "(" + nn + ")"); else zero.push(b.t(set)); } return; }
         rows.push(row(b.l, b.t(set), r.length, chips(r, (x) => mChip(x.m.id, b.chip(x.m, P, set))), `<button type="button" class="text-btn" data-mfilter="chk:${b.key}">표에서 보기</button>`));
       });
       if (S.ledger) {
@@ -1092,7 +1093,7 @@
         if (unlinked || notIn) rows.push(`<div class="td lv-info"><div class="td-h"><h3>잇지 못한 사람</h3><span class="cap">시트 멤버 ${nf(unlinked)}명, 시트에 없는 방 멤버 ${nf(notIn)}명</span><button type="button" class="text-btn" data-jump="sh-link">잇기 보기</button></div></div>`);
       }
       return `<section class="dsec" id="sh-todo"><h2>할 일 <small>첫 모임 ${nf(set.firstMeetDays)}일, 정기 참여 ${nf(set.regularDays)}일 기준</small></h2>
-        ${rows.length ? `<div class="todo">${rows.join("")}</div>` : `<p class="empty">없습니다.</p>`}${zero.length ? `<p class="cap zero">${ICON.good}<span class="sr-only">좋음</span>없음: ${esc(zero.join(", "))}</p>` : ""}</section>`;
+        ${rows.length ? `<div class="todo">${rows.join("")}</div>` : `<p class="empty">없습니다.</p>`}${zero.length ? `<p class="cap zero">${ICON.good}<span class="sr-only">좋음</span>해당 없음: ${esc(zero.join(", "))}</p>` : ""}${wait.length ? `<p class="cap">판정 전: ${esc(wait.join(", "))}</p>` : ""}</section>`;
     }
 
     function renderSheetTab() {
@@ -1113,7 +1114,7 @@
         if (SH.mode === "pinned") h += `<div class="banner info"><h3>${ICON.watch}고정한 판을 보고 있습니다</h3><p>판 ${esc(rec.acceptedId)}. 새 판을 받아도 바꾸지 않습니다.</p><div class="chips"><button type="button" class="btn btn-primary is-sm" id="shAccept">최신 판 반영</button></div></div>`;
       }
       if (!P) {
-        h += SH.ready || localOnly ? `<div class="panel"><p class="empty">${SH.mode === "none" ? "아직 받은 시트가 없습니다. 아래 연동 설정을 마치거나 붙여넣기로 넣어 주세요." : "보여 줄 판이 없습니다."}</p></div>` : `<div class="panel"><p class="empty">받는 중입니다.</p></div>`;
+        h += SH.ready || localOnly ? `<div class="panel"><p class="empty">${SH.mode === "none" ? (localOnly || SH.missing ? "아직 받은 시트가 없습니다. 아래 붙여넣기로 넣어 주세요." : "아직 받은 시트가 없습니다. 아래 연동 설정을 마치거나 붙여넣기로 넣어 주세요.") : "보여 줄 판이 없습니다."}</p></div>` : `<div class="panel"><p class="empty">받는 중입니다.</p></div>`;
         host.innerHTML = h + syncSecHtml(); renderSyncLine(); bindSheetTab(); return;
       }
       const X = sheetCalc(P), fixable = P.problems.filter((p) => p.level !== "info").length;
@@ -1260,8 +1261,8 @@
       const dayKeys = [...byDay.keys()].sort((a, b) => (a === "" ? 1 : b === "" ? -1 : b.localeCompare(a)));
       const STATE = { draft: "작성 중", bad: "날짜 확인", dup: "두 번째 줄", ignored: "뺀 줄" };
       const card = (b) => `<div class="bg${b.state !== "ok" ? " mute" : ""}"><span class="bt">${esc(b.title || "제목 없음")}${STATE[b.state] ? ` <span class="tag ${b.state === "ignored" ? "" : "watch"}">${STATE[b.state]}</span>` : ""}${b.place ? `<small>${esc(b.place)}</small>` : ""}</span>
-        <span class="bn"><b>${nf((b.host ? 1 : 0) + b.people.length)}명</b>${b.guests.length ? ` +${nf(b.guests.length)}` : ""}<br />${esc(b.row)}행</span>
-        <span class="ppl">${b.host ? mChip(b.host, "벙주", "host") : b.hostRaw ? `<span class="tag">${esc(b.hostRaw)} 벙주</span>` : `<span class="tag watch">벙주 없음</span>`}${b.people.map((id) => mChip(id)).join("")}${b.guests.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${b.noshows.map((id) => `<span class="tag watch">${esc(idName(id))} 노쇼</span>`).join("")}${b.unknown.concat(b.amb).map((x) => `<span class="tag rule">${esc(x)}</span>`).join("")}${b.notes.map((x) => `<span class="tag"${tipAttr(x)}>메모</span>`).join("")}</span></div>`;
+        <span class="bn"><b>${nf((b.host ? 1 : 0) + b.people.length)}명</b>${b.guests.length ? `, 게스트 ${nf(b.guests.length)}` : ""}<br />${esc(b.row)}행</span>
+        <span class="ppl">${b.host ? mChip(b.host, "벙주", "host") : b.hostRaw ? `<span class="tag">${esc(b.hostRaw)} 벙주</span>` : `<span class="tag watch">벙주 없음</span>`}${b.people.map((id) => mChip(id)).join("")}${b.guests.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${b.noshows.map((id) => `<span class="tag watch">${esc(idName(id))} 노쇼</span>`).join("")}${b.unknown.map((x) => `<span class="tag rule">${esc(x)}, 명단에 없음</span>`).join("")}${b.amb.map((x) => `<span class="tag rule">${esc(x)}, 누구인지 모름</span>`).join("")}${b.notes.map((x) => `<span class="tag"${tipAttr(x)}>메모</span>`).join("")}</span></div>`;
       const shown = dayKeys.slice(0, SH.bDays);
       const dayHtml = (k) => { const list = byDay.get(k), okL = list.filter((b) => b.state === "ok"), heads = okL.reduce((a, b) => a + (b.host ? 1 : 0) + b.people.length, 0);
         return `<div class="day"><h4>${k ? `${esc(mdS(k))}(${wdOf(k)})` : "날짜를 읽지 못한 줄"} <small>${k ? `벙 ${nf(okL.length)}개, 참석 ${nf(heads)}번` : nf(list.length) + "줄"}</small></h4><div class="bgs">${list.map(card).join("")}</div></div>`; };
@@ -1360,12 +1361,12 @@
       const disliked = P.members.filter((x) => x.dislike.some((n) => tightK(n) === tightK(m.name)));
       const acts = pid ? S.records.actions.filter((a) => a.pid === pid) : [];
       // 이번 달 순위(지금 멤버, 벙 수)
-      const per = rankPeriods(P)[0], rl = OpsSheet.rank(P, { from: per.from, to: per.to, by: "count", ids: X.liveIds, nameOf: idName }), me = rl.find((x) => x.id === m.id);
+      const RS = rankState(P, X), per = RS.per, inLive = !!X.liveIds[m.id], rl = OpsSheet.rank(P, { from: per.from, to: per.to, by: RS.by, ids: inLive ? X.liveIds : null, nameOf: idName }), me = rl.find((x) => x.id === m.id);
       const wk = X.wk.get(m.id) || [], T = OpsSheet.dnum(P.today);
       $("sheetBody").innerHTML = `
         <div class="panel"><div class="chips">${stTag(m)}${m.newbie ? `<span class="tag watch">날떼 전, 입장 ${esc(mdS(m.joinDate))}</span>` : ""}${m.couple ? `<span class="tag">커플</span>` : ""}${Object.keys(m.extra).map((k) => `<span class="tag">${esc(k)}열 ${esc(m.extra[k])}</span>`).join("")}<span class="tag">멤버 ${esc(m.rows.join(", "))}행</span></div>
           ${m.checks.length ? `<div class="chips">${m.checks.map((c) => `<span class="tag ${c.l === "info" ? "" : c.l}"${tipAttr(c.x || "")}>${esc(c.t)}</span>`).join("")}</div>` : ""}
-          <dl class="kv"><div><dt>최근 30일 벙</dt><dd>${nf(m.d30)}번</dd></div><div><dt>${esc(per.l)} 순위</dt><dd>${me ? `${me.tie ? "공동 " : ""}${nf(me.rank)}등, ${nf(me.count)}번` : "기록 없음"}</dd></div><div><dt>전체 벙</dt><dd>${nf(m.total)}번, 벙주 ${nf(m.hosted)}번</dd></div>
+          <dl class="kv"><div><dt>최근 30일 벙</dt><dd>${nf(m.d30)}번</dd></div><div><dt>${esc(per.l)} 순위(${RS.by === "days" ? "간 날 수" : "벙 수"})</dt><dd>${me ? `${me.tie ? "공동 " : ""}${nf(me.rank)}등, ${nf(me[RS.by])}${rankUnit(RS.by)}${inLive ? "" : "(나간 사람도 셈)"}` : "기록 없음"}</dd></div><div><dt>전체 벙</dt><dd>${nf(m.total)}번, 벙주 ${nf(m.hosted)}번</dd></div>
             <div><dt>처음, 마지막 벙</dt><dd>${m.first ? esc(mdS(m.first)) + ", " + esc(mdS(m.last)) : "없음"}</dd></div><div><dt>나간횟수</dt><dd>${nf(m.outs)}회${m.outLimit != null ? ", 한도 " + m.outLimit + "회" : ""}</dd></div><div><dt>노쇼</dt><dd>${m.noshows.length ? m.noshows.map((n) => esc(mdS(n.date))).join(", ") : "없음"}</dd></div>
             <div><dt>거주지</dt><dd>${esc(m.region || "없음")}</dd></div></dl>
           <div class="sub-h">주마다 벙, 8주</div>${vbars(wk.map((v, i) => { const hi = T - 7 * (7 - i); return { l: mdS(OpsSheet.dateOf(hi - 6)), v, tip: mdS(OpsSheet.dateOf(hi - 6)) + "~" + mdS(OpsSheet.dateOf(hi)) + ": " + v + "번" }; }), "sm")}
@@ -1419,7 +1420,7 @@
       on("shAccept", () => { const rec = sheetRec(); rec.acceptedId = SH.latestId; rec.pinned = false; delete rec.skipped[SH.latestId]; saveRecords(); sheetProcess(); renderAll(); toast("최신 판을 반영했습니다."); });
       on("shSkip", () => { const rec = sheetRec(); rec.skipped[SH.latestId] = true; saveRecords(); sheetProcess(); renderAll(); toast("이 판을 건너뛰었습니다."); });
       on("shFeedLoad", loadFeed);
-      on("shBMore", () => { SH.bDays += 14; renderSheetTab(); });
+      on("shBMore", () => { const n = SH.bDays; SH.bDays += 14; renderSheetTab(); const h = document.querySelectorAll("#sh-bung .day > h4")[n]; if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } });
       const setNum = (id, key, lo, hi) => { const el = $(id); if (el) el.addEventListener("change", () => { const v = Math.max(lo, Math.min(hi, Math.round(+el.value || 0))); const rs = sheetRec().settings; if (v === SH_SET[key]) delete rs[key]; else rs[key] = v; saveRecords(); sheetProcess(); renderAll(); }); };
       setNum("shSetFirst", "firstMeetDays", 1, 120); setNum("shSetReg", "regularDays", 7, 365);
       const sd = $("shSetup"); if (sd) sd.addEventListener("toggle", () => { if (!sd.open) SH.token = ""; });
@@ -1437,9 +1438,9 @@
       const rb = t.closest("[data-rkby]"); if (rb) { SH.rk.by = rb.dataset.rkby; renderSheetTab(); rkFocus(`[data-rkby="${CSS.escape(SH.rk.by)}"]`); return; }
       const rl = t.closest("[data-rklive]"); if (rl) { SH.rk.live = !SH.rk.live; renderSheetTab(); rkFocus("[data-rklive]"); return; }
       const rc = t.closest("[data-rkcopy]"); if (rc) { if (SH.parsed) copyText(rankText(rankState(SH.parsed, sheetCalc(SH.parsed)))); return; }
-      const mf = t.closest("[data-mfilter]"); if (mf) { SH.mf = SH.mf === mf.dataset.mfilter && mf.dataset.mfilter.startsWith("chk:") ? "active" : mf.dataset.mfilter; SH.mq = ""; renderSheetTab(); if (mf.dataset.mfilter.startsWith("chk:")) { const x = $("sh-members"); if (x) x.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
-      const ms = t.closest("[data-msort]"); if (ms) { const k = ms.dataset.msort; if (SH.ms.k === k) SH.ms.dir *= -1; else SH.ms = { k, dir: (MCOLS.find((c) => c.k === k) || {}).num || k === "check" || k === "last" || k === "join" ? -1 : 1 }; renderSheetTab(); return; }
-      const lp = t.closest("[data-linkpick]"); if (lp) { SH.fixOpen = "link:" + lp.dataset.linkpick; renderSheetTab(); return; }
+      const mf = t.closest("[data-mfilter]"); if (mf) { SH.mf = SH.mf === mf.dataset.mfilter && mf.dataset.mfilter.startsWith("chk:") ? "active" : mf.dataset.mfilter; SH.mq = ""; renderSheetTab(); rkFocus(`#sh-members [data-mfilter="${CSS.escape(SH.mf)}"]`); if (mf.dataset.mfilter.startsWith("chk:")) { const x = $("sh-members"); if (x) x.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
+      const ms = t.closest("[data-msort]"); if (ms) { const k = ms.dataset.msort; if (SH.ms.k === k) SH.ms.dir *= -1; else SH.ms = { k, dir: (MCOLS.find((c) => c.k === k) || {}).num || k === "check" || k === "last" || k === "join" ? -1 : 1 }; renderSheetTab(); rkFocus(`[data-msort="${CSS.escape(k)}"]`); return; }
+      const lp = t.closest("[data-linkpick]"); if (lp) { SH.fixOpen = "link:" + lp.dataset.linkpick; renderSheetTab(); rkFocus(`[data-linkto="${CSS.escape(lp.dataset.linkpick)}"]`); return; }
       const ln = t.closest("[data-linknone]"); if (ln) { sheetRec().link[ln.dataset.linknone] = "none"; fixChanged("잇지 않음으로 두었습니다."); return; }
       const lc = t.closest("[data-linkclear]"); if (lc) { const rec = sheetRec(); if (rec.link[lc.dataset.linkclear]) { delete rec.link[lc.dataset.linkclear]; fixChanged("직접 이은 것을 풀었습니다."); } else { rec.link[lc.dataset.linkclear] = "none"; fixChanged("풀었습니다. 아래에서 다른 사람을 고를 수 있습니다."); } return; }
       const pn = t.closest("[data-pin]"); if (pn) { const id = +pn.dataset.pin; const rec = sheetRec(); try { if (!SH.snaps.has(id)) { const r = await shCall("ops_sheet_get", { p_since: SH.latestId, p_ids: [id] }); (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s)); } rec.acceptedId = id; rec.pinned = id !== SH.latestId; saveRecords(); sheetProcess(); renderAll(); toast("판 " + id + "을 봅니다."); } catch (err) { toast("불러오지 못했습니다."); } return; }
