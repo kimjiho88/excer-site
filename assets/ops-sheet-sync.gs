@@ -14,7 +14,8 @@
         SYNC_TOKEN : 운영 대시보드 > 시트 > 연동 설정에서 만든 토큰
         SHEET_ID   : 시트 주소의 /d/ 와 /edit 사이 글자 (시트에 붙인 스크립트면 비워도 된다)
    3. (권장) 프로젝트 설정에서 'appsscript.json 매니페스트 파일 표시'를 켜고, 편집기의 appsscript.json 을
-      대시보드에서 복사한 매니페스트로 바꾼다. 시트를 '읽기만' 하는 권한으로 줄어든다.
+      대시보드에서 복사한 매니페스트로 바꾼다. 권한이 시트, 외부 연결, 트리거 셋으로 정해진다.
+      (시트를 ID 로 여는 openById 는 읽기 전용 권한으로는 안 된다. 이 스크립트는 시트를 읽기만 하고 고치지 않는다.)
    4. 위의 함수 고르기에서 install 을 고르고 실행한다. 권한을 물으면 허용한다.
       실행 기록에 '보냄' 이 보이면 끝이다. 대시보드 시트 탭에 바로 나타난다.
    멈추려면 uninstall, 지금 한 번 보내려면 syncNow 를 실행한다.
@@ -22,9 +23,9 @@
 
 var CFG = {
   url: "https://drggzlnzwvkhtalvkqyo.supabase.co",
-  anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2d6bG56d3ZraHRhbHZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NjI1MzcsImV4cCI6MjA5NzUzODUzN30.PRxFdiwhVNUoyLbOkiyJ_9PxX6QXFyI_6NMLHPmOr_E",
+  keySource: "https://excer-site.vercel.app/assets/site-core.js",   // 공개 접속 키(anon)는 사이트에서 읽어 온다. 긴 키를 코드에 붙여넣지 않는다
   heartbeatMs: 10 * 60 * 1000,
-  version: "1"
+  version: "2"
 };
 
 function install() {
@@ -100,18 +101,31 @@ function trim_(rows) {
   return rows.map(function (r) { return r.slice(0, w); });
 }
 
-/* 보내기: 연결이 흔들리면 3번까지(2초, 5초 쉬고) 다시 */
+/* 공개 접속 키(anon): 사이트의 site-core.js 에서 읽어 스크립트 속성 ANON_KEY 에 둔다 */
+function anonKey_(fresh) {
+  var props = PropertiesService.getScriptProperties();
+  var k = props.getProperty("ANON_KEY");
+  if (k && !fresh) return k;
+  var res = UrlFetchApp.fetch(CFG.keySource, { muteHttpExceptions: true });
+  var m = res.getResponseCode() === 200 && res.getContentText().match(/anon:\s*"([A-Za-z0-9._-]{40,})"/);
+  if (!m) throw new Error("사이트에서 접속 키를 읽지 못했습니다(HTTP " + res.getResponseCode() + ")");
+  props.setProperty("ANON_KEY", m[1]);
+  return m[1];
+}
+
+/* 보내기: 연결이 흔들리면 3번까지(2초, 5초 쉬고) 다시. 키가 틀렸다고 하면 사이트에서 한 번 다시 읽는다 */
 function post_(payload) {
-  var opts = { method: "post", contentType: "application/json", muteHttpExceptions: true, payload: JSON.stringify(payload),
-    headers: { apikey: CFG.anon, Authorization: "Bearer " + CFG.anon } };
-  var waits = [0, 2000, 5000], last = null;
+  var waits = [0, 2000, 5000], last = null, refetch = false, refreshed = false;
   for (var i = 0; i < waits.length; i++) {
     if (waits[i]) Utilities.sleep(waits[i]);
     try {
-      var res = UrlFetchApp.fetch(CFG.url + "/rest/v1/rpc/ops_sheet_push", opts);
+      var key = anonKey_(refetch); refetch = false;
+      var res = UrlFetchApp.fetch(CFG.url + "/rest/v1/rpc/ops_sheet_push", { method: "post", contentType: "application/json", muteHttpExceptions: true,
+        payload: JSON.stringify(payload), headers: { apikey: key, Authorization: "Bearer " + key } });
       var code = res.getResponseCode();
       if (code >= 200 && code < 300) return JSON.parse(res.getContentText() || "{}");
       last = "HTTP " + code + " " + res.getContentText().slice(0, 200);
+      if (code === 401 && !refreshed) { refreshed = true; refetch = true; continue; }
       if (code < 500 && code !== 429) break;   // 요청이 틀린 것은 다시 해도 같다
     } catch (e) { last = String(e && e.message || e); }
   }
