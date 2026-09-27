@@ -98,6 +98,7 @@
     }
     return best;
   }
+  var EXACT = { member: "멤버", bung: "벙", issue: "이슈" };
   function locate(tabs) {
     var found = {}, used = {};
     ["member", "bung", "issue"].forEach(function (kind) {
@@ -105,9 +106,11 @@
       tabs.forEach(function (t, i) {
         if (used[i] || !t || !Array.isArray(t.values)) return;
         var h = findHeader(t.values, spec);
-        if (h) cands.push({ i: i, h: h, named: spec.tab.test(String(t.name || "")) });
+        var nm = String(t.name || "").replace(/\s+/g, "");
+        // 이름이 딱 맞는 탭(멤버, 벙, 이슈) 먼저, 그다음 이름에 들어 있는 탭. 숨긴 탭('나간 멤버' 보관 탭 등)은 뒤로
+        if (h) cands.push({ i: i, h: h, exact: nm === EXACT[kind] ? 1 : 0, named: spec.tab.test(nm) ? 1 : 0, shown: t.hidden ? 0 : 1 });
       });
-      cands.sort(function (a, b) { return (b.named - a.named) || (b.h.hits - a.h.hits); });
+      cands.sort(function (a, b) { return (b.shown - a.shown) || (b.exact - a.exact) || (b.named - a.named) || (b.h.hits - a.h.hits); });
       if (cands.length) { found[kind] = { tab: tabs[cands[0].i], idx: cands[0].i, h: cands[0].h }; used[cands[0].i] = true; }
     });
     return found;
@@ -189,10 +192,11 @@
       var why = splitList(g("warnWhy"));
       var atRaw = clean(g("warnAt")).split(/[,，\s]+/).filter(Boolean), at = [];
       atRaw.forEach(function (x) { var d = parseDate(x); if (d) at.push(d); else P({ tab: TN, row: r + 1, col: colName(mh.map.warnAt), level: "watch", code: "m_warnat", msg: "경고일을 날짜로 읽지 못함", value: x, who: name }); });
-      var wN = Math.max(wn || 0, why.length, at.length);
+      // 경고여부에 수가 있으면 그것이 횟수(사유 칸의 쉼표로 늘리지 않음, 남는 사유는 마지막 경고에 붙임). 비었으면 사유와 경고일 중 많은 쪽
+      var wN = wn > 0 ? wn : Math.max(why.length, at.length);
       m.warnN = wn || 0;
       m.warnings = [];
-      for (var w = 0; w < wN; w++) m.warnings.push({ n: w + 1, reason: why[w] || "", date: at[w] || "" });
+      for (var w = 0; w < wN; w++) m.warnings.push({ n: w + 1, reason: (w === wN - 1 ? why.slice(w) : why.slice(w, w + 1)).join(", "), date: at[w] || "" });
       if ((wn || 0) && why.length && why.length !== wn) P({ tab: TN, row: r + 1, col: colName(mh.map.warnWhy), level: "info", code: "m_warn_n", msg: "경고 " + wn + "회인데 사유 " + why.length + "개", who: name });
       if ((wn || 0) && at.length < wn) P({ tab: TN, row: r + 1, col: colName(mh.map.warnAt), level: "info", code: "m_warn_at", msg: "경고일이 " + (wn - at.length) + "개 비어 있음", who: name });
       if (!wn && (why.length || at.length)) P({ tab: TN, row: r + 1, col: colName(mh.map.warn), level: "watch", code: "m_warn_0", msg: "경고사유나 경고일은 있는데 경고여부가 비었음", who: name });
@@ -218,7 +222,7 @@
     out.members = members;
 
     /* 이름 찾기: 같은 이름이 여럿이면 나가지 않은 사람, 그래도 여럿이면 정하지 않는다 */
-    var byName = {};
+    var byName = Object.create(null);
     members.forEach(function (m) { var k = tight(m.name); (byName[k] = byName[k] || []).push(m); });
     function lookup(t) {
       var c = byName[tight(t)] || [];
@@ -243,7 +247,8 @@
     var memberIds = {}; members.forEach(function (m) { memberIds[m.id] = m; });
     function classify(text) {
       var t = squash(text); if (!t) return null;
-      var raw = t, al = alias[tight(t)];
+      var raw = t, al = Object.prototype.hasOwnProperty.call(alias, tight(t)) ? alias[tight(t)] : null;
+      if (/^\d+\s*명?$/.test(t)) return { k: "note", raw: raw };   // 인원 같은 숫자만 적은 칸
       if (al) { if (memberIds[al]) return { k: "member", id: al, raw: raw, via: "alias" }; t = squash(al); }
       var gm = t.match(/^(게스트|게)\s*(\d*)\s*(?:[(（]\s*(.*?)\s*[)）])?$/);
       if (gm) return { k: "guest", raw: raw, who: gm[3] || "" };
@@ -261,15 +266,20 @@
     /* 벙 */
     var bt = loc.bung, bh = bt.h, bv = bt.tab.values, BN = bt.tab.name;
     var pStart = bh.map.people != null ? bh.map.people : bh.map.host + 1;
-    var bungs = [], seenKey = {};
+    var hdr2 = bv[bh.row] || [], pEnd = Infinity;
+    for (var hc = pStart + 1; hc < hdr2.length; hc++) if (clean(hdr2[hc]) && !/^(참여자|참석자|참가자|멤버)/.test(tight(hdr2[hc]))) { pEnd = hc; break; }
+    Object.keys(bh.map).forEach(function (k) { if (bh.map[k] > pStart && bh.map[k] < pEnd) pEnd = bh.map[k]; });
+    var bungs = [], seenKey = {}, sigN = Object.create(null);
     for (var r2 = bh.row + 1; r2 < bv.length; r2++) {
       var row2 = bv[r2] || [];
       var g2 = function (k) { var i = bh.map[k]; return i == null ? "" : clean(row2[i]); };
       var dateRaw = g2("date"), title = squash(g2("title")), place = squash(g2("place")), hostRaw = squash(g2("host"));
-      var cells = []; for (var c2 = pStart; c2 < row2.length; c2++) cells.push({ c: c2, t: squash(row2[c2]) });
+      var cells = []; for (var c2 = pStart; c2 < Math.min(row2.length, pEnd); c2++) cells.push({ c: c2, t: squash(row2[c2]) });
       var filled = cells.filter(function (x) { return x.t; });
       if (!dateRaw && !title && !place && !hostRaw && !filled.length) continue;
-      var sig = "b|" + tight(dateRaw) + "|" + tight(title) + "|" + tight(hostRaw);
+      var sig0 = "b|" + tight(dateRaw) + "|" + tight(title) + "|" + tight(hostRaw);
+      sigN[sig0] = (sigN[sig0] || 0) + 1;
+      var sig = sigN[sig0] > 1 ? sig0 + "#" + sigN[sig0] : sig0;
       var bg = { row: r2 + 1, sig: sig, dateRaw: dateRaw, date: parseDate(dateRaw), title: title, place: place, hostRaw: hostRaw, host: "", people: [], guests: [], noshows: [], notes: [], unknown: [], amb: [], flags: [] };
       if (ignore[sig]) { bg.state = "ignored"; out.ignored.push(bg); bungs.push(bg); continue; }
       var R = r2 + 1, seen = {};
@@ -439,10 +449,10 @@
         else if (!m.last) ck.push({ c: "no_record", l: "watch", t: "벙 기록 없음", x: "기록 " + (coverFrom || "없음") + "부터 " + out.cover.days + "일" });
         else if (gap > set.regularDays - 15) ck.push({ c: "regular_soon", l: "watch", t: "곧 " + set.regularDays + "일", x: "마지막 " + m.last + ", " + gap + "일" });
       }
-      var wn2 = Math.max(m.warnN, m.warnings.length);
-      if (wn2 >= 3) ck.push({ c: "warn3", l: "rule", t: "경고 " + wn2 + "회(강제퇴장 단계)", x: m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ") });
-      else if (wn2 === 2) ck.push({ c: "warn2", l: "watch", t: "경고 2회(다음은 강제퇴장)", x: m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ") });
-      else if (wn2 === 1) ck.push({ c: "warn1", l: "info", t: "경고 1회(다음은 면담)", x: m.warnings[0] && m.warnings[0].reason || "" });
+      // 시트 경고는 대화 기록에 없는 손 기록이라 참고: 단계(면담, 강제퇴장)는 붙이지 않는다
+      var wn2 = m.warnings.length, wx = m.warnings.map(function (w) { return w.reason || "사유 없음"; }).join(", ");
+      if (wn2 >= 2) ck.push({ c: wn2 >= 3 ? "warn3" : "warn2", l: "watch", t: "시트 경고 " + wn2 + "회", x: wx });
+      else if (wn2 === 1) ck.push({ c: "warn1", l: "info", t: "시트 경고 1회", x: wx });
       if (m.noshows.length >= 2) ck.push({ c: "noshow", l: "watch", t: "노쇼 " + m.noshows.length + "회", x: m.noshows.map(function (n) { return n.date; }).join(", ") });
       else if (m.noshows.length === 1) ck.push({ c: "noshow1", l: "info", t: "노쇼 1회", x: m.noshows[0].date });
       if (m.outLimit != null && m.outs > m.outLimit) ck.push({ c: "outs", l: "rule", t: m.chat ? "재입장 한도 초과" : "나간횟수 한도 초과", x: m.outs + "회, 한도 " + m.outLimit + "회" + (m.chat ? "(대화 기록)" : "") });
@@ -452,7 +462,8 @@
   /* ── 대화 기록 기준으로 맞추기 ──
      사람, 입퇴장, 입장일, 재입장 횟수, 닉네임의 지역과 하트는 대화 기록이 원본이고 시트는 보조다.
      벙, 벙주, 경고, 노쇼, 비고, 싫어하는 사람, 이슈처럼 대화 기록에 없는 것은 시트 값을 참고로 그대로 쓴다.
-     facts[id] = { status: "in"|"left"|"kicked", out, join, re, limit, region, heart, heartKind }. 대화 기록과 잇지 못한 사람은 시트 값 그대로.
+     facts[id] = { status: "in"|"left"|"kicked", out, join, re, limit, region, heart, heartKind, via, at }. 대화 기록과 잇지 못한 사람은 시트 값 그대로.
+     via: "roster" 는 대화 기록보다 새 명단으로 방에 있는지를 정한 것(at: 명단 날짜).
      시트와 다른 값은 시트에서 고칠 것(c_ 로 시작하는 입력 확인)으로 올린다. 여러 번 불러도 같은 결과(시트 원래 값은 m.sheet0) */
   var ST_WORD = { active: "활동", away: "외출", inactive: "비활성", left: "나감", kicked: "강퇴", other: "모름" };
   function mdot(d, today) { return d ? (d.slice(0, 4) !== String(today || "").slice(0, 4) ? d.slice(0, 4) + "." : "") + +d.slice(5, 7) + "." + +d.slice(8, 10) : ""; }
@@ -473,23 +484,27 @@
       if (!f) return;
       P.chatN += 1;
       var gap = function (k, col, level, msg, value) {
-        m.gaps.push({ k: k, level: level, msg: msg });
         var q = { tab: tab, row: m.row, col: cols[col] || cols.name || "", level: level, code: "c_" + k, msg: msg, value: value == null ? "" : String(value), who: m.name };
+        m.gaps.push({ k: k, level: level, msg: msg, where: q.tab + " " + q.row + "행 " + q.col + "열" });
         q.id = [q.tab, q.row, q.col, q.code, q.value].join("|");
         P.problems.push(q);
       };
       var sw = m.statusRaw || ST_WORD[s0.status], sOut = s0.status === "left" || s0.status === "kicked" || s0.status === "away";
       // 입퇴장: 방에 있는지와 나간 날은 대화 기록. 시트의 외출(잠시 나감)은 나가 있는 것과 맞는다
-      if (f.status === "in" && sOut) { m.status = "active"; gap("status", "status", "watch", "시트는 " + sw + "인데 대화 기록에서는 방에 있음"); }
-      else if (f.status !== "in" && !sOut) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "watch", "시트는 " + sw + "인데 대화 기록에서는 " + mdot(f.out, P.today) + "에 " + (f.status === "kicked" ? "내보냄" : "나감")); }
+      var src = f.via === "roster" ? "명단(" + mdot(f.at, P.today) + ")" : "대화 기록";
+      var outWhen = f.via === "roster" ? "명단(" + mdot(f.at, P.today) + ")에는 없음" : "대화 기록에서는 " + (f.out ? mdot(f.out, P.today) + "에 " : "") + (f.status === "kicked" ? "내보냄" : "나감");
+      if (f.status === "in" && sOut) { m.status = "active"; gap("status", "status", "watch", "시트는 " + sw + "인데 " + src + (f.via === "roster" ? "에는 있음" : "에서는 방에 있음")); }
+      else if (f.status !== "in" && !sOut) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "watch", "시트는 " + sw + "인데 " + outWhen); }
+      else if (f.status === "kicked" && s0.status === "away") { m.status = "kicked"; gap("status", "status", "info", "시트는 " + sw + "인데 대화 기록에서는 " + (f.out ? mdot(f.out, P.today) + "에 " : "") + "내보냄"); }
       else if (f.status !== "in" && s0.status !== "away" && (f.status === "kicked") !== (s0.status === "kicked")) { m.status = f.status === "kicked" ? "kicked" : "left"; gap("status", "status", "info", "시트는 " + sw + "인데 대화 기록에서는 " + (f.status === "kicked" ? "내보냄" : "스스로 나감")); }
+      var gone = m.status === "left" || m.status === "kicked";   // 나간 사람은 값만 맞추고 다른 점은 올리지 않음
       // 입장일: 날떼 전 신입의 입장일
-      if (m.newbie && f.join) { if (f.join !== s0.joinDate) gap("join", "nalte", "watch", "입장일 시트 " + mdot(s0.joinDate, P.today) + ", 대화 기록 " + mdot(f.join, P.today)); m.joinDate = f.join; }
+      if (m.newbie && f.join) { if (f.join !== s0.joinDate && !gone) gap("join", "nalte", "watch", "입장일 시트 " + mdot(s0.joinDate, P.today) + ", 대화 기록 " + mdot(f.join, P.today)); m.joinDate = f.join; }
       // 재입장 횟수와 한도
-      if (f.re != null) { if (f.re !== s0.outs) gap("outs", "outs", "info", "나간횟수 시트 " + s0.outs + "회, 대화 기록 재입장 " + f.re + "회"); m.outs = f.re; if (f.limit != null) m.outLimit = f.limit; }
+      if (f.re != null) { if (f.re !== s0.outs && !gone) gap("outs", "outs", "info", "나간횟수 시트 " + s0.outs + "회, 대화 기록 재입장 " + f.re + "회"); m.outs = f.re; if (f.limit != null) m.outLimit = f.limit; }
       // 닉네임의 지역과 하트
-      if (f.region) { if (s0.region && regionKey(f.region) !== regionKey(s0.region)) gap("region", "region", "info", "거주지 시트 " + s0.region + ", 닉네임 " + f.region); m.region = f.region; }
-      if (f.heart != null) { var h = !!f.heart; if (h !== !!s0.couple) gap("couple", "couple", "info", h ? "닉네임에 하트가 있는데 커플여부가 비었음" : "커플여부는 있는데 닉네임에 하트가 없음"); m.couple = h; m.heart = f.heart || ""; m.heartKind = f.heartKind || ""; }
+      if (f.region) { if (s0.region && regionKey(f.region) !== regionKey(s0.region) && !gone) gap("region", "region", "info", "거주지 시트 " + s0.region + ", 닉네임 " + f.region); m.region = f.region; }
+      if (f.heart != null) { var h = !!f.heart; if (h !== !!s0.couple && !gone) gap("couple", "couple", "info", h ? "닉네임에 하트가 있는데 커플여부가 비었음" : "커플여부는 있는데 닉네임에 하트가 없음"); m.couple = h; m.heart = f.heart || ""; m.heartKind = f.heartKind || ""; }
     });
     checkMembers(P);
     return P;
@@ -536,9 +551,18 @@
     if (!prev || !prev.structure.ok) return { state: "ok" };
     var d = diff(prev, next), why = [];
     var pm = prev.members.length, pb = prev.bungs.filter(function (x) { return x.state !== "draft"; }).length;
-    var rm = d.members.removed.length, rb = d.bungs.removed.length;
-    if (rm >= 3 && rm / Math.max(1, pm) >= 0.1) why.push("멤버 " + rm + "명이 사라짐");
-    if (rb >= 3 && rb / Math.max(1, pb) >= 0.1) why.push("벙 " + rb + "줄이 사라짐");
+    var bad = function (P) { return P.bungs.filter(function (x) { return x.state === "bad"; }).length; };
+    var badUp = Math.max(0, bad(next) - bad(prev));
+    var rm = d.members.removed.length, rb = Math.max(0, d.bungs.removed.length - badUp);
+    var many = function (n, base) { return n >= 10 || (n >= 3 && n / Math.max(1, base) >= 0.1); };
+    if (badUp >= 3) why.push("날짜를 읽지 못한 벙 " + badUp + "줄(날짜 모양이 바뀌었을 수 있음)");
+    if (many(rm, pm)) why.push("멤버 " + rm + "명이 사라짐");
+    if (many(rb, pb)) why.push("벙 " + rb + "줄이 사라짐");
+    var FL = { statusRaw: "활동중 여부", joinMD: "날떼여부", warnN: "경고여부", warnings: "경고", extra: "표시 칸" }, byF = {};
+    d.members.changed.forEach(function (c) { c.fields.forEach(function (f) { byF[f.k] = (byF[f.k] || 0) + 1; }); });
+    Object.keys(byF).forEach(function (k) { if (byF[k] >= 5 && byF[k] / Math.max(1, pm) >= 0.05) why.push("멤버 " + byF[k] + "명의 " + (FL[k] || LABEL[k] || k) + "가 한꺼번에 바뀜"); });
+    var bc = d.bungs.changed.length;
+    if (bc >= 5 && bc / Math.max(1, pb) >= 0.05) why.push("벙 " + bc + "줄의 사람이 한꺼번에 바뀜");
     if (pm && !next.members.length) why.push("멤버가 하나도 없음");
     if (pb && !next.bungs.length) why.push("벙이 하나도 없음");
     return why.length ? { state: "hold", why: why, diff: d } : { state: "ok", diff: d };
@@ -586,7 +610,7 @@
   function insights(P, o) {
     o = o || {};
     var today = o.today || P.today, T = dnum(today), B = okBungs(P), C0 = P.cover && P.cover.from ? dnum(P.cover.from) : T;
-    var live = P.members.filter(function (m) { return m.status !== "left" && m.status !== "kicked" && !(o.gone && o.gone[m.id]); });
+    var live = P.members.filter(function (m) { return m.status !== "left" && m.status !== "kicked" && m.status !== "away" && !(o.gone && o.gone[m.id]); });
     var act = live.filter(function (m) { return m.status === "active" || m.status === "other"; });
     var isLive = {}; live.forEach(function (m) { isLive[m.id] = 1; });
     var within = function (days, off) { return B.filter(function (b) { var n = dnum(b.date); return n > T - days - off && n <= T - off; }); };
@@ -649,13 +673,13 @@
     out.sizes = [["1명", 1, 1], ["2명", 2, 2], ["3~4명", 3, 4], ["5~7명", 5, 7], ["8명 이상", 8, 999]].map(function (t) { return { l: t[0], v: sizes.filter(function (n) { return n >= t[1] && n <= t[2]; }).length }; });
     out.sizeMid = median(sizes);
     // 자주 가는 곳(최근 30일)
-    var pl = {};
-    cur.forEach(function (b) { var k = tight(b.place); if (!k) return; var e = pl[k] || (pl[k] = { n: 0, names: {} }); e.n += 1; e.names[b.place] = (e.names[b.place] || 0) + 1; });
+    var pl = Object.create(null);
+    cur.forEach(function (b) { var k = tight(b.place); if (!k) return; var e = pl[k] || (pl[k] = { n: 0, names: Object.create(null) }); e.n += 1; e.names[b.place] = (e.names[b.place] || 0) + 1; });
     out.places = Object.keys(pl).map(function (k) { var e = pl[k]; var nm = Object.keys(e.names).sort(function (a, b) { return e.names[b] - e.names[a]; })[0]; return { l: nm, n: e.n }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
     out.placeN = Object.keys(pl).length;
     // 신입 첫 벙: 기록 기간 안에 들어온 멤버(시트 입장일, 없으면 대화 기록의 입장일)
     var joins = o.joins || {};
-    var nw = P.members.filter(function (m) { return m.status !== "kicked"; }).map(function (m) { var j = m.joinDate || joins[m.id] || ""; return { m: m, j: j }; }).filter(function (x) { return x.j && dnum(x.j) >= C0 && x.j <= today; });
+    var nw = P.members.filter(function (m) { return m.status !== "kicked"; }).map(function (m) { var j = joins[m.id] || m.joinDate || ""; return { m: m, j: j }; }).filter(function (x) { return x.j && dnum(x.j) >= C0 && x.j <= today; });
     var gaps = [];
     out.newbies = nw.map(function (x) { var f = x.m.attend.filter(function (a) { return a.date >= x.j; })[0]; var g = f ? dnum(f.date) - dnum(x.j) : null; if (g != null) gaps.push(g); return { id: x.m.id, join: x.j, first: f ? f.date : "", gap: g, gone: x.m.status === "left" || !!(o.gone && o.gone[x.m.id]) }; })
       .sort(function (a, b) { return b.join.localeCompare(a.join); });
