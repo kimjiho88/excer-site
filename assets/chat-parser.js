@@ -301,7 +301,7 @@
     "나도", "내가", "나는", "아니", "그래", "하나", "한번", "원래", "이미", "사실", "갑자기", "생각", "아님",
     "하지", "가면", "거의", "담에", "시에", "있는데", "집에", "아하", "언제", "있어", "없어", "같은데",
     "언니", "누나", "오빠", "형님", "동생", "남자", "여자", "친구", "사람", "사진", "동영상", "이모티콘", "파일", "삭제된",
-    "이런", "있음", "근대", "다른", "아주", "했는데", "집에서", "요기", "오호", "좋아", "나중", "느낌", "맨날", "예전"
+    "이런", "있음", "근대", "다른", "아주", "했는데", "집에서", "요기", "오호", "좋아", "나중", "느낌", "맨날", "예전", "메시지"
   ];
 
   var PARTICLES = [
@@ -397,7 +397,7 @@
   var RE_HEART = /❤|♥|💜|좋아/;
 
   // 키워드 카테고리 사전 (넉넉히) — 단어/문장에 사전 항목이 '포함'되면 해당 카테고리.
-  //   · 멤버별 kw: 텍스트 메시지에서 카테고리 사전 항목의 언급 횟수 합
+  //   · 멤버별 kw: 카테고리 사전 항목이 나온 텍스트 메시지 수(한 메시지에 카테고리마다 1)
   //   · keywords[].cat: 추출된 키워드가 처음 매칭되는 카테고리 (없으면 null)
   //   판정 우선순위: 나들이 → 맛집 → 벙 → 정보
   var KW_CAT_ORDER = ["나들이", "맛집", "벙", "정보"];
@@ -411,7 +411,8 @@
     ],
     "맛집": [
       "맛집", "저녁", "점심", "밥집", "밥약", "회식", "카페", "브런치", "디저트", "커피",
-      "한잔", "술", "술집", "포차", "맥주", "소주", "와인", "하이볼", "안주", "칵테일", "바",
+      "한잔", "술자리", "술집", "술약속", "술값", "술판", "술한잔", "술 한", "술마", "술 마", "술먹", "술 먹",
+      "포차", "맥주", "소주", "와인", "하이볼", "안주", "칵테일",
       "메뉴", "예약", "웨이팅", "야식", "먹방", "존맛", "맛있", "배달", "치킨", "삼겹살",
       "고기", "파스타", "국밥", "분식", "빵집", "베이커리", "맛도리"
     ],
@@ -428,15 +429,14 @@
   };
   var KW_CAT_RE = {};
   KW_CAT_ORDER.forEach(function (cat) {
-    KW_CAT_RE[cat] = new RegExp(KW_CATEGORIES[cat].join("|"), "g");
+    KW_CAT_RE[cat] = new RegExp(KW_CATEGORIES[cat].join("|"));
   });
 
-  // 텍스트 한 건에서 카테고리별 언급 횟수를 kw 에 누적
+  // 텍스트 한 건에서 카테고리마다 한 번만 센다(한 메시지에 같은 말이 여러 번 나와도 1). 칭호의 '비중'이 메시지 가운데의 비중이 되게
   function countCategoryMentions(text, kw) {
     for (var i = 0; i < KW_CAT_ORDER.length; i++) {
       var cat = KW_CAT_ORDER[i];
-      var hits = String(text).match(KW_CAT_RE[cat]);
-      if (hits) kw[cat] += hits.length;
+      if (KW_CAT_RE[cat].test(String(text))) kw[cat] += 1;
     }
   }
 
@@ -655,8 +655,8 @@
       var st = statOf(m);
       st.count += 1;
       var gapAny = prev ? epochMin(m) - epochMin(prev) : -1;
-      if (!prev || gapAny >= 60) st.starts += 1;                                   // 대화의 문을 연 사람(60분 넘게 조용한 뒤)
-      else if (prev.name !== m.name && gapAny >= 0) st.gaps.push(gapAny);          // 60분 안의 답 — 시작과 겹치지 않게
+      if (prev && gapAny >= 60) st.starts += 1;                                    // 대화의 문을 연 사람(60분 넘게 조용한 뒤). 자료 첫 메시지는 내보내기 경계라 세지 않는다
+      else if (prev && prev.name !== m.name && gapAny >= 0) st.gaps.push(gapAny);  // 60분 안의 답 — 시작과 겹치지 않게
       if (di != null) st.daily[di] += 1;
       st.hours[m.hour] += 1;
       st.weekdays[m.weekday] += 1;
@@ -668,7 +668,7 @@
       else if (m.kind === "video") st.media.video += 1;
       else if (m.kind === "emoticon") st.media.emoticon += 1;
       else if (m.kind === "link") st.media.link += 1;
-      if (m.kind === "text" || m.kind === "link") { st.textLen += m.len; st.textCount += 1; }
+      if (m.kind === "text") { st.textLen += m.len; st.textCount += 1; }              // 한 번에 쓰는 글자 수는 글 메시지만(링크 주소 길이는 빼고)
 
       // 휴리스틱 카운트 — 텍스트만 (시스템·미디어 제외 원칙)
       if (m.kind === "text") {
@@ -717,7 +717,7 @@
         a: st.a,
         welcome: st.welcome,
         media: st.media,
-        avgLen: st.textCount ? Math.round((st.textLen / st.textCount) * 10) / 10 : 0,
+        avgLen: st.textCount ? Math.round((st.textLen / st.textCount) * 100) / 100 : 0,
         textCount: st.textCount,          // avgLen 을 다시 계산하거나 발행본끼리 합칠 때 필요
         starts: st.starts,
         replyMed: st.gaps.length ? medianMin(st.gaps) : null,   // 타인 말에 답하기까지 걸린 시간의 중앙값(분). 답한 적이 없으면 null(0분은 '같은 분에 답함')

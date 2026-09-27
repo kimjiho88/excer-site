@@ -72,8 +72,10 @@
         try {
           var ta = document.createElement("textarea");
           ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
-          document.body.appendChild(ta); ta.select();
-          var ok = document.execCommand("copy"); document.body.removeChild(ta);
+          // 모달 대화상자가 열려 있으면 바깥은 비활성이라 선택이 안 된다. 열린 대화상자 안에 잠깐 넣는다
+          var host = document.querySelector("dialog[open]") || document.body;
+          host.appendChild(ta); ta.select();
+          var ok = document.execCommand("copy"); host.removeChild(ta);
           return ok ? "copy" : "fail";
         } catch (e) { return "fail"; }
       });
