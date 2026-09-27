@@ -585,8 +585,10 @@
       const acts = S.records.actions.filter((a) => a.pid === pid);
       const rule = acts.filter((a) => a.kind === "rule"), bib = acts.filter((a) => a.kind === "bibung");
       const out = [];
-      if (rule.length) out.push(rule.some((a) => a.step === "kick") ? "금지 행동: 강제퇴장까지 함" : "금지 행동: 재적발 시 강제퇴장");
-      if (bib.length) { const n = bib.filter((a) => a.step !== "etc").length; out.push(bib.some((a) => a.step === "kick") ? "비벙: 강제퇴장까지 함" : n >= 2 ? "비벙: 다음은 강제퇴장" : "비벙: 다음은 운영진 면담"); }
+      // 금지 행동과 비벙은 같은 3단계: 1차 구두 경고, 2차 운영진 면담, 3차 강제퇴장
+      const next = (label, list) => { const n = list.filter((a) => a.step !== "etc").length; return list.some((a) => a.step === "kick") ? label + ": 강제퇴장까지 함" : n >= 2 ? label + ": 다음은 강제퇴장" : label + ": 다음은 운영진 면담"; };
+      if (rule.length) out.push(next("금지 행동", rule));
+      if (bib.length) out.push(next("비벙", bib));
       return out;
     }
     function renderRecords() {
