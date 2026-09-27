@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="assets/site.css?v=20" />
   <script src="assets/chat-parser.js?v=10"></script>
   <script src="assets/ops-analyzer.js?v=4"></script>
+  <script src="assets/ops-sheet.js?v=1"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
     :root {
@@ -274,6 +275,42 @@
     .sheet-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 12px 0; background: var(--bg, #F7F5EF); border-bottom: 1px solid var(--line); margin-bottom: 12px; }
     .sheet-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 17px; overflow-wrap: anywhere; }
     .sheet-body { display: grid; gap: 12px; }
+    /* 시트 탭 */
+    .sync { display: grid; gap: 10px; }
+    .sync-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--ink-2); }
+    .sync-line b { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .banner { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--line); border-left-width: 4px; background: #fff; }
+    .banner.rule { border-left-color: var(--st-critical); }
+    .banner.watch { border-left-color: var(--st-serious); }
+    .banner.info { border-left-color: var(--s-violet); }
+    .banner h3 { margin: 0; font-size: 15px; display: flex; gap: 6px; align-items: center; }
+    .banner p { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+    .plist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .plist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); font-size: 13px; overflow-wrap: anywhere; }
+    .plist .where { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .plist .fixes { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .plist .fixes .input { max-width: 260px; }
+    .ppl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .ppl .nchip { min-height: 26px; padding: 0 8px; }
+    .token-box { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+    .steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.55; }
+    .tbl.lft th, .tbl.lft td { text-align: left; white-space: normal; vertical-align: top; }
+    .tbl.lft td.num { text-align: right; white-space: nowrap; }
+    .tbl.lft tr.mute td { color: var(--ink-2); }
+    .tbl.lft td:first-child { white-space: nowrap; }
+    .only-ph { display: none; }
+    @media (max-width: 699px) {
+      .tbl.bung thead { display: none; }
+      .tbl.bung, .tbl.bung tbody { display: block; }
+      .tbl.bung tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+      .tbl.bung td { display: block; border: 0; padding: 0; }
+      .tbl.bung td:nth-child(1) { grid-row: 1; grid-column: 1; }
+      .tbl.bung td:nth-child(2) { grid-row: 1; grid-column: 2; }
+      .tbl.bung td:nth-child(4) { grid-row: 1; grid-column: 3; }
+      .tbl.bung td:nth-child(3), .tbl.bung td:nth-child(5) { grid-column: 1 / -1; }
+      .tbl.bung td:nth-child(3) { display: flex; gap: 6px; align-items: center; }
+      .tbl.bung .only-ph { display: inline; }
+    }
     details.more > summary { cursor: pointer; color: var(--brand); font-size: 13px; font-weight: 700; min-height: 28px; display: flex; align-items: center; }
   </style>
 </head>
@@ -310,6 +347,7 @@
     <div id="app" hidden>
       <nav class="ops-tabs" aria-label="운영 대시보드"><div class="wrap ops-tabs-in" role="tablist">
         <button type="button" role="tab" data-tab="dash" aria-selected="true">대시보드</button>
+        <button type="button" role="tab" data-tab="sheet" aria-selected="false">시트</button>
         <button type="button" role="tab" data-tab="signals" aria-selected="false">신호 근거</button>
         <button type="button" role="tab" data-tab="records" aria-selected="false">기록</button>
         <button type="button" role="tab" data-tab="data" aria-selected="false">데이터</button>
@@ -318,6 +356,7 @@
         <p id="unsavedNote" class="notice" hidden>새로 분석한 결과를 아직 서버에 저장하지 않았습니다. 위의 서버에 저장을 누르면 다른 기기에서도 보입니다.</p>
         <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 위의 파일 올리기로 카카오톡 대화 내보내기 파일을 올려 주세요.</p>
         <section data-panel="dash"></section>
+        <section data-panel="sheet" hidden></section>
         <section data-panel="signals" hidden></section>
         <section data-panel="records" hidden></section>
         <section data-panel="data" hidden>
@@ -436,6 +475,7 @@
       $("gate").hidden = true; $("app").hidden = false; $("opsActs").hidden = false; setTopH();
       $("saveBtn").textContent = localOnly ? "저장 안 함(서버 설정 전)" : "서버에 저장";
       renderAll();
+      if (!localOnly) { sheetLoad(); sheetStartPoll(); }
     }
 
     /* ── 탭 ── */
@@ -444,6 +484,7 @@
       tab = t;
       document.querySelectorAll("[data-tab]").forEach((b) => { b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"); if (b.dataset.tab === t) try { b.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {} });
       document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== t; });
+      $("noDataNote").hidden = !!S.ledger || t === "sheet";
       window.scrollTo({ top: 0 });
     }
 
@@ -583,11 +624,14 @@
     const STEP = { warn: "구두 경고", talk: "면담", kick: "강제퇴장", etc: "그 밖" };
     function nextStep(pid) {
       const acts = S.records.actions.filter((a) => a.pid === pid);
-      const rule = acts.filter((a) => a.kind === "rule"), bib = acts.filter((a) => a.kind === "bibung");
+      // 시트의 경고는 금지 행동의 경고로 센다. 같은 날짜의 조치 기록과 겹치면 한 번만
+      const sm = typeof sheetOf === "function" ? sheetOf(pid) : null;
+      const sw = sm ? sm.warnings.filter((w) => !acts.some((a) => a.kind === "rule" && w.date && a.date === w.date)).map(() => ({ kind: "rule", step: "warn" })) : [];
+      const rule = acts.filter((a) => a.kind === "rule").concat(sw), bib = acts.filter((a) => a.kind === "bibung");
       const out = [];
       // 금지 행동과 비벙은 같은 3단계: 1차 구두 경고, 2차 운영진 면담, 3차 강제퇴장
-      const next = (label, list) => { const n = list.filter((a) => a.step !== "etc").length; return list.some((a) => a.step === "kick") ? label + ": 강제퇴장까지 함" : n >= 2 ? label + ": 다음은 강제퇴장" : label + ": 다음은 운영진 면담"; };
-      if (rule.length) out.push(next("금지 행동", rule));
+      const next = (label, list) => { const n = list.filter((a) => a.step !== "etc").length; return list.some((a) => a.step === "kick") ? label + ": 강제퇴장까지 함" : n >= 3 ? label + ": 강제퇴장 단계" : n >= 2 ? label + ": 다음은 강제퇴장" : label + ": 다음은 운영진 면담"; };
+      if (rule.length) out.push(next("금지 행동" + (sw.length ? "(시트 경고 " + sw.length + "회 포함)" : ""), rule));
       if (bib.length) out.push(next("비벙", bib));
       return out;
     }
@@ -595,10 +639,18 @@
       const host = document.querySelector('[data-panel="records"]');
       const acts = S.records.actions.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       const name = (pid) => { const p = byPid(pid); return p ? p.name : (acts.find((a) => a.pid === pid) || {}).name || pid; };
-      const pids = [...new Set(acts.map((a) => a.pid))];
-      host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건</small></h2>
-        ${acts.length ? `<ul class="ev">${acts.map((a) => `<li><time>${esc(md(a.date))}</time><span><b style="display:inline;color:var(--ink)">${esc(name(a.pid))}</b> ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>`).join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
-        ${pids.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}</div></div>` : ""}
+      // 시트의 경고(멤버 탭 경고여부, 경고사유, 경고일)도 함께. 시트에서 고치면 여기서도 바뀐다
+      const sheetW = SH.parsed ? SH.parsed.members.filter((m) => m.warnings.length) : [];
+      const items = acts.map((a) => ({ d: a.date || "", h: `<li><time>${esc(md(a.date))}</time><span><b style="display:inline;color:var(--ink)">${esc(name(a.pid))}</b> ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>` }))
+        .concat(sheetW.flatMap((m) => m.warnings.map((w) => ({ d: w.date || "", h: `<li><time>${w.date ? esc(md(w.date)) : "날짜 없음"}</time><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(m.name)}</button> 경고 ${w.n}차${w.reason ? ": " + esc(w.reason) : ""} <span class="tag">시트</span></span></li>` }))))
+        .sort((a, b) => b.d.localeCompare(a.d));
+      const pids = [...new Set(acts.map((a) => a.pid).concat(sheetW.map((m) => SH.links.m2p.get(m.id)).filter(Boolean)))];
+      const sheetOnly = sheetW.filter((m) => !SH.links.m2p.has(m.id) && m.status !== "left" && m.status !== "kicked");
+      const ladder = (n) => (n >= 3 ? "강제퇴장 단계" : n === 2 ? "다음은 강제퇴장" : "다음은 운영진 면담");
+      host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건${sheetW.length ? ", 시트 경고 " + sheetW.reduce((a, m) => a + m.warnings.length, 0) + "건" : ""}</small></h2>
+        ${items.length ? `<ul class="ev">${items.map((x) => x.h).join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
+        ${pids.length || sheetOnly.length ? `<div class="panel"><h2>다음 단계</h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); return p ? personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join("")) : `<p class="empty">${esc(name(pid))}: ${esc(ns.join(", "))}</p>`; }).join("")}
+          ${sheetOnly.map((m) => `<button class="prow" type="button" data-smember="${esc(m.id)}"><span class="pn">${esc(m.name)}</span><span class="pr"><b>${m.warnings.length}회</b>시트 경고</span><span class="pm">${stTag(m)}<span class="tag watch">금지 행동: ${ladder(m.warnings.length)}</span><span>대화 기록과 잇지 못함</span></span></button>`).join("")}</div></div>` : ""}
         ${ioPanel()}`;
     }
     /* 입퇴장 메모 모아 보기: 사람 메모와 줄마다 메모(날짜 순) */
@@ -615,11 +667,544 @@
         }).join("") : `<p class="empty">아직 없습니다. 멤버 상세의 들어옴, 나감에서 적습니다.</p>`}</div>`;
     }
 
+    /* ── 시트: 연동, 해석, 반영 판정, 교정 규칙, 관리 ──
+       서버는 받은 판을 그대로 남기고(ops_sheet_*), 해석과 판정은 여기서 한다(OpsSheet).
+       새 판이 구조가 깨졌거나 한꺼번에 많이 사라졌으면 반영하지 않고 앞 판을 그대로 보인다. 운영자가 고른다.
+       교정 규칙(이름 바꿔 읽기, 줄 빼기)과 사람 잇기는 기록(records.sheet)에 두어 다음 판에도 그대로 적용한다. */
+    const SH = { ready: false, missing: false, err: "", status: null, versions: [], snaps: new Map(), latestId: 0, parsed: null, latestParsed: null, guard: null, mode: "none", links: { m2p: new Map(), p2m: new Map() }, feed: null, feedBusy: false, token: "", paste: false, pasteKeep: null, mf: "active", mq: "", ms: { k: "d30", dir: -1 }, bq: "", bLimit: 40, fixOpen: "" };
+    const SH_SET = { firstMeetDays: 14, regularDays: 60 };
+    function sheetRec() { const r = S.records.sheet || (S.records.sheet = {}); ["alias", "ignore", "link", "skipped", "settings"].forEach((k) => { if (!r[k] || typeof r[k] !== "object" || Array.isArray(r[k])) r[k] = {}; }); return r; }
+    const shSet = () => Object.assign({}, SH_SET, sheetRec().settings);
+    const tightK = (s) => String(s == null ? "" : s).replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
+    const kstDate = (t) => { try { return new Date(t).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); } catch (e) { return String(t).slice(0, 10); } };
+    const kstHM = (t) => { try { return new Date(t).toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }); } catch (e) { return ""; } };
+    const minsAgo = (t) => (t ? (Date.now() - new Date(t).getTime()) / 60000 : Infinity);
+    const ago = (t) => { if (!t) return "없음"; const m = Math.round(minsAgo(t)); return m < 1 ? "방금" : m < 60 ? m + "분 전" : m < 1440 ? Math.floor(m / 60) + "시간 전" : md(kstDate(t)) + " " + kstHM(t); };
+    async function shCall(name, body) { const r = await rpc(name, Object.assign({ p_pass: PASS }, body || {})); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r; }
+    function snapParse(s) { const rec = sheetRec(); return OpsSheet.parse(s.tabs, { fixes: rec, settings: shSet(), today: todayKST(), snapDate: kstDate(s.at), idleMin: minsAgo(s.at) }); }
+    const shMember = (id) => (SH.parsed && SH.parsed.byId[id]) || null;
+    const sheetOf = (pid) => { const id = SH.links.p2m.get(pid); return id ? shMember(id) : null; };
+    /* 대화 기록의 사람과 잇기: 직접 이은 것 먼저, 아니면 닉네임 첫 칸과 출생연도(성별이 있으면 성별도)가 같은 사람이 하나일 때 */
+    function sheetLinkMaps() {
+      const m2p = new Map(), p2m = new Map(), P = SH.parsed;
+      if (!P || !S.ledger) return { m2p, p2m };
+      const rec = sheetRec(), idx = new Map();
+      people().filter((p) => !p.dflt).forEach((p) => { const np = OpsAnalyzer.nickParts(p.name); const k = tightK(np.nick) + "|" + (np.birth || ""); if (!idx.has(k)) idx.set(k, []); idx.get(k).push(p); });
+      P.members.forEach((m) => {
+        const man = rec.link[m.id];
+        if (man === "none") return;
+        let p = man ? byPid(man) : null;
+        if (!man) {
+          let c = (idx.get(tightK(m.name) + "|" + (m.birth || "")) || []).filter((q) => { const sx = OpsAnalyzer.nickParts(q.name).sex; return !m.sex || !sx || sx === m.sex; });
+          if (c.length > 1) { const inRoom = c.filter((q) => q.status === "in"); if (inRoom.length === 1) c = inRoom; }
+          if (c.length === 1) p = c[0];
+        }
+        if (p && !p2m.has(p.pid)) { m2p.set(m.id, p.pid); p2m.set(p.pid, m.id); }
+      });
+      return { m2p, p2m };
+    }
+    function sheetProcess() {
+      const rec = sheetRec(), latest = SH.snaps.get(SH.latestId);
+      SH.guard = null; SH.latestParsed = null;
+      if (!latest) { SH.mode = "none"; SH.parsed = null; SH.links = sheetLinkMaps(); return; }
+      const pL = snapParse(latest); SH.latestParsed = pL;
+      if (latest.id < 0) { SH.mode = pL.structure.ok ? "ok" : "broken"; SH.guard = pL.structure.ok ? null : OpsSheet.guard(null, pL); SH.parsed = pL.structure.ok ? pL : null; SH.links = sheetLinkMaps(); return; }   // 이 화면에만 넣은 판
+      const acc = rec.acceptedId && rec.acceptedId !== latest.id ? SH.snaps.get(rec.acceptedId) : null;
+      const pA = acc ? snapParse(acc) : null;
+      if (rec.pinned && pA && pA.structure.ok) { SH.mode = "pinned"; SH.parsed = pA; }
+      else {
+        const g = rec.acceptedId === latest.id ? (pL.structure.ok ? { state: "ok" } : OpsSheet.guard(null, pL)) : OpsSheet.guard(pA, pL);
+        SH.guard = g;
+        if (g.state === "ok") { SH.mode = "ok"; SH.parsed = pL; if (rec.acceptedId !== latest.id || rec.pinned) { rec.acceptedId = latest.id; rec.pinned = false; saveRecords(); } }
+        else if (g.state === "hold" && rec.skipped[latest.id]) { SH.mode = "skipped"; SH.parsed = pA; }
+        else { SH.mode = g.state; SH.parsed = pA && pA.structure.ok ? pA : null; }
+      }
+      SH.links = sheetLinkMaps();
+    }
+    /* 받기: 처음에는 보는 판과 최신 판, 그 뒤로는 새 판이 있을 때만 */
+    async function sheetLoad(opt) {
+      opt = opt || {};
+      if (localOnly || !PASS) return;
+      const rec = sheetRec();
+      const before = SH.parsed;
+      try {
+        const need = [rec.acceptedId].filter((x) => x && !SH.snaps.has(x));
+        const r = await shCall("ops_sheet_get", { p_since: SH.latestId || null, p_ids: need.length ? need : null });
+        SH.missing = false; SH.err = "";
+        SH.status = r.status; SH.versions = r.versions || [];
+        (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s));
+        let fresh = false, first = !SH.ready;
+        if (r.latest) { fresh = r.latest.id !== SH.latestId; SH.snaps.set(r.latest.id, r.latest); SH.latestId = r.latest.id; }
+        const keep = new Set([SH.latestId, rec.acceptedId]); [...SH.snaps.keys()].forEach((id) => { if (!keep.has(id) && !(SH.feed && SH.feed.ids.includes(id))) SH.snaps.delete(id); });
+        // 새 판이 없으면 다시 그리지 않는다(열어 둔 묶음과 입력이 그대로). 작성 중 줄이 있으면 멈춤 판정만 다시
+        if (opt.poll && !fresh && !first && !(SH.latestParsed && SH.latestParsed.drafts)) { SH.ready = true; renderSyncLine(); return; }
+        sheetProcess();
+        SH.ready = true;
+        if (fresh && opt.poll) {
+          const d = before && SH.parsed && SH.parsed !== before ? OpsSheet.diff(before, SH.parsed) : null;
+          const parts = d ? [["벙", d.bungs], ["멤버", d.members], ["이슈", d.issues]].map(([t, x]) => { const n = x.added.length + x.changed.length + x.removed.length; return n ? t + " " + n + "건" : ""; }).filter(Boolean) : [];
+          toast(SH.mode === "ok" ? "시트에서 새 판을 받았습니다" + (parts.length ? ": " + parts.join(", ") : "") : "시트에서 새 판을 받았지만 반영을 멈췄습니다. 시트 탭을 봐 주세요.");
+          SH.feed = null;
+        }
+      } catch (e) {
+        if (missingFn(e)) SH.missing = true; else SH.err = e.code || "NET";
+        SH.ready = true;
+      }
+      renderAll();
+    }
+    let shTimer = null;
+    function sheetStartPoll() {
+      if (shTimer || localOnly) return;
+      shTimer = setInterval(() => { if (document.visibilityState === "visible" && PASS) sheetLoad({ poll: true }); }, 60000);
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && PASS && SH.ready) sheetLoad({ poll: true }); });
+    }
+
+    /* 연동 상태: 마지막으로 제대로 받은 시각으로 판단(스크립트는 바뀐 것이 없어도 10분마다 알린다) */
+    function syncState() {
+      const st = SH.status;
+      if (SH.missing) return { l: "rule", t: "서버 설정 전" };
+      if (SH.err) return { l: "rule", t: "서버에 연결하지 못함" };
+      if (!st) return { l: "watch", t: localOnly ? "서버 설정 전" : "확인 중" };
+      if (!st.has_token && !SH.versions.length) return { l: "watch", t: "연동 전" };
+      if (!st.has_token) return { l: "watch", t: "연동 꺼짐" };
+      if (st.last_error && (!st.last_ok_at || st.last_error_at > st.last_ok_at)) return { l: "rule", t: "스크립트 오류" };
+      const m = minsAgo(st.last_ok_at);
+      if (m === Infinity) return { l: "watch", t: "아직 받은 것 없음" };
+      return m <= 15 ? { l: "good", t: "정상" } : m <= 60 ? { l: "watch", t: "늦음" } : { l: "rule", t: "멈춤" };
+    }
+    const LVL2 = { rule: "rule", watch: "watch", good: "good", info: "watch" };
+    function renderSyncLine() {
+      const el = $("shSyncLine"); if (!el) return;
+      const st = SH.status || {}, s = syncState();
+      const hp = $("shSyncHelp"); if (hp) { const t = syncHelp(s); hp.textContent = t; hp.hidden = !t; }
+      el.innerHTML = `<span class="lvl">${ICON[LVL2[s.l]]}${esc(s.t)}</span>
+        ${SH.status ? `<span>마지막 받음 <b>${esc(ago(st.last_ok_at))}</b></span><span>시트가 바뀐 때 <b>${esc(ago(st.last_change_at))}</b></span><span>판 <b>${nf(SH.versions.length)}</b>개${SH.versions.length >= 60 ? "(최근 60개)" : ""}</span>` : ""}
+        ${st.last_error && (!st.last_ok_at || st.last_error_at > st.last_ok_at) ? `<span class="tag rule">${esc(ago(st.last_error_at))}: ${esc(st.last_error)}</span>` : ""}`;
+    }
+    function syncHelp(s) {
+      if (s.t === "멈춤" || s.t === "늦음") return "스크립트가 멈췄을 수 있습니다. 앱스 스크립트의 트리거와 실행 기록을 확인하고 syncNow 를 한 번 실행해 주세요. 통째로 보내므로 다시 돌면 빠진 것 없이 따라잡습니다. 급하면 붙여넣기로 넣을 수 있습니다.";
+      if (s.t === "스크립트 오류") return "스크립트가 시트를 읽거나 보내지 못했습니다. 아래 오류 문구를 보고 스크립트 속성(SHEET_ID, SYNC_TOKEN)과 시트 공유 권한을 확인해 주세요.";
+      return "";
+    }
+
+    /* 붙여넣기: 탭마다 시트에서 전체 선택해 복사한 것을 넣는다. 넣지 않은 탭은 최신 판 그대로 */
+    function pasteTabs() {
+      const latest = SH.snaps.get(SH.latestId);
+      const tabs = latest ? latest.tabs.map((t) => ({ name: t.name, values: t.values })) : [];
+      document.querySelectorAll("[data-paste-tab]").forEach((ta) => {
+        const v = ta.value; if (!v.trim()) return;
+        const name = ta.dataset.pasteTab, values = OpsSheet.fromPaste(v);
+        const i = tabs.findIndex((t) => t.name === name);
+        if (i >= 0) tabs[i] = { name, values }; else tabs.push({ name, values });
+      });
+      return tabs;
+    }
+
+    /* ── 시트 탭 그리기 ── */
+    const SBOARD = [
+      { key: "first_late", t: (s) => "첫 모임 " + s.firstMeetDays + "일 넘김", l: "rule", img: "flow-first-meeting", codes: ["first_late"], chip: (m, P) => mdS(m.joinDate) + " 입장, " + (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate)) + "일" },
+      { key: "regular", t: (s) => s.regularDays + "일 넘게 벙 없음", l: "rule", img: "rules-meetup", codes: ["regular"], chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음"), none: (P, s) => P.cover.days < s.regularDays ? "벙 기록이 " + P.cover.days + "일치라 " + s.regularDays + "일부터 판정합니다." : "" },
+      { key: "warn", t: () => "경고 2회 이상", l: "watch", img: "rules-boundaries", codes: ["warn3", "warn2"], chip: (m) => m.warnings.length + "회" },
+      { key: "noshow", t: () => "노쇼", l: "watch", codes: ["noshow", "noshow1"], chip: (m) => m.noshows.length + "회" },
+      { key: "outs", t: () => "나간횟수 한도 초과", l: "rule", codes: ["outs"], hideZero: true, chip: (m) => m.outs + "/" + m.outLimit },
+      { key: "first_wait", t: () => "첫 모임 기다림", l: "watch", codes: ["first_wait"], chip: (m, P, s) => Math.max(0, s.firstMeetDays - (OpsSheet.dnum(P.today) - OpsSheet.dnum(m.joinDate))) + "일 남음" },
+      { key: "no_record", t: () => "벙 기록 없음, 곧 기한", l: "watch", codes: ["no_record", "regular_soon"], chip: (m) => (m.last ? "마지막 " + mdS(m.last) : "기록 없음") },
+      { key: "nalte", t: () => "벙에 왔는데 입장일이 남음", l: "watch", codes: ["nalte"], hideZero: true, chip: (m) => mdS(m.joinDate) + " 입장" }
+    ];
+    const mdS = (d) => (d ? +d.slice(5, 7) + "." + +d.slice(8, 10) : "");
+    const ST_LABEL = { active: "활동", away: "외출", inactive: "비활성", left: "나감", kicked: "강퇴", other: "모름" };
+    const stTag = (m) => `<span class="tag ${m.status === "left" || m.status === "kicked" ? "out" : m.status === "active" ? "in" : ""}">${esc(m.status === "other" ? m.statusRaw : m.statusRaw || ST_LABEL[m.status])}</span>`;
+    const mLabel = (m) => m.name + (m.birth ? " " + m.birth : "") + (m.sex ? " " + m.sex : "");
+    const idName = (id) => { const m = shMember(id); return m ? m.name : String(id).replace(/^m:/, "").split("|")[0]; };
+    const mChip = (id, extra) => `<button type="button" class="nchip" data-smember="${esc(id)}">${esc(idName(id))}${extra ? `<em>${esc(extra)}</em>` : ""}</button>`;
+    const liveM = (m) => m.status !== "left" && m.status !== "kicked";
+    function mismatchOf(m) {
+      const pid = SH.links.m2p.get(m.id); if (!pid) return "";
+      const p = byPid(pid); if (!p) return "";
+      const on = liveM(m);
+      if (on && m.status !== "away" && p.status !== "in") return "시트는 " + (m.statusRaw || "활동") + ", 대화 기록은 " + (p.status === "kicked" ? "내보냄" : "나감") + " " + md(p.outDate);
+      if (!on && p.status === "in") return "시트는 " + m.statusRaw + ", 대화 기록은 방에 있음";
+      return "";
+    }
+    // 대화 기록으로는 이미 나간 사람: 참석 점검 대신 '대화 기록과 다름'에서 본다(외출은 나가 있는 것이 맞음)
+    const goneInChat = (m) => { const pid = SH.links.m2p.get(m.id); const p = pid && byPid(pid); return !!(p && p.status !== "in" && m.status !== "away"); };
+    function renderSheetTab() {
+      const host = document.querySelector('[data-panel="sheet"]'); if (!host) return;
+      const P = SH.parsed, s = syncState(), set = shSet(), rec = sheetRec();
+      const keepFocus = document.activeElement && ["shMq", "shBq"].includes(document.activeElement.id) ? { id: document.activeElement.id, pos: document.activeElement.selectionStart } : null;
+      const help = syncHelp(s);
+      const st = SH.status || {};
+      const setupOpen = SH.token || (!st.has_token && SH.ready && !SH.missing && !localOnly);
+      // 1) 연동
+      let h = `<div class="panel" id="shSync"><h2>연동</h2><div class="sync-line" id="shSyncLine"></div>
+        <p class="sub" id="shSyncHelp"${help ? "" : " hidden"}>${esc(help)}</p>
+        ${SH.missing ? `<p class="notice">서버 설정이 아직 없습니다. Supabase SQL Editor 에서 sql/2026-09-28-ops-sheet.sql 을 한 번 실행해 주세요. 그 전에는 붙여넣기로 이 화면에서만 볼 수 있습니다.</p>` : ""}
+        <div class="chips">${localOnly || SH.missing ? "" : `<button type="button" class="btn btn-secondary is-sm" id="shReload">새로 받기</button>`}<button type="button" class="btn btn-secondary is-sm" id="shPasteBtn" aria-expanded="${SH.paste}">붙여넣기로 넣기</button></div>
+        ${localOnly || SH.missing ? "" : `<details class="more" id="shSetup"${setupOpen ? " open" : ""}><summary>연동 설정</summary>
+          <div class="sync">
+            <p class="sub">연동 토큰: ${st.has_token ? "있음(끝 " + esc(st.token_hint || "") + ", " + esc(md(kstDate(st.token_at))) + " 만듦)" : "없음"}. 토큰으로는 시트 판을 넣는 것만 할 수 있습니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary is-sm" id="shTokNew">${st.has_token ? "토큰 다시 만들기" : "토큰 만들기"}</button>${st.has_token ? `<button type="button" class="btn btn-secondary is-sm" id="shTokOff">연동 끄기</button>` : ""}</div>
+            ${SH.token ? `<div class="token-box"><input class="input" id="shTok" readonly value="${esc(SH.token)}" aria-label="연동 토큰" /><button type="button" class="btn btn-primary is-sm" data-copy="shTok">복사</button></div><p class="sub">이 토큰은 지금 한 번만 보입니다.</p>` : ""}
+            <ol class="steps">
+              <li>script.google.com 에서 새 프로젝트를 만들고 스크립트를 붙여넣습니다. <button type="button" class="text-btn" data-copyfile="assets/ops-sheet-sync.gs">스크립트 복사</button></li>
+              <li>프로젝트 설정의 스크립트 속성에 SYNC_TOKEN(위 토큰)과 SHEET_ID(시트 주소의 /d/ 와 /edit 사이)를 넣습니다.</li>
+              <li>프로젝트 설정에서 appsscript.json 매니페스트 표시를 켜고 내용을 바꿉니다. 시트를 읽기만 하는 권한이 됩니다. <button type="button" class="text-btn" data-copyfile="assets/ops-sheet-sync.appsscript.json">매니페스트 복사</button></li>
+              <li>함수 install 을 실행하고 권한을 허용합니다. 1분 안에 이 화면에 나타납니다.</li>
+            </ol></div></details>`}
+        ${SH.paste ? `<div class="sync" id="shPaste"><p class="sub">시트에서 탭 하나를 전체 선택해 복사한 뒤 붙여넣습니다. 비워 둔 탭은 최신 판 그대로 둡니다.</p>
+          ${((SH.snaps.get(SH.latestId) || {}).tabs || [{ name: "멤버" }, { name: "벙" }, { name: "이슈" }]).map((t) => `<label class="field"><span>${esc(t.name)}</span><textarea class="textarea" rows="3" data-paste-tab="${esc(t.name)}" aria-label="${esc(t.name)} 탭 붙여넣기"></textarea></label>`).join("")}
+          <div class="chips"><button type="button" class="btn btn-secondary is-sm" id="shPastePrev">읽어 보기</button><button type="button" class="btn btn-primary is-sm" id="shPastePut" disabled>${localOnly || SH.missing ? "이 화면에 넣기" : "서버에 넣기"}</button></div>
+          <p class="sub" id="shPasteRes" aria-live="polite"></p></div>` : ""}
+      </div>`;
+      // 2) 반영 알림
+      if (SH.mode === "hold" || SH.mode === "broken" || SH.mode === "pinned" || SH.mode === "skipped") {
+        const lat = SH.snaps.get(SH.latestId);
+        if (SH.mode === "broken") h += `<div class="banner rule"><h3>${ICON.rule}시트 구조가 바뀌어 반영을 멈췄습니다</h3><p>최신 판(${esc(md(kstDate(lat.at)))} ${esc(kstHM(lat.at))})에서 찾지 못한 것: ${esc((SH.guard.why || []).join(", "))}. ${SH.parsed ? "그 앞의 판을 보고 있습니다." : "보여 줄 앞 판이 없습니다."} 시트의 머리 줄 글자를 되돌리면 다음 판에서 바로 반영됩니다.</p></div>`;
+        if (SH.mode === "hold") h += `<div class="banner watch"><h3>${ICON.watch}한꺼번에 많이 사라진 판이라 반영을 멈췄습니다</h3><p>${esc(SH.guard.why.join(", "))}. 실수로 지웠거나 정렬, 거르기 중일 수 있습니다. 앞 판을 그대로 보고 있습니다.</p>
+          ${diffList(SH.guard.diff, true)}<div class="chips"><button type="button" class="btn btn-primary is-sm" id="shAccept">이 판 반영</button><button type="button" class="btn btn-secondary is-sm" id="shSkip">이 판 건너뛰기</button></div></div>`;
+        if (SH.mode === "skipped") h += `<div class="banner info"><h3>${ICON.watch}건너뛴 판이 최신입니다</h3><p>시트가 다시 바뀌면 새 판과 비교합니다.</p><div class="chips"><button type="button" class="btn btn-secondary is-sm" id="shAccept">최신 판 반영</button></div></div>`;
+        if (SH.mode === "pinned") h += `<div class="banner info"><h3>${ICON.watch}고정한 판을 보고 있습니다</h3><p>판 ${esc(rec.acceptedId)}. 새 판을 받아도 바꾸지 않습니다.</p><div class="chips"><button type="button" class="btn btn-primary is-sm" id="shAccept">최신 판 반영</button></div></div>`;
+      }
+      if (!P) {
+        h += SH.ready || localOnly ? `<div class="panel"><p class="empty">${SH.mode === "none" ? "아직 받은 시트가 없습니다. 연동 설정을 마치거나 붙여넣기로 넣어 주세요." : "보여 줄 판이 없습니다."}</p></div>` : `<div class="panel"><p class="empty">받는 중입니다.</p></div>`;
+        host.innerHTML = h; renderSyncLine(); bindSheetTab(); return;
+      }
+      const M = P.members, live = M.filter(liveM), act = M.filter((m) => m.status === "active" || m.status === "other");
+      const came30 = act.filter((m) => m.d30 > 0).length;
+      const b30 = P.bungs.filter((b) => b.state === "ok" && OpsSheet.dnum(b.date) > OpsSheet.dnum(P.today) - 30).length;
+      const fixable = P.problems.filter((p) => p.level !== "info");
+      // 3) 요약
+      h += `<section class="dsec"><h2>요약 <small>판 ${esc(rec.acceptedId || SH.latestId)}, 벙 기록 ${esc(md(P.cover.from))} ~ ${esc(md(P.cover.to))}</small></h2><div class="kpis">
+        <div class="kpi hero"><div><span class="k-l">시트 멤버</span><strong class="k-v">${nf(live.length)}</strong><span class="k-s">활동 ${nf(act.length)}, 외출 ${nf(M.filter((m) => m.status === "away").length)}, 비활성 ${nf(M.filter((m) => m.status === "inactive").length)}<br />나감 ${nf(M.filter((m) => m.status === "left").length)}, 강퇴 ${nf(M.filter((m) => m.status === "kicked").length)}</span></div>${art("flow-record", "hero-art")}</div>
+        <div class="kpi"><span class="k-l">최근 30일 벙</span><strong class="k-v">${nf(b30)}</strong><span class="k-s">전체 ${nf(P.counted)}줄</span></div>
+        <div class="kpi"><span class="k-l">최근 30일 벙에 온 멤버</span><strong class="k-v">${pctN(came30, act.length)}<small>%</small></strong><span class="k-s">활동 멤버 ${nf(act.length)}명 중 ${nf(came30)}명</span></div>
+        <div class="kpi"><span class="k-l">신입(날떼 전)</span><strong class="k-v">${nf(act.filter((m) => m.newbie).length)}</strong><span class="k-s">첫 모임 기한 ${nf(set.firstMeetDays)}일</span></div>
+        <div class="kpi"><span class="k-l">경고 받은 멤버</span><strong class="k-v">${nf(live.filter((m) => m.warnings.length).length)}</strong><span class="k-s">2회 이상 ${nf(live.filter((m) => m.warnings.length >= 2).length)}명</span></div>
+        <div class="kpi is-link" data-jump="sh-input"><span class="k-l">입력 확인</span><strong class="k-v">${nf(fixable.length)}</strong><span class="k-s">참고 ${nf(P.problems.length - fixable.length)}건${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}</span></div>
+      </div></section>`;
+      // 4) 관리 확인
+      const cards = SBOARD.map((b) => {
+        const rows = live.filter((m) => !goneInChat(m)).map((m) => ({ m, c: m.checks.find((c) => b.codes.includes(c.c)) })).filter((x) => x.c);
+        if (!rows.length && b.hideZero) return "";
+        const none = b.none ? b.none(P, set) : "";
+        return `<article class="bcard lv-${b.l}"><div class="b-head"><div><h3>${esc(b.t(set))}</h3><strong class="b-count">${nf(rows.length)}<small>명</small></strong>${lvl(b.l)}</div>${b.img ? art(b.img) : ""}</div>
+          ${rows.length ? `<div class="nchips">${rows.slice(0, 14).map((x) => mChip(x.m.id, b.chip(x.m, P, set))).join("")}${rows.length > 14 ? `<span class="more">외 ${rows.length - 14}명</span>` : ""}</div><button type="button" class="text-btn" data-mfilter="chk:${b.key}">표에서 보기</button>` : `<p class="b-none">${esc(none || "없습니다.")}</p>`}</article>`;
+      }).join("");
+      let linkCard = "";
+      if (S.ledger) {
+        const mis = live.concat(M.filter((m) => !liveM(m))).map((m) => ({ m, x: mismatchOf(m) })).filter((x) => x.x);
+        const inRoom = members();
+        const notInSheet = inRoom.filter((p) => !SH.links.p2m.has(p.pid));
+        const unlinked = live.filter((m) => !SH.links.m2p.has(m.id) && sheetRec().link[m.id] !== "none");
+        linkCard = `<article class="bcard lv-${mis.length ? "watch" : "good"}"><div class="b-head"><div><h3>대화 기록과 다름</h3><strong class="b-count">${nf(mis.length)}<small>명</small></strong>${lvl(mis.length ? "watch" : "good")}</div>${art("rules-faq")}</div>
+          ${mis.length ? `<div class="nchips">${mis.slice(0, 14).map((x) => mChip(x.m.id, x.x.replace(/^시트는 /, ""))).join("")}${mis.length > 14 ? `<span class="more">외 ${mis.length - 14}명</span>` : ""}</div>` : `<p class="b-none">없습니다.</p>`}
+          <p class="b-none">대화 기록 ${esc(md(S.ledger.range.to))}까지. 잇지 못한 시트 멤버 ${nf(unlinked.length)}명, 시트에 없는 방 멤버 ${nf(notInSheet.length)}명.</p>
+          ${unlinked.length || notInSheet.length ? `<button type="button" class="text-btn" data-jump="sh-link">잇기 보기</button>` : ""}</article>`;
+      }
+      h += `<section class="dsec" id="sh-check"><h2>관리 확인 <small>기준 첫 모임 ${nf(set.firstMeetDays)}일, 정기 참여 ${nf(set.regularDays)}일</small></h2><div class="board">${cards}${linkCard}</div></section>`;
+      // 5) 입력 확인
+      h += `<section class="dsec" id="sh-input"><h2>입력 확인 <small>시트에서 고치면 다음 판에서 사라집니다. 여기서 고친 규칙은 다음 판에도 적용됩니다.</small></h2>${problemsHtml(P)}</section>`;
+      // 6) 멤버 표
+      h += `<section class="dsec" id="sh-members"><h2>멤버 <small>벙 횟수는 벙 탭에서 다시 셈</small></h2>${memberTableHtml(P)}</section>`;
+      // 7) 벙
+      h += `<section class="dsec" id="sh-bung"><h2>벙 기록 <small>${nf(P.counted)}줄 셈${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}${P.ignored.length ? ", 뺀 줄 " + nf(P.ignored.length) : ""}</small></h2>${bungHtml(P)}</section>`;
+      // 8) 이슈, 불편한 사이
+      h += `<section class="dsec" id="sh-issue"><h2>이슈와 불편한 사이</h2><div class="cgrid">
+        <article class="card span-8"><h3>이슈 <small class="cap">${nf(P.issues.length)}건</small></h3>${P.issues.length ? `<ul class="ev">${P.issues.slice().reverse().map((e) => `<li><time>${esc(e.date ? md(e.date) : e.dateRaw || "날짜 없음")}</time><span>${e.action ? `<span class="tag ${e.warn ? "watch" : ""}">${esc(e.action)}</span> ` : ""}${esc(e.text)}${e.persons.length ? `<span class="ppl">${e.persons.map((id) => mChip(id)).join("")}</span>` : ""}${e.notice ? `<details class="more"><summary>공지</summary><p class="sub" style="white-space:pre-wrap">${esc(e.notice)}</p></details>` : ""}</span></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article>
+        <article class="card span-4"><h3>불편한 사이 <small class="cap">싫어하는 사람 칸, 같이 간 벙</small></h3>${P.pairs.length ? `<ul class="glist">${P.pairs.slice().sort((a, b) => b.together - a.together).map((x) => `<li><span>${esc(idName(x.a))}이 ${esc(idName(x.b))}${x.mutual ? "(서로)" : ""}</span><b>${nf(x.together)}번</b></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article>
+      </div></section>`;
+      // 9) 잇기
+      if (S.ledger) h += linkHtml(P);
+      // 10) 받은 기록, 판 이력, 기준
+      h += `<section class="dsec" id="sh-hist"><h2>받은 기록</h2><div class="cgrid">
+        <article class="card span-8"><h3>바뀐 내용 <small class="cap">판과 판 사이</small></h3>${feedHtml()}</article>
+        <article class="card span-4"><h3>판 이력 <small class="cap">최근 ${nf(SH.versions.length)}판</small></h3>${versionsHtml()}</article>
+        <article class="card span-4"><h3>기준</h3>
+          <label class="field"><span>첫 모임 기한(입장 뒤 일)</span><input id="shSetFirst" class="input" type="number" min="1" max="120" value="${esc(set.firstMeetDays)}" /></label>
+          <label class="field"><span>정기 참여(마지막 벙 뒤 일)</span><input id="shSetReg" class="input" type="number" min="7" max="365" value="${esc(set.regularDays)}" /></label>
+          <p class="cap">이용 안내 기준은 14일, 60일입니다.</p></article>
+      </div></section>`;
+      host.innerHTML = h;
+      renderSyncLine();
+      bindSheetTab();
+      if (keepFocus) { const el = $(keepFocus.id); if (el) { el.focus(); try { el.setSelectionRange(keepFocus.pos, keepFocus.pos); } catch (e) {} } }
+    }
+
+    /* 입력 확인: 고칠 것(살펴보기)과 참고. 같은 종류끼리 묶는다 */
+    const PWHERE = (p) => `${p.tab} ${p.row}행 ${p.col}열`;
+    function problemsHtml(P) {
+      const rec = sheetRec();
+      const groups = new Map();
+      P.problems.forEach((p) => { const k = (p.level === "info" ? "b" : "a") + "|" + p.code + "|" + (p.code === "m_calc" || p.code === "b_draft" ? "" : p.msg.replace(/\(.*\)$/, "")); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(p); });
+      const keys = [...groups.keys()].sort();
+      const names = P.members.filter(liveM).map((m) => m.name).filter((n, i, a) => a.indexOf(n) === i).sort((a, b) => a.localeCompare(b, "ko"));
+      const item = (p) => {
+        let fx = "";
+        if (p.code === "b_unknown") fx = (p.suggest || []).map((n) => `<button type="button" class="btn btn-secondary is-sm" data-alias="${esc(p.value)}" data-to="${esc(n)}">${esc(n)}로 읽기</button>`).join("") + `<button type="button" class="btn btn-secondary is-sm" data-alias="${esc(p.value)}" data-to="게스트">게스트로</button><button type="button" class="text-btn" data-aliaspick="${esc(p.value)}">다른 이름</button>`;
+        if (p.code === "b_amb") fx = (p.ids || []).map((id) => { const m = shMember(id); return m ? `<button type="button" class="btn btn-secondary is-sm" data-alias="${esc(p.value)}" data-to="${esc(id)}">${esc(mLabel(m))}${m.status !== "active" ? "(" + esc(ST_LABEL[m.status]) + ")" : ""}</button>` : ""; }).join("");
+        if (p.sig) fx += `<button type="button" class="text-btn" data-ignore="${esc(p.sig)}" data-row="${esc(p.row)}" data-text="${esc(p.value || "")}">이 줄 빼기</button>`;
+        const pick = SH.fixOpen === "alias:" + p.value ? `<select class="input" data-aliasto="${esc(p.value)}" aria-label="누구로 읽을지"><option value="">누구로 읽을까요</option>${names.map((n) => `<option>${esc(n)}</option>`).join("")}</select>` : "";
+        return `<li><span>${p.who ? `<b>${esc(p.who)}</b> ` : ""}${p.value ? esc(String(p.value).slice(0, 120)) : ""}${p.code === "b_draft" || p.code === "m_calc" ? ` <span class="cap">${esc(p.msg)}</span>` : ""}</span><span class="where">${esc(PWHERE(p))}</span>${fx || pick ? `<span class="fixes">${fx}${pick}</span>` : ""}</li>`;
+      };
+      const grp = (k) => { const list = groups.get(k), p0 = list[0], info = k[0] === "b"; const t = p0.code === "b_draft" ? (p0.stalled ? "적다가 멈춘 줄" : "작성 중인 줄(세지 않음)") : p0.msg.replace(/\(.*\)$/, "");
+        return `<details class="group"${info || list.length > 8 ? "" : " open"}><summary><h3>${info ? "" : lvl(p0.level === "rule" ? "rule" : "watch")}${esc(t)} <span class="tag">${nf(list.length)}</span></h3></summary><ul class="plist">${list.slice(0, 60).map(item).join("")}</ul>${list.length > 60 ? `<p class="cap">처음 60개만 보입니다.</p>` : ""}</details>`; };
+      const a = keys.filter((k) => k[0] === "a"), b = keys.filter((k) => k[0] === "b");
+      const fixes = Object.keys(rec.alias).map((k) => ({ t: "alias", k, x: k + " 를 " + (shMember(rec.alias[k]) ? mLabel(shMember(rec.alias[k])) : rec.alias[k]) + "(으)로 읽기" }))
+        .concat(Object.keys(rec.ignore).map((k) => ({ t: "ignore", k, x: "뺀 줄: " + ((rec.ignore[k] && rec.ignore[k].text) || k.split("|").slice(1).join(" ")) })));
+      return `<div class="cgrid"><article class="card span-8"><h3>고칠 것 <small class="cap">${nf(a.reduce((n, k) => n + groups.get(k).length, 0))}건</small></h3>${a.length ? a.map(grp).join("") : `<p class="cap">없습니다.</p>`}</article>
+        <article class="card span-4"><h3>참고 <small class="cap">세지 않았거나 시트 값과 다른 것</small></h3>${b.length ? b.map(grp).join("") : `<p class="cap">없습니다.</p>`}
+          <h3>여기서 고친 규칙 <small class="cap">${nf(fixes.length)}개</small></h3>${fixes.length ? `<ul class="plist">${fixes.map((f) => `<li><span>${esc(f.x)}</span><button type="button" class="text-btn" data-unfix="${esc(f.t)}" data-key="${esc(f.k)}">풀기</button></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article></div>`;
+    }
+
+    /* 멤버 표 */
+    const MFILTERS = [["active", "활동"], ["newbie", "신입"], ["check", "확인 필요"], ["rest", "외출, 비활성"], ["out", "나감, 강퇴"], ["all", "전체"]];
+    function mList(P, f) {
+      const M = P.members;
+      if (f.startsWith("chk:")) { const b = SBOARD.find((x) => "chk:" + x.key === f); return M.filter((m) => liveM(m) && !goneInChat(m) && m.checks.some((c) => b && b.codes.includes(c.c))); }
+      if (f === "newbie") return M.filter((m) => liveM(m) && m.newbie);
+      if (f === "check") return M.filter((m) => liveM(m) && m.checks.some((c) => c.l !== "info"));
+      if (f === "rest") return M.filter((m) => m.status === "away" || m.status === "inactive");
+      if (f === "out") return M.filter((m) => !liveM(m));
+      if (f === "all") return M.slice();
+      return M.filter((m) => m.status === "active" || m.status === "other");
+    }
+    const MCOLS = [
+      { k: "name", t: "이름", s: (m) => m.name, cls: "sticky" }, { k: "check", t: "확인", s: (m) => m.checks.filter((c) => c.l === "rule").length * 10 + m.checks.filter((c) => c.l === "watch").length },
+      { k: "birth", t: "나이", s: (m) => m.birthYear || 0, num: true }, { k: "sex", t: "성별", s: (m) => m.sex }, { k: "region", t: "거주지", s: (m) => m.region },
+      { k: "status", t: "상태", s: (m) => m.statusRaw }, { k: "join", t: "입장", s: (m) => m.joinDate || "" }, { k: "d30", t: "30일", s: (m) => m.d30, num: true },
+      { k: "total", t: "전체", s: (m) => m.total, num: true }, { k: "hosted", t: "벙주", s: (m) => m.hosted, num: true }, { k: "last", t: "마지막 벙", s: (m) => m.last || "" },
+      { k: "warn", t: "경고", s: (m) => m.warnings.length, num: true }, { k: "chat", t: "대화 기록", s: (m) => (SH.links.m2p.has(m.id) ? 1 : 0) }
+    ];
+    function memberTableHtml(P) {
+      const counts = {}; MFILTERS.forEach(([k]) => { counts[k] = mList(P, k).length; });
+      let list = mList(P, SH.mf);
+      const q = SH.mq.trim().toLowerCase(); if (q) list = list.filter((m) => m.name.toLowerCase().includes(q) || (m.note || "").toLowerCase().includes(q) || m.region.toLowerCase().includes(q));
+      const col = MCOLS.find((c) => c.k === SH.ms.k) || MCOLS[7], dir = SH.ms.dir;
+      list.sort((a, b) => { const x = col.s(a), y = col.s(b); return (x > y ? 1 : x < y ? -1 : 0) * dir || b.d30 - a.d30 || a.name.localeCompare(b.name, "ko"); });
+      const chk = SH.mf.startsWith("chk:") ? SBOARD.find((b) => "chk:" + b.key === SH.mf) : null;
+      const mx = Math.max(1, ...list.map((m) => m.d30));
+      const cellM = (m, k) => {
+        if (k === "name") return `<td class="sticky"><span class="nm">${esc(m.name)}</span>${m.couple ? `<span class="tag">커플</span>` : ""}</td>`;
+        if (k === "check") return `<td class="chk">${m.checks.filter((c) => c.l !== "info").map((c) => `<span class="dot ${c.l}"${tipAttr(c.t + (c.x ? ": " + c.x : ""))}>${esc(c.t.replace(/\(.*\)$/, ""))}</span>`).join("")}</td>`;
+        if (k === "birth") return `<td class="num">${esc(m.birth || "")}</td>`;
+        if (k === "sex") return `<td>${esc(m.sex)}</td>`;
+        if (k === "region") return `<td>${esc(m.region)}</td>`;
+        if (k === "status") return `<td>${stTag(m)}</td>`;
+        if (k === "join") return `<td>${m.newbie ? esc(md(m.joinDate)) : `<span class="mute">날떼</span>`}</td>`;
+        if (k === "d30") return `<td class="num dbar"><i style="width:${Math.min(100, (m.d30 / mx) * 100)}%"></i><span>${nf(m.d30)}</span></td>`;
+        if (k === "total") return `<td class="num">${nf(m.total)}${m.calcDiff.length ? ` <span class="dot watch"${tipAttr(m.calcDiff.join(", "))}>시트와 다름</span>` : ""}</td>`;
+        if (k === "hosted") return `<td class="num">${nf(m.hosted)}</td>`;
+        if (k === "last") { const g = m.last ? OpsSheet.dnum(P.today) - OpsSheet.dnum(m.last) : null; return `<td class="${g != null && g > shSet().regularDays ? "c-watch" : ""}">${m.last ? esc(md(m.last)) : `<span class="mute">없음</span>`}</td>`; }
+        if (k === "warn") return `<td class="num ${m.warnings.length >= 3 ? "c-rule" : m.warnings.length === 2 ? "c-watch" : ""}">${m.warnings.length || ""}</td>`;
+        if (k === "chat") { const pid = SH.links.m2p.get(m.id); const mis = mismatchOf(m); return `<td>${pid ? `<span class="tag ${mis ? "watch" : "good"}">${mis ? "다름" : "이음"}</span>` : S.ledger ? `<span class="mute">못 이음</span>` : ""}</td>`; }
+        return "<td></td>";
+      };
+      return `<div class="sheet-tools"><input id="shMq" class="input" type="search" placeholder="이름, 거주지, 비고 찾기" value="${esc(SH.mq)}" aria-label="시트 멤버 찾기" />
+        <div class="chips" role="group" aria-label="보기">${MFILTERS.map(([k, t]) => `<button type="button" data-mfilter="${k}" aria-pressed="${SH.mf === k}">${t} <b>${counts[k]}</b></button>`).join("")}${chk ? `<button type="button" data-mfilter="${esc(SH.mf)}" aria-pressed="true">${esc(chk.t(shSet()))} <b>${list.length}</b></button>` : ""}</div></div>
+        <div class="gridwrap"><table class="grid"><thead><tr>${MCOLS.map((c) => `<th class="${c.cls || ""}${c.num ? " num" : ""}" aria-sort="${SH.ms.k === c.k ? (dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-msort="${c.k}">${c.t}</button></th>`).join("")}</tr></thead>
+        <tbody>${list.length ? list.map((m) => `<tr data-smember="${esc(m.id)}" tabindex="0">${MCOLS.map((c) => cellM(m, c.k)).join("")}</tr>`).join("") : `<tr><td colspan="${MCOLS.length}" class="empty">해당하는 사람이 없습니다.</td></tr>`}</tbody></table></div>
+        <p class="cap">${nf(list.length)}명. 30일은 최근 30일 벙 참석, 입장은 날떼여부의 입장일입니다.</p>`;
+    }
+
+    /* 벙 기록: 날마다 벙 수(최근 8주)와 줄 목록 */
+    function bungHtml(P) {
+      const ok = P.bungs.filter((b) => b.state === "ok");
+      const endD = OpsSheet.dnum(P.today), days = 56, per = new Array(days).fill(0), ppl = new Array(days).fill(0);
+      ok.forEach((b) => { const i = days - 1 - (endD - OpsSheet.dnum(b.date)); if (i >= 0 && i < days) { per[i] += 1; ppl[i] += (b.host ? 1 : 0) + b.people.length; } });
+      const W = 760, H = 150, L = 30, R = 6, T = 8, Bm = 24, cw = (W - L - R) / days, bw = Math.max(3, cw * 0.66), mx = niceMax(Math.max(1, ...per));
+      let g = ""; [mx, mx / 2, 0].forEach((v, i) => { const y = T + ((H - T - Bm) * i) / 2; g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gl${i === 2 ? " zero" : ""}"/><text x="${L - 6}" y="${y + 4}" class="yt">${nf(v)}</text>`; });
+      let bars = "", xl = "", hits = "";
+      per.forEach((v, i) => {
+        const x = L + i * cw + (cw - bw) / 2, y1 = H - Bm, y0 = y1 - (v / mx) * (H - T - Bm), d = OpsSheet.dateOf(endD - (days - 1 - i));
+        if (v) bars += `<path d="${barPath(x, y0, y1, bw, true)}" fill="var(--s-violet)"/>`;
+        if (i % 7 === 6 || i === days - 1) xl += `<text x="${L + i * cw + cw / 2}" y="${H - 6}" class="xt">${esc(md(d).slice(5))}</text>`;
+        hits += `<rect x="${L + i * cw}" y="${T}" width="${cw}" height="${H - T - Bm}" class="hit"${tipAttr(md(d) + ": 벙 " + v + "개, 참석 " + ppl[i] + "명")}/>`;
+      });
+      const chart = `<svg class="viz" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 8주 날마다 벙 수">${g}${bars}${xl}${hits}</svg>`;
+      const q = SH.bq.trim().toLowerCase();
+      let rows = P.bungs.slice().reverse();
+      if (q) rows = rows.filter((b) => [b.title, b.place, b.hostRaw].concat(b.people.map(idName), b.guests).some((x) => String(x || "").toLowerCase().includes(q)));
+      const STATE = { draft: "작성 중", bad: "날짜 확인", dup: "두 번째 줄", ignored: "뺀 줄" };
+      const tr = (b) => `<tr class="${b.state !== "ok" ? "mute" : ""}"><td>${b.date ? esc(md(b.date)) : esc(b.dateRaw || "")}<br /><span class="cap">${esc(b.row)}행</span></td><td>${esc(b.title)}${STATE[b.state] ? ` <span class="tag ${b.state === "ignored" ? "" : "watch"}">${STATE[b.state]}</span>` : ""}${b.place ? `<br /><span class="cap">${esc(b.place)}</span>` : ""}</td>
+        <td><span class="cap only-ph">벙주</span>${b.host ? mChip(b.host) : b.hostRaw ? esc(b.hostRaw) : `<span class="mute">없음</span>`}</td><td class="num">${nf((b.host ? 1 : 0) + b.people.length)}${b.guests.length ? `<span class="cap"> +${b.guests.length}</span>` : ""}</td>
+        <td><span class="ppl">${b.people.map((id) => mChip(id)).join("")}${b.guests.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${b.noshows.map((id) => `<span class="tag watch">${esc(idName(id))} 노쇼</span>`).join("")}${b.unknown.concat(b.amb).map((x) => `<span class="tag rule">${esc(x)}</span>`).join("")}${b.notes.map((x) => `<span class="tag"${tipAttr(x)}>메모</span>`).join("")}</span></td></tr>`;
+      return `<div class="cgrid"><article class="card span-12"><h3>최근 8주 <small class="cap">막대에 대면 그날 벙 수와 참석이 보입니다</small></h3>${chart}</article>
+        <article class="card span-12"><div class="sheet-tools"><input id="shBq" class="input" type="search" placeholder="벙제, 장소, 이름 찾기" value="${esc(SH.bq)}" aria-label="벙 찾기" /></div>
+        <div class="tbl-wrap"><table class="tbl lft bung"><thead><tr><th>날짜</th><th>벙</th><th>벙주</th><th>사람</th><th>참여자</th></tr></thead><tbody>${rows.slice(0, SH.bLimit).map(tr).join("") || `<tr><td colspan="5" class="empty">없습니다.</td></tr>`}</tbody></table></div>
+        ${rows.length > SH.bLimit ? `<button type="button" class="btn btn-secondary is-sm" id="shBMore">더 보기 (${nf(rows.length - SH.bLimit)}줄 남음)</button>` : ""}</article></div>`;
+    }
+
+    /* 잇기: 시트 멤버와 대화 기록의 사람 */
+    function linkHtml(P) {
+      const live = P.members.filter(liveM);
+      const unlinked = live.filter((m) => !SH.links.m2p.has(m.id) && sheetRec().link[m.id] !== "none");
+      const notIn = members().filter((p) => !SH.links.p2m.has(p.pid));
+      return `<section class="dsec" id="sh-link"><h2>대화 기록과 잇기 <small>이은 시트 멤버 ${nf(SH.links.m2p.size)}명</small></h2><div class="cgrid">
+        <article class="card span-6"><h3>잇지 못한 시트 멤버 <small class="cap">${nf(unlinked.length)}명, 이름과 출생연도로 하나를 찾지 못함</small></h3>${unlinked.length ? `<ul class="plist">${unlinked.map((m) => `<li><span><button type="button" class="linkish" data-smember="${esc(m.id)}">${esc(mLabel(m))}</button> ${stTag(m)}</span><span class="fixes">${SH.fixOpen === "link:" + m.id ? linkSelect(m) : `<button type="button" class="text-btn" data-linkpick="${esc(m.id)}">사람 고르기</button><button type="button" class="text-btn" data-linknone="${esc(m.id)}">잇지 않음</button>`}</span></li>`).join("")}</ul>` : `<p class="cap">없습니다.</p>`}</article>
+        <article class="card span-6"><h3>시트에 없는 방 멤버 <small class="cap">${nf(notIn.length)}명, 대화 기록 ${esc(md(S.ledger.range.to))}까지</small></h3>${notIn.length ? `<div class="nchips">${notIn.map((p) => `<button type="button" class="nchip" data-person="${esc(p.pid)}">${esc(p.name)}</button>`).join("")}</div>` : `<p class="cap">없습니다.</p>`}</article>
+      </div></section>`;
+    }
+    function linkSelect(m) {
+      const head = tightK(m.name);
+      const opts = people().filter((p) => !p.dflt).slice().sort((a, b) => ((tightK(OpsAnalyzer.nickParts(b.name).nick) === head) - (tightK(OpsAnalyzer.nickParts(a.name).nick) === head)) || (b.status === "in") - (a.status === "in") || a.name.localeCompare(b.name, "ko"));
+      return `<select class="input" data-linkto="${esc(m.id)}" aria-label="${esc(m.name)}와 이을 사람"><option value="">누구와 이을까요</option>${opts.map((p) => `<option value="${esc(p.pid)}">${esc(p.name)}${p.status === "in" ? "" : " (" + (p.status === "kicked" ? "내보냄" : "나감") + ")"}</option>`).join("")}</select>`;
+    }
+
+    /* 바뀐 내용(판과 판 사이)은 누를 때 불러온다 */
+    const MF_LABEL = { region: "거주지", statusRaw: "활동중 여부", joinMD: "날떼여부", note: "비고", dislike: "싫어하는 사람", couple: "커플", warnN: "경고여부", warnings: "경고", outs: "나간횟수", extra: "표시 칸", birth: "나이", sex: "성별" };
+    const fv = (v) => (Array.isArray(v) ? v.map((x) => (x && typeof x === "object" ? x.reason || x.date || "" : x)).filter(Boolean).join(", ") : v && typeof v === "object" ? Object.values(v).join(", ") : v === true ? "예" : v === false ? "아니오" : String(v == null ? "" : v)) || "빈칸";
+    function diffList(d, short) {
+      if (!d) return "";
+      const bn = (b) => (b.date ? md(b.date) : b.dateRaw) + " " + (b.title || "");
+      const li = [];
+      d.bungs.added.forEach((b) => li.push(`벙 추가: ${esc(bn(b))}(${esc([b.host].concat(b.people).filter(Boolean).map(idName).join(", "))})`));
+      d.bungs.changed.forEach((c) => li.push(`벙 바뀜: ${esc(bn(c.to))}${c.plus.length ? ", 더함 " + esc(c.plus.map(idName).join(", ")) : ""}${c.minus.length ? ", 뺌 " + esc(c.minus.map(idName).join(", ")) : ""}`));
+      d.bungs.removed.forEach((b) => li.push(`벙 사라짐: ${esc(bn(b))}`));
+      d.members.added.forEach((m) => li.push(`멤버 추가: ${esc(m.name)}`));
+      d.members.changed.forEach((m) => li.push(`멤버 바뀜: ${esc(m.name)}(${m.fields.map((f) => esc(MF_LABEL[f.k] || f.k) + " " + esc(fv(f.from)).slice(0, 30) + "에서 " + esc(fv(f.to)).slice(0, 30)).join(", ")})`));
+      d.members.removed.forEach((m) => li.push(`멤버 사라짐: ${esc(m.name)}`));
+      d.issues.added.forEach((e) => li.push(`이슈 추가: ${esc((e.date ? md(e.date) : "") + " " + e.text.slice(0, 40))}`));
+      d.issues.changed.forEach((e) => li.push(`이슈 바뀜: ${esc(e.to.text.slice(0, 40))}`));
+      d.issues.removed.forEach((e) => li.push(`이슈 사라짐: ${esc(e.text.slice(0, 40))}`));
+      if (!li.length) return `<p class="cap">보이는 값만 바뀌었습니다(서식, 계산 칸 등).</p>`;
+      const lim = short ? 12 : 30;
+      return `<ul class="ev">${li.slice(0, lim).map((x) => `<li><span>${x}</span></li>`).join("")}</ul>${li.length > lim ? `<p class="cap">외 ${li.length - lim}건</p>` : ""}`;
+    }
+    function feedHtml() {
+      if (localOnly || SH.missing) return `<p class="cap">서버 연동 뒤에 보입니다.</p>`;
+      if (!SH.feed) return `<button type="button" class="btn btn-secondary is-sm" id="shFeedLoad"${SH.feedBusy ? " disabled" : ""}>${SH.feedBusy ? "불러오는 중" : "최근 12판 불러오기"}</button>`;
+      if (!SH.feed.items.length) return `<p class="cap">바뀐 판이 아직 하나뿐입니다.</p>`;
+      return SH.feed.items.map((it) => `<div class="group"><h3>${esc(md(kstDate(it.at)))} ${esc(kstHM(it.at))} <span class="tag">판 ${esc(it.id)}${it.source === "manual" ? ", 붙여넣기" : ""}</span>${it.broken ? `<span class="tag rule">구조 깨짐</span>` : ""}</h3>${it.broken ? "" : diffList(it.d)}</div>`).join("");
+    }
+    async function loadFeed() {
+      SH.feedBusy = true; renderSheetTab();
+      try {
+        const ids = SH.versions.slice(0, 13).map((v) => v.id);
+        const need = ids.filter((id) => !SH.snaps.has(id));
+        if (need.length) { const r = await shCall("ops_sheet_get", { p_since: SH.latestId, p_ids: need }); (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s)); }
+        const parsed = ids.map((id) => SH.snaps.get(id)).filter(Boolean).map((s) => ({ s, p: snapParse(s) }));
+        const items = [];
+        for (let i = 0; i < parsed.length - 1; i++) { const a = parsed[i + 1], b = parsed[i]; items.push({ id: b.s.id, at: b.s.at, source: b.s.source, broken: !b.p.structure.ok, d: b.p.structure.ok && a.p.structure.ok ? OpsSheet.diff(a.p, b.p) : null }); }
+        SH.feed = { ids, items };
+      } catch (e) { toast("불러오지 못했습니다. 연결을 확인해 주세요."); }
+      SH.feedBusy = false; renderSheetTab();
+    }
+    function versionsHtml() {
+      if (!SH.versions.length) return `<p class="cap">없습니다.</p>`;
+      const rec = sheetRec(), cur = rec.acceptedId;
+      return `<ul class="glist">${SH.versions.slice(0, 20).map((v) => `<li><span>${esc(md(kstDate(v.at)))} ${esc(kstHM(v.at))} 판 ${esc(v.id)}${v.source === "manual" ? ", 붙여넣기" : ""}${v.id === cur ? ` <span class="tag in">보는 판</span>` : ""}${v.id === SH.latestId && v.id !== cur ? ` <span class="tag watch">최신</span>` : ""}</span>${v.id === cur ? "" : `<button type="button" class="text-btn" data-pin="${esc(v.id)}">이 판 보기</button>`}</li>`).join("")}</ul>`;
+    }
+
+    /* 시트 멤버 상세 */
+    let sheetMid = null;
+    function openSheetMember(id) {
+      const m = shMember(id); if (!m) return;
+      if ($("sheet").hidden) lastFocus = document.activeElement;
+      sheetMid = id; sheetPid = null;
+      $("sheetTitle").textContent = mLabel(m);
+      renderSheetMember(m);
+      $("sheet").hidden = false; document.body.style.overflow = "hidden"; $("sheetClose").focus();
+    }
+    function renderSheetMember(m) {
+      const P = SH.parsed, pid = SH.links.m2p.get(m.id), p = pid ? byPid(pid) : null, mis = mismatchOf(m);
+      const disliked = P.members.filter((x) => x.dislike.some((n) => tightK(n) === tightK(m.name)));
+      const acts = pid ? S.records.actions.filter((a) => a.pid === pid) : [];
+      $("sheetBody").innerHTML = `
+        <div class="panel"><div class="chips">${stTag(m)}${m.newbie ? `<span class="tag watch">날떼 전, 입장 ${esc(md(m.joinDate))}</span>` : ""}${m.couple ? `<span class="tag">커플</span>` : ""}${Object.keys(m.extra).map((k) => `<span class="tag">${esc(k)}열 ${esc(m.extra[k])}</span>`).join("")}<span class="tag">멤버 ${esc(m.rows.join(", "))}행</span></div>
+          ${m.checks.length ? `<div class="chips">${m.checks.map((c) => `<span class="tag ${c.l === "info" ? "" : c.l}"${tipAttr(c.x || "")}>${esc(c.t)}</span>`).join("")}</div>` : ""}
+          <dl class="kv"><div><dt>거주지</dt><dd>${esc(m.region || "없음")}</dd></div><div><dt>벙 30일, 한 달, 전체</dt><dd>${nf(m.d30)}, ${nf(m.month)}, ${nf(m.total)}</dd></div><div><dt>벙주</dt><dd>${nf(m.hosted)}번</dd></div>
+            <div><dt>처음, 마지막 벙</dt><dd>${m.first ? esc(md(m.first)) + ", " + esc(md(m.last)) : "없음"}</dd></div><div><dt>나간횟수</dt><dd>${nf(m.outs)}회${m.outLimit != null ? ", 한도 " + m.outLimit + "회" : ""}</dd></div><div><dt>노쇼</dt><dd>${m.noshows.length ? m.noshows.map((n) => esc(md(n.date))).join(", ") : "없음"}</dd></div></dl>
+          ${m.calcDiff.length ? `<p class="sub">시트 계산 값과 다름: ${esc(m.calcDiff.join(", "))}</p>` : ""}
+          ${m.note ? `<p class="sub" style="white-space:pre-wrap;color:var(--ink)">${esc(m.note)}</p>` : ""}
+          ${(m.older || []).length ? `<p class="sub">같은 사람의 다른 줄: ${m.older.map((o) => esc(o.row + "행 " + (o.statusRaw || "활동") + (o.joinMD ? ", 입장 " + o.joinMD : ""))).join(" / ")}</p>` : ""}</div>
+        <div class="panel"><h2>경고 <small>${nf(m.warnings.length)}회${m.warnings.length ? ", " + (m.warnings.length >= 3 ? "강제퇴장 단계" : m.warnings.length === 2 ? "다음은 강제퇴장" : "다음은 운영진 면담") : ""}</small></h2>
+          ${m.warnings.length ? `<ul class="ev">${m.warnings.map((w) => `<li><time>${w.date ? esc(md(w.date)) : "날짜 없음"}</time><span>${w.n}차 ${esc(w.reason || "사유 없음")}</span></li>`).join("")}</ul>` : `<p class="sub">없습니다.</p>`}
+          ${m.issues.length ? `<p class="sub">이슈 탭: ${m.issues.map((e) => esc(md(e.date) + " " + (e.action || ""))).join(", ")}</p>` : ""}
+          ${acts.length ? `<p class="sub">대시보드 조치 기록 ${nf(acts.length)}건(대화 기록 쪽 상세에서 봅니다)</p>` : ""}</div>
+        <div class="panel"><h2>사람 사이</h2>
+          <p class="sub">싫어하는 사람: ${m.dislike.length ? m.dislike.map(esc).join(", ") : "없음"}</p>
+          <p class="sub">이 사람을 싫어하는 사람으로 적은 멤버: ${disliked.length ? disliked.map((x) => esc(x.name)).join(", ") : "없음"}</p>
+          ${m.co.length ? `<h3 style="margin:0;font-size:14px">자주 같이 간 멤버</h3><div class="nchips">${m.co.map((c) => mChip(c.id, c.n + "번")).join("")}</div>` : ""}</div>
+        <div class="panel"><h2>참석한 벙 <small>${nf(m.attend.length)}번</small></h2>${m.attend.length ? `<ul class="ev">${m.attend.slice().reverse().slice(0, 40).map((a) => `<li><time>${esc(md(a.date))}</time><span>${esc(a.title)}${a.host ? ` <span class="tag in">벙주</span>` : ""}</span></li>`).join("")}</ul>${m.attend.length > 40 ? `<p class="cap">최근 40번만 보입니다.</p>` : ""}` : `<p class="sub">없습니다.</p>`}</div>
+        ${S.ledger ? `<div class="panel"><h2>대화 기록</h2>${p ? `<p class="sub">${esc(p.name)}${mis ? ", " + esc(mis) : ""}</p><div class="chips"><button type="button" class="btn btn-secondary is-sm" data-person="${esc(p.pid)}">대화 기록 보기</button><button type="button" class="text-btn" data-linkclear="${esc(m.id)}">${sheetRec().link[m.id] ? "직접 이은 것 풀기" : "다른 사람과 잇기"}</button></div>` : `<p class="sub">잇지 못했습니다.</p>${linkSelect(m)}`}</div>` : ""}`;
+    }
+
+    /* 시트 탭 누름 */
+    function bindSheetTab() {
+      const host = document.querySelector('[data-panel="sheet"]'); if (!host) return;
+      const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", fn); };
+      on("shReload", () => { sheetLoad(); toast("받는 중입니다."); });
+      on("shPasteBtn", () => { SH.paste = !SH.paste; SH.pasteKeep = null; renderSheetTab(); if (SH.paste) { const ta = document.querySelector("[data-paste-tab]"); if (ta) ta.focus(); } });
+      on("shPastePrev", () => {
+        const tabs = pasteTabs(), res = $("shPasteRes"), put = $("shPastePut");
+        SH.pasteKeep = null; put.disabled = true;
+        if (![...document.querySelectorAll("[data-paste-tab]")].some((ta) => ta.value.trim())) { res.textContent = "붙여넣은 것이 없습니다."; return; }
+        const p = OpsSheet.parse(tabs, { fixes: sheetRec(), settings: shSet(), today: todayKST() });
+        if (!p.structure.ok) { res.textContent = "읽지 못했습니다: " + p.structure.missing.join(", "); return; }
+        SH.pasteKeep = tabs; put.disabled = false;
+        res.textContent = "멤버 " + p.members.length + "명, 벙 " + p.counted + "줄, 이슈 " + p.issues.length + "건, 입력 확인 " + p.problems.filter((x) => x.level !== "info").length + "건으로 읽었습니다.";
+      });
+      document.querySelectorAll("[data-paste-tab]").forEach((ta) => ta.addEventListener("input", () => { SH.pasteKeep = null; const put = $("shPastePut"); if (put) put.disabled = true; const res = $("shPasteRes"); if (res) res.textContent = ""; }));
+      on("shPastePut", async () => {
+        const tabs = SH.pasteKeep; if (!tabs) return;
+        if (localOnly || SH.missing) { const id = -1; SH.snaps.set(id, { id, at: new Date().toISOString(), source: "manual", tabs }); SH.latestId = id; SH.paste = false; SH.pasteKeep = null; sheetProcess(); renderAll(); toast("이 화면에 넣었습니다. 저장되지 않습니다."); return; }
+        try { const r = await shCall("ops_sheet_put", { p_tabs: tabs, p_meta: { source: "paste", at: new Date().toISOString() } }); SH.paste = false; SH.pasteKeep = null; toast(r.changed ? "넣었습니다. 판 " + r.id : "최신 판과 같습니다."); sheetLoad(); }
+        catch (e) { toast(e.code === "TOO_BIG" ? "너무 커서 넣지 못했습니다." : e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "넣지 못했습니다. 연결을 확인해 주세요."); }
+      });
+      on("shTokNew", async () => {
+        const st = SH.status || {};
+        if (st.has_token && !window.confirm("새 토큰을 만들면 지금 스크립트의 토큰은 바로 못 씁니다. 만들까요?")) return;
+        try { const r = await shCall("ops_sheet_token", { p_action: "new" }); SH.token = r.token; await sheetLoad(); }
+        catch (e) { toast("토큰을 만들지 못했습니다."); }
+      });
+      on("shTokOff", async () => {
+        if (!window.confirm("연동을 끄면 스크립트가 보내도 받지 않습니다. 끌까요?")) return;
+        try { await shCall("ops_sheet_token", { p_action: "off" }); SH.token = ""; await sheetLoad(); toast("연동을 껐습니다."); } catch (e) { toast("끄지 못했습니다."); }
+      });
+      on("shAccept", () => { const rec = sheetRec(); rec.acceptedId = SH.latestId; rec.pinned = false; delete rec.skipped[SH.latestId]; saveRecords(); sheetProcess(); renderAll(); toast("최신 판을 반영했습니다."); });
+      on("shSkip", () => { const rec = sheetRec(); rec.skipped[SH.latestId] = true; saveRecords(); sheetProcess(); renderAll(); toast("이 판을 건너뛰었습니다."); });
+      on("shFeedLoad", loadFeed);
+      on("shBMore", () => { SH.bLimit += 60; renderSheetTab(); });
+      const setNum = (id, key, lo, hi) => { const el = $(id); if (el) el.addEventListener("change", () => { const v = Math.max(lo, Math.min(hi, Math.round(+el.value || 0))); const rs = sheetRec().settings; if (v === SH_SET[key]) delete rs[key]; else rs[key] = v; saveRecords(); sheetProcess(); renderAll(); }); };
+      setNum("shSetFirst", "firstMeetDays", 1, 120); setNum("shSetReg", "regularDays", 7, 365);
+      const sd = $("shSetup"); if (sd) sd.addEventListener("toggle", () => { if (!sd.open) SH.token = ""; });
+    }
+    function fixChanged(msg) { saveRecords(); sheetProcess(); renderAll(); if (sheetMid && !$("sheet").hidden) { const m = shMember(sheetMid); if (m) renderSheetMember(m); } toast(msg); }
+    document.addEventListener("click", async (e) => {
+      const t = e.target;
+      const sm = t.closest("[data-smember]"); if (sm) { openSheetMember(sm.dataset.smember); return; }
+      const al = t.closest("[data-alias]"); if (al) { sheetRec().alias[tightK(al.dataset.alias)] = al.dataset.to; SH.fixOpen = ""; fixChanged("'" + al.dataset.alias + "'를 " + (shMember(al.dataset.to) ? mLabel(shMember(al.dataset.to)) : al.dataset.to) + "(으)로 읽습니다."); return; }
+      const ap = t.closest("[data-aliaspick]"); if (ap) { SH.fixOpen = "alias:" + ap.dataset.aliaspick; renderSheetTab(); const s = document.querySelector(`[data-aliasto="${CSS.escape(ap.dataset.aliaspick)}"]`); if (s) s.focus(); return; }
+      const ig = t.closest("[data-ignore]"); if (ig) { sheetRec().ignore[ig.dataset.ignore] = { row: +ig.dataset.row, text: ig.dataset.text, at: todayKST() }; fixChanged("이 줄을 빼고 셉니다."); return; }
+      const uf = t.closest("[data-unfix]"); if (uf) { const rec = sheetRec(); delete rec[uf.dataset.unfix][uf.dataset.key]; fixChanged("풀었습니다."); return; }
+      const mf = t.closest("[data-mfilter]"); if (mf) { SH.mf = SH.mf === mf.dataset.mfilter && mf.dataset.mfilter.startsWith("chk:") ? "active" : mf.dataset.mfilter; SH.mq = ""; renderSheetTab(); if (mf.dataset.mfilter.startsWith("chk:")) { const x = $("sh-members"); if (x) x.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
+      const ms = t.closest("[data-msort]"); if (ms) { const k = ms.dataset.msort; if (SH.ms.k === k) SH.ms.dir *= -1; else SH.ms = { k, dir: (MCOLS.find((c) => c.k === k) || {}).num || k === "check" || k === "last" || k === "join" ? -1 : 1 }; renderSheetTab(); return; }
+      const lp = t.closest("[data-linkpick]"); if (lp) { SH.fixOpen = "link:" + lp.dataset.linkpick; renderSheetTab(); return; }
+      const ln = t.closest("[data-linknone]"); if (ln) { sheetRec().link[ln.dataset.linknone] = "none"; fixChanged("잇지 않음으로 두었습니다."); return; }
+      const lc = t.closest("[data-linkclear]"); if (lc) { const rec = sheetRec(); if (rec.link[lc.dataset.linkclear]) { delete rec.link[lc.dataset.linkclear]; fixChanged("직접 이은 것을 풀었습니다."); } else { rec.link[lc.dataset.linkclear] = "none"; fixChanged("풀었습니다. 아래에서 다른 사람을 고를 수 있습니다."); } return; }
+      const pn = t.closest("[data-pin]"); if (pn) { const id = +pn.dataset.pin; const rec = sheetRec(); try { if (!SH.snaps.has(id)) { const r = await shCall("ops_sheet_get", { p_since: SH.latestId, p_ids: [id] }); (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s)); } rec.acceptedId = id; rec.pinned = id !== SH.latestId; saveRecords(); sheetProcess(); renderAll(); toast("판 " + id + "을 봅니다."); } catch (err) { toast("불러오지 못했습니다."); } return; }
+      const cp = t.closest("[data-copy]"); if (cp) { const el = $(cp.dataset.copy); if (el) copyText(el.value); return; }
+      const cf = t.closest("[data-copyfile]"); if (cf) { try { const r = await fetch(cf.dataset.copyfile, { cache: "no-store" }); if (!r.ok) throw new Error(); copyText(await r.text()); } catch (err) { toast("가져오지 못했습니다."); } return; }
+    });
+    document.addEventListener("change", (e) => {
+      const at = e.target.closest && e.target.closest("[data-aliasto]"); if (at && at.value) { sheetRec().alias[tightK(at.dataset.aliasto)] = at.value; SH.fixOpen = ""; fixChanged("'" + at.dataset.aliasto + "'를 " + at.value + "(으)로 읽습니다."); return; }
+      const lt = e.target.closest && e.target.closest("[data-linkto]"); if (lt && lt.value) { sheetRec().link[lt.dataset.linkto] = lt.value; SH.fixOpen = ""; fixChanged("이었습니다."); }
+    });
+    document.addEventListener("input", (e) => {
+      if (e.target && e.target.id === "shMq") { SH.mq = e.target.value; renderSheetTab(); }
+      if (e.target && e.target.id === "shBq") { SH.bq = e.target.value; SH.bLimit = 40; renderSheetTab(); }
+    });
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); toast("복사했습니다."); }
+      catch (e) { const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; (document.querySelector("dialog[open]") || document.body).appendChild(ta); ta.select(); try { document.execCommand("copy"); toast("복사했습니다."); } catch (e2) { toast("복사하지 못했습니다."); } ta.remove(); }
+    }
+
     /* ── 사람 상세 ── */
     let sheetPid = null, lastFocus = null;
     function openPerson(pid) {
       const p = byPid(pid); if (!p) return;
-      sheetPid = pid; lastFocus = document.activeElement; view.ioEdit = "";
+      if ($("sheet").hidden) lastFocus = document.activeElement;
+      sheetPid = pid; sheetMid = null; view.ioEdit = "";
       $("sheetTitle").textContent = p.name;
       renderSheet(p);
       $("sheet").hidden = false;
@@ -628,7 +1213,7 @@
     }
     function closeSheet() {
       const pid = sheetPid;
-      $("sheet").hidden = true; document.body.style.overflow = ""; sheetPid = null;
+      $("sheet").hidden = true; document.body.style.overflow = ""; sheetPid = null; sheetMid = null;
       let el = lastFocus && lastFocus.isConnected ? lastFocus : null;
       if (!el && pid) el = [...document.querySelectorAll(`[data-panel="${tab}"] [data-person]`)].find((b) => b.dataset.person === pid && b.closest("details:not([open])") === null && b.getClientRects().length) || null;
       if (el) try { el.focus(); } catch (e) {}
@@ -638,6 +1223,17 @@
     $("sheetClose").addEventListener("click", closeSheet);
     $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+    function sheetPanel(p) {
+      if (!SH.parsed) return "";
+      const m = sheetOf(p.pid);
+      if (!m) return `<div class="panel"><h2>시트</h2><p class="sub">시트에서 이 사람을 찾지 못했습니다.</p><button type="button" class="text-btn" data-tabgo="sheet">시트 탭의 잇기에서 고르기</button></div>`;
+      const mis = mismatchOf(m);
+      return `<div class="panel"><h2>시트 <small>${esc(mLabel(m))}</small></h2>
+        <div class="chips">${stTag(m)}${mis ? `<span class="tag watch">${esc(mis)}</span>` : ""}${m.checks.filter((c) => c.l !== "info").map((c) => `<span class="tag ${c.l}">${esc(c.t)}</span>`).join("")}</div>
+        <dl class="kv"><div><dt>벙 30일, 전체</dt><dd>${nf(m.d30)}, ${nf(m.total)}</dd></div><div><dt>마지막 벙</dt><dd>${m.last ? esc(md(m.last)) : "없음"}</dd></div><div><dt>경고</dt><dd>${m.warnings.length ? m.warnings.length + "회" : "없음"}</dd></div></dl>
+        ${m.note ? `<p class="sub" style="white-space:pre-wrap">${esc(m.note)}</p>` : ""}
+        <button type="button" class="btn btn-secondary is-sm" data-smember="${esc(m.id)}">시트 정보 보기</button></div>`;
+    }
     function renderSheet(p) {
       const e = exc(p.pid);
       const fl = effFlags(p);
@@ -673,6 +1269,7 @@
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
           ${pend.length ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
         </div>
+        ${sheetPanel(p)}
         <div class="panel"><h2>들어옴, 나감 <small>재입장 ${reAfter(p).length}회(기준일 뒤)${reAfterAll(p).length !== reAfter(p).length ? ", 한도에서 뺌 " + (reAfterAll(p).length - reAfter(p).length) + "회" : ""}${p.reentries.length !== reAfterAll(p).length ? ", 전체 " + p.reentries.length + "회" : ""}${p.limit != null ? ", 한도 " + p.limit + "회" : ""}${+e.reentry ? ", 미리 허용 +" + e.reentry : ""}</small></h2>
           <p class="sub">실제 입장일 ${p.joinedAt ? esc(md(p.joinedAt)) : p.joinedBeforeFile ? esc(md(S.ledger.range.from)) + " 전부터" : "기록 없음"}${p.firstJoin && p.firstJoin !== p.joinedAt ? ", 처음 들어옴 " + esc(md(p.firstJoin)) : ""}</p>
           ${evs ? `<ul class="timeline">${evs}</ul>` : `<p class="sub">이 파일에 이 사람의 들어옴, 나감 줄이 없습니다.</p>`}
@@ -985,7 +1582,10 @@
       { key: "name_change", t: "닉네임 변경 2회 이상", l: "rule", hideZero: true, pick: (p) => { const f = effFlags(p).find((x) => x.c === "name_change"); return f ? f.x : null; } },
       { key: "atlimit", t: "재입장 한도에 닿음", l: "watch", pick: (p) => { const f = reInfo(p); return f && /한도에 닿음/.test(f.x) ? reAfter(p).length + "/" + p.limit : null; } },
       { key: "signals", t: "살필 신호(최근 90일)", l: "watch", img: "rules-manners", pick: (p) => { const fs = uniqFlags(effFlags(p).filter((f) => f.l === "watch" && !QUIET.includes(f.c))); return fs.length ? fs.slice(0, 2).map((f) => f.t.split("(")[0]).join(", ") + (fs.length > 2 ? " 외 " + (fs.length - 2) : "") : null; } },
-      { key: "quiet", t: "조용해진 멤버", l: "watch", img: "rules-meetup", pick: (p) => { const f = effFlags(p).find((x) => x.c === "silent" || x.c === "drop"); return f ? (f.c === "silent" ? "마지막 " + md(p.last) : "급감") : null; } }
+      { key: "quiet", t: "조용해진 멤버", l: "watch", img: "rules-meetup", pick: (p) => { const f = effFlags(p).find((x) => x.c === "silent" || x.c === "drop"); return f ? (f.c === "silent" ? "마지막 " + md(p.last) : "급감") : null; } },
+      // 시트(벙 참석, 경고)에서 온 것. 시트를 받았을 때만
+      { key: "sh_meet", t: "모임 참여(시트)", l: "rule", img: "flow-first-meeting", hideZero: true, pick: (p) => { const m = sheetOf(p.pid); const c = m && m.checks.find((x) => x.c === "first_late" || x.c === "regular"); return c ? (c.c === "first_late" ? "첫 모임 전" : "마지막 " + md(m.last)) : null; } },
+      { key: "sh_warn", t: "경고 2회 이상(시트)", l: "watch", img: "rules-boundaries", hideZero: true, pick: (p) => { const m = sheetOf(p.pid); return m && m.warnings.length >= 2 ? m.warnings.length + "회" : null; } }
     ];
     function boardRows(key) { const b = BOARD.find((x) => x.key === key); return b ? members().map((p) => ({ p, d: b.pick(p) })).filter((x) => x.d != null) : []; }
 
@@ -1124,6 +1724,8 @@
       { k: "stay", t: "머문 일", s: (p) => stayDays(p) == null ? 99999 : stayDays(p), num: true },
       { k: "re", t: "재입장", s: (p) => reAfter(p).length, num: true },
       { k: "d30", t: "30일", s: (p) => p.d30 || 0, num: true },
+      { k: "b30", t: "벙 30일", s: (p) => { const m = sheetOf(p.pid); return m ? m.d30 : -1; }, num: true, when: () => !!SH.parsed },
+      { k: "blast", t: "마지막 벙", s: (p) => { const m = sheetOf(p.pid); return m ? m.last || "0" : ""; }, when: () => !!SH.parsed },
       { k: "wk", t: "12주 추이", s: (p) => (p.wk || []).reduce((a, b) => a + b, 0), num: true },
       { k: "last", t: "마지막 대화", s: (p) => p.last || "" },
       { k: "n", t: "전체 메시지", s: (p) => p.n, num: true },
@@ -1143,6 +1745,8 @@
       if (k === "wk") return `<td>${spark(p.wk && p.wk.length ? p.wk : [0, 0])}</td>`;
       if (k === "last") { const g = E - dnum(p.last); return `<td class="${g > 60 ? "c-watch" : g > 30 ? "mute" : ""}">${esc(md(p.last))}</td>`; }
       if (k === "n") return `<td class="num">${nf(p.n)}</td>`;
+      if (k === "b30") { const m = sheetOf(p.pid); return `<td class="num">${m ? nf(m.d30) : `<span class="mute">시트 없음</span>`}</td>`; }
+      if (k === "blast") { const m = sheetOf(p.pid); return `<td>${m ? (m.last ? esc(md(m.last)) : `<span class="mute">없음</span>`) : ""}</td>`; }
       if (k === "memo") { const a = S.records.actions.filter((x) => x.pid === p.pid).length; return `<td>${a ? `<span class="tag watch">조치 ${a}</span>` : ""}${S.records.notes[p.pid] ? `<span class="tag">메모</span>` : ""}${hasIo(p.pid) ? `<span class="tag">입퇴장</span>` : ""}</td>`; }
       return "<td></td>";
     }
@@ -1151,7 +1755,8 @@
       const E = endN();
       const counts = {}; SHEET_FILTERS.forEach(([k]) => { const keep = view.sheet.filter; view.sheet.filter = k; counts[k] = sheetList().length; view.sheet.filter = keep; });
       let list = sheetList();
-      const col = COLS.find((c) => c.k === view.sheet.sort) || COLS[1];
+      const cols = COLS.filter((c) => !c.when || c.when());
+      const col = cols.find((c) => c.k === view.sheet.sort) || COLS[1];
       const dir = view.sheet.dir;
       list = list.slice().sort((a, b) => { const x = col.s(a), y = col.s(b); return (x > y ? 1 : x < y ? -1 : 0) * dir || b.d30 - a.d30; });
       view.sheet.maxD30 = Math.max(1, ...list.map((p) => p.d30 || 0));
@@ -1163,9 +1768,9 @@
           <div class="chips" role="group" aria-label="보기">${SHEET_FILTERS.map(([k, t]) => `<button type="button" data-sf="${k}" aria-pressed="${view.sheet.filter === k}">${t} <b>${counts[k]}</b></button>`).join("")}${chk ? `<button type="button" data-sf="${esc(view.sheet.filter)}" aria-pressed="true">${esc(chk.t)} <b>${list.length}</b></button>` : ""}</div>
           <button type="button" class="btn btn-secondary is-sm" id="csvBtn">CSV 내려받기</button>
         </div>
-        <div class="gridwrap"><table class="grid"><thead><tr>${COLS.map((c) => `<th class="${c.cls || ""}${c.num ? " num" : ""}" aria-sort="${view.sheet.sort === c.k ? (dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-sort="${c.k}">${c.t}</button></th>`).join("")}</tr></thead>
-        <tbody>${list.length ? list.map((p) => `<tr data-person="${esc(p.pid)}" tabindex="0">${COLS.map((c) => cell(p, c.k, E)).join("")}</tr>`).join("") : `<tr><td colspan="${COLS.length}" class="empty">해당하는 사람이 없습니다.</td></tr>`}</tbody></table></div>
-        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 최근 30일 메시지, 12주 추이는 주마다 메시지 수입니다.</p>`;
+        <div class="gridwrap"><table class="grid"><thead><tr>${cols.map((c) => `<th class="${c.cls || ""}${c.num ? " num" : ""}" aria-sort="${view.sheet.sort === c.k ? (dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-sort="${c.k}">${c.t}</button></th>`).join("")}</tr></thead>
+        <tbody>${list.length ? list.map((p) => `<tr data-person="${esc(p.pid)}" tabindex="0">${cols.map((c) => cell(p, c.k, E)).join("")}</tr>`).join("") : `<tr><td colspan="${cols.length}" class="empty">해당하는 사람이 없습니다.</td></tr>`}</tbody></table></div>
+        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 최근 30일 메시지, 12주 추이는 주마다 메시지 수입니다.${SH.parsed ? " 벙 30일과 마지막 벙은 시트입니다." : ""}</p>`;
       if (focusQ) { const el = $("sq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} }
     }
     function csv() {
@@ -1185,7 +1790,7 @@
       const tg = e.target.closest("[data-tabgo]"); if (tg) { setTab(tg.dataset.tabgo); return; }
       if (e.target.closest("#csvBtn")) csv();
     });
-    document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target && e.target.matches && e.target.matches("tr[data-person], .hb[data-person], .kpi[data-jump]")) { e.preventDefault(); e.target.click(); } });
+    document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target && e.target.matches && e.target.matches("tr[data-person], tr[data-smember], .hb[data-person], .kpi[data-jump]")) { e.preventDefault(); e.target.click(); } });
 
     /* 차트 풀이 말풍선: 대면 보이고, 폰에서는 누르면 보인다 */
     (function () {
@@ -1242,14 +1847,16 @@
     }
     function renderAll() {
       $("unsavedNote").hidden = !(S.unsaved && !localOnly);
-      $("noDataNote").hidden = !!S.ledger;
+      $("noDataNote").hidden = !!S.ledger || tab === "sheet";
       setStamp();
-      renderDash(); renderSignals(); renderRecords(); renderData(); renderFilesExtra();
+      SH.links = sheetLinkMaps();
+      renderDash(); renderSheetTab(); renderSignals(); renderRecords(); renderData(); renderFilesExtra();
       if (sheetPid && !$("sheet").hidden) { const p = byPid(sheetPid); if (p) renderSheet(p); }
+      if (sheetMid && !$("sheet").hidden) { const m = shMember(sheetMid); if (m) renderSheetMember(m); else closeSheet(); }
     }
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };
     window.addEventListener("resize", setTopH); setTopH();
-    window.__ops = { S, view };   // 시험용
+    window.__ops = { S, view, SH, sheetLoad };   // 시험용
     $("gatePass").focus();
   })();
   </script>
