@@ -1,38 +1,45 @@
 #!/usr/bin/env python3
 """
-excer-bot: 사이트의 모임 모집(벙) 글을 읽어 오픈채팅방에 벙 일정을 올리고 공지로 건다.
+excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채팅방에 벙 일정을 올리고 공지로 건다.
 
 봇 계정(excer-bot)으로 로그인한 카카오톡을 이 파이썬이 대신 조작한다.
 카카오톡에는 오픈채팅에 글을 올리거나 공지를 거는 공개 연결이 없어서, 사람이 하듯 화면을 조작한다.
+  android  안드로이드 폰이나 태블릿(USB 디버깅)의 카카오톡을 uiautomator2 로. 방은 늘 채팅 목록에서 눌러 열고,
+           보낸 목록 말풍선을 글자로 찾아 길게 눌러 공지로 건다.
   pc       윈도우 PC 카카오톡. 방 창을 앞으로 가져와 붙여넣고 보낸다. 공지는 보낸 메시지를 우클릭해 건다
            (처음에 calibrate 로 메뉴 자리를 한 번 잡는다. 우클릭한 메시지를 복사해 봇이 보낸 글인지 확인한 뒤에만 건다).
-  android  안드로이드 폰(USB 디버깅)의 카카오톡을 uiautomator2 로. 보낸 메시지를 글자로 찾아 길게 눌러 공지로 건다.
   dry      보내지 않고 화면에 찍기만(시험용).
 
 하는 일
-  - 3분마다 사이트를 읽어 새 벙, 바뀐 벙, 마감이 있으면 다가오는 벙 목록을 올리고 공지로 건다.
-    첫 줄에 무엇이 바뀌었는지 적고, 목록의 줄 끝에 (새), (바뀜: 시간) 을 단다.
-  - 매일 10시에 목록을 다시 올리고 공지로 건다(지난 벙이 빠진 목록). 그날 이미 올렸으면 건너뛴다.
-  - 0시부터 7시까지는 올리지 않고 7시 뒤에 몰아서. 한 번 올린 뒤 10분 안의 바뀜은 모았다가 한 번에.
+  - 20초마다 사이트를 읽는다(check_sec). 새 벙, 날짜와 시간과 장소 바뀜, 마감, 마감 풀림, 지워진 벙이 보이면
+    곧바로 다가오는 벙 목록을 올리고 공지로 건다. 첫 줄에 무엇이 바뀌었는지, 줄 끝에 (새), (바뀜: 시간) 을 단다.
+  - 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec). 글을 쓰고 바로 고치는 경우.
+  - 매일 10시에 목록을 한 번 더 올려 공지를 새로 건다(지난 벙이 빠지게). 그날 이미 올렸으면 건너뛴다. digest_at 을 "" 로 두면 안 한다.
   - 처음 켤 때 이미 올라와 있던 글은 새 벙으로 치지 않는다.
-  - 보내기에 실패하면 기록을 바꾸지 않아 다음 차례에 다시 보낸다.
-  - 사이트를 읽는 것은 3분에 한 번이고, 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
+  - 보내기에 실패하면 기록을 바꾸지 않고 1분 쉬었다가 다시 보낸다.
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 준비
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
-  - 파이썬 3.8 이상. pc 는 pip install pywin32, android 는 pip install uiautomator2 (그리고 adb).
-  - pc: 봇 계정으로 PC 카카오톡에 로그인하고 방 창을 열어 둔다(최소화해도 된다). 윈도우 잠금은 끈다(잠기면 조작이 안 된다).
-  - android: 봇 계정 카카오톡이 깔린 폰에서 USB 디버깅을 켜고 PC 에 연결한다. 화면 잠금은 없음으로, 충전 중 화면 켜짐 유지.
+  - 파이썬 3.8 이상. android 는 pip install uiautomator2 와 adb(Android SDK Platform-Tools), pc 는 pip install pywin32.
+  - android: 봇 계정 카카오톡 기기의 USB 디버깅을 켜고 PC 에 연결. 화면 잠금 없음, 충전 중 화면 켜짐 유지, 자동 회전 끔.
+  - pc: 봇 계정으로 PC 카카오톡에 로그인하고 방 창을 열어 둔다(최소화해도 된다). 윈도우 잠금은 끈다.
 
 명령(이 파일이 있는 폴더에서)
-  python excer_bot.py setup       설정 파일(excer_bot.json)을 만든다. 방식과 방 이름을 묻는다
-  python excer_bot.py list        지금 목록을 찍어 본다(보내지 않음)
-  python excer_bot.py calibrate   (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다. 시험 방에서 한다
-  python excer_bot.py test        시험 방에 지금 목록을 보내고 공지까지 걸어 본다
-  python excer_bot.py run         계속 돈다(멈추려면 Ctrl+C)
-  python excer_bot.py once        한 번만 보고 끝낸다(작업 스케줄러로 돌릴 때)
-기록: excer_bot_state.json(본 글), excer_bot.log(한 일). 둘 다 이 파일 옆에 생긴다.
+  python excer_bot.py setup         설정 파일(excer_bot.json)을 만든다. 방식과 방 이름을 묻는다
+  python excer_bot.py check         사이트와 기기 연결을 확인한다(보내지 않음)
+  python excer_bot.py list          지금 목록을 찍어 본다(보내지 않음)
+  python excer_bot.py test          시험 방에 지금 목록을 보내고 공지까지 걸어 본다
+  python excer_bot.py run --test    시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
+  python excer_bot.py run           알릴 방으로 늘 지켜보기(멈추려면 Ctrl+C)
+  python excer_bot.py sample-feed   시험 파일(excer_bot_feed.json)을 만든다. run --test --feed excer_bot_feed.json 과 함께
+                                    쓰면 사이트 대신 이 파일을 읽으므로, 파일을 고쳐 새 벙, 바뀜, 마감, 지움을 흉내 낸다
+  python excer_bot.py ui            (android) 지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
+                                    시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
+  python excer_bot.py calibrate     (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다. 시험 방에서 한다
+  python excer_bot.py once          한 번만 보고 끝낸다
+기록: excer_bot_state.json(본 글, 시험은 excer_bot_test_state.json), excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import json
@@ -52,16 +59,16 @@ DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 DEFAULTS = {
-    "backend": "pc",                     # pc, android, dry
+    "backend": "android",                # android, pc, dry
     "room": "",                          # 알릴 방 이름(카카오톡에 보이는 그대로)
     "test_room": "",                     # 시험 방(봇 계정과 나만 있는 방). test, calibrate 가 쓴다
     "notice": True,                      # 올린 목록을 공지로 걸지
-    "check_min": 3,                      # 사이트를 몇 분에 한 번 볼지
+    "check_sec": 20,                     # 사이트를 몇 초에 한 번 볼지
     "digest_at": "10:00",                # 매일 목록을 올릴 시각(한국 시간). "" 이면 올리지 않는다
     "digest_late_min": 180,              # 이 시각에서 이만큼 지나도록 못 올렸으면 그날은 건너뛴다
     "digest_empty": True,                # 다가오는 벙이 없어도 매일 목록을 올릴지
-    "min_gap_min": 10,                   # 한 번 올린 뒤 다음에 올리기까지(그 사이 바뀜은 모았다가)
-    "quiet": ["00:00", "07:00"],         # 이 사이에는 올리지 않는다. [] 이면 없음
+    "min_gap_sec": 60,                   # 한 번 올린 뒤 다음에 올리기까지(그 사이 바뀜은 모았다가)
+    "quiet": [],                         # 이 사이에는 올리지 않는다. 예: ["00:00", "07:00"]. [] 이면 늘 올린다
     "max_lines": 15,                     # 목록 줄 수 한도
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
@@ -79,7 +86,7 @@ class KakaoError(Exception):
 def load_cfg(path):
     cfg = json.loads(json.dumps(DEFAULTS))
     if os.path.exists(path):
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             got = json.load(f)
         for k, v in got.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict):
@@ -98,7 +105,7 @@ def save_json(path, obj):
 
 def load_state(path):
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:
             st = json.load(f)
         if isinstance(st, dict):
             st.setdefault("known", {})
@@ -173,7 +180,7 @@ def norm(p):
     return {"id": str(p["id"]), "title": clean(p.get("title"), 40) or "제목 없음", "author": clean(p.get("author"), 20),
             "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "",
             "place": clean(m.get("place"), 40), "cap": cap, "closed": m.get("status") == "closed",
-            "created": str(p.get("created_at") or "")[:10]}
+            "created": str(p.get("created_at") or "")}
 
 
 def http_get(url, headers=None, timeout=15):
@@ -213,6 +220,20 @@ class Site:
         rows = json.loads(body)
         if not isinstance(rows, list):
             raise RuntimeError("글 모양이 다름")
+        self.last_full = len(rows) < 100                    # 100개보다 적으면 모임 모집 글을 전부 읽은 것
+        return [v for v in (norm(r) for r in rows) if v]
+
+
+class FileSite:
+    """사이트 대신 파일에서 글을 읽는다(시험용). 파일은 사이트 글과 같은 모양의 목록"""
+    def __init__(self, path):
+        self.path, self.last_full = path, True
+
+    def posts(self):
+        with open(self.path, encoding="utf-8-sig") as f:
+            rows = json.load(f)
+        if not isinstance(rows, list):
+            raise RuntimeError("시험 파일은 [ ] 로 감싼 목록이어야 함")
         return [v for v in (norm(r) for r in rows) if v]
 
 
@@ -227,7 +248,7 @@ def undated_open(v, now):
     if v["date"] or v["closed"]:
         return False
     since = (datetime.strptime(now.ymd, "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
-    return not v["created"] or v["created"] >= since
+    return not v["created"] or v["created"][:10] >= since
 
 
 def skey(v):
@@ -243,12 +264,17 @@ def line(v):
 
 
 def sig(v):
-    return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0}
+    return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0, "n": v["title"], "cr": v["created"]}
 
 
-def diff(known, posts, now, init):
-    """지난번에 본 글(known)과 견준다. 기록을 바꾸지 않고 (새 기록, 바뀜)을 돌려준다"""
-    cur, ch = {}, {"new": [], "chg": [], "cls": []}
+def noch():
+    return {"new": [], "chg": [], "cls": [], "del": []}
+
+
+def diff(known, posts, now, init, full=False):
+    """지난번에 본 글(known)과 견준다. 기록을 바꾸지 않고 (새 기록, 바뀜)을 돌려준다.
+    full: 모임 모집 글을 전부 읽었는지(전부면 안 보이는 글은 지워진 것)"""
+    cur, ch = {}, noch()
     for v in posts:
         cur[v["id"]] = sig(v)
         if not init:
@@ -269,15 +295,24 @@ def diff(known, posts, now, init):
             f.append("마감 풀림")
         if f:
             ch["chg"].append((v, f))
-    # 목록(최근 100개) 밖으로 밀려난 글 중 날짜가 남은 것은 기억해 둔다. 다시 보여도 새 글로 치지 않게
+    # 안 보이는 글: 지워졌으면 알리고, 최근 100개 밖으로 밀려난 것이면 기억해 둔다(다시 보여도 새 글로 치지 않게)
+    oldest = min((v["created"] for v in posts if v["created"]), default="")
+    since = (datetime.strptime(now.ymd, "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
     for k, o in known.items():
-        if k not in cur and o and o.get("d") and o["d"] >= now.ymd:
-            cur[k] = o
+        if k in cur or not o or o.get("c"):
+            continue
+        live = (o.get("d") or "") >= now.ymd if o.get("d") else (o.get("cr") or "")[:10] >= since
+        if not live:
+            continue                                   # 지난 글은 잊는다
+        if init and (full or (o.get("cr") and oldest and o["cr"] > oldest)):   # 읽은 범위 안의 글이 없어졌으면 지워진 것
+            ch["del"].append({"id": k, "date": o.get("d") or "", "time": o.get("t") or "", "title": o.get("n") or "제목 없음", "place": o.get("p") or ""})
+            continue
+        cur[k] = o
     return cur, ch
 
 
 def has_changes(ch):
-    return bool(ch["new"] or ch["chg"] or ch["cls"])
+    return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("del"))
 
 
 def compose(posts, now, ch, cfg, always=False):
@@ -298,7 +333,8 @@ def compose(posts, now, ch, cfg, always=False):
         return " (" + ("바뀜: " + ", ".join(rest) if rest else "다시 모집") + ")"
 
     top = "[벙 일정] %s 기준 %s" % (md(now.ymd), ("%d건" % len(items)) if items else "올라온 벙 없음")
-    summary = [("새 %d" % len(ch["new"])) if ch["new"] else "", ("바뀜 %d" % len(ch["chg"])) if ch["chg"] else "", ("마감 %d" % len(ch["cls"])) if ch["cls"] else ""]
+    summary = [("새 %d" % len(ch["new"])) if ch["new"] else "", ("바뀜 %d" % len(ch["chg"])) if ch["chg"] else "",
+               ("마감 %d" % len(ch["cls"])) if ch["cls"] else "", ("삭제 %d" % len(ch.get("del", []))) if ch.get("del") else ""]
     summary = [s for s in summary if s]
     if summary:
         top += ", " + ", ".join(summary)
@@ -308,6 +344,7 @@ def compose(posts, now, ch, cfg, always=False):
     if len(items) > len(shown):
         out.append("외 %d건" % (len(items) - len(shown)))
     out += ["마감: " + head(v) for v in ch["cls"]]
+    out += ["삭제: " + head(v) for v in ch.get("del", [])]
     if cfg.get("link", True):
         out.append(("전체 " if items else "벙 올리기 ") + cfg["site"] + "/bung")
     return "\n".join(out)
@@ -327,8 +364,9 @@ def digest_due(st, now, cfg):
 
 # ── 한 차례 ──
 class Bot:
-    def __init__(self, cfg, sender, site, state_path, log, clock=None):
+    def __init__(self, cfg, sender, site, state_path, log, clock=None, room=None):
         self.cfg, self.sender, self.site, self.state_path, self.log = cfg, sender, site, state_path, log
+        self.room = room or cfg["room"]
         self.clock = clock or (lambda: datetime.now(KST))
         self.st = load_state(state_path)
         self.last_check = 0.0
@@ -341,7 +379,7 @@ class Bot:
         now = Now(self.clock())
         if now.ts < self.hold_until:
             return False
-        return now.ts - self.last_check >= int(self.cfg["check_min"]) * 60 or digest_due(self.st, now, self.cfg) is True
+        return now.ts - self.last_check >= int(self.cfg.get("check_sec", 20)) or digest_due(self.st, now, self.cfg) is True
 
     def cycle(self):
         """사이트를 한 번 보고 올릴 것이 있으면 올린다. 무엇을 했는지 한 낱말로 돌려준다"""
@@ -354,21 +392,21 @@ class Bot:
             posts = self.site.posts()
         except Exception as e:                          # 사이트가 흔들리면 다음 차례에
             self.log("사이트 읽기 실패: %s" % e)
-            self.hold_until = now.ts + 120
+            self.hold_until = now.ts + 60
             return "read-fail"
-        cur, ch = diff(st.get("known", {}), posts, now, bool(st.get("init")))
+        cur, ch = diff(st.get("known", {}), posts, now, bool(st.get("init")), bool(getattr(self.site, "last_full", False)))
         if not st.get("init"):
             st.update(known=cur, init=True)
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
-            ch = {"new": [], "chg": [], "cls": []}
+            ch = noch()
         changed = has_changes(ch)
         dg = digest_due(st, now, cfg)
         if dg == "skip" or (dg and st.get("last_post_ymd") == now.ymd and not changed):
             st["last_digest"] = now.ymd                 # 너무 늦었거나 오늘 이미 올렸다
             self.save()
             dg = False
-        gap_ok = now.ts - float(st.get("last_post_at") or 0) >= int(cfg.get("min_gap_min", 10)) * 60
+        gap_ok = now.ts - float(st.get("last_post_at") or 0) >= int(cfg.get("min_gap_sec", 60))
         if not ((changed and gap_ok) or dg):
             if not changed:
                 st["known"] = cur                       # 제목만 바뀜, 지난 글 정리
@@ -380,10 +418,10 @@ class Bot:
             self.save()
             return "empty"
         try:
-            self.sender.send(cfg["room"], text)
+            self.sender.send(self.room, text)
         except Exception as e:
             self.log("보내기 실패(다음 차례에 다시): %s" % e)
-            self.hold_until = now.ts + 120
+            self.hold_until = now.ts + 60
             return "send-fail"
         st.update(known=cur, last_post_at=now.ts, last_post_ymd=now.ymd)
         if dg:
@@ -392,7 +430,7 @@ class Bot:
         self.log("올림: " + text.split("\n")[0])
         if cfg.get("notice"):
             try:
-                self.sender.notice(cfg["room"], text)
+                self.sender.notice(self.room, text)
                 self.log("공지로 걸었음")
             except Exception as e:
                 self.log("공지 걸기 실패(목록은 올라감): %s" % e)
@@ -412,6 +450,9 @@ class DrySender:
     def notice(self, room, text):
         self.notices.append((room, text.split("\n")[0]))
         self.out("[공지 %s] %s" % (room, text.split("\n")[0]))
+
+    def check(self):
+        return ["카카오톡: dry 방식이라 보내지 않고 찍기만 합니다"]
 
 
 # ── 카카오톡 조작: 윈도우 PC ──
@@ -493,6 +534,11 @@ class PcSender:
             return True
         self.g.EnumWindows(cb, None)
         return out
+
+    def check(self):
+        ws = [t for _, t in self.kakao_windows() if t != "카카오톡"]
+        return ["열려 있는 카카오톡 방 창: " + (", ".join(ws) if ws else "없음"),
+                "공지 자리: " + ("잡음" if self.pc.get("bubble") else "아직(calibrate)")]
 
     def window(self, room):
         h = self.g.FindWindow(None, room)
@@ -621,7 +667,7 @@ class PcSender:
         return dict(self.pc)
 
 
-# ── 카카오톡 조작: 안드로이드(uiautomator2) ──
+# ── 카카오톡 조작: 안드로이드 폰, 태블릿(uiautomator2) ──
 class AndroidSender:
     def __init__(self, cfg, log, device=None):
         if device is None:
@@ -629,38 +675,52 @@ class AndroidSender:
             device = u2.connect(cfg["android"].get("serial") or None)
         self.d, self.cfg, self.log, self.pkg, self.sleep = device, cfg, log, cfg["android"]["package"], time.sleep
 
-    def _in_room(self, room):
+    def _list_visible(self):
         d = self.d
-        return d(className="android.widget.EditText").exists and d(textContains=room[:12]).exists
+        return d(description="채팅").exists or d(text="채팅").exists
+
+    def _room_item(self, room):
+        d = self.d
+        for sel in (dict(text=room), dict(textStartsWith=room[:12])):
+            o = d(**sel)
+            if o.exists:
+                return o
+        return None
 
     def open_room(self, room):
+        """방은 늘 채팅 목록에서 눌러 연다. 태블릿은 목록과 방이 한 화면이라 다른 방이 열려 있어도 이 방으로 바뀐다"""
         d = self.d
         d.screen_on()
         d.app_start(self.pkg)
         self.sleep(1.5)
-        if self._in_room(room):
-            return
-        for _ in range(4):                                  # 목록 화면으로
-            if d(description="채팅").exists or d(text="채팅").exists:
+        for _ in range(5):                                  # 폰은 방 안에 있으면 뒤로 가서 목록으로
+            if self._list_visible():
                 break
             d.press("back")
             self.sleep(0.6)
+        else:
+            raise KakaoError("카카오톡 채팅 목록 화면으로 가지 못함")
         for sel in (dict(description="채팅"), dict(text="채팅")):
-            if d(**sel).click_exists(timeout=2):
+            if d(**sel).click_exists(timeout=1):
                 break
         self.sleep(0.8)
-        if not d(text=room).exists:
+        item = self._room_item(room)
+        if not item:
             d(text="오픈채팅").click_exists(timeout=1)    # 채팅과 오픈채팅이 나뉜 판
             self.sleep(0.8)
-        if not d(text=room).exists:
+            item = self._room_item(room)
+        if not item:
             try:
                 d(scrollable=True).scroll.to(text=room)
             except Exception:
                 pass
-        if not d(text=room).click_exists(timeout=3):
+            item = self._room_item(room)
+        if not item:
             raise KakaoError("채팅 목록에서 '%s' 방을 찾지 못함" % room)
+        item.click()
         if not d(className="android.widget.EditText").wait(timeout=5):
             raise KakaoError("방은 열었는데 입력 칸이 없음")
+        self.sleep(0.6)
 
     def send(self, room, text):
         self.open_room(room)
@@ -671,27 +731,71 @@ class AndroidSender:
         self.sleep(0.5)
         for sel in (dict(description="전송"), dict(text="전송"), dict(resourceIdMatches=r".*:id/send.*")):
             if d(**sel).click_exists(timeout=1):
-                self.sleep(1.2)
+                self.sleep(1.5)
                 return
         raise KakaoError("전송 단추를 찾지 못함")
 
+    def bubble(self, text):
+        """방금 보낸 목록 말풍선. 채팅 목록의 미리보기(한 줄)와 위쪽 공지 띠는 빼고, 글 전체가 같은 것 중 가장 아래"""
+        d = self.d
+        want = text.strip()
+        sel = d(textContains=want.split("\n")[0])
+        if not sel.wait(timeout=5):
+            raise KakaoError("보낸 목록을 화면에서 찾지 못함")
+        best = None
+        for i in range(sel.count):
+            el = sel[i]
+            try:
+                info = el.info
+            except Exception:
+                continue
+            t = (info.get("text") or "").strip()
+            score = (t == want, t.count("\n"), (info.get("bounds") or {}).get("bottom", 0))
+            if best is None or score > best[0]:
+                best = (score, el)
+        if not best or (not best[0][0] and best[0][1] < want.count("\n")):
+            raise KakaoError("보낸 목록 말풍선을 찾지 못함(미리보기 줄만 보임)")
+        return best[1]
+
     def notice(self, room, text):
         d = self.d
-        first = text.split("\n")[0]
-        if not self._in_room(room):
-            self.open_room(room)
-        el = d(textContains=first)
-        if not el.wait(timeout=5):
-            raise KakaoError("보낸 목록을 화면에서 찾지 못함")
-        n = el.count
-        (el[n - 1] if n > 1 else el).long_click(duration=1.0)   # 가장 아래(방금 보낸 것)
+        self.sleep(1.0)
+        self.bubble(text).long_click(duration=1.0)
         if not d(text="공지").click_exists(timeout=3):
             d.press("back")
-            raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 부방장인지 확인)")
+            raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 부방장인지 확인)")
         self.sleep(0.8)
         for t in ("확인", "등록", "공지 등록"):
             if d(text=t).click_exists(timeout=1.5):
                 break
+
+    def check(self):
+        d, out = self.d, []
+        i = d.info
+        out.append("기기 연결: 됨(%s, 화면 %sx%s, 화면 켜짐 %s)" % (i.get("productName", "?"), i.get("displayWidth", "?"), i.get("displayHeight", "?"), "예" if i.get("screenOn") else "아니오"))
+        try:
+            d.app_info(self.pkg)
+            out.append("카카오톡: 있음")
+        except Exception:
+            out.append("카카오톡: 찾지 못함(%s)" % self.pkg)
+        try:
+            out.append("지금 앞에 뜬 앱: %s" % (d.app_current() or {}).get("package", "?"))
+        except Exception:
+            pass
+        return out
+
+    def dump(self, path):
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.d.dump_hierarchy())
+        rows = []
+        for n in root.iter("node"):
+            a = n.attrib
+            if a.get("text") or a.get("content-desc") or a.get("resource-id"):
+                rows.append("%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s" % (a.get("class", "").split(".")[-1], a.get("text", "")[:60].replace("\n", " / "),
+                            a.get("content-desc", ""), a.get("resource-id", ""), a.get("clickable", ""), a.get("bounds", "")))
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(rows))
+        return len(rows)
 
 
 def make_sender(cfg, log):
@@ -710,7 +814,7 @@ def make_sender(cfg, log):
 # ── 명령 ──
 def cmd_setup(cfg, cfg_path, ask=input):
     print("excer-bot 설정. 비워 두고 엔터를 누르면 [ ] 안의 값을 씁니다.")
-    b = ask("방식 pc(윈도우 PC 카카오톡) / android(안드로이드 폰) / dry(시험) [%s]: " % cfg["backend"]).strip() or cfg["backend"]
+    b = ask("방식 android(안드로이드 폰, 태블릿) / pc(윈도우 PC 카카오톡) / dry(시험) [%s]: " % cfg["backend"]).strip() or cfg["backend"]
     cfg["backend"] = b
     rooms = []
     if b == "pc" and os.name == "nt":
@@ -735,30 +839,63 @@ def cmd_setup(cfg, cfg_path, ask=input):
         cfg["notice"] = v == "y"
     save_json(cfg_path, cfg)
     print("저장했습니다:", cfg_path)
-    print("다음: python excer_bot.py list 로 목록 확인" + (", calibrate 로 공지 자리 잡기" if b == "pc" and cfg["notice"] else "") + ", test, 그다음 run.")
+    print("다음: python excer_bot.py check 로 연결 확인" + (", calibrate 로 공지 자리 잡기" if b == "pc" and cfg["notice"] else "") + ", test, run --test, 그다음 run.")
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="사이트의 벙 일정을 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "list", "calibrate", "test", "run", "once"])
+    ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
+    ap.add_argument("command", choices=["setup", "check", "list", "test", "run", "once", "sample-feed", "ui", "calibrate"])
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
+    ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
+    ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
     a = ap.parse_args(argv)
     cfg = load_cfg(a.config)
     base = os.path.splitext(a.config)[0]
     log = Log(base + ".log")
     if a.command == "setup":
         return cmd_setup(cfg, a.config)
-    site = Site(cfg)
+    if a.command == "sample-feed":
+        path = a.feed or base + "_feed.json"
+        today = datetime.now(KST)
+        rows = [{"id": 900001, "title": "시험 벙", "author": "시험", "created_at": today.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
+                 "meta": {"kind": "bung", "date": (today + timedelta(days=1)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소", "cap": 4}}]
+        save_json(path, rows)
+        print("만들었습니다:", path)
+        print("python excer_bot.py run --test --feed %s 로 켠 뒤, 이 파일을 메모장으로 열어 고치고 저장하면 20초 안에 시험 방에 올라옵니다." % os.path.basename(path))
+        return
+    site = FileSite(a.feed) if a.feed else Site(cfg)
+    now = lambda: Now(datetime.now(KST))
     if a.command == "list":
-        posts = site.posts()
-        print(compose(posts, Now(datetime.now(KST)), {"new": [], "chg": [], "cls": []}, cfg, always=True))
+        print(compose(site.posts(), now(), noch(), cfg, always=True))
+        return
+    if a.command == "check":
+        try:
+            ps = site.posts()
+            print("사이트: 모임 모집 글 %d개 읽음, 다가오는 벙 %d개" % (len(ps), sum(1 for v in ps if upcoming(v, now()))))
+        except Exception as e:
+            print("사이트: 읽지 못함(%s)" % e)
+        print("방식: %s, 알릴 방: %s, 시험 방: %s, 공지: %s" % (cfg["backend"], cfg["room"] or "(없음)", cfg["test_room"] or "(없음)", "건다" if cfg.get("notice") else "안 건다"))
+        try:
+            for l in make_sender(cfg, log).check():
+                print(l)
+        except SystemExit as e:
+            print(e)
+        except Exception as e:
+            print("카카오톡 쪽: 확인하지 못함(%s)" % e)
+        return
+    if a.command == "ui":
+        sender = make_sender(cfg, log)
+        if not isinstance(sender, AndroidSender):
+            raise SystemExit("ui 는 android 방식에서 씁니다.")
+        n = sender.dump(base + "_ui.txt")
+        print("화면 요소 %d개를 %s 에 적었습니다." % (n, base + "_ui.txt"))
         return
     if a.command in ("calibrate", "test"):
         room = cfg.get("test_room") or ""
         if not room:
             raise SystemExit("excer_bot.json 의 test_room(시험 방)을 먼저 넣으세요(setup).")
         sender = make_sender(cfg, log)
-        text = compose(site.posts(), Now(datetime.now(KST)), {"new": [], "chg": [], "cls": []}, cfg, always=True)
+        text = compose(site.posts(), now(), noch(), cfg, always=True)
         if a.command == "calibrate":
             if not isinstance(sender, PcSender):
                 raise SystemExit("calibrate 는 pc 방식에서만 필요합니다.")
@@ -772,13 +909,14 @@ def main(argv=None):
             sender.notice(room, text)
             log("시험 방에 공지를 걸었음. 방 위쪽 공지를 확인하세요.")
         return
-    if not cfg.get("room"):
-        raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
-    bot = Bot(cfg, make_sender(cfg, log), site, base + "_state.json", log)
+    room = cfg.get("test_room") if a.test else cfg.get("room")
+    if not room:
+        raise SystemExit("excer_bot.json 의 %s 을 먼저 넣으세요(setup)." % ("test_room(시험 방)" if a.test else "room(알릴 방)"))
+    bot = Bot(cfg, make_sender(cfg, log), site, base + ("_test_state.json" if a.test else "_state.json"), log, room=room)
     if a.command == "once":
         log("한 번 봄: " + bot.cycle())
         return
-    log("켬: %s 방, %s 방식, %d분마다" % (cfg["room"], cfg["backend"], int(cfg["check_min"])))
+    log("켬: %s 방%s, %s 방식, %d초마다 %s 확인" % (room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
     while True:
         try:
             if bot.due():
@@ -789,7 +927,7 @@ def main(argv=None):
             raise
         except Exception as e:
             log("오류: %s" % e)
-        time.sleep(30)
+        time.sleep(2)
 
 
 if __name__ == "__main__":
