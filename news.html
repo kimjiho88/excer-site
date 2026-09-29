@@ -461,6 +461,19 @@
     const EMOJIS = ["👍", "❤️", "😂", "👏", "🔥"];
     const CATS = ["공지", "벙 소식", "후기", "정보", "자유"];
     const OPEN_CHAT = "https://open.kakao.com/o/geS7Tzy";
+    /* 주소의 ?cat= 값. /bung 이 news.html?cat=bung 으로 온다(vercel.json) */
+    const CAT_KEYS = { notice: "공지", bung: "벙 소식", review: "후기", info: "정보", free: "자유" };
+    function catFromUrl() { try { const v = new URLSearchParams(location.search).get("cat") || ""; return CAT_KEYS[v] || (CATS.includes(v) ? v : ""); } catch (e) { return ""; } }
+    function setCatChips() { $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); }); }
+    function syncCatUrl() {
+      try {
+        const key = Object.keys(CAT_KEYS).find((k) => CAT_KEYS[k] === state.category), u = new URL(location.href);
+        if (key) u.searchParams.set("cat", key); else u.searchParams.delete("cat");
+        history.replaceState(null, "", u.pathname + u.search + u.hash);
+      } catch (e) {}
+    }
+    /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
+    function openWriteDefault() { openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null); }
     const ERROR_MAP = {
       BAD_PASS: "비밀번호가 맞지 않습니다. 글을 쓸 때 입력한 비밀번호나 운영진 비밀번호를 입력해 주세요.",
       ADMIN_ONLY: "운영진 비밀번호가 맞지 않습니다. 공지 작성과 글 고정은 운영진만 할 수 있습니다.",
@@ -1218,7 +1231,7 @@
 
     // ── 이벤트 ──
     function bindEvents() {
-      $("heroWriteBtn").addEventListener("click", () => openWriteModal(null));
+      $("heroWriteBtn").addEventListener("click", openWriteDefault);
       $("writeCloseBtn").addEventListener("click", closeWriteModal);
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitWrite);
@@ -1231,7 +1244,7 @@
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
       });
-      $("fabWrite").addEventListener("click", () => openWriteModal(null));
+      $("fabWrite").addEventListener("click", openWriteDefault);
       $("promptWrite").addEventListener("click", () => { const p = currentPrompt(); openWriteModal(null, { category: p.cat, title: p.title }); });
       $("draftNoteLoad").addEventListener("click", () => { state.draftHold = false; openWriteModal(null); });
       $("popularWrap").addEventListener("click", (e) => { const a = e.target.closest("[data-act='goto']"); if (!a) return; e.preventDefault(); gotoPost(Number(a.dataset.id)); });
@@ -1247,7 +1260,8 @@
         const chip = e.target.closest("button[data-cat]");
         if (!chip || chip.dataset.cat === state.category) return;
         state.category = chip.dataset.cat;
-        $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); });
+        setCatChips();
+        syncCatUrl();
         refetchList();
       });
       $("moreBtn").addEventListener("click", () => loadPosts(false));
@@ -1276,7 +1290,7 @@
           return;
         }
         if (act === "react") { toggleReact(id, el.dataset.emoji); return; }
-        if (act === "open-write") { openWriteModal(null, el.dataset.cat ? { category: el.dataset.cat } : null); return; }
+        if (act === "open-write") { if (el.dataset.cat) openWriteModal(null, { category: el.dataset.cat }); else openWriteDefault(); return; }
         if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
@@ -1301,6 +1315,7 @@
     // ── 초기화 ──
     $("wNick").value = savedNick();
     bindEvents();
+    { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
     C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta()); });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
     renderListLoading();
