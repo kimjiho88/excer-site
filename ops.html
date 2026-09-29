@@ -2267,15 +2267,15 @@
             <ul class="ev">${g.lines.map((u) => `<li><time>${esc(md(u.d))} ${esc(u.t)}</time><span>${u.k === "join" ? "들어옴" : u.how === "kick" ? "내보냄" : "나감"}${canLink && u.key ? ` <button class="text-btn" type="button" data-link="${esc(u.key)}" data-head="${esc(g.name.split(" ")[0])}">사람에게 잇기</button>` : ""}</span></li>`).join("")}</ul></details>`).join("") : `<p class="empty">없습니다.</p>`}
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
       }
-      const botHtml = `<div class="panel"><h2>카카오 봇 <small>모임 모집 알림</small></h2>
-          <p class="sub">사이트의 모임 모집 글을 방에 알립니다. 새 벙, 바뀜, 마감, 매일 10시 목록, !벙 답. 공지 등록은 봇이 보낸 목록을 길게 눌러 합니다.</p>
+      const botHtml = `<div class="panel"><h2>카카오 봇 <small>벙 일정 공지</small></h2>
+          <p class="sub">봇 계정으로 로그인한 카카오톡을 파이썬이 조작합니다. 사이트의 모임 모집 글에 새 벙, 바뀜, 마감이 생기면 목록을 올리고 공지로 겁니다. 매일 10시에도 올립니다.</p>
           <ol class="steps">
-            <li>봇 계정으로 로그인한 안드로이드 폰에 메신저봇R 을 깔고 알림 접근을 허용합니다. 배터리 최적화에서 메신저봇R 과 카카오톡을 뺍니다.</li>
-            <li>봇 계정 카카오톡에서 이 방의 알림을 켭니다.</li>
-            <li>메신저봇R 에서 봇을 만들고 스크립트를 붙여넣습니다. <button type="button" class="text-btn" data-copyfile="assets/excer-bot.js">스크립트 복사</button></li>
-            <li>컴파일하고 켠 뒤 방에서 !방이름 을 칩니다. 봇이 답한 방 이름을 스크립트 맨 위 ROOM 에 넣고 다시 컴파일합니다.</li>
+            <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
+            <li>PC 방식: 윈도우 PC 카카오톡에 봇 계정으로 로그인하고 방 창을 열어 둡니다(최소화 가능, 윈도우 잠금은 끔). 폰 방식: 봇 계정 카카오톡이 깔린 안드로이드 폰의 USB 디버깅을 켜고 PC 에 연결합니다.</li>
+            <li>PC 에 파이썬을 깔고 pip install pywin32 를 실행합니다(폰 방식은 uiautomator2). <a class="text-btn" href="tools/excer_bot.py" download>스크립트 받기</a></li>
+            <li>스크립트가 있는 폴더의 명령 창에서 python excer_bot.py setup 으로 방식과 방 이름을 넣습니다. PC 방식이면 calibrate 로 공지 메뉴 자리를 잡습니다. test 로 시험 방에서 확인한 뒤 run 으로 켭니다.</li>
           </ol>
-          <p class="sub">방 공지에 걸어 둘 벙 일정 주소: excer-site.vercel.app/bung <button type="button" class="text-btn" data-copytext="https://excer-site.vercel.app/bung">주소 복사</button></p></div>`;
+          <p class="sub">벙 일정 주소: excer-site.vercel.app/bung <button type="button" class="text-btn" data-copytext="https://excer-site.vercel.app/bung">주소 복사</button></p></div>`;
       host.innerHTML = setHtml + rosterHtml + unHtml + botHtml;
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) { view.open.add(k); view.closed.delete(k); } else { view.open.delete(k); view.closed.add(k); } }));
       const rf = $("ruleFrom");
