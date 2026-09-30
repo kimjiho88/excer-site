@@ -42,7 +42,8 @@ tablet 준비(태블릿 하나로)
                                       시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
-기록: excer_bot_state.json(본 글, 시험은 excer_bot_test_state.json), excer_bot.log(한 일). 이 파일 옆에 생긴다.
+기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
+      excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import json
@@ -1378,7 +1379,9 @@ def main(argv=None):
     room = cfg.get("test_room") if a.test else cfg.get("room")
     if not room:
         raise SystemExit("excer_bot.json 의 %s 을 먼저 넣으세요(setup)." % ("test_room(시험 방)" if a.test else "room(알릴 방)"))
-    bot = Bot(cfg, make_sender(cfg, log), site, base + ("_test_state.json" if a.test else "_state.json"), log, room=room)
+    # 기록은 따로: 시험 파일(--feed), 시험 방(--test), 알릴 방. 시험 파일로 흉내 낸 것이 실제 시험에 섞이지 않게
+    state_path = base + ("_feed_state.json" if a.feed else "_test_state.json" if a.test else "_state.json")
+    bot = Bot(cfg, make_sender(cfg, log), site, state_path, log, room=room)
     if a.command == "once":
         log("한 번 봄: " + bot.cycle())
         return
