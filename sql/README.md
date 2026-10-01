@@ -55,6 +55,16 @@ v2 적용 후 `sql/site_features_v3.sql` 도 같은 방법으로 Run 하세요.
 `sql/2026-09-27-ops-store.sql` 다음에 `sql/2026-09-28-ops-sheet.sql` 을 같은 방법으로 한 번 Run 하세요(재실행 안전).
 그다음 운영 대시보드 > 시트 > 연동 설정에서 토큰을 만들고 적힌 4단계대로 구글 앱스 스크립트를 설치합니다.
 
+## 모임 모집 참석 (2026-10-01)
+
+`sql/2026-10-01-bung-attend.sql` 을 SQL Editor 에 붙여넣고 **Run** 하세요. 다시 실행해도 안전합니다. (콘텐츠 양식 세 쪽을 먼저 실행한 뒤에.)
+
+- 참석 명단 표 `site_bung_attend`(공개 보기 `site_bung_attend_v` 는 닉네임과 시각만), 함수 `bung_attend`, `bung_unattend`.
+- 모임 모집 글에 신청 마감(`meta.deadline`)과 같은 시간대 예외(`meta.dup`)를 받고, 글쓰기와 글 수정에서 날짜, 시간, 장소, 인원 필수, 지난 시각, 신청 마감이 시작 뒤인지, 같은 날 앞뒤 2시간 안의 모집 중인 모임을 서버에서도 검사합니다.
+- `site_posts_v` 에 `attend_count` 가 붙고 `site_schema_v` 에 `bung_attend 1` 이 생깁니다. 이 줄이 보여야 화면에 참석 단추와 신청 마감 칸이 나옵니다.
+
+확인: 맨 아래 확인 쿼리의 마지막 표에 `bung_attend 1` 줄이 보이면 끝입니다.
+
 ## 지금 서버 상태 보기
 
 `sql/status.sql` 을 SQL Editor 에 한 번 붙여넣고 **이름을 '서버 상태'로 바꿔 저장**해 두세요.

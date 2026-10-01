@@ -13,10 +13,12 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시간, 장소, 인원을 꼭 받는다).
-  - 공지: 첫 줄이 다음 벙, 그 아래로 이후 벙. 이 글이 달라질 때마다(새 벙, 바뀜, 마감, 취소, 그리고 벙이 시작해
-    다음 벙이 첫 줄로 올라올 때) 방에 올리고 길게 눌러 공지로 건다. 그래서 공지는 늘 벙 시간 차례대로 다음 벙을 보여 준다.
-  - 알림: 새 벙, 날짜와 시간과 장소 바뀜, 마감, 마감 풀림, 취소(모집 글 삭제)는 공지 글 앞에 알림 메시지를 따로 올린다.
-    하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
+  - 공지: 모집 중인 벙만 벙 시간 차례대로. 첫 줄이 다음 벙(신청 마감이 따로 있으면 그 시각도), 그 아래로 이후 벙.
+    모집 중은 마감하지 않았고, 신청 마감(없으면 시작 시각) 전이고, 참석이 정원에 차지 않은 벙이다.
+    이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 취소, 그리고 신청 마감이 되어 다음 벙이 첫 줄로 올라올 때)
+    방에 올리고 길게 눌러 공지로 건다.
+  - 알림: 새 벙, 날짜와 시간과 장소와 신청 마감 바뀜, 마감, 정원 참, 다시 모집(마감 풀림, 자리 남), 취소(모집 글 삭제)는
+    공지 글 앞에 알림 메시지를 따로 올린다. 하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
   - 24시간 돈다. 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec).
   - 처음 켤 때는 이미 올라와 있던 글을 알리지 않고, 지금의 공지 글만 올려 공지로 건다.
   - 보내기에 실패하면 1분 쉬었다가 다시. 공지 걸기만 실패하면 공지 글을 다시 올려 1분, 5분, 15분 뒤 다시 건다(세 번까지).
@@ -40,7 +42,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
   python excer_bot.py run             알릴 방으로 늘 지켜보기(멈추려면 Ctrl+C)
   python excer_bot.py sample-feed     시험 파일(excer_bot_feed.json)을 만든다. run --test --feed excer_bot_feed.json 으로 켜고
-  python excer_bot.py feed add        다른 창에서 feed add, change, close, del, soon 으로 새 벙, 바뀜, 마감, 취소, 곧 시작하는 벙을 흉내 낸다
+  python excer_bot.py feed add        다른 창에서 feed add, change, close, del, soon, full, deadline 으로 새 벙, 바뀜, 마감, 취소,
+                                      곧 시작하는 벙, 정원 참, 2분 뒤 신청 마감을 흉내 낸다
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
                                       시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -186,9 +189,16 @@ def norm(p):
         cap = int(round(float(m.get("cap")))) if m.get("cap") not in (None, "") and float(m.get("cap")) > 0 else 0
     except (TypeError, ValueError):
         cap = 0
+    dl = str(m.get("deadline") or "")
+    try:
+        att = int(p["attend_count"]) if p.get("attend_count") is not None else None
+    except (TypeError, ValueError):
+        att = None
     return {"id": str(p["id"]), "title": clean(p.get("title"), 40) or "제목 없음", "author": clean(p.get("author"), 20),
             "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "",
             "place": clean(m.get("place"), 40), "cap": cap, "closed": m.get("status") == "closed",
+            "deadline": dl if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", dl) else "",
+            "attend": att, "full": bool(cap and att is not None and att >= cap),
             "created": str(p.get("created_at") or "")}
 
 
@@ -216,7 +226,8 @@ class Site:
         return self.key
 
     def posts(self):
-        q = urllib.parse.urlencode({"select": "id,title,author,meta,created_at", "category": "eq.벙 소식",
+        cols = "id,title,author,meta,created_at" + ("" if getattr(self, "no_attend", False) else ",attend_count")
+        q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식",
                                     "order": "created_at.desc", "limit": "100"}, quote_via=urllib.parse.quote)
         url = self.cfg["supa"] + "/rest/v1/site_posts_v?" + q
         for fresh in (False, True):
@@ -224,6 +235,9 @@ class Site:
             code, body = self.get(url, {"apikey": k, "Authorization": "Bearer " + k})
             if code != 401:
                 break
+        if code == 400 and "attend_count" in body and not getattr(self, "no_attend", False):
+            self.no_attend = True                       # 참석 기능 SQL 을 아직 안 돌린 서버: 참석 수 없이 읽는다
+            return self.posts()
         if not 200 <= code < 300:
             raise RuntimeError("글을 읽지 못함(HTTP %s) %s" % (code, body[:120]))
         rows = json.loads(body)
@@ -247,10 +261,33 @@ class FileSite:
 
 
 # ── 견주기와 문구 ──
+def now_key(now):
+    return now.ymd + "T" + now.hm
+
+
+def start_key(v):
+    return v["date"] + "T" + (v["time"] or "23:59")
+
+
+def deadline_key(v):
+    return v.get("deadline") or start_key(v)
+
+
 def upcoming(v, now):
-    if not v["date"] or v["closed"] or v["date"] < now.ymd:
-        return False
-    return not (v["date"] == now.ymd and v["time"] and v["time"] < now.hm)
+    """아직 시작하지 않았고 마감하지 않은 벙"""
+    return bool(v["date"]) and not v["closed"] and now_key(now) < start_key(v)
+
+
+def recruiting(v, now):
+    """모집 중: 시작 전, 마감 안 함, 신청 마감 전, 정원 남음. 공지에는 이 벙만 넣는다"""
+    return upcoming(v, now) and not v.get("full") and now_key(now) < deadline_key(v)
+
+
+def dl_text(v):
+    d = v.get("deadline") or ""
+    if not d or d == start_key(v):
+        return ""
+    return "신청 " + ("" if d[:10] == v["date"] else md(d[:10]) + " ") + d[11:16] + "까지"
 
 
 def skey(v):
@@ -266,11 +303,12 @@ def line(v):
 
 
 def sig(v):
-    return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0, "n": v["title"], "cr": v["created"]}
+    return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0, "n": v["title"], "cr": v["created"],
+            "dl": v.get("deadline") or "", "f": 1 if v.get("full") else 0}
 
 
 def noch():
-    return {"new": [], "chg": [], "cls": [], "del": []}
+    return {"new": [], "chg": [], "cls": [], "full": [], "del": []}
 
 
 def diff(known, posts, now, init, full=False):
@@ -292,9 +330,12 @@ def diff(known, posts, now, init, full=False):
             if not o.get("c"):
                 ch["cls"].append(v)
             continue
-        f = [n for n, a, b in (("날짜", o.get("d"), v["date"]), ("시간", o.get("t"), v["time"]), ("장소", o.get("p"), v["place"])) if (a or "") != (b or "")]
-        if o.get("c"):
-            f.append("마감 풀림")
+        f = [n for n, a, b in (("날짜", o.get("d"), v["date"]), ("시간", o.get("t"), v["time"]), ("장소", o.get("p"), v["place"]),
+                                ("신청 마감", o.get("dl"), v.get("deadline"))) if (a or "") != (b or "")]
+        if v.get("full") and not o.get("f"):
+            ch["full"].append(v)                       # 정원이 찼다
+        elif (o.get("c") or o.get("f")) and not v.get("full"):
+            f.append("마감 풀림")                       # 마감을 풀었거나 자리가 났다
         if f:
             ch["chg"].append((dict(v, _old=o), f))
     # 안 보이는 글: 지워졌으면 알리고, 최근 100개 밖으로 밀려난 것이면 기억해 둔다(다시 보여도 새 글로 치지 않게)
@@ -313,18 +354,18 @@ def diff(known, posts, now, init, full=False):
 
 
 def has_changes(ch):
-    return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("del"))
+    return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("full") or ch.get("del"))
 
 
 def notice_text(posts, now, cfg):
     """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 그 아래로 이후 벙. 벙이 시작하면 다음 벙이 첫 줄로 올라온다"""
-    up = sorted([v for v in posts if upcoming(v, now)], key=skey)
+    up = sorted([v for v in posts if recruiting(v, now)], key=skey)
     link = cfg["site"] + "/bung"
     if not up:
         return "\n".join(["[다음 벙] 아직 없음"] + (["벙 올리기 " + link] if cfg.get("link", True) else []))
     first, rest = up[0], up[1:]
     same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
-    out = ["[다음 벙] " + line(first) + (" 외 %d건" % same if same else "")]
+    out = ["[다음 벙] " + line(first) + (", " + dl_text(first) if dl_text(first) else "") + (" 외 %d건" % same if same else "")]
     if rest:
         mx = max(1, int(cfg.get("max_lines", 15)))
         out.append("이후 %d건" % len(rest))
@@ -344,6 +385,8 @@ def detail(v):
         bits.append("인원 %d명" % v["cap"])
     if v["author"]:
         bits.append("벙주 " + v["author"])
+    if dl_text(v):
+        bits.append(dl_text(v))
     return ", ".join(bits)
 
 
@@ -359,7 +402,9 @@ def alert_text(ch, cfg):
         else:
             items.append(("벙 다시 모집", v, ""))
     for v in ch["cls"]:
-        items.append(("벙 마감", v, ""))
+        items.append(("벙 마감", v, "모집 마감"))
+    for v in ch.get("full", []):
+        items.append(("벙 마감", v, "정원 %d명 다 참" % v["cap"]))
     for v in ch.get("del", []):
         items.append(("벙 취소", v, "모집 글 삭제"))
     if not items:
@@ -392,6 +437,9 @@ def changes_line(ch, v):
                 parts.append("시간 %s 에서 %s" % (o.get("t") or "없음", v["time"] or "없음"))
             if "장소" in f:
                 parts.append("장소 %s 에서 %s" % (o.get("p") or "없음", v["place"] or "없음"))
+            if "신청 마감" in f:
+                fmt = lambda d: (md(d[:10]) + " " + d[11:16]) if d else "시작 시각"
+                parts.append("신청 마감 %s 에서 %s" % (fmt(o.get("dl") or ""), fmt(v.get("deadline") or "")))
             return ", ".join(parts)
     return ""
 
@@ -1315,9 +1363,10 @@ def cmd_setup(cfg, cfg_path, ask=input, tab=None):
 
 
 def cmd_feed(path, op):
-    """시험 파일 고치기: add(새 벙), change(마지막 벙 시간 한 시간 뒤로), close(마지막 벙 마감), del(마지막 벙 지우기)"""
-    if op not in ("add", "change", "close", "del", "soon"):
-        raise SystemExit("python excer_bot.py feed add | change | close | del | soon")
+    """시험 파일 고치기: add(새 벙), change(마지막 벙 시간 한 시간 뒤로), close(마지막 벙 마감), del(마지막 벙 지우기),
+    soon(3분 뒤 시작하는 벙), full(마지막 벙 정원 채우기), deadline(마지막 벙 2분 뒤 신청 마감)"""
+    if op not in ("add", "change", "close", "del", "soon", "full", "deadline"):
+        raise SystemExit("python excer_bot.py feed add | change | close | del | soon | full | deadline")
     try:
         with open(path, encoding="utf-8-sig") as f:
             rows = json.load(f)
@@ -1338,7 +1387,8 @@ def cmd_feed(path, op):
                      "meta": {"kind": "bung", "date": (now + timedelta(days=1 + (n - 900000) % 5)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소 %d" % (n - 900000), "cap": 6}})
         what = "새 벙: " + rows[-1]["title"]
     else:
-        live = [r for r in rows if (r.get("meta") or {}).get("status") != "closed"]
+        full = lambda r: (r.get("attend_count") or 0) >= int((r.get("meta") or {}).get("cap") or 0) > 0
+        live = [r for r in rows if (r.get("meta") or {}).get("status") != "closed" and not full(r)]
         if not live:
             raise SystemExit("고칠 벙이 없음. feed add 부터")
         r = live[-1]
@@ -1346,6 +1396,15 @@ def cmd_feed(path, op):
             h = int(((r.get("meta") or {}).get("time") or "18:00")[:2])
             r.setdefault("meta", {})["time"] = "%02d:00" % ((h + 1) % 24)
             what = "%s 시간을 %s 로" % (r["title"], r["meta"]["time"])
+        elif op == "full":                               # 정원을 채운다(다음 벙으로 넘어가는지)
+            cap = int((r.get("meta") or {}).get("cap") or 4)
+            r.setdefault("meta", {})["cap"] = cap
+            r["attend_count"] = cap
+            what = "%s 정원 %d명 다 참" % (r["title"], cap)
+        elif op == "deadline":                           # 2분 뒤 신청 마감(그 시각이 지나면 다음 벙으로 넘어가는지)
+            at = now + timedelta(minutes=2)
+            r.setdefault("meta", {})["deadline"] = at.strftime("%Y-%m-%dT%H:%M")
+            what = "%s 신청 마감 %s" % (r["title"], at.strftime("%H:%M"))
         elif op == "close":
             r.setdefault("meta", {})["status"] = "closed"
             what = "%s 마감" % r["title"]
@@ -1359,7 +1418,7 @@ def cmd_feed(path, op):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
     ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "calibrate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del")
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
@@ -1384,7 +1443,7 @@ def main(argv=None):
                  "meta": {"kind": "bung", "date": (today + timedelta(days=1)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소", "cap": 4}}]
         save_json(path, rows)
         print("만들었습니다:", path)
-        print("python excer_bot.py run --test --feed %s 로 켠 뒤, 다른 창에서 python excer_bot.py feed add (또는 change, close, del) 를 치면 20초 안에 시험 방에 올라옵니다." % os.path.basename(path))
+        print("python excer_bot.py run --test --feed %s 로 켠 뒤, 다른 창에서 python excer_bot.py feed add (또는 change, close, del, soon, full, deadline) 를 치면 20초 안에 시험 방에 올라옵니다." % os.path.basename(path))
         return
     site = FileSite(a.feed) if a.feed else Site(cfg)
     now = lambda: Now(datetime.now(KST))
