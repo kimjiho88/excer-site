@@ -852,7 +852,7 @@ class AdbSender:
             if want in devs:
                 self.serial = want
                 return want
-            raise KakaoError("adb 에 '%s' 기기가 없음" % want)
+            raise KakaoError("adb 에 '%s' 기기가 없음. 재부팅했거나 와이파이가 바뀌었으면 무선 디버깅 화면의 새 포트로 python excer_bot.py connect 포트" % want)
         if len(devs) == 1:
             self.serial = devs[0]
             return self.serial
@@ -1432,6 +1432,8 @@ def main(argv=None):
         if not a.arg.isdigit():
             raise SystemExit("python excer_bot.py connect 포트  (설정 > 개발자 옵션 > 무선 디버깅의 'IP 주소 및 포트' 에서 : 뒤 숫자)")
         serial, done = AdbSender(cfg, log).connect(a.arg)
+        cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
+        save_json(a.config, cfg)
         print("붙었습니다: %s%s" % (serial, (", 설정함: " + ", ".join(done)) if done else ""))
         return
     if a.command == "feed":
