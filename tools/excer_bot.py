@@ -90,7 +90,8 @@ DEFAULTS = {
     "link": True,                        # 목록 끝에 벙 일정 주소(pc 에서 공지가 자주 실패하면 false: 주소 미리보기가 늦게 떠 자리가 밀린다)
     "pc": {"window": [40, 40, 460, 780], "input_dy": 80, "bubble": None, "menu_copy": None, "menu_notice": None, "confirm": None},
     "android": {"serial": "", "package": "com.kakao.talk"},
-    "tablet": {"serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
+    "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
+              "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
 }
 
 
@@ -1177,9 +1178,30 @@ class AdbSender:
         if not btn:
             raise KakaoError("전송 단추를 찾지 못함")
         self.tap(btn[0])
-        self.sleep(1.5)
+        self.sleep(0.7)
+        if self.t.get("freeze", True):
+            self.freeze(nodes)                                   # 바쁜 방: 곧바로 대화를 살짝 올려 화면이 더 내려가지 않게
+        self.sleep(0.5)
         if ws(self.box(self.dump())["text"]) == ws(text):
             raise KakaoError("전송을 눌렀는데 입력 칸에 글이 남아 있음")
+
+    def chat_area(self, nodes):
+        """대화가 흐르는 칸: 입력 칸과 같은 가로 범위, 방 이름 머리 아래부터 입력 칸 위까지"""
+        e = find(nodes, cls="EditText")
+        box = max(e, key=lambda n: n["b"][3])
+        l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
+        hgt = max(n["b"][3] for n in nodes)
+        top = int(hgt * 0.16)
+        return l0, top, r0, box["b"][1] - 10
+
+    def freeze(self, nodes, amount=0.07):
+        """대화를 아주 조금 위로(손가락은 아래로) 올린다. 맨 아래가 아니면 카카오톡은 새 글이 와도 화면을 내리지 않는다.
+        많이 올리면 방금 보낸 글이 아래로 밀려 안 보이니 조금만"""
+        l, t, r, b = self.chat_area(nodes)
+        x, h = (l + r) // 2, b - t
+        y1 = t + int(h * 0.35)
+        self.sh("input swipe %d %d %d %d 250" % (x, y1, x, y1 + int(h * amount)))
+        self.sleep(0.5)
 
     def bubble(self, nodes, text):
         """방금 보낸 목록 말풍선: 방(입력 칸과 같은 가로 범위) 안에서 글 전체가 같은 것 중 가장 아래.
@@ -1226,15 +1248,21 @@ class AdbSender:
                 return True
         return False
 
+    @staticmethod
+    def card_text_of(nodes):
+        """'공지가 등록되었습니다' 카드 머리와 그 바로 밑(카드 안) 글의 짝. 카드 다음 말풍선은 더 떨어져 있어 들지 않는다"""
+        hgt = max([n["b"][3] for n in nodes] or [1])
+        gap = hgt * 0.06
+        heads = [h for h in nodes if ws(h["text"]).startswith("공지가 등록")]
+        return [(h, t) for h in heads for t in nodes if t is not h and t["text"] and h["b"][3] - 5 <= t["b"][1] <= h["b"][3] + gap
+                and t["b"][0] < h["b"][2] and t["b"][2] > h["b"][0]]
+
     def cards(self, nodes, text):
-        """'공지가 등록되었습니다' 카드 중 바로 아래 글이 이 글(첫 줄)인 것"""
+        """'공지가 등록되었습니다' 카드 중 카드 안 글이 이 글(첫 줄)인 것"""
         first = ws(text.split("\n")[0])
         out = []
-        for h in nodes:
-            if not ws(h["text"]).startswith("공지가 등록"):
-                continue
-            if any(t is not h and h["b"][3] - 5 <= t["b"][1] <= h["b"][3] + 200 and t["b"][0] < h["b"][2] and t["b"][2] > h["b"][0]
-                   and ws(t["text"]).startswith(first) for t in nodes):
+        for h, t in self.card_text_of(nodes):
+            if ws(t["text"]).startswith(first) and h not in out:
                 out.append(h)
         return out
 
@@ -1247,6 +1275,55 @@ class AdbSender:
             return True
         return max(n["b"][1] for n in a) > max(n["b"][1] for n in b) + 10
 
+    def to_bottom(self, nodes):
+        """대화 맨 아래로(멈춘 화면을 풀어 방금 붙은 '공지가 등록되었습니다' 카드를 본다)"""
+        l, t, r, b = self.chat_area(nodes)
+        x, h = (l + r) // 2, b - t
+        for _ in range(3):
+            self.sh("input swipe %d %d %d %d 150" % (x, t + int(h * 0.8), x, t + int(h * 0.15)))
+            self.sleep(0.3)
+        self.sleep(0.6)
+
+    def registered_below(self, nodes, text):
+        """맨 아래 화면에서: 이 글(첫 줄)의 '공지가 등록되었습니다' 카드가 봇 글보다 아래(뒤에 생긴 것)에 있는지"""
+        cs = self.cards(nodes, text)
+        if not cs:
+            return False
+        own = self.own_bubble(nodes, text)
+        low = max(cs, key=lambda n: n["b"][1])
+        return own is None or low["b"][1] > own["b"][1]
+
+    def own_bubble(self, nodes, text):
+        """봇이 보낸 글: 글 전체가 같은 말풍선 중 가장 아래('공지가 등록되었습니다' 카드 안 글은 뺀다). 없으면 None"""
+        inside = {id(t) for _, t in self.card_text_of(nodes)}
+        try:
+            n = self.bubble([x for x in nodes if id(x) not in inside], text)
+        except KakaoError:
+            return None
+        return n
+
+    def find_own(self, nodes, text, tries=6):
+        """멈춘 화면에서 봇 글을 찾는다. 이미 위로 밀려 안 보이면 대화를 조금씩 위로 올려 가며(자리가 아니라 글자로)"""
+        target = self.own_bubble(nodes, text)
+        for _ in range(tries):
+            if target:
+                break
+            self.freeze(nodes, 0.35)                             # 이미 위로 밀려 올라갔으면 조금씩 위로
+            nodes = self.dump()
+            target = self.own_bubble(nodes, text)
+        return nodes, target
+
+    def banner_text(self, nodes):
+        """방 위쪽 공지 띠의 글(방 이름 머리 바로 아래 한 줄). 없으면 ''"""
+        e = find(nodes, cls="EditText")
+        if not e:
+            return ""
+        l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
+        hgt = max(n["b"][3] for n in nodes)
+        c = [n for n in nodes if n["text"].strip() and l0 - 60 <= n["b"][0] and n["b"][2] <= r0 + 200
+             and hgt * 0.045 < n["b"][1] < hgt * 0.085 and n["b"][3] - n["b"][1] < hgt * 0.06 and not n["cls"].endswith("EditText")]
+        return ws(max(c, key=lambda n: n["b"][2] - n["b"][0])["text"]) if c else ""   # 띠 안에서 가장 넓은 글(앞의 '공지' 표시 글자는 빼고)
+
     def notice(self, room, text):
         self.key(224)
         self.sleep(1.0)
@@ -1256,12 +1333,19 @@ class AdbSender:
         l0 = min([n["b"][0] for n in e] or [0])
         hgt = max([n["b"][3] for n in nodes] or [0])
         self.snap("방 위쪽(공지 띠 자리)", [n for n in nodes if n["b"][1] < hgt * 0.3 and self.center(n)[0] >= l0 - 10])
-        target = self.bubble(nodes, text)
-        for _ in range(3):                                       # 바쁜 방: 새 글이 들어와 말풍선이 밀리는 중이면 멈출 때까지
+        nodes, target = self.find_own(nodes, text)
+        if not target:
+            self.save_diag(nodes)
+            raise KakaoError("보낸 글을 화면에서 찾지 못함(위로 올려 가며 찾았는데 없음)%s" % self.diag_note())
+        for _ in range(3):                                       # 그래도 밀리는 중이면(화면이 덜 멈춤) 멈출 때까지
             again = self.dump()
-            t2 = self.bubble(again, text)
-            if t2["b"] == target["b"]:
+            t2 = self.own_bubble(again, text)
+            if t2 and t2["b"] == target["b"]:
                 break
+            if not t2:
+                again, t2 = self.find_own(again, text)
+                if not t2:
+                    raise KakaoError("보낸 글이 화면에서 밀려 사라짐")
             nodes, target = again, t2
             self.sleep(0.6)
         pre = self.pinned(nodes, text, {target["b"]})            # 첫 줄이 같은 공지가 이미 걸려 있으면 띠로는 바뀐 것을 알 수 없다
@@ -1276,12 +1360,16 @@ class AdbSender:
             self.save_diag()
             raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 방장이나 부방장인지 확인)%s" % self.diag_note())
         self.tap(m[0])
-        ok = lambda ns: self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip))
-        dlg = self.wait_change(menu, lambda ns: ok(ns) or bool(self.labeled(ns, self.CONFIRM, menu)), tries=4)
+        wrong = lambda ns: bool(self.banner_text(ns)) and not (self.banner_text(ns).startswith(first) or first.startswith(self.banner_text(ns).rstrip(".\u2026 ")))
+        ok = lambda ns: not wrong(ns) and (self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip)))
+        dlg = self.wait_change(menu, lambda ns: ok(ns) or bool(self.labeled(ns, self.CONFIRM, menu) and any(
+            re.search(r"공지.*(하시겠|할까요|1건만)|(하시겠|할까요).*공지", ws(n["text"])) for n in ns)), tries=4)
         self.snap("'공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
         if ok(dlg):                                              # 누르자마자 걸렸다(확인 창 없음). 확인을 또 누르지 않는다
             return
-        c = self.labeled(dlg, self.CONFIRM, menu)
+        # 확인 단추는 '공지를 등록하시겠습니까?' 같은 묻는 창이 떴을 때만 누른다(다른 알림 창의 '확인' 을 잘못 누르지 않게)
+        asks = [n for n in dlg if n not in menu and re.search(r"공지.*(하시겠|할까요|1건만)|(하시겠|할까요).*공지", ws(n["text"]))]
+        c = self.labeled(dlg, self.CONFIRM, menu) if asks else []
         if c:
             self.tap(c[0])
         done = dlg
@@ -1290,6 +1378,16 @@ class AdbSender:
             done = self.dump()
             if ok(done):
                 return
+        if not wrong(done):                                      # 멈춘 화면이라 카드가 아래에 붙어 안 보일 수 있다: 맨 아래로 가서 본다
+            self.to_bottom(done)
+            bottom = self.dump()
+            if not wrong(bottom) and self.registered_below(bottom, text):
+                return
+            done = bottom
+        if wrong(done) and self.banner_text(done) != self.banner_text(nodes):
+            self.snap("마지막 화면(새로 나온 것)", done, nodes)
+            self.save_diag()
+            raise KakaoError("공지 띠가 다른 글로 바뀜(봇 글이 아닌 글이 걸렸을 수 있음). 다시 겁니다%s" % self.diag_note())
         if pre and c:
             return                                               # 같은 첫 줄 공지가 이미 있어 띠로는 알 수 없고, 확인은 눌렀다
         self.snap("마지막 화면(새로 나온 것)", done, nodes)
@@ -1409,9 +1507,8 @@ class AdbSender:
                         take("9 공지 쓰기에서 뒤로(새로 나온 창)", self.dump(), wr, private=True)
             nodes = back_to_room()
             take("10 방으로 돌아와서", nodes)
-        heads = [h for h in nodes if ws(h["text"]).startswith("공지가 등록")]
-        in_card = lambda t: any(h["b"][3] - 5 <= t["b"][1] <= h["b"][3] + 200 and t["b"][0] < h["b"][2] and t["b"][2] > h["b"][0] for h in heads)
-        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and not in_card(n)]
+        inside = {id(t) for _, t in self.card_text_of(nodes)}
+        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and id(n) not in inside]
         if bubbles:                                              # 봇이 올린 말풍선을 길게 눌러 메뉴, '공지' 를 누른 뒤 창은 '아니요' 로 닫는다
             target = max(bubbles, key=lambda n: n["b"][3])
             self.hold(target, 1000)
