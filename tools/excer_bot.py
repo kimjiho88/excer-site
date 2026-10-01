@@ -31,7 +31,8 @@ tablet 준비(태블릿 하나로)
     pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect 포트 (무선 디버깅 화면의 'IP 주소 및 포트' 의 포트). 재부팅하면 connect 만 다시.
-  - 화면 잠금 없음, 자동 회전 끔, 충전기 연결(connect 가 충전 중 화면 켜짐을 켠다), Termux 는 배터리 제한 없음.
+  - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음, 돌리기 전에 termux-wake-lock.
+    화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
 
 명령(이 파일이 있는 폴더에서)
@@ -874,9 +875,8 @@ class AdbSender:
             raise KakaoError("adb connect 실패: %s" % msg)
         self.serial = addr
         done = []
-        # Termux 가 오래 돌 때 안드로이드가 끄지 않게, 충전 중에는 화면이 꺼지지 않게
-        for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),
-                          ("settings put global stay_on_while_plugged_in 7", "충전 중 화면 켜짐")):
+        # Termux 가 오래 돌 때 안드로이드가 끄지 않게. 화면은 꺼져도 된다(봇이 쓸 때 켠다)
+        for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),):
             try:
                 self.sh(cmd)
                 done.append(what)
@@ -972,25 +972,40 @@ class AdbSender:
         c = find(k, desc="채팅") or find(k, text="채팅") or [n for n in k if re.match(r"^채팅(\s*탭)?\s*(,|$)", n["desc"])]
         return c[0] if c else None
 
-    def goto_list(self):
-        self.key(224)                                            # 화면 켜기
-        nodes, launched = [], 0
+    def launch(self):
+        """화면을 켜고 카카오톡을 앞으로. 뜨는 중이면 조금 더 기다린다(화면이 꺼져 있어도 된다, 잠금만 없으면)"""
+        self.key(224)
+        self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
+        nodes = []
+        for wait in (2.0, 1.5, 2.5):
+            self.sleep(wait)
+            nodes = self.dump()
+            if self.on_kakao(nodes) and (self.chat_tab(nodes) or find(nodes, cls="EditText")):
+                break
+        return nodes
+
+    def room_open(self, nodes, room):
+        """이 방이 이미 열려 있는지: 입력 칸이 있고, 방 칸 맨 위 머리에 방 이름이 그대로"""
+        e = find(nodes, cls="EditText")
+        if not e or not self.on_kakao(nodes):
+            return False
+        l0 = min(n["b"][0] for n in e)
+        hgt = max(n["b"][3] for n in nodes)
+        return any(n["text"].strip() == room and n["b"][0] >= l0 - 60 and n["b"][1] < hgt * 0.12 for n in nodes)
+
+    def goto_list(self, nodes=None):
+        nodes, launched = (nodes, 0) if nodes is not None else ([], 0)
         for _ in range(8):
-            if not self.on_kakao(nodes):                         # 카카오톡을 앞으로(뜨는 중이면 조금 더 기다린다)
+            if not self.on_kakao(nodes):                         # 카카오톡을 앞으로
                 if launched >= 3:
                     break
-                self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
+                nodes = self.launch()
                 launched += 1
-                for wait in (2.0, 1.5, 2.5):
-                    self.sleep(wait)
-                    nodes = self.dump()
-                    if self.on_kakao(nodes) and (self.chat_tab(nodes) or find(nodes, cls="EditText")):
-                        break
                 continue
             tab = self.chat_tab(nodes)
             if tab:
                 self.tap(tab)
-                return self.dump()
+                return self.wait_change(nodes, tries=3)
             self.key(4)                                          # 폰은 방 안이면 뒤로 가서 목록으로, 알림 창이면 닫는다
             self.sleep(0.8)
             nodes = self.dump()
@@ -1081,7 +1096,10 @@ class AdbSender:
 
     def open_room(self, room):
         self.trace = []
-        nodes = self.goto_list()
+        nodes = self.launch()
+        if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
+            return nodes
+        nodes = self.goto_list(nodes)
         self.snap("채팅 목록", nodes)
         item = self.room_item(nodes, room)
         chat_nodes = nodes
@@ -1204,7 +1222,29 @@ class AdbSender:
                 return True
         return False
 
+    def cards(self, nodes, text):
+        """'공지가 등록되었습니다' 카드 중 바로 아래 글이 이 글(첫 줄)인 것"""
+        first = ws(text.split("\n")[0])
+        out = []
+        for h in nodes:
+            if not ws(h["text"]).startswith("공지가 등록"):
+                continue
+            if any(t is not h and h["b"][3] - 5 <= t["b"][1] <= h["b"][3] + 200 and t["b"][0] < h["b"][2] and t["b"][2] > h["b"][0]
+                   and ws(t["text"]).startswith(first) for t in nodes):
+                out.append(h)
+        return out
+
+    def registered(self, nodes, before, text):
+        """새 '공지가 등록되었습니다' 카드: 전보다 많거나, 가장 아래 카드가 전보다 아래(새 글이 맨 아래에 붙는다)"""
+        a, b = self.cards(nodes, text), self.cards(before, text)
+        if not a:
+            return False
+        if len(a) > len(b) or not b:
+            return True
+        return max(n["b"][1] for n in a) > max(n["b"][1] for n in b) + 10
+
     def notice(self, room, text):
+        self.key(224)
         self.sleep(1.0)
         nodes = self.dump()
         self.trace = []                                          # 공지 단계만 남긴다(안 될 때 보낼 파일이 짧게)
@@ -1225,22 +1265,25 @@ class AdbSender:
             self.save_diag()
             raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 방장이나 부방장인지 확인)%s" % self.diag_note())
         self.tap(m[0])
-        dlg = self.wait_change(menu, lambda ns: bool(self.labeled(ns, self.CONFIRM, menu)) or (not pre and self.pinned(ns, text, skip)), tries=4)
+        ok = lambda ns: self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip))
+        dlg = self.wait_change(menu, lambda ns: ok(ns) or bool(self.labeled(ns, self.CONFIRM, menu)), tries=4)
         self.snap("'공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
+        if ok(dlg):                                              # 누르자마자 걸렸다(확인 창 없음). 확인을 또 누르지 않는다
+            return
         c = self.labeled(dlg, self.CONFIRM, menu)
         if c:
             self.tap(c[0])
-        if pre:
-            self.sleep(0.8)
-            return
-        for _ in range(4):                                       # 방 위쪽 공지 띠에 이 글이 보이면 된 것
+        done = dlg
+        for _ in range(5):                                       # '공지가 등록되었습니다' 카드나 위쪽 공지 띠에 이 글이 보이면 된 것
             self.sleep(0.8)
             done = self.dump()
-            if self.pinned(done, text, skip):
+            if ok(done):
                 return
+        if pre and c:
+            return                                               # 같은 첫 줄 공지가 이미 있어 띠로는 알 수 없고, 확인은 눌렀다
         self.snap("마지막 화면(새로 나온 것)", done, nodes)
         self.save_diag()
-        raise KakaoError("공지를 눌렀는데 방 위쪽 공지가 이 글로 바뀌지 않음%s" % self.diag_note())
+        raise KakaoError("공지를 눌렀는데 공지가 걸린 표시('공지가 등록되었습니다' 나 위쪽 공지 띠)를 찾지 못함%s" % self.diag_note())
 
     def done(self):
         """올리고 나면 Termux 를 앞으로(기록이 보이게, 다음 명령을 치게). return_to 를 "" 로 두면 카카오톡에 머문다"""
@@ -1261,7 +1304,7 @@ class AdbSender:
             out.append("카카오톡: " + ("있음" if "package:" in self.sh("pm path %s" % self.t["package"]) else "찾지 못함"))
         except KakaoError:
             out.append("카카오톡: 찾지 못함(%s)" % self.t["package"])
-        for key, what in (("settings_enable_monitor_phantom_procs", "Termux 강제 종료 막기"), ("stay_on_while_plugged_in", "충전 중 화면 켜짐")):
+        for key, what in (("settings_enable_monitor_phantom_procs", "Termux 강제 종료 막기"),):
             try:
                 v = self.sh("settings get global %s" % key).strip()
                 ok = v == "false" if key.startswith("settings_") else v not in ("", "0", "null")
