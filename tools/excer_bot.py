@@ -27,7 +27,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 tablet 준비(태블릿 하나로)
-  - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 pkg install python android-tools termux-api
+  - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤
+    pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect 포트 (무선 디버깅 화면의 'IP 주소 및 포트' 의 포트). 재부팅하면 connect 만 다시.
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결(connect 가 충전 중 화면 켜짐을 켠다), Termux 는 배터리 제한 없음.
