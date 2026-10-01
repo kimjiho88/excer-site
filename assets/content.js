@@ -311,10 +311,12 @@
       if (m.place) f.push({ key: "place", label: "장소", value: m.place });
       if (m.cap) f.push({ key: "cap", label: "모집 인원", value: m.cap + "명" });
       if (m.cost) f.push({ key: "cost", label: "예상 비용", value: m.cost });
+      if (m.deadline && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.deadline)) f.push({ key: "deadline", label: "신청 마감", value: dateText(m.deadline.slice(0, 10), { withDow: true }) + " " + m.deadline.slice(11, 16) });
       f.push({ key: "host", label: "모임장", value: post.author || "" });
-      f.push({ key: "apply", label: "신청 방법", value: m.apply || "오픈채팅 공지의 참석 버튼" });
+      f.push({ key: "apply", label: "신청 방법", value: m.apply || (attendOn ? "이 글의 참석 버튼" : "오픈채팅 공지의 참석 버튼") });
       if (m.bring) f.push({ key: "bring", label: "준비물과 유의사항", value: m.bring });
       if (m.status) f.push({ key: "status", label: "모집 상태", value: m.status === "closed" ? "마감" : "모집 중" });
+      if (m.dup === "consent") f.push({ key: "dup", label: "같은 시간대 예외", value: "기존 모임장 사전 동의" });
     } else if (t === "notice") {
       if (m.audience) f.push({ key: "audience", label: "적용 대상", value: m.audience });
       var period = m.from ? dateText(m.from, { withYear: true }) + (m.to ? " ~ " + dateText(m.to, { withYear: true }) : "부터") : (m.to ? dateText(m.to, { withYear: true }) + "까지" : "");
@@ -384,6 +386,7 @@
 
   /* ── 서버 형식 확인 ── */
   var capsPromise = null;
+  var attendOn = false;   // 서버에 참석 기능(2026-10-01 SQL)이 있으면 caps() 가 켠다
   function caps() {
     if (capsPromise) return capsPromise;
     var S = window.SUPA;
@@ -392,14 +395,16 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1, loc = false;
+        var v = 1, loc = false, att = false;
         (Array.isArray(rows) ? rows : []).forEach(function (x) {
           if (x.key === "content_format") v = Number(x.value) || 1;
           if (x.key === "places_location") loc = Number(x.value) >= 1;
+          if (x.key === "bung_attend") att = Number(x.value) >= 1;
         });
-        return { contentFormat: v, location: loc };
+        attendOn = att;
+        return { contentFormat: v, location: loc, attend: att };
       })
-      .catch(function () { return { contentFormat: 1, location: false }; });
+      .catch(function () { return { contentFormat: 1, location: false, attend: false }; });
     return capsPromise;
   }
 

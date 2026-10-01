@@ -1589,6 +1589,7 @@
       const lc = t.closest("[data-linkclear]"); if (lc) { const rec = sheetRec(); if (rec.link[lc.dataset.linkclear]) { delete rec.link[lc.dataset.linkclear]; fixChanged("직접 이은 것을 풀었습니다."); } else { rec.link[lc.dataset.linkclear] = "none"; fixChanged("풀었습니다. 아래에서 다른 사람을 고를 수 있습니다."); } return; }
       const pn = t.closest("[data-pin]"); if (pn) { const id = +pn.dataset.pin; const rec = sheetRec(); try { if (!SH.snaps.has(id)) { const r = await shCall("ops_sheet_get", { p_since: SH.latestId, p_ids: [id] }); (r.snaps || []).forEach((s) => SH.snaps.set(s.id, s)); } rec.acceptedId = id; rec.pinned = id !== SH.latestId; saveRecords(); sheetProcess(); renderAll(); toast("판 " + id + "을 봅니다."); } catch (err) { toast("불러오지 못했습니다."); } return; }
       const cp = t.closest("[data-copy]"); if (cp) { const el = $(cp.dataset.copy); if (el) copyText(el.value); return; }
+      const ctx = t.closest("[data-copytext]"); if (ctx) { copyText(ctx.dataset.copytext); return; }
       const ctb = t.closest("[data-contact]"); if (ctb) { const c = S.records.contact = S.records.contact || {}; if (ctb.dataset.off) delete c[ctb.dataset.contact]; else c[ctb.dataset.contact] = todayKST(); fixChanged(ctb.dataset.off ? "연락함을 풀었습니다." : "오늘 연락함으로 적었습니다."); return; }
       if (t.closest("[data-copyfix]") && SH.parsed) { copyText(SH.parsed.problems.filter((p) => p.level !== "info").map((p) => PWHERE(p) + ": " + ptitle(p) + (p.who ? ", " + p.who : "") + (p.value ? ", " + String(p.value).slice(0, 60) : "") + (p.msg !== ptitle(p) && p.code !== "b_draft" ? " (" + p.msg + ")" : "")).join("\n")); return; }
       const cn = t.closest("[data-copynames]"); if (cn && SH.parsed) { const X = sheetCalc(SH.parsed), td = X.todo.find((x) => x.b.key === cn.dataset.copynames); if (td) copyText(td.b.t(X.set) + ": " + td.rows.map((x) => x.m.name).join(", ")); return; }
@@ -2266,7 +2267,16 @@
             <ul class="ev">${g.lines.map((u) => `<li><time>${esc(md(u.d))} ${esc(u.t)}</time><span>${u.k === "join" ? "들어옴" : u.how === "kick" ? "내보냄" : "나감"}${canLink && u.key ? ` <button class="text-btn" type="button" data-link="${esc(u.key)}" data-head="${esc(g.name.split(" ")[0])}">사람에게 잇기</button>` : ""}</span></li>`).join("")}</ul></details>`).join("") : `<p class="empty">없습니다.</p>`}
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
       }
-      host.innerHTML = setHtml + rosterHtml + unHtml;
+      const botHtml = `<div class="panel"><h2>카카오 봇 <small>벙 일정 공지</small></h2>
+          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 모집 중인 다음 벙이 첫 줄인 일정 글을 공지로 겁니다. 신청 마감(없으면 시작 시각)이 되거나 정원이 차면 다음 벙으로 넘어가고, 새 벙, 바뀜, 마감, 정원 참, 다시 모집, 취소는 알림을 따로 올립니다.</p>
+          <ol class="steps">
+            <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
+            <li>태블릿에 F-Droid 에서 Termux 와 Termux:API 를 깔고, Termux 에서 pkg install python android-tools termux-api curl 을 실행합니다.</li>
+            <li>개발자 옵션의 무선 디버깅을 켜고 adb pair 127.0.0.1:포트 로 한 번 짝을 맺습니다.</li>
+            <li>Termux 에서 스크립트를 받고(curl -LO https://excer-site.vercel.app/tools/excer_bot.py) connect 포트, setup, check, test, run --test 로 시험 방에서 확인한 뒤 run 으로 켭니다. <a class="text-btn" href="tools/excer_bot.py" download>스크립트 받기</a></li>
+          </ol>
+          <p class="sub">벙 일정 주소: excer-site.vercel.app/bung <button type="button" class="text-btn" data-copytext="https://excer-site.vercel.app/bung">주소 복사</button></p></div>`;
+      host.innerHTML = setHtml + rosterHtml + unHtml + botHtml;
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) { view.open.add(k); view.closed.delete(k); } else { view.open.delete(k); view.closed.add(k); } }));
       const rf = $("ruleFrom");
       if (rf) rf.addEventListener("change", () => { if (rf.value) S.records.settings.ruleFrom = rf.value; else delete S.records.settings.ruleFrom; saveRecords(); renderAll(); });
