@@ -862,10 +862,15 @@ class AdbSender:
         raise KakaoError("adb 에 붙은 기기가 여럿(%s). excer_bot.json 의 tablet.serial 에 하나를 넣으세요" % ", ".join(devs))
 
     def connect(self, port):
-        code, out, err = self.run([self.t["adb"], "connect", "127.0.0.1:%s" % port], None, 20)
+        addr = port if ":" in str(port) else "127.0.0.1:%s" % port
+        code, out, err = self.run([self.t["adb"], "connect", addr], None, 20)
         if "connected" not in out or "cannot" in out or "failed" in out:
-            raise KakaoError("adb connect 실패: %s" % (out + err).strip()[:200])
-        self.serial = "127.0.0.1:%s" % port
+            msg = (out + err).strip()[:200]
+            if "refused" in msg:                        # 흔한 실수: 페어링 창의 포트를 넣음
+                msg += ("\n포트를 확인하세요. 페어링 창의 포트가 아니라 무선 디버깅 첫 화면 'IP 주소 및 포트' 의 : 뒤 숫자입니다"
+                        "(무선 디버깅을 껐다 켜거나 재부팅하면 바뀝니다).")
+            raise KakaoError("adb connect 실패: %s" % msg)
+        self.serial = addr
         done = []
         # Termux 가 오래 돌 때 안드로이드가 끄지 않게, 충전 중에는 화면이 꺼지지 않게
         for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),
@@ -1430,7 +1435,7 @@ def main(argv=None):
     if a.command == "setup":
         return cmd_setup(cfg, a.config)
     if a.command == "connect":
-        if not a.arg.isdigit():
+        if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", a.arg):
             raise SystemExit("python excer_bot.py connect 포트  (설정 > 개발자 옵션 > 무선 디버깅의 'IP 주소 및 포트' 에서 : 뒤 숫자)")
         serial, done = AdbSender(cfg, log).connect(a.arg)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
@@ -1536,3 +1541,6 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("멈춤")
+    except KakaoError as e:                             # 파이썬 오류 화면 대신 무엇이 안 됐는지만
+        print("안 됨:", e)
+        sys.exit(1)
