@@ -1312,7 +1312,28 @@ class AdbSender:
                                                          "누름" if n["click"] else "", *n["b"]))
         return rows[:70]
 
-    def study(self, room):
+    def paste_into(self, field, text):
+        """입력 칸에 글 넣기(클립보드 붙여넣기 키, 안 되면 길게 눌러 '붙여넣기'). 넣은 뒤 화면을 돌려준다"""
+        self.tap(field)
+        self.set_clip(text)
+        self.key(279)
+        self.sleep(0.6)
+        ns = self.dump()
+        if not any(ws(n["text"]) == ws(text) for n in find(ns, cls="EditText")):
+            before = {n["b"] for n in find(ns, text="붙여넣기")}
+            e = find(ns, cls="EditText")
+            if e:
+                self.hold(max(e, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1])), 800)
+                ns = self.dump()
+                p = [n for n in find(ns, text="붙여넣기") if n["b"] not in before]
+                if p:
+                    self.tap(p[0])
+                    self.sleep(0.6)
+                    ns = self.dump()
+        return ns
+
+    def study(self, room, trial=True):
+        """trial: 시험 방에 톡게시판으로 시험 공지를 한 번 실제로 써 본다(채팅 말풍선을 거치지 않는 공지 방법을 알아보려고)"""
         out, keep = [], (room,)
         def take(label, nodes, before=None, private=False):
             rows = self.study_rows(nodes, before, private, keep)
@@ -1359,34 +1380,57 @@ class AdbSender:
                     wr = self.wait_change(bd, tries=3)
                     take("7 글쓰기를 누른 뒤", wr, private=True)
                     pick = [n for n in wr if ws(n["text"]) == "공지" or ws(n["desc"]) == "공지"]
+                    done_trial = False
                     if pick:
                         self.tap(pick[0])
                         nw = self.wait_change(wr, tries=3)
                         take("8 공지 쓰기 화면", nw, private=True)
-                    self.key(4)
-                    self.sleep(0.8)
-                    take("9 공지 쓰기에서 뒤로(새로 나온 창)", self.dump(), wr, private=True)
+                        fields = find(nw, cls="EditText")
+                        if trial and fields:                     # 시험 방에만: 시험 공지를 넣고 올려 본다
+                            ttext = "[다음 벙] 톡게시판 공지 시험 " + time.strftime("%H:%M")
+                            keep = keep + (ttext,)
+                            field = max(fields, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1]))
+                            filled = self.paste_into(field, ttext)
+                            take("8-1 시험 공지 글을 넣은 뒤", filled, nw, private=True)
+                            ok_btn = self.labeled(filled, ("완료", "등록", "올리기", "게시", "확인"))
+                            if ok_btn:
+                                self.tap(ok_btn[0])
+                                after = self.wait_change(filled, tries=4)
+                                take("8-2 '%s' 를 누른 뒤(새로 나온 것)" % (ok_btn[0]["text"] or ok_btn[0]["desc"]), after, filled, private=True)
+                                yes = self.labeled(after, ("예", "네", "확인"), filled)
+                                if yes:
+                                    self.tap(yes[0])
+                                    after2 = self.wait_change(after, tries=4)
+                                    take("8-3 '%s' 를 누른 뒤" % (yes[0]["text"] or yes[0]["desc"]), after2, private=True)
+                                done_trial = True
+                    if not done_trial:
+                        self.key(4)
+                        self.sleep(0.8)
+                        take("9 공지 쓰기에서 뒤로(새로 나온 창)", self.dump(), wr, private=True)
             nodes = back_to_room()
-        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25]
+            take("10 방으로 돌아와서", nodes)
+        heads = [h for h in nodes if ws(h["text"]).startswith("공지가 등록")]
+        in_card = lambda t: any(h["b"][3] - 5 <= t["b"][1] <= h["b"][3] + 200 and t["b"][0] < h["b"][2] and t["b"][2] > h["b"][0] for h in heads)
+        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and not in_card(n)]
         if bubbles:                                              # 봇이 올린 말풍선을 길게 눌러 메뉴, '공지' 를 누른 뒤 창은 '아니요' 로 닫는다
             target = max(bubbles, key=lambda n: n["b"][3])
             self.hold(target, 1000)
             menu = self.wait_change(nodes, tries=3)
-            take("10 말풍선을 길게 누른 메뉴(새로 나온 것)", menu, nodes)
+            take("11 말풍선을 길게 누른 메뉴(새로 나온 것)", menu, nodes)
             m = self.labeled(menu, ("공지",), nodes)
             has_notice = any(n["text"].strip() and n["text"].strip() != room and not n["cls"].endswith("EditText")
                              and n["b"][0] >= l0 - 60 and hgt * 0.04 < n["b"][1] < hgt * 0.12 for n in nodes)
             if m and has_notice:
                 self.tap(m[0])                                   # 공지가 이미 있을 때만(없으면 바로 걸려서 누르지 않는다)
                 dlg = self.wait_change(menu, tries=3)
-                take("11 '공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
+                take("12 '공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
                 no = self.labeled(dlg, ("아니요", "취소"), menu)
                 if no:
                     self.tap(no[0])
             else:
                 self.key(4)
         else:
-            out.append("== 10 '[다음 벙]' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
+            out.append("== 11 '[다음 벙]' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
         return "\n".join(out)
 
     def done(self):
@@ -1764,7 +1808,11 @@ def main(argv=None):
         sender = make_sender(cfg, log)
         if not isinstance(sender, AdbSender):
             raise SystemExit("study 는 tablet 방식에서 씁니다.")
-        print("카카오톡 화면을 단계마다 적습니다. 1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
+        ans = input("시험 방 '%s' 에서 화면을 적고, 톡게시판으로 시험 공지를 한 번 실제로 걸어 봅니다. 시작할까요? y/n [y]: " % room).strip().lower()
+        if ans not in ("", "y", "yes", "ㅛ"):
+            print("그만둡니다.")
+            return
+        print("1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
         try:
             txt = sender.study(room)
         finally:
