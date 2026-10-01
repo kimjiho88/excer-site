@@ -176,7 +176,18 @@
     .form-preview .post-head:hover .row-title { text-decoration: none; }
     .form-preview .kv { margin: 6px 0 4px; }
     .pass-modal { width: min(420px, 100%); }
-    #passBackdrop, #dupBackdrop { z-index: 240; }
+    #passBackdrop, #dupBackdrop, #attBackdrop { z-index: 240; }
+    .attend { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; }
+    .att-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+    .att-head b { font-size: 1.05em; }
+    .att-state { color: var(--ink-2); font-size: var(--fs-caption); }
+    .att-state.is-off { color: var(--danger, #B42318); font-weight: 600; }
+    .att-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .att-list li { padding: 4px 10px; border-radius: 999px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    .att-list li small { color: var(--ink-2); font-size: 1em; }
+    .att-empty { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .att-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .dup-ok { display: flex; gap: 8px; align-items: center; min-height: 44px; font-size: var(--fs-body, 15px); }
     .dup-list { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 6px; }
     .dup-list li { padding: 8px 10px; border-radius: 8px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); line-height: 1.5; overflow-wrap: anywhere; }
     .dup-why { border: 0; margin: 0 0 4px; padding: 0; display: grid; gap: 4px; }
@@ -213,7 +224,7 @@
   </style>
   <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=2"></script>
-  <script src="assets/content.js?v=5"></script>
+  <script src="assets/content.js?v=6"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -415,6 +426,25 @@
     </div>
   </div>
 
+  <div id="attBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="attTitle">
+      <div class="modal-head">
+        <h3 id="attTitle">참석</h3>
+        <button id="attClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <p id="attDesc" class="field-hint" style="margin:0 0 10px"></p>
+      <label class="sr-only" for="attNick">닉네임</label>
+      <input id="attNick" class="input" type="text" maxlength="24" placeholder="닉네임(채팅방 닉네임 그대로)" autocomplete="nickname" list="wNick-list" style="margin-bottom:8px" />
+      <label class="sr-only" for="attPass">비밀번호</label>
+      <input id="attPass" class="input" type="password" placeholder="비밀번호(4자 이상)" autocomplete="off" />
+      <p id="attErr" class="field-error" hidden style="margin:8px 0 0"></p>
+      <div class="modal-foot">
+        <button id="attCancel" class="btn btn-secondary is-sm" type="button">닫기</button>
+        <button id="attOk" class="btn btn-primary is-sm" type="button">참석</button>
+      </div>
+    </div>
+  </div>
+
   <div id="dupBackdrop" class="modal-backdrop" hidden>
     <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="dupTitle">
       <div class="modal-head">
@@ -422,13 +452,8 @@
         <button id="dupClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <ul id="dupList" class="dup-list"></ul>
-      <p class="field-hint" style="margin:0 0 8px">같은 시간대(앞뒤 2시간) 중복 개설은 원칙적으로 금지입니다. 예외에 해당하면 고르고 등록합니다.</p>
-      <fieldset class="dup-why">
-        <legend class="sr-only">중복 개설 예외</legend>
-        <label><input type="radio" name="dupWhy" value="기존 모임 정원 마감" /> 기존 모임 정원 마감</label>
-        <label><input type="radio" name="dupWhy" value="기존 모임의 설정 마감 시간이 지남" /> 기존 모임의 설정 마감 시간이 지남</label>
-        <label><input type="radio" name="dupWhy" value="기존 모임장이 사전에 동의" /> 기존 모임장이 사전에 동의</label>
-      </fieldset>
+      <p class="field-hint" style="margin:0 0 8px">같은 시간대(앞뒤 2시간) 중복 개설은 원칙적으로 금지입니다. 정원이 찼거나 신청 마감이 지난 모임은 예외로 칩니다.</p>
+      <label class="dup-ok"><input type="checkbox" id="dupConsent" /> 기존 모임장이 사전에 동의했습니다</label>
       <div class="modal-foot">
         <button id="dupCancel" class="btn btn-secondary is-sm" type="button">돌아가기</button>
         <button id="dupOk" class="btn btn-primary is-sm" type="button" disabled>이대로 등록</button>
@@ -500,6 +525,18 @@
     /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
     function openWriteDefault() { openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null); }
     const ERROR_MAP = {
+      BUNG_REQUIRED: "날짜, 시간, 장소, 인원을 모두 적어 주세요.",
+      BUNG_PAST: "지난 시각입니다. 날짜와 시간을 확인해 주세요.",
+      BUNG_DEADLINE: "신청 마감은 모임 시작보다 늦을 수 없고, 지금보다 뒤여야 합니다.",
+      BUNG_DUP: "같은 시간대(앞뒤 2시간)에 모집 중인 모임이 있습니다. 기존 모임장의 동의가 있어야 합니다.",
+      NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
+      NOT_ATTENDING: "그 닉네임으로 참석한 기록이 없습니다.",
+      STARTED: "모임이 시작해 취소할 수 없습니다. 모임장에게 연락해 주세요.",
+      DEADLINE: "신청 마감 시각이 지났습니다.",
+      FULL: "정원이 찼습니다.",
+      CLOSED: "모집이 마감된 모임입니다.",
+      BAD_NICK: "닉네임을 입력해 주세요.",
+      NOT_BUNG: "모임 모집 글이 아닙니다.",
       BAD_PASS: "비밀번호가 맞지 않습니다. 글을 쓸 때 입력한 비밀번호나 운영진 비밀번호를 입력해 주세요.",
       ADMIN_ONLY: "운영진 비밀번호가 맞지 않습니다. 공지 작성과 글 고정은 운영진만 할 수 있습니다.",
       PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
@@ -538,7 +575,8 @@
         { key: "date", label: "모임 날짜", type: "date", req: true, hint: "날짜가 지나면 '지난 모임'으로 표시됩니다." },
         { key: "time", label: "시간", type: "time", req: true },
         { key: "place", label: "장소", type: "text", max: 60, req: true, ph: "예: 강남역 3번 출구" },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, hint: "비우면 모임 시작 시각까지 받습니다." },
         { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
         { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
@@ -563,7 +601,8 @@
       category: "전체", sort: "latest", search: "",
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
-      myReactions: {}, reactBusy: {}, caps: 1, popular: []
+      myReactions: {}, reactBusy: {}, caps: 1, popular: [],
+      attendOn: false, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
     const SEEN_KEY = "excer_news_seen";
@@ -710,6 +749,7 @@
         state.loading = false;
         renderList();
         loadMyReactions(rows.map((r) => r.id));
+        loadAttend(bungIds(rows));
         return;
       } catch (err) {
         if (seq !== reqSeq) return;
@@ -746,6 +786,7 @@
       const sub = v.subline.text || v.excerpt;
       const author = v.author || "익명";
       const who = ['<b class="who" data-initial="' + esc(author.slice(0, 1)) + '">' + esc(author) + "</b>", esc(C.relTime(v.created_at))];
+      if (v.attendText) who.push(v.attendText);
       if (v.comment_count) who.push("댓글 " + v.comment_count);
       if (v.reaction_count) who.push("반응 " + v.reaction_count);
       return (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + who.join(", ") + "</span>";
@@ -801,7 +842,8 @@
         ${lead}
         ${factsHTML(v.facts)}
         ${body}
-        ${v.kind === "bung" && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
+        ${v.kind === "bung" && state.attendOn && v.meta && v.meta.date ? attendHTML(post) : ""}
+        ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
         ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
         ${reactBarHTML(post)}
@@ -829,6 +871,11 @@
     function rowHTML(post) {
       const v = C.postView(post);
       const expanded = state.expandedId === post.id;
+      if (v.kind === "bung" && state.attendOn && v.meta && v.meta.date) {
+        const bs = bungStatus(post);
+        if (bs.why === "full" || bs.why === "deadline") v.subline = Object.assign({}, v.subline, { state: WHY_LABEL[bs.why], past: true });
+        if (state.attend[post.id] || post.attend_count != null) v.attendText = "참석 " + bs.n + (bs.cap ? "/" + bs.cap : "");
+      }
       const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
       return `
         <article class="row post-row${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
@@ -976,11 +1023,12 @@
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
       else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
-      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && f.type !== "date" && f.type !== "time" ? ` maxlength="${f.max}"` : ""} placeholder="${esc(f.ph || "")}" />`;
-      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${f.hint ? `<span class="field-hint">${esc(f.hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
+      const hint = !state.attendOn && f.hintOff ? f.hintOff : f.hint;
+      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
     function renderTypeFields(cat, meta) {
-      const fields = (TYPE_FIELDS[cat] || []).filter((f) => state.caps >= 2 || (cat === "벙 소식" && !f.v2));
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn));
       $("typeFields").innerHTML = fields.map(fieldHTML).join("");
       $("typeDesc").textContent = typeDesc(cat);
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
@@ -1076,6 +1124,12 @@
           const today = C.kstToday();
           if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
         }
+        const dl = $("wf_deadline");
+        if (dl && dl.value && d && t && d.value && t.value) {
+          const v = dl.value.slice(0, 16), old = state.editingId ? (C.postMeta(findPost(state.editingId) || {}) || {}).deadline || "" : "";
+          if (v > d.value + "T" + t.value) { setError("wf_deadline", "신청 마감은 모임 시작보다 늦을 수 없습니다."); ok = false; }
+          else if (v !== old && v <= nowKey()) { setError("wf_deadline", "신청 마감이 이미 지났습니다."); ok = false; }
+        }
       }
       const from = $("wf_from"), to = $("wf_to");
       if (from && to && from.value && to.value && to.value < from.value) { setError("wf_to", "종료일은 적용일보다 뒤여야 합니다."); ok = false; }
@@ -1083,18 +1137,109 @@
       return ok;
     }
     /* 새 글이거나, 고치는 글의 날짜나 시간이 바뀌었는지(그대로면 지난 시각, 같은 시간대 확인을 하지 않는다) */
+    /* 모임 모집 글의 지금 상태: 참석 수, 정원, 모집 중인지(마감 안 함, 신청 마감 전, 정원 남음). 시각은 한국 시간 */
+    function nowKey() { return C.kstToday() + "T" + C.kstNowHM(); }
+    function bungStatus(post, count) {
+      const m = C.postMeta(post) || {};
+      const list = (state.attend[post.id] || {}).list;
+      const n = count != null ? Number(count) : list ? list.length : Number(post.attend_count) || 0;
+      const cap = Number(m.cap) || 0;
+      const start = m.date ? m.date + "T" + (m.time || "23:59") : "";
+      const dl = m.deadline || start, now = nowKey();
+      let why = "";
+      if (!start) why = "nodate";
+      else if (start <= now) why = "started";
+      else if (m.status === "closed") why = "closed";
+      else if (dl <= now) why = "deadline";
+      else if (cap && n >= cap) why = "full";
+      return { n, cap, open: !why, why, start, deadline: m.deadline || "" };
+    }
+    const WHY_LABEL = { started: "지난 모임", closed: "모집 마감", deadline: "신청 마감", full: "정원 마감" };
+    async function loadAttend(ids) {
+      if (!state.attendOn || state.degraded) return;
+      const want = (ids || []).filter((id) => Number(id) > 0);
+      if (!want.length) return;
+      try {
+        const rows = (await supaFetch("/rest/v1/site_bung_attend_v?select=post_id,nick,created_at&post_id=in.(" + want.join(",") + ")&order=created_at.asc")) || [];
+        want.forEach((id) => { state.attend[id] = { list: [] }; });
+        rows.forEach((r) => { (state.attend[r.post_id] = state.attend[r.post_id] || { list: [] }).list.push({ nick: r.nick, at: r.created_at }); });
+        renderList();
+      } catch (e) {}
+    }
+    function bungIds(posts) { return (posts || []).filter((p) => p.category === "벙 소식").map((p) => p.id); }
+    function isMe(nick) { const a = String(nick || "").trim().toLowerCase(), b = savedNick().trim().toLowerCase(); return !!a && a === b; }
+    function attendHTML(post) {
+      const st = bungStatus(post);
+      const a = state.attend[post.id];
+      const list = a ? a.list : null;
+      const mine = list && list.some((x) => isMe(x.nick));
+      const host = String(post.author || "").trim().toLowerCase();
+      const dlText = st.deadline ? C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " " + st.deadline.slice(11, 16) + "까지" : "";
+      const stateText = st.open ? (dlText ? "신청 " + dlText : "모집 중") : (WHY_LABEL[st.why] || "");
+      let btn = "";
+      if (mine && st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
+      else if (st.open) btn = `<button type="button" class="btn btn-primary is-sm" data-act="attend" data-id="${post.id}">참석하기</button>`;
+      else if (st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
+      const other = list && list.length && !mine && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">참석 취소</button>` : "";
+      return `<div class="attend" data-post="${post.id}">
+          <div class="att-head"><b>참석 ${list ? list.length : st.n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>
+          ${list ? (list.length ? `<ul class="att-list" aria-label="참석자">${list.map((x) => `<li>${esc(x.nick)}${String(x.nick).trim().toLowerCase() === host ? " <small>모임장</small>" : ""}</li>`).join("")}</ul>` : `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`) : `<p class="att-empty">참석 명단을 불러오는 중입니다.</p>`}
+          <div class="att-acts">${btn}${other}</div>
+        </div>`;
+    }
+    // 참석 창
+    let attCtx = null;
+    function openAttend(id, mode) {
+      const post = findPost(id); if (!post) return;
+      attCtx = { id, mode };
+      const list = (state.attend[id] || {}).list || [];
+      const me = list.find((x) => isMe(x.nick));
+      $("attTitle").textContent = mode === "attend" ? "참석" : "참석 취소";
+      $("attDesc").textContent = mode === "attend" ? "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다." : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 모임장은 글 비밀번호로 다른 사람을 뺄 수 있습니다.";
+      $("attNick").value = mode === "attend" ? savedNick() : (me ? me.nick : "");
+      $("attPass").value = savedPass();
+      $("attOk").textContent = mode === "attend" ? "참석" : "참석 취소";
+      $("attErr").hidden = true;
+      $("attBackdrop").hidden = false;
+      setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
+    }
+    function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; }
+    async function submitAttend() {
+      if (!attCtx || state.busy) return;
+      const nick = $("attNick").value.trim(), pass = $("attPass").value;
+      const fail = (m) => { $("attErr").textContent = m; $("attErr").hidden = false; };
+      if (!nick) { fail("닉네임을 입력해 주세요."); $("attNick").focus(); return; }
+      if (pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
+      const { id, mode } = attCtx;
+      state.busy = true; $("attOk").disabled = true;
+      try {
+        const res = await supaFetch("/rest/v1/rpc/" + (mode === "attend" ? "bung_attend" : "bung_unattend"), { method: "POST", body: JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass }) });
+        state.attend[id] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at })) };
+        const post = findPost(id); if (post) post.attend_count = state.attend[id].list.length;
+        if (mode === "attend") { saveNick(nick); savePass(pass, "벙 소식"); }
+        closeAttend();
+        renderList();
+        showToast(mode === "attend" ? "참석했습니다." : "참석을 취소했습니다.");
+      } catch (err) {
+        fail(rpcErrorMessage(err));
+        if (/FULL|DEADLINE|CLOSED/.test(String(err && err.message))) loadAttend([id]);
+      } finally {
+        state.busy = false; $("attOk").disabled = false;
+      }
+    }
     function slotChanged(date, time) {
       if (!state.editingId) return true;
       const m = C.postMeta(findPost(state.editingId) || {}) || {};
       return m.date !== date || m.time !== time;
     }
-    /* 같은 날 앞뒤 2시간 안에 열린(마감 아닌) 다른 모임. 마감된 모임은 '정원 마감' 예외라 묻지 않는다 */
+    /* 같은 날 앞뒤 2시간 안에 모집 중인 다른 모임. 마감했거나, 신청 마감이 지났거나, 정원이 찬 모임은 예외라 묻지 않는다(서버도 같은 기준) */
     async function sameSlot(meta, selfId) {
-      const rows = await supaFetch("/rest/v1/site_posts_v?select=id,title,author,meta,category&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=100");
+      const sel = "id,title,author,meta,category" + (state.attendOn ? ",attend_count" : "");
+      const rows = await supaFetch("/rest/v1/site_posts_v?select=" + sel + "&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=100");
       const mm = (hm) => { const p = String(hm).split(":"); return Number(p[0]) * 60 + Number(p[1]); };
       const me = mm(meta.time);
       return (rows || []).filter((p) => p.id !== selfId).map((p) => ({ p, m: C.postMeta(p) }))
-        .filter(({ m }) => m && m.date === meta.date && /^\d{2}:\d{2}$/.test(m.time || "") && m.status !== "closed" && Math.abs(mm(m.time) - me) <= 120)
+        .filter(({ p, m }) => m && m.date === meta.date && /^\d{2}:\d{2}$/.test(m.time || "") && Math.abs(mm(m.time) - me) <= 120 && bungStatus(p, p.attend_count).open)
         .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: m.time, place: m.place || "" }))
         .sort((a, b) => a.time.localeCompare(b.time));
     }
@@ -1103,7 +1248,7 @@
       return new Promise((resolve) => {
         dupResolve = resolve;
         $("dupList").innerHTML = near.map((n) => `<li><b>${esc(n.time)}</b> ${esc(n.title)}${n.place ? ", " + esc(n.place) : ""}${n.author ? `, 모임장 ${esc(n.author)}` : ""}</li>`).join("");
-        document.querySelectorAll('input[name="dupWhy"]').forEach((r) => { r.checked = false; });
+        $("dupConsent").checked = false;
         $("dupOk").disabled = true;
         $("dupBackdrop").hidden = false;
         setTimeout(() => $("dupCancel").focus(), 30);
@@ -1121,16 +1266,20 @@
       if (!validateWrite()) return;
       const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
       const title = $("wTitle").value.trim(), meta = readMeta();
-      let body = $("wBody").value;
-      if (cat === "벙 소식" && meta && meta.date && meta.time && slotChanged(meta.date, meta.time)) {
-        state.busy = true;
-        let near = [];
-        try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }   // 읽지 못하면 막지 않는다
-        state.busy = false;
-        if (near.length) {
-          const why = await askDup(near);
-          if (!why) return;
-          body = body.replace(/\s+$/, "") + "\n\n같은 시간대 모임 예외: " + why;
+      const body = $("wBody").value;
+      if (cat === "벙 소식" && meta && meta.date && meta.time) {
+        if (slotChanged(meta.date, meta.time)) {
+          state.busy = true;
+          let near = [];
+          try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }   // 읽지 못하면 화면에서는 막지 않는다(서버가 다시 본다)
+          state.busy = false;
+          if (near.length) {
+            if (!(await askDup(near))) return;
+            meta.dup = "consent";
+          }
+        } else {
+          const old = C.postMeta(findPost(state.editingId) || {}) || {};
+          if (old.dup) meta.dup = old.dup;                 // 날짜와 시간이 그대로면 예전 동의를 지킨다
         }
       }
       state.busy = true;
@@ -1302,6 +1451,7 @@
       if (state.expandedId === id) { keepHeadInPlace(id, () => { state.expandedId = null; syncHash(null); renderList(); }); return; }
       keepHeadInPlace(id, () => { state.expandedId = id; syncHash(id); renderList(); });
       if (state.commentsCache[id] === undefined) loadComments(id);
+      if (state.attendOn && !state.attend[id]) loadAttend([id]);
     }
     function refetchList() {
       state.expandedId = null;
@@ -1373,6 +1523,8 @@
         if (act === "open-write") { if (el.dataset.cat) openWriteModal(null, { category: el.dataset.cat }); else openWriteDefault(); return; }
         if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
+        if (act === "attend") { openAttend(id, "attend"); return; }
+        if (act === "unattend") { openAttend(id, "unattend"); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
         if (act === "delete") { deletePost(id); return; }
         if (act === "pin") { togglePin(id); return; }
@@ -1380,8 +1532,13 @@
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
 
-      document.querySelectorAll('input[name="dupWhy"]').forEach((r) => r.addEventListener("change", () => { $("dupOk").disabled = false; }));
-      $("dupOk").addEventListener("click", () => { const c = document.querySelector('input[name="dupWhy"]:checked'); if (c) closeDup(c.value); });
+      $("dupConsent").addEventListener("change", () => { $("dupOk").disabled = !$("dupConsent").checked; });
+      $("dupOk").addEventListener("click", () => { if ($("dupConsent").checked) closeDup("consent"); });
+      $("attOk").addEventListener("click", submitAttend);
+      $("attCancel").addEventListener("click", closeAttend);
+      $("attClose").addEventListener("click", closeAttend);
+      $("attBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeAttend(); });
+      ["attNick", "attPass"].forEach((k) => $(k).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitAttend(); } }));
       $("dupCancel").addEventListener("click", () => closeDup(null));
       $("dupClose").addEventListener("click", () => closeDup(null));
       $("dupBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeDup(null); });
@@ -1394,6 +1551,7 @@
         if (e.key !== "Escape") return;
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
         if (!$("dupBackdrop").hidden) { closeDup(null); return; }
+        if (!$("attBackdrop").hidden) { closeAttend(); return; }
         if (!$("writeBackdrop").hidden) closeWriteModal();
       });
     }
@@ -1403,7 +1561,11 @@
     bindEvents();
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
-    C.caps().then((c) => { state.caps = c.contentFormat; if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta()); });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
+    C.caps().then((c) => {
+      state.caps = c.contentFormat; state.attendOn = !!c.attend;
+      if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
+      if (state.attendOn) loadAttend(bungIds(state.posts));
+    });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
     renderListLoading();
     loadPosts(true).then(openPromptFromHash).then(loadPopular).then(openFromHash);
     window.addEventListener("hashchange", openFromHash);
