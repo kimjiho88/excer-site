@@ -797,6 +797,46 @@ class PcSender:
 
 
 # ── 카카오톡 조작: 태블릿 하나로(Termux 안에서 adb 로 같은 기기에) ──
+# 화면 읽기 도우미(tools/excer_dump/ExcerDump.java 를 dex 로 바꾼 jar, base64). 안드로이드 기본 uiautomator dump 는
+# 화면이 1초 멈춰야 읽어서 글이 빨리 올라오는 방에서는 끝내 못 읽는다. 이것은 잠깐만 기다리고 그대로 읽는다.
+# 다시 만들기: sh tools/excer_dump/build.sh (sha1 d511ce5f0c8bd60f5f3154f8ad0008dca7632336)
+DUMPER_JAR = (
+    "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"
+)
 BOUNDS_RE = re.compile(r"\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
 NAV_WORDS = {"채팅", "오픈채팅", "친구", "더보기", "쇼핑", "뷰", "지갑", "전체", "안읽음"}
 
@@ -825,6 +865,7 @@ def find(nodes, text=None, desc=None, starts=None, cls=None, rid=None):
 class AdbSender:
     """태블릿(또는 폰) 안의 Termux 에서 돈다. adb 로 같은 기기에 붙어 화면을 읽고(uiautomator dump) 누른다(input)"""
     TMP = "/data/local/tmp/excer_ui.xml"
+    JAR = "/data/local/tmp/excer_dump.jar"
     diag_path = None                                             # 안 될 때 그때 화면을 적을 파일(main 이 정한다)
 
     def __init__(self, cfg, log, run=None):
@@ -832,6 +873,8 @@ class AdbSender:
         self.run = run or self._run
         self.serial = ""
         self.trace = []                                          # 안 될 때 원인을 보려고 지나온 화면을 모아 둔다
+        self.fast = None                                         # 화면 읽기 도우미: None 아직 모름, True 됨, False 이 기기에서 안 됨(기본 방식만)
+        self.fast_fail = 0
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -907,20 +950,55 @@ class AdbSender:
         return self.adb("shell", cmd, timeout=timeout)
 
     # 화면
+    def install_dumper(self):
+        """화면 읽기 도우미를 기기에 둔다(이미 같은 것이 있으면 그대로). 안 되면 기본 방식(uiautomator dump)만 쓴다"""
+        import base64
+        import hashlib
+        data = base64.b64decode("".join(DUMPER_JAR))
+        want = hashlib.sha1(data).hexdigest()
+        try:
+            have = self.sh("sha1sum %s 2>/dev/null; true" % self.JAR).split(" ")[0].strip()
+            if have != want:
+                b64 = base64.b64encode(data).decode()
+                self.sh("rm -f %s; echo %s | base64 -d > %s; chmod 444 %s; true" % (self.JAR, b64, self.JAR, self.JAR))
+                have = self.sh("sha1sum %s 2>/dev/null; true" % self.JAR).split(" ")[0].strip()
+            return have == want
+        except KakaoError:
+            return False
+
+    def _parse_dump(self, out):
+        i, j = out.find("<hierarchy"), out.rfind("</hierarchy>")
+        if i < 0 or j <= i:
+            return None, out.strip()[:120] or "빈 결과"
+        try:
+            nodes = self._nodes(ET.fromstring(out[i:j + len("</hierarchy>")]))
+        except ET.ParseError as e:
+            return None, str(e)
+        return (nodes, "") if nodes else (None, "빈 화면")
+
     def dump(self):
+        """지금 화면의 요소들. 도우미로 먼저 읽고(바빠도 읽힘), 안 되면 기본 uiautomator dump 로(화면이 1초 멈출 때까지 기다림)"""
+        if self.fast is None:
+            self.fast = self.install_dumper() or False
         last = ""
-        for _ in range(4):
-            out = self.sh("rm -f %s; uiautomator dump %s >/dev/null 2>&1; cat %s" % (self.TMP, self.TMP, self.TMP), timeout=45)
-            i, j = out.find("<hierarchy"), out.rfind("</hierarchy>")
-            if i >= 0 and j > i:
-                try:
-                    return self._nodes(ET.fromstring(out[i:j + len("</hierarchy>")]))
-                except ET.ParseError as e:
-                    last = str(e)
-            else:
-                last = out.strip()[:120] or "빈 결과"
+        for _ in range(6):
+            if self.fast:
+                out = self.sh("rm -f %s; CLASSPATH=/system/framework/uiautomator.jar:%s app_process /system/bin ExcerDump %s 200 1200 "
+                              ">/dev/null 2>&1; cat %s 2>/dev/null; true" % (self.TMP, self.JAR, self.TMP, self.TMP), timeout=30)
+                nodes, last = self._parse_dump(out)
+                if nodes:
+                    self.fast_fail = 0
+                    return nodes
+                self.fast_fail += 1
+                if self.fast_fail >= 3:                          # 이 기기에서 도우미가 안 되면 기본 방식만
+                    self.fast = False
+                    self.log("화면 읽기 도우미가 이 기기에서 안 됨, 기본 방식으로 읽음(%s)" % last)
+            out = self.sh("rm -f %s; uiautomator dump %s >/dev/null 2>&1; cat %s 2>/dev/null; true" % (self.TMP, self.TMP, self.TMP), timeout=45)
+            nodes, last = self._parse_dump(out)
+            if nodes:
+                return nodes
             self.sleep(0.8)
-        raise KakaoError("화면을 읽지 못함(uiautomator dump): %s" % last)
+        raise KakaoError("화면을 읽지 못함: %s" % last)
 
     @staticmethod
     def _nodes(root):
@@ -1562,7 +1640,8 @@ class AdbSender:
         except KakaoError as e:
             out.append("클립보드: 안 됨(%s)" % e)
         try:
-            out.append("화면 읽기: 됨(요소 %d개)" % len(self.dump()))
+            n = len(self.dump())
+            out.append("화면 읽기: 됨(요소 %d개, %s)" % (n, "빠른 방식" if self.fast else "기본 방식: 글이 빨리 올라오는 방에서는 느릴 수 있음"))
         except KakaoError as e:
             out.append("화면 읽기: 안 됨(%s)" % e)
         return out
