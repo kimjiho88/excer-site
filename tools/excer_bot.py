@@ -827,6 +827,7 @@ class AdbSender:
         self.t, self.log, self.sleep = cfg["tablet"], log, time.sleep
         self.run = run or self._run
         self.serial = ""
+        self.trace = []                                          # 안 될 때 원인을 보려고 지나온 화면을 모아 둔다
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -995,7 +996,7 @@ class AdbSender:
             nodes = self.dump()
         self.save_diag(nodes)
         why = "카카오톡이 앞으로 나오지 않음" if not self.on_kakao(nodes) else "'채팅' 단추를 찾지 못함"
-        raise KakaoError("카카오톡 채팅 목록 화면으로 가지 못함(%s)%s" % (why, ". 그때 화면을 %s 에 적었습니다" % os.path.basename(self.diag_path) if self.diag_path else ""))
+        raise KakaoError("카카오톡 채팅 목록 화면으로 가지 못함(%s)%s" % (why, self.diag_note()))
 
     @staticmethod
     def list_right(nodes):
@@ -1018,19 +1019,55 @@ class AdbSender:
         self.sh("input swipe %d %d %d %d 400" % (x, t + (b - t) * 3 // 4, x, t + (b - t) // 3))
         self.sleep(0.8)
 
+    def wait_change(self, nodes, ok=None, tries=4):
+        """누른 뒤 화면이 바뀔 때까지(또는 ok(새 화면) 가 참일 때까지) 기다린다. 바로 읽으면 바뀌기 전 화면을 읽는다"""
+        old = [(n["b"], n["text"]) for n in nodes]
+        new = nodes
+        for _ in range(tries):
+            self.sleep(0.8)
+            new = self.dump()
+            if ok and ok(new):
+                return new
+            if not ok and [(n["b"], n["text"]) for n in new] != old:
+                self.sleep(0.6)                                  # 바뀌는 중일 수 있어 한 번 더
+                return self.dump()
+        return new
+
+    def goto_open_list(self, nodes, room=None):
+        """오픈채팅 목록으로. 채팅 목록 위의 '오픈채팅' 칸이 있는 판, 아래 메뉴 '지금'(오픈채팅) 안의 '오픈채팅' 칸인 판"""
+        k = [n for n in nodes if n.get("pkg") == self.t["package"]]
+        ok = (lambda ns: self.room_item(ns, room) is not None) if room else None
+        sub = find(k, text="오픈채팅")
+        if not sub:
+            nav = [n for n in k if re.match(r"^(지금|오픈채팅)(\s*탭)?\s*(,|$)", n["desc"])] or find(k, text="지금")
+            if not nav:
+                return None
+            self.tap(nav[0])
+            nodes = self.wait_change(nodes, ok)
+            self.snap("오픈채팅 메뉴를 누른 뒤", nodes)
+            if ok and ok(nodes):
+                return nodes
+            sub = find(nodes, text="오픈채팅")
+            if not sub:
+                return nodes
+        self.tap(sub[0])
+        nodes = self.wait_change(nodes, ok)
+        self.snap("'오픈채팅' 을 누른 뒤", nodes)
+        return nodes
+
     def room_names(self):
         nodes = self.goto_list()
         names = self._names(nodes)
-        sub = find(nodes, text="오픈채팅")
-        if sub:
-            self.tap(sub[0])
-            names += [n for n in self._names(self.dump()) if n not in names]
+        op = self.goto_open_list(nodes)
+        if op:
+            names += [n for n in self._names(op) if n not in names]
         return names
 
     def _names(self, nodes):
         right, names = self.list_right(nodes) + 5, []
+        stop = min([n["b"][1] for n in nodes if n["text"].startswith("지금 뜨는")] or [10 ** 9])   # 아래 커뮤니티 글은 방이 아님
         for n in nodes:
-            if not n["click"] or n["b"][2] > right:
+            if not n["click"] or n["b"][2] > right or n["b"][1] >= stop:
                 continue
             texts, stack = [], list(n["kids"])
             while stack:
@@ -1043,28 +1080,34 @@ class AdbSender:
         return names
 
     def open_room(self, room):
+        self.trace = []
         nodes = self.goto_list()
+        self.snap("채팅 목록", nodes)
         item = self.room_item(nodes, room)
-        if not item:
-            sub = find(nodes, text="오픈채팅")                  # 채팅과 오픈채팅이 나뉜 판
-            if sub:
-                self.tap(sub[0])
-                nodes = self.dump()
+        chat_nodes = nodes
+        if not item:                                             # 오픈채팅 목록부터(알릴 방은 오픈채팅)
+            op = self.goto_open_list(nodes, room)
+            if op:
+                nodes = op
                 item = self.room_item(nodes, room)
-        for _ in range(8):
+        for i in range(8):                                       # 그래도 없으면 지금 목록을 밀어 가며
             if item:
                 break
             self.scroll_list(nodes)
             nodes = self.dump()
             item = self.room_item(nodes, room)
         if not item:
-            raise KakaoError("채팅 목록에서 '%s' 방을 찾지 못함" % room)
+            self.save_diag(nodes)
+            raise KakaoError("채팅 목록에서 '%s' 방을 찾지 못함(방 이름이 똑같은지 확인)%s" % (room, self.diag_note()))
         self.tap(item)
-        self.sleep(1.0)
-        nodes = self.dump()
+        nodes = self.wait_change(nodes, lambda ns: bool(find(ns, cls="EditText")))
         if not find(nodes, cls="EditText"):
-            raise KakaoError("방은 열었는데 입력 칸이 없음")
+            self.save_diag(nodes)
+            raise KakaoError("방은 열었는데 입력 칸이 없음%s" % self.diag_note())
         return nodes
+
+    def diag_note(self):
+        return ". 지나온 화면을 %s 에 적었습니다" % os.path.basename(self.diag_path) if self.diag_path else ""
 
     @staticmethod
     def box(nodes):
@@ -1132,26 +1175,72 @@ class AdbSender:
             raise KakaoError("보낸 목록 말풍선을 화면에서 찾지 못함")
         return max(c, key=lambda n: n["b"][3])
 
+    CONFIRM = ("확인", "등록", "공지 등록", "공지로 등록", "등록하기", "완료", "올리기", "공지 올리기")
+
+    @staticmethod
+    def labeled(nodes, words, before=()):
+        """글자나 이름(content-desc)이 words 중 하나인 새 요소(before 에 없던 자리)"""
+        seen = {n["b"] for n in before}
+        out = []
+        for w in words:
+            out += [n for n in nodes if (n["text"].strip() == w or n["desc"].strip() == w) and n["b"] not in seen and n not in out]
+        return out
+
+    def pinned(self, nodes, text, skip=()):
+        """방 위쪽 공지 띠에 이 글(첫 줄)이 보이는지. 말풍선이 아니라 방 칸의 맨 위 쪽에 있는 것(skip: 원래 있던 말풍선 자리)"""
+        e = find(nodes, cls="EditText")
+        if not e:
+            return False
+        l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
+        pane = [n for n in nodes if l0 - 10 <= self.center(n)[0] <= r0 + 10]
+        top, bottom = min(n["b"][1] for n in pane), max(n["b"][3] for n in e)
+        first = ws(text.split("\n")[0])
+        for n in pane:
+            t = ws(n["text"]).rstrip(".\u2026 ")
+            if (n["b"][1] > top + (bottom - top) * 0.22 or n["b"][3] - n["b"][1] > (bottom - top) * 0.12
+                    or len(t) < 6 or n["cls"].endswith("EditText") or n["b"] in skip):
+                continue
+            if ws(n["text"]).startswith(first) or first.startswith(t):
+                return True
+        return False
+
     def notice(self, room, text):
         self.sleep(1.0)
         nodes = self.dump()
+        self.trace = []                                          # 공지 단계만 남긴다(안 될 때 보낼 파일이 짧게)
+        e = find(nodes, cls="EditText")
+        l0 = min([n["b"][0] for n in e] or [0])
+        hgt = max([n["b"][3] for n in nodes] or [0])
+        self.snap("방 위쪽(공지 띠 자리)", [n for n in nodes if n["b"][1] < hgt * 0.3 and self.center(n)[0] >= l0 - 10])
         target = self.bubble(nodes, text)
-        before = {n["b"] for n in find(nodes, text="공지")}      # 위쪽 공지 띠의 '공지' 글자는 빼고
+        pre = self.pinned(nodes, text, {target["b"]})            # 첫 줄이 같은 공지가 이미 걸려 있으면 띠로는 바뀐 것을 알 수 없다
+        first = ws(text.split("\n")[0])
+        skip = {n["b"] for n in nodes if ws(n["text"]).startswith(first)}   # 원래 있던 같은 글(말풍선)은 공지 띠로 치지 않는다
         self.hold(target, 1000)
-        menu = self.dump()
-        m = [n for n in find(menu, text="공지") if n["b"] not in before]
+        menu = self.wait_change(nodes, lambda ns: bool(self.labeled(ns, ("공지", "공지 등록", "공지로 등록"), nodes)), tries=3)
+        self.snap("말풍선을 길게 누른 뒤(새로 나온 것)", menu, nodes)
+        m = self.labeled(menu, ("공지", "공지 등록", "공지로 등록"), nodes)
         if not m:
             self.key(4)
-            raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 부방장인지 확인)")
+            self.save_diag()
+            raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 방장이나 부방장인지 확인)%s" % self.diag_note())
         self.tap(m[0])
-        self.sleep(1.0)
-        dlg = self.dump()
-        for t in ("확인", "등록", "공지 등록"):
-            seen = {n["b"] for n in find(menu, text=t)}
-            c = [n for n in find(dlg, text=t) if n["b"] not in seen]
-            if c:
-                self.tap(c[0])
-                break
+        dlg = self.wait_change(menu, lambda ns: bool(self.labeled(ns, self.CONFIRM, menu)) or (not pre and self.pinned(ns, text, skip)), tries=4)
+        self.snap("'공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
+        c = self.labeled(dlg, self.CONFIRM, menu)
+        if c:
+            self.tap(c[0])
+        if pre:
+            self.sleep(0.8)
+            return
+        for _ in range(4):                                       # 방 위쪽 공지 띠에 이 글이 보이면 된 것
+            self.sleep(0.8)
+            done = self.dump()
+            if self.pinned(done, text, skip):
+                return
+        self.snap("마지막 화면(새로 나온 것)", done, nodes)
+        self.save_diag()
+        raise KakaoError("공지를 눌렀는데 방 위쪽 공지가 이 글로 바뀌지 않음%s" % self.diag_note())
 
     def done(self):
         """올리고 나면 Termux 를 앞으로(기록이 보이게, 다음 명령을 치게). return_to 를 "" 로 두면 카카오톡에 머문다"""
@@ -1202,12 +1291,26 @@ class AdbSender:
             f.write("\n".join(rows))
         return len(rows)
 
-    def save_diag(self, nodes):
-        if self.diag_path:
-            try:
-                self.dump_file(self.diag_path, nodes)
-            except OSError:
-                pass
+    def snap(self, label, nodes, before=None):
+        """지나온 화면 한 장. before 를 주면 그때 없던 요소만(메뉴, 확인 창)"""
+        if before is not None:
+            seen = {(n["b"], n["text"], n["desc"]) for n in before}
+            nodes = [n for n in nodes if (n["b"], n["text"], n["desc"]) not in seen]
+        self.trace = (self.trace + [(label, self.rows(nodes)[:120])])[-8:]
+
+    def save_diag(self, nodes=None):
+        if not self.diag_path:
+            return
+        if nodes is not None:
+            self.snap("마지막 화면", nodes)
+        out = []
+        for label, rows in self.trace:
+            out += ["== %s (%d줄)" % (label, len(rows))] + rows + [""]
+        try:
+            with open(self.diag_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(out))
+        except OSError:
+            pass
 
 
 # ── 카카오톡 조작: 안드로이드 폰, 태블릿(uiautomator2) ──
