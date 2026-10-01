@@ -46,6 +46,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py sample-feed     시험 파일(excer_bot_feed.json)을 만든다. run --test --feed excer_bot_feed.json 으로 켜고
   python excer_bot.py feed add        다른 창에서 feed add, change, close, del, soon, full, deadline 으로 새 벙, 바뀜, 마감, 취소,
                                       곧 시작하는 벙, 정원 참, 2분 뒤 신청 마감을 흉내 낸다
+  python excer_bot.py study           시험 방에서 카카오톡 화면을 단계마다 적고 클립보드에 담는다(목록, 방, 방 메뉴, 톡게시판,
+                                      길게 누른 메뉴, 공지 창. 글을 올리거나 공지를 거는 단추는 누르지 않는다)
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
                                       시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -1193,16 +1195,18 @@ class AdbSender:
             raise KakaoError("보낸 목록 말풍선을 화면에서 찾지 못함")
         return max(c, key=lambda n: n["b"][3])
 
-    CONFIRM = ("확인", "등록", "공지 등록", "공지로 등록", "등록하기", "완료", "올리기", "공지 올리기")
+    # 확인 단추 이름(앞에 있을수록 먼저). 이미 공지가 있으면 '공지 등록' 창(채팅방 상단 공지는 1건만...)이 떠서 '예' 를 눌러야 걸린다.
+    # 창 제목 '공지 등록' 은 단추가 아니라 넣지 않는다. '아니요', '취소' 는 누르지 않는다
+    CONFIRM = ("예", "네", "확인", "등록", "등록하기", "완료", "올리기", "공지 올리기", "공지로 등록")
 
     @staticmethod
     def labeled(nodes, words, before=()):
-        """글자나 이름(content-desc)이 words 중 하나인 새 요소(before 에 없던 자리)"""
+        """글자나 이름(content-desc)이 words 중 하나인 새 요소(before 에 없던 자리). 누를 수 있는 것을 먼저"""
         seen = {n["b"] for n in before}
         out = []
         for w in words:
             out += [n for n in nodes if (n["text"].strip() == w or n["desc"].strip() == w) and n["b"] not in seen and n not in out]
-        return out
+        return [n for n in out if n["click"]] + [n for n in out if not n["click"]]
 
     def pinned(self, nodes, text, skip=()):
         """방 위쪽 공지 띠에 이 글(첫 줄)이 보이는지. 말풍선이 아니라 방 칸의 맨 위 쪽에 있는 것(skip: 원래 있던 말풍선 자리)"""
@@ -1253,6 +1257,13 @@ class AdbSender:
         hgt = max([n["b"][3] for n in nodes] or [0])
         self.snap("방 위쪽(공지 띠 자리)", [n for n in nodes if n["b"][1] < hgt * 0.3 and self.center(n)[0] >= l0 - 10])
         target = self.bubble(nodes, text)
+        for _ in range(3):                                       # 바쁜 방: 새 글이 들어와 말풍선이 밀리는 중이면 멈출 때까지
+            again = self.dump()
+            t2 = self.bubble(again, text)
+            if t2["b"] == target["b"]:
+                break
+            nodes, target = again, t2
+            self.sleep(0.6)
         pre = self.pinned(nodes, text, {target["b"]})            # 첫 줄이 같은 공지가 이미 걸려 있으면 띠로는 바뀐 것을 알 수 없다
         first = ws(text.split("\n")[0])
         skip = {n["b"] for n in nodes if ws(n["text"]).startswith(first)}   # 원래 있던 같은 글(말풍선)은 공지 띠로 치지 않는다
@@ -1284,6 +1295,99 @@ class AdbSender:
         self.snap("마지막 화면(새로 나온 것)", done, nodes)
         self.save_diag()
         raise KakaoError("공지를 눌렀는데 공지가 걸린 표시('공지가 등록되었습니다' 나 위쪽 공지 띠)를 찾지 못함%s" % self.diag_note())
+
+    # ── 화면 조사: 카카오톡 실제 화면을 단계마다 적는다(시험 방에서만, 글을 올리거나 공지를 거는 단추는 누르지 않는다) ──
+    def study_rows(self, nodes, before=None, private=False, keep=()):
+        if before is not None:
+            seen = {(n["b"], n["text"], n["desc"]) for n in before}
+            nodes = [n for n in nodes if (n["b"], n["text"], n["desc"]) not in seen]
+        rows = []
+        for n in nodes:
+            if not (n["text"] or n["desc"] or n["click"] or n["cls"].endswith("EditText")):
+                continue
+            t = ws(n["text"])
+            if t and t not in keep and not t.startswith(("[다음 벙]", "공지", "채팅방 상단")) and (len(t) > (6 if private else 20)):
+                t = "(글 %d자)" % len(t)                         # 대화 내용은 적지 않는다(단추 이름, 짧은 글만)
+            rows.append("%s|%s|%s|%s|%s|[%d,%d][%d,%d]" % (n["cls"].split(".")[-1], t[:60], ws(n["desc"])[:40], n["rid"].split("/")[-1],
+                                                         "누름" if n["click"] else "", *n["b"]))
+        return rows[:70]
+
+    def study(self, room):
+        out, keep = [], (room,)
+        def take(label, nodes, before=None, private=False):
+            rows = self.study_rows(nodes, before, private, keep)
+            out.extend(["== %s (%d)" % (label, len(rows))] + rows + [""])
+        def back_to_room():
+            for _ in range(6):
+                ns = self.dump()
+                if self.room_open(ns, room):
+                    return ns
+                if not self.on_kakao(ns):
+                    return self.open_room(room)
+                self.key(4)
+                self.sleep(0.8)
+            return self.open_room(room)
+        nodes = self.launch()
+        take("1 카카오톡을 띄운 화면", nodes, private=True)
+        tab = self.chat_tab(nodes)
+        if tab:
+            self.tap(tab)
+            nodes = self.wait_change(nodes, tries=3)
+            take("2 아래 메뉴 '채팅' 을 누른 뒤", nodes, private=True)
+        op = self.goto_open_list(nodes, room)
+        if op:
+            take("3 오픈채팅 목록", op, private=True)
+        nodes = self.open_room(room)
+        take("4 시험 방(%s)" % room, nodes)
+        hgt = max(n["b"][3] for n in nodes)
+        e = find(nodes, cls="EditText")
+        l0 = min(n["b"][0] for n in e)
+        topbar = [n for n in nodes if n["click"] and n["b"][1] < hgt * 0.08 and n["b"][0] >= l0 - 60]
+        if topbar:                                               # 방 오른쪽 위 메뉴(서랍): 톡게시판, 공지 자리
+            btn = max(topbar, key=lambda n: n["b"][2])
+            self.tap(btn)
+            drawer = self.wait_change(nodes, tries=3)
+            take("5 방 오른쪽 위 메뉴를 누른 뒤(새로 나온 것)", drawer, nodes)
+            board = [n for n in drawer if "게시판" in n["text"] or "게시판" in n["desc"]]
+            if board:
+                self.tap(board[0])
+                bd = self.wait_change(drawer, tries=3)
+                take("6 톡게시판", bd, private=True)
+                write = [n for n in bd if n["click"] and (ws(n["text"]) in ("글쓰기", "글 쓰기", "작성", "+") or ws(n["desc"]) in ("글쓰기", "글 쓰기", "작성", "새 글"))]
+                if write:
+                    self.tap(write[0])
+                    wr = self.wait_change(bd, tries=3)
+                    take("7 글쓰기를 누른 뒤", wr, private=True)
+                    pick = [n for n in wr if ws(n["text"]) == "공지" or ws(n["desc"]) == "공지"]
+                    if pick:
+                        self.tap(pick[0])
+                        nw = self.wait_change(wr, tries=3)
+                        take("8 공지 쓰기 화면", nw, private=True)
+                    self.key(4)
+                    self.sleep(0.8)
+                    take("9 공지 쓰기에서 뒤로(새로 나온 창)", self.dump(), wr, private=True)
+            nodes = back_to_room()
+        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25]
+        if bubbles:                                              # 봇이 올린 말풍선을 길게 눌러 메뉴, '공지' 를 누른 뒤 창은 '아니요' 로 닫는다
+            target = max(bubbles, key=lambda n: n["b"][3])
+            self.hold(target, 1000)
+            menu = self.wait_change(nodes, tries=3)
+            take("10 말풍선을 길게 누른 메뉴(새로 나온 것)", menu, nodes)
+            m = self.labeled(menu, ("공지",), nodes)
+            has_notice = any(n["text"].strip() and n["text"].strip() != room and not n["cls"].endswith("EditText")
+                             and n["b"][0] >= l0 - 60 and hgt * 0.04 < n["b"][1] < hgt * 0.12 for n in nodes)
+            if m and has_notice:
+                self.tap(m[0])                                   # 공지가 이미 있을 때만(없으면 바로 걸려서 누르지 않는다)
+                dlg = self.wait_change(menu, tries=3)
+                take("11 '공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
+                no = self.labeled(dlg, ("아니요", "취소"), menu)
+                if no:
+                    self.tap(no[0])
+            else:
+                self.key(4)
+        else:
+            out.append("== 10 '[다음 벙]' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
+        return "\n".join(out)
 
     def done(self):
         """올리고 나면 Termux 를 앞으로(기록이 보이게, 다음 명령을 치게). return_to 를 "" 로 두면 카카오톡에 머문다"""
@@ -1602,7 +1706,7 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "calibrate"])
+    ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate"])
     ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -1652,6 +1756,27 @@ def main(argv=None):
             print(e)
         except Exception as e:
             print("카카오톡 쪽: 확인하지 못함(%s)" % e)
+        return
+    if a.command == "study":
+        room = cfg.get("test_room") or ""
+        if not room:
+            raise SystemExit("excer_bot.json 의 test_room(시험 방)을 먼저 넣으세요(setup).")
+        sender = make_sender(cfg, log)
+        if not isinstance(sender, AdbSender):
+            raise SystemExit("study 는 tablet 방식에서 씁니다.")
+        print("카카오톡 화면을 단계마다 적습니다. 1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
+        try:
+            txt = sender.study(room)
+        finally:
+            sender.done()
+        path = base + "_study.txt"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt)
+        try:
+            sender.set_clip(txt)
+            print("다 적었습니다(%s). 클립보드에도 담았으니 대화창에 붙여넣어 보내 주세요." % os.path.basename(path))
+        except KakaoError:
+            print("다 적었습니다: %s (cat 으로 보세요)" % path)
         return
     if a.command == "ui":
         sender = make_sender(cfg, log)
