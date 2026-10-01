@@ -176,7 +176,11 @@
     .form-preview .post-head:hover .row-title { text-decoration: none; }
     .form-preview .kv { margin: 6px 0 4px; }
     .pass-modal { width: min(420px, 100%); }
-    #passBackdrop { z-index: 240; }
+    #passBackdrop, #dupBackdrop { z-index: 240; }
+    .dup-list { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 6px; }
+    .dup-list li { padding: 8px 10px; border-radius: 8px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); line-height: 1.5; overflow-wrap: anywhere; }
+    .dup-why { border: 0; margin: 0 0 4px; padding: 0; display: grid; gap: 4px; }
+    .dup-why label { display: flex; gap: 8px; align-items: center; min-height: 40px; font-size: var(--fs-body, 15px); }
     @media (max-width: 640px) {
       .field-grid { grid-template-columns: 1fr; }
       .field-grid .is-wide { grid-column: span 1; }
@@ -411,6 +415,27 @@
     </div>
   </div>
 
+  <div id="dupBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="dupTitle">
+      <div class="modal-head">
+        <h3 id="dupTitle">같은 시간대에 모임이 있습니다</h3>
+        <button id="dupClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <ul id="dupList" class="dup-list"></ul>
+      <p class="field-hint" style="margin:0 0 8px">같은 시간대(앞뒤 2시간) 중복 개설은 원칙적으로 금지입니다. 예외에 해당하면 고르고 등록합니다.</p>
+      <fieldset class="dup-why">
+        <legend class="sr-only">중복 개설 예외</legend>
+        <label><input type="radio" name="dupWhy" value="기존 모임 정원 마감" /> 기존 모임 정원 마감</label>
+        <label><input type="radio" name="dupWhy" value="기존 모임의 설정 마감 시간이 지남" /> 기존 모임의 설정 마감 시간이 지남</label>
+        <label><input type="radio" name="dupWhy" value="기존 모임장이 사전에 동의" /> 기존 모임장이 사전에 동의</label>
+      </fieldset>
+      <div class="modal-foot">
+        <button id="dupCancel" class="btn btn-secondary is-sm" type="button">돌아가기</button>
+        <button id="dupOk" class="btn btn-primary is-sm" type="button" disabled>이대로 등록</button>
+      </div>
+    </div>
+  </div>
+
   <button class="fab" id="fabWrite" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>글쓰기</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -488,8 +513,7 @@
        "홈의 다가오는 모임" 조건은 content.js isUpcoming 과 같은 말: 날짜가 오늘 이후, 마감 아님, 가까운 2건 */
     function typeDesc(cat) {
       if (cat === "벙 소식") {
-        const items = state.caps >= 2 ? "날짜, 시간, 장소, 인원, 비용" : "날짜, 시간, 장소, 인원";
-        return items + "을 항목으로 적으면 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+        return "날짜, 시간, 장소, 인원은 꼭 적습니다" + (state.caps >= 2 ? "(비용은 선택)" : "") + ". 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
       if (state.caps < 2 && (cat === "후기" || cat === "정보" || cat === "공지")) {
@@ -511,10 +535,10 @@
         { key: "to", label: "종료일", type: "date" }
       ],
       "벙 소식": [
-        { key: "date", label: "모임 날짜", type: "date", hint: "날짜가 지나면 '지난 모임'으로 표시됩니다." },
-        { key: "time", label: "시간", type: "time" },
-        { key: "place", label: "장소", type: "text", max: 60, ph: "예: 강남역 3번 출구" },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        { key: "date", label: "모임 날짜", type: "date", req: true, hint: "날짜가 지나면 '지난 모임'으로 표시됩니다." },
+        { key: "time", label: "시간", type: "time", req: true },
+        { key: "place", label: "장소", type: "text", max: 60, req: true, ph: "예: 강남역 3번 출구" },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", hint: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
         { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
@@ -948,7 +972,7 @@
     // ── 글쓰기 / 수정 모달 ──
     function fieldHTML(f) {
       const id = "wf_" + f.key;
-      const label = `<label for="${id}">${esc(f.label)} <small>선택</small></label>`;
+      const label = `<label for="${id}">${esc(f.label)} <small>${f.req ? "필수" : "선택"}</small></label>`;
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
       else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
@@ -1042,17 +1066,73 @@
         if (el.type === "url" && !/^https?:\/\//i.test(v)) { setError(el.id, "링크는 http 또는 https 로 시작해야 합니다."); ok = false; }
         if (el.type === "number" && !(Number(v) >= Number(el.min) && Number(v) <= Number(el.max))) { setError(el.id, `${el.min}에서 ${el.max} 사이로 입력해 주세요.`); ok = false; }
       });
+      if (cat === "벙 소식") {
+        [["date", "모임 날짜를 골라 주세요."], ["time", "시간을 입력해 주세요."], ["place", "장소를 입력해 주세요."], ["cap", "모집 인원을 입력해 주세요."]].forEach(([k, msg]) => {
+          const el = $("wf_" + k);
+          if (el && !String(el.value || "").trim()) { setError(el.id, msg); ok = false; }
+        });
+        const d = $("wf_date"), t = $("wf_time");
+        if (d && t && d.value && t.value && slotChanged(d.value, t.value)) {
+          const today = C.kstToday();
+          if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
+        }
+      }
       const from = $("wf_from"), to = $("wf_to");
       if (from && to && from.value && to.value && to.value < from.value) { setError("wf_to", "종료일은 적용일보다 뒤여야 합니다."); ok = false; }
       if (!ok) firstInvalid();
       return ok;
+    }
+    /* 새 글이거나, 고치는 글의 날짜나 시간이 바뀌었는지(그대로면 지난 시각, 같은 시간대 확인을 하지 않는다) */
+    function slotChanged(date, time) {
+      if (!state.editingId) return true;
+      const m = C.postMeta(findPost(state.editingId) || {}) || {};
+      return m.date !== date || m.time !== time;
+    }
+    /* 같은 날 앞뒤 2시간 안에 열린(마감 아닌) 다른 모임. 마감된 모임은 '정원 마감' 예외라 묻지 않는다 */
+    async function sameSlot(meta, selfId) {
+      const rows = await supaFetch("/rest/v1/site_posts_v?select=id,title,author,meta,category&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=100");
+      const mm = (hm) => { const p = String(hm).split(":"); return Number(p[0]) * 60 + Number(p[1]); };
+      const me = mm(meta.time);
+      return (rows || []).filter((p) => p.id !== selfId).map((p) => ({ p, m: C.postMeta(p) }))
+        .filter(({ m }) => m && m.date === meta.date && /^\d{2}:\d{2}$/.test(m.time || "") && m.status !== "closed" && Math.abs(mm(m.time) - me) <= 120)
+        .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: m.time, place: m.place || "" }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+    }
+    let dupResolve = null;
+    function askDup(near) {
+      return new Promise((resolve) => {
+        dupResolve = resolve;
+        $("dupList").innerHTML = near.map((n) => `<li><b>${esc(n.time)}</b> ${esc(n.title)}${n.place ? ", " + esc(n.place) : ""}${n.author ? `, 모임장 ${esc(n.author)}` : ""}</li>`).join("");
+        document.querySelectorAll('input[name="dupWhy"]').forEach((r) => { r.checked = false; });
+        $("dupOk").disabled = true;
+        $("dupBackdrop").hidden = false;
+        setTimeout(() => $("dupCancel").focus(), 30);
+      });
+    }
+    function closeDup(value) {
+      if ($("dupBackdrop").hidden) return;
+      $("dupBackdrop").hidden = true;
+      const r = dupResolve; dupResolve = null;
+      if (r) r(value);
     }
     async function submitWrite() {
       if (state.busy) return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
       if (!validateWrite()) return;
       const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
-      const title = $("wTitle").value.trim(), body = $("wBody").value, meta = readMeta();
+      const title = $("wTitle").value.trim(), meta = readMeta();
+      let body = $("wBody").value;
+      if (cat === "벙 소식" && meta && meta.date && meta.time && slotChanged(meta.date, meta.time)) {
+        state.busy = true;
+        let near = [];
+        try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }   // 읽지 못하면 막지 않는다
+        state.busy = false;
+        if (near.length) {
+          const why = await askDup(near);
+          if (!why) return;
+          body = body.replace(/\s+$/, "") + "\n\n같은 시간대 모임 예외: " + why;
+        }
+      }
       state.busy = true;
       const btn = $("writeSubmitBtn");
       const editing = !!state.editingId;
@@ -1300,6 +1380,11 @@
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
 
+      document.querySelectorAll('input[name="dupWhy"]').forEach((r) => r.addEventListener("change", () => { $("dupOk").disabled = false; }));
+      $("dupOk").addEventListener("click", () => { const c = document.querySelector('input[name="dupWhy"]:checked'); if (c) closeDup(c.value); });
+      $("dupCancel").addEventListener("click", () => closeDup(null));
+      $("dupClose").addEventListener("click", () => closeDup(null));
+      $("dupBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeDup(null); });
       $("passOk").addEventListener("click", () => { const value = $("passInput").value; if (!value) { $("passInput").focus(); return; } closePassModal(value); });
       $("passCancel").addEventListener("click", () => closePassModal(null));
       $("passClose").addEventListener("click", () => closePassModal(null));
@@ -1308,6 +1393,7 @@
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
+        if (!$("dupBackdrop").hidden) { closeDup(null); return; }
         if (!$("writeBackdrop").hidden) closeWriteModal();
       });
     }

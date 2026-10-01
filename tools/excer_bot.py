@@ -12,12 +12,15 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   dry      보내지 않고 화면에 찍기만(시험용).
 
 하는 일
-  - 20초마다 사이트를 읽는다(check_sec). 새 벙, 날짜와 시간과 장소 바뀜, 마감, 마감 풀림, 지워진 벙이 보이면
-    곧바로 다가오는 벙 목록을 올리고 공지로 건다. 첫 줄에 무엇이 바뀌었는지, 줄 끝에 (새), (바뀜: 시간) 을 단다.
-  - 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec). 글을 쓰고 바로 고치는 경우.
-  - 매일 10시에 목록을 한 번 더 올려 공지를 새로 건다(지난 벙이 빠지게). 그날 이미 올렸으면 건너뛴다. digest_at 을 "" 로 두면 안 한다.
-  - 처음 켤 때 이미 올라와 있던 글은 새 벙으로 치지 않는다.
-  - 보내기에 실패하면 기록을 바꾸지 않고 1분 쉬었다가 다시 보낸다.
+  - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시간, 장소, 인원을 꼭 받는다).
+  - 공지: 첫 줄이 다음 벙, 그 아래로 이후 벙. 이 글이 달라질 때마다(새 벙, 바뀜, 마감, 취소, 그리고 벙이 시작해
+    다음 벙이 첫 줄로 올라올 때) 방에 올리고 길게 눌러 공지로 건다. 그래서 공지는 늘 벙 시간 차례대로 다음 벙을 보여 준다.
+  - 알림: 새 벙, 날짜와 시간과 장소 바뀜, 마감, 마감 풀림, 취소(모집 글 삭제)는 공지 글 앞에 알림 메시지를 따로 올린다.
+    하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
+  - 24시간 돈다. 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec).
+  - 처음 켤 때는 이미 올라와 있던 글을 알리지 않고, 지금의 공지 글만 올려 공지로 건다.
+  - 보내기에 실패하면 1분 쉬었다가 다시. 공지 걸기만 실패하면 공지 글을 다시 올려 1분, 5분, 15분 뒤 다시 건다(세 번까지).
+  - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
@@ -37,7 +40,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
   python excer_bot.py run             알릴 방으로 늘 지켜보기(멈추려면 Ctrl+C)
   python excer_bot.py sample-feed     시험 파일(excer_bot_feed.json)을 만든다. run --test --feed excer_bot_feed.json 으로 켜고
-  python excer_bot.py feed add        다른 창에서 feed add, feed change, feed close, feed del 로 새 벙, 바뀜, 마감, 삭제를 흉내 낸다
+  python excer_bot.py feed add        다른 창에서 feed add, change, close, del, soon 으로 새 벙, 바뀜, 마감, 취소, 곧 시작하는 벙을 흉내 낸다
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
                                       시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -70,9 +73,8 @@ DEFAULTS = {
     "test_room": "",                     # 시험 방(봇 계정과 나만 있는 방). test, calibrate 가 쓴다
     "notice": True,                      # 올린 목록을 공지로 걸지
     "check_sec": 20,                     # 사이트를 몇 초에 한 번 볼지
-    "digest_at": "10:00",                # 매일 목록을 올릴 시각(한국 시간). "" 이면 올리지 않는다
+    "digest_at": "",                     # 매일 이 시각(예 "10:00")에 공지 글을 한 번 더 올린다. "" 이면 안 한다(차례대로 바뀌므로 기본은 끔)
     "digest_late_min": 180,              # 이 시각에서 이만큼 지나도록 못 올렸으면 그날은 건너뛴다
-    "digest_empty": True,                # 다가오는 벙이 없어도 매일 목록을 올릴지
     "min_gap_sec": 60,                   # 한 번 올린 뒤 다음에 올리기까지(그 사이 바뀜은 모았다가)
     "quiet": [],                         # 이 사이에는 올리지 않는다. 예: ["00:00", "07:00"]. [] 이면 늘 올린다
     "max_lines": 15,                     # 목록 줄 수 한도
@@ -251,13 +253,6 @@ def upcoming(v, now):
     return not (v["date"] == now.ymd and v["time"] and v["time"] < now.hm)
 
 
-def undated_open(v, now):
-    if v["date"] or v["closed"]:
-        return False
-    since = (datetime.strptime(now.ymd, "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
-    return not v["created"] or v["created"][:10] >= since
-
-
 def skey(v):
     return (v["date"], v["time"] or "99:99", int(v["id"]) if v["id"].isdigit() else 0)
 
@@ -288,7 +283,7 @@ def diff(known, posts, now, init, full=False):
             continue
         o = known.get(v["id"])
         if not o:
-            if not v["closed"] and (upcoming(v, now) or undated_open(v, now)):
+            if upcoming(v, now):
                 ch["new"].append(v)
             continue
         if v["date"] and v["date"] < now.ymd:
@@ -301,14 +296,13 @@ def diff(known, posts, now, init, full=False):
         if o.get("c"):
             f.append("마감 풀림")
         if f:
-            ch["chg"].append((v, f))
+            ch["chg"].append((dict(v, _old=o), f))
     # 안 보이는 글: 지워졌으면 알리고, 최근 100개 밖으로 밀려난 것이면 기억해 둔다(다시 보여도 새 글로 치지 않게)
     oldest = min((v["created"] for v in posts if v["created"]), default="")
-    since = (datetime.strptime(now.ymd, "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
     for k, o in known.items():
         if k in cur or not o or o.get("c"):
             continue
-        live = (o.get("d") or "") >= now.ymd if o.get("d") else (o.get("cr") or "")[:10] >= since
+        live = bool(o.get("d")) and o["d"] >= now.ymd
         if not live:
             continue                                   # 지난 글은 잊는다
         if init and (full or (o.get("cr") and oldest and o["cr"] > oldest)):   # 읽은 범위 안의 글이 없어졌으면 지워진 것
@@ -322,39 +316,84 @@ def has_changes(ch):
     return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("del"))
 
 
-def compose(posts, now, ch, cfg, always=False):
-    """다가오는 벙 목록. 바뀐 것이 있으면 첫 줄과 줄 끝에 적는다. 올릴 것이 없으면 빈 글"""
-    items = sorted([v for v in posts if upcoming(v, now)], key=skey) + [v for v in posts if undated_open(v, now)]
-    if not items and not has_changes(ch) and not always and not cfg.get("digest_empty", True):
-        return ""
-    new_ids = {v["id"] for v in ch["new"]}
-    chg = {v["id"]: f for v, f in ch["chg"]}
-
-    def mark(v):
-        if v["id"] in new_ids:
-            return " (새)"
-        f = chg.get(v["id"])
-        if not f:
-            return ""
-        rest = [x for x in f if x != "마감 풀림"]
-        return " (" + ("바뀜: " + ", ".join(rest) if rest else "다시 모집") + ")"
-
-    top = "[벙 일정] %s 기준 %s" % (md(now.ymd), ("%d건" % len(items)) if items else "올라온 벙 없음")
-    summary = [("새 %d" % len(ch["new"])) if ch["new"] else "", ("바뀜 %d" % len(ch["chg"])) if ch["chg"] else "",
-               ("마감 %d" % len(ch["cls"])) if ch["cls"] else "", ("삭제 %d" % len(ch.get("del", []))) if ch.get("del") else ""]
-    summary = [s for s in summary if s]
-    if summary:
-        top += ", " + ", ".join(summary)
-    mx = max(1, int(cfg.get("max_lines", 15)))
-    shown = items[:mx] + [v for v in items[mx:] if v["id"] in new_ids or v["id"] in chg]   # 바뀐 것은 한도 밖이어도 보인다
-    out = [top] + [line(v) + mark(v) for v in shown]
-    if len(items) > len(shown):
-        out.append("외 %d건" % (len(items) - len(shown)))
-    out += ["마감: " + head(v) for v in ch["cls"]]
-    out += ["삭제: " + head(v) for v in ch.get("del", [])]
+def notice_text(posts, now, cfg):
+    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 그 아래로 이후 벙. 벙이 시작하면 다음 벙이 첫 줄로 올라온다"""
+    up = sorted([v for v in posts if upcoming(v, now)], key=skey)
+    link = cfg["site"] + "/bung"
+    if not up:
+        return "\n".join(["[다음 벙] 아직 없음"] + (["벙 올리기 " + link] if cfg.get("link", True) else []))
+    first, rest = up[0], up[1:]
+    same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
+    out = ["[다음 벙] " + line(first) + (" 외 %d건" % same if same else "")]
+    if rest:
+        mx = max(1, int(cfg.get("max_lines", 15)))
+        out.append("이후 %d건" % len(rest))
+        out += [line(v) for v in rest[:mx]]
+        if len(rest) > mx:
+            out.append("외 %d건" % (len(rest) - mx))
     if cfg.get("link", True):
-        out.append(("전체 " if items else "벙 올리기 ") + cfg["site"] + "/bung")
+        out.append("전체 " + link)
     return "\n".join(out)
+
+
+def detail(v):
+    bits = []
+    if v["place"]:
+        bits.append("장소 " + v["place"])
+    if v["cap"]:
+        bits.append("인원 %d명" % v["cap"])
+    if v["author"]:
+        bits.append("벙주 " + v["author"])
+    return ", ".join(bits)
+
+
+def alert_text(ch, cfg):
+    """바뀐 것 알림(공지와 따로 올리는 메시지). 하나면 자세히, 여럿이면 한 메시지에 한 줄씩"""
+    items = []
+    for v in sorted(ch["new"], key=skey):
+        items.append(("새 벙", v, detail(v)))
+    for v, f in ch["chg"]:
+        rest = [x for x in f if x != "마감 풀림"]
+        if rest:
+            items.append(("벙 변경", v, ", ".join(rest) + " 바뀜"))
+        else:
+            items.append(("벙 다시 모집", v, ""))
+    for v in ch["cls"]:
+        items.append(("벙 마감", v, ""))
+    for v in ch.get("del", []):
+        items.append(("벙 취소", v, "모집 글 삭제"))
+    if not items:
+        return ""
+    post_link = lambda v: cfg["site"] + "/news.html#post-" + v["id"]
+    if len(items) == 1:
+        kind, v, d = items[0]
+        out = ["[%s] %s" % (kind, head(v))]
+        if kind == "벙 변경":
+            out.append(changes_line(ch, v))
+        elif d:
+            out.append(d)
+        if kind != "벙 취소" and cfg.get("link", True):
+            out.append(post_link(v))
+        return "\n".join(out)
+    out = ["[벙 알림 %d건]" % len(items)]
+    for kind, v, d in items:
+        out.append("%s: %s%s" % (kind, head(v), (" (" + d + ")") if d and kind != "새 벙" else ""))
+    return "\n".join(out)
+
+
+def changes_line(ch, v):
+    for x, f in ch["chg"]:
+        if x["id"] == v["id"]:
+            o = x.get("_old") or {}
+            parts = []
+            if "날짜" in f:
+                parts.append("날짜 %s 에서 %s" % (md(o["d"]) if o.get("d") else "없음", md(v["date"]) if v["date"] else "없음"))
+            if "시간" in f:
+                parts.append("시간 %s 에서 %s" % (o.get("t") or "없음", v["time"] or "없음"))
+            if "장소" in f:
+                parts.append("장소 %s 에서 %s" % (o.get("p") or "없음", v["place"] or "없음"))
+            return ", ".join(parts)
+    return ""
 
 
 def digest_due(st, now, cfg):
@@ -370,6 +409,9 @@ def digest_due(st, now, cfg):
 
 
 # ── 한 차례 ──
+NOTICE_RETRY = [60, 300, 900]                           # 공지 걸기가 실패하면 1분, 5분, 15분 뒤 다시(세 번까지)
+
+
 class Bot:
     def __init__(self, cfg, sender, site, state_path, log, clock=None, room=None):
         self.cfg, self.sender, self.site, self.state_path, self.log = cfg, sender, site, state_path, log
@@ -389,7 +431,7 @@ class Bot:
         return now.ts - self.last_check >= int(self.cfg.get("check_sec", 20)) or digest_due(self.st, now, self.cfg) is True
 
     def cycle(self):
-        """사이트를 한 번 보고 올릴 것이 있으면 올린다. 무엇을 했는지 한 낱말로 돌려준다"""
+        """사이트를 한 번 보고, 바뀐 것은 알림으로, 공지 글이 달라졌으면 공지로. 무엇을 했는지 한 낱말로 돌려준다"""
         now = Now(self.clock())
         self.last_check = now.ts
         st, cfg = self.st, self.cfg
@@ -407,48 +449,68 @@ class Bot:
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
             ch = noch()
-        changed = has_changes(ch)
+        alert = alert_text(ch, cfg)
+        ntext = notice_text(posts, now, cfg)
         dg = digest_due(st, now, cfg)
-        if dg == "skip" or (dg and st.get("last_post_ymd") == now.ymd and not changed):
+        if dg == "skip" or (dg and st.get("last_post_ymd") == now.ymd and ntext == st.get("notice_text")):
             st["last_digest"] = now.ymd                 # 너무 늦었거나 오늘 이미 올렸다
             self.save()
             dg = False
-        gap_ok = now.ts - float(st.get("last_post_at") or 0) >= int(cfg.get("min_gap_sec", 60))
-        if not ((changed and gap_ok) or dg):
-            if not changed:
-                st["known"] = cur                       # 제목만 바뀜, 지난 글 정리
-                self.save()
-            return "wait" if changed else "none"
-        text = compose(posts, now, ch, cfg)
-        if not text:
-            st.update(known=cur, last_digest=now.ymd)
+        want = (ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg)
+        if not alert and not want:
+            st["known"] = cur                           # 제목만 바뀜, 지난 글 정리
             self.save()
-            return "empty"
+            return "none"
+        if now.ts - float(st.get("last_post_at") or 0) < int(cfg.get("min_gap_sec", 60)):
+            return "wait"                               # 방금 올렸다. 모았다가 한 번에
         try:
-            return self._post(st, cfg, now, cur, dg, text)
+            return self._post(st, cfg, now, cur, alert, ntext if want else "", dg)
         finally:
             if hasattr(self.sender, "done"):
                 self.sender.done()
 
-    def _post(self, st, cfg, now, cur, dg, text):
+    def _post(self, st, cfg, now, cur, alert, ntext, dg):
+        if alert:
+            try:
+                self.sender.send(self.room, alert)
+            except Exception as e:
+                self.log("알림 보내기 실패(다음 차례에 다시): %s" % e)
+                self.hold_until = now.ts + 60
+                return "send-fail"
+            self.log("알림: " + alert.split("\n")[0])
+        st.update(known=cur, last_post_at=now.ts)
+        self.save()
+        if not ntext:
+            return "alert"
         try:
-            self.sender.send(self.room, text)
+            self.sender.send(self.room, ntext)
         except Exception as e:
-            self.log("보내기 실패(다음 차례에 다시): %s" % e)
+            self.log("공지 글 보내기 실패(다음 차례에 다시): %s" % e)
             self.hold_until = now.ts + 60
             return "send-fail"
-        st.update(known=cur, last_post_at=now.ts, last_post_ymd=now.ymd)
+        st.update(last_post_at=now.ts, last_post_ymd=now.ymd)
         if dg:
             st["last_digest"] = now.ymd
+        self.log("올림: " + ntext.split("\n")[0])
+        if not cfg.get("notice"):
+            st["notice_text"] = ntext
+            self.save()
+            return "sent"
+        try:
+            self.sender.notice(self.room, ntext)
+        except Exception as e:
+            n = int(st.get("notice_fail") or 0) if st.get("notice_fail_text") == ntext else 0
+            if n < len(NOTICE_RETRY):
+                st.update(notice_fail=n + 1, notice_fail_text=ntext, notice_retry_at=now.ts + NOTICE_RETRY[n])
+                self.log("공지 걸기 실패(%d번째, 글을 다시 올려 다시 건다): %s" % (n + 1, e))
+            else:
+                st.update(notice_text=ntext, notice_fail=0, notice_retry_at=0)   # 세 번 넘게 실패: 다음 바뀜까지 쉼
+                self.log("공지 걸기 %d번 실패, 다음 바뀜 때 다시: %s" % (n + 1, e))
+            self.save()
+            return "sent-no-notice"
+        st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0)
         self.save()
-        self.log("올림: " + text.split("\n")[0])
-        if cfg.get("notice"):
-            try:
-                self.sender.notice(self.room, text)
-                self.log("공지로 걸었음")
-            except Exception as e:
-                self.log("공지 걸기 실패(목록은 올라감): %s" % e)
-                return "sent-no-notice"
+        self.log("공지로 걸었음")
         return "sent"
 
 
@@ -1254,18 +1316,26 @@ def cmd_setup(cfg, cfg_path, ask=input, tab=None):
 
 def cmd_feed(path, op):
     """시험 파일 고치기: add(새 벙), change(마지막 벙 시간 한 시간 뒤로), close(마지막 벙 마감), del(마지막 벙 지우기)"""
-    if op not in ("add", "change", "close", "del"):
-        raise SystemExit("python excer_bot.py feed add | change | close | del")
+    if op not in ("add", "change", "close", "del", "soon"):
+        raise SystemExit("python excer_bot.py feed add | change | close | del | soon")
     try:
         with open(path, encoding="utf-8-sig") as f:
             rows = json.load(f)
     except (OSError, ValueError):
         raise SystemExit("시험 파일이 없음. 먼저 python excer_bot.py sample-feed")
     now = datetime.now(KST)
+    if op == "soon":                                    # 3분 뒤 시작: 시작하면 공지 첫 줄이 다음 벙으로 넘어가는지 본다
+        n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
+        at = now + timedelta(minutes=3)
+        rows.append({"id": n, "title": "곧 시작 시험 벙 %d" % (n - 900000), "author": "시험", "created_at": now.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
+                     "meta": {"kind": "bung", "date": at.strftime("%Y-%m-%d"), "time": at.strftime("%H:%M"), "place": "시험 장소", "cap": 4}})
+        save_json(path, rows)
+        print("고쳤습니다: %s 에 시작하는 벙. 곧 공지 첫 줄에 오고, %s 가 지나면 다음 벙으로 넘어갑니다." % (at.strftime("%H:%M"), at.strftime("%H:%M")))
+        return
     if op == "add":
         n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
         rows.append({"id": n, "title": "시험 벙 %d" % (n - 900000), "author": "시험", "created_at": now.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
-                     "meta": {"kind": "bung", "date": (now + timedelta(days=1 + (n - 900000) % 5)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소 %d" % (n - 900000)}})
+                     "meta": {"kind": "bung", "date": (now + timedelta(days=1 + (n - 900000) % 5)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소 %d" % (n - 900000), "cap": 6}})
         what = "새 벙: " + rows[-1]["title"]
     else:
         live = [r for r in rows if (r.get("meta") or {}).get("status") != "closed"]
@@ -1281,7 +1351,7 @@ def cmd_feed(path, op):
             what = "%s 마감" % r["title"]
         else:
             rows.remove(r)
-            what = "%s 지움" % r["title"]
+            what = "%s 지움(취소)" % r["title"]
     save_json(path, rows)
     print("고쳤습니다: %s. 20초 안에 시험 방에 올라옵니다(한 번 올린 뒤 1분 안이면 1분 뒤)." % what)
 
@@ -1319,7 +1389,7 @@ def main(argv=None):
     site = FileSite(a.feed) if a.feed else Site(cfg)
     now = lambda: Now(datetime.now(KST))
     if a.command == "list":
-        print(compose(site.posts(), now(), noch(), cfg, always=True))
+        print(notice_text(site.posts(), now(), cfg))
         return
     if a.command == "check":
         try:
@@ -1358,7 +1428,7 @@ def main(argv=None):
         if not room:
             raise SystemExit("excer_bot.json 의 test_room(시험 방)을 먼저 넣으세요(setup).")
         sender = make_sender(cfg, log)
-        text = compose(site.posts(), now(), noch(), cfg, always=True)
+        text = notice_text(site.posts(), now(), cfg)
         if a.command == "calibrate":
             if not isinstance(sender, PcSender):
                 raise SystemExit("calibrate 는 pc 방식에서만 필요합니다.")
