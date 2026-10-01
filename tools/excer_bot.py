@@ -27,7 +27,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 tablet 준비(태블릿 하나로)
-  - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 pkg install python android-tools termux-api
+  - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤
+    pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect 포트 (무선 디버깅 화면의 'IP 주소 및 포트' 의 포트). 재부팅하면 connect 만 다시.
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결(connect 가 충전 중 화면 켜짐을 켠다), Termux 는 배터리 제한 없음.
@@ -820,6 +821,7 @@ def find(nodes, text=None, desc=None, starts=None, cls=None, rid=None):
 class AdbSender:
     """태블릿(또는 폰) 안의 Termux 에서 돈다. adb 로 같은 기기에 붙어 화면을 읽고(uiautomator dump) 누른다(input)"""
     TMP = "/data/local/tmp/excer_ui.xml"
+    diag_path = None                                             # 안 될 때 그때 화면을 적을 파일(main 이 정한다)
 
     def __init__(self, cfg, log, run=None):
         self.t, self.log, self.sleep = cfg["tablet"], log, time.sleep
@@ -861,10 +863,15 @@ class AdbSender:
         raise KakaoError("adb 에 붙은 기기가 여럿(%s). excer_bot.json 의 tablet.serial 에 하나를 넣으세요" % ", ".join(devs))
 
     def connect(self, port):
-        code, out, err = self.run([self.t["adb"], "connect", "127.0.0.1:%s" % port], None, 20)
+        addr = port if ":" in str(port) else "127.0.0.1:%s" % port
+        code, out, err = self.run([self.t["adb"], "connect", addr], None, 20)
         if "connected" not in out or "cannot" in out or "failed" in out:
-            raise KakaoError("adb connect 실패: %s" % (out + err).strip()[:200])
-        self.serial = "127.0.0.1:%s" % port
+            msg = (out + err).strip()[:200]
+            if "refused" in msg:                        # 흔한 실수: 페어링 창의 포트를 넣음
+                msg += ("\n포트를 확인하세요. 페어링 창의 포트가 아니라 무선 디버깅 첫 화면 'IP 주소 및 포트' 의 : 뒤 숫자입니다"
+                        "(무선 디버깅을 껐다 켜거나 재부팅하면 바뀝니다).")
+            raise KakaoError("adb connect 실패: %s" % msg)
+        self.serial = addr
         done = []
         # Termux 가 오래 돌 때 안드로이드가 끄지 않게, 충전 중에는 화면이 꺼지지 않게
         for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),
@@ -920,7 +927,7 @@ class AdbSender:
                 a = el.attrib
                 m = BOUNDS_RE.match(a.get("bounds", ""))
                 n = {"text": a.get("text", ""), "desc": a.get("content-desc", ""), "rid": a.get("resource-id", ""),
-                     "cls": a.get("class", ""), "click": a.get("clickable") == "true",
+                     "cls": a.get("class", ""), "click": a.get("clickable") == "true", "pkg": a.get("package", ""),
                      "b": tuple(int(x) for x in m.groups()) if m else (0, 0, 0, 0), "kids": [], "i": len(out)}
                 out.append(n)
                 if parent is not None:
@@ -955,21 +962,40 @@ class AdbSender:
             raise KakaoError("클립보드에 넣지 못함(%s, Termux:API 앱이 깔려 있는지): %s" % (self.t["clip"], (err or out).strip()[:120]))
 
     # 카카오톡 채팅 목록과 방
+    def on_kakao(self, nodes):
+        return any(n.get("pkg") == self.t["package"] for n in nodes)
+
+    def chat_tab(self, nodes):
+        """아래(또는 옆) 메뉴의 '채팅'. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다"""
+        k = [n for n in nodes if n.get("pkg") == self.t["package"]]
+        c = find(k, desc="채팅") or find(k, text="채팅") or [n for n in k if re.match(r"^채팅(\s*탭)?\s*(,|$)", n["desc"])]
+        return c[0] if c else None
+
     def goto_list(self):
         self.key(224)                                            # 화면 켜기
-        self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
-        self.sleep(2.0)
-        nodes = self.dump()
-        for _ in range(5):                                       # 폰은 방 안에 있으면 뒤로 가서 목록으로
-            if find(nodes, desc="채팅") or find(nodes, text="채팅"):
-                break
-            self.key(4)
-            self.sleep(0.6)
+        nodes, launched = [], 0
+        for _ in range(8):
+            if not self.on_kakao(nodes):                         # 카카오톡을 앞으로(뜨는 중이면 조금 더 기다린다)
+                if launched >= 3:
+                    break
+                self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
+                launched += 1
+                for wait in (2.0, 1.5, 2.5):
+                    self.sleep(wait)
+                    nodes = self.dump()
+                    if self.on_kakao(nodes) and (self.chat_tab(nodes) or find(nodes, cls="EditText")):
+                        break
+                continue
+            tab = self.chat_tab(nodes)
+            if tab:
+                self.tap(tab)
+                return self.dump()
+            self.key(4)                                          # 폰은 방 안이면 뒤로 가서 목록으로, 알림 창이면 닫는다
+            self.sleep(0.8)
             nodes = self.dump()
-        else:
-            raise KakaoError("카카오톡 채팅 목록 화면으로 가지 못함")
-        self.tap((find(nodes, desc="채팅") or find(nodes, text="채팅"))[0])
-        return self.dump()
+        self.save_diag(nodes)
+        why = "카카오톡이 앞으로 나오지 않음" if not self.on_kakao(nodes) else "'채팅' 단추를 찾지 못함"
+        raise KakaoError("카카오톡 채팅 목록 화면으로 가지 못함(%s)%s" % (why, ". 그때 화면을 %s 에 적었습니다" % os.path.basename(self.diag_path) if self.diag_path else ""))
 
     @staticmethod
     def list_right(nodes):
@@ -1164,13 +1190,24 @@ class AdbSender:
             out.append("화면 읽기: 안 됨(%s)" % e)
         return out
 
-    def dump_file(self, path):
-        rows = ["%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s" % (n["cls"].split(".")[-1], n["text"][:60].replace("\n", " / "), n["desc"], n["rid"],
-                "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"]) for n in self.dump()
+    @staticmethod
+    def rows(nodes):
+        return ["%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], n["text"][:60].replace("\n", " / "), n["desc"], n["rid"],
+                "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"], n.get("pkg", "")) for n in nodes
                 if n["text"] or n["desc"] or n["rid"] or n["click"] or n["cls"].endswith("EditText")]
+
+    def dump_file(self, path, nodes=None):
+        rows = self.rows(self.dump() if nodes is None else nodes)
         with open(path, "w", encoding="utf-8") as f:
             f.write("\n".join(rows))
         return len(rows)
+
+    def save_diag(self, nodes):
+        if self.diag_path:
+            try:
+                self.dump_file(self.diag_path, nodes)
+            except OSError:
+                pass
 
 
 # ── 카카오톡 조작: 안드로이드 폰, 태블릿(uiautomator2) ──
@@ -1329,8 +1366,10 @@ def cmd_setup(cfg, cfg_path, ask=input, tab=None):
         print("카카오톡 채팅 목록에서 방 이름을 읽습니다(카카오톡이 잠깐 앞으로 나옵니다).")
         try:
             tab = tab or AdbSender(cfg, print)
-            rooms = tab.room_names()
-            tab.done()
+            try:
+                rooms = tab.room_names()
+            finally:
+                tab.done()
         except Exception as e:
             print("방 이름을 읽지 못함:", e, "(방 이름을 직접 넣거나 connect 부터 하세요)")
         if rooms:
@@ -1426,10 +1465,11 @@ def main(argv=None):
     cfg = load_cfg(a.config)
     base = os.path.splitext(a.config)[0]
     log = Log(base + ".log")
+    AdbSender.diag_path = base + "_ui.txt"
     if a.command == "setup":
         return cmd_setup(cfg, a.config)
     if a.command == "connect":
-        if not a.arg.isdigit():
+        if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", a.arg):
             raise SystemExit("python excer_bot.py connect 포트  (설정 > 개발자 옵션 > 무선 디버깅의 'IP 주소 및 포트' 에서 : 뒤 숫자)")
         serial, done = AdbSender(cfg, log).connect(a.arg)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
@@ -1470,14 +1510,20 @@ def main(argv=None):
     if a.command == "ui":
         sender = make_sender(cfg, log)
         if isinstance(sender, AdbSender):
+            err = None
             try:                                        # 시험 방을 연 화면을 적는다(다른 방 대화가 들어가지 않게)
-                if cfg.get("test_room"):
-                    sender.open_room(cfg["test_room"])
-                else:
-                    sender.goto_list()
+                try:
+                    if cfg.get("test_room"):
+                        sender.open_room(cfg["test_room"])
+                    else:
+                        sender.goto_list()
+                except KakaoError as e:                 # 못 가도 지금 화면은 적는다(원인 찾기용)
+                    err = e
                 n = sender.dump_file(base + "_ui.txt")
             finally:
                 sender.done()
+            if err:
+                print("안 됨:", err)
         elif isinstance(sender, AndroidSender):
             n = sender.dump(base + "_ui.txt")
         else:
@@ -1535,3 +1581,6 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("멈춤")
+    except KakaoError as e:                             # 파이썬 오류 화면 대신 무엇이 안 됐는지만
+        print("안 됨:", e)
+        sys.exit(1)
