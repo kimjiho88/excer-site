@@ -1101,14 +1101,46 @@ class AdbSender:
         m = re.search(r"_adb-tls-connect\._tcp\.?\s+\S*?:(\d{1,5})\b", out or "")
         return m.group(1) if m else ""
 
+    @staticmethod
+    def probe(port):
+        """이 기기 안(127.0.0.1)에서 이 포트가 열려 있는지"""
+        import socket
+        s = socket.socket()
+        s.settimeout(0.05)
+        try:
+            return s.connect_ex(("127.0.0.1", port)) == 0
+        except OSError:
+            return False
+        finally:
+            s.close()
+
+    def scan_port(self, ranges=((30000, 50000), (5555, 5556), (50000, 61000))):
+        """무선 디버깅 포트 찾기: 기기 안의 열린 포트를 훑어 adb connect 가 되는 것. 무선 디버깅은 3만에서 5만 사이 숫자를 쓴다"""
+        tried = 0
+        for lo, hi in ranges:
+            for port in range(lo, hi):
+                if not self.probe(port):
+                    continue
+                tried += 1
+                if tried > 12:
+                    return ""
+                try:
+                    code, out, err = self.run([self.t["adb"], "connect", "127.0.0.1:%d" % port], None, 10)
+                except KakaoError:
+                    return ""
+                if "connected" in out and "cannot" not in out and "failed" not in out:
+                    return str(port)
+        return ""
+
     def connect(self, port):
         addr = port if ":" in str(port) else "127.0.0.1:%s" % port
         code, out, err = self.run([self.t["adb"], "connect", addr], None, 20)
         if "connected" not in out or "cannot" in out or "failed" in out:
             msg = (out + err).strip()[:200]
-            if "refused" in msg:                        # 흔한 실수: 페어링 창의 포트를 넣음
-                msg += ("\n포트를 확인하세요. 페어링 창의 포트가 아니라 무선 디버깅 첫 화면 'IP 주소 및 포트' 의 : 뒤 숫자입니다"
-                        "(무선 디버깅을 껐다 켜거나 재부팅하면 바뀝니다).")
+            if "refused" in msg:                        # 흔한 실수: 예로 든 숫자나 페어링 창의 포트를 넣음
+                msg += ("\n포트를 확인하세요. 안내에 예로 적힌 숫자가 아니라 이 기기 화면에 보이는 숫자이고, 페어링 창의 포트가 아니라 "
+                        "무선 디버깅 첫 화면 'IP 주소 및 포트' 의 : 뒤 숫자입니다(무선 디버깅을 껐다 켜거나 재부팅하면 바뀝니다).\n"
+                        "숫자를 안 적고 python excer_bot.py connect 만 치면 스스로 찾아 봅니다.")
             raise KakaoError("adb connect 실패: %s" % msg)
         self.serial = addr
         done = []
@@ -2296,12 +2328,15 @@ def main(argv=None):
     if a.command == "connect":
         port = a.arg
         if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", port):
-            port = AdbSender(cfg, log).mdns_port()        # 포트를 안 적었으면(또는 '포트' 라고 적었으면) 기기가 알리는 것을 찾아 본다
+            finder = AdbSender(cfg, log)                  # 포트를 안 적었으면(또는 '포트' 라고 적었으면) 스스로 찾아 본다
+            print("무선 디버깅 포트를 찾는 중(몇 초)")
+            port = finder.mdns_port() or finder.scan_port()
             if port:
                 print("무선 디버깅 포트를 찾았습니다: %s" % port)
             else:
-                raise SystemExit("python excer_bot.py connect 포트   예: python excer_bot.py connect 37581\n"
-                                 "포트는 숫자입니다. 설정 > 개발자 옵션 > 무선 디버깅(켬) 첫 화면의 'IP 주소 및 포트' 가 192.168.0.12:37581 이면 37581.\n"
+                raise SystemExit("찾지 못했습니다. 무선 디버깅이 켜져 있는지 보고(설정 > 개발자 옵션 > 무선 디버깅) 다시 python excer_bot.py connect\n"
+                                 "그래도 안 되면 숫자를 직접: python excer_bot.py connect 포트   예: python excer_bot.py connect 37581\n"
+                                 "포트는 숫자이고 기기마다 다릅니다. 무선 디버깅 글자를 눌러 들어간 화면의 'IP 주소 및 포트' 가 192.168.0.12:37581 이면 37581.\n"
                                  "페어링 창의 포트가 아닙니다. 무선 디버깅을 껐다 켜거나 재부팅하면 숫자가 바뀝니다.")
         serial, done = AdbSender(cfg, log).connect(port)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
