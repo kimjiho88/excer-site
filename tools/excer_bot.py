@@ -54,6 +54,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py voice study     (tablet) 시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과
                                       신호(알림, 소리, 서비스)를 excer_bot_voice_study.txt 에 적고 클립보드에 담는다. docs/BOT_VOICE_ROOM.md
   python excer_bot.py voice status    보이스룸이 켜져 있는지(화면을 건드리지 않고 알림, 소리, 서비스로)와 최근 끊김 기록
+  python excer_bot.py voice raw       그 신호의 원문을 excer_bot_voice_raw.txt 에 적고 클립보드에 담는다(해석기를 맞추는 근거.
+                                      대화 글은 안 들어가고 보이스룸 알림 글자만 그대로)
   python excer_bot.py voice on        run 이 보이스룸 끊김도 함께 지켜보게 켠다(1단계: 알아채고 기록만, 복구는 2단계). voice off 로 끈다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
@@ -98,7 +100,9 @@ DEFAULTS = {
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
               "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
     # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md). 1단계: run 이 끊김을 알아채 기록만 한다(복구는 2단계). room 이 비면 알릴 방
-    "voice": {"on": False, "room": "", "title": "", "check_sec": 60, "notif_word": "보이스룸", "renew_hours": 47.5, "mute": True,
+    "voice": {"on": False, "room": "", "title": "", "check_sec": 60, "notif_word": "보이스룸",
+              "on_text": "보이스룸에 참여 중", "end_text": "보이스룸 종료",   # 카카오톡 알림 글자(실측). 바뀌면 여기만
+              "renew_hours": 47.5, "mute": True,
               "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
 }
 
@@ -895,10 +899,19 @@ def notif_records(out, pkg):
 
 
 def audio_active(out, pkg, pids):
-    """dumpsys audio: 이 앱의 재생이 돌고 있는지(players 에 state:started), 오디오 포커스를 쥐고 있는지"""
+    """dumpsys audio: 이 앱의 재생이 돌고 있는지(players 에 state:started), 오디오 포커스를 쥐고 있는지.
+    혼자 있는 보이스룸은 들어오는 소리가 없어 재생이 멈춰 있고 포커스만 쥔다(실측)"""
     started = any(m.group(1) in pids for m in re.finditer(r"u/pid:\d+/(\d+)\s+state:started", out))
     focus = re.search(r"pack:\s*%s\b" % re.escape(pkg), out) is not None
     return started, focus
+
+
+def telecom_call(out, pkg):
+    """dumpsys telecom: 이 앱의 통화가 살아 있는지(카카오톡 통화 계열은 전화 앱처럼 통화로 등록되기도 한다)"""
+    for blk in re.split(r"\n(?=\s*(?:Call |\[?TC@))", out or ""):
+        if pkg in blk and re.search(r"(?:State|state)\s*[:=]?\s*(ACTIVE|DIALING|CONNECTING|RINGING|HOLDING)\b", blk):
+            return True
+    return False
 
 
 def fg_services(out, pkg):
@@ -913,38 +926,64 @@ def fg_services(out, pkg):
     return res
 
 
-def net_state(out):
-    """dumpsys connectivity 에서 연결된 망 종류(WIFI, MOBILE 등). 없으면 '없음'"""
+def net_state(route, conn=""):
+    """연결된 망 종류: ip route 의 기본 경로 장치(wlan WIFI, rmnet MOBILE), 없으면 dumpsys connectivity. 둘 다 없으면 '없음'"""
     kinds = []
-    for m in re.finditer(r"\[type: (\w+)[^\n]*?state: (\w+)", out):
+    for m in re.finditer(r"^default\s.*?\bdev\s+(\S+)", route or "", re.M):
+        d = m.group(1)
+        k = "WIFI" if d.startswith("wlan") else "MOBILE" if re.match(r"rmnet|ccmni|pdp|radio", d) else "ETHERNET" if d.startswith("eth") else d
+        if k not in kinds:
+            kinds.append(k)
+    for m in re.finditer(r"\[type: (\w+)[^\n]*?state: (\w+)", conn or ""):
         if m.group(2) == "CONNECTED" and m.group(1) not in kinds:
             kinds.append(m.group(1))
     return ", ".join(kinds) or "없음"
 
 
-def voice_state(sig, word="보이스룸"):
-    """세 신호로 판정: on(진행 중 알림에 보이스룸), off(알림도 소리도 서비스도 없음), unsure(엇갈림: 알림은 없는데 소리나 서비스),
-    unknown(adb 가 안 붙어 아무것도 못 읽음)"""
+def voice_words(v=None):
+    v = v or {}
+    return {"on": v.get("on_text") or "보이스룸에 참여 중", "end": v.get("end_text") or "보이스룸 종료", "word": v.get("notif_word") or "보이스룸"}
+
+
+def voice_state(sig, v=None):
+    """판정(실측 2026-10-02): 켜져 있으면 카카오톡 알림에 '보이스룸에 참여 중입니다' 가 있고 오디오 포커스를 쥔다(혼자면 재생은 멈춤,
+    포그라운드 서비스는 안 보임). 끊기면 '보이스룸 종료 / 일시적인 오류가 발생하여 종료했습니다' 알림이 남는다.
+    on: 참여 중 알림이 있고 카카오톡이 살아 있음. off: 참여 중 알림이 없고 소리, 포커스, 통화, 서비스도 없음. unsure: 엇갈림.
+    unknown: adb 가 안 붙어 못 읽음"""
+    w = voice_words(v)
     if sig.get("unreadable"):
         return "unknown", "읽지 못함: " + (sig.get("errors") or ["?"])[0]
-    if any(r["ongoing"] and word in r["text"] for r in sig.get("notif") or []):
-        return "on", "진행 중 알림"
+    notes = sig.get("notif") or []
+    has_on = [r for r in notes if w["on"] in r["text"]]
+    ended = [r["text"] for r in notes if w["end"] in r["text"]]
+    end_note = (", 종료 알림: " + ended[-1].split(" / ", 1)[-1][:60]) if ended else ""
+    if has_on and sig.get("alive"):
+        return "on", "참여 중 알림" + ("(진행 중)" if any(r["ongoing"] for r in has_on) else "") + (", 포커스" if sig.get("focus") else "")
     fg = [n for n, f in sig.get("services") or [] if f and VOICE_SERVICE_RE.search(n)]
-    if not sig.get("audio") and not fg:
-        return "off", "알림도 소리도 없음" + ("" if sig.get("alive") else ", 카카오톡 꺼짐")
-    return "unsure", "알림은 없는데 " + ", ".join((["소리 재생"] if sig.get("audio") else []) + (["서비스 " + ", ".join(fg)] if fg else []))
+    extra = ((["소리 재생"] if sig.get("audio") else []) + (["오디오 포커스"] if sig.get("focus") else [])
+             + (["통화 상태"] if sig.get("call") else []) + (["서비스 " + ", ".join(fg)] if fg else []))
+    if has_on:
+        return "off", "참여 중 알림은 남았지만 카카오톡 꺼짐" + end_note
+    if not extra:
+        return "off", "참여 중 알림 없음" + ("" if sig.get("alive") else ", 카카오톡 꺼짐") + end_note
+    return "unsure", "참여 중 알림은 없는데 " + ", ".join(extra) + end_note
 
 
-def voice_status_lines(sig, st, word="보이스룸"):
-    state, why = voice_state(sig, word)
+def voice_status_lines(sig, st, v=None):
+    state, why = voice_state(sig, v)
     out = ["보이스룸: %s (%s)" % ({"on": "켜짐", "off": "꺼짐", "unsure": "알 수 없음", "unknown": "읽지 못함"}[state], why)]
     if state == "unknown":
         if st.get("state"):
             out.append("기록: %s %s 부터" % ("켜짐" if st["state"] == "on" else "꺼짐", st.get("since", "")))
         return out
-    for r in sig.get("notif") or []:
-        out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"] or "(글자 없음)"))
-    out.append("소리: 재생 %s, 포커스 %s" % ("있음" if sig.get("audio") else "없음", "있음" if sig.get("focus") else "없음"))
+    w, notes = voice_words(v), sig.get("notif") or []
+    for r in notes:                                     # 보이스룸 알림만 글자를 적는다(대화 알림 글은 적지 않는다)
+        if w["word"] in r["text"]:
+            out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"]))
+    others = sum(1 for r in notes if w["word"] not in r["text"])
+    if others:
+        out.append("알림: 그 밖 %d개(글자는 적지 않음)" % others)
+    out.append("소리: 재생 %s, 포커스 %s, 통화 상태 %s" % ("있음" if sig.get("audio") else "없음", "있음" if sig.get("focus") else "없음", "있음" if sig.get("call") else "없음"))
     out.append("포그라운드 서비스: %s" % (", ".join(n for n, f in sig.get("services") or [] if f) or "없음"))
     out.append("카카오톡 프로세스: %s" % (", ".join(sig.get("pids") or []) or "없음"))
     out.append("망: %s" % (sig.get("net") or "모름"))
@@ -986,7 +1025,7 @@ class VoiceWatch:
             return "wait"
         self.next_ts = ts + max(15, int(self.v.get("check_sec") or 60))
         sig = self.sender.voice_signals()
-        state, why = voice_state(sig, self.v.get("notif_word") or "보이스룸")
+        state, why = voice_state(sig, self.v)
         prev = self.st.get("state") or ""
         if state == "unknown":                           # adb 가 안 붙으면 판정을 바꾸지 않고, 처음 한 번만 적는다
             if not self.blind:
@@ -996,9 +1035,15 @@ class VoiceWatch:
         if self.blind:
             self.log("보이스룸: 다시 읽음")
             self.blind = False
-        if state == "unsure":
-            state = prev or "off"                       # 엇갈리면 지난 판정을 지킨다(2단계에서 화면으로 확정)
-        if state == "off" and prev == "on":
+        if state == "unsure":                            # 엇갈림(알림은 없는데 포커스 등): 켜져 있던 중이면 세 번 연속일 때 끊김으로
+            if prev == "on":
+                self.off_streak += 1
+                if self.off_streak < 3:
+                    return "off?"
+                state = "off"
+            else:
+                state = prev or "off"
+        elif state == "off" and prev == "on":
             self.off_streak += 1
             if self.off_streak < 2:
                 return "off?"
@@ -1919,13 +1964,67 @@ class AdbSender:
         sig["notif"] = notif_records(get("dumpsys notification --noredact"), pkg)
         sig["audio"], sig["focus"] = audio_active(get("dumpsys audio"), pkg, sig["pids"])
         sig["services"] = fg_services(get("dumpsys activity services %s" % pkg), pkg)
-        sig["net"] = net_state(get("dumpsys connectivity", 40))
+        sig["call"] = telecom_call(get("dumpsys telecom", 40), pkg)
+        sig["net"] = net_state(get("ip route", 20), get("dumpsys connectivity", 40))
         return sig
 
-    def voice_study(self, room, title="시험 보이스룸", word="보이스룸"):
+    def voice_raw(self, v=None):
+        """신호의 원문을 적는다(해석기를 맞추는 근거). 대화 글은 들어가지 않게: 알림 글자는 보이스룸이 든 것만 그대로, 나머지는 글자 수.
+        전화번호 꼴 숫자는 가린다"""
+        pkg, w = self.t["package"], voice_words(v)
+        out = ["# 보이스룸 신호 원문 " + time.strftime("%Y-%m-%d %H:%M") + " (기기 %s, SDK %s)" % (self.sh("getprop ro.product.model").strip(), self.sh("getprop ro.build.version.sdk").strip()), ""]
+
+        def get(cmd, timeout=60):
+            try:
+                return self.sh(cmd + " 2>/dev/null; true", timeout=timeout)
+            except KakaoError as e:
+                return "(읽기 오류: %s)" % str(e)[:80]
+
+        def mask(s):                                          # 전화번호 꼴(9자리 이상)만 가린다. 8자리 flags 값은 그대로
+            return re.sub(r"\d{9,}", lambda m: "숫자" + str(len(m.group(0))) + "자리", s)
+        pids = sorted(set(re.findall(r"\d+", get("ps -A -o PID,NAME | grep -F %s | awk '{print $1}'; pidof %s" % (pkg, pkg), 30))), key=int)
+        out += ["## 프로세스: " + (", ".join(pids) or "없음"), ""]
+        no = get("dumpsys notification --noredact")
+        cut = min([i for i in (no.find(x) for x in ("mArchive", "Archive (", "Historical")) if i >= 0] or [len(no)])
+        out.append("## 알림(카카오톡 것만, 글자는 '%s' 가 든 것만 그대로)" % w["word"])
+        for blk in no[:cut].split("NotificationRecord(")[1:]:
+            head = blk.split("\n", 1)[0]
+            if not re.search(r"\bpkg=%s\b" % re.escape(pkg), head):
+                continue
+            out.append("- " + mask(head)[:300])
+            for line in blk.split("\n")[1:]:
+                s = line.strip()
+                if re.match(r"(uid=|opPkg=|flags=|mIsForegroundService|isOngoing|isForeground|android\.(title|text|subText|bigText|textLines|infoText|conversationTitle)=|tickerText=|category=|mChannel|channel=)", s):
+                    m = re.match(r"(android\.\w+=\w+ \()(.*)(\)\s*)$", s)
+                    if m and w["word"] not in m.group(2):
+                        s = m.group(1) + "(글 %d자)" % len(m.group(2)) + ")"
+                    out.append("    " + mask(s)[:200])
+        out.append("")
+        au = get("dumpsys audio")
+        out.append("## 소리(dumpsys audio 에서 카카오톡 줄과 포커스 줄)")
+        out += ["    " + l.strip()[:220] for l in au.split("\n") if pkg in l or any(("/%s " % p) in l for p in pids) or "Focus stack" in l or "focus" in l.lower() and "stack" in l.lower()][:40]
+        out.append("")
+        sv = get("dumpsys activity services %s" % pkg)
+        out.append("## 서비스(dumpsys activity services)")
+        out += ["    " + l.strip()[:200] for l in sv.split("\n") if "ServiceRecord{" in l or "isForeground" in l or "foregroundId" in l or "fgs" in l.lower()][:40]
+        out.append("")
+        tc = get("dumpsys telecom", 40)
+        out.append("## 통화(dumpsys telecom 에서 카카오톡과 상태 줄)")
+        out += ["    " + mask(l.strip())[:200] for l in tc.split("\n") if pkg in l or re.search(r"\b(ACTIVE|DIALING|CONNECTING|RINGING|HOLDING|DISCONNECTED|SelfManaged|isSelfManaged)\b", l)][:60]
+        out.append("")
+        out.append("## 망(ip route)")
+        out += ["    " + l.strip()[:200] for l in get("ip route", 20).split("\n") if l.strip()][:20]
+        out.append("## 망(dumpsys connectivity 앞부분, 망 이름은 가림)")
+        out += ["    " + re.sub(r'extra: "[^"]*"', 'extra: "..."', l.strip())[:200] for l in get("dumpsys connectivity", 40).split("\n") if l.strip()][:30]
+        out.append("")
+        out.append("## 판정")
+        out += voice_status_lines(self.voice_signals(), {}, v)
+        return "\n".join(out)
+
+    def voice_study(self, room, title="시험 보이스룸", v=None):
         """시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과 신호를 적는다. 2단계(복구)의 근거.
         '방 나가기', '삭제' 같은 단추는 누르지 않는다"""
-        out = []
+        out, word = [], voice_words(v)["word"]
 
         def take(label, nodes, before=None):
             keep = (room, title) + tuple(ws(n["text"]) for n in nodes if word in n["text"])   # 보이스룸 글자가 든 띠와 안내 창 글은 그대로 적는다
@@ -1935,9 +2034,9 @@ class AdbSender:
         def sig(label):
             s = self.voice_signals()
             out.append("## 신호: " + label)
-            out.extend(voice_status_lines(s, {}, word))
+            out.extend(voice_status_lines(s, {}, v))
             out.append("")
-            return voice_state(s, word)[0]
+            return voice_state(s, v)[0]
 
         def pick(nodes, words, before=()):
             c = [n for n in self.labeled(nodes, words, before) if not any(w in n["text"] + " " + n["desc"] for w in self.VOICE_NEVER)]
@@ -1948,7 +2047,7 @@ class AdbSender:
 
         def has_voice_ui(nodes):
             return pick(nodes, self.VOICE_LEAVE) is not None or pick(nodes, ("마이크 끄기", "마이크 켜기", "음소거")) is not None
-        first = voice_state(self.voice_signals(), word)[0]
+        first = voice_state(self.voice_signals(), v)[0]
         if first == "on":                                 # 한 계정은 보이스룸 하나. 시험하면 켜 둔 보이스룸(알릴 방)이 끊긴다
             raise KakaoError("보이스룸이 이미 켜져 있음(알릴 방). 시험을 하면 그 보이스룸이 끊기니, 끝낸 뒤에 voice study 를 하세요")
         if first == "unknown":
@@ -2534,12 +2633,13 @@ def cmd_voice(cfg, a, base, log):
         return
     if sub == "now":
         raise SystemExit("복구(voice now)는 2단계에서 만듭니다. 지금은 voice study, status, on, off")
-    if sub not in ("study", "status"):
-        raise SystemExit("python excer_bot.py voice study | status | on | off")
+    if sub not in ("study", "status", "raw"):
+        raise SystemExit("python excer_bot.py voice study | status | raw | on | off")
     sender = make_sender(cfg, log)
     if not isinstance(sender, AdbSender):
         raise SystemExit("voice 는 tablet 방식에서 씁니다.")
-    word = (cfg.get("voice") or {}).get("notif_word") or "보이스룸"
+    v = cfg.get("voice") or {}
+    word = voice_words(v)["word"]
     if sub == "status":
         st = {}
         try:
@@ -2547,8 +2647,19 @@ def cmd_voice(cfg, a, base, log):
                 st = json.load(f)
         except (OSError, ValueError):
             pass
-        for l in voice_status_lines(sender.voice_signals(), st if isinstance(st, dict) else {}, word):
+        for l in voice_status_lines(sender.voice_signals(), st if isinstance(st, dict) else {}, v):
             print(l)
+        return
+    if sub == "raw":
+        txt = sender.voice_raw(v)
+        path = base + "_voice_raw.txt"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt)
+        try:
+            sender.set_clip(txt)
+            print("적었습니다(%s, %d줄). 클립보드에도 담았으니 대화창에 붙여넣어 보내 주세요." % (os.path.basename(path), txt.count("\n") + 1))
+        except KakaoError:
+            print("적었습니다: %s (cat 으로 보세요)" % path)
         return
     room = cfg.get("test_room") or ""
     if not room:
@@ -2559,7 +2670,7 @@ def cmd_voice(cfg, a, base, log):
         return
     print("1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
     try:
-        txt = sender.voice_study(room, (cfg.get("voice") or {}).get("title") or "시험 보이스룸", word)
+        txt = sender.voice_study(room, v.get("title") or "시험 보이스룸", v)
     finally:
         sender.done()
     path = base + "_voice_study.txt"
