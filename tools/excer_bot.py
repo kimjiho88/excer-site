@@ -100,7 +100,8 @@ DEFAULTS = {
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
               "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
     # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md). 1단계: run 이 끊김을 알아채 기록만 한다(복구는 2단계). room 이 비면 알릴 방
-    "voice": {"on": False, "room": "", "title": "", "check_sec": 60, "notif_word": "보이스룸",
+    "voice": {"on": False, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫",   # 봇이 보이스룸을 만들 때 쓰는 제목(운영자가 정함)
+              "check_sec": 60, "notif_word": "보이스룸",
               "on_text": "보이스룸에 참여 중", "end_text": "보이스룸 종료",   # 카카오톡 알림 글자(실측). 바뀌면 여기만
               "renew_hours": 47.5, "mute": True,
               "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
@@ -2635,7 +2636,8 @@ def cmd_voice(cfg, a, base, log):
     if sub in ("on", "off"):
         cfg.setdefault("voice", {})["on"] = sub == "on"
         save_json(a.config, cfg)
-        print("보이스룸 지키기: " + ("켬. run 이 끊김을 함께 지켜봅니다(1단계: 기록만, 복구는 2단계)" if sub == "on" else "끔"))
+        title = cfg["voice"].get("title") or DEFAULTS["voice"]["title"]
+        print("보이스룸 지키기: " + ("켬. run 이 끊김을 함께 지켜봅니다(1단계: 기록만, 복구는 2단계). 만들 때 제목: " + title if sub == "on" else "끔"))
         return
     if sub == "now":
         raise SystemExit("복구(voice now)는 2단계에서 만듭니다. 지금은 voice study, status, on, off")
@@ -2676,7 +2678,7 @@ def cmd_voice(cfg, a, base, log):
         return
     print("1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
     try:
-        txt = sender.voice_study(room, v.get("title") or "시험 보이스룸", v)
+        txt = sender.voice_study(room, v.get("title") or DEFAULTS["voice"]["title"], v)
     finally:
         sender.done()
     path = base + "_voice_study.txt"
