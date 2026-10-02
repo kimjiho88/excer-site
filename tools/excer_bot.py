@@ -922,7 +922,10 @@ def net_state(out):
 
 
 def voice_state(sig, word="보이스룸"):
-    """세 신호로 판정: on(진행 중 알림에 보이스룸), off(알림도 소리도 서비스도 없음), unsure(엇갈림: 알림은 없는데 소리나 서비스)"""
+    """세 신호로 판정: on(진행 중 알림에 보이스룸), off(알림도 소리도 서비스도 없음), unsure(엇갈림: 알림은 없는데 소리나 서비스),
+    unknown(adb 가 안 붙어 아무것도 못 읽음)"""
+    if sig.get("unreadable"):
+        return "unknown", "읽지 못함: " + (sig.get("errors") or ["?"])[0]
     if any(r["ongoing"] and word in r["text"] for r in sig.get("notif") or []):
         return "on", "진행 중 알림"
     fg = [n for n, f in sig.get("services") or [] if f and VOICE_SERVICE_RE.search(n)]
@@ -933,7 +936,11 @@ def voice_state(sig, word="보이스룸"):
 
 def voice_status_lines(sig, st, word="보이스룸"):
     state, why = voice_state(sig, word)
-    out = ["보이스룸: %s (%s)" % ({"on": "켜짐", "off": "꺼짐", "unsure": "알 수 없음"}[state], why)]
+    out = ["보이스룸: %s (%s)" % ({"on": "켜짐", "off": "꺼짐", "unsure": "알 수 없음", "unknown": "읽지 못함"}[state], why)]
+    if state == "unknown":
+        if st.get("state"):
+            out.append("기록: %s %s 부터" % ("켜짐" if st["state"] == "on" else "꺼짐", st.get("since", "")))
+        return out
     for r in sig.get("notif") or []:
         out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"] or "(글자 없음)"))
     out.append("소리: 재생 %s, 포커스 %s" % ("있음" if sig.get("audio") else "없음", "있음" if sig.get("focus") else "없음"))
@@ -965,13 +972,13 @@ class VoiceWatch:
                 self.st.update(got)
         except (OSError, ValueError):
             pass
-        self.next_ts, self.off_streak = 0.0, 0
+        self.next_ts, self.off_streak, self.blind = 0.0, 0, False
 
     def due(self):
         return self.clock().timestamp() >= self.next_ts
 
     def tick(self):
-        """한 번 읽고 판정. 꺼짐은 두 번 연속일 때만 끊김으로 적는다. 돌려주는 것: on, off, off?(한 번 안 보임), wait"""
+        """한 번 읽고 판정. 꺼짐은 두 번 연속일 때만 끊김으로 적는다. 돌려주는 것: on, off, off?(한 번 안 보임), unknown(adb 안 붙음), wait"""
         dt = self.clock()
         ts = dt.timestamp()
         if ts < self.next_ts:
@@ -980,6 +987,14 @@ class VoiceWatch:
         sig = self.sender.voice_signals()
         state, why = voice_state(sig, self.v.get("notif_word") or "보이스룸")
         prev = self.st.get("state") or ""
+        if state == "unknown":                           # adb 가 안 붙으면 판정을 바꾸지 않고, 처음 한 번만 적는다
+            if not self.blind:
+                self.log("보이스룸: " + why + ". 붙을 때까지 지난 판정(%s)을 지킨다" % ({"on": "켜짐", "off": "꺼짐"}.get(prev, "없음")))
+            self.blind = True
+            return "unknown"
+        if self.blind:
+            self.log("보이스룸: 다시 읽음")
+            self.blind = False
         if state == "unsure":
             state = prev or "off"                       # 엇갈리면 지난 판정을 지킨다(2단계에서 화면으로 확정)
         if state == "off" and prev == "on":
@@ -1793,7 +1808,13 @@ class AdbSender:
     def voice_signals(self):
         """보이스룸 신호(화면을 건드리지 않음): 알림, 소리, 서비스, 카카오톡 프로세스, 망"""
         pkg = self.t["package"]
-        sig = {"notif": [], "audio": False, "focus": False, "services": [], "alive": False, "pids": [], "net": "", "errors": []}
+        sig = {"notif": [], "audio": False, "focus": False, "services": [], "alive": False, "pids": [], "net": "", "errors": [], "unreadable": False}
+        try:
+            self.device()                                 # adb 가 안 붙으면 신호를 '없음' 으로 치지 않는다
+        except KakaoError as e:
+            sig["errors"].append(str(e)[:160])
+            sig["unreadable"] = True
+            return sig
 
         def get(cmd, timeout=60):
             try:
@@ -1836,6 +1857,11 @@ class AdbSender:
 
         def has_voice_ui(nodes):
             return pick(nodes, self.VOICE_LEAVE) is not None or pick(nodes, ("마이크 끄기", "마이크 켜기", "음소거")) is not None
+        first = voice_state(self.voice_signals(), word)[0]
+        if first == "on":                                 # 한 계정은 보이스룸 하나. 시험하면 켜 둔 보이스룸(알릴 방)이 끊긴다
+            raise KakaoError("보이스룸이 이미 켜져 있음(알릴 방). 시험을 하면 그 보이스룸이 끊기니, 끝낸 뒤에 voice study 를 하세요")
+        if first == "unknown":
+            raise KakaoError("adb 가 안 붙어 신호를 읽지 못함. python excer_bot.py connect 포트 뒤에 다시")
         nodes = self.open_room(room)
         take("1 시험 방(%s)" % room, nodes)
         sig("1 시작 전")
