@@ -30,7 +30,8 @@ tablet 준비(태블릿 하나로)
   - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤
     pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
-    python excer_bot.py connect 포트 (무선 디버깅 화면의 'IP 주소 및 포트' 의 포트). 재부팅하면 connect 만 다시.
+    python excer_bot.py connect (포트는 스스로 찾는다. 못 찾으면 무선 디버깅 화면의 'IP 주소 및 포트' 의 포트를 적는다).
+    connect 는 고정 포트(5555)도 열어 두어 무선 디버깅이 저절로 꺼져도 붙는다(처음 한 번 화면의 허용 창). 재부팅하면 무선 디버깅을 켜고 connect 만 다시.
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
@@ -1084,12 +1085,26 @@ class AdbSender:
             if want in devs:
                 self.serial = want
                 return want
-            raise KakaoError("adb 에 '%s' 기기가 없음. 재부팅했거나 와이파이가 바뀌었으면 무선 디버깅 화면의 새 포트로 python excer_bot.py connect 포트" % want)
+            fixed = "127.0.0.1:%d" % self.FIXED                # 무선 디버깅 포트가 죽었어도 고정 포트가 열려 있으면 그리로
+            if want != fixed:
+                try:
+                    code, out, err = self.run([self.t["adb"], "connect", fixed], None, 10)
+                    if "connected" in out and "failed" not in out and "cannot" not in out:
+                        self.serial = fixed
+                        return fixed
+                except KakaoError:
+                    pass
+            raise KakaoError("adb 에 '%s' 기기가 없음. 무선 디버깅이 꺼졌거나 재부팅했으면 무선 디버깅을 켜고 python excer_bot.py connect" % want)
         if len(devs) == 1:
             self.serial = devs[0]
             return self.serial
         if not devs:
-            raise KakaoError("adb 에 붙은 기기가 없음. 무선 디버깅을 켜고 python excer_bot.py connect 포트")
+            raise KakaoError("adb 에 붙은 기기가 없음. 무선 디버깅을 켜고 python excer_bot.py connect")
+        local = [d for d in devs if d.startswith("127.0.0.1:")]   # 127.0.0.1 로 붙은 것은 모두 이 기기(무선 포트와 고정 포트)
+        if local:
+            fixed = "127.0.0.1:%d" % self.FIXED
+            self.serial = fixed if fixed in local else local[0]
+            return self.serial
         raise KakaoError("adb 에 붙은 기기가 여럿(%s). excer_bot.json 의 tablet.serial 에 하나를 넣으세요" % ", ".join(devs))
 
     def mdns_port(self):
@@ -1114,7 +1129,7 @@ class AdbSender:
         finally:
             s.close()
 
-    def scan_port(self, ranges=((30000, 50000), (5555, 5556), (50000, 61000))):
+    def scan_port(self, ranges=((5555, 5556), (30000, 50000), (50000, 61000))):
         """무선 디버깅 포트 찾기: 기기 안의 열린 포트를 훑어 adb connect 가 되는 것. 무선 디버깅은 3만에서 5만 사이 숫자를 쓴다"""
         tried = 0
         for lo, hi in ranges:
@@ -1151,7 +1166,42 @@ class AdbSender:
                 done.append(what)
             except KakaoError:
                 pass
+        fixed = self.fixed_port(addr)
+        if fixed:
+            done.append(fixed)
         return self.serial, done
+
+    FIXED = 5555
+    pending_auth = False
+
+    def fixed_port(self, addr):
+        """무선 디버깅은 와이파이가 바뀌거나 저절로 꺼지면 포트가 사라진다. adbd 를 고정 포트(5555)로도 열어 두면 그래도 붙는다(재부팅 전까지).
+        처음 한 번은 태블릿 화면의 'USB 디버깅을 허용하시겠습니까?' 창에서 허용해야 한다. 안 되면 조용히 무선 포트를 그대로 쓴다"""
+        fixed = "127.0.0.1:%d" % self.FIXED
+        if addr == fixed:
+            return "고정 포트 %d" % self.FIXED
+        ok = lambda out: "connected" in out and "failed" not in out and "cannot" not in out
+        try:
+            code, out, err = self.run([self.t["adb"], "connect", fixed], None, 10)
+            if ok(out):                                           # 이미 열려 있음
+                self.serial = fixed
+                return "고정 포트 %d(이미 열려 있음)" % self.FIXED
+            code, out, err = self.run([self.t["adb"], "-s", addr, "tcpip", str(self.FIXED)], None, 20)
+            if "restarting" not in out + err:
+                return ""
+            self.sleep(2.5)
+            for _ in range(3):
+                code, out, err = self.run([self.t["adb"], "connect", fixed], None, 10)
+                if ok(out):
+                    self.serial = fixed
+                    return "고정 포트 %d(무선 디버깅이 꺼져도 붙음, 재부팅 전까지)" % self.FIXED
+                if re.search(r"authenticat|unauthorized", out + err):
+                    self.pending_auth = True                      # 화면의 허용 창을 눌러야 한다
+                    return ""
+                self.sleep(1.5)
+        except KakaoError:
+            pass
+        return ""
 
     def adb(self, *args, **kw):
         timeout = kw.get("timeout", 30)
@@ -2338,10 +2388,14 @@ def main(argv=None):
                                  "그래도 안 되면 숫자를 직접: python excer_bot.py connect 포트   예: python excer_bot.py connect 37581\n"
                                  "포트는 숫자이고 기기마다 다릅니다. 무선 디버깅 글자를 눌러 들어간 화면의 'IP 주소 및 포트' 가 192.168.0.12:37581 이면 37581.\n"
                                  "페어링 창의 포트가 아닙니다. 무선 디버깅을 껐다 켜거나 재부팅하면 숫자가 바뀝니다.")
-        serial, done = AdbSender(cfg, log).connect(port)
+        conn = AdbSender(cfg, log)
+        serial, done = conn.connect(port)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
         save_json(a.config, cfg)
         print("붙었습니다: %s%s" % (serial, (", 설정함: " + ", ".join(done)) if done else ""))
+        if conn.pending_auth:
+            print("태블릿 화면에 'USB 디버깅을 허용하시겠습니까?' 창이 떴으면 '이 컴퓨터에서 항상 허용' 을 켜고 허용을 누른 뒤 python excer_bot.py connect 를 한 번 더 치세요."
+                  " 그러면 무선 디버깅이 저절로 꺼져도 붙는 고정 포트(%d)가 됩니다(재부팅 전까지)." % AdbSender.FIXED)
         return
     if a.command == "feed":
         return cmd_feed(a.feed or base + "_feed.json", a.arg)
