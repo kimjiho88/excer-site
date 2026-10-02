@@ -550,6 +550,7 @@
        "홈의 다가오는 모임" 조건은 content.js isUpcoming 과 같은 말: 날짜가 오늘 이후, 마감 아님, 가까운 2건 */
     function typeDesc(cat) {
       if (cat === "벙 소식") {
+        if (state.attendOn) return "날짜, 시간, 장소, 인원은 꼭 적습니다(비용은 선택). 참석은 이 글의 참석 버튼으로 받고, 정원이 차거나 신청 마감이 지나면 더 받지 않습니다. 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다.";
         return "날짜, 시간, 장소, 인원은 꼭 적습니다" + (state.caps >= 2 ? "(비용은 선택)" : "") + ". 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
@@ -578,9 +579,9 @@
         { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, hint: "비우면 모임 시작 시각까지 받습니다." },
         { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
-        { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true },
+        { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true, noAtt: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
-        { key: "status", label: "모집 상태", type: "select", options: [["", "표시 안 함"], ["recruiting", "모집 중"], ["closed", "마감"]], hint: "모임장이 직접 바꿉니다.", v2: true }
+        { key: "status", label: "모집 상태", type: "select", options: [["", "모집 중"], ["closed", "마감"]], hint: "마감하면 참석을 더 받지 않습니다.", hintOff: "모임장이 직접 바꿉니다.", v2: true }
       ],
       "후기": [
         { key: "activity", label: "모임이나 활동 종류", type: "text", max: 40, ph: "예: 산책, 고기 모임" },
@@ -1028,7 +1029,7 @@
       return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
     function renderTypeFields(cat, meta) {
-      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn));
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn));
       $("typeFields").innerHTML = fields.map(fieldHTML).join("");
       $("typeDesc").textContent = typeDesc(cat);
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");

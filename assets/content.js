@@ -313,7 +313,8 @@
       if (m.cost) f.push({ key: "cost", label: "예상 비용", value: m.cost });
       if (m.deadline && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.deadline)) f.push({ key: "deadline", label: "신청 마감", value: dateText(m.deadline.slice(0, 10), { withDow: true }) + " " + m.deadline.slice(11, 16) });
       f.push({ key: "host", label: "모임장", value: post.author || "" });
-      f.push({ key: "apply", label: "신청 방법", value: m.apply || (attendOn ? "이 글의 참석 버튼" : "오픈채팅 공지의 참석 버튼") });
+      var over = !!(m.date && daysFromToday(m.date, today) !== null && daysFromToday(m.date, today) < 0);
+      if (m.apply || !over) f.push({ key: "apply", label: "신청 방법", value: m.apply || (attendOn ? "이 글의 참석 버튼" : "오픈채팅 공지의 참석 버튼") });
       if (m.bring) f.push({ key: "bring", label: "준비물과 유의사항", value: m.bring });
       if (m.status) f.push({ key: "status", label: "모집 상태", value: m.status === "closed" ? "마감" : "모집 중" });
       if (m.dup === "consent") f.push({ key: "dup", label: "같은 시간대 예외", value: "기존 모임장 사전 동의" });

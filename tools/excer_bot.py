@@ -31,7 +31,7 @@ tablet 준비(태블릿 하나로)
     pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect 포트 (무선 디버깅 화면의 'IP 주소 및 포트' 의 포트). 재부팅하면 connect 만 다시.
-  - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음, 돌리기 전에 termux-wake-lock.
+  - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
 
@@ -231,8 +231,9 @@ class Site:
         return self.key
 
     def posts(self):
+        """오늘 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다"""
         cols = "id,title,author,meta,created_at" + ("" if getattr(self, "no_attend", False) else ",attend_count")
-        q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식",
+        q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식", "meta->>date": "gte." + Now(datetime.now(KST)).ymd,
                                     "order": "created_at.desc", "limit": "100"}, quote_via=urllib.parse.quote)
         url = self.cfg["supa"] + "/rest/v1/site_posts_v?" + q
         for fresh in (False, True):
@@ -473,6 +474,7 @@ class Bot:
         self.st = load_state(state_path)
         self.last_check = 0.0
         self.hold_until = 0.0                           # 읽기나 보내기가 실패하면 잠시 쉰다
+        self.empty_streak = 0                           # 알던 벙이 있는데 사이트가 빈 목록을 준 횟수
 
     def save(self):
         save_json(self.state_path, self.st)
@@ -496,6 +498,15 @@ class Bot:
             self.log("사이트 읽기 실패: %s" % e)
             self.hold_until = now.ts + 60
             return "read-fail"
+        live_known = any(o and o.get("d") and o["d"] >= now.ymd for o in st.get("known", {}).values())
+        if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다. 세 번 연속이어야 믿는다
+            self.empty_streak += 1
+            if self.empty_streak < 3:
+                self.log("사이트가 빈 목록을 줌(%d번째). 다음 차례에 다시 봄" % self.empty_streak)
+                self.hold_until = now.ts + 60
+                return "read-empty"
+        else:
+            self.empty_streak = 0
         cur, ch = diff(st.get("known", {}), posts, now, bool(st.get("init")), bool(getattr(self.site, "last_full", False)))
         if not st.get("init"):
             st.update(known=cur, init=True)
@@ -522,10 +533,28 @@ class Bot:
             if hasattr(self.sender, "done"):
                 self.sender.done()
 
+    def send_once(self, text):
+        """보낸다. 지난번에 같은 글을 보내다 실패했는데 실제로는 올라가 있으면(화면에서 확인) 또 보내지 않는다"""
+        if self.st.get("send_fail_text") == text and hasattr(self.sender, "already_sent"):
+            try:
+                if self.sender.already_sent(self.room, text):
+                    self.log("지난번 글이 이미 올라가 있어 다시 보내지 않음")
+                    self.st["send_fail_text"] = ""
+                    return
+            except Exception:
+                pass
+        try:
+            self.sender.send(self.room, text)
+        except Exception:
+            self.st["send_fail_text"] = text
+            self.save()
+            raise
+        self.st["send_fail_text"] = ""
+
     def _post(self, st, cfg, now, cur, alert, ntext, dg):
         if alert:
             try:
-                self.sender.send(self.room, alert)
+                self.send_once(alert)
             except Exception as e:
                 self.log("알림 보내기 실패(다음 차례에 다시): %s" % e)
                 self.hold_until = now.ts + 60
@@ -536,7 +565,7 @@ class Bot:
         if not ntext:
             return "alert"
         try:
-            self.sender.send(self.room, ntext)
+            self.send_once(ntext)
         except Exception as e:
             self.log("공지 글 보내기 실패(다음 차례에 다시): %s" % e)
             self.hold_until = now.ts + 60
@@ -1259,9 +1288,16 @@ class AdbSender:
         self.sleep(0.7)
         if self.t.get("freeze", True):
             self.freeze(nodes)                                   # 바쁜 방: 곧바로 대화를 살짝 올려 화면이 더 내려가지 않게
-        self.sleep(0.5)
-        if ws(self.box(self.dump())["text"]) == ws(text):
-            raise KakaoError("전송을 눌렀는데 입력 칸에 글이 남아 있음")
+        for i in range(4):                                       # 입력 칸이 비워질 때까지 잠깐씩 더 본다
+            self.sleep(0.5)
+            if ws(self.box(self.dump())["text"]) != ws(text):
+                return
+        raise KakaoError("전송을 눌렀는데 입력 칸에 글이 남아 있음")
+
+    def already_sent(self, room, text):
+        """이 글이 방 화면(아래쪽)에 이미 올라가 있는지. 보내기 실패 뒤 다시 보내기 전에 본다"""
+        nodes = self.open_room(room)
+        return self.own_bubble(nodes, text) is not None
 
     def chat_area(self, nodes):
         """대화가 흐르는 칸: 입력 칸과 같은 가로 범위, 방 이름 머리 아래부터 입력 칸 위까지"""
@@ -1965,7 +2001,7 @@ def main(argv=None):
     if a.command == "check":
         try:
             ps = site.posts()
-            print("사이트: 모임 모집 글 %d개 읽음, 다가오는 벙 %d개" % (len(ps), sum(1 for v in ps if upcoming(v, now()))))
+            print("사이트: 오늘 이후 모임 모집 글 %d개 읽음, 모집 중인 벙 %d개" % (len(ps), sum(1 for v in ps if recruiting(v, now()))))
         except Exception as e:
             print("사이트: 읽지 못함(%s)" % e)
         print("방식: %s, 알릴 방: %s, 시험 방: %s, 공지: %s" % (cfg["backend"], cfg["room"] or "(없음)", cfg["test_room"] or "(없음)", "건다" if cfg.get("notice") else "안 건다"))
@@ -2058,6 +2094,24 @@ def main(argv=None):
         log("한 번 봄: " + bot.cycle())
         return
     log("켬: %s 방%s, %s 방식, %d초마다 %s 확인" % (room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
+    wake_lock(True)                                     # Termux 가 잠들지 않게(태블릿일 때만 있는 명령)
+    try:
+        run_loop(bot, log)
+    finally:
+        wake_lock(False)
+
+
+def wake_lock(on):
+    import shutil
+    cmd = "termux-wake-lock" if on else "termux-wake-unlock"
+    if shutil.which(cmd):
+        try:
+            subprocess.run([cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
+def run_loop(bot, log):
     while True:
         try:
             if bot.due():
