@@ -177,7 +177,7 @@
     .form-preview .kv { margin: 6px 0 4px; }
     .pass-modal { width: min(420px, 100%); }
     #passBackdrop, #dupBackdrop, #attBackdrop { z-index: 240; }
-    .attend { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; }
+    .attend { display: grid; gap: 10px; }
     .att-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
     .att-head b { font-size: 1.05em; }
     .att-state { color: var(--ink-2); font-size: var(--fs-caption); }
@@ -187,6 +187,33 @@
     .att-list li small { color: var(--ink-2); font-size: 1em; }
     .att-empty { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); }
     .att-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    /* 모집 글 상세의 모임 카드: 언제, 어디서, 몇 명이 먼저 보이고 참석 단추가 그 바로 아래 */
+    .bung-card { margin: 0 0 16px; padding: 16px; border: 1px solid rgba(75, 42, 130, 0.14); border-radius: 14px; background: linear-gradient(180deg, #F7F4FB, var(--surface) 70%); }
+    .bc-when { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+    .bc-when b { font-size: 20px; line-height: 1.3; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .bc-dday { padding: 3px 9px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.2; }
+    .bc-dday.is-past { background: var(--surface-2, #F3F0E8); color: var(--ink-2); }
+    .bc-row { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+    .bc-row .ic { flex: none; width: 18px; height: 18px; color: var(--brand); }
+    .bc-cap { display: grid; gap: 6px; }
+    .bc-n { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 10px; }
+    .bc-n b { font-size: 15px; }
+    .cap-bar { position: relative; height: 6px; border-radius: 999px; background: var(--brand-soft); overflow: hidden; }
+    .cap-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: var(--p, 0%); border-radius: 999px; background: var(--brand); transition: width .3s; }
+    .cap-bar.is-full i { background: var(--rust); }
+    .bung-card .att-acts .btn-primary { min-width: 160px; }
+    @media (max-width: 640px) { .bung-card .att-acts .btn { flex: 1 1 0; } .bung-card .att-acts .text-btn { flex: none; } }
+    /* 목록 줄의 참석 수: 작은 막대와 함께 */
+    .cap-mini { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .cap-mini i { position: relative; display: inline-block; width: 34px; height: 4px; border-radius: 999px; background: var(--brand-soft); overflow: hidden; }
+    .cap-mini i::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: var(--p, 0%); background: var(--brand); }
+    /* 글쓰기: 날짜, 시간, 인원, 신청 마감을 한 번에 고르는 단추(칸은 그대로 두어 다른 값도 넣을 수 있다) */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; line-height: 1; cursor: pointer; }
+    .chip:hover { border-color: var(--brand); }
+    .chip.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+    .chip:disabled { opacity: 0.4; cursor: default; }
+    .fg-h { margin: 4px 0 -6px; color: var(--ink-2); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
     .dup-ok { display: flex; gap: 8px; align-items: center; min-height: 44px; font-size: var(--fs-body, 15px); }
     .dup-list { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 6px; }
     .dup-list li { padding: 8px 10px; border-radius: 8px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); line-height: 1.5; overflow-wrap: anywhere; }
@@ -550,7 +577,7 @@
        "홈의 다가오는 모임" 조건은 content.js isUpcoming 과 같은 말: 날짜가 오늘 이후, 마감 아님, 가까운 2건 */
     function typeDesc(cat) {
       if (cat === "벙 소식") {
-        if (state.attendOn) return "날짜, 시간, 장소, 인원은 꼭 적습니다(비용은 선택). 참석은 이 글의 참석 버튼으로 받고, 정원이 차거나 신청 마감이 지나면 더 받지 않습니다. 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다.";
+        if (state.attendOn) return "날짜, 시간, 장소, 인원은 꼭 적습니다. 참석은 이 글의 참석 버튼으로 받습니다.";
         return "날짜, 시간, 장소, 인원은 꼭 적습니다" + (state.caps >= 2 ? "(비용은 선택)" : "") + ". 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
@@ -573,12 +600,12 @@
         { key: "to", label: "종료일", type: "date" }
       ],
       "벙 소식": [
-        { key: "date", label: "모임 날짜", type: "date", req: true, hint: "날짜가 지나면 '지난 모임'으로 표시됩니다." },
-        { key: "time", label: "시간", type: "time", req: true },
-        { key: "place", label: "장소", type: "text", max: 60, req: true, ph: "예: 강남역 3번 출구" },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
-        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, hint: "비우면 모임 시작 시각까지 받습니다." },
-        { key: "cost", label: "예상 비용", type: "text", max: 40, ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
+        { key: "date", label: "모임 날짜", type: "date", req: true, group: "언제", chips: "date" },
+        { key: "time", label: "시간", type: "time", req: true, chips: "time" },
+        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 강남역 3번 출구", list: "wf_place-list" },
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", chips: "cap", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, group: "선택", chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
+        { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
         { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true, noAtt: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
         { key: "status", label: "모집 상태", type: "select", options: [["", "모집 중"], ["closed", "마감"]], hint: "마감하면 참석을 더 받지 않습니다.", hintOff: "모임장이 직접 바꿉니다.", v2: true }
@@ -839,11 +866,13 @@
       const body = v.body.trim() ? `<div class="post-body">${renderBody(v.body)}</div>` : `<div class="post-body is-empty">본문이 없습니다.</div>`;
       const updated = post.updated_at && post.created_at && String(post.updated_at).slice(0, 16) !== String(post.created_at).slice(0, 16)
         ? `<p class="post-updated">${esc(C.relTime(post.updated_at))} 수정</p>` : "";
+      const card = v.kind === "bung" && state.attendOn && v.meta && v.meta.date;
+      const facts = card ? v.facts.filter((f) => !/^(when|place|cap|deadline)$/.test(f.key) && !(f.key === "apply" && !(v.meta && v.meta.apply))) : v.facts;   // 카드에 있는 것과 참석 단추 자체인 '신청 방법' 은 표에서 뺀다
       return `
         ${lead}
-        ${factsHTML(v.facts)}
+        ${card ? attendHTML(post) : ""}
+        ${factsHTML(facts)}
         ${body}
-        ${v.kind === "bung" && state.attendOn && v.meta && v.meta.date ? attendHTML(post) : ""}
         ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
         ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
@@ -875,7 +904,7 @@
       if (v.kind === "bung" && state.attendOn && v.meta && v.meta.date) {
         const bs = bungStatus(post);
         if (bs.why === "full" || bs.why === "deadline") v.subline = Object.assign({}, v.subline, { state: WHY_LABEL[bs.why], past: true });
-        if (state.attend[post.id] || post.attend_count != null) v.attendText = "참석 " + bs.n + (bs.cap ? "/" + bs.cap : "");
+        if (state.attend[post.id] || post.attend_count != null) v.attendText = `<span class="cap-mini">${bs.cap ? `<i style="--p:${Math.min(100, Math.round(bs.n / bs.cap * 100))}%"></i>` : ""}참석 ${bs.n}${bs.cap ? "/" + bs.cap : ""}</span>`;
       }
       const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
       return `
@@ -1024,13 +1053,52 @@
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
       else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
-      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
+      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
       const hint = !state.attendOn && f.hintOff ? f.hintOff : f.hint;
-      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+      const chips = f.chips ? `<div class="chips" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip" data-v="${esc(c.v)}">${esc(c.label)}</button>`).join("")}</div>` : "";
+      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${chips}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+    }
+    /* 한 번에 고르는 단추: 날짜는 오늘부터 이레, 시간과 인원은 자주 쓰는 값, 신청 마감은 시작 시각에서 셈 */
+    const DOW = "일월화수목금토";
+    function addDays(ymd, n) { const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+    function chipList(kind) {
+      if (kind === "date") { const t = C.kstToday(); return Array.from({ length: 7 }, (_, i) => { const v = addDays(t, i); const dow = DOW[new Date(v + "T00:00:00Z").getUTCDay()]; return { v, label: i === 0 ? "오늘" : i === 1 ? "내일" : dow + " " + Number(v.slice(5, 7)) + "/" + Number(v.slice(8, 10)) }; }); }
+      if (kind === "time") return ["12:00", "14:00", "18:00", "19:00", "19:30", "20:00"].map((v) => ({ v, label: v }));
+      if (kind === "cap") return [4, 6, 8, 10].map((n) => ({ v: String(n), label: n + "명" }));
+      if (kind === "deadline") return [{ v: "-60", label: "시작 1시간 전" }, { v: "day12", label: "당일 12:00" }, { v: "prev21", label: "전날 21:00" }, { v: "", label: "시작까지" }];
+      return [];
+    }
+    function deadlineFrom(code, date, time) {
+      if (!date || !time) return null;
+      if (code === "") return "";
+      if (code === "-60") { const t = new Date(date + "T" + time + ":00Z"); if (isNaN(t)) return null; t.setUTCMinutes(t.getUTCMinutes() - 60); return t.toISOString().slice(0, 16); }
+      if (code === "day12") return date + "T12:00";
+      if (code === "prev21") return addDays(date, -1) + "T21:00";
+      return null;
+    }
+    function syncChips() {
+      document.querySelectorAll("#typeFields .chips").forEach((box) => {
+        const input = $(box.dataset.for); if (!input) return;
+        const kind = box.dataset.chips, date = ($("wf_date") || {}).value || "", time = ($("wf_time") || {}).value || "";
+        const start = date && time ? date + "T" + time : "", now = nowKey();
+        box.querySelectorAll(".chip").forEach((b) => {
+          let v = b.dataset.v, off = false;
+          if (kind === "deadline") { v = deadlineFrom(b.dataset.v, date, time); off = v == null || (v !== "" && (v > start || v <= now)); }
+          b.disabled = off;
+          b.classList.toggle("is-on", !off && v != null && String(v) === String(input.value || ""));
+        });
+      });
+    }
+    function placeOptions() {
+      const seen = new Set();
+      return state.posts.filter((p) => p.category === "벙 소식").map((p) => ((C.postMeta(p) || {}).place || "").trim()).filter((x) => x && !seen.has(x) && seen.add(x)).slice(0, 20);
     }
     function renderTypeFields(cat, meta) {
       const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn));
-      $("typeFields").innerHTML = fields.map(fieldHTML).join("");
+      let last = "", html = "";
+      fields.forEach((f) => { if (f.group && f.group !== last) { html += `<div class="fg-h is-wide">${esc(f.group)}</div>`; last = f.group; } html += fieldHTML(f); });
+      if (fields.some((f) => f.list === "wf_place-list")) html += `<datalist id="wf_place-list">${placeOptions().map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist>`;
+      $("typeFields").innerHTML = html;
       $("typeDesc").textContent = typeDesc(cat);
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
       $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
@@ -1038,6 +1106,7 @@
       $("wBodyLabel").textContent = cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
       $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
+      syncChips();
     }
     function readMeta() {
       const cat = $("wCat").value;
@@ -1176,14 +1245,22 @@
       const mine = list && list.some((x) => isMe(x.nick));
       const host = String(post.author || "").trim().toLowerCase();
       const dlText = st.deadline ? C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " " + st.deadline.slice(11, 16) + "까지" : "";
-      const stateText = st.open ? (dlText ? "신청 " + dlText : "모집 중") : (WHY_LABEL[st.why] || "");
+      const stateText = st.open ? (dlText ? "신청 " + dlText : "모집 중") : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
+      const m = C.postMeta(post) || {};
+      const when = m.date ? C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "";
+      const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
+      const dday = st.why === "started" ? "지난 모임" : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
+      const n = list ? list.length : st.n;
+      const pct = st.cap ? Math.min(100, Math.round(n / st.cap * 100)) : 0;
       let btn = "";
       if (mine && st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
       else if (st.open) btn = `<button type="button" class="btn btn-primary is-sm" data-act="attend" data-id="${post.id}">참석하기</button>`;
       else if (st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
       const other = list && list.length && !mine && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">참석 취소</button>` : "";
-      return `<div class="attend" data-post="${post.id}">
-          <div class="att-head"><b>참석 ${list ? list.length : st.n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>
+      return `<div class="attend bung-card" data-post="${post.id}">
+          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${st.why === "started" ? " is-past" : ""}">${esc(dday)}</span>` : ""}</div>
+          ${m.place ? `<div class="bc-row">${icon("pin")}<span>${esc(m.place)}</span></div>` : ""}
+          <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
           ${list ? (list.length ? `<ul class="att-list" aria-label="참석자">${list.map((x) => `<li>${esc(x.nick)}${String(x.nick).trim().toLowerCase() === host ? " <small>모임장</small>" : ""}</li>`).join("")}</ul>` : `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`) : `<p class="att-empty">참석 명단을 불러오는 중입니다.</p>`}
           <div class="att-acts">${btn}${other}</div>
         </div>`;
@@ -1474,6 +1551,16 @@
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
+        if (e.target.closest("#typeFields")) syncChips();
+      });
+      $("typeFields").addEventListener("click", (e) => {
+        const b = e.target.closest(".chip"); if (!b || b.disabled) return;
+        const box = b.closest(".chips"), input = $(box.dataset.for); if (!input) return;
+        let v = b.dataset.v;
+        if (box.dataset.chips === "deadline") { v = deadlineFrom(v, ($("wf_date") || {}).value, ($("wf_time") || {}).value); if (v == null) return; }
+        input.value = v;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        syncChips();
       });
       $("fabWrite").addEventListener("click", openWriteDefault);
       $("promptWrite").addEventListener("click", () => { const p = currentPrompt(); openWriteModal(null, { category: p.cat, title: p.title }); });
