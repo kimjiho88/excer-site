@@ -56,7 +56,9 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py voice status    보이스룸이 켜져 있는지(화면을 건드리지 않고 알림, 소리, 서비스로)와 최근 끊김 기록
   python excer_bot.py voice raw       그 신호의 원문을 excer_bot_voice_raw.txt 에 적고 클립보드에 담는다(해석기를 맞추는 근거.
                                       대화 글은 안 들어가고 보이스룸 알림 글자만 그대로)
-  python excer_bot.py voice on        run 이 보이스룸 끊김도 함께 지켜보게 켠다(1단계: 알아채고 기록만, 복구는 2단계). voice off 로 끈다
+  python excer_bot.py voice on        run 이 보이스룸도 지키게 켠다: 60초마다 보고 끊기면 다시 켜고(새로 만들거나 참여), 47.5시간이 지나면
+                                      끝내고 새로 만든다. 실패하면 1, 2, 5, 10, 15분 간격으로 다시. voice off 로 끈다
+  python excer_bot.py voice now       지금 바로 확인하고 꺼져 있으면 다시 켠다(한 번)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
@@ -99,12 +101,12 @@ DEFAULTS = {
     "android": {"serial": "", "package": "com.kakao.talk"},
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
               "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
-    # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md). 1단계: run 이 끊김을 알아채 기록만 한다(복구는 2단계). room 이 비면 알릴 방
+    # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md): run 이 끊김을 알아채 기록하고 다시 켠다. room 이 비면 알릴 방
     "voice": {"on": False, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫",   # 봇이 보이스룸을 만들 때 쓰는 제목(운영자가 정함)
               "check_sec": 60, "notif_word": "보이스룸",
               "on_text": "보이스룸에 참여 중", "end_text": "보이스룸 종료",   # 카카오톡 알림 글자(실측). 바뀌면 여기만
-              "renew_hours": 47.5, "mute": True,
-              "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
+              "renew_hours": 47.5, "mute": True, "volume0": True, "recover": True,   # recover: 끊기면 다시 켠다(2단계). 끄면 기록만
+              "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
 }
 
 
@@ -1006,12 +1008,16 @@ def voice_status_lines(sig, st, v=None):
 
 
 class VoiceWatch:
-    """보이스룸 지키기 1단계: run 안에서 화면을 건드리지 않고 켜짐과 끊김을 알아채 기록한다(복구는 2단계). docs/BOT_VOICE_ROOM.md"""
+    """보이스룸 지키기: run 안에서 화면을 건드리지 않고 켜짐과 끊김을 알아채 기록하고(1단계), 끊겼으면 다시 켜고(2단계),
+    만든 지 오래됐으면 끝내고 새로 만든다(48시간 갱신). docs/BOT_VOICE_ROOM.md"""
+    BACKOFF = (60, 120, 300, 600, 900)                   # 복구 실패 뒤 다시 하기까지(초)
+
     def __init__(self, cfg, sender, path, log, clock=None):
         self.v = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))
-        self.sender, self.path, self.log = sender, path, log
+        self.cfg, self.sender, self.path, self.log = cfg, sender, path, log
+        self.room = self.v.get("room") or cfg.get("room") or ""
         self.clock = clock or (lambda: datetime.now(KST))
-        self.st = {"state": "", "since": "", "since_ts": 0, "events": []}
+        self.st = {"state": "", "since": "", "since_ts": 0, "events": [], "made": []}
         try:
             with open(path, encoding="utf-8-sig") as f:
                 got = json.load(f)
@@ -1020,12 +1026,30 @@ class VoiceWatch:
         except (OSError, ValueError):
             pass
         self.next_ts, self.off_streak, self.blind = 0.0, 0, False
+        self.retry_at, self.fails, self.kick_until, self.renew_retry_at, self.last_skip = 0.0, 0, 0.0, 0.0, ""
 
     def due(self):
         return self.clock().timestamp() >= self.next_ts
 
+    def can_recover(self):
+        return self.v.get("recover", True) and bool(self.room) and hasattr(self.sender, "voice_recover")
+
+    def save(self):
+        save_json(self.path, self.st)
+
+    def record(self, dt, ts, state, why, sig=None):
+        ev = {"at": dt.astimezone(KST).strftime("%Y-%m-%d %H:%M"), "to": state, "why": why,
+              "alive": bool((sig or {}).get("alive", True)), "net": (sig or {}).get("net") or ""}
+        if self.st.get("state") == "on" and self.st.get("since_ts"):
+            ev["hours"] = round((ts - float(self.st["since_ts"])) / 3600, 1)
+        self.st["events"] = (self.st.get("events") or [])[-199:] + [ev]
+        self.st["state"], self.st["since"], self.st["since_ts"] = state, ev["at"], ts
+        self.save()
+        return ev
+
     def tick(self):
-        """한 번 읽고 판정. 꺼짐은 두 번 연속일 때만 끊김으로 적는다. 돌려주는 것: on, off, off?(한 번 안 보임), unknown(adb 안 붙음), wait"""
+        """한 번 읽고 판정. 꺼짐은 두 번 연속일 때만 끊김으로 적고, 그러면 다시 켠다.
+        돌려주는 것: on, off, off?(한 번 안 보임), unknown(adb 안 붙음), wait, 그리고 복구 뒤 recovered, renewed"""
         dt = self.clock()
         ts = dt.timestamp()
         if ts < self.next_ts:
@@ -1057,19 +1081,96 @@ class VoiceWatch:
         else:
             self.off_streak = 0
         if state != prev:
-            ev = {"at": dt.astimezone(KST).strftime("%Y-%m-%d %H:%M"), "to": state, "why": why, "alive": bool(sig.get("alive")), "net": sig.get("net") or ""}
-            if prev == "on" and self.st.get("since_ts"):
-                ev["hours"] = round((ts - float(self.st["since_ts"])) / 3600, 1)
-            self.st["events"] = (self.st.get("events") or [])[-199:] + [ev]
-            self.st["state"], self.st["since"], self.st["since_ts"] = state, ev["at"], ts
-            save_json(self.path, self.st)
+            ev = self.record(dt, ts, state, why, sig)
             if state == "on":
                 self.log("보이스룸: 켜짐")
             elif prev == "on":
-                self.log("보이스룸: 끊김(%s%s), 복구는 2단계" % (why, ", %s시간 만에" % ev["hours"] if "hours" in ev else ""))
+                self.log("보이스룸: 끊김(%s%s)" % (why, ", %s시간 만에" % ev["hours"] if "hours" in ev else ""))
             else:
-                self.log("보이스룸: 지금 꺼져 있음(%s). 켜지면 적는다" % why)
+                self.log("보이스룸: 지금 꺼져 있음(%s)" % why)
+        if state == "on":
+            self.fails, self.retry_at, self.kick_until = 0, 0.0, 0.0
+            if self.can_recover() and self.renew_due(dt, ts):
+                return self.renew(dt, ts)
+            return "on"
+        if self.can_recover():
+            ok, skip = self.allowed(dt, ts)
+            if ok:
+                return self.recover(dt, ts)
+            if skip and skip != self.last_skip:
+                self.log("보이스룸: 복구 안 함(%s)" % skip)
+                self.last_skip = skip
         return state
+
+    def allowed(self, dt, ts):
+        """지금 복구해도 되는지: 재시도 간격, 내보내짐 뒤 대기, 하루 만들기 한도"""
+        if ts < self.retry_at:
+            return False, ""
+        if ts < self.kick_until:
+            return False, "내보내진 뒤라 다시 들어가지 않음" + ("" if self.kick_until == float("inf") else ", %d분 뒤 한 번 더" % max(1, int((self.kick_until - ts) // 60)))
+        today = dt.astimezone(KST).strftime("%Y-%m-%d")
+        n = sum(1 for m in self.st.get("made") or [] if str(m).startswith(today))
+        if n >= int(self.v.get("max_new_per_day") or 6):
+            return False, "오늘 만든 횟수 %d번, 한도에 닿아 내일까지 쉼" % n
+        return True, ""
+
+    def recover(self, dt, ts):
+        """끊긴 보이스룸을 다시 켠다. 실패하면 1, 2, 5, 10, 15분 간격으로 다시"""
+        self.last_skip = ""
+        try:
+            how = self.sender.voice_recover(self.room, self.v)
+        except KakaoError as e:
+            self.fails += 1
+            gap = self.BACKOFF[min(self.fails - 1, len(self.BACKOFF) - 1)]
+            self.retry_at = ts + gap
+            self.log("보이스룸 복구 실패(%d번째): %s. %d분 뒤 다시" % (self.fails, e, gap // 60))
+            if self.fails == 5:
+                self.alert("보이스룸 복구가 다섯 번 연속 실패했습니다: %s" % str(e)[:80])
+            return "fail"
+        if how == "kicked":
+            kr = int(self.v.get("kick_retry_min") or 0)
+            self.kick_until = ts + kr * 60 if kr else float("inf")
+            self.log("보이스룸: 봇이 내보내진 것으로 보여 다시 들어가지 않음" + (", %d분 뒤 한 번 더" % kr if kr else ". 운영자가 보이스룸을 켜면 그때부터 다시 지킨다"))
+            return "kicked"
+        self.fails, self.retry_at, self.off_streak = 0, 0.0, 0
+        if how == "created":
+            self.st["made"] = ((self.st.get("made") or []) + [dt.astimezone(KST).strftime("%Y-%m-%d %H:%M")])[-50:]
+        self.record(dt, ts, "on", {"created": "복구: 새로 만듦", "joined": "복구: 열려 있는 보이스룸에 참여", "on": "확인: 이미 켜져 있음"}.get(how, how))
+        self.log("보이스룸: " + {"created": "새로 만들어 켬", "joined": "열려 있는 보이스룸에 참여함", "on": "화면으로 보니 켜져 있음"}.get(how, how))
+        return "recovered"
+
+    def renew_due(self, dt, ts):
+        hours = float(self.v.get("renew_hours") or 47.5)
+        since = float(self.st.get("since_ts") or 0)
+        if not since or ts - since < hours * 3600 or ts < self.renew_retry_at:
+            return False
+        if in_quiet(dt.astimezone(KST).strftime("%H:%M"), self.cfg.get("quiet") or []):
+            return False                                     # 조용한 시간대에는 갱신하지 않는다(끊김 복구는 한다)
+        return True
+
+    def renew(self, dt, ts):
+        """48시간 만료 전에 봇이 먼저 끝내고 새로 만든다(몇 초 빈다). 안 되면 30분 뒤 다시"""
+        try:
+            self.sender.voice_end(self.room, self.v)
+            self.record(dt, ts, "off", "갱신: 봇이 끝냄")
+            how = self.sender.voice_recover(self.room, self.v)
+        except KakaoError as e:
+            self.renew_retry_at = ts + 1800
+            self.log("보이스룸 갱신 실패: %s. 30분 뒤 다시" % e)
+            return "renew-fail"
+        if how == "created":
+            self.st["made"] = ((self.st.get("made") or []) + [dt.astimezone(KST).strftime("%Y-%m-%d %H:%M")])[-50:]
+        self.record(dt, ts, "on", "갱신: 새로 만듦")
+        self.log("보이스룸: 48시간 만료 전에 끝내고 새로 만듦")
+        return "renewed"
+
+    def alert(self, text):
+        self.log("!! " + text)
+        if self.v.get("alert_test_room") and self.cfg.get("test_room") and hasattr(self.sender, "send"):
+            try:
+                self.sender.send(self.cfg["test_room"], "[excer-bot] " + text)
+            except KakaoError as e:
+                self.log("알림을 시험 방에 보내지 못함: %s" % e)
 
 
 BOUNDS_RE = re.compile(r"\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
@@ -1502,7 +1603,7 @@ class AdbSender:
 
     def open_room(self, room):
         self.trace = []
-        nodes = self.launch()
+        nodes = self.voice_guard(self.launch())                  # 보이스룸 화면이 앞에 떠 있으면 최소화만(나가기는 안 누른다)
         if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
             return nodes
         nodes = self.goto_list(nodes)
@@ -2151,6 +2252,203 @@ class AdbSender:
         sig("12 끝낸 뒤")
         return "\n".join(out)
 
+    # ── 보이스룸 2단계: 다시 켜기, 끝내기(docs/BOT_VOICE_ROOM.md 4절, 6절) ──
+    VOICE_JOIN = ("참여", "참여하기", "보이스룸 참여", "들어가기")
+    VOICE_KICK_RE = re.compile(r"내보내|강퇴|참여할 수 없|참여가 제한")
+    VOICE_ERR_RE = re.compile(r"보이스룸[^\n]{0,30}(오류|종료|끊)|(오류|종료|끊)[^\n]{0,30}보이스룸|일시적인 오류")
+
+    def vpick(self, nodes, words, before=()):
+        """단추 찾기. '방 나가기', '삭제', '신고' 는 어떤 흐름에서도 고르지 않는다"""
+        c = [n for n in self.labeled(nodes, words, before) if not any(w in n["text"] + " " + n["desc"] for w in self.VOICE_NEVER)]
+        return c[0] if c else None
+
+    def voice_ui(self, nodes):
+        """보이스룸 화면인지(나가기나 마이크 단추가 있음)"""
+        return self.vpick(nodes, self.VOICE_LEAVE) is not None or self.vpick(nodes, ("마이크 끄기", "마이크 켜기", "음소거")) is not None
+
+    def voice_close_dialog(self, nodes):
+        """보이스룸 오류나 종료 안내 창이면 확인으로 닫는다. 다른 창은 건드리지 않는다"""
+        if self.VOICE_ERR_RE.search(" ".join(n["text"] for n in nodes if n["text"])):
+            ok = self.vpick(nodes, ("확인", "닫기", "네"))
+            if ok:
+                self.snap("보이스룸 안내 창", nodes)
+                self.tap(ok)
+                return self.wait_change(nodes, tries=2)
+        return nodes
+
+    def voice_guard(self, nodes):
+        """공지 흐름이 시작될 때 보이스룸 화면이 앞에 떠 있으면 최소화하고 방으로. 나가기는 누르지 않는다"""
+        if self.on_kakao(nodes) and self.voice_ui(nodes) and not find(nodes, cls="EditText"):
+            return self.voice_minimize(nodes)
+        return nodes
+
+    def voice_minimize(self, nodes):
+        mn = self.vpick(nodes, self.VOICE_MIN)
+        if mn:
+            self.tap(mn)
+        else:
+            self.key(4)
+        return self.wait_change(nodes, tries=3)
+
+    def voice_perm(self, scr):
+        perm = self.vpick(scr, self.VOICE_PERM)
+        if perm:
+            self.tap(perm)
+            scr = self.wait_change(scr, tries=4)
+        return scr
+
+    def voice_mute(self, scr):
+        mic = self.vpick(scr, ("마이크 끄기", "음소거"))
+        if mic:
+            self.tap(mic)
+            return self.wait_change(scr, tries=2)
+        return scr
+
+    def voice_volume0(self):
+        """통화 음량 0: 태블릿 스피커로 방 소리가 나지 않게"""
+        for cmd in ("cmd media_session volume --stream 0 --set 0", "media volume --stream 0 --set 0"):
+            try:
+                self.sh(cmd + " >/dev/null 2>&1; true", timeout=15)
+                return
+            except KakaoError:
+                pass
+
+    def voice_wait_on(self, v, tries=4):
+        for _ in range(tries):
+            self.sleep(2.5)
+            if voice_state(self.voice_signals(), v)[0] == "on":
+                return True
+        return False
+
+    def voice_plus(self, nodes):
+        box = self.box(nodes)
+        bh = box["b"][3] - box["b"][1]
+        cands = [n for n in nodes if n["click"] and n["b"][2] <= box["b"][0] + 10 and n["b"][0] >= box["b"][0] - 400
+                 and abs(self.center(n)[1] - self.center(box)[1]) < bh]
+        return max(cands, key=lambda n: n["b"][2]) if cands else None
+
+    def voice_create(self, nodes, title, word):
+        """방에서 + 메뉴, 보이스룸, (제목), 시작. 보이스룸 화면을 돌려준다. 안 되면 화면을 적고 KakaoError"""
+        plus = self.voice_plus(nodes)
+        if not plus:
+            self.save_diag(nodes)
+            raise KakaoError("입력 칸 왼쪽에서 + 단추를 찾지 못함" + self.diag_note())
+        self.tap(plus)
+        panel = self.wait_change(nodes, tries=3)
+        self.snap("+ 메뉴", panel, nodes)
+        item = [n for n in panel if word in n["text"] or word in n["desc"]]
+        if not item:
+            self.save_diag(panel)
+            self.key(4)
+            raise KakaoError("+ 메뉴에 '%s' 이 없음(봇이 방장이나 부방장인지)%s" % (word, self.diag_note()))
+        self.tap(item[0])
+        dlg = self.wait_change(panel, tries=3)
+        self.snap("'%s' 을 누른 뒤" % word, dlg, panel)
+        if self.voice_ui(dlg):
+            return dlg
+        box = self.box(nodes)
+        field = [n for n in find(dlg, cls="EditText") if n["b"] != box["b"]]
+        if field and title:
+            dlg = self.paste_into(field[0], title)
+        start = self.vpick(dlg, self.VOICE_START, panel)
+        if not start:
+            self.save_diag(dlg)
+            self.key(4)
+            raise KakaoError("보이스룸 시작 단추를 찾지 못함" + self.diag_note())
+        self.tap(start)
+        scr = self.voice_perm(self.wait_change(dlg, tries=4))
+        self.snap("시작을 누른 뒤", scr)
+        if not self.voice_ui(scr):
+            self.save_diag(scr)
+            raise KakaoError("시작을 눌렀는데 보이스룸 화면이 아님" + self.diag_note())
+        return scr
+
+    def voice_recover(self, room, v=None):
+        """끊긴 보이스룸을 다시 켠다. 띠에 '참여' 가 있으면(다른 진행자가 열어 둠) 참여, 없으면 새로 만든다.
+        돌려주는 것: on(이미 켜져 있음), joined, created, kicked(내보내진 것으로 보임). 안 되면 KakaoError(지나온 화면은 excer_bot_ui.txt)"""
+        v = v or {}
+        w = voice_words(v)
+        title = v.get("title") or DEFAULTS["voice"]["title"]
+        if voice_state(self.voice_signals(), v)[0] == "on":    # 신호로 켜져 있으면 화면을 건드리지 않는다
+            return "on"
+        self.trace = []
+        try:
+            nodes = self.launch()
+            self.snap("카카오톡을 띄운 화면", nodes)
+            nodes = self.voice_close_dialog(nodes)
+            if self.voice_ui(nodes):                            # 보이스룸 화면이 앞에 떠 있음: 아직 켜져 있을 수 있다
+                nodes = self.voice_minimize(nodes)
+                if voice_state(self.voice_signals(), v)[0] == "on":
+                    return "on"
+            nodes = self.open_room(room)
+            self.snap("방", nodes)
+            if any(self.VOICE_KICK_RE.search(n["text"] + " " + n["desc"]) for n in nodes if w["word"] in n["text"] + n["desc"]):
+                self.save_diag(nodes)
+                return "kicked"
+            tagged = [n for n in nodes if w["word"] in n["text"] or w["word"] in n["desc"]]
+            join = self.vpick(nodes, self.VOICE_JOIN) if tagged else None
+            if join:
+                self.tap(join)
+                scr = self.voice_perm(self.wait_change(nodes, tries=4))
+                self.snap("'참여' 를 누른 뒤", scr)
+                if not self.voice_ui(scr):
+                    self.save_diag(scr)
+                    raise KakaoError("참여를 눌렀는데 보이스룸 화면이 아님" + self.diag_note())
+                how = "joined"
+            else:
+                scr = self.voice_create(nodes, title, w["word"])
+                how = "created"
+            if v.get("mute", True):
+                scr = self.voice_mute(scr)
+            if v.get("volume0", True):
+                self.voice_volume0()
+            if not self.voice_wait_on(v):
+                self.save_diag(scr)
+                raise KakaoError("보이스룸을 %s 했는데 '%s' 알림이 안 보임%s" % ("만들기" if how == "created" else "참여", w["on"], self.diag_note()))
+            self.voice_minimize(scr)
+            return how
+        finally:
+            self.done()
+
+    def voice_end(self, room, v=None):
+        """켜 둔 보이스룸을 끝낸다(48시간 갱신). 봇이 진행자라 나가면 끝난다: 나가기, 종료 확인"""
+        v = v or {}
+        w = voice_words(v)
+        self.trace = []
+        try:
+            nodes = self.voice_close_dialog(self.launch())
+            scr = nodes if self.voice_ui(nodes) else None
+            if scr is None:
+                nodes = self.open_room(room)
+                tag = [n for n in nodes if (w["word"] in n["text"] or w["word"] in n["desc"]) and n["click"]]
+                if not tag:
+                    self.save_diag(nodes)
+                    raise KakaoError("방에서 보이스룸 띠를 찾지 못함" + self.diag_note())
+                self.tap(tag[0])
+                scr = self.wait_change(nodes, tries=3)
+                if not self.voice_ui(scr):
+                    self.save_diag(scr)
+                    raise KakaoError("띠를 눌렀는데 보이스룸 화면이 아님" + self.diag_note())
+            leave = self.vpick(scr, self.VOICE_LEAVE)
+            if not leave:
+                self.save_diag(scr)
+                raise KakaoError("나가기 단추를 찾지 못함" + self.diag_note())
+            self.tap(leave)
+            conf = self.wait_change(scr, tries=3)
+            self.snap("나가기를 누른 뒤", conf, scr)
+            yes = self.vpick(conf, self.VOICE_END_OK, scr)
+            if yes:
+                self.tap(yes)
+                self.wait_change(conf, tries=3)
+            for _ in range(4):
+                self.sleep(2)
+                if voice_state(self.voice_signals(), v)[0] != "on":
+                    return True
+            self.save_diag()
+            raise KakaoError("끝내기를 눌렀는데 아직 켜져 있음" + self.diag_note())
+        finally:
+            self.done()
+
     def done(self):
         """올리고 나면 Termux 를 앞으로(기록이 보이게, 다음 명령을 치게). return_to 를 "" 로 두면 카카오톡에 머문다"""
         app = self.t.get("return_to") or ""
@@ -2621,7 +2919,7 @@ def main(argv=None):
     if (cfg.get("voice") or {}).get("on"):
         if isinstance(bot.sender, AdbSender):
             voice = VoiceWatch(cfg, bot.sender, base + "_voice.json", log)
-            log("보이스룸 지키기: %d초마다 끊김을 알아채 기록(1단계, 복구는 2단계)" % max(15, int(voice.v.get("check_sec") or 60)))
+            log("보이스룸 지키기: %d초마다 보고, 끊기면 %s(방: %s, 제목: %s)" % (max(15, int(voice.v.get("check_sec") or 60)), "다시 켠다" if voice.can_recover() else "기록만", voice.room, voice.v.get("title") or DEFAULTS["voice"]["title"]))
         else:
             log("보이스룸 지키기는 tablet 방식에서만 돈다")
     wake_lock(True)                                     # Termux 가 잠들지 않게(태블릿일 때만 있는 명령)
@@ -2637,12 +2935,10 @@ def cmd_voice(cfg, a, base, log):
         cfg.setdefault("voice", {})["on"] = sub == "on"
         save_json(a.config, cfg)
         title = cfg["voice"].get("title") or DEFAULTS["voice"]["title"]
-        print("보이스룸 지키기: " + ("켬. run 이 끊김을 함께 지켜봅니다(1단계: 기록만, 복구는 2단계). 만들 때 제목: " + title if sub == "on" else "끔"))
+        print("보이스룸 지키기: " + ("켬. run 이 끊김을 알아채 다시 켭니다. 만들 때 제목: " + title if sub == "on" else "끔"))
         return
-    if sub == "now":
-        raise SystemExit("복구(voice now)는 2단계에서 만듭니다. 지금은 voice study, status, on, off")
-    if sub not in ("study", "status", "raw"):
-        raise SystemExit("python excer_bot.py voice study | status | raw | on | off")
+    if sub not in ("study", "status", "raw", "now"):
+        raise SystemExit("python excer_bot.py voice study | status | raw | now | on | off")
     sender = make_sender(cfg, log)
     if not isinstance(sender, AdbSender):
         raise SystemExit("voice 는 tablet 방식에서 씁니다.")
@@ -2657,6 +2953,17 @@ def cmd_voice(cfg, a, base, log):
             pass
         for l in voice_status_lines(sender.voice_signals(), st if isinstance(st, dict) else {}, v):
             print(l)
+        return
+    if sub == "now":
+        room = v.get("room") or cfg.get("room") or ""
+        if not room:
+            raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
+        print("보이스룸을 확인하고 꺼져 있으면 다시 켭니다(방: %s). 1분쯤 걸립니다. 태블릿을 만지지 마세요." % room)
+        w = VoiceWatch(cfg, sender, base + "_voice.json", log)
+        r = w.tick() if w.due() else "wait"
+        if r in ("on", "off?", "wait"):
+            r = w.recover(datetime.now(KST), time.time()) if r != "on" else "on"
+        print("결과: " + {"on": "이미 켜져 있음", "recovered": "다시 켬", "fail": "실패(excer_bot.log 와 excer_bot_ui.txt 를 보세요)", "kicked": "내보내진 것으로 보여 안 들어감", "renewed": "갱신함"}.get(r, r))
         return
     if sub == "raw":
         txt = sender.voice_raw(v)
