@@ -894,7 +894,8 @@ def notif_records(out, pkg):
         for f in re.findall(r"\bflags=0x([0-9a-fA-F]+)", blk):
             flags |= int(f, 16)
         texts = [t for t in re.findall(r"android\.(?:title|text|subText|bigText|infoText|textLines)=\w+ \((.*?)\)\s*$", blk, re.M) if t and t != "null"]
-        recs.append({"ongoing": bool(flags & 0x42), "text": " / ".join(texts)[:200]})   # 0x2 진행 중, 0x40 포그라운드 서비스
+        ts = [int(x) for x in re.findall(r"\b(?:mUpdateTimeMs|mCreationTimeMs|postTime)=(\d{10,})", blk)]
+        recs.append({"ongoing": bool(flags & 0x42), "text": " / ".join(texts)[:200], "t": max(ts) if ts else 0})   # 0x2 진행 중, 0x40 포그라운드 서비스
     return recs
 
 
@@ -927,9 +928,10 @@ def fg_services(out, pkg):
 
 
 def net_state(route, conn=""):
-    """연결된 망 종류: ip route 의 기본 경로 장치(wlan WIFI, rmnet MOBILE), 없으면 dumpsys connectivity. 둘 다 없으면 '없음'"""
+    """연결된 망 종류: ip route get 1.1.1.1 의 장치(wlan WIFI, rmnet MOBILE), 없으면 dumpsys connectivity. 둘 다 없으면 '없음'.
+    안드로이드는 경로 표가 여럿이라 그냥 ip route 는 비어 있다"""
     kinds = []
-    for m in re.finditer(r"^default\s.*?\bdev\s+(\S+)", route or "", re.M):
+    for m in re.finditer(r"^(?:default\s.*?|\d+\.\d+\.\d+\.\d+\s.*?)\bdev\s+(\S+)", route or "", re.M):
         d = m.group(1)
         k = "WIFI" if d.startswith("wlan") else "MOBILE" if re.match(r"rmnet|ccmni|pdp|radio", d) else "ETHERNET" if d.startswith("eth") else d
         if k not in kinds:
@@ -955,8 +957,12 @@ def voice_state(sig, v=None):
         return "unknown", "읽지 못함: " + (sig.get("errors") or ["?"])[0]
     notes = sig.get("notif") or []
     has_on = [r for r in notes if w["on"] in r["text"]]
-    ended = [r["text"] for r in notes if w["end"] in r["text"]]
+    ended_recs = [r for r in notes if w["end"] in r["text"]]
+    ended = [r["text"] for r in ended_recs]
     end_note = (", 종료 알림: " + ended[-1].split(" / ", 1)[-1][:60]) if ended else ""
+    on_t, end_t = max([r.get("t", 0) for r in has_on] or [0]), max([r.get("t", 0) for r in ended_recs] or [0])
+    if has_on and sig.get("alive") and end_t > on_t and not sig.get("focus"):
+        return "off", "참여 중 알림보다 종료 알림이 새롭고 포커스 없음" + end_note   # 참여 중 알림이 안 지워진 채 끝난 경우
     if has_on and sig.get("alive"):
         return "on", "참여 중 알림" + ("(진행 중)" if any(r["ongoing"] for r in has_on) else "") + (", 포커스" if sig.get("focus") else "")
     fg = [n for n, f in sig.get("services") or [] if f and VOICE_SERVICE_RE.search(n)]
@@ -1965,7 +1971,7 @@ class AdbSender:
         sig["audio"], sig["focus"] = audio_active(get("dumpsys audio"), pkg, sig["pids"])
         sig["services"] = fg_services(get("dumpsys activity services %s" % pkg), pkg)
         sig["call"] = telecom_call(get("dumpsys telecom", 40), pkg)
-        sig["net"] = net_state(get("ip route", 20), get("dumpsys connectivity", 40))
+        sig["net"] = net_state(get("ip route get 1.1.1.1; ip route", 20), get("dumpsys connectivity", 40))
         return sig
 
     def voice_raw(self, v=None):
@@ -2012,8 +2018,8 @@ class AdbSender:
         out.append("## 통화(dumpsys telecom 에서 카카오톡과 상태 줄)")
         out += ["    " + mask(l.strip())[:200] for l in tc.split("\n") if pkg in l or re.search(r"\b(ACTIVE|DIALING|CONNECTING|RINGING|HOLDING|DISCONNECTED|SelfManaged|isSelfManaged)\b", l)][:60]
         out.append("")
-        out.append("## 망(ip route)")
-        out += ["    " + l.strip()[:200] for l in get("ip route", 20).split("\n") if l.strip()][:20]
+        out.append("## 망(ip route get 1.1.1.1, ip route)")
+        out += ["    " + l.strip()[:200] for l in get("ip route get 1.1.1.1; ip route", 20).split("\n") if l.strip()][:20]
         out.append("## 망(dumpsys connectivity 앞부분, 망 이름은 가림)")
         out += ["    " + re.sub(r'extra: "[^"]*"', 'extra: "..."', l.strip())[:200] for l in get("dumpsys connectivity", 40).split("\n") if l.strip()][:30]
         out.append("")
