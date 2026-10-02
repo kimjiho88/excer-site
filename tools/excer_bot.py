@@ -976,8 +976,13 @@ def voice_status_lines(sig, st, v=None):
         if st.get("state"):
             out.append("기록: %s %s 부터" % ("켜짐" if st["state"] == "on" else "꺼짐", st.get("since", "")))
         return out
-    for r in sig.get("notif") or []:
-        out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"] or "(글자 없음)"))
+    w, notes = voice_words(v), sig.get("notif") or []
+    for r in notes:                                     # 보이스룸 알림만 글자를 적는다(대화 알림 글은 적지 않는다)
+        if w["word"] in r["text"]:
+            out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"]))
+    others = sum(1 for r in notes if w["word"] not in r["text"])
+    if others:
+        out.append("알림: 그 밖 %d개(글자는 적지 않음)" % others)
     out.append("소리: 재생 %s, 포커스 %s, 통화 상태 %s" % ("있음" if sig.get("audio") else "없음", "있음" if sig.get("focus") else "없음", "있음" if sig.get("call") else "없음"))
     out.append("포그라운드 서비스: %s" % (", ".join(n for n, f in sig.get("services") or [] if f) or "없음"))
     out.append("카카오톡 프로세스: %s" % (", ".join(sig.get("pids") or []) or "없음"))
