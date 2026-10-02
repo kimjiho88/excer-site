@@ -91,7 +91,7 @@
 `excer_bot.json` 에 `voice` 묶음을 더한다.
 
 ```json
-"voice": {"on": false, "room": "", "title": "", "check_sec": 60, "renew_hours": 47.5, "mute": true,
+"voice": {"on": false, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫", "check_sec": 60, "renew_hours": 47.5, "mute": true,
           "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": false}
 ```
 
