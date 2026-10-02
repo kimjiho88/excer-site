@@ -1092,6 +1092,15 @@ class AdbSender:
             raise KakaoError("adb 에 붙은 기기가 없음. 무선 디버깅을 켜고 python excer_bot.py connect 포트")
         raise KakaoError("adb 에 붙은 기기가 여럿(%s). excer_bot.json 의 tablet.serial 에 하나를 넣으세요" % ", ".join(devs))
 
+    def mdns_port(self):
+        """기기가 알리는 무선 디버깅 포트(adb mdns services 의 _adb-tls-connect). 이 adb 가 mdns 를 못 하면 ''"""
+        try:
+            code, out, err = self.run([self.t["adb"], "mdns", "services"], None, 15)
+        except KakaoError:
+            return ""
+        m = re.search(r"_adb-tls-connect\._tcp\.?\s+\S*?:(\d{1,5})\b", out or "")
+        return m.group(1) if m else ""
+
     def connect(self, port):
         addr = port if ":" in str(port) else "127.0.0.1:%s" % port
         code, out, err = self.run([self.t["adb"], "connect", addr], None, 20)
@@ -2285,9 +2294,16 @@ def main(argv=None):
     if a.command == "setup":
         return cmd_setup(cfg, a.config)
     if a.command == "connect":
-        if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", a.arg):
-            raise SystemExit("python excer_bot.py connect 포트  (설정 > 개발자 옵션 > 무선 디버깅의 'IP 주소 및 포트' 에서 : 뒤 숫자)")
-        serial, done = AdbSender(cfg, log).connect(a.arg)
+        port = a.arg
+        if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", port):
+            port = AdbSender(cfg, log).mdns_port()        # 포트를 안 적었으면(또는 '포트' 라고 적었으면) 기기가 알리는 것을 찾아 본다
+            if port:
+                print("무선 디버깅 포트를 찾았습니다: %s" % port)
+            else:
+                raise SystemExit("python excer_bot.py connect 포트   예: python excer_bot.py connect 37581\n"
+                                 "포트는 숫자입니다. 설정 > 개발자 옵션 > 무선 디버깅(켬) 첫 화면의 'IP 주소 및 포트' 가 192.168.0.12:37581 이면 37581.\n"
+                                 "페어링 창의 포트가 아닙니다. 무선 디버깅을 껐다 켜거나 재부팅하면 숫자가 바뀝니다.")
+        serial, done = AdbSender(cfg, log).connect(port)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
         save_json(a.config, cfg)
         print("붙었습니다: %s%s" % (serial, (", 설정함: " + ", ".join(done)) if done else ""))
