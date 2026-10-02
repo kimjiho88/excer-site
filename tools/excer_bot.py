@@ -50,10 +50,14 @@ tablet 준비(태블릿 하나로)
                                       길게 누른 메뉴, 공지 창. 글을 올리거나 공지를 거는 단추는 누르지 않는다)
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
                                       시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
+  python excer_bot.py voice study     (tablet) 시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과
+                                      신호(알림, 소리, 서비스)를 excer_bot_voice_study.txt 에 적고 클립보드에 담는다. docs/BOT_VOICE_ROOM.md
+  python excer_bot.py voice status    보이스룸이 켜져 있는지(화면을 건드리지 않고 알림, 소리, 서비스로)와 최근 끊김 기록
+  python excer_bot.py voice on        run 이 보이스룸 끊김도 함께 지켜보게 켠다(1단계: 알아채고 기록만, 복구는 2단계). voice off 로 끈다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
-      excer_bot.log(한 일). 이 파일 옆에 생긴다.
+      excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import json
@@ -92,6 +96,9 @@ DEFAULTS = {
     "android": {"serial": "", "package": "com.kakao.talk"},
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
               "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
+    # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md). 1단계: run 이 끊김을 알아채 기록만 한다(복구는 2단계). room 이 비면 알릴 방
+    "voice": {"on": False, "room": "", "title": "", "check_sec": 60, "notif_word": "보이스룸", "renew_hours": 47.5, "mute": True,
+              "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
 }
 
 
@@ -866,6 +873,137 @@ DUMPER_JAR = (
     "PAP9/91kzW+XvWNQRH7+vVu7/X2cRMy/p4v62fuM/wFQSwECFAMUAAAACAAAAEFdeZVXoqIJAAAIEQAACwAAAAAAAAAAAAAAgAEA"
     "AAAAY2xhc3Nlcy5kZXhQSwUGAAAAAAEAAQA5AAAAywkAAAAA"
 )
+# ── 보이스룸 신호: 화면을 건드리지 않고 adb dumpsys 로 읽는다(docs/BOT_VOICE_ROOM.md 3절) ──
+VOICE_SERVICE_RE = re.compile(r"vox|voice|call|room", re.I)
+
+
+def notif_records(out, pkg):
+    """dumpsys notification --noredact 에서 지금 떠 있는 이 앱의 알림: [{"ongoing", "text"}]. 지난 알림 보관함(mArchive)은 뺀다"""
+    cut = min([i for i in (out.find(w) for w in ("mArchive", "Archive (", "Historical")) if i >= 0] or [len(out)])
+    recs = []
+    for blk in out[:cut].split("NotificationRecord(")[1:]:
+        m = re.search(r"\bpkg=(\S+)", blk.split("\n", 1)[0])
+        if not m or m.group(1) != pkg:
+            continue
+        flags = 0
+        for f in re.findall(r"\bflags=0x([0-9a-fA-F]+)", blk):
+            flags |= int(f, 16)
+        texts = [t for t in re.findall(r"android\.(?:title|text|subText|bigText|infoText|textLines)=\w+ \((.*?)\)\s*$", blk, re.M) if t and t != "null"]
+        recs.append({"ongoing": bool(flags & 0x42), "text": " / ".join(texts)[:200]})   # 0x2 진행 중, 0x40 포그라운드 서비스
+    return recs
+
+
+def audio_active(out, pkg, pids):
+    """dumpsys audio: 이 앱의 재생이 돌고 있는지(players 에 state:started), 오디오 포커스를 쥐고 있는지"""
+    started = any(m.group(1) in pids for m in re.finditer(r"u/pid:\d+/(\d+)\s+state:started", out))
+    focus = re.search(r"pack:\s*%s\b" % re.escape(pkg), out) is not None
+    return started, focus
+
+
+def fg_services(out, pkg):
+    """dumpsys activity services <앱>: [(서비스 이름, 포그라운드인지)]"""
+    res = []
+    for blk in out.split("ServiceRecord{")[1:]:
+        m = re.search(r"\s%s/(\S+?)\}" % re.escape(pkg), blk.split("\n", 1)[0])
+        if not m:
+            continue
+        name = m.group(1)
+        res.append((pkg + name if name.startswith(".") else name, "isForeground=true" in blk))
+    return res
+
+
+def net_state(out):
+    """dumpsys connectivity 에서 연결된 망 종류(WIFI, MOBILE 등). 없으면 '없음'"""
+    kinds = []
+    for m in re.finditer(r"\[type: (\w+)[^\n]*?state: (\w+)", out):
+        if m.group(2) == "CONNECTED" and m.group(1) not in kinds:
+            kinds.append(m.group(1))
+    return ", ".join(kinds) or "없음"
+
+
+def voice_state(sig, word="보이스룸"):
+    """세 신호로 판정: on(진행 중 알림에 보이스룸), off(알림도 소리도 서비스도 없음), unsure(엇갈림: 알림은 없는데 소리나 서비스)"""
+    if any(r["ongoing"] and word in r["text"] for r in sig.get("notif") or []):
+        return "on", "진행 중 알림"
+    fg = [n for n, f in sig.get("services") or [] if f and VOICE_SERVICE_RE.search(n)]
+    if not sig.get("audio") and not fg:
+        return "off", "알림도 소리도 없음" + ("" if sig.get("alive") else ", 카카오톡 꺼짐")
+    return "unsure", "알림은 없는데 " + ", ".join((["소리 재생"] if sig.get("audio") else []) + (["서비스 " + ", ".join(fg)] if fg else []))
+
+
+def voice_status_lines(sig, st, word="보이스룸"):
+    state, why = voice_state(sig, word)
+    out = ["보이스룸: %s (%s)" % ({"on": "켜짐", "off": "꺼짐", "unsure": "알 수 없음"}[state], why)]
+    for r in sig.get("notif") or []:
+        out.append("알림: %s%s" % ("진행 중 " if r["ongoing"] else "", r["text"] or "(글자 없음)"))
+    out.append("소리: 재생 %s, 포커스 %s" % ("있음" if sig.get("audio") else "없음", "있음" if sig.get("focus") else "없음"))
+    out.append("포그라운드 서비스: %s" % (", ".join(n for n, f in sig.get("services") or [] if f) or "없음"))
+    out.append("카카오톡 프로세스: %s" % (", ".join(sig.get("pids") or []) or "없음"))
+    out.append("망: %s" % (sig.get("net") or "모름"))
+    if sig.get("errors"):
+        out.append("읽기 오류: " + " | ".join(sig["errors"]))
+    if st.get("state"):
+        out.append("기록: %s %s 부터" % ("켜짐" if st["state"] == "on" else "꺼짐", st.get("since", "")))
+    drops = [e for e in st.get("events") or [] if e.get("to") == "off" and e.get("hours") is not None]
+    if drops:
+        e = drops[-1]
+        out.append("최근 끊김: %s (%s, %s시간 만에, 망 %s, 카카오톡 %s), 끊김 %d번" % (e["at"], e["why"], e["hours"], e.get("net", "모름"), "살아 있음" if e.get("alive") else "꺼짐", len(drops)))
+    return out
+
+
+class VoiceWatch:
+    """보이스룸 지키기 1단계: run 안에서 화면을 건드리지 않고 켜짐과 끊김을 알아채 기록한다(복구는 2단계). docs/BOT_VOICE_ROOM.md"""
+    def __init__(self, cfg, sender, path, log, clock=None):
+        self.v = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))
+        self.sender, self.path, self.log = sender, path, log
+        self.clock = clock or (lambda: datetime.now(KST))
+        self.st = {"state": "", "since": "", "since_ts": 0, "events": []}
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                got = json.load(f)
+            if isinstance(got, dict):
+                self.st.update(got)
+        except (OSError, ValueError):
+            pass
+        self.next_ts, self.off_streak = 0.0, 0
+
+    def due(self):
+        return self.clock().timestamp() >= self.next_ts
+
+    def tick(self):
+        """한 번 읽고 판정. 꺼짐은 두 번 연속일 때만 끊김으로 적는다. 돌려주는 것: on, off, off?(한 번 안 보임), wait"""
+        dt = self.clock()
+        ts = dt.timestamp()
+        if ts < self.next_ts:
+            return "wait"
+        self.next_ts = ts + max(15, int(self.v.get("check_sec") or 60))
+        sig = self.sender.voice_signals()
+        state, why = voice_state(sig, self.v.get("notif_word") or "보이스룸")
+        prev = self.st.get("state") or ""
+        if state == "unsure":
+            state = prev or "off"                       # 엇갈리면 지난 판정을 지킨다(2단계에서 화면으로 확정)
+        if state == "off" and prev == "on":
+            self.off_streak += 1
+            if self.off_streak < 2:
+                return "off?"
+        else:
+            self.off_streak = 0
+        if state != prev:
+            ev = {"at": dt.astimezone(KST).strftime("%Y-%m-%d %H:%M"), "to": state, "why": why, "alive": bool(sig.get("alive")), "net": sig.get("net") or ""}
+            if prev == "on" and self.st.get("since_ts"):
+                ev["hours"] = round((ts - float(self.st["since_ts"])) / 3600, 1)
+            self.st["events"] = (self.st.get("events") or [])[-199:] + [ev]
+            self.st["state"], self.st["since"], self.st["since_ts"] = state, ev["at"], ts
+            save_json(self.path, self.st)
+            if state == "on":
+                self.log("보이스룸: 켜짐")
+            elif prev == "on":
+                self.log("보이스룸: 끊김(%s%s), 복구는 2단계" % (why, ", %s시간 만에" % ev["hours"] if "hours" in ev else ""))
+            else:
+                self.log("보이스룸: 지금 꺼져 있음(%s). 켜지면 적는다" % why)
+        return state
+
+
 BOUNDS_RE = re.compile(r"\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
 NAV_WORDS = {"채팅", "오픈채팅", "친구", "더보기", "쇼핑", "뷰", "지갑", "전체", "안읽음"}
 
@@ -1644,6 +1782,152 @@ class AdbSender:
             out.append("== 11 '[다음 벙]' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
         return "\n".join(out)
 
+    # ── 보이스룸(docs/BOT_VOICE_ROOM.md) ──
+    VOICE_START = ("시작", "시작하기", "만들기", "개설", "개설하기", "보이스룸 시작", "보이스룸 만들기", "확인")
+    VOICE_PERM = ("앱 사용 중에만 허용", "이번만 허용", "허용")
+    VOICE_MIN = ("최소화", "작게 보기", "접기")
+    VOICE_LEAVE = ("보이스룸 나가기", "나가기", "보이스룸 종료", "종료")
+    VOICE_END_OK = ("종료", "나가기", "확인", "예")
+    VOICE_NEVER = ("방 나가기", "채팅방 나가기", "삭제", "신고", "차단")   # 어떤 흐름에서도 누르지 않는다
+
+    def voice_signals(self):
+        """보이스룸 신호(화면을 건드리지 않음): 알림, 소리, 서비스, 카카오톡 프로세스, 망"""
+        pkg = self.t["package"]
+        sig = {"notif": [], "audio": False, "focus": False, "services": [], "alive": False, "pids": [], "net": "", "errors": []}
+
+        def get(cmd, timeout=60):
+            try:
+                return self.sh(cmd + " 2>/dev/null; true", timeout=timeout)
+            except KakaoError as e:
+                sig["errors"].append(str(e)[:80])
+                return ""
+        pids = re.findall(r"\d+", get("ps -A -o PID,NAME | grep -F %s | awk '{print $1}'; pidof %s" % (pkg, pkg), 30))
+        sig["pids"] = sorted(set(pids), key=int)
+        sig["alive"] = bool(sig["pids"])
+        sig["notif"] = notif_records(get("dumpsys notification --noredact"), pkg)
+        sig["audio"], sig["focus"] = audio_active(get("dumpsys audio"), pkg, sig["pids"])
+        sig["services"] = fg_services(get("dumpsys activity services %s" % pkg), pkg)
+        sig["net"] = net_state(get("dumpsys connectivity", 40))
+        return sig
+
+    def voice_study(self, room, title="시험 보이스룸", word="보이스룸"):
+        """시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과 신호를 적는다. 2단계(복구)의 근거.
+        '방 나가기', '삭제' 같은 단추는 누르지 않는다"""
+        out = []
+
+        def take(label, nodes, before=None):
+            keep = (room, title) + tuple(ws(n["text"]) for n in nodes if word in n["text"])   # 보이스룸 글자가 든 띠와 안내 창 글은 그대로 적는다
+            rows = self.study_rows(nodes, before, False, keep)
+            out.extend(["== %s (%d)" % (label, len(rows))] + rows + [""])
+
+        def sig(label):
+            s = self.voice_signals()
+            out.append("## 신호: " + label)
+            out.extend(voice_status_lines(s, {}, word))
+            out.append("")
+            return voice_state(s, word)[0]
+
+        def pick(nodes, words, before=()):
+            c = [n for n in self.labeled(nodes, words, before) if not any(w in n["text"] + " " + n["desc"] for w in self.VOICE_NEVER)]
+            return c[0] if c else None
+
+        def name(n):
+            return n["text"].strip() or n["desc"].strip()
+
+        def has_voice_ui(nodes):
+            return pick(nodes, self.VOICE_LEAVE) is not None or pick(nodes, ("마이크 끄기", "마이크 켜기", "음소거")) is not None
+        nodes = self.open_room(room)
+        take("1 시험 방(%s)" % room, nodes)
+        sig("1 시작 전")
+        box = self.box(nodes)
+        bh = box["b"][3] - box["b"][1]
+        cands = [n for n in nodes if n["click"] and n["b"][2] <= box["b"][0] + 10 and n["b"][0] >= box["b"][0] - 400
+                 and abs(self.center(n)[1] - self.center(box)[1]) < bh]
+        if not cands:
+            out.append("안 됨: 입력 칸 왼쪽에서 + 단추를 찾지 못함")
+            return "\n".join(out)
+        plus = max(cands, key=lambda n: n["b"][2])
+        out.extend(["+ 단추로 고른 것: " + self.study_rows([plus], None, False, ())[0], ""])
+        self.tap(plus)
+        panel = self.wait_change(nodes, tries=3)
+        take("2 + 를 누른 뒤(새로 나온 것)", panel, nodes)
+        item = [n for n in panel if word in n["text"] or word in n["desc"]]
+        if not item:
+            out.append("안 됨: + 메뉴에 '%s' 이 없음(봇이 방장이나 부방장인지, 메뉴를 옆으로 밀어야 하는지)" % word)
+            self.key(4)
+            return "\n".join(out)
+        self.tap(item[0])
+        dlg = self.wait_change(panel, tries=3)
+        take("3 '%s' 을 누른 뒤(새로 나온 것)" % word, dlg, panel)
+        if has_voice_ui(dlg):
+            scr = dlg                                             # 창 없이 바로 만들어짐
+        else:
+            field = [n for n in find(dlg, cls="EditText") if n["b"] != box["b"]]
+            if field:
+                dlg = self.paste_into(field[0], title)
+                take("3-1 제목을 넣은 뒤", dlg, panel)
+            start = pick(dlg, self.VOICE_START, panel)
+            if not start:
+                out.append("안 됨: 시작 단추를 찾지 못함")
+                self.key(4)
+                return "\n".join(out)
+            self.tap(start)
+            scr = self.wait_change(dlg, tries=4)
+            take("4 '%s' 를 누른 뒤(새로 나온 것)" % name(start), scr, dlg)
+        perm = pick(scr, self.VOICE_PERM)
+        if perm:
+            self.tap(perm)
+            out.append("권한 창: '%s' 를 누름" % name(perm))
+            scr = self.wait_change(scr, tries=4)
+        take("5 보이스룸 화면", scr)
+        self.sleep(3)
+        sig("5 보이스룸 화면에서")
+        mic = pick(scr, ("마이크 끄기", "음소거"))
+        if mic:
+            self.tap(mic)
+            scr2 = self.wait_change(scr, tries=2)
+            take("5-1 '%s' 를 누른 뒤(새로 나온 것)" % name(mic), scr2, scr)
+            scr = scr2
+        mn = pick(scr, self.VOICE_MIN)
+        if mn:
+            self.tap(mn)
+            out.append("최소화: '%s' 단추" % name(mn))
+        else:
+            self.key(4)
+            out.append("최소화: 단추가 없어 뒤로 가기")
+        nodes = self.wait_change(scr, tries=3)
+        take("6 최소화한 뒤(방 화면: 띠, 작은 창)", nodes)
+        sig("6 최소화한 뒤")
+        self.done()
+        self.sleep(5)
+        sig("7 다른 앱(Termux)으로 나간 뒤")
+        nodes = self.open_room(room)
+        take("8 방을 다시 연 화면", nodes)
+        tag = [n for n in nodes if (word in n["text"] or word in n["desc"]) and n["b"][0] >= box["b"][0] - 60]
+        tag = [n for n in tag if n["click"]] + [n for n in tag if not n["click"]]
+        if tag:
+            self.tap(tag[0])
+            scr = self.wait_change(nodes, tries=3)
+            take("9 '%s' 띠(또는 작은 창)를 누른 뒤(새로 나온 것)" % name(tag[0])[:20], scr, nodes)
+        else:
+            out.append("== 9 방 화면에 '%s' 글자가 없어 띠 누르기는 건너뜀\n" % word)
+            scr = nodes
+        leave = pick(scr, self.VOICE_LEAVE)
+        if not leave:
+            out.append("안 됨: 나가기 단추를 찾지 못함. 보이스룸은 켜진 채로 둠(직접 끄세요)")
+            return "\n".join(out)
+        self.tap(leave)
+        conf = self.wait_change(scr, tries=3)
+        take("10 '%s' 를 누른 뒤(새로 나온 것)" % name(leave), conf, scr)
+        yes = pick(conf, self.VOICE_END_OK, scr)
+        if yes:
+            self.tap(yes)
+            after = self.wait_change(conf, tries=3)
+            take("11 '%s' 를 누른 뒤" % name(yes), after)
+        self.sleep(2)
+        sig("12 끝낸 뒤")
+        return "\n".join(out)
+
     def done(self):
         """올리고 나면 Termux 를 앞으로(기록이 보이게, 다음 명령을 치게). return_to 를 "" 로 두면 카카오톡에 머문다"""
         app = self.t.get("return_to") or ""
@@ -1962,8 +2246,8 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline")
+    ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, on, off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
@@ -2038,6 +2322,8 @@ def main(argv=None):
         except KakaoError:
             print("다 적었습니다: %s (cat 으로 보세요)" % path)
         return
+    if a.command == "voice":
+        return cmd_voice(cfg, a, base, log)
     if a.command == "ui":
         sender = make_sender(cfg, log)
         if isinstance(sender, AdbSender):
@@ -2094,11 +2380,65 @@ def main(argv=None):
         log("한 번 봄: " + bot.cycle())
         return
     log("켬: %s 방%s, %s 방식, %d초마다 %s 확인" % (room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
+    voice = None
+    if (cfg.get("voice") or {}).get("on"):
+        if isinstance(bot.sender, AdbSender):
+            voice = VoiceWatch(cfg, bot.sender, base + "_voice.json", log)
+            log("보이스룸 지키기: %d초마다 끊김을 알아채 기록(1단계, 복구는 2단계)" % max(15, int(voice.v.get("check_sec") or 60)))
+        else:
+            log("보이스룸 지키기는 tablet 방식에서만 돈다")
     wake_lock(True)                                     # Termux 가 잠들지 않게(태블릿일 때만 있는 명령)
     try:
-        run_loop(bot, log)
+        run_loop(bot, log, voice)
     finally:
         wake_lock(False)
+
+
+def cmd_voice(cfg, a, base, log):
+    sub = a.arg
+    if sub in ("on", "off"):
+        cfg.setdefault("voice", {})["on"] = sub == "on"
+        save_json(a.config, cfg)
+        print("보이스룸 지키기: " + ("켬. run 이 끊김을 함께 지켜봅니다(1단계: 기록만, 복구는 2단계)" if sub == "on" else "끔"))
+        return
+    if sub == "now":
+        raise SystemExit("복구(voice now)는 2단계에서 만듭니다. 지금은 voice study, status, on, off")
+    if sub not in ("study", "status"):
+        raise SystemExit("python excer_bot.py voice study | status | on | off")
+    sender = make_sender(cfg, log)
+    if not isinstance(sender, AdbSender):
+        raise SystemExit("voice 는 tablet 방식에서 씁니다.")
+    word = (cfg.get("voice") or {}).get("notif_word") or "보이스룸"
+    if sub == "status":
+        st = {}
+        try:
+            with open(base + "_voice.json", encoding="utf-8-sig") as f:
+                st = json.load(f)
+        except (OSError, ValueError):
+            pass
+        for l in voice_status_lines(sender.voice_signals(), st if isinstance(st, dict) else {}, word):
+            print(l)
+        return
+    room = cfg.get("test_room") or ""
+    if not room:
+        raise SystemExit("excer_bot.json 의 test_room(시험 방)을 먼저 넣으세요(setup).")
+    ans = input("시험 방 '%s' 에 보이스룸을 실제로 하나 만들었다가 끝내며 화면과 신호를 적습니다(방 사람들에게 보이스룸 알림이 갈 수 있습니다). 시작할까요? y/n [y]: " % room).strip().lower()
+    if ans not in ("", "y", "yes", "ㅛ"):
+        print("그만둡니다.")
+        return
+    print("1~2분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요.")
+    try:
+        txt = sender.voice_study(room, (cfg.get("voice") or {}).get("title") or "시험 보이스룸", word)
+    finally:
+        sender.done()
+    path = base + "_voice_study.txt"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(txt)
+    try:
+        sender.set_clip(txt)
+        print("다 적었습니다(%s). 클립보드에도 담았으니 대화창에 붙여넣어 보내 주세요." % os.path.basename(path))
+    except KakaoError:
+        print("다 적었습니다: %s (cat 으로 보세요)" % path)
 
 
 def wake_lock(on):
@@ -2111,13 +2451,15 @@ def wake_lock(on):
             pass
 
 
-def run_loop(bot, log):
+def run_loop(bot, log, voice=None):
     while True:
         try:
             if bot.due():
                 r = bot.cycle()
                 if r not in ("none", "quiet"):
                     log("차례: " + r)
+            if voice and voice.due():
+                voice.tick()                            # 보이스룸 끊김은 tick 안에서 적는다
         except KeyboardInterrupt:
             raise
         except Exception as e:
