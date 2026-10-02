@@ -308,7 +308,7 @@
     if (t === "bung") {
       var when = m.date ? dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : (m.time || "");
       if (when) f.push({ key: "when", label: "날짜와 시간", value: when });
-      if (m.place) f.push({ key: "place", label: "장소", value: m.place });
+      if (m.place) f.push({ key: "place", label: "장소", value: m.place + (m.addr ? ", " + m.addr : "") });
       if (m.cap) f.push({ key: "cap", label: "모집 인원", value: m.cap + "명" });
       if (m.cost) f.push({ key: "cost", label: "예상 비용", value: m.cost });
       if (m.deadline && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.deadline)) f.push({ key: "deadline", label: "신청 마감", value: dateText(m.deadline.slice(0, 10), { withDow: true }) + " " + m.deadline.slice(11, 16) });
@@ -396,16 +396,17 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1, loc = false, att = false;
+        var v = 1, loc = false, att = false, plc = false;
         (Array.isArray(rows) ? rows : []).forEach(function (x) {
           if (x.key === "content_format") v = Number(x.value) || 1;
           if (x.key === "places_location") loc = Number(x.value) >= 1;
           if (x.key === "bung_attend") att = Number(x.value) >= 1;
+          if (x.key === "bung_place") plc = Number(x.value) >= 1;   // 모집 글의 주소와 좌표, 모임장 참석자 추가(2026-10-02 SQL)
         });
         attendOn = att;
-        return { contentFormat: v, location: loc, attend: att };
+        return { contentFormat: v, location: loc, attend: att, place: plc && att };
       })
-      .catch(function () { return { contentFormat: 1, location: false, attend: false }; });
+      .catch(function () { return { contentFormat: 1, location: false, attend: false, place: false }; });
     return capsPromise;
   }
 

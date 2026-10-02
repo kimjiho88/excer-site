@@ -176,7 +176,7 @@
     .form-preview .post-head:hover .row-title { text-decoration: none; }
     .form-preview .kv { margin: 6px 0 4px; }
     .pass-modal { width: min(420px, 100%); }
-    #passBackdrop, #dupBackdrop, #attBackdrop { z-index: 240; }
+    #passBackdrop, #dupBackdrop, #attBackdrop, #mapBackdrop { z-index: 240; }
     .attend { display: grid; gap: 10px; }
     .att-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
     .att-head b { font-size: 1.05em; }
@@ -214,6 +214,43 @@
     .chip.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 700; }
     .chip:disabled { opacity: 0.4; cursor: default; }
     .fg-h { margin: 4px 0 -6px; color: var(--ink-2); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+    /* 모임 카드의 장소: 이름, 주소, 지도와 길찾기 링크(좌표가 있을 때). 시작 하루 안이면 남은 시간 */
+    .bc-left { color: var(--brand); font-size: 13px; font-weight: 700; }
+    .bc-place { align-items: flex-start; }
+    .bc-place .ic { margin-top: 2px; }
+    .bc-pl { display: grid; gap: 2px; min-width: 0; }
+    .bc-pl small { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
+    .bc-links { display: flex; gap: 14px; margin-top: 2px; }
+    .bc-links a { color: var(--brand); font-size: var(--fs-caption); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+    /* 댓글로 참석: 댓글 등록 단추 옆 확인 칸 */
+    .comment-form-acts { align-items: center; gap: 12px; }
+    .c-att { display: flex; align-items: center; gap: 8px; margin-right: auto; min-height: 36px; color: var(--ink); font-size: var(--fs-caption); cursor: pointer; }
+    .c-att input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand); }
+    /* 글쓰기 장소 칸: 지도에서 찾기 단추, 고른 장소의 주소 */
+    .place-row { display: flex; gap: 8px; }
+    .place-row .input { flex: 1 1 auto; min-width: 0; }
+    .place-row .btn { flex: none; white-space: nowrap; }
+    .place-picked { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
+    .place-picked .ic { flex: none; width: 14px; height: 14px; color: var(--brand); }
+    .place-picked span { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .place-picked .text-btn { flex: none; min-height: 28px; }
+    /* 지도에서 장소 찾기 창 */
+    .map-modal { width: min(560px, 100%); }
+    .map-search { display: flex; gap: 8px; margin-bottom: 10px; }
+    .map-search .input { flex: 1 1 auto; min-width: 0; }
+    .map-search .btn { flex: none; }
+    .map-results { margin: 0 0 10px; padding: 0; list-style: none; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .map-results:empty { display: none; }
+    .map-results li + li { border-top: 1px solid var(--line); }
+    .map-results button { display: grid; gap: 2px; width: 100%; padding: 10px 12px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+    .map-results button:hover { background: var(--surface-2, #F3F0E8); }
+    .map-results button.is-on { background: var(--brand-soft); }
+    .map-results button > span > small { color: var(--ink-2); }
+    .map-results small { color: var(--ink-2); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    .map-results .is-none { padding: 12px; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    .map-canvas { height: 200px; margin-bottom: 10px; border-radius: 10px; overflow: hidden; background: var(--surface-2, #F3F0E8); }
+    .map-picked { display: grid; gap: 2px; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--brand-soft); font-size: var(--fs-caption); line-height: 1.4; overflow-wrap: anywhere; }
+    .map-picked b { color: var(--ink); font-size: 14px; }
     .dup-ok { display: flex; gap: 8px; align-items: center; min-height: 44px; font-size: var(--fs-body, 15px); }
     .dup-list { margin: 0 0 10px; padding: 0; list-style: none; display: grid; gap: 6px; }
     .dup-list li { padding: 8px 10px; border-radius: 8px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); line-height: 1.5; overflow-wrap: anywhere; }
@@ -465,9 +502,32 @@
       <label class="sr-only" for="attPass">비밀번호</label>
       <input id="attPass" class="input" type="password" placeholder="비밀번호(4자 이상)" autocomplete="off" />
       <p id="attErr" class="field-error" hidden style="margin:8px 0 0"></p>
+      <p id="attDone" class="field-hint" hidden style="margin:8px 0 0"></p>
       <div class="modal-foot">
         <button id="attCancel" class="btn btn-secondary is-sm" type="button">닫기</button>
         <button id="attOk" class="btn btn-primary is-sm" type="button">참석</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 글쓰기 장소 칸의 '지도에서 찾기': 카카오 장소 검색, 고르면 이름과 주소와 좌표가 글에 들어간다 -->
+  <div id="mapBackdrop" class="modal-backdrop" hidden>
+    <div class="modal map-modal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+      <div class="modal-head">
+        <h3 id="mapTitle">지도에서 장소 찾기</h3>
+        <button id="mapClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="map-search">
+        <label class="sr-only" for="mapQ">장소 검색</label>
+        <input id="mapQ" class="input" type="search" maxlength="60" placeholder="가게, 역, 건물 이름" autocomplete="off" />
+        <button id="mapGo" class="btn btn-primary is-sm" type="button">검색</button>
+      </div>
+      <ul id="mapResults" class="map-results" aria-live="polite"></ul>
+      <div id="mapCanvas" class="map-canvas" hidden aria-hidden="true"></div>
+      <p id="mapPicked" class="map-picked" hidden></p>
+      <div class="modal-foot">
+        <button id="mapCancel" class="btn btn-secondary is-sm" type="button">닫기</button>
+        <button id="mapOk" class="btn btn-primary is-sm" type="button" disabled>이 장소로</button>
       </div>
     </div>
   </div>
@@ -602,7 +662,10 @@
       "벙 소식": [
         { key: "date", label: "모임 날짜", type: "date", req: true, group: "언제", chips: "date" },
         { key: "time", label: "시간", type: "time", req: true, chips: "time" },
-        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 강남역 3번 출구", list: "wf_place-list" },
+        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 강남역 3번 출구", list: "wf_place-list", map: true },
+        { key: "addr", type: "hidden", plc: true },          // 지도에서 고른 장소의 주소와 좌표(bung_place 서버). 글자 칸은 그대로 두고 따로 담는다
+        { key: "lat", type: "hidden", plc: true, num: true },
+        { key: "lng", type: "hidden", plc: true, num: true },
         { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", chips: "cap", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, group: "선택", chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
         { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
@@ -630,7 +693,7 @@
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
       myReactions: {}, reactBusy: {}, caps: 1, popular: [],
-      attendOn: false, attend: {}
+      attendOn: false, placeOn: false, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
     const SEEN_KEY = "excer_news_seen";
@@ -868,6 +931,8 @@
         ? `<p class="post-updated">${esc(C.relTime(post.updated_at))} 수정</p>` : "";
       const card = v.kind === "bung" && state.attendOn && v.meta && v.meta.date;
       const facts = card ? v.facts.filter((f) => !/^(when|place|cap|deadline)$/.test(f.key) && !(f.key === "apply" && !(v.meta && v.meta.apply))) : v.facts;   // 카드에 있는 것과 참석 단추 자체인 '신청 방법' 은 표에서 뺀다
+      // 댓글로 참석: 모집 중인 모임이고 아직 참석하지 않았으면 댓글 등록에 '참석도 신청' 칸
+      const canAtt = card && bungStatus(post).open && !(((state.attend[post.id] || {}).list) || []).some((x) => isMe(x.nick));
       return `
         ${lead}
         ${card ? attendHTML(post) : ""}
@@ -893,7 +958,7 @@
               <input class="input c-pass" type="password" placeholder="비밀번호 (4자 이상)" aria-label="댓글 비밀번호" autocomplete="new-password" value="${esc(savedPass())}" />
             </div>
             <textarea class="textarea c-body" maxlength="1000" placeholder="댓글" aria-label="댓글 내용"></textarea>
-            <div class="comment-form-acts"><button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
+            <div class="comment-form-acts">${canAtt ? `<label class="c-att"><input type="checkbox" class="c-attend" /> 참석도 신청</label>` : ""}<button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
           </div>
         </div>
         <div class="post-close"><button type="button" class="text-btn is-quiet" data-act="toggle" data-id="${post.id}">${icon("chevDown", "is-sm")} 글 접기</button></div>`;
@@ -1049,14 +1114,18 @@
     // ── 글쓰기 / 수정 모달 ──
     function fieldHTML(f) {
       const id = "wf_" + f.key;
+      if (f.type === "hidden") return `<input type="hidden" id="${id}" data-key="${f.key}"${f.num ? ' data-num="1"' : ""} />`;
       const label = `<label for="${id}">${esc(f.label)} <small>${f.req ? "필수" : "선택"}</small></label>`;
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
       else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
       else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
+      const withMap = !!(f.map && mapOK());   // 장소 칸: 지도에서 찾기 단추(서버 bung_place 와 카카오 키가 있을 때), 고른 장소의 주소 줄
+      if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
+      const picked = f.map ? `<p class="place-picked" id="wf_placePicked" hidden>${icon("pin")}<span id="wf_placeAddr"></span><button type="button" class="text-btn is-quiet" data-act="place-clear">지우기</button></p>` : "";
       const hint = !state.attendOn && f.hintOff ? f.hintOff : f.hint;
       const chips = f.chips ? `<div class="chips" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip" data-v="${esc(c.v)}">${esc(c.label)}</button>`).join("")}</div>` : "";
-      return `<div class="field${f.wide ? " is-wide" : ""}" data-field="${id}">${label}${input}${chips}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+      return `<div class="field${f.wide || withMap ? " is-wide" : ""}" data-field="${id}">${label}${input}${picked}${chips}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
     /* 한 번에 고르는 단추: 날짜는 오늘부터 이레, 시간과 인원은 자주 쓰는 값, 신청 마감은 시작 시각에서 셈 */
     const DOW = "일월화수목금토";
@@ -1094,7 +1163,7 @@
       return state.posts.filter((p) => p.category === "벙 소식").map((p) => ((C.postMeta(p) || {}).place || "").trim()).filter((x) => x && !seen.has(x) && seen.add(x)).slice(0, 20);
     }
     function renderTypeFields(cat, meta) {
-      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn));
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn) && !(f.plc && !state.placeOn));
       let last = "", html = "";
       fields.forEach((f) => { if (f.group && f.group !== last) { html += `<div class="fg-h is-wide">${esc(f.group)}</div>`; last = f.group; } html += fieldHTML(f); });
       if (fields.some((f) => f.list === "wf_place-list")) html += `<datalist id="wf_place-list">${placeOptions().map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist>`;
@@ -1106,6 +1175,7 @@
       $("wBodyLabel").textContent = cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
       $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
+      syncPlacePicked();
       syncChips();
     }
     function readMeta() {
@@ -1115,7 +1185,7 @@
       document.querySelectorAll("#typeFields [data-key]").forEach((el) => {
         const v = String(el.value || "").trim();
         if (!v) return;
-        m[el.dataset.key] = el.type === "number" ? Number(v) : v;
+        m[el.dataset.key] = el.type === "number" || el.dataset.num ? Number(v) : v;
         any = true;
       });
       if (!any) return null;
@@ -1250,34 +1320,53 @@
       const when = m.date ? C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "";
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
       const dday = st.why === "started" ? "지난 모임" : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
+      const left = m.time && st.why !== "started" ? startLeft(st.start) : "";
       const n = list ? list.length : st.n;
       const pct = st.cap ? Math.min(100, Math.round(n / st.cap * 100)) : 0;
+      const coords = Number(m.lat) > 0 && Number(m.lng) > 0;
+      const mapName = encodeURIComponent(String(m.place || "모임 장소").slice(0, 40));
+      const links = coords ? `<span class="bc-links"><a href="https://map.kakao.com/link/map/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">지도</a><a href="https://map.kakao.com/link/to/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">길찾기</a></span>` : "";
       let btn = "";
       if (mine && st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
       else if (st.open) btn = `<button type="button" class="btn btn-primary is-sm" data-act="attend" data-id="${post.id}">참석하기</button>`;
       else if (st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
       const other = list && list.length && !mine && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">참석 취소</button>` : "";
+      // 모임장이 댓글이나 채팅으로 참석을 밝힌 사람을 적는다(글 비밀번호). 마감이나 정원과 상관없이 모임장이 정한다
+      const hostAdd = state.placeOn && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가 <small>모임장</small></button>` : "";
       return `<div class="attend bung-card" data-post="${post.id}">
-          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${st.why === "started" ? " is-past" : ""}">${esc(dday)}</span>` : ""}</div>
-          ${m.place ? `<div class="bc-row">${icon("pin")}<span>${esc(m.place)}</span></div>` : ""}
+          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${st.why === "started" ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
+          ${m.place ? `<div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div>` : ""}
           <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
           ${list ? (list.length ? `<ul class="att-list" aria-label="참석자">${list.map((x) => `<li>${esc(x.nick)}${String(x.nick).trim().toLowerCase() === host ? " <small>모임장</small>" : ""}</li>`).join("")}</ul>` : `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`) : `<p class="att-empty">참석 명단을 불러오는 중입니다.</p>`}
-          <div class="att-acts">${btn}${other}</div>
+          <div class="att-acts">${btn}${other}${hostAdd}</div>
         </div>`;
+    }
+    /* 시작까지 하루 안이면 남은 시간. 시각은 한국 시간 */
+    function startLeft(start) {
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(start || "")) return "";
+      const mins = Math.round((Date.parse(start + ":00Z") - Date.parse(nowKey() + ":00Z")) / 60000);
+      if (!(mins > 0 && mins <= 1440)) return "";
+      return "시작까지 " + (mins >= 60 ? Math.floor(mins / 60) + "시간" + (mins % 60 ? " " + (mins % 60) + "분" : "") : mins + "분");
     }
     // 참석 창
     let attCtx = null;
+    /* mode: attend(본인 참석), unattend(취소), host(모임장이 참석자를 적음, 글 비밀번호나 운영진 비밀번호) */
     function openAttend(id, mode) {
       const post = findPost(id); if (!post) return;
       attCtx = { id, mode };
       const list = (state.attend[id] || {}).list || [];
       const me = list.find((x) => isMe(x.nick));
-      $("attTitle").textContent = mode === "attend" ? "참석" : "참석 취소";
-      $("attDesc").textContent = mode === "attend" ? "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다." : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 모임장은 글 비밀번호로 다른 사람을 뺄 수 있습니다.";
-      $("attNick").value = mode === "attend" ? savedNick() : (me ? me.nick : "");
+      const host = mode === "host";
+      $("attTitle").textContent = mode === "attend" ? "참석" : host ? "참석자 추가" : "참석 취소";
+      $("attDesc").textContent = mode === "attend" ? "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다."
+        : host ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다."
+        : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 모임장은 글 비밀번호로 다른 사람을 뺄 수 있습니다.";
+      $("attNick").value = mode === "attend" ? savedNick() : host ? "" : (me ? me.nick : "");
+      $("attNick").placeholder = host ? "참석자 닉네임" : "닉네임(채팅방 닉네임 그대로)";
       $("attPass").value = savedPass();
-      $("attOk").textContent = mode === "attend" ? "참석" : "참석 취소";
-      $("attErr").hidden = true;
+      $("attPass").placeholder = host ? "글 비밀번호" : "비밀번호(4자 이상)";
+      $("attOk").textContent = mode === "attend" ? "참석" : host ? "추가" : "참석 취소";
+      $("attErr").hidden = true; $("attDone").hidden = true;
       $("attBackdrop").hidden = false;
       setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
     }
@@ -1285,25 +1374,111 @@
     async function submitAttend() {
       if (!attCtx || state.busy) return;
       const nick = $("attNick").value.trim(), pass = $("attPass").value;
-      const fail = (m) => { $("attErr").textContent = m; $("attErr").hidden = false; };
+      const fail = (m) => { $("attErr").textContent = m; $("attErr").hidden = false; $("attDone").hidden = true; };
       if (!nick) { fail("닉네임을 입력해 주세요."); $("attNick").focus(); return; }
       if (pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
       const { id, mode } = attCtx;
+      const fn = mode === "attend" ? "bung_attend" : mode === "host" ? "bung_host_attend" : "bung_unattend";
       state.busy = true; $("attOk").disabled = true;
       try {
-        const res = await supaFetch("/rest/v1/rpc/" + (mode === "attend" ? "bung_attend" : "bung_unattend"), { method: "POST", body: JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass }) });
+        const res = await supaFetch("/rest/v1/rpc/" + fn, { method: "POST", body: JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass }) });
         state.attend[id] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at })) };
         const post = findPost(id); if (post) post.attend_count = state.attend[id].list.length;
         if (mode === "attend") { saveNick(nick); savePass(pass, "벙 소식"); }
-        closeAttend();
+        if (mode === "host") {   // 여러 명을 이어서 적을 수 있게 창은 열어 둔다
+          $("attErr").hidden = true; $("attDone").textContent = "추가됨: " + nick; $("attDone").hidden = false;
+          $("attNick").value = ""; $("attNick").focus();
+        } else closeAttend();
         renderList();
-        showToast(mode === "attend" ? "참석했습니다." : "참석을 취소했습니다.");
+        showToast(mode === "attend" ? "참석했습니다." : mode === "host" ? "참석자를 추가했습니다." : "참석을 취소했습니다.");
       } catch (err) {
         fail(rpcErrorMessage(err));
         if (/FULL|DEADLINE|CLOSED/.test(String(err && err.message))) loadAttend([id]);
       } finally {
         state.busy = false; $("attOk").disabled = false;
       }
+    }
+    /* ── 지도에서 장소 찾기(카카오 장소 검색): 모집 글의 장소 칸. 서버 bung_place 와 KAKAO.jsKey 가 있을 때만 단추가 보인다. SDK 는 처음 찾을 때 읽는다 ── */
+    const MAP = { loading: null, failed: false, map: null, marker: null, results: [], picked: null };
+    const SEOUL_GANGNAM = { lat: 37.4979, lng: 127.0276 };
+    function mapOK() { return !!(state.placeOn && window.KAKAO && KAKAO.jsKey && !MAP.failed); }
+    function loadKakao() {
+      if (window.kakao && kakao.maps && kakao.maps.Map) return Promise.resolve();
+      if (MAP.loading) return MAP.loading;
+      MAP.loading = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" + encodeURIComponent(KAKAO.jsKey) + "&libraries=services&autoload=false";
+        s.async = true;
+        const timer = setTimeout(() => reject(new Error("timeout")), 10000);
+        s.onload = () => { try { kakao.maps.load(() => { clearTimeout(timer); resolve(); }); } catch (e) { clearTimeout(timer); reject(e); } };
+        s.onerror = () => { clearTimeout(timer); reject(new Error("load")); };
+        document.head.appendChild(s);
+      }).catch((e) => { MAP.loading = null; MAP.failed = true; throw e; });
+      return MAP.loading;
+    }
+    function searchPlaces(keyword) {
+      return loadKakao().then(() => new Promise((resolve) => {
+        const ps = new kakao.maps.services.Places();
+        ps.keywordSearch(keyword, (data, status) => {
+          if (status === kakao.maps.services.Status.OK && Array.isArray(data)) {
+            resolve(data.map((d) => ({ name: String(d.place_name || ""), address: String(d.road_address_name || d.address_name || ""), category: String(d.category_name || "").split(">").pop().trim(), lat: Number(d.y), lng: Number(d.x) })));
+          } else resolve([]);
+        }, { size: 8, location: new kakao.maps.LatLng(SEOUL_GANGNAM.lat, SEOUL_GANGNAM.lng), radius: 20000 });
+      }));
+    }
+    function openMapPicker() {
+      MAP.picked = null; MAP.results = [];
+      $("mapResults").innerHTML = ""; $("mapCanvas").hidden = true; $("mapPicked").hidden = true; $("mapOk").disabled = true;
+      $("mapQ").value = (($("wf_place") || {}).value || "").trim();
+      $("mapBackdrop").hidden = false;
+      setTimeout(() => $("mapQ").focus(), 30);
+      if ($("mapQ").value) runMapSearch();
+    }
+    function closeMapPicker() { $("mapBackdrop").hidden = true; }
+    async function runMapSearch() {
+      const q = $("mapQ").value.trim(); if (!q) { $("mapQ").focus(); return; }
+      const box = $("mapResults");
+      box.innerHTML = '<li class="is-none">찾는 중</li>';
+      let list = [];
+      try { list = await searchPlaces(q); }
+      catch (e) { box.innerHTML = '<li class="is-none">지도를 불러오지 못했습니다. 장소는 글자로 적어 주세요.</li>'; return; }
+      if ($("mapQ").value.trim() !== q) return;   // 그사이 다른 검색어로 바뀜
+      MAP.results = list; MAP.picked = null; $("mapOk").disabled = true; $("mapPicked").hidden = true;
+      box.innerHTML = list.length
+        ? list.map((r, i) => `<li><button type="button" data-i="${i}"><span>${esc(r.name)}${r.category ? ` <small>${esc(r.category)}</small>` : ""}</span><small>${esc(r.address || "주소 없음")}</small></button></li>`).join("")
+        : '<li class="is-none">검색 결과가 없습니다. 이름을 조금 바꿔 다시 찾아 주세요.</li>';
+    }
+    function pickMapResult(i) {
+      const r = MAP.results[i]; if (!r) return;
+      MAP.picked = r;
+      $("mapResults").querySelectorAll("button[data-i]").forEach((b) => b.classList.toggle("is-on", Number(b.dataset.i) === i));
+      $("mapPicked").innerHTML = `<b>${esc(r.name)}</b><span>${esc(r.address || "주소 없음")}</span>`; $("mapPicked").hidden = false;
+      $("mapOk").disabled = false;
+      const canvas = $("mapCanvas"); canvas.hidden = false;
+      try {
+        const pos = new kakao.maps.LatLng(r.lat, r.lng);
+        if (!MAP.map) { MAP.map = new kakao.maps.Map(canvas, { center: pos, level: 3 }); MAP.marker = new kakao.maps.Marker({ position: pos, map: MAP.map }); }
+        else { MAP.map.relayout(); MAP.map.setCenter(pos); MAP.marker.setPosition(pos); }
+      } catch (e) { canvas.hidden = true; }
+    }
+    function confirmMapPick() {
+      const r = MAP.picked; if (!r) return;
+      const set = (id, v) => { const el = $(id); if (el) el.value = v; };
+      set("wf_place", r.name.slice(0, 60)); set("wf_addr", r.address.slice(0, 100)); set("wf_lat", String(r.lat)); set("wf_lng", String(r.lng));
+      syncPlacePicked();
+      closeMapPicker();
+      const el = $("wf_place"); if (el) { el.dispatchEvent(new Event("input", { bubbles: true })); el.focus(); }
+    }
+    function clearPlacePick() {
+      ["wf_addr", "wf_lat", "wf_lng"].forEach((id) => { const el = $(id); if (el) el.value = ""; });
+      syncPlacePicked();
+      const el = $("wf_place"); if (el) el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    function syncPlacePicked() {
+      const box = $("wf_placePicked"); if (!box) return;
+      const addr = (($("wf_addr") || {}).value || "").trim(), lat = (($("wf_lat") || {}).value || "").trim();
+      box.hidden = !(addr || lat);
+      $("wf_placeAddr").textContent = addr || "지도에서 고른 위치";
     }
     function slotChanged(date, time) {
       if (!state.editingId) return true;
@@ -1434,13 +1609,24 @@
       if (!nick) { showToast("닉네임을 입력해 주세요."); card.querySelector(".c-nick").focus(); return; }
       if (pass.trim().length < 4) { showToast("비밀번호는 4자 이상 입력해 주세요."); card.querySelector(".c-pass").focus(); return; }
       if (!body.trim()) { showToast("댓글 내용을 입력해 주세요."); card.querySelector(".c-body").focus(); return; }
+      const attBox = card.querySelector(".c-attend");
+      const wantAtt = !!(attBox && attBox.checked);
       state.busy = true;
       try {
         await supaFetch("/rest/v1/rpc/comment_create", { method: "POST", body: JSON.stringify({ p_post_id: postId, p_author: nick, p_pass: pass, p_body: body }) });
         saveNick(nick); savePass(pass, "");
         const post = findPost(postId);
         if (post) post.comment_count = (Number(post.comment_count) || 0) + 1;
-        showToast("댓글을 등록했습니다.");
+        let msg = "댓글을 등록했습니다.";
+        if (wantAtt) {   // 댓글과 같은 닉네임과 비밀번호로 참석. 참석이 거절되어도 댓글은 남는다
+          try {
+            const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: postId, p_nick: nick, p_pass: pass }) });
+            state.attend[postId] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at })) };
+            if (post) post.attend_count = state.attend[postId].list.length;
+            msg = "댓글을 등록하고 참석했습니다.";
+          } catch (err) { msg = "댓글은 올렸지만 참석은 안 됐습니다. " + rpcErrorMessage(err); loadAttend([postId]); }
+        }
+        showToast(msg);
         state.busy = false;
         await loadComments(postId);
         return;
@@ -1554,6 +1740,9 @@
         if (e.target.closest("#typeFields")) syncChips();
       });
       $("typeFields").addEventListener("click", (e) => {
+        const a = e.target.closest("[data-act]");
+        if (a && a.dataset.act === "place-map") { openMapPicker(); return; }
+        if (a && a.dataset.act === "place-clear") { clearPlacePick(); return; }
         const b = e.target.closest(".chip"); if (!b || b.disabled) return;
         const box = b.closest(".chips"), input = $(box.dataset.for); if (!input) return;
         let v = b.dataset.v;
@@ -1613,6 +1802,7 @@
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "attend") { openAttend(id, "attend"); return; }
         if (act === "unattend") { openAttend(id, "unattend"); return; }
+        if (act === "host-attend") { openAttend(id, "host"); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
         if (act === "delete") { deletePost(id); return; }
         if (act === "pin") { togglePin(id); return; }
@@ -1627,6 +1817,13 @@
       $("attClose").addEventListener("click", closeAttend);
       $("attBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeAttend(); });
       ["attNick", "attPass"].forEach((k) => $(k).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitAttend(); } }));
+      $("mapGo").addEventListener("click", runMapSearch);
+      $("mapQ").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); runMapSearch(); } });
+      $("mapResults").addEventListener("click", (e) => { const b = e.target.closest("button[data-i]"); if (b) pickMapResult(Number(b.dataset.i)); });
+      $("mapOk").addEventListener("click", confirmMapPick);
+      $("mapCancel").addEventListener("click", closeMapPicker);
+      $("mapClose").addEventListener("click", closeMapPicker);
+      $("mapBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeMapPicker(); });
       $("dupCancel").addEventListener("click", () => closeDup(null));
       $("dupClose").addEventListener("click", () => closeDup(null));
       $("dupBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeDup(null); });
@@ -1637,6 +1834,7 @@
       $("passInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); } });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
+        if (!$("mapBackdrop").hidden) { closeMapPicker(); return; }
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
         if (!$("dupBackdrop").hidden) { closeDup(null); return; }
         if (!$("attBackdrop").hidden) { closeAttend(); return; }
@@ -1650,7 +1848,7 @@
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
     C.caps().then((c) => {
-      state.caps = c.contentFormat; state.attendOn = !!c.attend;
+      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
     });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
