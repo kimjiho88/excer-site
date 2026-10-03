@@ -61,7 +61,7 @@
       display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; width: 100%;
       padding: 14px 0; text-align: left; color: var(--ink); cursor: pointer;
     }
-    .post-head:hover .row-title { color: var(--brand); }
+    @media (hover: hover) and (pointer: fine) { .post-head:hover .row-title { color: var(--brand); } }
     .post-head .nr-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .post-head .row-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .post-head .row-state { align-self: center; }
@@ -97,7 +97,7 @@
       min-height: 40px; min-width: 48px; padding: 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
       background: var(--surface); font-size: 15px; line-height: 1; cursor: pointer;
     }
-    .react-btn:hover { border-color: var(--ink-2); }
+    @media (hover: hover) and (pointer: fine) { .react-btn:hover { border-color: var(--ink-2); } }
     .react-btn.is-on { background: var(--brand-soft); border-color: var(--brand); }
     .react-n { font-size: 12px; font-weight: 600; color: var(--brand); font-variant-numeric: tabular-nums; }
     .post-actions { display: flex; gap: 2px 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -183,10 +183,21 @@
     .att-state { color: var(--ink-2); font-size: var(--fs-caption); }
     .att-state.is-off { color: var(--danger, #B42318); font-weight: 600; }
     .att-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-    .att-list li { padding: 4px 10px; border-radius: 999px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    .att-list li { max-width: 14em; padding: 4px 10px; border-radius: 999px; background: var(--surface-2, #F3F0E8); font-size: var(--fs-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .att-list li small { color: var(--ink-2); font-size: 1em; }
+    .att-list li.is-me { background: var(--brand-soft); color: var(--brand); font-weight: 700; box-shadow: inset 0 0 0 1px var(--brand); }
+    .att-list.is-many li:nth-child(n+13) { display: none; }   /* 12명 넘으면 접고 '외 N명 보기' */
     .att-empty { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); }
+    .att-empty .text-btn { min-height: 32px; }
     .att-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .att-sub { display: flex; flex-wrap: wrap; gap: 2px 14px; align-items: center; margin-top: -4px; }
+    .att-sub .text-btn { min-height: 40px; }
+    .att-sub .text-btn small { color: var(--ink-2); font-weight: 500; }
+    /* 참석 창: 폰에서는 위쪽에 붙여 키보드가 올라와도 단추가 보이게. 라벨은 보이게 */
+    @media (max-width: 640px) { .att-backdrop { place-items: start center; padding-top: max(16px, 6vh); } }
+    .att-label { display: block; margin: 0 0 4px; font-size: var(--fs-caption); font-weight: 700; color: var(--ink); }
+    .att-label small { color: var(--ink-2); font-weight: 500; }
+    #attNick { margin-bottom: 10px; }
     /* 모집 글 상세의 모임 카드: 언제, 어디서, 몇 명이 먼저 보이고 참석 단추가 그 바로 아래 */
     .bung-card { margin: 0 0 16px; padding: 16px; border: 1px solid rgba(75, 42, 130, 0.14); border-radius: 14px; background: linear-gradient(180deg, #F7F4FB, var(--surface) 70%); }
     .bc-when { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -201,8 +212,9 @@
     .cap-bar { position: relative; height: 6px; border-radius: 999px; background: var(--brand-soft); overflow: hidden; }
     .cap-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: var(--p, 0%); border-radius: 999px; background: var(--brand); transition: width .3s; }
     .cap-bar.is-full i { background: var(--rust); }
-    .bung-card .att-acts .btn-primary { min-width: 160px; }
-    @media (max-width: 640px) { .bung-card .att-acts .btn { flex: 1 1 0; } .bung-card .att-acts .text-btn { flex: none; } }
+    .bung-card .att-acts .btn { min-height: 48px; }
+    .bung-card .att-acts .btn-primary { min-width: 180px; }
+    @media (max-width: 640px) { .bung-card .att-acts .btn { flex: 1 1 0; } }
     /* 목록 줄의 참석 수: 작은 막대와 함께 */
     .cap-mini { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .cap-mini i { position: relative; display: inline-block; width: 34px; height: 4px; border-radius: 999px; background: var(--brand-soft); overflow: hidden; }
@@ -210,7 +222,7 @@
     /* 글쓰기: 날짜, 시간, 인원, 신청 마감을 한 번에 고르는 단추(칸은 그대로 두어 다른 값도 넣을 수 있다) */
     .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .chip { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; line-height: 1; cursor: pointer; }
-    .chip:hover { border-color: var(--brand); }
+    @media (hover: hover) and (pointer: fine) { .chip:hover { border-color: var(--brand); } }
     .chip.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 700; }
     .chip:disabled { opacity: 0.4; cursor: default; }
     .fg-h { margin: 4px 0 -6px; color: var(--ink-2); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
@@ -220,12 +232,12 @@
     .bc-place .ic { margin-top: 2px; }
     .bc-pl { display: grid; gap: 2px; min-width: 0; }
     .bc-pl small { color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.4; }
-    .bc-links { display: flex; gap: 14px; margin-top: 2px; }
-    .bc-links a { color: var(--brand); font-size: var(--fs-caption); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+    .bc-links { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; }
+    .bc-links a { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--brand); font-size: var(--fs-caption); font-weight: 700; text-decoration: none; }
     /* 댓글로 참석: 댓글 등록 단추 옆 확인 칸 */
     .comment-form-acts { align-items: center; gap: 12px; }
-    .c-att { display: flex; align-items: center; gap: 8px; margin-right: auto; min-height: 36px; color: var(--ink); font-size: var(--fs-caption); cursor: pointer; }
-    .c-att input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand); }
+    .c-att { display: flex; align-items: center; gap: 8px; margin-right: auto; min-height: 44px; color: var(--ink); font-size: var(--fs-sm); cursor: pointer; }
+    .c-att input { width: 22px; height: 22px; margin: 0; accent-color: var(--brand); }
     /* 글쓰기 장소 칸: 지도에서 찾기 단추, 고른 장소의 주소 */
     .place-row { display: flex; gap: 8px; }
     .place-row .input { flex: 1 1 auto; min-width: 0; }
@@ -243,7 +255,7 @@
     .map-results:empty { display: none; }
     .map-results li + li { border-top: 1px solid var(--line); }
     .map-results button { display: grid; gap: 2px; width: 100%; padding: 10px 12px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
-    .map-results button:hover { background: var(--surface-2, #F3F0E8); }
+    @media (hover: hover) and (pointer: fine) { .map-results button:hover { background: var(--surface-2, #F3F0E8); } }
     .map-results button.is-on { background: var(--brand-soft); }
     .map-results button > span > small { color: var(--ink-2); }
     .map-results small { color: var(--ink-2); font-size: var(--fs-caption); overflow-wrap: anywhere; }
@@ -490,22 +502,24 @@
     </div>
   </div>
 
-  <div id="attBackdrop" class="modal-backdrop" hidden>
-    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="attTitle">
+  <div id="attBackdrop" class="modal-backdrop att-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="attTitle" aria-describedby="attDesc">
       <div class="modal-head">
         <h3 id="attTitle">참석</h3>
         <button id="attClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <p id="attDesc" class="field-hint" style="margin:0 0 10px"></p>
-      <label class="sr-only" for="attNick">닉네임</label>
-      <input id="attNick" class="input" type="text" maxlength="24" placeholder="닉네임(채팅방 닉네임 그대로)" autocomplete="nickname" list="wNick-list" style="margin-bottom:8px" />
-      <label class="sr-only" for="attPass">비밀번호</label>
-      <input id="attPass" class="input" type="password" placeholder="비밀번호(4자 이상)" autocomplete="off" />
-      <p id="attErr" class="field-error" hidden style="margin:8px 0 0"></p>
-      <p id="attDone" class="field-hint" hidden style="margin:8px 0 0"></p>
+      <label class="att-label" for="attNick">닉네임</label>
+      <input id="attNick" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="nickname" enterkeyhint="next" list="wNick-list" />
+      <label class="att-label" for="attPass">비밀번호 <small id="attPassWhy">취소할 때 필요, 4자 이상</small></label>
+      <input id="attPass" class="input" type="password" placeholder="비밀번호" autocomplete="off" enterkeyhint="done" />
+      <p id="attPassHint" class="field-hint" hidden style="margin:6px 0 0">이 브라우저에 저장된 비밀번호를 채웠습니다.</p>
+      <p id="attErr" class="field-error" role="alert" hidden style="margin:8px 0 0"></p>
+      <p id="attClaim" hidden style="margin:6px 0 0"><button type="button" class="text-btn" data-act="att-claim">이 이름이 나예요(이 기기에 기억)</button></p>
+      <p id="attDone" class="field-hint" aria-live="polite" hidden style="margin:8px 0 0"></p>
       <div class="modal-foot">
-        <button id="attCancel" class="btn btn-secondary is-sm" type="button">닫기</button>
-        <button id="attOk" class="btn btn-primary is-sm" type="button">참석</button>
+        <button id="attCancel" class="btn btn-secondary" type="button">취소</button>
+        <button id="attOk" class="btn btn-primary" type="button">참석하기</button>
       </div>
     </div>
   </div>
@@ -592,6 +606,7 @@
 
     const PAGE_SIZE = 20;
     const POST_SELECT = "select=id,category,title,body,author,pinned,meta,created_at,updated_at,comment_count,reactions,reaction_count";
+    function postSelect() { return POST_SELECT + (state.attendOn ? ",attend_count" : ""); }   // 참석 기능이 있으면 참석 수도(명단이 오기 전에도 정원 참을 안다)
     const NICK_KEY = "excer_news_nick";
     const PASS_KEY = "excer_news_pass";
     const DEVICE_STORE_KEY = "excer_device_key";
@@ -616,6 +631,8 @@
       BUNG_PAST: "지난 시각입니다. 날짜와 시간을 확인해 주세요.",
       BUNG_DEADLINE: "신청 마감은 모임 시작보다 늦을 수 없고, 지금보다 뒤여야 합니다.",
       BUNG_DUP: "같은 시간대(앞뒤 2시간)에 모집 중인 모임이 있습니다. 기존 모임장의 동의가 있어야 합니다.",
+      BUNG_CAP: "모집 인원이 이미 참석한 사람 수보다 적습니다. 먼저 명단에서 빼 주세요.",
+      HAS_ATTENDEES: "참석자가 있는 모집 글은 글 종류를 바꿀 수 없습니다. 먼저 명단을 비워 주세요.",
       NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
       NOT_ATTENDING: "그 닉네임으로 참석한 기록이 없습니다.",
       STARTED: "모임이 시작해 취소할 수 없습니다. 모임장에게 연락해 주세요.",
@@ -692,7 +709,7 @@
       category: "전체", sort: "latest", search: "",
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
-      myReactions: {}, reactBusy: {}, caps: 1, popular: [],
+      myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {},
       attendOn: false, placeOn: false, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
@@ -817,26 +834,37 @@
       return state.sort === "popular" ? "order=pinned.desc,reaction_count.desc,created_at.desc" : "order=pinned.desc,created_at.desc";
     }
     let reqSeq = 0;
+    /* 모임 모집 탭(검색 없음): 다가오는 모임은 날짜순으로 전부 받고, 지난 모임만 20건씩 더 보기. 최근에 쓴 20건만 보면 오래전에 올린 먼 날짜 벙이 빠진다 */
+    function bungSplit() { return state.category === "벙 소식" && !state.search; }
     async function loadPosts(reset) {
       if (state.loading && !reset) return;
       const seq = ++reqSeq;
       state.loading = true;
       if (reset) state.offset = 0;
       updateMoreBtn();
-      const params = [POST_SELECT, orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset];
-      if (state.category !== "전체") params.push("category=eq." + encodeURIComponent(state.category));
+      await capsReady;   // 참석 기능 여부를 알고 나서 질의(참석 수 열)
+      if (seq !== reqSeq) return;
+      const base = [postSelect()];
+      if (state.category !== "전체") base.push("category=eq." + encodeURIComponent(state.category));
       const orFilter = searchOrParam(state.search);
-      if (orFilter) params.push(orFilter);
+      if (orFilter) base.push(orFilter);
+      const split = bungSplit(), today = C.kstToday(), dk = encodeURIComponent("meta->>date");
+      const pageParams = base.concat(split ? ["or=" + encodeURIComponent("(meta->>date.lt." + today + ",meta->>date.is.null)")] : [], [orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset]);
+      const upParams = base.concat([dk + "=gte." + today, "order=" + encodeURIComponent("meta->>date.asc,meta->>time.asc,created_at.asc"), "limit=100"]);
       try {
-        const rows = (await supaFetch("/rest/v1/site_posts_v?" + params.join("&"))) || [];
+        const [page, up] = await Promise.all([
+          supaFetch("/rest/v1/site_posts_v?" + pageParams.join("&")).then((r) => r || []),
+          split && reset ? supaFetch("/rest/v1/site_posts_v?" + upParams.join("&")).then((r) => r || []) : Promise.resolve([])
+        ]);
         if (seq !== reqSeq) return;
+        const rows = up.concat(page.filter((r) => !up.some((u) => u.id === r.id)));
         rows.forEach((r) => { r.reactions = r.reactions || {}; });
         state.degraded = false;
         $("setupBanner").hidden = true;
         if (reset) { state.posts = rows; state.expandedId = null; state.commentsCache = {}; }
         else state.posts = state.posts.concat(rows.filter((r) => !state.posts.some((x) => x.id === r.id)));   // 링크로 먼저 불러온 글과 겹치지 않게
-        state.offset += rows.length;
-        state.hasMore = rows.length === PAGE_SIZE;
+        state.offset += page.length;
+        state.hasMore = page.length === PAGE_SIZE;
         state.loading = false;
         renderList();
         loadMyReactions(rows.map((r) => r.id));
@@ -930,9 +958,9 @@
       const updated = post.updated_at && post.created_at && String(post.updated_at).slice(0, 16) !== String(post.created_at).slice(0, 16)
         ? `<p class="post-updated">${esc(C.relTime(post.updated_at))} 수정</p>` : "";
       const card = v.kind === "bung" && state.attendOn && v.meta && v.meta.date;
-      const facts = card ? v.facts.filter((f) => !/^(when|place|cap|deadline)$/.test(f.key) && !(f.key === "apply" && !(v.meta && v.meta.apply))) : v.facts;   // 카드에 있는 것과 참석 단추 자체인 '신청 방법' 은 표에서 뺀다
+      const facts = card ? v.facts.filter((f) => !/^(when|place|cap|deadline|status)$/.test(f.key) && !(f.key === "apply" && !(v.meta && v.meta.apply))) : v.facts;   // 카드에 있는 것(모집 상태 포함)과 참석 단추 자체인 '신청 방법' 은 표에서 뺀다
       // 댓글로 참석: 모집 중인 모임이고 아직 참석하지 않았으면 댓글 등록에 '참석도 신청' 칸
-      const canAtt = card && bungStatus(post).open && !(((state.attend[post.id] || {}).list) || []).some((x) => isMe(x.nick));
+      const canAtt = card && bungStatus(post).open && !(((state.attend[post.id] || {}).list) || []).some((x) => isMe(x.nick, post.id));
       return `
         ${lead}
         ${card ? attendHTML(post) : ""}
@@ -958,7 +986,7 @@
               <input class="input c-pass" type="password" placeholder="비밀번호 (4자 이상)" aria-label="댓글 비밀번호" autocomplete="new-password" value="${esc(savedPass())}" />
             </div>
             <textarea class="textarea c-body" maxlength="1000" placeholder="댓글" aria-label="댓글 내용"></textarea>
-            <div class="comment-form-acts">${canAtt ? `<label class="c-att"><input type="checkbox" class="c-attend" /> 참석도 신청</label>` : ""}<button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
+            <div class="comment-form-acts">${canAtt ? `<label class="c-att"><input type="checkbox" class="c-attend" /> 이 닉네임으로 참석도 신청</label>` : ""}<button type="button" class="btn btn-primary is-sm" data-act="add-comment" data-id="${post.id}">댓글 등록</button></div>
           </div>
         </div>
         <div class="post-close"><button type="button" class="text-btn is-quiet" data-act="toggle" data-id="${post.id}">${icon("chevDown", "is-sm")} 글 접기</button></div>`;
@@ -969,6 +997,7 @@
       if (v.kind === "bung" && state.attendOn && v.meta && v.meta.date) {
         const bs = bungStatus(post);
         if (bs.why === "full" || bs.why === "deadline") v.subline = Object.assign({}, v.subline, { state: WHY_LABEL[bs.why], past: true });
+        else if (bs.why === "started" && v.subline.state === "오늘") v.subline = Object.assign({}, v.subline, { state: "진행 중", past: true });   // 오늘 이미 시작한 모임
         if (state.attend[post.id] || post.attend_count != null) v.attendText = `<span class="cap-mini">${bs.cap ? `<i style="--p:${Math.min(100, Math.round(bs.n / bs.cap * 100))}%"></i>` : ""}참석 ${bs.n}${bs.cap ? "/" + bs.cap : ""}</span>`;
       }
       const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
@@ -1019,7 +1048,18 @@
       const listEl = $("postList");
       const ae = document.activeElement;
       const keep = ae && listEl.contains(ae) && ae.dataset && ae.dataset.act && ae.dataset.id ? [ae.dataset.act, ae.dataset.id] : null;
+      // 다시 그려도 쓰던 댓글은 지킨다(명단이나 댓글 응답이 늦게 와도)
+      const drafts = {};
+      listEl.querySelectorAll(".post-row").forEach((row) => {
+        const b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
+        if (b && (b.value || (a && a.checked))) drafts[row.id] = { body: b.value, nick: n ? n.value : "", pass: p ? p.value : "", att: !!(a && a.checked) };
+      });
       listEl.innerHTML = posts.length ? groupedHTML(posts) : emptyStateHTML();
+      Object.keys(drafts).forEach((rid) => {
+        const row = document.getElementById(rid); if (!row) return;
+        const d = drafts[rid], b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
+        if (b) b.value = d.body; if (n && d.nick) n.value = d.nick; if (p && d.pass) p.value = d.pass; if (a) a.checked = d.att;
+      });
       listEl.removeAttribute("aria-busy");
       $("listNote").textContent = state.degraded ? "" :
         (posts.length ? `${posts.length}건${state.hasMore ? " 이상" : ""}${state.category !== "전체" ? ", " + C.catLabel(state.category) : ""}${state.search ? ', "' + state.search + '"' : ""}` : "");
@@ -1118,7 +1158,7 @@
       const label = `<label for="${id}">${esc(f.label)} <small>${f.req ? "필수" : "선택"}</small></label>`;
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
-      else if (f.type === "number") input = `<input id="${id}" class="input" type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
+      else if (f.type === "number") input = `<input id="${id}" class="input" type="number" inputmode="numeric" step="1" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
       else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
       const withMap = !!(f.map && mapOK());   // 장소 칸: 지도에서 찾기 단추(서버 bung_place 와 카카오 키가 있을 때), 고른 장소의 주소 줄
       if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
@@ -1252,7 +1292,7 @@
         const v = String(el.value || "").trim();
         if (!v) return;
         if (el.type === "url" && !/^https?:\/\//i.test(v)) { setError(el.id, "링크는 http 또는 https 로 시작해야 합니다."); ok = false; }
-        if (el.type === "number" && !(Number(v) >= Number(el.min) && Number(v) <= Number(el.max))) { setError(el.id, `${el.min}에서 ${el.max} 사이로 입력해 주세요.`); ok = false; }
+        if (el.type === "number" && !(Number(v) >= Number(el.min) && Number(v) <= Number(el.max) && Number.isInteger(Number(v)))) { setError(el.id, `${el.min}에서 ${el.max} 사이로, 소수점 없이 입력해 주세요.`); ok = false; }
       });
       if (cat === "벙 소식") {
         [["date", "모임 날짜를 골라 주세요."], ["time", "시간을 입력해 주세요."], ["place", "장소를 입력해 주세요."], ["cap", "모집 인원을 입력해 주세요."]].forEach(([k, msg]) => {
@@ -1263,6 +1303,11 @@
         if (d && t && d.value && t.value && slotChanged(d.value, t.value)) {
           const today = C.kstToday();
           if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
+        }
+        const capEl = $("wf_cap");   // 고치는 글: 이미 참석한 사람보다 적은 정원은 안 된다(서버는 막지 않으니 화면에서 먼저)
+        if (state.editingId && capEl && capEl.value) {
+          const have = ((state.attend[state.editingId] || {}).list || []).length || Number((findPost(state.editingId) || {}).attend_count) || 0;
+          if (Number(capEl.value) < have) { setError("wf_cap", `이미 참석한 ${have}명보다 적게 정할 수 없습니다. 먼저 명단에서 빼 주세요.`); ok = false; }
         }
         const dl = $("wf_deadline");
         if (dl && dl.value && d && t && d.value && t.value) {
@@ -1278,7 +1323,16 @@
     }
     /* 새 글이거나, 고치는 글의 날짜나 시간이 바뀌었는지(그대로면 지난 시각, 같은 시간대 확인을 하지 않는다) */
     /* 모임 모집 글의 지금 상태: 참석 수, 정원, 모집 중인지(마감 안 함, 신청 마감 전, 정원 남음). 시각은 한국 시간 */
-    function nowKey() { return C.kstToday() + "T" + C.kstNowHM(); }
+    /* 지금 "YYYY-MM-DDTHH:MM"(한국 시간). 날짜와 시각을 한 Date 로 만들어 자정 직전에 어제 날짜와 00:00 이 섞이지 않게 */
+    function nowKey() {
+      try {
+        const p = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+        const g = (t) => (p.find((x) => x.type === t) || {}).value || "";
+        const k = g("year") + "-" + g("month") + "-" + g("day") + "T" + (g("hour") === "24" ? "00" : g("hour")) + ":" + g("minute");
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(k)) return k;
+      } catch (e) {}
+      return C.kstToday() + "T" + C.kstNowHM();
+    }
     function bungStatus(post, count) {
       const m = C.postMeta(post) || {};
       const list = (state.attend[post.id] || {}).list;
@@ -1300,46 +1354,106 @@
       const want = (ids || []).filter((id) => Number(id) > 0);
       if (!want.length) return;
       try {
-        const rows = (await supaFetch("/rest/v1/site_bung_attend_v?select=post_id,nick,created_at&post_id=in.(" + want.join(",") + ")&order=created_at.asc")) || [];
+        const rows = (await supaFetch("/rest/v1/site_bung_attend_v?select=*&post_id=in.(" + want.join(",") + ")&order=created_at.asc")) || [];   // host_added 는 보강 SQL 뒤에만 있다
         want.forEach((id) => { state.attend[id] = { list: [] }; });
-        rows.forEach((r) => { (state.attend[r.post_id] = state.attend[r.post_id] || { list: [] }).list.push({ nick: r.nick, at: r.created_at }); });
-        renderList();
-      } catch (e) {}
+        rows.forEach((r) => { (state.attend[r.post_id] = state.attend[r.post_id] || { list: [] }).list.push({ nick: r.nick, at: r.created_at, host: !!r.host_added }); });
+      } catch (e) {
+        want.forEach((id) => { if (!(state.attend[id] && state.attend[id].list)) state.attend[id] = { list: null, failed: true }; });   // 읽은 적 없는 글만 실패로(있던 명단은 지킨다). 카드에 다시 시도 단추
+      }
+      renderList();
+    }
+    function applyAttendList(id, res) {
+      state.attend[id] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at, host: !!x.host })) };
+      const post = findPost(id); if (post) post.attend_count = state.attend[id].list.length;
     }
     function bungIds(posts) { return (posts || []).filter((p) => p.category === "벙 소식").map((p) => p.id); }
-    function isMe(nick) { const a = String(nick || "").trim().toLowerCase(), b = savedNick().trim().toLowerCase(); return !!a && a === b; }
+    /* 내 참석 판정: 이 기기에서 참석한 글은 그때 닉네임을 글마다 기억해 두고(ATT_KEY), 없으면 저장 닉네임. 비교는 서버 키처럼 공백을 하나로, 소문자 */
+    const ATT_KEY = "excer_news_attended";
+    const nickKey = (s) => String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+    function attendedMap() { try { const m = JSON.parse(localStorage.getItem(ATT_KEY) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } }
+    function rememberAttend(postId, nick) {
+      try { const m = attendedMap(); if (nick) m[postId] = nick; else delete m[postId]; localStorage.setItem(ATT_KEY, JSON.stringify(m)); } catch (e) {}
+    }
+    function isMe(nick, postId) {
+      const a = nickKey(nick); if (!a) return false;
+      const mine = postId != null ? attendedMap()[postId] : "";
+      return a === nickKey(mine || savedNick());
+    }
+    const ATT_FOLD = 12;   // 참석자가 이보다 많으면 접고 '외 N명 보기'
     function attendHTML(post) {
       const st = bungStatus(post);
       const a = state.attend[post.id];
       const list = a ? a.list : null;
-      const mine = list && list.some((x) => isMe(x.nick));
-      const host = String(post.author || "").trim().toLowerCase();
-      const dlText = st.deadline ? C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " " + st.deadline.slice(11, 16) + "까지" : "";
-      const stateText = st.open ? (dlText ? "신청 " + dlText : "모집 중") : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
+      const failed = !!(a && a.failed);
+      const mine = !!(list && list.some((x) => isMe(x.nick, post.id)));
+      const host = nickKey(post.author);
       const m = C.postMeta(post) || {};
+      // 신청 마감 글자: 시작 시각과 같으면 '시작 전까지', 모임 당일이면 날짜를 되풀이하지 않는다
+      const dlText = st.deadline && st.deadline !== st.start ? "신청 " + (st.deadline.slice(0, 10) === m.date ? "당일 " : C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " ") + st.deadline.slice(11, 16) + "까지" : "";
+      const stateText = st.open ? (dlText || "시작 전까지 신청") : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
       const when = m.date ? C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "";
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
-      const dday = st.why === "started" ? "지난 모임" : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
-      const left = m.time && st.why !== "started" ? startLeft(st.start) : "";
+      const past = st.why === "started";
+      const dday = past ? (days === 0 ? "진행 중" : "지난 모임") : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
+      const left = m.time && !past ? startLeft(st.start) : "";
       const n = list ? list.length : st.n;
       const pct = st.cap ? Math.min(100, Math.round(n / st.cap * 100)) : 0;
       const coords = Number(m.lat) > 0 && Number(m.lng) > 0;
       const mapName = encodeURIComponent(String(m.place || "모임 장소").slice(0, 40));
       const links = coords ? `<span class="bc-links"><a href="https://map.kakao.com/link/map/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">지도</a><a href="https://map.kakao.com/link/to/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">길찾기</a></span>` : "";
       let btn = "";
-      if (mine && st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
-      else if (st.open) btn = `<button type="button" class="btn btn-primary is-sm" data-act="attend" data-id="${post.id}">참석하기</button>`;
-      else if (st.why !== "started") btn = `<button type="button" class="btn btn-secondary is-sm" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
-      const other = list && list.length && !mine && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">참석 취소</button>` : "";
-      // 모임장이 댓글이나 채팅으로 참석을 밝힌 사람을 적는다(글 비밀번호). 마감이나 정원과 상관없이 모임장이 정한다
-      const hostAdd = state.placeOn && st.why !== "started" ? `<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가 <small>모임장</small></button>` : "";
-      return `<div class="attend bung-card" data-post="${post.id}">
-          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${st.why === "started" ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
+      if (mine && !past) btn = `<button type="button" class="btn btn-secondary" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
+      else if (st.open) btn = `<button type="button" class="btn btn-primary" data-act="attend" data-id="${post.id}">참석하기</button>`;
+      else if (!past) btn = `<button type="button" class="btn btn-secondary" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
+      // 보조 동작은 둘째 줄: 다른 기기에서 참석한 사람의 취소와 모임장의 빼기, 명단 복사, 모임장의 참석자 추가와 마감(글 비밀번호)
+      const sub = [];
+      const recent = !past || (days != null && days >= -7);   // 모임장은 시작 뒤에도(일주일 안) 늦게 온 사람을 적거나 안 온 사람을 뺄 수 있다(서버도 허용)
+      if (list && list.length && recent && !(mine && !past)) sub.push(`<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">명단에서 빼기 <small>다른 기기, 모임장</small></button>`);
+      if (list && list.length) sub.push(`<button type="button" class="text-btn is-quiet" data-act="copy-att" data-id="${post.id}">명단 복사</button>`);
+      if (state.placeOn && recent) sub.push(`<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가 <small>모임장</small></button>`);
+      if (!past && st.why !== "nodate") sub.push(m.status === "closed"
+        ? `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="">다시 모집 <small>모임장</small></button>`
+        : `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="closed">모집 마감 <small>모임장</small></button>`);
+      const many = !!(list && list.length > ATT_FOLD && !state.attMore[post.id]);
+      let names;
+      if (failed) names = `<p class="att-empty">명단을 불러오지 못했습니다. <button type="button" class="text-btn" data-act="retry-att" data-id="${post.id}">다시 시도</button></p>`;
+      else if (!list) names = `<p class="att-empty" aria-busy="true">참석 명단을 불러오는 중입니다.</p>`;
+      else if (!list.length) names = `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`;
+      else names = `<ul class="att-list${many ? " is-many" : ""}" aria-label="참석자">${list.map((x) => `<li${isMe(x.nick, post.id) ? ' class="is-me"' : ""} title="${esc(x.nick)}${x.host ? " (모임장이 적음)" : ""}">${esc(x.nick)}${nickKey(x.nick) === host ? " <small>모임장</small>" : x.host ? " <small>모임장 추가</small>" : ""}</li>`).join("")}</ul>`
+        + (many ? `<p class="att-empty"><button type="button" class="text-btn" data-act="att-more" data-id="${post.id}">외 ${list.length - ATT_FOLD}명 보기</button></p>` : "");
+      return `<div class="attend bung-card" data-post="${post.id}" role="group" aria-label="모임 참석">
+          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
           ${m.place ? `<div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div>` : ""}
           <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
-          ${list ? (list.length ? `<ul class="att-list" aria-label="참석자">${list.map((x) => `<li>${esc(x.nick)}${String(x.nick).trim().toLowerCase() === host ? " <small>모임장</small>" : ""}</li>`).join("")}</ul>` : `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`) : `<p class="att-empty">참석 명단을 불러오는 중입니다.</p>`}
-          <div class="att-acts">${btn}${other}${hostAdd}</div>
+          ${btn ? `<div class="att-acts">${btn}</div>` : ""}
+          ${names}
+          ${sub.length ? `<div class="att-sub">${sub.join("")}</div>` : ""}
         </div>`;
+    }
+    async function copyAttendList(id) {
+      const post = findPost(id); const list = (state.attend[id] || {}).list || [];
+      if (!post || !list.length) return;
+      const m = C.postMeta(post) || {};
+      const head = (post.title || "모임") + (m.date ? " " + C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "");
+      const ok = await copyText(head + "\n참석 " + list.length + "명" + (m.cap ? " / 정원 " + m.cap + "명" : "") + "\n" + list.map((x) => x.nick).join(", "));
+      showToast(ok ? "참석 명단을 복사했습니다." : "복사에 실패했습니다.");
+    }
+    /* 모임장의 빠른 마감과 다시 모집: 글 비밀번호(또는 운영진)로 모집 상태만 바꾼다. 나머지 항목은 그대로 보낸다 */
+    async function setRecruit(id, close) {
+      if (state.busy) return;
+      const post = findPost(id); if (!post) return;
+      const pass = await askPassword(close ? "모집 마감 (모임장)" : "다시 모집 (모임장)",
+        close ? "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 마감하면 참석을 더 받지 않습니다." : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 정원이 남은 만큼 다시 참석을 받습니다.");
+      if (pass === null) return;
+      const meta = Object.assign({}, C.postMeta(post) || {});
+      if (close) meta.status = "closed"; else delete meta.status;
+      state.busy = true;
+      try {
+        await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_title: post.title, p_body: post.body || "", p_category: post.category, p_meta: meta }) });
+        post.meta = meta; renderList();
+        showToast(close ? "모집을 마감했습니다." : "다시 모집합니다.");
+      } catch (err) { showToast(rpcErrorMessage(err)); }
+      finally { state.busy = false; }
     }
     /* 시작까지 하루 안이면 남은 시간. 시각은 한국 시간 */
     function startLeft(start) {
@@ -1355,48 +1469,91 @@
       const post = findPost(id); if (!post) return;
       attCtx = { id, mode };
       const list = (state.attend[id] || {}).list || [];
-      const me = list.find((x) => isMe(x.nick));
+      const me = list.find((x) => isMe(x.nick, id));
       const host = mode === "host";
       $("attTitle").textContent = mode === "attend" ? "참석" : host ? "참석자 추가" : "참석 취소";
       $("attDesc").textContent = mode === "attend" ? "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다."
         : host ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다."
-        : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 모임장은 글 비밀번호로 다른 사람을 뺄 수 있습니다.";
+        : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 잊었으면 모임장(글 비밀번호)이나 운영진이 명단에서 뺄 수 있습니다.";
       $("attNick").value = mode === "attend" ? savedNick() : host ? "" : (me ? me.nick : "");
-      $("attNick").placeholder = host ? "참석자 닉네임" : "닉네임(채팅방 닉네임 그대로)";
+      $("attNick").placeholder = host ? "참석자 닉네임" : "채팅방 닉네임 그대로";
       $("attPass").value = savedPass();
-      $("attPass").placeholder = host ? "글 비밀번호" : "비밀번호(4자 이상)";
-      $("attOk").textContent = mode === "attend" ? "참석" : host ? "추가" : "참석 취소";
-      $("attErr").hidden = true; $("attDone").hidden = true;
+      $("attPassWhy").textContent = mode === "attend" ? "취소할 때 필요, 4자 이상" : host ? "글 비밀번호나 운영진 비밀번호" : "참석할 때 넣은 것";
+      $("attPassHint").hidden = !$("attPass").value;
+      $("attOk").textContent = mode === "attend" ? "참석하기" : host ? "추가" : "참석 취소";
+      $("attErr").hidden = true; $("attDone").hidden = true; $("attClaim").hidden = true;
       $("attBackdrop").hidden = false;
       setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
     }
     function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; }
+    /* 참석 창에서만 쓰는 오류 문구(같은 코드라도 글 수정 때와 뜻이 다르다) */
+    const ATT_ERR = {
+      attend: { NICK_TAKEN: "이 닉네임으로 이미 참석했거나 모임장이 적어 둔 이름입니다. 다른 기기에서 참석했다면 그때 넣은 비밀번호를 입력해 주세요." },
+      unattend: { BAD_PASS: "참석할 때 넣은 비밀번호가 아닙니다. 잊었으면 모임장(글 비밀번호)이나 운영진이 뺄 수 있습니다.", NOT_ATTENDING: "그 닉네임은 명단에 없습니다. 닉네임을 확인해 주세요." },
+      host: { BAD_PASS: "이 글의 비밀번호나 운영진 비밀번호가 아닙니다." }
+    };
+    function attError(mode, err) {
+      const msg = String((err && err.message) || ""), own = ATT_ERR[mode] || {};
+      for (const code of Object.keys(own)) if (msg.includes(code)) return own[code];
+      return rpcErrorMessage(err);
+    }
     async function submitAttend() {
       if (!attCtx || state.busy) return;
-      const nick = $("attNick").value.trim(), pass = $("attPass").value;
-      const fail = (m) => { $("attErr").textContent = m; $("attErr").hidden = false; $("attDone").hidden = true; };
+      const ctx = attCtx;   // 요청 중에 창을 닫고 다른 글의 창을 열어도 앞 글의 결과를 새 창에 쓰지 않는다
+      const nick = String($("attNick").value || "").normalize("NFC").trim(), pass = $("attPass").value;   // iOS 분해형 한글을 서버 키와 같게
+      const fail = (m) => { if (attCtx !== ctx) return; $("attErr").textContent = m; $("attErr").hidden = false; $("attDone").hidden = true; };
+      $("attClaim").hidden = true;
       if (!nick) { fail("닉네임을 입력해 주세요."); $("attNick").focus(); return; }
       if (pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
-      const { id, mode } = attCtx;
+      if (state.degraded) { fail(OFFLINE_MSG); return; }
+      const { id, mode } = ctx;
       const fn = mode === "attend" ? "bung_attend" : mode === "host" ? "bung_host_attend" : "bung_unattend";
-      state.busy = true; $("attOk").disabled = true;
+      state.busy = true; $("attOk").setAttribute("aria-busy", "true");
       try {
         const res = await supaFetch("/rest/v1/rpc/" + fn, { method: "POST", body: JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass }) });
-        state.attend[id] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at })) };
-        const post = findPost(id); if (post) post.attend_count = state.attend[id].list.length;
-        if (mode === "attend") { saveNick(nick); savePass(pass, "벙 소식"); }
-        if (mode === "host") {   // 여러 명을 이어서 적을 수 있게 창은 열어 둔다
-          $("attErr").hidden = true; $("attDone").textContent = "추가됨: " + nick; $("attDone").hidden = false;
-          $("attNick").value = ""; $("attNick").focus();
-        } else closeAttend();
+        applyAttendList(id, res);
+        if (mode === "attend") { saveNick(nick); rememberAttend(id, nick); if (!savedPass()) savePass(pass, "벙 소식"); }   // 글 열쇠로 저장된 비밀번호는 덮어쓰지 않는다
+        if (mode === "unattend" && nickKey(attendedMap()[id]) === nickKey(nick)) rememberAttend(id, "");
+        if (attCtx === ctx) {
+          if (mode === "host") {   // 여러 명을 이어서 적을 수 있게 창은 열어 둔다
+            $("attErr").hidden = true; $("attDone").textContent = "추가됨: " + nick; $("attDone").hidden = false;
+            $("attNick").value = ""; $("attNick").focus();
+          } else closeAttend();
+        }
         renderList();
+        if (mode !== "host" && attCtx === null) { const nb = document.querySelector(`#post-${id} .att-acts button, #post-${id} .att-sub button`); if (nb) nb.focus({ preventScroll: true }); }
         showToast(mode === "attend" ? "참석했습니다." : mode === "host" ? "참석자를 추가했습니다." : "참석을 취소했습니다.");
       } catch (err) {
-        fail(rpcErrorMessage(err));
-        if (/FULL|DEADLINE|CLOSED/.test(String(err && err.message))) loadAttend([id]);
+        const code = String((err && err.message) || "");
+        fail(attError(mode, err));
+        if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
+        if (/NOT_FOUND/.test(code)) {   // 그사이 지워진 글
+          state.posts = state.posts.filter((p) => p.id !== id); if (state.expandedId === id) state.expandedId = null;
+          if (attCtx === ctx) closeAttend();
+          renderList();
+        } else if (/CLOSED|DEADLINE|NOT_BUNG/.test(code)) refreshPost(id);   // 다른 기기에서 마감했거나 고친 글: 글 항목을 새로 읽는다
+        else if (/FULL|NICK_TAKEN|NOT_ATTENDING/.test(code)) loadAttend([id]);
+        if (attCtx === ctx) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
       } finally {
-        state.busy = false; $("attOk").disabled = false;
+        state.busy = false; $("attOk").removeAttribute("aria-busy");
       }
+    }
+    async function refreshPost(id) {
+      try {
+        const rows = await supaFetch("/rest/v1/site_posts_v?" + postSelect() + "&id=eq." + id + "&limit=1");
+        const i = state.posts.findIndex((p) => p.id === id);
+        if (rows && rows.length) { rows[0].reactions = rows[0].reactions || {}; if (i >= 0) state.posts[i] = rows[0]; }
+        else if (i >= 0) { state.posts.splice(i, 1); if (state.expandedId === id) state.expandedId = null; }
+        renderList();
+        loadAttend([id]);
+      } catch (e) {}
+    }
+    function claimAttend() {   // 이미 명단에 있는 이름을 내 것으로: 이 기기에 닉네임만 기억한다(서버는 바꾸지 않는다)
+      if (!attCtx) return;
+      const nick = $("attNick").value.trim(); if (!nick) return;
+      saveNick(nick);
+      closeAttend(); renderList();
+      showToast("이 기기에서 " + nick + " 을(를) 내 이름으로 기억합니다.");
     }
     /* ── 지도에서 장소 찾기(카카오 장소 검색): 모집 글의 장소 칸. 서버 bung_place 와 KAKAO.jsKey 가 있을 때만 단추가 보인다. SDK 는 처음 찾을 때 읽는다 ── */
     const MAP = { loading: null, failed: false, map: null, marker: null, results: [], picked: null };
@@ -1488,12 +1645,13 @@
     /* 같은 날 앞뒤 2시간 안에 모집 중인 다른 모임. 마감했거나, 신청 마감이 지났거나, 정원이 찬 모임은 예외라 묻지 않는다(서버도 같은 기준) */
     async function sameSlot(meta, selfId) {
       const sel = "id,title,author,meta,category" + (state.attendOn ? ",attend_count" : "");
-      const rows = await supaFetch("/rest/v1/site_posts_v?select=" + sel + "&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=100");
-      const mm = (hm) => { const p = String(hm).split(":"); return Number(p[0]) * 60 + Number(p[1]); };
+      const rows = await supaFetch("/rest/v1/site_posts_v?select=" + sel + "&category=eq." + encodeURIComponent("벙 소식") + "&" + encodeURIComponent("meta->>date") + "=eq." + encodeURIComponent(meta.date) + "&order=created_at.desc&limit=100");
+      const hm = (t) => (/^\d{2}:\d{2}$/.test(t || "") ? t : "23:59");   // 시간이 없는 글은 서버처럼 23:59 로 본다
+      const mm = (t) => { const p = hm(t).split(":"); return Number(p[0]) * 60 + Number(p[1]); };
       const me = mm(meta.time);
       return (rows || []).filter((p) => p.id !== selfId).map((p) => ({ p, m: C.postMeta(p) }))
-        .filter(({ p, m }) => m && m.date === meta.date && /^\d{2}:\d{2}$/.test(m.time || "") && Math.abs(mm(m.time) - me) <= 120 && bungStatus(p, p.attend_count).open)
-        .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: m.time, place: m.place || "" }))
+        .filter(({ p, m }) => m && m.date === meta.date && Math.abs(mm(m.time) - me) <= 120 && bungStatus(p, p.attend_count).open)
+        .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: /^\d{2}:\d{2}$/.test(m.time || "") ? m.time : "시간 미정", place: m.place || "" }))
         .sort((a, b) => a.time.localeCompare(b.time));
     }
     let dupResolve = null;
@@ -1539,15 +1697,22 @@
       const btn = $("writeSubmitBtn");
       const editing = !!state.editingId;
       btn.disabled = true; btn.textContent = editing ? "저장 중" : "등록 중";
+      const send = () => editing
+        ? supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) })
+        : supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
       try {
-        if (editing) {
-          await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) });
-          showToast("글을 저장했습니다.");
-        } else {
-          await supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
-          saveNick(nick); savePass(pass, cat);
-          showToast("글을 등록했습니다.");
+        try { await send(); }
+        catch (err) {   // 화면이 못 본 같은 시간대 겹침(목록 밖의 글, 시간 없는 글)은 서버가 BUNG_DUP 으로 알려 준다: 동의를 받아 한 번 더
+          if (!meta || meta.dup || !/BUNG_DUP/.test(String(err && err.message))) throw err;
+          let near = [];
+          try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }
+          if (!near.length) near = [{ time: meta.time || "", title: "같은 시간대의 모집 중인 모임(목록에서 찾지 못함)", author: "", place: "" }];
+          if (!(await askDup(near))) return;
+          meta.dup = "consent";
+          await send();
         }
+        if (editing) showToast("글을 저장했습니다.");
+        else { saveNick(nick); savePass(pass, cat); showToast("글을 등록했습니다."); }
         closeWriteModal();
         if (!editing && !state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
@@ -1621,10 +1786,9 @@
         if (wantAtt) {   // 댓글과 같은 닉네임과 비밀번호로 참석. 참석이 거절되어도 댓글은 남는다
           try {
             const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: postId, p_nick: nick, p_pass: pass }) });
-            state.attend[postId] = { list: ((res && res.attendees) || []).map((x) => ({ nick: x.nick, at: x.at })) };
-            if (post) post.attend_count = state.attend[postId].list.length;
+            applyAttendList(postId, res);
             msg = "댓글을 등록하고 참석했습니다.";
-          } catch (err) { msg = "댓글은 올렸지만 참석은 안 됐습니다. " + rpcErrorMessage(err); loadAttend([postId]); }
+          } catch (err) { msg = "댓글은 올렸지만 참석은 안 됐습니다. " + attError("attend", err); loadAttend([postId]); }
         }
         showToast(msg);
         state.busy = false;
@@ -1687,7 +1851,7 @@
       let post = findPost(id);
       if (!post) {
         try {
-          const rows = await supaFetch("/rest/v1/site_posts_v?" + POST_SELECT + "&id=eq." + id + "&limit=1");
+          const rows = await supaFetch("/rest/v1/site_posts_v?" + postSelect() + "&id=eq." + id + "&limit=1");
           if (rows && rows.length) { rows[0].reactions = rows[0].reactions || {}; state.posts.unshift(rows[0]); post = rows[0]; loadMyReactions([id]); }
         } catch (e) {}
       }
@@ -1695,6 +1859,7 @@
       state.expandedId = id;
       renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
+      if (state.attendOn && !(state.attend[id] && state.attend[id].list)) loadAttend([id]);   // 첫 쪽 밖의 글(봇 알림 링크)도 명단을 읽는다
       focusPostCard(id);
     }
     // 펼치거나 접은 뒤에도 누른 글의 제목 줄이 손가락 아래에 남게 한다. 64 는 site.css 의 scroll-padding-top
@@ -1715,7 +1880,7 @@
       if (state.expandedId === id) { keepHeadInPlace(id, () => { state.expandedId = null; syncHash(null); renderList(); }); return; }
       keepHeadInPlace(id, () => { state.expandedId = id; syncHash(id); renderList(); });
       if (state.commentsCache[id] === undefined) loadComments(id);
-      if (state.attendOn && !state.attend[id]) loadAttend([id]);
+      if (state.attendOn) loadAttend([id]);   // 펼 때마다 새로 읽는다(그사이 자리가 났거나 찼을 수 있다)
     }
     function refetchList() {
       state.expandedId = null;
@@ -1803,6 +1968,10 @@
         if (act === "attend") { openAttend(id, "attend"); return; }
         if (act === "unattend") { openAttend(id, "unattend"); return; }
         if (act === "host-attend") { openAttend(id, "host"); return; }
+        if (act === "retry-att") { delete state.attend[id]; renderList(); loadAttend([id]); return; }
+        if (act === "att-more") { state.attMore[id] = true; renderList(); return; }
+        if (act === "copy-att") { copyAttendList(id); return; }
+        if (act === "recruit") { setRecruit(id, el.dataset.to === "closed"); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
         if (act === "delete") { deletePost(id); return; }
         if (act === "pin") { togglePin(id); return; }
@@ -1817,6 +1986,8 @@
       $("attClose").addEventListener("click", closeAttend);
       $("attBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeAttend(); });
       ["attNick", "attPass"].forEach((k) => $(k).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitAttend(); } }));
+      $("attPass").addEventListener("input", () => { $("attPassHint").hidden = true; });
+      $("attClaim").addEventListener("click", (e) => { if (e.target.closest('[data-act="att-claim"]')) claimAttend(); });
       $("mapGo").addEventListener("click", runMapSearch);
       $("mapQ").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); runMapSearch(); } });
       $("mapResults").addEventListener("click", (e) => { const b = e.target.closest("button[data-i]"); if (b) pickMapResult(Number(b.dataset.i)); });
@@ -1847,11 +2018,11 @@
     bindEvents();
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
-    C.caps().then((c) => {
+    const capsReady = C.caps().then((c) => {
       state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
-    });   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다
+    }).catch(() => {});   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다. 글 목록 질의는 이것을 기다린다
     renderListLoading();
     loadPosts(true).then(openPromptFromHash).then(loadPopular).then(openFromHash);
     window.addEventListener("hashchange", openFromHash);
