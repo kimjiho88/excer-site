@@ -216,7 +216,7 @@ def norm(p):
         att = None
     return {"id": str(p["id"]), "title": clean(p.get("title"), 40) or "제목 없음", "author": clean(p.get("author"), 20),
             "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "",
-            "place": clean(m.get("place"), 40), "cap": cap, "closed": m.get("status") == "closed",
+            "place": clean(m.get("place"), 40), "addr": clean(m.get("addr"), 60), "cap": cap, "closed": m.get("status") == "closed",
             "deadline": dl if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", dl) else "",
             "attend": att, "full": bool(cap and att is not None and att >= cap),
             "created": str(p.get("created_at") or "")}
@@ -320,7 +320,7 @@ def head(v):
 
 
 def line(v):
-    return head(v) + (", " + v["place"] if v["place"] else "")
+    return head(v) + (", " + v["place"] if v["place"] and v["place"] not in v["title"] else "")   # 제목에 이미 장소가 있으면 되풀이하지 않는다
 
 
 def sig(v):
@@ -378,44 +378,57 @@ def has_changes(ch):
     return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("full") or ch.get("del"))
 
 
+# 카카오톡은 글자만 보내므로 이모지로 줄의 뜻을 표시한다. 공지 띠에는 첫 100자쯤이 보여 첫 두 줄에 날짜, 시간, 제목, 장소를 둔다
+EMO = {"next": "\U0001F4E3", "place": "\U0001F4CD", "people": "\U0001F465", "later": "\U0001F5D3", "go": "\U0001F449", "bell": "\U0001F514",
+       "새 벙": "\U0001F195", "벙 변경": "\u270F\uFE0F", "벙 마감": "\U0001F512", "벙 다시 모집": "\U0001F513", "벙 취소": "\u274C"}
+
+
+def place_line(v):
+    p, a = v.get("place") or "", v.get("addr") or ""
+    if not p and not a:
+        return ""
+    return EMO["place"] + " " + (p + (", " + a if a and a not in p else "") if p else a)
+
+
+def people_line(v, host=False):
+    parts = []
+    if v.get("attend") is not None and v.get("cap"):
+        parts.append("참석 %d/%d" % (v["attend"], v["cap"]))
+    elif v.get("cap"):
+        parts.append("정원 %d명" % v["cap"])
+    if host and v.get("author"):
+        parts.append("벙주 " + v["author"])
+    if dl_text(v):
+        parts.append(dl_text(v))
+    return (EMO["people"] + " " + ", ".join(parts)) if parts else ""
+
+
 def notice_text(posts, now, cfg):
-    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 그 아래로 이후 벙. 벙이 시작하면 다음 벙이 첫 줄로 올라온다"""
+    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 둘째 줄이 장소, 그 아래로 이후 벙. 벙이 시작하면 다음 벙이 첫 줄로 올라온다"""
     up = sorted([v for v in posts if recruiting(v, now)], key=skey)
     link = cfg["site"] + "/bung"
     if not up:
-        return "\n".join(["[다음 벙] 아직 없음"] + (["벙 올리기 " + link] if cfg.get("link", True) else []))
+        return "\n".join([EMO["next"] + " 다음 벙 아직 없음"] + (["벙 올리기 " + EMO["go"] + " " + link] if cfg.get("link", True) else []))
     first, rest = up[0], up[1:]
     same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
-    out = ["[다음 벙] " + line(first) + (", " + dl_text(first) if dl_text(first) else "") + (" 외 %d건" % same if same else "")]
+    out = [EMO["next"] + " 다음 벙 " + head(first) + (" 외 %d건" % same if same else "")]
+    out += [l for l in (place_line(first), people_line(first)) if l]
     if rest:
         mx = max(1, int(cfg.get("max_lines", 15)))
-        out.append("이후 %d건" % len(rest))
+        out += ["", EMO["later"] + " 이후 %d건" % len(rest)]
         out += [line(v) for v in rest[:mx]]
         if len(rest) > mx:
             out.append("외 %d건" % (len(rest) - mx))
     if cfg.get("link", True):
-        out.append("전체 " + link)
+        out += ["", "참석 신청 " + EMO["go"] + " " + link]
     return "\n".join(out)
 
 
-def detail(v):
-    bits = []
-    if v["place"]:
-        bits.append("장소 " + v["place"])
-    if v["cap"]:
-        bits.append("인원 %d명" % v["cap"])
-    if v["author"]:
-        bits.append("벙주 " + v["author"])
-    if dl_text(v):
-        bits.append(dl_text(v))
-    return ", ".join(bits)
-
-
 def alert_text(ch, cfg):
-    """바뀐 것 알림(공지와 따로 올리는 메시지). 하나면 자세히, 여럿이면 한 메시지에 한 줄씩"""
+    """바뀐 것 알림(공지와 따로 올리는 메시지). 하나면 자세히(장소, 인원, 벙주, 글 주소), 여럿이면 한 메시지에 한 줄씩"""
     items = []
     for v in sorted(ch["new"], key=skey):
-        items.append(("새 벙", v, detail(v)))
+        items.append(("새 벙", v, ""))
     for v, f in ch["chg"]:
         rest = [x for x in f if x != "마감 풀림"]
         if rest:
@@ -431,19 +444,22 @@ def alert_text(ch, cfg):
     if not items:
         return ""
     post_link = lambda v: cfg["site"] + "/news.html#post-" + v["id"]
+    tag = lambda kind: EMO.get(kind, "") + " " + kind
     if len(items) == 1:
         kind, v, d = items[0]
-        out = ["[%s] %s" % (kind, head(v))]
+        out = [tag(kind) + " " + head(v)]
         if kind == "벙 변경":
-            out.append(changes_line(ch, v))
+            out.append("바뀜: " + changes_line(ch, v))
         elif d:
             out.append(d)
+        if kind in ("새 벙", "벙 다시 모집", "벙 변경"):
+            out += [l for l in (place_line(v), people_line(v, host=True)) if l]
         if kind != "벙 취소" and cfg.get("link", True):
-            out.append(post_link(v))
+            out.append(EMO["go"] + " " + post_link(v))
         return "\n".join(out)
-    out = ["[벙 알림 %d건]" % len(items)]
+    out = [EMO["bell"] + " 벙 알림 %d건" % len(items)]
     for kind, v, d in items:
-        out.append("%s: %s%s" % (kind, head(v), (" (" + d + ")") if d and kind != "새 벙" else ""))
+        out.append("%s %s%s" % (tag(kind), head(v), (" (" + d + ")") if d and kind != "새 벙" else ""))
     return "\n".join(out)
 
 
@@ -1923,7 +1939,7 @@ class AdbSender:
             if not (n["text"] or n["desc"] or n["click"] or n["cls"].endswith("EditText")):
                 continue
             t = ws(n["text"])
-            if t and t not in keep and not t.startswith(("[다음 벙]", "공지", "채팅방 상단")) and (len(t) > (6 if private else 20)):
+            if t and t not in keep and not t.startswith(("[다음 벙]", EMO["next"], "공지", "채팅방 상단")) and (len(t) > (6 if private else 20)):
                 t = "(글 %d자)" % len(t)                         # 대화 내용은 적지 않는다(단추 이름, 짧은 글만)
             rows.append("%s|%s|%s|%s|%s|[%d,%d][%d,%d]" % (n["cls"].split(".")[-1], t[:60], ws(n["desc"])[:40], n["rid"].split("/")[-1],
                                                          "누름" if n["click"] else "", *n["b"]))
@@ -2004,7 +2020,7 @@ class AdbSender:
                         take("8 공지 쓰기 화면", nw, private=True)
                         fields = find(nw, cls="EditText")
                         if trial and fields:                     # 시험 방에만: 시험 공지를 넣고 올려 본다
-                            ttext = "[다음 벙] 톡게시판 공지 시험 " + time.strftime("%H:%M")
+                            ttext = EMO["next"] + " 다음 벙 톡게시판 공지 시험 " + time.strftime("%H:%M")
                             keep = keep + (ttext,)
                             field = max(fields, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1]))
                             filled = self.paste_into(field, ttext)
@@ -2027,7 +2043,7 @@ class AdbSender:
             nodes = back_to_room()
             take("10 방으로 돌아와서", nodes)
         inside = {id(t) for _, t in self.card_text_of(nodes)}
-        bubbles = [n for n in nodes if ws(n["text"]).startswith("[다음 벙]") and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and id(n) not in inside]
+        bubbles = [n for n in nodes if ws(n["text"]).startswith(("[다음 벙]", EMO["next"])) and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and id(n) not in inside]
         if bubbles:                                              # 봇이 올린 말풍선을 길게 눌러 메뉴, '공지' 를 누른 뒤 창은 '아니요' 로 닫는다
             target = max(bubbles, key=lambda n: n["b"][3])
             self.hold(target, 1000)
@@ -2046,7 +2062,7 @@ class AdbSender:
             else:
                 self.key(4)
         else:
-            out.append("== 11 '[다음 벙]' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
+            out.append("== 11 '다음 벙' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
         return "\n".join(out)
 
     # ── 보이스룸(docs/BOT_VOICE_ROOM.md) ──
