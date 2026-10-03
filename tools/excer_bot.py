@@ -490,6 +490,7 @@ class Bot:
         self.last_check = 0.0
         self.hold_until = 0.0                           # 읽기나 보내기가 실패하면 잠시 쉰다
         self.empty_streak = 0                           # 알던 벙이 있는데 사이트가 빈 목록을 준 횟수
+        self.read_fails = 0                             # 사이트 읽기가 연속으로 실패한 횟수(망 끊김)
 
     def save(self):
         save_json(self.state_path, self.st)
@@ -509,10 +510,15 @@ class Bot:
             return "quiet"
         try:
             posts = self.site.posts()
-        except Exception as e:                          # 사이트가 흔들리면 다음 차례에
-            self.log("사이트 읽기 실패: %s" % e)
+        except Exception as e:                          # 사이트가 흔들리면 다음 차례에. 같은 오류가 이어지면 처음과 10번째마다만 적는다
+            self.read_fails += 1
+            if self.read_fails == 1 or self.read_fails % 10 == 0:
+                self.log("사이트 읽기 실패%s: %s" % ("(%d번째, 망이 끊겼으면 돌아올 때까지 1분마다 다시 봄)" % self.read_fails if self.read_fails > 1 else "", e))
             self.hold_until = now.ts + 60
             return "read-fail"
+        if self.read_fails:
+            self.log("사이트 다시 읽힘(%d번 실패 뒤)" % self.read_fails)
+            self.read_fails = 0
         live_known = any(o and o.get("d") and o["d"] >= now.ymd for o in st.get("known", {}).values())
         if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다. 세 번 연속이어야 믿는다
             self.empty_streak += 1
@@ -1094,7 +1100,7 @@ class VoiceWatch:
                 return self.renew(dt, ts)
             return "on"
         if self.can_recover():
-            ok, skip = self.allowed(dt, ts)
+            ok, skip = self.allowed(dt, ts, sig)
             if ok:
                 return self.recover(dt, ts)
             if skip and skip != self.last_skip:
@@ -1102,8 +1108,10 @@ class VoiceWatch:
                 self.last_skip = skip
         return state
 
-    def allowed(self, dt, ts):
-        """지금 복구해도 되는지: 재시도 간격, 내보내짐 뒤 대기, 하루 만들기 한도"""
+    def allowed(self, dt, ts, sig=None):
+        """지금 복구해도 되는지: 망, 재시도 간격, 내보내짐 뒤 대기, 하루 만들기 한도"""
+        if sig is not None and (sig.get("net") or "") in ("", "없음"):
+            return False, "망이 없음(와이파이나 핫스팟 끊김). 돌아오면 다시 켠다"
         if ts < self.retry_at:
             return False, ""
         if ts < self.kick_until:
