@@ -385,12 +385,23 @@
       function who(name) { name = name || "익명"; return '<span class="who" data-initial="' + esc(name.slice(0, 1)) + '">' + esc(name) + "</span>"; }
 
       /* ── C. 공지·다가오는 모임·최근 후기 ── */
+      /* 모임 모집 줄의 참석 수와 상태(정원 마감, 신청 마감): 소식 목록과 같은 규칙. 참석 수 열이 있을 때만 */
+      function bungRow(v) {
+        var m = v.meta || {};
+        if (v.kind !== "bung" || v.attend_count == null || !m.date) return null;
+        var n = Number(v.attend_count) || 0, cap = Number(m.cap) || 0;
+        var nowK = C.kstToday() + "T" + C.kstNowHM(), start = m.date + "T" + (m.time || "23:59"), dl = m.deadline || start;
+        var why = start <= nowK || m.status === "closed" ? "" : dl <= nowK ? "신청 마감" : (cap && n >= cap) ? "정원 마감" : "";
+        return { text: "참석 " + n + (cap ? "/" + cap : ""), state: why };
+      }
       function rowHTML(v) {
         var tag = '<span class="type-tag' + (v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : "") + '">' + esc(v.label) + "</span>";
         var sub = v.subline.text || v.excerpt;
         var w = [who(v.author), esc(C.relTime(v.created_at))];
+        var st = v.subline.state, past = v.subline.past, br = bungRow(v);
+        if (br) { w.push(br.text); if (br.state) { st = br.state; past = true; } }
         if (v.comment_count) w.push("댓글 " + v.comment_count);
-        var state = v.subline.state ? '<span class="row-state' + (v.subline.past ? " is-past" : "") + '">' + esc(v.subline.state) + "</span>" : "";
+        var state = st ? '<span class="row-state' + (past ? " is-past" : "") + '">' + esc(st) + "</span>" : "";
         return '<a class="row news-row" href="news.html#post-' + v.id + '">' +
           '<span class="nr-line">' + tag + '<span class="row-title">' + esc(v.title || "제목 없음") + "</span></span>" +
           state +
@@ -399,13 +410,14 @@
       function renderLive(rows) {
         var host = $("liveList");
         var today = C.kstToday(), now = C.kstNowHM();
-        var views = (Array.isArray(rows) ? rows : []).map(function (p) { return C.postView(p, today); });
+        var views = (Array.isArray(rows) ? rows : []).map(function (p) { var v = C.postView(p, today); v.attend_count = p.attend_count; return v; });
         // 고정 공지: 운영진이 고정한 '공지' 가운데 최근 것 한 건. 고정된 모임 글은 공지로 부르지 않고 다가오는 모임 쪽에서만 다룬다
         var notice = views.filter(function (v) { return v.pinned && v.kind === "notice"; })
           .sort(function (a, b) { return String(b.created_at || "").localeCompare(String(a.created_at || "")); })[0] || null;
         // 다가오는 모임: 날짜가 오늘 이후·마감 아님·오늘이면 시간이 아직 안 지난 것. 가까운 순 2건 (조건은 content.js isUpcoming)
+        var canJoin = function (v) { var br = bungRow(v); return br && br.state ? 1 : 0; };   // 정원이 찼거나 신청이 끝난 모임은 뒤로
         var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now); })
-          .sort(function (a, b) { return String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
+          .sort(function (a, b) { return (canJoin(a) - canJoin(b)) || String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
           .slice(0, 2);
         // 지난번 소식 방문(소식 페이지가 남긴 시각) 뒤에 올라온 글 수 → 주요 기능의 소식 옆 알약. 방문 기록이 없으면 표시하지 않는다
         var seen = ""; try { seen = localStorage.getItem("excer_news_seen") || ""; } catch (e) {}
@@ -427,7 +439,9 @@
         host.removeAttribute("aria-busy");
       }
       function loadLive() {
-        return supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count&order=pinned.desc,created_at.desc&limit=100")
+        return C.caps().then(function (c) {   // 참석 기능이 있는 서버면 참석 수 열도(없는 서버에서 부르면 400)
+          return supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count" + (c && c.attend ? ",attend_count" : "") + "&order=pinned.desc,created_at.desc&limit=100");
+        })
           .then(function (rows) { renderLive(rows); })
           .catch(function () { note($("liveList"), "소식을 불러오지 못했습니다.", loadLive); });
       }

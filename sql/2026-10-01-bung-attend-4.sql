@@ -57,17 +57,15 @@ create view site_posts_v as
   from site_posts p;
 grant select on site_posts_v to anon, authenticated;
 
--- ── 7. 서버 형식 표시(화면이 bung_attend 를 보고 참석 칸을 연다) ──
-do $v$
-declare has_loc boolean := exists (select 1 from information_schema.columns
-                                    where table_schema = 'public' and table_name = 'site_places' and column_name = 'lat');
-begin
-  execute 'drop view if exists site_schema_v';
-  execute 'create view site_schema_v as select ''content_format''::text as key, 2 as value'
-       || case when has_loc then ' union all select ''places_location''::text, 1' else '' end
-       || ' union all select ''bung_attend''::text, 1';
-  execute 'grant select on site_schema_v to anon, authenticated';
-end $v$;
+-- ── 7. 서버 형식 표시(화면이 bung_attend 를 보고 참석 칸을 연다). 카탈로그에서 그때그때 계산하므로 어느 쪽을 다시 돌려도 결과가 같다 ──
+drop view if exists site_schema_v;
+create view site_schema_v as
+  select 'content_format'::text as key, 2 as value
+  union all select 'places_location', 1 where exists (select 1 from pg_attribute
+                                                       where attrelid = to_regclass('public.site_places') and attname = 'lat' and not attisdropped)
+  union all select 'bung_attend', 1 where to_regprocedure('public.bung_attend(bigint,text,text)') is not null
+  union all select 'bung_place', 1 where to_regprocedure('public.bung_host_attend(bigint,text,text)') is not null;
+grant select on site_schema_v to anon, authenticated;
 
 grant execute on function bung_attend(bigint, text, text), bung_unattend(bigint, text, text) to anon, authenticated;
 

@@ -10,9 +10,10 @@ begin
 
   if p_category = '벙 소식' then
     out := jsonb_build_object('kind', 'bung');
-    t := site_meta_date(p_meta, 'date');            if t is not null then out := out || jsonb_build_object('date', t); end if;
-    t := nullif(trim(p_meta ->> 'time'), '');
-    if t is not null and t ~ '^\d{2}:\d{2}$' then out := out || jsonb_build_object('time', t); end if;
+    t := site_meta_date(p_meta, 'date');            -- 달력에 있는 날짜만(02-30 같은 값은 버린다)
+    if t is not null and bung_ts(t, null) is not null then out := out || jsonb_build_object('date', t); end if;
+    t := nullif(trim(p_meta ->> 'time'), '');       -- 00:00~23:59 만(24:00 은 다음날 0시가 되어 버린다)
+    if t is not null and t ~ '^([01]\d|2[0-3]):[0-5]\d$' then out := out || jsonb_build_object('time', t); end if;
     t := site_meta_text(p_meta, 'place', 60);       if t is not null then out := out || jsonb_build_object('place', t); end if;
     t := site_meta_text(p_meta, 'addr', 100);       if t is not null then out := out || jsonb_build_object('addr', t); end if;
     begin                                           -- 좌표: 둘 다 있고 한국 안일 때만
@@ -30,7 +31,7 @@ begin
     t := nullif(trim(p_meta ->> 'status'), '');
     if t in ('recruiting', 'closed') then out := out || jsonb_build_object('status', t); end if;
     t := nullif(trim(p_meta ->> 'deadline'), '');
-    if t is not null and t ~ '^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$' then
+    if t is not null and t ~ '^\d{4}-\d{2}-\d{2}[T ]([01]\d|2[0-3]):[0-5]\d(:\d{2})?$' and bung_ts(left(t, 10), substr(t, 12, 5)) is not null then
       out := out || jsonb_build_object('deadline', replace(left(t, 16), ' ', 'T'));
     end if;
     if trim(coalesce(p_meta ->> 'dup', '')) = 'consent' then out := out || jsonb_build_object('dup', 'consent'); end if;

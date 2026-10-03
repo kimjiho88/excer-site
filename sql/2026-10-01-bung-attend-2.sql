@@ -1,6 +1,11 @@
 -- 모임 모집 참석 2/4: 항목 정리기(모임 모집에 신청 마감 deadline, 같은 시간대 예외 dup = consent 를 더한 판)
 -- 1쪽부터 4쪽까지 차례로 SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(기존 글, 댓글, 참석 명단은 그대로).
-do $g$ begin if to_regclass('public.site_bung_attend') is null then raise exception '1쪽을 먼저 실행하세요'; end if; end $g$;
+do $g$ begin
+  if to_regclass('public.site_bung_attend') is null then raise exception '1쪽을 먼저 실행하세요'; end if;
+  if post_meta_clean('벙 소식', '{"date":"2030-01-01","lat":"37.5","lng":"127.0"}'::jsonb) ->> 'lat' is not null then
+    raise exception '장소 판(2026-10-02 1쪽)이 이미 적용되어 있습니다. 이 쪽을 다시 돌리면 주소와 좌표가 빠지므로 멈춥니다(아무것도 바뀌지 않음)';
+  end if;
+end $g$;
 
 create or replace function post_meta_clean(p_category text, p_meta jsonb)
 returns jsonb language plpgsql immutable set search_path = public as $$

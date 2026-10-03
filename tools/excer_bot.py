@@ -97,6 +97,7 @@ DEFAULTS = {
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
     "link": True,                        # 목록 끝에 벙 일정 주소(pc 에서 공지가 자주 실패하면 false: 주소 미리보기가 늦게 떠 자리가 밀린다)
+    "notice_attend": False,              # 공지 글에 참석 수(참석 N/정원)를 넣을지. 넣으면 참석자가 바뀔 때마다 공지를 새로 올리고 다시 건다. 끄면 '정원 N명'
     "pc": {"window": [40, 40, 460, 780], "input_dy": 80, "bubble": None, "menu_copy": None, "menu_notice": None, "confirm": None},
     "android": {"serial": "", "package": "com.kakao.talk"},
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
@@ -325,7 +326,7 @@ def line(v):
 
 def sig(v):
     return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0, "n": v["title"], "cr": v["created"],
-            "dl": v.get("deadline") or "", "f": 1 if v.get("full") else 0}
+            "dl": v.get("deadline") or "", "f": 1 if v.get("full") else 0, "cap": v.get("cap") or 0}
 
 
 def noch():
@@ -353,10 +354,13 @@ def diff(known, posts, now, init, full=False):
             continue
         f = [n for n, a, b in (("날짜", o.get("d"), v["date"]), ("시간", o.get("t"), v["time"]), ("장소", o.get("p"), v["place"]),
                                 ("신청 마감", o.get("dl"), v.get("deadline"))) if (a or "") != (b or "")]
+        if "cap" in o and (o.get("cap") or 0) != (v.get("cap") or 0):
+            f.append("정원")                            # 예전 기록에 정원이 없으면(이 판 이전) 바뀐 것으로 치지 않는다
         if v.get("full") and not o.get("f"):
-            ch["full"].append(v)                       # 정원이 찼다
-        elif (o.get("c") or o.get("f")) and not v.get("full"):
-            f.append("마감 풀림")                       # 마감을 풀었거나 자리가 났다
+            ch["full"].append(v)                       # 정원이 찼다(정원을 줄여서 찬 것이면 마감 알림 한 번에 참석과 정원을 적는다)
+            f = [x for x in f if x != "정원"]
+        elif (o.get("c") or o.get("f")) and not v.get("full") and recruiting(v, now):
+            f.append("마감 풀림")                       # 마감을 풀었거나 자리가 났다(신청 마감이 지났으면 다시 모집이 아니다)
         if f:
             ch["chg"].append((dict(v, _old=o), f))
     # 안 보이는 글: 지워졌으면 알리고, 최근 100개 밖으로 밀려난 것이면 기억해 둔다(다시 보여도 새 글로 치지 않게)
@@ -390,9 +394,10 @@ def place_line(v):
     return EMO["place"] + " " + (p + (", " + a if a and a not in p else "") if p else a)
 
 
-def people_line(v, host=False):
+def people_line(v, host=False, live=True):
+    """live: 참석 수까지(알림). 공지 글은 기본으로 정원만 적는다(참석자가 바뀔 때마다 공지를 다시 올리지 않게)"""
     parts = []
-    if v.get("attend") is not None and v.get("cap"):
+    if live and v.get("attend") is not None and v.get("cap"):
         parts.append("참석 %d/%d" % (v["attend"], v["cap"]))
     elif v.get("cap"):
         parts.append("정원 %d명" % v["cap"])
@@ -412,7 +417,7 @@ def notice_text(posts, now, cfg):
     first, rest = up[0], up[1:]
     same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
     out = [EMO["next"] + " 다음 벙 " + head(first) + (" 외 %d건" % same if same else "")]
-    out += [l for l in (place_line(first), people_line(first)) if l]
+    out += [l for l in (place_line(first), people_line(first, live=bool(cfg.get("notice_attend")))) if l]
     if rest:
         mx = max(1, int(cfg.get("max_lines", 15)))
         out += ["", EMO["later"] + " 이후 %d건" % len(rest)]
@@ -431,14 +436,12 @@ def alert_text(ch, cfg):
         items.append(("새 벙", v, ""))
     for v, f in ch["chg"]:
         rest = [x for x in f if x != "마감 풀림"]
-        if rest:
-            items.append(("벙 변경", v, ", ".join(rest) + " 바뀜"))
-        else:
-            items.append(("벙 다시 모집", v, ""))
+        items.append(("벙 다시 모집" if "마감 풀림" in f else "벙 변경", v, (", ".join(rest) + " 바뀜") if rest else ""))
     for v in ch["cls"]:
         items.append(("벙 마감", v, "모집 마감"))
     for v in ch.get("full", []):
-        items.append(("벙 마감", v, "정원 %d명 다 참" % v["cap"]))
+        over = v.get("attend") is not None and v["attend"] > v["cap"]   # 모임장이 정원 너머로 적었거나 정원을 줄임
+        items.append(("벙 마감", v, ("참석 %d명, 정원 %d명" % (v["attend"], v["cap"])) if over else "정원 %d명 다 참" % v["cap"]))
     for v in ch.get("del", []):
         items.append(("벙 취소", v, "모집 글 삭제"))
     if not items:
@@ -448,8 +451,9 @@ def alert_text(ch, cfg):
     if len(items) == 1:
         kind, v, d = items[0]
         out = [tag(kind) + " " + head(v)]
-        if kind == "벙 변경":
-            out.append("바뀜: " + changes_line(ch, v))
+        cl = changes_line(ch, v) if kind in ("벙 변경", "벙 다시 모집") else ""
+        if cl:
+            out.append("바뀜: " + cl)
         elif d:
             out.append(d)
         if kind in ("새 벙", "벙 다시 모집", "벙 변경"):
@@ -477,6 +481,8 @@ def changes_line(ch, v):
             if "신청 마감" in f:
                 fmt = lambda d: (md(d[:10]) + " " + d[11:16]) if d else "시작 시각"
                 parts.append("신청 마감 %s 에서 %s" % (fmt(o.get("dl") or ""), fmt(v.get("deadline") or "")))
+            if "정원" in f:
+                parts.append("정원 %d명에서 %d명" % (o.get("cap") or 0, v.get("cap") or 0))
             return ", ".join(parts)
     return ""
 
