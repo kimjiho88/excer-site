@@ -195,10 +195,14 @@
     .self-att { display: flex; align-items: center; gap: 8px; min-height: 40px; margin-top: 6px; font-size: var(--fs-sm); color: var(--ink); cursor: pointer; }
     .self-att input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
     .slot-warn { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--rust-soft, #FBEDE7); color: var(--ink); font-size: var(--fs-caption); line-height: 1.5; }
-    /* 날짜 단추는 두 주를 가로로 넘겨 본다 */
-    .chips.is-scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
-    .chips.is-scroll::-webkit-scrollbar { display: none; }
-    .chips.is-scroll .chip { flex: none; }
+    /* 날짜 단추는 두 주를 일곱 칸 두 줄로(가로로 밀지 않고 금, 토가 한 번에 보이게). 요일 위, 날짜 아래 */
+    .chips.is-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+    .chips.is-days .chip { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 46px; padding: 4px 0; border-radius: 10px; }
+    .chips.is-days .chip b { font-size: 13px; font-weight: 700; }
+    .chips.is-days .chip small { color: var(--ink-2); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .chips.is-days .chip.is-sun b { color: var(--rust, #B4532A); }
+    .chips.is-days .chip.is-sat b { color: var(--brand); }
+    .chips.is-days .chip.is-on small { color: var(--brand); }
     /* 글 종류 선택 옆 그림(2세대 posts-*) — 56px 타일, 고른 종류에 맞춰 바뀐다 */
     .form-preview .post-row { border-top: 0; }
     .form-preview .post-head { padding: 4px 0 6px; cursor: default; }
@@ -837,7 +841,7 @@
       syncPassHint();
       showToast("저장된 비밀번호를 지웠습니다.");
     }
-    function syncPassHint() { $("passHint").hidden = !savedPass(); }
+    function syncPassHint() { $("passHint").hidden = !(savedPass() && $("wPass").value === savedPass()); }
     function findPost(id) { return state.posts.find((p) => p.id === id); }
 
     let _deviceKey = null;
@@ -882,7 +886,13 @@
         const i = w.querySelector(".input, .textarea"); if (i) i.removeAttribute("aria-invalid");
       });
     }
-    function firstInvalid() { const w = document.querySelector("#writeForm .is-invalid .input, #writeForm .is-invalid .textarea"); if (w) w.focus(); }
+    function firstInvalid() {
+      const w = document.querySelector("#writeForm .is-invalid .input, #writeForm .is-invalid .textarea");
+      if (!w) return;
+      w.focus({ preventScroll: true });
+      // 아래 고정 단추 띠에 오류 글이 가리지 않게 칸 전체를 창 가운데로
+      const f = w.closest(".field"); if (f) f.scrollIntoView({ block: "center" });
+    }
 
     // ── 데이터 로드 ──
     function orderParam() {
@@ -1220,7 +1230,7 @@
       if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
       const picked = f.map ? `<p class="place-picked" id="wf_placePicked" hidden>${icon("pin")}<span id="wf_placeAddr"></span><button type="button" class="text-btn is-quiet" data-act="place-clear">지우기</button></p>` : "";
       const hint = !state.attendOn && f.hintOff ? f.hintOff : f.hint;
-      const chips = f.chips ? `<div class="chips${f.chips === "date" ? " is-scroll" : ""}" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip" data-v="${esc(c.v)}">${esc(c.label)}</button>`).join("")}</div>` : "";
+      const chips = f.chips ? `<div class="chips${f.chips === "date" ? " is-days" : ""}" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip${c.cls ? " " + c.cls : ""}" data-v="${esc(c.v)}"${c.aria ? ` aria-label="${esc(c.aria)}"` : ""}>${c.html || esc(c.label)}</button>`).join("")}</div>` : "";
       // 새 모임 글: 모임장도 참석자로 넣을지(기본 켬). 켜 두면 올리자마자 명단 첫 줄에 들어가 인원에 셈된다
       const self = f.self && state.attendOn && !state.editingId ? `<label class="self-att"><input type="checkbox" id="wSelfAttend" checked /> 나도 참석자로 넣기</label>` : "";
       const slot = f.key === "time" ? `<p class="slot-warn" id="slotWarn" role="status" hidden></p>` : "";
@@ -1232,7 +1242,14 @@
     let chipCtx = null;   // 고치는 글의 지금 값(그 시간이 단추에 없으면 하나 더 붙인다)
     function addDays(ymd, n) { const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
     function chipList(kind) {
-      if (kind === "date") { const t = C.kstToday(); return Array.from({ length: 14 }, (_, i) => { const v = addDays(t, i); const dow = DOW[new Date(v + "T00:00:00Z").getUTCDay()]; return { v, label: i === 0 ? "오늘" : i === 1 ? "내일" : dow + " " + Number(v.slice(5, 7)) + "/" + Number(v.slice(8, 10)) }; }); }
+      if (kind === "date") {
+        const t = C.kstToday();
+        return Array.from({ length: 14 }, (_, i) => {
+          const v = addDays(t, i), di = new Date(v + "T00:00:00Z").getUTCDay(), dow = DOW[di];
+          const top = i === 0 ? "오늘" : i === 1 ? "내일" : dow, md = Number(v.slice(5, 7)) + "/" + Number(v.slice(8, 10));
+          return { v, label: top + " " + md, html: `<b>${top}</b><small>${md}</small>`, aria: `${md} ${dow}요일${i < 2 ? ", " + top : ""}`, cls: di === 0 ? "is-sun" : di === 6 ? "is-sat" : "" };
+        });
+      }
       if (kind === "time") {
         const cur = chipCtx && /^\d{2}:\d{2}$/.test(chipCtx.time || "") ? chipCtx.time : "";
         return (cur && !TIME_CHIPS.includes(cur) ? TIME_CHIPS.concat(cur).sort() : TIME_CHIPS).map((v) => ({ v, label: v }));
@@ -1295,8 +1312,8 @@
       // 모임 모집은 올린 글의 카드가 곧 미리보기라 아래 미리보기 상자를 빼서 창을 줄인다
       const pv = document.querySelector("#writeForm .form-preview"); if (pv) pv.hidden = isBung;
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
-      // 고치는 글에 '더 적기' 쪽 값이 있으면 펼쳐 둔다
-      if (isBung && meta && extra.some((f) => meta[f.key] != null && String(meta[f.key]) !== "")) $("moreFold").open = true;
+      // 고치는 글에 '더 적기' 쪽 값이 있거나 쓴 내용이 있으면 펼쳐 둔다(내용이 접힌 곳에 숨지 않게)
+      if (isBung && ((meta && extra.some((f) => meta[f.key] != null && String(meta[f.key]) !== "")) || $("wBody").value.trim())) $("moreFold").open = true;
       syncCatChips(cat);
       $("catNudge").hidden = true;
       syncAuthor();
@@ -1362,8 +1379,9 @@
       $("draftNote").hidden = !state.draftHold;
       if (state.draftHold) $("draftNoteTitle").textContent = existing.title ? "“" + existing.title.slice(0, 30) + "”" : "제목 없는 글";
       const cat = post ? post.category : (init && init.category && CATS.includes(init.category) ? init.category : "자유");
-      authorOpen = false;
+      authorOpen = false; catStash = {};
       $("wCat").value = cat;
+      $("wBody").value = "";   // 지난 창의 내용이 남아 '더 적기' 를 펼치지 않게(내용은 아래에서 다시 채운다)
       renderTypeFields(cat, post ? C.postMeta(post) : (init && init.meta) || null);
       $("wTitle").value = post ? post.title : (init && init.title) || "";
       const body0 = post ? post.body : (init && init.body) || "";
@@ -1387,13 +1405,16 @@
       }, 60);
     }
     /* 종류 단추: 고르면 숨은 select 값을 바꾸고 칸을 다시 그린다(제목과 내용은 그대로) */
+    let catStash = {};   // 글쓰기 창 하나 안에서 종류별로 쓰던 항목(종류 단추를 잘못 눌러도 되돌리면 그대로)
     function pickCat(cat) {
       if (!CATS.includes(cat) || $("wCat").value === cat) { syncCatChips($("wCat").value); return; }
       const keep = readMeta();
+      if (keep) catStash[$("wCat").value] = keep;
       $("wCat").value = cat;
       if (cat === "공지" && $("wPass").value === savedPass()) $("wPass").value = "";   // 운영진 비밀번호는 저장값으로 채우지 않는다
       if (cat !== "공지" && !$("wPass").value) $("wPass").value = savedPass();
-      renderTypeFields(cat, keep && C.postType(cat).kind === keep.kind ? keep : null);
+      renderTypeFields(cat, keep && C.postType(cat).kind === keep.kind ? keep : (catStash[cat] || null));
+      syncCatNudge();
       if (!state.editingId) {
         $("writeSubmitBtn").textContent = cat === "벙 소식" ? "모임 올리기" : "등록";
         $("writeTitle").textContent = cat === "벙 소식" ? "모임 올리기" : "글쓰기";
@@ -1587,8 +1608,9 @@
     async function setRecruit(id, close) {
       if (state.busy) return;
       const post = findPost(id); if (!post) return;
+      const pre = ownPass(post);
       const pass = await askPassword(close ? "모집 마감 (모임장)" : "다시 모집 (모임장)",
-        close ? "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 마감하면 참석을 더 받지 않습니다." : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 정원이 남은 만큼 다시 참석을 받습니다.", ownPass(post));
+        (pre ? "저장된 비밀번호를 넣어 두었습니다. " : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. ") + (close ? "마감하면 참석을 더 받지 않습니다." : "정원이 남은 만큼 다시 참석을 받습니다."), pre);
       if (pass === null) return;
       const meta = Object.assign({}, C.postMeta(post) || {});
       if (close) meta.status = "closed"; else delete meta.status;
@@ -1846,9 +1868,13 @@
       if (!validateWrite()) return;
       const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
       const title = $("wTitle").value.trim(), meta = readMeta();
+      if (!state.editingId && (cat === "자유" || cat === "정보") && /(벙|번개|모집|정모|[0-9]+\s*명)/.test(title)) {
+        if (!window.confirm("모임을 모집하는 글이면 모임 모집으로 올려야 참석 버튼이 생깁니다. 이대로 올릴까요?")) { syncCatNudge(); $("catNudge").hidden = false; $("catNudge").scrollIntoView({ block: "center" }); return; }
+      }
       // 모임 모집은 내용을 비워도 된다. 서버 표는 내용이 한 글자 이상이어야 해서 공백 하나로 보낸다(화면은 빈 내용을 그리지 않는다)
       const body = cat === "벙 소식" && !$("wBody").value.trim() ? " " : $("wBody").value;
       const selfAttend = !state.editingId && cat === "벙 소식" && state.attendOn && !!($("wSelfAttend") && $("wSelfAttend").checked);
+      const oldMeta = state.editingId ? C.postMeta(findPost(state.editingId) || {}) : null;
       if (cat === "벙 소식" && meta && meta.date && meta.time) {
         if (slotChanged(meta.date, meta.time)) {
           state.busy = true;
@@ -1878,7 +1904,7 @@
           if (!meta || meta.dup || !/BUNG_DUP/.test(String(err && err.message))) throw err;
           let near = [];
           try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }
-          if (!near.length) near = [{ time: meta.time || "", title: "같은 시간대의 모집 중인 모임(목록에서 찾지 못함)", author: "", place: "" }];
+          if (!near.length) near = [{ time: "", title: `${meta.time || ""} 앞뒤 2시간 안에 모집 중인 모임이 있습니다. 모임 모집 탭에서 그 모임을 확인해 주세요.`.trim(), author: "", place: "" }];
           if (!(await askDup(near))) return;
           meta.dup = "consent";
           newId = await send();
@@ -1892,8 +1918,12 @@
             applyAttendList(newId, res); rememberAttend(newId, nick); selfOk = true;
           } catch (e) {}
         }
-        if (editing) showToast("글을 저장했습니다.");
-        else { saveNick(nick); savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
+        if (editing) {
+          const others = ((state.attend[state.editingId] || {}).list || []).filter((x) => nickKey(x.nick) !== nickKey(nick || (findPost(state.editingId) || {}).author)).length;
+          const moved = oldMeta && meta && ["date", "time", "place"].some((k) => String(oldMeta[k] || "") !== String(meta[k] || ""));
+          showToast(moved && others ? `저장했습니다. 참석자 ${others}명에게 바뀐 내용을 알려 주세요.` : "글을 저장했습니다.");
+        }
+        else { saveNick(nick); savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : selfAttend ? "모임은 올렸지만 참석자로 넣지 못했습니다. 카드의 참석하기를 눌러 주세요." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
         closeWriteModal();
         if (!editing && !state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
@@ -2078,7 +2108,7 @@
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitWrite);
       $("passForget").addEventListener("click", forgetPass);
-      $("writeBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeWriteModal(); });
+
       $("wCat").addEventListener("change", () => { renderTypeFields($("wCat").value, null); renderPreview(); });
       $("wCatChips").addEventListener("click", (e) => { const b = e.target.closest(".cat-chip"); if (b) pickCat(b.dataset.cat); });
       $("wCatChips").addEventListener("keydown", (e) => {   // 라디오 묶음처럼 좌우 화살표로 옮겨 고른다
@@ -2095,6 +2125,7 @@
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
         if (e.target.closest("#typeFields")) syncChips();
         if (e.target.id === "wTitle" || e.target.id === "wBody") syncCatNudge();
+        if (e.target.id === "wPass") syncPassHint();
         if (e.target.id === "wf_date" || e.target.id === "wf_time") { clearTimeout(slotTimer); slotTimer = setTimeout(checkSlotEarly, 350); }
       });
       $("typeFields").addEventListener("click", (e) => {
@@ -2144,7 +2175,14 @@
         if (act === "share") {
           const p = findPost(id); if (!p) return;
           const v = C.postView(p);
-          window.KSHARE.share({ title: "[" + v.label + "] " + (v.title || ""), description: String(v.subline.text || v.excerpt || "").slice(0, 80), url: postUrl(id), buttonTitle: "글 보기" })
+          let desc = String(v.subline.text || v.excerpt || ""), btnTitle = "글 보기";
+          if (p.category === "벙 소식" && state.attendOn) {
+            const st = bungStatus(p), m = C.postMeta(p) || {}, a = state.attend[id];
+            const n = a && a.list ? a.list.length : (Number.isFinite(Number(p.attend_count)) ? Number(p.attend_count) : null);
+            desc += (m.cap ? `, ${m.cap}명 모집` : "") + (n != null ? `, 참석 ${n}명` : "");
+            if (st.open) btnTitle = "참석하러 가기";
+          }
+          window.KSHARE.share({ title: "[" + v.label + "] " + (v.title || ""), description: desc.slice(0, 80), url: postUrl(id), buttonTitle: btnTitle })
             .then((r) => { const m = window.KSHARE.message(r); if (m) showToast(m); });
           return;
         }
