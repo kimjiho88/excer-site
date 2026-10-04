@@ -170,6 +170,35 @@
     .textarea.is-body { min-height: 150px; }
     .type-fields { display: contents; }
     .type-desc { margin: -4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
+    /* 47차: 글 종류는 보이는 단추로. 모임 모집이 맨 앞 */
+    .field-label { display: block; margin-bottom: 6px; font-size: var(--fs-sm); font-weight: 700; color: var(--ink); }
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .cat-chip { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .cat-chip small { color: var(--ink-2); font-weight: 500; font-size: 12px; }
+    .cat-chip[aria-checked="true"] { border-color: var(--brand); background: var(--brand); color: #fff; }
+    .cat-chip[aria-checked="true"] small { color: rgba(255, 255, 255, 0.82); }
+    .cat-chip[data-cat="벙 소식"]:not([aria-checked="true"]) { border-color: var(--brand); color: var(--brand); }
+    .cat-nudge { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--brand-soft); color: var(--ink); font-size: var(--fs-caption); line-height: 1.5; }
+    /* 모임 모집: 필수 칸만 펼치고 나머지는 '더 적기' 안에 */
+    .more-fold { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .more-fold > summary { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; cursor: pointer; list-style: none; font-weight: 700; font-size: var(--fs-sm); color: var(--ink); }
+    .more-fold > summary::-webkit-details-marker { display: none; }
+    .more-fold > summary small { color: var(--ink-2); font-weight: 500; font-size: var(--fs-caption); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .more-fold > summary::after { content: ""; flex: none; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+    .more-fold[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+    .more-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; padding: 4px 14px 14px; }
+    .more-body .is-wide { grid-column: 1 / -1; }
+    @media (max-width: 640px) { .more-body { grid-template-columns: 1fr; } }
+    .author-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: -4px 0 0; color: var(--ink); font-size: var(--fs-sm); }
+    .author-sum .text-btn { min-height: 36px; }
+    .is-folded { display: none !important; }
+    .self-att { display: flex; align-items: center; gap: 8px; min-height: 40px; margin-top: 6px; font-size: var(--fs-sm); color: var(--ink); cursor: pointer; }
+    .self-att input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
+    .slot-warn { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--rust-soft, #FBEDE7); color: var(--ink); font-size: var(--fs-caption); line-height: 1.5; }
+    /* 날짜 단추는 두 주를 가로로 넘겨 본다 */
+    .chips.is-scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; mask-image: linear-gradient(90deg, #000 85%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }
+    .chips.is-scroll::-webkit-scrollbar { display: none; }
+    .chips.is-scroll .chip { flex: none; }
     /* 글 종류 선택 옆 그림(2세대 posts-*) — 56px 타일, 고른 종류에 맞춰 바뀐다 */
     .form-preview .post-row { border-top: 0; }
     .form-preview .post-head { padding: 4px 0 6px; cursor: default; }
@@ -193,6 +222,13 @@
     .att-sub { display: flex; flex-wrap: wrap; gap: 2px 14px; align-items: center; margin-top: -4px; }
     .att-sub .text-btn { min-height: 40px; }
     .att-sub .text-btn small { color: var(--ink-2); font-weight: 500; }
+    /* 모임장 메뉴: 글쓴이 기기에서는 펼쳐 두고, 다른 사람에게는 접어 둔다 */
+    .host-menu { border-top: 1px solid var(--line); padding-top: 6px; }
+    .host-menu > summary { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; list-style: none; color: var(--ink-2); font-size: var(--fs-sm); font-weight: 700; }
+    .host-menu > summary::-webkit-details-marker { display: none; }
+    .host-menu > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+    .host-menu[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
+    .host-menu .att-sub { margin-top: 0; }
     /* 참석 창: 폰에서는 위쪽에 붙여 키보드가 올라와도 단추가 보이게. 라벨은 보이게 */
     @media (max-width: 640px) { .att-backdrop { place-items: start center; padding-top: max(16px, 6vh); } }
     .att-label { display: block; margin: 0 0 4px; font-size: var(--fs-caption); font-weight: 700; color: var(--ink); }
@@ -214,7 +250,8 @@
     .cap-bar.is-full i { background: var(--rust); }
     .bung-card .att-acts .btn { min-height: 48px; }
     .bung-card .att-acts .btn-primary { min-width: 180px; }
-    @media (max-width: 640px) { .bung-card .att-acts .btn { flex: 1 1 0; } }
+    .bung-card .att-acts .bc-share { flex: none; }
+    @media (max-width: 640px) { .bung-card .att-acts { flex-wrap: nowrap; } .bung-card .att-acts .btn { flex: 1 1 0; min-width: 0; } .bung-card .att-acts .bc-share { flex: 0 0 auto; min-width: 88px; } }
     /* 목록 줄의 참석 수: 작은 막대와 함께 */
     .cap-mini { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .cap-mini i { position: relative; display: inline-block; width: 34px; height: 4px; border-radius: 999px; background: var(--brand-soft); overflow: hidden; }
@@ -437,8 +474,16 @@
           <button type="button" class="text-btn" id="draftNoteLoad">그 글 불러오기</button>
         </div>
         <div class="field is-wide" data-field="wCat">
-          <label for="wCat">글 종류</label>
-          <select id="wCat" class="input">
+          <span class="field-label" id="wCatLabel">글 종류</span>
+          <!-- 종류는 보이는 단추로 고른다(목록 상자는 접혀 있어 '자유' 인 채로 모임을 올리는 일이 잦았다). 값은 아래 숨은 select 에 담긴다 -->
+          <div class="cat-chips" id="wCatChips" role="radiogroup" aria-labelledby="wCatLabel">
+            <button type="button" class="cat-chip" role="radio" data-cat="벙 소식">모임 모집</button>
+            <button type="button" class="cat-chip" role="radio" data-cat="후기">모임 후기</button>
+            <button type="button" class="cat-chip" role="radio" data-cat="정보">정보</button>
+            <button type="button" class="cat-chip" role="radio" data-cat="자유">자유</button>
+            <button type="button" class="cat-chip" role="radio" data-cat="공지">공지 <small>운영진</small></button>
+          </div>
+          <select id="wCat" class="sr-only" tabindex="-1" aria-hidden="true">
             <option value="자유" selected>자유</option>
             <option value="벙 소식">모임 모집</option>
             <option value="후기">모임 후기</option>
@@ -446,6 +491,7 @@
             <option value="공지">공지 (운영진)</option>
           </select>
           <p class="type-desc" id="typeDesc"></p>
+          <p class="cat-nudge" id="catNudge" hidden><span>모임을 모집하는 글이면 모임 모집으로 올려야 참석 버튼이 생깁니다.</span> <button type="button" class="btn btn-secondary is-sm" id="catNudgeBtn">모임 모집으로 바꾸기</button></p>
         </div>
         <p class="form-note is-wide" id="capsNote" hidden>서버 업데이트 전이라 이 종류의 항목은 저장되지 않습니다. 날짜와 장소는 본문에 적어 주세요.</p>
         <div class="field is-wide" data-field="wTitle">
@@ -461,12 +507,14 @@
           <span class="field-error" hidden></span>
         </div>
         <div class="form-sec is-wide">작성 정보</div>
+        <!-- 이 브라우저에 닉네임과 비밀번호가 저장돼 있으면 칸 대신 한 줄로. 바꾸기를 누르면 칸이 열린다 -->
+        <p class="author-sum is-wide" id="authorSum" hidden><span id="authorSumText"></span><button type="button" class="text-btn" id="authorSumEdit">바꾸기</button></p>
         <div class="field" data-field="wNick" id="wNickWrap">
           <label for="wNick">닉네임</label>
           <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
           <span class="field-error" hidden></span>
         </div>
-        <div class="field" data-field="wPass">
+        <div class="field" data-field="wPass" id="wPassWrap">
           <label for="wPass">비밀번호</label>
           <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
           <span class="field-hint" id="wPassHint">글을 수정하거나 삭제할 때 필요합니다.</span>
@@ -562,7 +610,7 @@
     </div>
   </div>
 
-  <button class="fab" id="fabWrite" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>글쓰기</button>
+  <button class="fab" id="fabWrite" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg><span id="fabLabel">글쓰기</span></button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- 공통 셸 JS -->
@@ -616,7 +664,13 @@
     /* 주소의 ?cat= 값. /bung 은 bung.html(미리보기 카드용)이 받아 news.html?cat=bung 으로 보낸다(vercel.json) */
     const CAT_KEYS = { notice: "공지", bung: "벙 소식", review: "후기", info: "정보", free: "자유" };
     function catFromUrl() { try { const v = new URLSearchParams(location.search).get("cat") || ""; return CAT_KEYS[v] || (CATS.includes(v) ? v : ""); } catch (e) { return ""; } }
-    function setCatChips() { $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); }); }
+    function setCatChips() {
+      $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); });
+      // 모임 모집을 보고 있으면 떠 있는 단추와 머리 단추를 '모임 올리기' 로
+      const label = state.category === "벙 소식" ? "모임 올리기" : "글쓰기";
+      const f = document.getElementById("fabLabel"); if (f) f.textContent = label;
+      const h = document.getElementById("heroWriteBtn"); if (h) h.textContent = label;
+    }
     function syncCatUrl() {
       try {
         const key = Object.keys(CAT_KEYS).find((k) => CAT_KEYS[k] === state.category), u = new URL(location.href);
@@ -679,16 +733,17 @@
       "벙 소식": [
         { key: "date", label: "모임 날짜", type: "date", req: true, group: "언제", chips: "date" },
         { key: "time", label: "시간", type: "time", req: true, chips: "time" },
-        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 강남역 3번 출구", list: "wf_place-list", map: true },
+        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 논현역 근처 고깃집", list: "wf_place-list", map: true },
         { key: "addr", type: "hidden", plc: true },          // 지도에서 고른 장소의 주소와 좌표(bung_place 서버). 글자 칸은 그대로 두고 따로 담는다
         { key: "lat", type: "hidden", plc: true, num: true },
         { key: "lng", type: "hidden", plc: true, num: true },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", chips: "cap", hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
-        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, group: "선택", chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
-        { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", ph: "예: 1인 3만원 안팎", hint: "비우면 항목이 보이지 않습니다.", v2: true },
-        { key: "apply", label: "신청 방법", type: "text", max: 80, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true, noAtt: true },
-        { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
-        { key: "status", label: "모집 상태", type: "select", options: [["", "모집 중"], ["closed", "마감"]], hint: "마감하면 참석을 더 받지 않습니다.", hintOff: "모임장이 직접 바꿉니다.", v2: true }
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", chips: "cap", self: true, hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        // 여기부터는 '더 적기' 안(more: true). 새 글에서는 모집 상태를 묻지 않는다(올린 뒤 카드의 모집 마감으로)
+        { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", more: true, ph: "예: 1인 3만원 안팎", v2: true },
+        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, more: true, chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
+        { key: "apply", label: "신청 방법", type: "text", max: 80, more: true, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true, noAtt: true },
+        { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, more: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
+        { key: "status", label: "모집 상태", type: "select", more: true, editOnly: true, options: [["", "모집 중"], ["closed", "마감"]], hint: "마감하면 참석을 더 받지 않습니다.", hintOff: "모임장이 직접 바꿉니다.", v2: true }
       ],
       "후기": [
         { key: "activity", label: "모임이나 활동 종류", type: "text", max: 40, ph: "예: 산책, 고기 모임" },
@@ -709,7 +764,7 @@
       category: "전체", sort: "latest", search: "",
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
-      myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {},
+      myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {}, hostMenu: {},
       attendOn: false, placeOn: false, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
@@ -954,7 +1009,7 @@
       else if (!comments.length) commentsHTML = `<div class="comment-empty">댓글이 없습니다.</div>`;
       else commentsHTML = comments.map(commentHTML).join("");
       const lead = (v.kind === "notice" || v.kind === "info") && v.meta && v.meta.summary ? `<p class="pd-lead">${esc(v.meta.summary)}</p>` : "";
-      const body = v.body.trim() ? `<div class="post-body">${renderBody(v.body)}</div>` : `<div class="post-body is-empty">본문이 없습니다.</div>`;
+      const body = v.body.trim() ? `<div class="post-body">${renderBody(v.body)}</div>` : v.kind === "bung" ? "" : `<div class="post-body is-empty">본문이 없습니다.</div>`;   // 모임 글은 카드가 곧 내용이라 빈 본문을 그리지 않는다
       const updated = post.updated_at && post.created_at && String(post.updated_at).slice(0, 16) !== String(post.created_at).slice(0, 16)
         ? `<p class="post-updated">${esc(C.relTime(post.updated_at))} 수정</p>` : "";
       const card = v.kind === "bung" && state.attendOn && v.meta && v.meta.date;
@@ -1136,10 +1191,11 @@
 
     // ── 비밀번호 모달 ──
     let passResolve = null;
-    function askPassword(title, desc) {
+    /* prefill: 이 브라우저에 저장된 글 비밀번호(모임장이 같은 기기에서 다시 치지 않게). 운영진 일에는 넘기지 않는다 */
+    function askPassword(title, desc, prefill) {
       return new Promise((resolve) => {
         passResolve = resolve;
-        $("passTitle").textContent = title; $("passDesc").textContent = desc; $("passInput").value = "";
+        $("passTitle").textContent = title; $("passDesc").textContent = desc; $("passInput").value = prefill || "";
         $("passBackdrop").hidden = false;
         setTimeout(() => $("passInput").focus(), 30);
       });
@@ -1164,15 +1220,23 @@
       if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
       const picked = f.map ? `<p class="place-picked" id="wf_placePicked" hidden>${icon("pin")}<span id="wf_placeAddr"></span><button type="button" class="text-btn is-quiet" data-act="place-clear">지우기</button></p>` : "";
       const hint = !state.attendOn && f.hintOff ? f.hintOff : f.hint;
-      const chips = f.chips ? `<div class="chips" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip" data-v="${esc(c.v)}">${esc(c.label)}</button>`).join("")}</div>` : "";
-      return `<div class="field${f.wide || withMap ? " is-wide" : ""}" data-field="${id}">${label}${input}${picked}${chips}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+      const chips = f.chips ? `<div class="chips${f.chips === "date" ? " is-scroll" : ""}" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip" data-v="${esc(c.v)}">${esc(c.label)}</button>`).join("")}</div>` : "";
+      // 새 모임 글: 모임장도 참석자로 넣을지(기본 켬). 켜 두면 올리자마자 명단 첫 줄에 들어가 인원에 셈된다
+      const self = f.self && state.attendOn && !state.editingId ? `<label class="self-att"><input type="checkbox" id="wSelfAttend" checked /> 나도 참석자로 넣기</label>` : "";
+      const slot = f.key === "time" ? `<p class="slot-warn" id="slotWarn" role="status" hidden></p>` : "";
+      return `<div class="field${f.wide || withMap ? " is-wide" : ""}" data-field="${id}">${label}${input}${picked}${chips}${slot}${self}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
-    /* 한 번에 고르는 단추: 날짜는 오늘부터 이레, 시간과 인원은 자주 쓰는 값, 신청 마감은 시작 시각에서 셈 */
+    /* 한 번에 고르는 단추: 날짜는 오늘부터 두 주(가로로 넘김), 시간과 인원은 자주 쓰는 값, 신청 마감은 시작 시각에서 셈 */
     const DOW = "일월화수목금토";
+    const TIME_CHIPS = ["12:00", "14:00", "15:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "21:00"];
+    let chipCtx = null;   // 고치는 글의 지금 값(그 시간이 단추에 없으면 하나 더 붙인다)
     function addDays(ymd, n) { const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
     function chipList(kind) {
-      if (kind === "date") { const t = C.kstToday(); return Array.from({ length: 7 }, (_, i) => { const v = addDays(t, i); const dow = DOW[new Date(v + "T00:00:00Z").getUTCDay()]; return { v, label: i === 0 ? "오늘" : i === 1 ? "내일" : dow + " " + Number(v.slice(5, 7)) + "/" + Number(v.slice(8, 10)) }; }); }
-      if (kind === "time") return ["12:00", "14:00", "18:00", "19:00", "19:30", "20:00"].map((v) => ({ v, label: v }));
+      if (kind === "date") { const t = C.kstToday(); return Array.from({ length: 14 }, (_, i) => { const v = addDays(t, i); const dow = DOW[new Date(v + "T00:00:00Z").getUTCDay()]; return { v, label: i === 0 ? "오늘" : i === 1 ? "내일" : dow + " " + Number(v.slice(5, 7)) + "/" + Number(v.slice(8, 10)) }; }); }
+      if (kind === "time") {
+        const cur = chipCtx && /^\d{2}:\d{2}$/.test(chipCtx.time || "") ? chipCtx.time : "";
+        return (cur && !TIME_CHIPS.includes(cur) ? TIME_CHIPS.concat(cur).sort() : TIME_CHIPS).map((v) => ({ v, label: v }));
+      }
       if (kind === "cap") return [4, 6, 8, 10].map((n) => ({ v: String(n), label: n + "명" }));
       if (kind === "deadline") return [{ v: "-60", label: "시작 1시간 전" }, { v: "day12", label: "당일 12:00" }, { v: "prev21", label: "전날 21:00" }, { v: "", label: "시작까지" }];
       return [];
@@ -1202,22 +1266,58 @@
       const seen = new Set();
       return state.posts.filter((p) => p.category === "벙 소식").map((p) => ((C.postMeta(p) || {}).place || "").trim()).filter((x) => x && !seen.has(x) && seen.add(x)).slice(0, 20);
     }
+    /* 모임 모집은 필수 칸(모임명, 언제, 어디서, 몇 명)만 펼치고, 비용과 신청 마감과 준비물과 내용은 '더 적기' 안에 둔다.
+       내용 칸(wBody)은 다른 종류에서는 제자리에, 모임 모집에서는 '더 적기' 맨 아래로 옮긴다 */
+    function bodyField() { return document.querySelector('#writeForm [data-field="wBody"]'); }
     function renderTypeFields(cat, meta) {
-      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (cat === "벙 소식" && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn) && !(f.plc && !state.placeOn));
+      const isBung = cat === "벙 소식";
+      chipCtx = meta || null;
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (isBung && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn) && !(f.plc && !state.placeOn) && !(f.editOnly && !state.editingId));
+      const main = isBung ? fields.filter((f) => !f.more) : fields, extra = isBung ? fields.filter((f) => f.more) : [];
       let last = "", html = "";
-      fields.forEach((f) => { if (f.group && f.group !== last) { html += `<div class="fg-h is-wide">${esc(f.group)}</div>`; last = f.group; } html += fieldHTML(f); });
+      main.forEach((f) => { if (f.group && f.group !== last) { html += `<div class="fg-h is-wide">${esc(f.group)}</div>`; last = f.group; } html += fieldHTML(f); });
+      if (isBung) {
+        const note = extra.map((f) => f.label).concat("내용").join(", ");
+        html += `<details class="more-fold" id="moreFold"><summary>더 적기 <small>${esc(note)}</small></summary><div class="more-body" id="moreBody">${extra.map(fieldHTML).join("")}</div></details>`;
+      }
       if (fields.some((f) => f.list === "wf_place-list")) html += `<datalist id="wf_place-list">${placeOptions().map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist>`;
+      const bf = bodyField();
+      if (bf && $("typeFields").contains(bf)) $("typeFields").after(bf);   // 지난번에 '더 적기' 안으로 옮긴 내용 칸을 먼저 꺼낸다(다시 그릴 때 같이 지워지지 않게)
       $("typeFields").innerHTML = html;
+      if (bf && isBung) $("moreBody").appendChild(bf);
       $("typeDesc").textContent = typeDesc(cat);
-      $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && cat !== "벙 소식");
-      $("wTitleLabel").textContent = cat === "벙 소식" ? "모임명" : "제목";
-      $("wTitle").placeholder = cat === "벙 소식" ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
-      $("wBodyLabel").textContent = cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
+      $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && !isBung);
+      $("wTitleLabel").textContent = isBung ? "모임명" : "제목";
+      $("wTitle").placeholder = isBung ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
+      $("wBodyLabel").innerHTML = isBung ? "내용 <small>선택</small>" : cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
+      $("wBody").placeholder = isBung ? "예: 편하게 오세요. 가게는 정해지면 알려드릴게요." : "내용";
       $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
+      // 모임 모집은 올린 글의 카드가 곧 미리보기라 아래 미리보기 상자를 빼서 창을 줄인다
+      const pv = document.querySelector("#writeForm .form-preview"); if (pv) pv.hidden = isBung;
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
+      // 고치는 글에 '더 적기' 쪽 값이 있으면 펼쳐 둔다
+      if (isBung && meta && extra.some((f) => meta[f.key] != null && String(meta[f.key]) !== "")) $("moreFold").open = true;
+      syncCatChips(cat);
+      $("catNudge").hidden = true;
+      syncAuthor();
       syncPlacePicked();
       syncChips();
     }
+    function syncCatChips(cat) {
+      $("wCatChips").querySelectorAll(".cat-chip").forEach((b) => { const on = b.dataset.cat === cat; b.setAttribute("aria-checked", String(on)); b.tabIndex = on ? 0 : -1; });
+    }
+    /* 저장된 닉네임과 비밀번호가 있으면 칸 대신 한 줄. 공지(운영진 비밀번호)와 바꾸기를 누른 뒤에는 칸을 보인다 */
+    let authorOpen = false;
+    function syncAuthor() {
+      const cat = $("wCat").value, editing = !!state.editingId;
+      const nick = $("wNick").value.trim(), pass = $("wPass").value;
+      const fold = !authorOpen && cat !== "공지" && pass.trim().length >= 4 && (editing ? !!ownPass(findPost(state.editingId)) : !!nick) && pass === savedPass();
+      $("authorSum").hidden = !fold;
+      $("wNickWrap").classList.toggle("is-folded", fold);
+      $("wPassWrap").classList.toggle("is-folded", fold);
+      if (fold) $("authorSumText").textContent = editing ? "저장된 비밀번호로 저장합니다." : nick + " 이름으로 올립니다. 비밀번호는 저장된 것을 씁니다.";
+    }
+    function openAuthor() { authorOpen = true; syncAuthor(); }
     function readMeta() {
       const cat = $("wCat").value;
       const m = {};
@@ -1262,20 +1362,50 @@
       $("draftNote").hidden = !state.draftHold;
       if (state.draftHold) $("draftNoteTitle").textContent = existing.title ? "“" + existing.title.slice(0, 30) + "”" : "제목 없는 글";
       const cat = post ? post.category : (init && init.category && CATS.includes(init.category) ? init.category : "자유");
+      authorOpen = false;
       $("wCat").value = cat;
       renderTypeFields(cat, post ? C.postMeta(post) : (init && init.meta) || null);
       $("wTitle").value = post ? post.title : (init && init.title) || "";
-      $("wBody").value = post ? post.body : (init && init.body) || "";
+      const body0 = post ? post.body : (init && init.body) || "";
+      $("wBody").value = String(body0).trim() ? body0 : "";   // 본문 없이 올린 모임 글은 서버에 공백 하나로 남아 있다
       if (draft) showToast("작성 중이던 글을 다시 불러왔습니다.");
       $("wCount").textContent = $("wBody").value.length + " / 4000";
       $("wNick").value = post ? post.author : savedNick();   // 수정 창에 남은 다른 사람 이름을 새 글에 물려주지 않는다
       $("wNickWrap").hidden = !!post;
-      $("wPass").value = post && post.category === "공지" ? "" : savedPass();
-      $("writeSubmitBtn").textContent = post ? "저장" : "등록";
+      $("wPass").value = post ? (post.category === "공지" ? "" : ownPass(post)) : savedPass();   // 남의 글을 고칠 때는 내 저장 비밀번호를 채우지 않는다
+      $("writeSubmitBtn").textContent = post ? "저장" : cat === "벙 소식" ? "모임 올리기" : "등록";
+      $("writeTitle").textContent = post ? "글 수정" : cat === "벙 소식" ? "모임 올리기" : "글쓰기";
+      if (cat === "벙 소식" && $("wBody").value.trim() && $("moreFold")) $("moreFold").open = true;
       syncPassHint();
+      syncAuthor();
       renderPreview();
       $("writeBackdrop").hidden = false;
-      setTimeout(() => $(post ? "wTitle" : "wCat").focus(), 60);
+      // 종류가 정해져 열렸으면 바로 제목 칸, 아니면 종류 단추(폰 자판이 종류 단추를 가리지 않게)
+      setTimeout(() => {
+        if (post || (init && init.category)) $("wTitle").focus();
+        else { const c = $("wCatChips").querySelector('[aria-checked="true"]'); if (c) c.focus(); }
+      }, 60);
+    }
+    /* 종류 단추: 고르면 숨은 select 값을 바꾸고 칸을 다시 그린다(제목과 내용은 그대로) */
+    function pickCat(cat) {
+      if (!CATS.includes(cat) || $("wCat").value === cat) { syncCatChips($("wCat").value); return; }
+      const keep = readMeta();
+      $("wCat").value = cat;
+      if (cat === "공지" && $("wPass").value === savedPass()) $("wPass").value = "";   // 운영진 비밀번호는 저장값으로 채우지 않는다
+      if (cat !== "공지" && !$("wPass").value) $("wPass").value = savedPass();
+      renderTypeFields(cat, keep && C.postType(cat).kind === keep.kind ? keep : null);
+      if (!state.editingId) {
+        $("writeSubmitBtn").textContent = cat === "벙 소식" ? "모임 올리기" : "등록";
+        $("writeTitle").textContent = cat === "벙 소식" ? "모임 올리기" : "글쓰기";
+      }
+      syncAuthor();
+      renderPreview(); saveDraft();
+    }
+    /* 자유나 정보 글에 모임 모집처럼 보이는 말이 있으면 모임 모집으로 바꾸자고 한 줄 */
+    const BUNG_WORDS = /(벙|번개|모임|모집|정모|[0-9]+\s*명|[0-9]{1,2}\s*시)/;
+    function syncCatNudge() {
+      const cat = $("wCat").value;
+      $("catNudge").hidden = !((cat === "자유" || cat === "정보") && !state.editingId && BUNG_WORDS.test($("wTitle").value + " " + $("wBody").value.slice(0, 200)));
     }
     function closeWriteModal() { $("writeBackdrop").hidden = true; }
     function validateWrite() {
@@ -1287,7 +1417,7 @@
       if (!$("wTitle").value.trim()) { setError("wTitle", cat === "벙 소식" ? "모임명을 입력해 주세요." : "제목을 입력해 주세요."); ok = false; }
       else if ($("wTitle").value.trim().length > 100) { setError("wTitle", "제목은 100자까지입니다."); ok = false; }
       if ($("wBody").value.length > 4000) { setError("wBody", "내용은 4000자까지입니다."); ok = false; }
-      if (!$("wBody").value.trim()) { setError("wBody", "내용을 입력해 주세요."); ok = false; }
+      if (!$("wBody").value.trim() && cat !== "벙 소식") { setError("wBody", "내용을 입력해 주세요."); ok = false; }   // 모임 모집은 항목이 곧 내용이라 비워도 된다
       document.querySelectorAll("#typeFields [data-key]").forEach((el) => {
         const v = String(el.value || "").trim();
         if (!v) return;
@@ -1313,12 +1443,17 @@
         if (dl && dl.value && d && t && d.value && t.value) {
           const v = dl.value.slice(0, 16), old = state.editingId ? (C.postMeta(findPost(state.editingId) || {}) || {}).deadline || "" : "";
           if (v > d.value + "T" + t.value) { setError("wf_deadline", "신청 마감은 모임 시작보다 늦을 수 없습니다."); ok = false; }
-          else if (v !== old && v <= nowKey()) { setError("wf_deadline", "신청 마감이 이미 지났습니다."); ok = false; }
+          else if ((v !== old || slotChanged(d.value, t.value)) && v <= nowKey()) { setError("wf_deadline", "신청 마감이 이미 지났습니다."); ok = false; }   // 날짜를 옮기면 신청 마감도 다시 본다(서버와 같은 규칙)
         }
       }
       const from = $("wf_from"), to = $("wf_to");
       if (from && to && from.value && to.value && to.value < from.value) { setError("wf_to", "종료일은 적용일보다 뒤여야 합니다."); ok = false; }
-      if (!ok) firstInvalid();
+      if (!ok) {
+        // 접혀 있는 칸에 오류가 있으면 펼쳐서 보이게
+        if (document.querySelector("#authorSum:not([hidden])") && document.querySelector("#wNickWrap.is-invalid, #wPassWrap.is-invalid")) openAuthor();
+        const mf = $("moreFold"); if (mf && mf.querySelector(".is-invalid")) mf.open = true;
+        firstInvalid();
+      }
       return ok;
     }
     /* 새 글이거나, 고치는 글의 날짜나 시간이 바뀌었는지(그대로면 지난 시각, 같은 시간대 확인을 하지 않는다) */
@@ -1405,15 +1540,23 @@
       if (mine && !past) btn = `<button type="button" class="btn btn-secondary" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
       else if (st.open) btn = `<button type="button" class="btn btn-primary" data-act="attend" data-id="${post.id}">참석하기</button>`;
       else if (!past) btn = `<button type="button" class="btn btn-secondary" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
-      // 보조 동작은 둘째 줄: 다른 기기에서 참석한 사람의 취소와 모임장의 빼기, 명단 복사, 모임장의 참석자 추가와 마감(글 비밀번호)
+      // 참석 단추 옆에 공유(올린 사람도, 친구를 부르는 멤버도 바로 채팅방으로). 지난 모임은 공유 대신 후기 쓰기가 아래에 있다
+      const shareBtn = past ? "" : `<button type="button" class="btn btn-secondary bc-share" data-act="share" data-id="${post.id}">${icon("send", "is-sm")} 공유</button>`;
+      // 모임장 메뉴: 수정, 모집 마감과 다시 모집, 참석자 추가, 명단에서 빼기, 명단 복사, 이 글로 또 열기, 정산하기.
+      // 글쓴이 기기(저장된 닉네임이 모임장)에서는 펼쳐 두고, 다른 사람에게는 접어 둔다
       const sub = [];
       const recent = !past || (days != null && days >= -7);   // 모임장은 시작 뒤에도(일주일 안) 늦게 온 사람을 적거나 안 온 사람을 뺄 수 있다(서버도 허용)
-      if (list && list.length && recent && !(mine && !past)) sub.push(`<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">명단에서 빼기 <small>다른 기기, 모임장</small></button>`);
-      if (list && list.length) sub.push(`<button type="button" class="text-btn is-quiet" data-act="copy-att" data-id="${post.id}">명단 복사</button>`);
-      if (state.placeOn && recent) sub.push(`<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가 <small>모임장</small></button>`);
+      sub.push(`<button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>`);
       if (!past && st.why !== "nodate") sub.push(m.status === "closed"
-        ? `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="">다시 모집 <small>모임장</small></button>`
-        : `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="closed">모집 마감 <small>모임장</small></button>`);
+        ? `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="">다시 모집</button>`
+        : `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="closed">모집 마감</button>`);
+      if (state.placeOn && recent) sub.push(`<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가</button>`);
+      if (list && list.length && recent && !(mine && !past)) sub.push(`<button type="button" class="text-btn is-quiet" data-act="unattend" data-id="${post.id}">명단에서 빼기</button>`);
+      if (list && list.length) sub.push(`<button type="button" class="text-btn is-quiet" data-act="copy-att" data-id="${post.id}">명단 복사</button>`);
+      sub.push(`<button type="button" class="text-btn is-quiet" data-act="repost" data-id="${post.id}">이 글로 또 열기</button>`);
+      if (past || (list && list.length)) sub.push(`<button type="button" class="text-btn is-quiet" data-act="settle" data-id="${post.id}">정산하기</button>`);
+      const isAuthor = !!savedNick() && nickKey(savedNick()) === host;
+      const menuOpen = state.hostMenu[post.id] != null ? state.hostMenu[post.id] : isAuthor;
       const many = !!(list && list.length > ATT_FOLD && !state.attMore[post.id]);
       let names;
       if (failed) names = `<p class="att-empty">명단을 불러오지 못했습니다. <button type="button" class="text-btn" data-act="retry-att" data-id="${post.id}">다시 시도</button></p>`;
@@ -1425,9 +1568,9 @@
           <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
           ${m.place ? `<div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div>` : ""}
           <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
-          ${btn ? `<div class="att-acts">${btn}</div>` : ""}
+          ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
           ${names}
-          ${sub.length ? `<div class="att-sub">${sub.join("")}</div>` : ""}
+          <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }
     async function copyAttendList(id) {
@@ -1439,11 +1582,13 @@
       showToast(ok ? "참석 명단을 복사했습니다." : "복사에 실패했습니다.");
     }
     /* 모임장의 빠른 마감과 다시 모집: 글 비밀번호(또는 운영진)로 모집 상태만 바꾼다. 나머지 항목은 그대로 보낸다 */
+    /* 이 기기의 저장 닉네임이 글쓴이면 저장된 비밀번호를 미리 채운다(같은 기기에서 같은 비밀번호를 거듭 치지 않게) */
+    function ownPass(post) { return post && savedNick() && nickKey(savedNick()) === nickKey(post.author) ? savedPass() : ""; }
     async function setRecruit(id, close) {
       if (state.busy) return;
       const post = findPost(id); if (!post) return;
       const pass = await askPassword(close ? "모집 마감 (모임장)" : "다시 모집 (모임장)",
-        close ? "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 마감하면 참석을 더 받지 않습니다." : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 정원이 남은 만큼 다시 참석을 받습니다.");
+        close ? "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 마감하면 참석을 더 받지 않습니다." : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. 정원이 남은 만큼 다시 참석을 받습니다.", ownPass(post));
       if (pass === null) return;
       const meta = Object.assign({}, C.postMeta(post) || {});
       if (close) meta.status = "closed"; else delete meta.status;
@@ -1654,6 +1799,29 @@
         .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: /^\d{2}:\d{2}$/.test(m.time || "") ? m.time : "시간 미정", place: m.place || "" }))
         .sort((a, b) => a.time.localeCompare(b.time));
     }
+    /* 날짜와 시간을 고르는 순간 같은 시간대(앞뒤 2시간)의 모집 중인 모임을 시간 칸 아래 한 줄로 알린다. 등록 때의 동의 창은 그대로 */
+    let slotSeq = 0;
+    async function checkSlotEarly() {
+      const box = $("slotWarn"); if (!box) return;
+      const d = ($("wf_date") || {}).value, t = ($("wf_time") || {}).value;
+      if ($("wCat").value !== "벙 소식" || !d || !t || !slotChanged(d, t)) { box.hidden = true; return; }
+      const seq = ++slotSeq;
+      let near = [];
+      try { near = await sameSlot({ date: d, time: t }, state.editingId); } catch (e) { near = []; }
+      if (seq !== slotSeq || !$("slotWarn")) return;
+      box.hidden = !near.length;
+      if (near.length) box.textContent = "같은 시간대에 모집 중: " + near.slice(0, 2).map((n) => n.time + " " + n.title + (n.author ? "(" + n.author + ")" : "")).join(", ") + (near.length > 2 ? " 외 " + (near.length - 2) + "건" : "");
+    }
+    /* 이 글로 또 열기: 모임명, 장소(주소와 좌표), 인원, 비용, 준비물, 내용을 채운 새 글. 날짜와 시간과 신청 마감은 비운다 */
+    function repostBung(id) {
+      const p = findPost(id); if (!p) return;
+      const m = C.postMeta(p) || {};
+      const keep = {};
+      ["place", "addr", "lat", "lng", "cap", "cost", "bring"].forEach((k) => { if (m[k] != null && m[k] !== "") keep[k] = m[k]; });
+      openWriteModal(null, { category: "벙 소식", title: p.title || "", body: String(p.body || "").trim() ? p.body : "", meta: Object.keys(keep).length ? keep : null });
+      showToast("날짜와 시간만 골라 주세요.");
+      setTimeout(() => { const d = $("wf_date"); if (d) d.closest(".field").scrollIntoView({ block: "center" }); }, 80);
+    }
     let dupResolve = null;
     function askDup(near) {
       return new Promise((resolve) => {
@@ -1661,6 +1829,7 @@
         $("dupList").innerHTML = near.map((n) => `<li><b>${esc(n.time)}</b> ${esc(n.title)}${n.place ? ", " + esc(n.place) : ""}${n.author ? `, 모임장 ${esc(n.author)}` : ""}</li>`).join("");
         $("dupConsent").checked = false;
         $("dupOk").disabled = true;
+        $("dupOk").textContent = state.editingId ? "이대로 저장" : "이대로 등록";
         $("dupBackdrop").hidden = false;
         setTimeout(() => $("dupCancel").focus(), 30);
       });
@@ -1677,7 +1846,9 @@
       if (!validateWrite()) return;
       const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
       const title = $("wTitle").value.trim(), meta = readMeta();
-      const body = $("wBody").value;
+      // 모임 모집은 내용을 비워도 된다. 서버 표는 내용이 한 글자 이상이어야 해서 공백 하나로 보낸다(화면은 빈 내용을 그리지 않는다)
+      const body = cat === "벙 소식" && !$("wBody").value.trim() ? " " : $("wBody").value;
+      const selfAttend = !state.editingId && cat === "벙 소식" && state.attendOn && !!($("wSelfAttend") && $("wSelfAttend").checked);
       if (cat === "벙 소식" && meta && meta.date && meta.time) {
         if (slotChanged(meta.date, meta.time)) {
           state.busy = true;
@@ -1700,8 +1871,9 @@
       const send = () => editing
         ? supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) })
         : supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
+      let newId = null;
       try {
-        try { await send(); }
+        try { newId = await send(); }
         catch (err) {   // 화면이 못 본 같은 시간대 겹침(목록 밖의 글, 시간 없는 글)은 서버가 BUNG_DUP 으로 알려 준다: 동의를 받아 한 번 더
           if (!meta || meta.dup || !/BUNG_DUP/.test(String(err && err.message))) throw err;
           let near = [];
@@ -1709,30 +1881,41 @@
           if (!near.length) near = [{ time: meta.time || "", title: "같은 시간대의 모집 중인 모임(목록에서 찾지 못함)", author: "", place: "" }];
           if (!(await askDup(near))) return;
           meta.dup = "consent";
-          await send();
+          newId = await send();
+        }
+        newId = Number(newId) > 0 ? Number(newId) : null;
+        // 모임장도 참석자로(새 모임 글, 켜 두었을 때). 같은 닉네임과 글 비밀번호로 참석한다. 실패해도 글은 올라가 있다
+        let selfOk = false;
+        if (selfAttend && newId) {
+          try {
+            const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: newId, p_nick: nick, p_pass: pass }) });
+            applyAttendList(newId, res); rememberAttend(newId, nick); selfOk = true;
+          } catch (e) {}
         }
         if (editing) showToast("글을 저장했습니다.");
-        else { saveNick(nick); savePass(pass, cat); showToast("글을 등록했습니다."); }
+        else { saveNick(nick); savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
         closeWriteModal();
         if (!editing && !state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
         const keepId = state.editingId;
         renderListLoading();
         await loadPosts(true);
-        if (keepId) { state.expandedId = keepId; renderList(); if (state.commentsCache[keepId] === undefined) loadComments(keepId); }
+        // 올리거나 고친 글로 데려가 펼친다(목록 맨 위에 두기만 하면 올라간 줄 모른다). 첫 쪽 밖이면 글 하나를 따로 받는다
+        const goId = keepId || newId;
+        if (goId) gotoPost(goId);
       } catch (err) {
         const msg = rpcErrorMessage(err);
-        if (/BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { setError("wPass", msg); firstInvalid(); }
+        if (/BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { openAuthor(); setError("wPass", msg); firstInvalid(); }
         else showToast(msg);
       } finally {
-        state.busy = false; btn.disabled = false; btn.textContent = editing ? "저장" : "등록";
+        state.busy = false; btn.disabled = false; btn.textContent = editing ? "저장" : cat === "벙 소식" ? "모임 올리기" : "등록";
       }
     }
 
     // ── 삭제 / 고정 ──
     async function deletePost(id) {
       if (state.busy) return;
-      const pass = await askPassword("글 삭제", "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.");
+      const pass = await askPassword("글 삭제", "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ownPass(findPost(id)));
       if (pass === null) return;
       state.busy = true;
       try {
@@ -1897,12 +2080,22 @@
       $("passForget").addEventListener("click", forgetPass);
       $("writeBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeWriteModal(); });
       $("wCat").addEventListener("change", () => { renderTypeFields($("wCat").value, null); renderPreview(); });
-      let pvTimer = null;
+      $("wCatChips").addEventListener("click", (e) => { const b = e.target.closest(".cat-chip"); if (b) pickCat(b.dataset.cat); });
+      $("wCatChips").addEventListener("keydown", (e) => {   // 라디오 묶음처럼 좌우 화살표로 옮겨 고른다
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        const bs = [...$("wCatChips").querySelectorAll(".cat-chip")], i = bs.indexOf(document.activeElement); if (i < 0) return;
+        e.preventDefault(); const n = bs[(i + (e.key === "ArrowRight" ? 1 : bs.length - 1)) % bs.length]; n.focus(); pickCat(n.dataset.cat);
+      });
+      $("catNudgeBtn").addEventListener("click", () => { pickCat("벙 소식"); const d = $("wf_date"); if (d) d.closest(".field").scrollIntoView({ block: "center" }); });
+      $("authorSumEdit").addEventListener("click", () => { openAuthor(); $(state.editingId ? "wPass" : "wNick").focus(); });
+      let pvTimer = null, slotTimer = null;
       $("writeForm").addEventListener("input", (e) => {
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
         if (e.target.closest("#typeFields")) syncChips();
+        if (e.target.id === "wTitle" || e.target.id === "wBody") syncCatNudge();
+        if (e.target.id === "wf_date" || e.target.id === "wf_time") { clearTimeout(slotTimer); slotTimer = setTimeout(checkSlotEarly, 350); }
       });
       $("typeFields").addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");
@@ -1968,6 +2161,8 @@
         if (act === "attend") { openAttend(id, "attend"); return; }
         if (act === "unattend") { openAttend(id, "unattend"); return; }
         if (act === "host-attend") { openAttend(id, "host"); return; }
+        if (act === "repost") { repostBung(id); return; }
+        if (act === "settle") { location.href = "calculator.html?bung=" + id; return; }
         if (act === "retry-att") { delete state.attend[id]; renderList(); loadAttend([id]); return; }
         if (act === "att-more") { state.attMore[id] = true; renderList(); return; }
         if (act === "copy-att") { copyAttendList(id); return; }
@@ -1979,6 +2174,8 @@
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
 
+      // 모임장 메뉴를 펴고 접은 것을 기억한다(목록을 다시 그려도 그대로)
+      $("postList").addEventListener("toggle", (e) => { const d = e.target; if (d.classList && d.classList.contains("host-menu")) state.hostMenu[Number(d.dataset.post)] = d.open; }, true);
       $("dupConsent").addEventListener("change", () => { $("dupOk").disabled = !$("dupConsent").checked; });
       $("dupOk").addEventListener("click", () => { if ($("dupConsent").checked) closeDup("consent"); });
       $("attOk").addEventListener("click", submitAttend);
@@ -2026,6 +2223,14 @@
     renderListLoading();
     loadPosts(true).then(openPromptFromHash).then(loadPopular).then(openFromHash);
     window.addEventListener("hashchange", openFromHash);
+    // 홈의 '모임 올리기'(news.html?cat=bung&write=1): 서버 형식을 안 뒤 모임 모집 창을 연다. 주소에서 write 는 지운다
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.get("write") === "1") {
+        u.searchParams.delete("write"); history.replaceState(null, "", u.pathname + u.search + u.hash);
+        capsReady.then(() => openWriteModal(null, loadDraft() && loadDraft().category === "벙 소식" ? null : { category: "벙 소식" }));
+      }
+    } catch (e) {}
   </script>
 </body>
 </html>
