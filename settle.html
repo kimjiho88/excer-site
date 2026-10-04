@@ -152,8 +152,6 @@
       transition: transform 0.16s var(--ease), background 0.16s var(--ease), box-shadow 0.16s var(--ease);
     }
     .m-btn:hover { transform: none; }
-    .m-send { background: var(--pastel-mint); color: var(--brand); }
-    .m-send:hover { background: var(--brand-soft); }
     .m-toggle { background: #fff; color: var(--primary); border: 1px solid var(--line-strong); }
     .m-toggle:hover { border-color: var(--brand); }
     /* 끝난 줄을 흐리게(opacity 0.62) 처리하고 있었는데, 그 안의 글자 대비까지 같이
@@ -526,7 +524,6 @@
       const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
       return `${Number(m[1])}년 ${Number(m[2])}월 ${Number(m[3])}일 (${"일월화수목금토"[d.getDay()]})`;
     }
-    function isMobileUA() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ""); }
 
     async function copyToClipboard(text) {
       try {
@@ -557,7 +554,7 @@
     let detailsOpen = false;   // 폴링 재렌더 시 접기 상태 유지
     let lastLiveSig = "";      // 변화 없으면 재렌더 생략
     let wasComplete = null;    // 완료 전환 감지(축하 연출)
-    let accountOwner = "";     // 이 페이지에 실린 계좌의 주인 — 송금 버튼이 이 사람에게만 보낸다
+    let accountOwner = "";     // 이 페이지에 실린 계좌의 주인(내 정산 카드의 계좌 줄과 다른 결제자 안내에 쓴다)
     try { myName = localStorage.getItem(MYNAME_KEY) || ""; } catch (e) {}
 
     function b64urlDecode(s) {
@@ -738,15 +735,6 @@
         </section>`;
     }
 
-    /* owner 가 있으면 '그 사람에게 보낼 몫만'이라는 뜻이다 — 버튼에도 그렇게 적는다 */
-    function transferButton(amount, owner) {
-      const bank = payload.pay.bank.trim();
-      const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
-      if (!bank || !digits) return "";
-      const label = isMobileUA() ? "토스로 송금" : "계좌와 금액 복사";
-      return `<button class="m-btn m-send" type="button" data-send-amount="${amount}"${owner ? ` title="${escapeHTML(owner)} 님 계좌로 ${formatWon(amount)}"` : ""}>${label}</button>`;
-    }
-
     /* 이 사람이 누구에게 보내야 하는지.
        parts 는 받을 사람이 둘 이상일 때만 실려 오고, 예전에 만든 링크에는 아예 없다.
        groups(결제자별 명단)에서 찾으면 두 경우 모두 답이 나온다. */
@@ -781,7 +769,7 @@
       const toLine = to.length > 1 ? to.map((x) => `${x.payer}에게 ${formatWon(x.amount)}`).join(", ") : to.length ? `${to[0].payer}에게` : (single ? `${single}에게` : "");
       const missed = roundsMissed(r.name);
       const mineAcct = to.length ? to.find((x) => x.payer === accountOwner) : null;
-      const sendAmount = to.length ? (mineAcct ? mineAcct.amount : 0) : r.amount;
+      const toOwner = to.length ? (mineAcct ? mineAcct.amount : 0) : r.amount;   // 이 페이지 계좌의 주인에게 보낼 몫(없으면 계좌 줄을 보이지 않는다)
       const others = to.filter((x) => x.payer !== accountOwner).map((x) => x.payer);
       return `
         <section class="s-card card s-mine${isPaid ? " is-paid" : ""}" aria-label="내 정산">
@@ -790,10 +778,9 @@
           ${toLine ? `<p class="sm-to">${escapeHTML(toLine)}</p>` : ""}
           ${missed.length ? `<p class="sm-missed">${escapeHTML(missed.join(", "))} 불참</p>` : ""}
           ${to.filter((x) => x.net).map((x) => `<p class="sm-missed">${escapeHTML(x.payer)} 님과 서로 보낼 ${formatWon(x.net)}을 뺀 금액</p>`).join("")}
-          ${!isPaid && sendAmount && accountLine ? `<p class="sm-acct"><span>${escapeHTML(accountLine)}</span><button type="button" class="text-btn" data-copy-account="${escapeHTML(accountLine)}">계좌 복사</button></p>` : ""}
+          ${!isPaid && toOwner && accountLine ? `<p class="sm-acct"><span>${escapeHTML(accountLine)}</span><button type="button" class="text-btn" data-copy-account="${escapeHTML(accountLine)}">계좌 복사</button></p>` : ""}
           ${!isPaid && others.length ? `<p class="s-note" style="margin-top:8px">${escapeHTML(others.join(", "))} 님 계좌는 따로 확인해 주세요.</p>` : ""}
           <div class="sm-acts">
-            ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
             <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}" aria-pressed="${isPaid ? "true" : "false"}">${toggleLabel(isPaid)}</button>
           </div>
         </section>`;
@@ -818,11 +805,6 @@
       const partsLine = to.length
         ? `<span class="m-parts sep-row">${to.map((x) => `<span>${escapeHTML(x.payer)}에게 ${formatWon(x.amount)}</span>`).join("")}</span>`
         : "";
-      /* 송금 버튼은 이 페이지에 실린 계좌(한 사람 것)로만 보낸다.
-         결제자가 여럿일 때 합계를 그대로 물리면 다른 결제자 몫까지 그 계좌로 가 버린다 —
-         계좌 주인에게 갈 몫만 넘기고, 그런 몫이 없으면 버튼을 빼고 안내만 남긴다. */
-      const mine = to.length ? to.find((x) => x.payer === accountOwner) : null;
-      const sendAmount = to.length ? (mine ? mine.amount : 0) : r.amount;
       const missed = roundsMissed(r.name);
       return `
       <div class="m-row${isPaid ? " is-paid" : " is-wait"}${isMe ? " is-me" : ""}">
@@ -834,7 +816,6 @@
           ${to.filter((x) => x.net).map((x) => `<span class="m-missed">${escapeHTML(x.payer)} 님과 서로 보낼 ${formatWon(x.net)}을 뺀 금액</span>`).join("")}
         </div>
         <div class="m-actions">
-          ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
           <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}"
             aria-pressed="${isPaid ? "true" : "false"}">${toggleLabel(isPaid)}</button>
         </div>
@@ -1025,21 +1006,6 @@
     /* ============================================================
        동작
        ============================================================ */
-    async function handleTransfer(amount) {
-      const bank = payload.pay.bank.trim();
-      const digits = String(payload.pay.account || "").replace(/[^\d]/g, "");
-      if (!bank || !digits) { showToast("입금 계좌 정보가 없습니다."); return; }
-      if (isMobileUA()) {
-        window.location.href = "supertoss://send?amount=" + amount + "&bank=" + encodeURIComponent(bank) + "&accountNo=" + digits;
-        showToast("토스 앱을 엽니다. 열리지 않으면 계좌 복사를 이용해 주세요.");
-      } else {
-        const holder = payload.pay.holder.trim();
-        const text = `${bank} ${payload.pay.account.trim()}${holder ? ` (${holder})` : ""} ${formatWon(amount)}`;
-        const ok = await copyToClipboard(text);
-        showToast(ok ? "계좌와 금액을 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
-      }
-    }
-
     /* 내 이름은 맨 위 이름 단추로만 정한다(명단에서 누른 줄을 나로 기억하면, 옆 사람을 잘못 눌렀을 때 그 사람이 내가 된다) */
     function setMyName(name) {
       myName = name || "";
@@ -1134,8 +1100,6 @@
     app.addEventListener("click", async (e) => {
       const toggle = e.target.closest("[data-toggle-name]");
       if (toggle) { togglePaid(toggle.dataset.toggleName, !!toggle.closest(".s-mine")); return; }
-      const send = e.target.closest("[data-send-amount]");
-      if (send) { handleTransfer(Number(send.dataset.sendAmount) || 0); return; }
       const pick = e.target.closest("[data-me]");
       if (pick) { setMyName(pick.dataset.me); renderView(); window.scrollTo({ top: 0 }); return; }
       if (e.target.closest('[data-act="change-me"]')) {
