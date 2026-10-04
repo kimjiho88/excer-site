@@ -91,6 +91,11 @@
     .group-h:first-child { margin-top: 0; }
     .group-h .ic { width: 16px; height: 16px; color: var(--brand); }
     .group-h small { color: var(--ink-2); font-weight: 500; }
+    /* 다가오는 모임 머리의 '모임 올리기' 와 아래 '모두 보기' */
+    .group-h .group-act { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 700; }
+    .group-h .group-act .ic { width: 14px; height: 14px; }
+    .rows .group-more { display: block; padding: 12px 0; color: var(--brand); font-size: var(--fs-sm); font-weight: 700; }
+    .rows .group-none { margin: 0; padding: 12px 0; color: var(--ink-2); font-size: var(--fs-sm); }
     /* 이번 주 글감 줄 — 목록 아래 한 줄, 라벤더 면 */
     .prompt-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--brand-soft); color: var(--ink); font-size: var(--fs-sm); font-weight: 500; }
     .prompt-line > .ic { width: 18px; height: 18px; color: var(--brand); flex: none; }
@@ -104,8 +109,6 @@
     .news-row .row-state { align-self: center; }
     .rm-sub + .rm-who::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: var(--line-strong); vertical-align: -1px; }
     .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
-    .live-empty { border-bottom: 1px solid var(--line); padding: 28px 16px; }   /* 위 선은 제목 줄 선과 겹쳐 두 줄로 보였다 */
-    .live-empty .empty-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
     @media (max-width: 600px) {
       .news-row .row-title, .news-row .row-meta { white-space: normal; }
       .rm-sub { display: block; }
@@ -428,13 +431,13 @@
         var review = views.filter(function (v) { return v.kind === "review"; })[0] || null;
         var html = "";
         if (notice) html += '<div class="group-h">' + icon("megaphone") + '공지</div><div class="rows">' + rowHTML(notice) + "</div>";
-        if (upcoming.length) html += '<div class="group-h">' + icon("calendar") + '다가오는 모임</div><div class="rows">' + upcoming.map(rowHTML).join("") + "</div>";
+        // 다가오는 모임 머리에 '모임 올리기'(소식의 모임 모집 창을 바로 연다). 보이는 2건보다 많으면 전체 수와 함께 모임 모집 탭으로
+        var upAll = views.filter(function (v) { return C.isUpcoming(v, today, now); }).length;
+        var addLink = '<a class="group-act" href="news.html?cat=bung&amp;write=1">' + icon("pencil") + '모임 올리기</a>';
+        if (upcoming.length) html += '<div class="group-h">' + icon("calendar") + '다가오는 모임' + addLink + '</div><div class="rows">' + upcoming.map(rowHTML).join("") +
+          (upAll > upcoming.length ? '<a class="row group-more" href="news.html?cat=bung">다가오는 모임 ' + upAll + '건 모두 보기</a>' : "") + "</div>";
+        else html += '<div class="group-h">' + icon("calendar") + '다가오는 모임' + addLink + '</div><div class="rows"><p class="row group-none">예정된 모임이 없습니다.</p></div>';
         if (review) html += '<div class="group-h">' + icon("sparkle") + '최근 모임 후기</div><div class="rows">' + rowHTML(review) + "</div>";
-        if (!html) {
-          html = '<div class="empty-state live-empty"><span class="empty-ic">' + icon("calendar") + '</span><strong>고정된 공지와 예정된 모임이 없습니다.</strong>' +
-            '<p>새 모임은 오픈채팅 공지로 먼저 올라옵니다.</p>' +
-            '<div class="empty-acts"><a class="btn btn-primary is-sm" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a><a class="btn btn-secondary is-sm" href="news.html">소식 보기</a></div></div>';
-        }
         host.innerHTML = html;
         host.removeAttribute("aria-busy");
       }

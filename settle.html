@@ -260,6 +260,22 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── 47차: 내 정산(맨 위), 내 이름 고르기, 차수 불참 ── */
+    .s-mine { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+    .s-mine .sm-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .s-mine .sm-top b { font-size: 15px; color: var(--ink); }
+    .s-mine .sm-amt { display: block; margin-top: 4px; color: var(--deep-1); font-size: 30px; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+    .s-mine .sm-to { margin: 6px 0 0; color: var(--ink); font-size: 15px; font-weight: 700; }
+    .s-mine .sm-missed, .m-missed { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; font-weight: 600; }
+    .m-missed { display: block; grid-column: 1 / -1; }
+    .s-mine .sm-acct { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin: 10px 0 0; padding: 10px 12px; border-radius: var(--r-sm); background: var(--offwhite); border: 1px solid var(--line); color: var(--ink); font-size: 14px; font-weight: 700; word-break: break-all; }
+    .s-mine .sm-acts { display: flex; gap: 8px; margin-top: 12px; }
+    .s-mine .sm-acts .m-btn { flex: 1 1 0; min-height: 48px; font-size: 15px; }
+    .s-mine.is-paid .sm-amt { color: var(--gray); text-decoration: line-through; }
+    .s-mine.is-paid .m-toggle { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .s-pick .pick-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .s-pick .pick-chips .chip { min-height: 40px; }
+
     @media (max-width: 767px) {
       .s-card { padding: 17px 16px; }
       .m-row { flex-wrap: wrap; }
@@ -274,6 +290,8 @@
       /* 총 비용은 요약 카드에 다시 나오므로 커버에서는 뺀다. 명단이 두 번째 화면에 닿도록
          진행 카드와 명단 뒤 카드들은 명단 아래로 보낸다 */
       .cover .hero-signal { display: none; }
+      /* 링크 하나 보러 온 사람에게 커버는 제목 한 줄이면 된다(내 금액이 첫 화면에 오게) */
+      .cover .cover-lead, .cover .cover-spot { display: none; }
       .settle-wrap > [aria-label="입금 진행 상황"], .settle-wrap > [aria-label="입금 명단"] ~ * { order: 1; }
 
       /* 멤버 줄: 이름 오른쪽에 금액, 받는 사람은 한 줄에 한 명 */
@@ -327,7 +345,7 @@
       <div>
         <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-receipt"/></svg>모임장이 보낸 정산 링크</p>
         <h1 class="cover-title" id="pageTitle">정산 확인</h1>
-        <p class="cover-lead">내 정산 금액을 확인하고 입금한 뒤 입금 완료를 눌러 주세요.</p>
+        <p class="cover-lead">내 정산 금액을 확인하고 입금한 뒤 보냈어요를 눌러 주세요.</p>
         <div class="hero-signal" aria-live="polite">
           <span class="hs"><span class="hs-k">총 비용</span><span class="hs-v"><span id="heroTotal">-</span></span></span>
           <span class="hs"><span class="hs-k">입금 완료</span><span class="hs-v"><span id="heroPaid">-</span></span></span>
@@ -501,6 +519,13 @@
       return String(value).replace(/[&<>"']/g, (char) => entities[char]);
     }
     function formatWon(value) { return `${Math.round(Number(value) || 0).toLocaleString("ko-KR")}원`; }
+    /* "2026-10-02" 를 모임장 메시지와 같은 꼴로: "2026년 10월 2일 (금)" */
+    function formatDateKo(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+      if (!m) return String(iso || "");
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return `${Number(m[1])}년 ${Number(m[2])}월 ${Number(m[3])}일 (${"일월화수목금토"[d.getDay()]})`;
+    }
     function isMobileUA() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ""); }
 
     async function copyToClipboard(text) {
@@ -584,7 +609,7 @@
         notices: Array.isArray(p.notices) ? p.notices.map((n) => String(n).slice(0, 200)).slice(0, 10) : [],
         rounds: Array.isArray(p.rounds)
           ? p.rounds.map((r) => ({
-              label: String((r && r.label) || "").slice(0, 60),
+              label: String((r && r.label) || "").replace(/^\d+차\s+(?=\d+\s*차)/, "").slice(0, 60),   // 예전 링크의 "2차 2차 맥주" 는 "2차 맥주" 로
               amount: intAmount(r && r.amount),
               count: Math.max(0, Math.round(Number(r && r.count) || 0)),
               payer: String((r && r.payer) || "").slice(0, 30),
@@ -600,7 +625,7 @@
                 rows: Array.isArray(g.rows)
                   ? g.rows
                       .filter((r) => r && r.name)
-                      .map((r) => ({ name: String(r.name).trim().slice(0, 30), amount: intAmount(r.amount) }))
+                      .map((r) => ({ name: String(r.name).trim().slice(0, 30), amount: intAmount(r.amount), net: intAmount(r.net) }))
                       .slice(0, 60)
                   : []
               })).slice(0, 12)
@@ -708,11 +733,8 @@
         <section class="s-status card is-lg">
           <div class="emoji ic-tile" aria-hidden="true"><svg class="ic is-lg"><use href="#i-${isNetwork ? "alert" : "search"}"/></svg></div>
           <h2>${isNetwork ? "정산을 불러오지 못했습니다." : "정산을 찾을 수 없습니다."}</h2>
-          ${isNetwork ? "" : "<p>링크가 만료되었거나 주소가 잘못되었을 수 있습니다.<br />모임장에게 새 링크를 요청해 주세요.</p>"}
-          <div class="actions">
-            ${isNetwork ? `<button id="retryBtn" class="btn btn-primary" type="button">다시 시도</button>` : ""}
-            <a class="btn btn-secondary" href="calculator.html">모임 정산 열기</a>
-          </div>
+          ${isNetwork ? "<p>잠시 뒤 다시 시도해 주세요.</p>" : "<p>링크가 만료되었거나 주소가 잘못되었을 수 있습니다.<br />모임장에게 새 링크를 요청해 주세요.</p>"}
+          ${isNetwork ? `<div class="actions"><button id="retryBtn" class="btn btn-primary" type="button">다시 시도</button></div>` : ""}
         </section>`;
     }
 
@@ -732,13 +754,59 @@
       const groups = Array.isArray(payload.groups) ? payload.groups : [];
       const out = [];
       groups.forEach((g) => {
-        (g.rows || []).forEach((r) => { if (r.name === name) out.push({ payer: g.payer, amount: r.amount }); });
+        (g.rows || []).forEach((r) => { if (r.name === name) out.push({ payer: g.payer, amount: r.amount, net: r.net || 0 }); });
       });
       return out;
     }
 
     /* 아이콘 한 벌(assets/icons.js)에서 하나 꺼내 쓴다 */
     function icon(name, cls) { return `<svg class="ic${cls ? " " + cls : ""}" aria-hidden="true"><use href="#i-${name}"/></svg>`; }
+
+    /* 차수가 둘 이상이면 이 사람이 빠진 차수("2차 맥주 불참"). 차수 명단이 없는 옛 링크는 말하지 않는다 */
+    function roundsMissed(name) {
+      const rs = (payload.rounds || []).filter((r) => r.amount > 0 && r.active && r.active.length);
+      if (rs.length < 2) return [];
+      return rs.filter((r) => !r.active.includes(name)).map((r) => r.label || "차수");
+    }
+    function toggleLabel(isPaid) { return isPaid ? '<svg class="ic is-sm" aria-hidden="true"><use href="#i-check"/></svg> 입금 완료' : "보냈어요"; }
+    const meInList = () => !!(myName && payload && payload.rows.some((r) => r.name === myName));
+
+    /* 맨 위 내 정산: 이름을 기억하는 기기(전에 보냈어요를 눌렀거나 이름을 골랐음)에서는 내 금액, 받을 사람, 빠진 차수, 계좌, 단추 */
+    function mineHTML(r, accountLine) {
+      const isPaid = !!paid[r.name];
+      const multi = payload.groups.length > 1;
+      const to = multi ? recipientsOf(r.name) : [];
+      const single = !multi ? (payload.groups[0] ? payload.groups[0].payer : payload.host) : "";
+      // 받을 사람이 한 명이면 금액을 되풀이하지 않는다
+      const toLine = to.length > 1 ? to.map((x) => `${x.payer}에게 ${formatWon(x.amount)}`).join(", ") : to.length ? `${to[0].payer}에게` : (single ? `${single}에게` : "");
+      const missed = roundsMissed(r.name);
+      const mineAcct = to.length ? to.find((x) => x.payer === accountOwner) : null;
+      const sendAmount = to.length ? (mineAcct ? mineAcct.amount : 0) : r.amount;
+      const others = to.filter((x) => x.payer !== accountOwner).map((x) => x.payer);
+      return `
+        <section class="s-card card s-mine${isPaid ? " is-paid" : ""}" aria-label="내 정산">
+          <div class="sm-top"><b>${escapeHTML(r.name)}님</b><button type="button" class="text-btn is-quiet" data-act="change-me">다른 이름</button></div>
+          <strong class="sm-amt">${formatWon(r.amount)}</strong>
+          ${toLine ? `<p class="sm-to">${escapeHTML(toLine)}</p>` : ""}
+          ${missed.length ? `<p class="sm-missed">${escapeHTML(missed.join(", "))} 불참</p>` : ""}
+          ${to.filter((x) => x.net).map((x) => `<p class="sm-missed">${escapeHTML(x.payer)} 님과 서로 보낼 ${formatWon(x.net)}을 뺀 금액</p>`).join("")}
+          ${!isPaid && sendAmount && accountLine ? `<p class="sm-acct"><span>${escapeHTML(accountLine)}</span><button type="button" class="text-btn" data-copy-account="${escapeHTML(accountLine)}">계좌 복사</button></p>` : ""}
+          ${!isPaid && others.length ? `<p class="s-note" style="margin-top:8px">${escapeHTML(others.join(", "))} 님 계좌는 따로 확인해 주세요.</p>` : ""}
+          <div class="sm-acts">
+            ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
+            <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}" aria-pressed="${isPaid ? "true" : "false"}">${toggleLabel(isPaid)}</button>
+          </div>
+        </section>`;
+    }
+    /* 이 기기가 아직 내 이름을 모르면 맨 위에 이름 단추. 고르면 내 정산이 맨 위에 온다 */
+    function pickHTML() {
+      return `
+        <section class="s-card card s-pick" aria-label="내 이름 고르기">
+          <h2>내 이름 고르기</h2>
+          <p class="m-hint">누르면 내 금액이 맨 위에 나옵니다.</p>
+          <div class="pick-chips">${payload.rows.map((r) => `<button type="button" class="chip" data-me="${escapeHTML(r.name)}">${escapeHTML(r.name)}</button>`).join("")}</div>
+        </section>`;
+    }
 
     function memberRow(r) {
       const isPaid = !!paid[r.name];
@@ -755,17 +823,20 @@
          계좌 주인에게 갈 몫만 넘기고, 그런 몫이 없으면 버튼을 빼고 안내만 남긴다. */
       const mine = to.length ? to.find((x) => x.payer === accountOwner) : null;
       const sendAmount = to.length ? (mine ? mine.amount : 0) : r.amount;
+      const missed = roundsMissed(r.name);
       return `
       <div class="m-row${isPaid ? " is-paid" : " is-wait"}${isMe ? " is-me" : ""}">
         <div class="m-left">
           <div class="m-name"><b>${escapeHTML(r.name)}</b>${isMe ? `<span class="me-chip">나</span>` : ""}${isPaid ? "" : `<span class="wait-tag">대기 중</span>`}</div>
           <strong class="m-amt">${formatWon(r.amount)}</strong>
           ${partsLine}
+          ${missed.length ? `<span class="m-missed">${escapeHTML(missed.join(", "))} 불참</span>` : ""}
+          ${to.filter((x) => x.net).map((x) => `<span class="m-missed">${escapeHTML(x.payer)} 님과 서로 보낼 ${formatWon(x.net)}을 뺀 금액</span>`).join("")}
         </div>
         <div class="m-actions">
           ${isPaid || !sendAmount ? "" : transferButton(sendAmount, to.length > 0 ? accountOwner : "")}
           <button class="m-btn m-toggle" type="button" data-toggle-name="${escapeHTML(r.name)}"
-            aria-pressed="${isPaid ? "true" : "false"}">${isPaid ? '<svg class="ic is-sm" aria-hidden="true"><use href="#i-check"/></svg> 입금 완료' : "입금 완료"}</button>
+            aria-pressed="${isPaid ? "true" : "false"}">${toggleLabel(isPaid)}</button>
         </div>
       </div>`;
     }
@@ -791,13 +862,14 @@
         ? payload.groups.map((g) => g.payer).filter((n) => n && n !== accountOwner)
         : [];
 
+      const meRow = meInList() ? rows.find((r) => r.name === myName) : null;
       setHeroStats(payload.total, paidCount, rows.length);
       announce(`${paidCount}/${rows.length}명 입금 완료`);
 
       /* 전체를 다시 그리므로, 본문 안에 있던 포커스는 같은 자리로 되돌린다 */
       const ae = document.activeElement;
       const keep = ae && app.contains(ae)
-        ? (ae.dataset && ae.dataset.toggleName != null ? ["toggle", ae.dataset.toggleName] : ae.id ? ["id", ae.id] : null)
+        ? (ae.dataset && ae.dataset.toggleName != null ? ["toggle", ae.dataset.toggleName, !!ae.closest(".s-mine")] : ae.id ? ["id", ae.id] : null)
         : null;
 
       const detailHTML = payload.rounds.map((r) => `
@@ -807,17 +879,18 @@
         </div>`).join("");
 
       app.innerHTML = `
+        ${meRow ? mineHTML(meRow, accountLine) : pickHTML()}
         <section class="s-head card is-lg" aria-label="정산 요약">
           <i class="glow-orb" style="--orb-size:280px; right:-100px; top:-120px" aria-hidden="true"></i>
           <div class="s-head-inner">
             ${mode === "local" ? `<div class="s-head-top"><span class="local-badge">이 기기에서만 표시</span></div>` : ""}
             <h2 class="s-title">${escapeHTML(payload.title)}</h2>
-            <p class="s-meta sep-row">${payload.date ? `<span>${escapeHTML(payload.date)}</span>` : ""}<span>모임장 ${escapeHTML(payload.host || "-")}</span>${payload.hostBurden ? `<span>${payload.payerCount > 1 ? "결제자" : "모임장"} 부담 ${formatWon(payload.hostBurden)}</span>` : ""}</p>
+            <p class="s-meta sep-row">${payload.date ? `<span>${escapeHTML(formatDateKo(payload.date))}</span>` : ""}<span>모임장 ${escapeHTML(payload.host || "-")}</span></p>
             <div class="s-total"><span>총 비용</span><strong>${formatWon(payload.total)}</strong></div>
             ${per && per.count ? `
             <div class="s-perline">
               <span class="badge-soft">참여 ${per.count}명</span>
-              <span class="badge-soft is-mint">${per.uniform ? "1인" : "1인 평균"} ${formatWon(per.value)}</span>
+              ${per.uniform ? `<span class="badge-soft is-mint">1인 ${formatWon(per.value)}</span>` : ""}
             </div>` : ""}
           </div>
         </section>
@@ -854,7 +927,7 @@
             ${pay.kakao ? `<div class="deposit-row"><span>카카오페이</span><b>송금 가능</b></div>` : ""}
           </div>
           ${accountLine ? `<div class="deposit-actions"><button id="copyAccountBtn" class="btn btn-secondary" type="button" data-account="${escapeHTML(accountLine)}">계좌 복사</button></div>` : ""}
-          ${otherPayers.length ? `<p class="s-note">${pay.holder.trim() ? "" : `이 계좌는 ${escapeHTML(accountOwner)} 님 계좌입니다. `}${escapeHTML(otherPayers.join(", "))} 님에게 보낼 금액은 계좌를 따로 확인해 주세요.</p>` : ""}
+          ${otherPayers.length && (!meRow || recipientsOf(meRow.name).some((x) => x.payer !== accountOwner)) ? `<p class="s-note">${pay.holder.trim() ? "" : `이 계좌는 ${escapeHTML(accountOwner)} 님 계좌입니다. `}${escapeHTML(otherPayers.join(", "))} 님에게 보낼 금액은 계좌를 따로 확인해 주세요.</p>` : ""}
         </section>` : `
         <section class="s-card card" aria-label="입금 정보">
           <h2>입금 정보</h2>
@@ -863,7 +936,7 @@
 
         <section class="s-card card" aria-label="입금 명단">
           <h2>입금 명단</h2>
-          ${mode === "live" ? `<p class="m-hint">입금 완료를 누르면 모임장과 멤버 화면에 함께 반영됩니다.</p>` : ""}
+          ${mode === "live" ? `<p class="m-hint">보냈어요를 누르면 모임장과 멤버 화면에 함께 반영됩니다.</p>` : ""}
           ${waiting.length ? `<div class="m-group-head is-wait">대기 중 <b>${waiting.length}명</b><i></i></div>
           <div class="m-list">${waiting.map(memberRow).join("")}</div>` : ""}
           ${done.length ? `<div class="m-group-head is-done">${icon("checkCircle","is-sm")} 입금 완료 <b>${done.length}명</b><i></i></div>
@@ -913,14 +986,10 @@
             ${detailHTML}
             ${payload.verifyText ? `<div class="verify-line"><b>합계 검증</b>${escapeHTML(payload.verifyText)}</div>` : ""}
           </div>
-        </details>` : ""}
-
-        <div class="s-promo">
-          <a href="calculator.html">모임 정산 열기</a>
-        </div>`;
+        </details>` : ""}`;
       if (keep) {
         const el = keep[0] === "toggle"
-          ? app.querySelector(`[data-toggle-name="${CSS.escape(keep[1])}"]`)
+          ? app.querySelector(`${keep[2] ? ".s-mine" : ".m-list"} [data-toggle-name="${CSS.escape(keep[1])}"]`)
           : document.getElementById(keep[1]);
         if (el) el.focus({ preventScroll: true });
       }
@@ -942,13 +1011,15 @@
     /* 입금 완료를 누르면 그 줄이 대기 중에서 입금 완료 묶음으로 옮겨 간다.
        다시 그린 뒤 그 줄이 손가락 밑에 그대로 있도록 옮겨 간 만큼 스크롤한다.
        site.css 가 html 에 부드러운 스크롤을 걸어 두어서 behavior: "instant" 로 바로 맞춘다 */
-    function renderKeepRow(name) {
-      const sel = `[data-toggle-name="${CSS.escape(name)}"]`;
+    function renderKeepRow(name, inMine) {
+      // 맨 위 내 정산에서 눌렀으면 그 카드를, 명단에서 눌렀으면 그 줄을 손가락 밑에 둔다
+      const sel = `${inMine ? ".s-mine" : ".m-list"} [data-toggle-name="${CSS.escape(name)}"]`;
+      const box = (el) => el.closest(".m-row, .s-mine");
       const before = app.querySelector(sel);
-      const y0 = before ? before.closest(".m-row").getBoundingClientRect().top : null;
+      const y0 = before ? box(before).getBoundingClientRect().top : null;
       renderView();
       const after = app.querySelector(sel);
-      if (after && y0 !== null) window.scrollBy({ top: after.closest(".m-row").getBoundingClientRect().top - y0, behavior: "instant" });
+      if (after && y0 !== null) window.scrollBy({ top: box(after).getBoundingClientRect().top - y0, behavior: "instant" });
     }
 
     /* ============================================================
@@ -969,22 +1040,33 @@
       }
     }
 
-    function rememberMe(name) {
-      if (myName) return;
-      myName = name;
-      try { localStorage.setItem(MYNAME_KEY, name); } catch (e) {}
+    /* 내 이름은 맨 위 이름 단추로만 정한다(명단에서 누른 줄을 나로 기억하면, 옆 사람을 잘못 눌렀을 때 그 사람이 내가 된다) */
+    function setMyName(name) {
+      myName = name || "";
+      try { if (myName) localStorage.setItem(MYNAME_KEY, myName); else localStorage.removeItem(MYNAME_KEY); } catch (e) {}
     }
 
-    async function togglePaid(name) {
+    /* 남의 줄(또는 내 이름을 모를 때 명단의 줄)을 누르면 한 번 묻는다. 한 번 확인하면 이 화면에서는 다시 묻지 않는다.
+       내 입금 완료를 푸는 것도 묻는다(완료 단추를 확인 단추로 알고 한 번 더 누르는 일) */
+    let othersOk = false;
+    const markedHere = new Set();   // 이 화면에서 입금 완료로 표시한 이름(이름을 잘못 골랐을 때 되돌리기 위해)
+    async function togglePaid(name, inMine, force) {
       const row = payload.rows.find((r) => r.name === name);
       if (!row) return;
       const next = !paid[name];
-      if (next) rememberMe(name);
+      const mineRow = meInList() && name === myName;
+      if (force) { /* 이미 물어봄 */ }
+      else if (!mineRow && !othersOk) {
+        const who = meInList() ? `${myName} 님이 아닌 ${name} 님 줄입니다. ` : "";
+        if (!window.confirm(`${who}${name} 님을 ${next ? "입금 완료로 표시할까요?" : "입금 완료에서 뺄까요?"}`)) return;
+        othersOk = true;
+      } else if (mineRow && !next && !window.confirm("입금 완료 표시를 해제할까요?")) return;
+      if (next) markedHere.add(name); else markedHere.delete(name);
 
       if (mode === "local") {
         if (next) paid[name] = true; else delete paid[name];
         persistLocalPaid();
-        renderKeepRow(name);
+        renderKeepRow(name, inMine);
         showToast(next ? "입금 완료로 표시했습니다. 이 기기에서만 보입니다." : "입금 완료 표시를 해제했습니다.");
         return;
       }
@@ -994,18 +1076,18 @@
       inflightNames.add(name);
       const prev = !!paid[name];
       if (next) paid[name] = true; else delete paid[name];
-      renderKeepRow(name);
+      renderKeepRow(name, inMine);
       pendingOps += 1;
       try {
         const res = await supaFetch("/rest/v1/rpc/settle_set_paid", {
           method: "POST",
           body: JSON.stringify({ p_id: settleId, p_name: name, p_paid: next })
         });
-        if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderKeepRow(name); }
+        if (res && res.paid && typeof res.paid === "object") { paid = res.paid; renderKeepRow(name, inMine); }
         showToast(next ? "입금 완료로 표시했습니다. 모임장 화면에도 반영됩니다." : "입금 완료 표시를 해제했습니다. 모임장 화면에도 반영됩니다.");
       } catch (err) {
         if (prev) paid[name] = true; else delete paid[name];
-        renderKeepRow(name);
+        renderKeepRow(name, inMine);
         const msg = String((err && err.message) || "");
         showToast(msg.indexOf("NOT_FOUND") >= 0
           ? "정산을 찾을 수 없습니다. 모임장에게 새 링크를 요청해 주세요."
@@ -1051,12 +1133,21 @@
 
     app.addEventListener("click", async (e) => {
       const toggle = e.target.closest("[data-toggle-name]");
-      if (toggle) { togglePaid(toggle.dataset.toggleName); return; }
+      if (toggle) { togglePaid(toggle.dataset.toggleName, !!toggle.closest(".s-mine")); return; }
       const send = e.target.closest("[data-send-amount]");
       if (send) { handleTransfer(Number(send.dataset.sendAmount) || 0); return; }
-      const copyAcct = e.target.closest("#copyAccountBtn");
+      const pick = e.target.closest("[data-me]");
+      if (pick) { setMyName(pick.dataset.me); renderView(); window.scrollTo({ top: 0 }); return; }
+      if (e.target.closest('[data-act="change-me"]')) {
+        const old = myName;
+        if (old && markedHere.has(old) && paid[old] && window.confirm(`방금 이 기기에서 ${old} 님을 입금 완료로 표시했습니다. 잘못 고른 이름이면 표시를 풀까요?`)) {
+          await togglePaid(old, true, true);
+        }
+        setMyName(""); othersOk = false; renderView(); return;
+      }
+      const copyAcct = e.target.closest("#copyAccountBtn, [data-copy-account]");
       if (copyAcct) {
-        const ok = await copyToClipboard(copyAcct.dataset.account || "");
+        const ok = await copyToClipboard(copyAcct.dataset.account || copyAcct.dataset.copyAccount || "");
         showToast(ok ? "계좌를 복사했습니다." : "복사에 실패했습니다. 다시 시도해 주세요.");
         return;
       }
