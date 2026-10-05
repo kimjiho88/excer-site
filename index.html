@@ -397,8 +397,9 @@
         var m = v.meta || {};
         if (v.kind !== "bung" || v.attend_count == null || !m.date) return null;
         var n = Number(v.attend_count) || 0, cap = Number(m.cap) || 0;
-        var nowK = C.kstToday() + "T" + C.kstNowHM(), start = m.date + "T" + (m.time || "23:59"), dl = m.deadline || start;
-        var why = start <= nowK || m.status === "closed" ? "" : dl <= nowK ? "신청 마감" : (cap && n >= cap) ? "정원 마감" : "";
+        var nowK = C.kstToday() + "T" + C.kstNowHM(), ph = C.bungPhase(m, nowK), dl = m.deadline || C.bungStartKey(m);
+        // 시작 뒤 끝나는 시간 전에는 '진행 중'(끝나는 시간이 없는 옛 글은 시작하면 빠진다)
+        var why = m.status === "closed" ? "" : ph === "ongoing" ? "진행 중" : ph === "ended" ? "" : dl <= nowK ? "신청 마감" : (cap && n >= cap) ? "정원 마감" : "";
         return { text: "참석 " + n + (cap ? "/" + cap : ""), state: why };
       }
       function rowHTML(v) {

@@ -47,8 +47,17 @@
       background-size: 16px;
     }
     .type-tabs { width: 100%; }
+    /* 49차: 글쓰기 단추는 검색 옆에 늘 보이게(커버와 떠 있는 단추만으로는 찾기 어려웠다). 정렬은 목록 머리로 */
+    .tools-row .btn { flex: none; }
+    .tools-row .btn .ic { width: 18px; height: 18px; }
+    /* 모임 모집 탭: 달력 아이콘과 굵은 보라 글자, 누르면 보라 바탕 흰 글자(색만으로 가르지 않게 아이콘도) */
+    .type-tabs > button[data-cat="벙 소식"] { color: var(--brand); font-weight: 700; }
+    .type-tabs > button[data-cat="벙 소식"] .ic { width: 16px; height: 16px; flex: none; }
+    .type-tabs > button[data-cat="벙 소식"].is-active { box-shadow: inset 0 0 0 2px var(--brand); border-color: transparent; color: var(--brand); }   /* 보라 테두리(바로 위 보라 단추와 겹쳐 보이지 않게 채우지 않는다) */
+    @media (max-width: 408px) { .type-tabs > button[data-cat="벙 소식"] .ic { display: none; } }   /* 세 칸 격자에서는 글자가 칸을 넘지 않게 아이콘을 뺀다(굵기와 색은 그대로) */
     .board-foot { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 12px; color: var(--ink-2); font-size: var(--fs-caption); }
-    .board-foot .btn { margin-left: auto; }
+    .board-foot .btn, .board-foot .sort-select { margin-left: auto; }
+    .board-foot .sort-select { min-height: 40px; }
 
     .status-line.is-warn { color: var(--ink); }
 
@@ -315,8 +324,6 @@
     }
     /* 이 페이지에는 떠 있는 글쓰기 버튼이 늘 있으므로 알림을 그 위로 — site.css 의 body:has() 규칙을 모르는 브라우저(iOS 15.3 이하)를 위한 직접 규칙 */
     @media (max-width: 860px) { .toast { bottom: calc(144px + env(safe-area-inset-bottom)); } }
-    /* 폰에서는 떠 있는 글쓰기 버튼 하나만 둔다 */
-    @media (max-width: 860px) { .cover .cover-actions { display: none; } }
     /* 폰: 글 목록을 먼저 보이고 글감과 인기 글은 목록 뒤로 */
     @media (max-width: 640px) {
       #board > .container { display: flex; flex-direction: column; }
@@ -329,7 +336,7 @@
       .modal-backdrop.is-sheet .write-modal .modal-foot { position: sticky; bottom: 0; z-index: 1; flex-direction: row; margin: 16px -24px 0; padding: 12px 24px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
       .modal-backdrop.is-sheet .write-modal .modal-foot .btn { width: auto; flex: 1 1 0; }
     }
-    /* 검색과 정렬을 한 줄에 */
+    /* 검색과 글쓰기 단추를 한 줄에 */
     @media (max-width: 480px) { .tools-row { flex-wrap: nowrap; } .search-box { flex: 1 1 0; } }
     /* 펼친 글의 항목: 좁은 폰에서도 이름과 값을 나란히 */
     @media (max-width: 420px) {
@@ -372,7 +379,6 @@
         <p class="cover-kicker"><svg class="ic" aria-hidden="true"><use href="#i-megaphone"/></svg>공지, 모임 모집, 후기, 정보</p>
         <h1 class="cover-title" id="pageTitle">소식</h1>
         <p class="cover-lead">동네친구들의 공지와 모임 소식을 올리는 게시판입니다.</p>
-        <div class="cover-actions"><button class="btn btn-primary" id="heroWriteBtn" type="button">글쓰기</button></div>
       </div>
       <img class="cover-spot" src="assets/img/news-spot-240.webp?v=2" srcset="assets/img/news-spot-240.webp?v=2 240w, assets/img/news-spot-480.webp?v=2 480w" sizes="(max-width: 767px) 112px, 200px" width="480" height="480" alt="" decoding="async" onerror="this.closest('.cover').classList.add('no-image')" />
     </div>
@@ -387,16 +393,12 @@
               <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
               <input id="searchInput" class="input" type="search" placeholder="제목, 내용 검색" aria-label="소식 검색" autocomplete="off" />
             </label>
-            <label class="sr-only" for="sortSelect">정렬</label>
-            <select id="sortSelect" class="sort-select">
-              <option value="latest">최신순</option>
-              <option value="popular">반응순</option>
-            </select>
+            <button class="btn btn-primary" id="boardWriteBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg><span id="boardWriteLabel">글쓰기</span></button>
           </div>
           <div class="tab-row type-tabs" id="filterChips" role="group" aria-label="글 종류">
             <button type="button" class="is-active" data-cat="전체" aria-pressed="true">전체</button>
             <button type="button" data-cat="공지" aria-pressed="false">공지</button>
-            <button type="button" data-cat="벙 소식" aria-pressed="false">모임 모집</button>
+            <button type="button" data-cat="벙 소식" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>모임 모집</button>
             <button type="button" data-cat="후기" aria-pressed="false">모임 후기</button>
             <button type="button" data-cat="정보" aria-pressed="false">정보</button>
             <button type="button" data-cat="자유" aria-pressed="false">자유</button>
@@ -411,7 +413,14 @@
         </div>
         <div class="popular" id="popularWrap" hidden></div>
 
-        <div class="board-foot"><span id="listNote" aria-live="polite"></span></div>
+        <div class="board-foot">
+          <span id="listNote" aria-live="polite"></span>
+          <label class="sr-only" for="sortSelect">정렬</label>
+          <select id="sortSelect" class="sort-select">
+            <option value="latest">최신순</option>
+            <option value="popular">반응순</option>
+          </select>
+        </div>
 
         <div id="setupBanner" class="status-line is-warn" hidden>
           <span>소식을 불러오지 못했습니다.</span>
@@ -670,10 +679,10 @@
     function catFromUrl() { try { const v = new URLSearchParams(location.search).get("cat") || ""; return CAT_KEYS[v] || (CATS.includes(v) ? v : ""); } catch (e) { return ""; } }
     function setCatChips() {
       $("filterChips").querySelectorAll("button[data-cat]").forEach((c) => { const on = c.dataset.cat === state.category; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); });
-      // 모임 모집을 보고 있으면 떠 있는 단추와 머리 단추를 '모임 올리기' 로
+      // 모임 모집을 보고 있으면 떠 있는 단추와 검색 옆 단추를 '모임 올리기' 로
       const label = state.category === "벙 소식" ? "모임 올리기" : "글쓰기";
       const f = document.getElementById("fabLabel"); if (f) f.textContent = label;
-      const h = document.getElementById("heroWriteBtn"); if (h) h.textContent = label;
+      const h = document.getElementById("boardWriteLabel"); if (h) h.textContent = label;
     }
     function syncCatUrl() {
       try {
@@ -685,7 +694,8 @@
     /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
     function openWriteDefault() { openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null); }
     const ERROR_MAP = {
-      BUNG_REQUIRED: "날짜, 시간, 장소, 인원을 모두 적어 주세요.",
+      BUNG_REQUIRED: "날짜, 시작 시간, 끝나는 시간, 장소를 모두 적어 주세요.",
+      BUNG_END: "끝나는 시간이 시작 시간과 같습니다.",
       BUNG_PAST: "지난 시각입니다. 날짜와 시간을 확인해 주세요.",
       BUNG_DEADLINE: "신청 마감은 모임 시작보다 늦을 수 없고, 지금보다 뒤여야 합니다.",
       BUNG_DUP: "같은 시간대(앞뒤 2시간)에 모집 중인 모임이 있습니다. 기존 모임장의 동의가 있어야 합니다.",
@@ -712,8 +722,9 @@
        "홈의 다가오는 모임" 조건은 content.js isUpcoming 과 같은 말: 날짜가 오늘 이후, 마감 아님, 가까운 2건 */
     function typeDesc(cat) {
       if (cat === "벙 소식") {
-        if (state.attendOn) return "날짜, 시간, 장소, 인원은 꼭 적습니다. 참석은 이 글의 참석 버튼으로 받습니다.";
-        return "날짜, 시간, 장소, 인원은 꼭 적습니다" + (state.caps >= 2 ? "(비용은 선택)" : "") + ". 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
+        const must = state.endOn ? "날짜, 시작 시간, 끝나는 시간, 장소는" : "날짜, 시작 시간, 끝나는 시간, 장소, 인원은";   // 옛 판 서버는 인원도 꼭 받는다
+        if (state.attendOn) return must + " 꼭 적습니다. 참석은 이 글의 참석 버튼으로 받습니다.";
+        return must + " 꼭 적습니다" + (state.caps >= 2 ? "(비용은 선택)" : "") + ". 목록 줄에는 날짜, 시간, 장소가 보입니다. 날짜가 오늘 이후이고 마감이 아니면 홈의 다가오는 모임에도 가까운 순으로 2건까지 보입니다. 참석 신청은 오픈채팅에서 받습니다.";
       }
       // 서버가 이전 형식이면 후기·정보·공지의 항목 칸이 열리지 않는다 — 안내문도 그 사실만 말한다
       if (state.caps < 2 && (cat === "후기" || cat === "정보" || cat === "공지")) {
@@ -735,13 +746,16 @@
         { key: "to", label: "종료일", type: "date" }
       ],
       "벙 소식": [
-        { key: "date", label: "모임 날짜", type: "date", req: true, group: "언제", chips: "date" },
-        { key: "time", label: "시간", type: "time", req: true, chips: "time" },
-        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서, 몇 명", ph: "예: 논현역 근처 고깃집", list: "wf_place-list", map: true },
+        // 49차: 날짜는 한 줄 전체(일곱 칸 두 줄 단추), 시작 시간과 끝나는 시간이 나란히(둘 다 필수. 끝나는 시간이 시작보다 이르면 다음 날)
+        { key: "date", label: "모임 날짜", type: "date", req: true, wide: true, group: "언제", chips: "date" },
+        { key: "time", label: "시작 시간", type: "time", req: true, chips: "time" },
+        { key: "end", label: "끝나는 시간", type: "time", req: true, chips: "end" },
+        { key: "place", label: "장소", type: "text", max: 60, req: true, group: "어디서", ph: "예: 논현역 근처 고깃집", list: "wf_place-list", map: true },
         { key: "addr", type: "hidden", plc: true },          // 지도에서 고른 장소의 주소와 좌표(bung_place 서버). 글자 칸은 그대로 두고 따로 담는다
         { key: "lat", type: "hidden", plc: true, num: true },
         { key: "lng", type: "hidden", plc: true, num: true },
-        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, req: true, ph: "예: 8", chips: "cap", self: true, hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
+        // 모집 인원은 선택이고 보기 단추 없이 숫자만 적는다(참석 인원은 모임장이 댓글로 알린다). 서버가 옛 판(bung_end 없음)이면 renderTypeFields 가 필수로 돌린다
+        { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, self: true, hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         // 여기부터는 '더 적기' 안(more: true). 새 글에서는 모집 상태를 묻지 않는다(올린 뒤 카드의 모집 마감으로)
         { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", more: true, ph: "예: 1인 3만원 안팎", v2: true },
         { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, more: true, chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
@@ -769,7 +783,7 @@
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
       myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {}, hostMenu: {},
-      attendOn: false, placeOn: false, attend: {}
+      attendOn: false, placeOn: false, endOn: false, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
     const SEEN_KEY = "excer_news_seen";
@@ -1062,7 +1076,8 @@
       if (v.kind === "bung" && state.attendOn && v.meta && v.meta.date) {
         const bs = bungStatus(post);
         if (bs.why === "full" || bs.why === "deadline") v.subline = Object.assign({}, v.subline, { state: WHY_LABEL[bs.why], past: true });
-        else if (bs.why === "started" && v.subline.state === "오늘") v.subline = Object.assign({}, v.subline, { state: "진행 중", past: true });   // 오늘 이미 시작한 모임
+        else if (bs.ongoing) v.subline = Object.assign({}, v.subline, { state: "진행 중", past: true });   // 시작했고 끝나는 시간 전(자정을 넘긴 어제 모임도)
+        else if (bs.why === "started" && v.subline.state === "오늘") v.subline = Object.assign({}, v.subline, { state: "지난 모임", past: true });   // 오늘 이미 끝난 모임
         if (state.attend[post.id] || post.attend_count != null) v.attendText = `<span class="cap-mini">${bs.cap ? `<i style="--p:${Math.min(100, Math.round(bs.n / bs.cap * 100))}%"></i>` : ""}참석 ${bs.n}${bs.cap ? "/" + bs.cap : ""}</span>`;
       }
       const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
@@ -1233,14 +1248,36 @@
       const chips = f.chips ? `<div class="chips${f.chips === "date" ? " is-days" : ""}" data-for="${id}" data-chips="${f.chips}">${chipList(f.chips).map((c) => `<button type="button" class="chip${c.cls ? " " + c.cls : ""}" data-v="${esc(c.v)}"${c.aria ? ` aria-label="${esc(c.aria)}"` : ""}>${c.html || esc(c.label)}</button>`).join("")}</div>` : "";
       // 새 모임 글: 모임장도 참석자로 넣을지(기본 켬). 켜 두면 올리자마자 명단 첫 줄에 들어가 인원에 셈된다
       const self = f.self && state.attendOn && !state.editingId ? `<label class="self-att"><input type="checkbox" id="wSelfAttend" checked /> 나도 참석자로 넣기</label>` : "";
-      const slot = f.key === "time" ? `<p class="slot-warn" id="slotWarn" role="status" hidden></p>` : "";
+      const slot = f.key === "time" ? `<p class="slot-warn" id="slotWarn" role="status" hidden></p>` : f.key === "end" ? `<span class="field-hint" id="endHint" hidden></span>` : "";   // 끝나는 시간 아래: 몇 시간짜리인지, 다음 날로 넘어가는지
       return `<div class="field${f.wide || withMap ? " is-wide" : ""}" data-field="${id}">${label}${input}${picked}${chips}${slot}${self}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
-    /* 한 번에 고르는 단추: 날짜는 오늘부터 두 주(가로로 넘김), 시간과 인원은 자주 쓰는 값, 신청 마감은 시작 시각에서 셈 */
+    /* 한 번에 고르는 단추: 날짜는 오늘부터 두 주, 시작 시간은 자주 쓰는 값, 끝나는 시간은 시작에서 1~4시간 뒤, 신청 마감은 시작 시각에서 셈 */
     const DOW = "일월화수목금토";
     const TIME_CHIPS = ["12:00", "14:00", "15:00", "17:00", "18:00", "18:30", "19:00", "19:30", "20:00", "21:00"];
+    const END_AFTER = [60, 120, 180, 240];
     let chipCtx = null;   // 고치는 글의 지금 값(그 시간이 단추에 없으면 하나 더 붙인다)
     function addDays(ymd, n) { const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+    function addMinutes(hm, n) { const p = hm.split(":"), t = (Number(p[0]) * 60 + Number(p[1]) + n) % 1440; return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); }
+    const toMin = (hm) => { const p = String(hm || "").split(":"); return Number(p[0]) * 60 + Number(p[1]); };
+    /* 시작 시간을 고치면 끝나는 시간이 같은 간격으로 따라간다(19:00~21:00 에서 시작을 19:30 으로 바꾸면 21:30). 끝이 시작보다 이른 하루짜리 모임이 되지 않게 */
+    let prevTime = "";
+    function followEnd(newTime) {
+      const en = $("wf_end");
+      if (en && en.value && /^\d{2}:\d{2}$/.test(prevTime) && /^\d{2}:\d{2}$/.test(newTime || "")) {
+        const off = (toMin(en.value) - toMin(prevTime) + 1440) % 1440;
+        if (off) en.value = addMinutes(newTime, off);
+      }
+      prevTime = /^\d{2}:\d{2}$/.test(newTime || "") ? newTime : "";
+    }
+    /* 끝나는 시간 아래 한 줄: '2시간', 자정을 넘기면 '다음 날 01:00까지, 6시간' */
+    function syncEndHint() {
+      const box = $("endHint"), t = ($("wf_time") || {}).value || "", e = ($("wf_end") || {}).value || "";
+      if (!box) return;
+      if (!/^\d{2}:\d{2}$/.test(t) || !/^\d{2}:\d{2}$/.test(e) || t === e) { box.hidden = true; return; }
+      const d = (toMin(e) - toMin(t) + 1440) % 1440, h = Math.floor(d / 60), mi = d % 60;
+      box.textContent = (e < t ? "다음 날 " + e + "까지, " : "") + (h ? h + "시간" : "") + (mi ? (h ? " " : "") + mi + "분" : "");
+      box.hidden = false;
+    }
     function chipList(kind) {
       if (kind === "date") {
         const t = C.kstToday();
@@ -1254,7 +1291,7 @@
         const cur = chipCtx && /^\d{2}:\d{2}$/.test(chipCtx.time || "") ? chipCtx.time : "";
         return (cur && !TIME_CHIPS.includes(cur) ? TIME_CHIPS.concat(cur).sort() : TIME_CHIPS).map((v) => ({ v, label: v }));
       }
-      if (kind === "cap") return [4, 6, 8, 10].map((n) => ({ v: String(n), label: n + "명" }));
+      if (kind === "end") return END_AFTER.map((n) => ({ v: String(n), label: n / 60 + "시간 뒤" }));   // 글자와 값은 syncChips 가 시작 시간에 맞춰 바꾼다
       if (kind === "deadline") return [{ v: "-60", label: "시작 1시간 전" }, { v: "day12", label: "당일 12:00" }, { v: "prev21", label: "전날 21:00" }, { v: "", label: "시작까지" }];
       return [];
     }
@@ -1274,22 +1311,28 @@
         box.querySelectorAll(".chip").forEach((b) => {
           let v = b.dataset.v, off = false;
           if (kind === "deadline") { v = deadlineFrom(b.dataset.v, date, time); off = v == null || (v !== "" && (v > start || v <= now)); }
+          if (kind === "end") {   // 시작 시간이 있으면 '21:00' 처럼 실제 시각을, 없으면 '2시간 뒤'를 꺼 둔 채
+            const hm = /^\d{2}:\d{2}$/.test(time) ? addMinutes(time, Number(b.dataset.v)) : "";
+            b.dataset.hm = hm; b.textContent = hm || (Number(b.dataset.v) / 60 + "시간 뒤"); off = !hm; v = hm;
+          }
           b.disabled = off;
           b.classList.toggle("is-on", !off && v != null && String(v) === String(input.value || ""));
         });
       });
+      syncEndHint();
     }
     function placeOptions() {
       const seen = new Set();
       return state.posts.filter((p) => p.category === "벙 소식").map((p) => ((C.postMeta(p) || {}).place || "").trim()).filter((x) => x && !seen.has(x) && seen.add(x)).slice(0, 20);
     }
-    /* 모임 모집은 필수 칸(모임명, 언제, 어디서, 몇 명)만 펼치고, 비용과 신청 마감과 준비물과 내용은 '더 적기' 안에 둔다.
+    /* 모임 모집은 필수 칸(모임명, 언제, 어디서)과 모집 인원만 펼치고, 비용과 신청 마감과 준비물과 내용은 '더 적기' 안에 둔다.
        내용 칸(wBody)은 다른 종류에서는 제자리에, 모임 모집에서는 '더 적기' 맨 아래로 옮긴다 */
     function bodyField() { return document.querySelector('#writeForm [data-field="wBody"]'); }
     function renderTypeFields(cat, meta) {
       const isBung = cat === "벙 소식";
       chipCtx = meta || null;
-      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (isBung && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn) && !(f.plc && !state.placeOn) && !(f.editOnly && !state.editingId));
+      const fields = (TYPE_FIELDS[cat] || []).filter((f) => (state.caps >= 2 || (isBung && !f.v2)) && (!f.att || state.attendOn) && !(f.noAtt && state.attendOn) && !(f.plc && !state.placeOn) && !(f.editOnly && !state.editingId))
+        .map((f) => f.key === "cap" && !state.endOn ? Object.assign({}, f, { req: true }) : f);   // 옛 판 서버(bung_end 없음)는 인원을 꼭 받는다
       const main = isBung ? fields.filter((f) => !f.more) : fields, extra = isBung ? fields.filter((f) => f.more) : [];
       let last = "", html = "";
       main.forEach((f) => { if (f.group && f.group !== last) { html += `<div class="fg-h is-wide">${esc(f.group)}</div>`; last = f.group; } html += fieldHTML(f); });
@@ -1312,6 +1355,7 @@
       // 모임 모집은 올린 글의 카드가 곧 미리보기라 아래 미리보기 상자를 빼서 창을 줄인다
       const pv = document.querySelector("#writeForm .form-preview"); if (pv) pv.hidden = isBung;
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
+      prevTime = (($("wf_time") || {}).value || "");
       // 고치는 글에 '더 적기' 쪽 값이 있거나 쓴 내용이 있으면 펼쳐 둔다(내용이 접힌 곳에 숨지 않게)
       if (isBung && ((meta && extra.some((f) => meta[f.key] != null && String(meta[f.key]) !== "")) || $("wBody").value.trim())) $("moreFold").open = true;
       syncCatChips(cat);
@@ -1446,15 +1490,18 @@
         if (el.type === "number" && !(Number(v) >= Number(el.min) && Number(v) <= Number(el.max) && Number.isInteger(Number(v)))) { setError(el.id, `${el.min}에서 ${el.max} 사이로, 소수점 없이 입력해 주세요.`); ok = false; }
       });
       if (cat === "벙 소식") {
-        [["date", "모임 날짜를 골라 주세요."], ["time", "시간을 입력해 주세요."], ["place", "장소를 입력해 주세요."], ["cap", "모집 인원을 입력해 주세요."]].forEach(([k, msg]) => {
+        const must = [["date", "모임 날짜를 골라 주세요."], ["time", "시작 시간을 입력해 주세요."], ["end", "끝나는 시간을 입력해 주세요."], ["place", "장소를 입력해 주세요."]];
+        if (!state.endOn) must.push(["cap", "모집 인원을 입력해 주세요."]);   // 옛 판 서버는 인원을 꼭 받는다
+        must.forEach(([k, msg]) => {
           const el = $("wf_" + k);
           if (el && !String(el.value || "").trim()) { setError(el.id, msg); ok = false; }
         });
-        const d = $("wf_date"), t = $("wf_time");
+        const d = $("wf_date"), t = $("wf_time"), en = $("wf_end");
         if (d && t && d.value && t.value && slotChanged(d.value, t.value)) {
           const today = C.kstToday();
           if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
         }
+        if (en && t && en.value && t.value && en.value === t.value) { setError("wf_end", "끝나는 시간이 시작 시간과 같습니다."); ok = false; }   // 시작보다 이른 값은 다음 날로 본다(19:00 시작 01:00 끝)
         const capEl = $("wf_cap");   // 고치는 글: 이미 참석한 사람보다 적은 정원은 안 된다(서버는 막지 않으니 화면에서 먼저)
         if (state.editingId && capEl && capEl.value) {
           const have = ((state.attend[state.editingId] || {}).list || []).length || Number((findPost(state.editingId) || {}).attend_count) || 0;
@@ -1494,7 +1541,7 @@
       const list = (state.attend[post.id] || {}).list;
       const n = count != null ? Number(count) : list ? list.length : Number(post.attend_count) || 0;
       const cap = Number(m.cap) || 0;
-      const start = m.date ? m.date + "T" + (m.time || "23:59") : "";
+      const start = C.bungStartKey(m), end = C.bungEndKey(m);
       const dl = m.deadline || start, now = nowKey();
       let why = "";
       if (!start) why = "nodate";
@@ -1502,7 +1549,8 @@
       else if (m.status === "closed") why = "closed";
       else if (dl <= now) why = "deadline";
       else if (cap && n >= cap) why = "full";
-      return { n, cap, open: !why, why, start, deadline: m.deadline || "" };
+      // ongoing: 시작했고 끝나는 시간 전(끝나는 시간이 없는 옛 글은 시작하면 끝난 것으로)
+      return { n, cap, open: !why, why, start, end, ongoing: why === "started" && now < end, deadline: m.deadline || "" };
     }
     const WHY_LABEL = { started: "지난 모임", closed: "모집 마감", deadline: "신청 마감", full: "정원 마감" };
     async function loadAttend(ids) {
@@ -1547,10 +1595,10 @@
       // 신청 마감 글자: 시작 시각과 같으면 '시작 전까지', 모임 당일이면 날짜를 되풀이하지 않는다
       const dlText = st.deadline && st.deadline !== st.start ? "신청 " + (st.deadline.slice(0, 10) === m.date ? "당일 " : C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " ") + st.deadline.slice(11, 16) + "까지" : "";
       const stateText = st.open ? (dlText || "시작 전까지 신청") : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
-      const when = m.date ? C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "";
+      const when = m.date ? C.dateText(m.date, { withDow: true }) + (C.timeRange(m) ? " " + C.timeRange(m) : "") : "";
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
       const past = st.why === "started";
-      const dday = past ? (days === 0 ? "진행 중" : "지난 모임") : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
+      const dday = past ? (st.ongoing ? "진행 중" : "지난 모임") : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
       const left = m.time && !past ? startLeft(st.start) : "";
       const n = list ? list.length : st.n;
       const pct = st.cap ? Math.min(100, Math.round(n / st.cap * 100)) : 0;
@@ -1568,7 +1616,7 @@
       const sub = [];
       const recent = !past || (days != null && days >= -7);   // 모임장은 시작 뒤에도(일주일 안) 늦게 온 사람을 적거나 안 온 사람을 뺄 수 있다(서버도 허용)
       sub.push(`<button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>`);
-      if (!past && st.why !== "nodate") sub.push(m.status === "closed"
+      if ((!past || st.ongoing) && st.why !== "nodate") sub.push(m.status === "closed"   // 진행 중에도 마감할 수 있다(마감하면 봇 공지의 첫 줄을 다음 모임에 내준다)
         ? `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="">다시 모집</button>`
         : `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="closed">모집 마감</button>`);
       if (state.placeOn && recent) sub.push(`<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가</button>`);
@@ -1598,7 +1646,7 @@
       const post = findPost(id); const list = (state.attend[id] || {}).list || [];
       if (!post || !list.length) return;
       const m = C.postMeta(post) || {};
-      const head = (post.title || "모임") + (m.date ? " " + C.dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : "");
+      const head = (post.title || "모임") + (m.date ? " " + C.dateText(m.date, { withDow: true }) + (C.timeRange(m) ? " " + C.timeRange(m) : "") : "");
       const ok = await copyText(head + "\n참석 " + list.length + "명" + (m.cap ? " / 정원 " + m.cap + "명" : "") + "\n" + list.map((x) => x.nick).join(", "));
       showToast(ok ? "참석 명단을 복사했습니다." : "복사에 실패했습니다.");
     }
@@ -1809,6 +1857,13 @@
       const m = C.postMeta(findPost(state.editingId) || {}) || {};
       return m.date !== date || m.time !== time;
     }
+    /* 같은 시간대 검사에서 '모집 중': 마감 안 함, 정원 남음, 모임장이 정한 신청 마감 전. 신청 마감을 따로 정하지 않았으면 끝나는 시각까지(끝나는 시간이 없는 옛 글은 시작까지).
+       봇 공지와 서버 bung_is_open 과 같은 뜻. 진행 중이고 마감이 아닌 모임은 자리를 지킨다(참석 단추의 열림과는 다르다. 참석은 시작 뒤 받지 않는다) */
+    function slotOpen(post, count) {
+      const st = bungStatus(post, count), m = C.postMeta(post) || {};
+      if (!st.start || m.status === "closed" || (st.cap && st.n >= st.cap)) return false;
+      return nowKey() < (m.deadline || st.end);
+    }
     /* 같은 날 앞뒤 2시간 안에 모집 중인 다른 모임. 마감했거나, 신청 마감이 지났거나, 정원이 찬 모임은 예외라 묻지 않는다(서버도 같은 기준) */
     async function sameSlot(meta, selfId) {
       const sel = "id,title,author,meta,category" + (state.attendOn ? ",attend_count" : "");
@@ -1817,7 +1872,7 @@
       const mm = (t) => { const p = hm(t).split(":"); return Number(p[0]) * 60 + Number(p[1]); };
       const me = mm(meta.time);
       return (rows || []).filter((p) => p.id !== selfId).map((p) => ({ p, m: C.postMeta(p) }))
-        .filter(({ p, m }) => m && m.date === meta.date && Math.abs(mm(m.time) - me) <= 120 && bungStatus(p, p.attend_count).open)
+        .filter(({ p, m }) => m && m.date === meta.date && Math.abs(mm(m.time) - me) <= 120 && slotOpen(p, p.attend_count))
         .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", time: /^\d{2}:\d{2}$/.test(m.time || "") ? m.time : "시간 미정", place: m.place || "" }))
         .sort((a, b) => a.time.localeCompare(b.time));
     }
@@ -1920,7 +1975,7 @@
         }
         if (editing) {
           const others = ((state.attend[state.editingId] || {}).list || []).filter((x) => nickKey(x.nick) !== nickKey(nick || (findPost(state.editingId) || {}).author)).length;
-          const moved = oldMeta && meta && ["date", "time", "place"].some((k) => String(oldMeta[k] || "") !== String(meta[k] || ""));
+          const moved = oldMeta && meta && ["date", "time", "end", "place"].some((k) => String(oldMeta[k] || "") !== String(meta[k] || ""));
           showToast(moved && others ? `저장했습니다. 참석자 ${others}명에게 바뀐 내용을 알려 주세요.` : "글을 저장했습니다.");
         }
         else { saveNick(nick); savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : selfAttend ? "모임은 올렸지만 참석자로 넣지 못했습니다. 카드의 참석하기를 눌러 주세요." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
@@ -2103,7 +2158,7 @@
 
     // ── 이벤트 ──
     function bindEvents() {
-      $("heroWriteBtn").addEventListener("click", openWriteDefault);
+      $("boardWriteBtn").addEventListener("click", openWriteDefault);
       $("writeCloseBtn").addEventListener("click", closeWriteModal);
       $("writeCancelBtn").addEventListener("click", closeWriteModal);
       $("writeSubmitBtn").addEventListener("click", submitWrite);
@@ -2123,6 +2178,7 @@
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
+        if (e.target.id === "wf_time") followEnd(e.target.value);
         if (e.target.closest("#typeFields")) syncChips();
         if (e.target.id === "wTitle" || e.target.id === "wBody") syncCatNudge();
         if (e.target.id === "wPass") syncPassHint();
@@ -2136,6 +2192,7 @@
         const box = b.closest(".chips"), input = $(box.dataset.for); if (!input) return;
         let v = b.dataset.v;
         if (box.dataset.chips === "deadline") { v = deadlineFrom(v, ($("wf_date") || {}).value, ($("wf_time") || {}).value); if (v == null) return; }
+        if (box.dataset.chips === "end") { v = b.dataset.hm || ""; if (!v) return; }
         input.value = v;
         input.dispatchEvent(new Event("input", { bubbles: true }));
         syncChips();
@@ -2254,7 +2311,7 @@
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
     const capsReady = C.caps().then((c) => {
-      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place;
+      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
     }).catch(() => {});   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다. 글 목록 질의는 이것을 기다린다

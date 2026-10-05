@@ -1,9 +1,6 @@
--- 모임 모집 장소 1/2: 모집 글 항목에 주소(addr)와 좌표(lat, lng)를 받는다(지도에서 고른 장소)
--- 1쪽, 2쪽을 차례로 SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다. 참석 기능 네 쪽(2026-10-01)이 먼저 적용되어 있어야 한다.
-do $g$ begin
-  if to_regclass('public.site_bung_attend') is null then raise exception '참석 기능 SQL(2026-10-01) 네 쪽을 먼저 실행하세요'; end if;
-  if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '끝나는 시간 판(2026-10-05)이 이미 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(끝나는 시간이 빠집니다)'; end if;
-end $g$;
+-- 모임 모집 끝나는 시간 1/2: 모집 글 항목에 끝나는 시간(end, HH:MM)을 받는다
+-- 1쪽, 2쪽을 차례로 SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다. 참석 보강 두 쪽(2026-10-03)이 먼저 적용되어 있어야 한다.
+do $g$ begin if to_regprocedure('public.bung_check(jsonb,bigint,jsonb)') is null then raise exception '참석 보강 SQL(2026-10-03) 두 쪽을 먼저 실행하세요'; end if; end $g$;
 
 create or replace function post_meta_clean(p_category text, p_meta jsonb)
 returns jsonb language plpgsql immutable set search_path = public as $$
@@ -17,6 +14,8 @@ begin
     if t is not null and bung_ts(t, null) is not null then out := out || jsonb_build_object('date', t); end if;
     t := nullif(trim(p_meta ->> 'time'), '');       -- 00:00~23:59 만(24:00 은 다음날 0시가 되어 버린다)
     if t is not null and t ~ '^([01]\d|2[0-3]):[0-5]\d$' then out := out || jsonb_build_object('time', t); end if;
+    t := nullif(trim(p_meta ->> 'end'), '');        -- 끝나는 시간. 시작보다 이르거나 같으면 다음 날로 본다(bung_end)
+    if t is not null and t ~ '^([01]\d|2[0-3]):[0-5]\d$' then out := out || jsonb_build_object('end', t); end if;
     t := site_meta_text(p_meta, 'place', 60);       if t is not null then out := out || jsonb_build_object('place', t); end if;
     t := site_meta_text(p_meta, 'addr', 100);       if t is not null then out := out || jsonb_build_object('addr', t); end if;
     begin                                           -- 좌표: 둘 다 있고 한국 안일 때만

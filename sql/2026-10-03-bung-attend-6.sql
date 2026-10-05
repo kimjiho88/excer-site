@@ -1,6 +1,9 @@
 -- 모임 모집 참석 보강 2/2: 글 수정 검사(정원은 참석 수 이상 BUNG_CAP, 날짜를 옮기면 지난 신청 마감은 안 됨, 참석자 있는 글의 종류 바꾸기 HAS_ATTENDEES), 옛 5인자 글 함수 정리
 -- 보강 1쪽 뒤에 실행. 다시 실행해도 안전하다.
-do $g$ begin if to_regprocedure('public.bung_nick_key(text)') is null then raise exception '보강 1쪽을 먼저 실행하세요'; end if; end $g$;
+do $g$ begin
+  if to_regprocedure('public.bung_nick_key(text)') is null then raise exception '보강 1쪽을 먼저 실행하세요'; end if;
+  if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '끝나는 시간 판(2026-10-05)이 이미 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(글 검사가 옛 판으로 돌아갑니다)'; end if;
+end $g$;
 
 create or replace function bung_check(p_meta jsonb, p_self bigint, p_old jsonb)
 returns void language plpgsql stable security definer set search_path = public as $$
