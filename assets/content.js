@@ -296,17 +296,39 @@
      모임 모집 글 + 모임 날짜가 오늘 이후 + 마감 아님. 오늘 모임은 시간이 아직 지나지 않은 것만. 시간이 없으면 그날 하루 종일 */
   function isUpcoming(v, today, nowHM) {
     if (!v || v.kind !== "bung" || !v.meta || !v.meta.date) return false;
-    if (v.meta.status === "closed" || v.meta.date < today) return false;
-    if (v.meta.date === today && nowHM && /^\d{2}:\d{2}$/.test(String(v.meta.time || "")) && v.meta.time < nowHM) return false;
+    if (v.meta.status === "closed") return false;
+    var nowK = today + "T" + (nowHM || "00:00");
+    if (v.meta.date < today) return HM_RE.test(v.meta.end || "") && v.meta.date >= addDaysYmd(today, -1) && nowK < bungEndKey(v.meta);   // 자정을 넘겨 아직 진행 중인 어제 모임만
+    if (v.meta.date === today && nowHM && HM_RE.test(String(v.meta.time || "")) && nowK >= bungEndKey(v.meta)) return false;   // 끝나는 시간까지(없으면 시작까지)
     return true;
   }
+  function addDaysYmd(ymd, n) { var d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  /* 모임 시각 열쇠 "YYYY-MM-DDTHH:MM"(한국 시간, 문자열 비교). 시간이 없으면 23:59 */
+  var HM_RE = /^\d{2}:\d{2}$/;
+  function bungStartKey(m) { return m && m.date ? m.date + "T" + (HM_RE.test(m.time || "") ? m.time : "23:59") : ""; }
+  /* 끝나는 시각. 시작보다 이르거나 같으면 다음 날(19:00 시작 01:00 끝). 끝나는 시간이 없는 옛 글은 시작 시각 */
+  function bungEndKey(m) {
+    var s = bungStartKey(m);
+    if (!s || !HM_RE.test(m.end || "")) return s;
+    if (m.end > s.slice(11, 16)) return m.date + "T" + m.end;
+    return addDaysYmd(m.date, 1) + "T" + m.end;
+  }
+  /* 지금(열쇠 꼴) 기준 모임의 때: before(시작 전), ongoing(진행 중), ended(끝남). 날짜가 없으면 "" */
+  function bungPhase(m, nowKey) {
+    var s = bungStartKey(m);
+    if (!s) return "";
+    if (nowKey < s) return "before";
+    return nowKey < bungEndKey(m) ? "ongoing" : "ended";
+  }
+  /* "19:00~21:00". 끝나는 시간이 없으면 "19:00", 시간이 없으면 "" */
+  function timeRange(m) { return m && HM_RE.test(m.time || "") ? m.time + (HM_RE.test(m.end || "") ? "~" + m.end : "") : ""; }
   /* 상세에 표 형태로 놓는 사실 항목. 있는 것만 담긴다 */
   function postFacts(post, today) {
     var m = postMeta(post);
     if (!m) return [];
     var t = postType(post.category).kind, f = [];
     if (t === "bung") {
-      var when = m.date ? dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : "") : (m.time || "");
+      var when = m.date ? dateText(m.date, { withDow: true }) + (timeRange(m) ? " " + timeRange(m) : "") : timeRange(m);
       if (when) f.push({ key: "when", label: "날짜와 시간", value: when });
       if (m.place) f.push({ key: "place", label: "장소", value: m.place + (m.addr ? ", " + m.addr : "") });
       if (m.cap) f.push({ key: "cap", label: "모집 인원", value: m.cap + "명" });
@@ -342,8 +364,8 @@
     if (t === "bung" && m) {
       var st = bungState(m, today);
       var bits = [];
-      if (m.date) bits.push(dateText(m.date, { withDow: true }) + (m.time ? " " + m.time : ""));
-      else if (m.time) bits.push(m.time);
+      if (m.date) bits.push(dateText(m.date, { withDow: true }) + (timeRange(m) ? " " + timeRange(m) : ""));
+      else if (timeRange(m)) bits.push(timeRange(m));
       if (m.place) bits.push(m.place);
       return { text: bits.join(", "), state: st.label, past: st.past || st.closed };
     }
@@ -396,17 +418,18 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1, loc = false, att = false, plc = false;
+        var v = 1, loc = false, att = false, plc = false, en = false;
         (Array.isArray(rows) ? rows : []).forEach(function (x) {
           if (x.key === "content_format") v = Number(x.value) || 1;
           if (x.key === "places_location") loc = Number(x.value) >= 1;
           if (x.key === "bung_attend") att = Number(x.value) >= 1;
           if (x.key === "bung_place") plc = Number(x.value) >= 1;   // 모집 글의 주소와 좌표, 모임장 참석자 추가(2026-10-02 SQL)
+          if (x.key === "bung_end") en = Number(x.value) >= 1;      // 끝나는 시간을 받고 모집 인원은 선택(2026-10-05 SQL). 없으면 서버가 인원을 꼭 받는다
         });
         attendOn = att;
-        return { contentFormat: v, location: loc, attend: att, place: plc && att };
+        return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en };
       })
-      .catch(function () { return { contentFormat: 1, location: false, attend: false, place: false }; });
+      .catch(function () { return { contentFormat: 1, location: false, attend: false, place: false, end: false }; });
     return capsPromise;
   }
 
@@ -443,6 +466,6 @@
     placeView: placeView, placeLine: placeLine, mapUrl: mapUrl,
     looksLikeAddress: looksLikeAddress,
     postType: postType, catLabel: catLabel, postMeta: postMeta, postFacts: postFacts, postSubline: postSubline, postView: postView,
-    bungState: bungState, isUpcoming: isUpcoming, excerpt: excerpt, caps: caps
+    bungState: bungState, isUpcoming: isUpcoming, bungStartKey: bungStartKey, bungEndKey: bungEndKey, bungPhase: bungPhase, timeRange: timeRange, excerpt: excerpt, caps: caps
   };
 })();

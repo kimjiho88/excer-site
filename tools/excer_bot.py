@@ -12,10 +12,12 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   dry      보내지 않고 화면에 찍기만(시험용).
 
 하는 일
-  - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시간, 장소, 인원을 꼭 받는다).
-  - 공지: 모집 중인 벙만 벙 시간 차례대로. 첫 줄이 다음 벙(신청 마감이 따로 있으면 그 시각도), 그 아래로 이후 벙.
-    모집 중은 마감하지 않았고, 신청 마감(없으면 시작 시각) 전이고, 참석이 정원에 차지 않은 벙이다.
-    이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 취소, 그리고 신청 마감이 되어 다음 벙이 첫 줄로 올라올 때)
+  - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
+  - 공지: 모집 중인 벙만 벙 시간 차례대로(같은 시간이면 먼저 올라온 글이 위). 첫 줄이 다음 벙(신청 마감이 따로 있으면 그 시각도),
+    그 아래로 이후 벙. 벙이 시작하면 끝나는 시간까지 첫 줄에 '진행 중 제목 21:00까지'로 남고, 끝나면 빠진다(끝나는 시간이 없는 옛 글은 시작하면 빠진다).
+    모집 중은 마감하지 않았고, 모임장이 정한 신청 마감이 지나지 않았고, 참석이 정원에 차지 않은 벙이다.
+    진행 중인 벙이 마감되면 첫 줄 자리를 내주어 같은 시간대의 새 벙이 첫 줄로 오고, 마감된 벙은 끝날 때까지 그 아래 '진행 중' 줄로 남는다.
+    이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 취소, 시작, 끝, 신청 마감이 되어 다음 벙이 첫 줄로 올라올 때)
     방에 올리고 길게 눌러 공지로 건다.
   - 알림: 새 벙, 날짜와 시간과 장소와 신청 마감 바뀜, 마감, 정원 참, 다시 모집(마감 풀림, 자리 남), 취소(모집 글 삭제)는
     공지 글 앞에 알림 메시지를 따로 올린다. 하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
@@ -205,7 +207,7 @@ def norm(p):
     m = p.get("meta") if isinstance(p.get("meta"), dict) else {}
     if m.get("kind") and m.get("kind") != "bung":
         m = {}
-    d, t = str(m.get("date") or ""), str(m.get("time") or "")
+    d, t, e = str(m.get("date") or ""), str(m.get("time") or ""), str(m.get("end") or "")
     try:
         cap = int(round(float(m.get("cap")))) if m.get("cap") not in (None, "") and float(m.get("cap")) > 0 else 0
     except (TypeError, ValueError):
@@ -216,7 +218,7 @@ def norm(p):
     except (TypeError, ValueError):
         att = None
     return {"id": str(p["id"]), "title": clean(p.get("title"), 40) or "제목 없음", "author": clean(p.get("author"), 20),
-            "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "",
+            "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "", "end": e if TIME_RE.match(e) else "",
             "place": clean(m.get("place"), 40), "addr": clean(m.get("addr"), 60), "cap": cap, "closed": m.get("status") == "closed",
             "deadline": dl if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", dl) else "",
             "attend": att, "full": bool(cap and att is not None and att >= cap),
@@ -247,9 +249,10 @@ class Site:
         return self.key
 
     def posts(self):
-        """오늘 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다"""
+        """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
+        어제 것도 읽는 까닭: 자정을 넘겨 끝나는 벙(19:00 시작 01:00 끝)이 자정에 공지에서 빠지지 않게"""
         cols = "id,title,author,meta,created_at" + ("" if getattr(self, "no_attend", False) else ",attend_count")
-        q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식", "meta->>date": "gte." + Now(datetime.now(KST)).ymd,
+        q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식", "meta->>date": "gte." + Now(datetime.now(KST) - timedelta(days=1)).ymd,
                                     "order": "created_at.desc", "limit": "100"}, quote_via=urllib.parse.quote)
         url = self.cfg["supa"] + "/rest/v1/site_posts_v?" + q
         for fresh in (False, True):
@@ -295,14 +298,31 @@ def deadline_key(v):
     return v.get("deadline") or start_key(v)
 
 
+def end_key(v):
+    """끝나는 시각. 시작보다 이르거나 같으면 다음 날(19:00 시작 01:00 끝). 끝나는 시간이 없는 옛 글은 시작 시각"""
+    e = v.get("end") or ""
+    if not e or not v["date"]:
+        return start_key(v)
+    if e > (v["time"] or "23:59"):
+        return v["date"] + "T" + e
+    y, m, d = (int(x) for x in v["date"].split("-"))
+    return (date(y, m, d) + timedelta(days=1)).isoformat() + "T" + e
+
+
+def ongoing(v, now):
+    """시작했고 아직 끝나지 않은 벙"""
+    return bool(v["date"]) and start_key(v) <= now_key(now) < end_key(v)
+
+
 def upcoming(v, now):
-    """아직 시작하지 않았고 마감하지 않은 벙"""
-    return bool(v["date"]) and not v["closed"] and now_key(now) < start_key(v)
+    """아직 끝나지 않았고(끝나는 시간이 없으면 시작 전) 마감하지 않은 벙"""
+    return bool(v["date"]) and not v["closed"] and now_key(now) < end_key(v)
 
 
 def recruiting(v, now):
-    """모집 중: 시작 전, 마감 안 함, 신청 마감 전, 정원 남음. 공지에는 이 벙만 넣는다"""
-    return upcoming(v, now) and not v.get("full") and now_key(now) < deadline_key(v)
+    """모집 중: 마감 안 함, 정원 남음, 모임장이 정한 신청 마감 전, 끝나기 전. 공지에는 이 벙만 넣는다.
+    신청 마감을 따로 정하지 않은 벙은 시작한 뒤에도 끝날 때까지 '진행 중'으로 공지에 남는다(시작 시각은 설정한 마감이 아니다)"""
+    return upcoming(v, now) and not v.get("full") and (not v.get("deadline") or now_key(now) < v["deadline"])
 
 
 def dl_text(v):
@@ -317,7 +337,7 @@ def skey(v):
 
 
 def head(v):
-    return (md(v["date"]) if v["date"] else "날짜 미정") + (" " + v["time"] if v["time"] else "") + " " + v["title"]
+    return (md(v["date"]) if v["date"] else "날짜 미정") + (" " + v["time"] + ("~" + v["end"] if v.get("end") else "") if v["time"] else "") + " " + v["title"]
 
 
 def line(v):
@@ -326,7 +346,21 @@ def line(v):
 
 def sig(v):
     return {"d": v["date"], "t": v["time"], "p": v["place"], "c": 1 if v["closed"] else 0, "n": v["title"], "cr": v["created"],
-            "dl": v.get("deadline") or "", "f": 1 if v.get("full") else 0, "cap": v.get("cap") or 0}
+            "dl": v.get("deadline") or "", "f": 1 if v.get("full") else 0, "cap": v.get("cap") or 0, "e": v.get("end") or ""}
+
+
+def sig_live(o, now):
+    """기록된 글이 아직 살아 있는가: 날짜가 오늘 이후이거나, 어제 시작해 자정을 넘겨 아직 끝나지 않은 벙"""
+    if not o or not o.get("d"):
+        return False
+    if o["d"] >= now.ymd:
+        return True
+    return bool(o.get("e")) and now_key(now) < end_key({"date": o["d"], "time": o.get("t") or "", "end": o["e"]})
+
+
+def live_reason(v):
+    """진행 중인데 마감인 까닭(공지의 진행 중 줄에 적는다)"""
+    return "모집 마감" if v["closed"] else "정원 마감" if v.get("full") else "신청 마감"
 
 
 def noch():
@@ -346,8 +380,8 @@ def diff(known, posts, now, init, full=False):
             if upcoming(v, now):
                 ch["new"].append(v)
             continue
-        if v["date"] and v["date"] < now.ymd:
-            continue                                   # 지난 벙은 알리지 않는다
+        if v["date"] and v["date"] < now.ymd and not ongoing(v, now):
+            continue                                   # 지난 벙은 알리지 않는다(자정을 넘겨 진행 중인 어제 벙은 아직 산 것)
         if v["closed"]:
             if not o.get("c"):
                 ch["cls"].append(v)
@@ -356,6 +390,8 @@ def diff(known, posts, now, init, full=False):
                                 ("신청 마감", o.get("dl"), v.get("deadline"))) if (a or "") != (b or "")]
         if "cap" in o and (o.get("cap") or 0) != (v.get("cap") or 0):
             f.append("정원")                            # 예전 기록에 정원이 없으면(이 판 이전) 바뀐 것으로 치지 않는다
+        if "e" in o and (o.get("e") or "") != (v.get("end") or ""):
+            f.append("끝나는 시간")
         if v.get("full") and not o.get("f"):
             ch["full"].append(v)                       # 정원이 찼다(정원을 줄여서 찬 것이면 마감 알림 한 번에 참석과 정원을 적는다)
             f = [x for x in f if x != "정원"]
@@ -368,8 +404,7 @@ def diff(known, posts, now, init, full=False):
     for k, o in known.items():
         if k in cur or not o or o.get("c"):
             continue
-        live = bool(o.get("d")) and o["d"] >= now.ymd
-        if not live:
+        if not sig_live(o, now):
             continue                                   # 지난 글은 잊는다
         if init and (full or (o.get("cr") and oldest and o["cr"] > oldest)):   # 읽은 범위 안의 글이 없어졌으면 지워진 것
             ch["del"].append({"id": k, "date": o.get("d") or "", "time": o.get("t") or "", "title": o.get("n") or "제목 없음", "place": o.get("p") or ""})
@@ -383,7 +418,7 @@ def has_changes(ch):
 
 
 # 카카오톡은 글자만 보내므로 이모지로 줄의 뜻을 표시한다. 공지 띠에는 첫 100자쯤이 보여 첫 두 줄에 날짜, 시간, 제목, 장소를 둔다
-EMO = {"next": "\U0001F4E3", "place": "\U0001F4CD", "people": "\U0001F465", "later": "\U0001F5D3", "go": "\U0001F449", "bell": "\U0001F514",
+EMO = {"next": "\U0001F4E3", "place": "\U0001F4CD", "people": "\U0001F465", "later": "\U0001F5D3", "go": "\U0001F449", "bell": "\U0001F514", "live": "⏳",
        "새 벙": "\U0001F195", "벙 변경": "\u270F\uFE0F", "벙 마감": "\U0001F512", "벙 다시 모집": "\U0001F513", "벙 취소": "\u274C"}
 
 
@@ -408,16 +443,29 @@ def people_line(v, host=False, live=True):
     return (EMO["people"] + " " + ", ".join(parts)) if parts else ""
 
 
+def live_line(v):
+    """진행 중이지만 마감인 벙의 줄: 제목, 장소, 끝나는 시각, 마감 까닭"""
+    return EMO["live"] + " 진행 중 " + v["title"] + (", " + v["place"] if v["place"] and v["place"] not in v["title"] else "") + \
+        (" " + v["end"] + "까지" if v.get("end") else "") + " (" + live_reason(v) + ")"
+
+
 def notice_text(posts, now, cfg):
-    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 둘째 줄이 장소, 그 아래로 이후 벙. 벙이 시작하면 다음 벙이 첫 줄로 올라온다"""
+    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 둘째 줄이 장소, 그 아래로 이후 벙.
+    모집 중인 벙이 시작하면 끝날 때까지 첫 줄에 '진행 중 제목 21:00까지'로 남고, 끝나면 다음 벙이 첫 줄로 올라온다.
+    진행 중인데 마감된 벙(모집 마감, 정원 참, 설정한 신청 마감 지남)은 첫 줄 자리를 내주고 그 아래 '진행 중' 줄로 남는다"""
     up = sorted([v for v in posts if recruiting(v, now)], key=skey)
+    live = sorted([v for v in posts if ongoing(v, now) and not recruiting(v, now)], key=skey)
     link = cfg["site"] + "/bung"
     if not up:
-        return "\n".join([EMO["next"] + " 다음 벙 아직 없음"] + (["벙 올리기 " + EMO["go"] + " " + link] if cfg.get("link", True) else []))
+        return "\n".join([EMO["next"] + " 다음 벙 아직 없음"] + [live_line(v) for v in live] + (["벙 올리기 " + EMO["go"] + " " + link] if cfg.get("link", True) else []))
     first, rest = up[0], up[1:]
     same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
-    out = [EMO["next"] + " 다음 벙 " + head(first) + (" 외 %d건" % same if same else "")]
+    if ongoing(first, now):                              # 지금 하는 벙: 날짜 대신 끝나는 시각(공지 띠에 제목이 보이게 짧게)
+        out = [EMO["next"] + " 진행 중 " + first["title"] + (" " + first["end"] + "까지" if first.get("end") else "") + (" 외 %d건" % same if same else "")]
+    else:
+        out = [EMO["next"] + " 다음 벙 " + head(first) + (" 외 %d건" % same if same else "")]
     out += [l for l in (place_line(first), people_line(first, live=bool(cfg.get("notice_attend")))) if l]
+    out += [live_line(v) for v in live]
     if rest:
         mx = max(1, int(cfg.get("max_lines", 15)))
         out += ["", EMO["later"] + " 이후 %d건" % len(rest)]
@@ -483,6 +531,8 @@ def changes_line(ch, v):
                 parts.append("신청 마감 %s 에서 %s" % (fmt(o.get("dl") or ""), fmt(v.get("deadline") or "")))
             if "정원" in f:
                 parts.append("정원 %d명에서 %d명" % (o.get("cap") or 0, v.get("cap") or 0))
+            if "끝나는 시간" in f:
+                parts.append("끝나는 시간 %s 에서 %s" % (o.get("e") or "없음", v.get("end") or "없음"))
             return ", ".join(parts)
     return ""
 
@@ -541,7 +591,7 @@ class Bot:
         if self.read_fails:
             self.log("사이트 다시 읽힘(%d번 실패 뒤)" % self.read_fails)
             self.read_fails = 0
-        live_known = any(o and o.get("d") and o["d"] >= now.ymd for o in st.get("known", {}).values())
+        live_known = any(sig_live(o, now) for o in st.get("known", {}).values())
         if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다. 세 번 연속이어야 믿는다
             self.empty_streak += 1
             if self.empty_streak < 3:
@@ -2753,18 +2803,18 @@ def cmd_feed(path, op):
     except (OSError, ValueError):
         raise SystemExit("시험 파일이 없음. 먼저 python excer_bot.py sample-feed")
     now = datetime.now(KST)
-    if op == "soon":                                    # 3분 뒤 시작: 시작하면 공지 첫 줄이 다음 벙으로 넘어가는지 본다
+    if op == "soon":                                    # 3분 뒤 시작, 6분 뒤 끝: 시작하면 첫 줄이 '진행 중'이 되고, 끝나면 다음 벙으로 넘어가는지 본다
         n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
-        at = now + timedelta(minutes=3)
+        at, till = now + timedelta(minutes=3), now + timedelta(minutes=6)
         rows.append({"id": n, "title": "곧 시작 시험 벙 %d" % (n - 900000), "author": "시험", "created_at": now.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
-                     "meta": {"kind": "bung", "date": at.strftime("%Y-%m-%d"), "time": at.strftime("%H:%M"), "place": "시험 장소", "cap": 4}})
+                     "meta": {"kind": "bung", "date": at.strftime("%Y-%m-%d"), "time": at.strftime("%H:%M"), "end": till.strftime("%H:%M"), "place": "시험 장소", "cap": 4}})
         save_json(path, rows)
-        print("고쳤습니다: %s 에 시작하는 벙. 곧 공지 첫 줄에 오고, %s 가 지나면 다음 벙으로 넘어갑니다." % (at.strftime("%H:%M"), at.strftime("%H:%M")))
+        print("고쳤습니다: %s 에 시작해 %s 에 끝나는 벙. 곧 공지 첫 줄에 오고, 시작하면 '진행 중', 끝나면 다음 벙으로 넘어갑니다." % (at.strftime("%H:%M"), till.strftime("%H:%M")))
         return
     if op == "add":
         n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
         rows.append({"id": n, "title": "시험 벙 %d" % (n - 900000), "author": "시험", "created_at": now.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
-                     "meta": {"kind": "bung", "date": (now + timedelta(days=1 + (n - 900000) % 5)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소 %d" % (n - 900000), "cap": 6}})
+                     "meta": {"kind": "bung", "date": (now + timedelta(days=1 + (n - 900000) % 5)).strftime("%Y-%m-%d"), "time": "19:00", "end": "21:00", "place": "시험 장소 %d" % (n - 900000), "cap": 6}})
         what = "새 벙: " + rows[-1]["title"]
     else:
         full = lambda r: (r.get("attend_count") or 0) >= int((r.get("meta") or {}).get("cap") or 0) > 0
@@ -2837,7 +2887,7 @@ def main(argv=None):
         path = a.feed or base + "_feed.json"
         today = datetime.now(KST)
         rows = [{"id": 900001, "title": "시험 벙", "author": "시험", "created_at": today.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
-                 "meta": {"kind": "bung", "date": (today + timedelta(days=1)).strftime("%Y-%m-%d"), "time": "19:00", "place": "시험 장소", "cap": 4}}]
+                 "meta": {"kind": "bung", "date": (today + timedelta(days=1)).strftime("%Y-%m-%d"), "time": "19:00", "end": "21:00", "place": "시험 장소", "cap": 4}}]
         save_json(path, rows)
         print("만들었습니다:", path)
         print("python excer_bot.py run --test --feed %s 로 켠 뒤, 다른 창에서 python excer_bot.py feed add (또는 change, close, del, soon, full, deadline) 를 치면 20초 안에 시험 방에 올라옵니다." % os.path.basename(path))
