@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="only light" />
   <meta name="theme-color" content="#F7F5EF" />
+  <meta name="robots" content="noindex" />
 
   <title>소식 | 동네친구들</title>
   <meta name="description" content="동네친구들 소식 게시판입니다. 공지, 모임 모집, 모임 후기, 정보, 자유 글을 올리고 댓글을 남길 수 있습니다." />
@@ -348,7 +349,7 @@
   </style>
   <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=2"></script>
-  <script src="assets/content.js?v=7"></script>
+  <script src="assets/content.js?v=8"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -454,6 +455,7 @@
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
             <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
+            <li><a href="news.html?cat=free&amp;write=suggest">건의하기</a></li>
           </ul>
         </nav>
       </div>
@@ -713,7 +715,8 @@
       ADMIN_ONLY: "운영진 비밀번호가 맞지 않습니다. 공지 작성과 글 고정은 운영진만 할 수 있습니다.",
       PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
       NOT_FOUND: "이미 삭제된 글입니다.",
-      BAD_KEY: "이 글을 수정할 권한이 없습니다."
+      BAD_KEY: "이 글을 수정할 권한이 없습니다.",
+      RATE_LIMIT: "짧은 시간에 너무 많이 보냈습니다. 잠시 뒤 다시 해 주세요."
     };
     const OFFLINE_MSG = "지금은 소식을 불러올 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
@@ -2000,7 +2003,10 @@
     // ── 삭제 / 고정 ──
     async function deletePost(id) {
       if (state.busy) return;
-      const pass = await askPassword("글 삭제", "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ownPass(findPost(id)));
+      const post = findPost(id);
+      // 참석자가 있는 모임 글은 명단도 함께 지워진다는 것을 먼저 말한다
+      const n = post ? (((state.attend[id] || {}).list || []).length || Number(post.attend_count) || 0) : 0;
+      const pass = await askPassword("글 삭제", (n ? "참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ownPass(post));
       if (pass === null) return;
       state.busy = true;
       try {
@@ -2321,9 +2327,12 @@
     // 홈의 '모임 올리기'(news.html?cat=bung&write=1): 서버 형식을 안 뒤 모임 모집 창을 연다. 주소에서 write 는 지운다
     try {
       const u = new URL(location.href);
-      if (u.searchParams.get("write") === "1") {
+      const w = u.searchParams.get("write");
+      if (w === "1" || w === "suggest") {
         u.searchParams.delete("write"); history.replaceState(null, "", u.pathname + u.search + u.hash);
-        capsReady.then(() => openWriteModal(null, loadDraft() && loadDraft().category === "벙 소식" ? null : { category: "벙 소식" }));
+        // 푸터의 '건의하기'(write=suggest): 자유 글에 [건의] 제목으로 연다. 운영진이 소식에서 건의와 신고를 모아 본다
+        if (w === "suggest") capsReady.then(() => openWriteModal(null, { category: "자유", title: "[건의] " }));
+        else capsReady.then(() => openWriteModal(null, loadDraft() && loadDraft().category === "벙 소식" ? null : { category: "벙 소식" }));
       }
     } catch (e) {}
   </script>

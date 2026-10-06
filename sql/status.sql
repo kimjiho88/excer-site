@@ -11,18 +11,24 @@
 -- 그때 못 쓰면 의미가 없기 때문이다. 그래서 표 이름을 직접 적지 않고
 -- to_regclass 로 있는지 먼저 보고, 있을 때만 query_to_xml 로 세어 온다.
 -- 구문 하나로 끝나는 이유도 같다 — SQL Editor 는 마지막 결과만 보여준다.
+--
+-- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다.
+--   판정에 적힌 파일 이름은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- ============================================================
 
 with want (ord, t, 부름) as (values
   (1, 'site_posts',       '소식 글'),
   (2, 'site_comments',    '댓글'),
-  (3, 'site_reports',     '발행 리포트'),
-  (4, 'site_settlements', '정산 공유'),
-  (5, 'site_visit_log',   '방문 기록'),
-  (6, 'site_config',      '설정'),
+  (3, 'site_bung_attend', '참석 명단'),
+  (4, 'site_post_reactions', '반응'),
+  (5, 'site_reports',     '발행 리포트'),
+  (6, 'site_settlements', '정산 공유'),
   (7, 'site_places',      '맛집'),
   (8, 'site_place_notes', '한줄평'),
-  (9, 'site_visit_counts', '방문 횟수(날짜 수)')
+  (9, 'site_visit_counts', '방문 횟수(날짜 수)'),
+  (11, 'ops_store',       '운영 원장'),
+  (12, 'site_rate_hit',   '속도 제한 기록(하루치)'),
+  (13, 'site_config',     '설정')
 ),
 have as (
   select ord, t, 부름, to_regclass('public.' || t) as reg from want
@@ -40,8 +46,6 @@ cnt as (
 -- anon 은 사이트가 브라우저에 그대로 싣고 다니는 공개 키의 권한이다.
 -- 표 이름을 그대로 적으면 to_regclass 로 감싸도 파싱 단계에서 죽는다.
 -- CASE 는 그보다 나중에 평가되기 때문이다. 그래서 이쪽도 문자열로 넘긴다.
--- 벙 모집 글의 날짜·시각·장소·정원이 들어가는 칸.
--- 이게 없으면 소식에서 '벙 소식'을 써도 날짜가 저장되지 않는다.
 bung as (
   select to_regclass('public.site_posts') is not null
          and exists (select 1 from information_schema.columns
@@ -56,28 +60,40 @@ admin as (
                      false, true, '')))[1]::text::bigint
          end as n
 ),
-locks (ord, 부름, 열림) as (
-  select 20, '비밀번호 판정함수',
-         case when to_regprocedure('public.site_is_admin(text)') is null then null
-              else has_function_privilege('anon', 'public.site_is_admin(text)', 'execute') end
-  union all
-  select 21, '해시함수',
-         case when to_regprocedure('public.site_hash(text)') is null then null
-              else has_function_privilege('anon', 'public.site_hash(text)', 'execute') end
+-- 안쪽 함수: 공개 키로 부르면 안 되는 것들. 열린 개수가 0 이어야 한다
+inner_fn (sig) as (values
+  ('public.site_is_admin(text)'), ('public.site_hash(text)'), ('public.site_kst_now()'),
+  ('public.bung_is_open(bigint,jsonb)'), ('public.bung_attend_list(bigint)'), ('public.bung_check(jsonb,bigint,jsonb)'),
+  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)')
+),
+locks as (
+  select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
+         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림
+    from inner_fn
+),
+-- 서버 형식(site_schema_v): 화면이 이 줄들을 보고 기능을 연다. 다섯 줄이 다 있어야 최신이다
+schema_v as (
+  select case when to_regclass('public.site_schema_v') is null then null
+              else (xpath('/row/c/text()', query_to_xml(
+                     $q$select string_agg(key, ', ' order by key) as c from site_schema_v$q$, false, true, '')))[1]::text
+         end as keys
+),
+rate as (
+  select (select count(*) from pg_trigger where tgname = 'site_rate_trg') as n
 )
 
 select 항목, 값, 판정 from (
 
 select ord, 부름 as 항목,
        case when reg is null then '표가 없어요' else n::text || '줄' end as 값,
-       case when reg is null then '설치가 덜 됐어요' else '' end as 판정
+       case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' else '설치가 덜 됐어요' end else '' end as 판정
   from cnt
 
 union all
-select ord, 부름,
-       case 열림 when true then '열려 있음' when false then '잠김' else '함수가 없어요' end,
-       case 열림 when true then '위험 — 2026-09-19-hardening.sql 을 돌려주세요'
-                 when false then '정상' else '설치가 덜 됐어요' end
+select 20, '안쪽 함수 잠금',
+       format('%s개 가운데 %s개 열림', 있음, 열림),
+       case when 열림 > 0 then '위험. sql/README.md 의 권한 절을 보고 revoke 하세요'
+            when 있음 < 9 then '설치가 덜 됐어요(없는 함수가 있어요)' else '정상' end
   from locks
 
 union all
@@ -92,7 +108,21 @@ union all
 select 10, '벙 날짜·장소 칸',
        case when ok then '있음' else '없음' end,
        case when ok then '정상'
-            else '2026-09-20-bung-fields.sql 을 돌려야 벙 날짜가 저장돼요' end
+            else '설치가 덜 됐어요. sql/README.md 의 차례대로(콘텐츠 양식부터)' end
   from bung
+
+union all
+select 14, '서버 형식(site_schema_v)',
+       coalesce(keys, '보기가 없어요'),
+       case when keys is null then '설치가 덜 됐어요'
+            when keys = 'bung_attend, bung_end, bung_place, content_format, places_location' then '정상(최신)'
+            else '빠진 줄이 있어요. sql/README.md 에서 아직 안 돌린 쪽을 차례대로' end
+  from schema_v
+
+union all
+select 15, '속도 제한 트리거',
+       n::text || '개',
+       case when n >= 6 then '정상' when n = 0 then '2026-10-06-rate-limit.sql 을 돌리세요' else '일부만 있어요. 2026-10-06-rate-limit.sql 을 다시 돌리세요' end
+  from rate
 
 ) x order by x.ord;

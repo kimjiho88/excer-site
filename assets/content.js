@@ -429,7 +429,10 @@
         attendOn = att;
         return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en };
       })
-      .catch(function () { return { contentFormat: 1, location: false, attend: false, place: false, end: false }; });
+      .catch(function () {
+        capsPromise = null;   // 한 번 못 읽었다고 페이지가 살아 있는 동안 옛 서버로 굳지 않게: 다음 호출이 다시 읽는다
+        return { contentFormat: 1, location: false, attend: false, place: false, end: false };
+      });
     return capsPromise;
   }
 

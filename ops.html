@@ -621,6 +621,10 @@
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
+        try {
+          localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(소식과 맛집이 글 비밀번호를 저장하지 않는다). 비밀번호는 저장하지 않는다
+          if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
+        } catch (e2) {}
         openApp();
       } catch (err) {
         PASS = "";

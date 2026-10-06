@@ -113,6 +113,8 @@
 | `python excer_bot.py voice look` | 켜 둔 보이스룸(알릴 방)의 방 위쪽, '보이스룸' 이 든 요소, 띠를 누른 뒤의 보이스룸 화면 단추 이름을 `excer_bot_voice_look.txt` 에 적고 클립보드에 담는다. 나가기는 누르지 않고 작게 접는다. 대화 글과 남의 알림 글은 적지 않는다 |
 | `python excer_bot.py voice on` / `off` | 설정을 켜고 끈다 |
 | `python excer_bot.py run` | `voice.on` 이면 공지 감시와 함께 보이스룸 감시도 돈다 |
+| `python excer_bot.py status` | run 이 돌고 있는지(30초마다 남기는 `excer_bot_alive.json`), 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸 상태, 최근 기록 다섯 줄, 저장소에 새 판이 있는지. 기기를 건드리지 않아 run 이 도는 동안 다른 창에서 쳐도 된다 |
+| `python excer_bot.py update` | 저장소(main)의 봇 파일을 받아 이 파일을 바꾼다. 문법 검사가 통과해야 바꾸고 옛 파일은 `.bak`. run 이 돌고 있으면 먼저 멈추라고 한다 |
 
 ## 9. 만드는 차례
 

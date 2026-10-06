@@ -37,11 +37,16 @@ tablet 준비(태블릿 하나로)
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
+  - 재부팅이나 Termux 종료 뒤에는 봇이 저절로 다시 켜지지 않는다. Termux 를 열고 python excer_bot.py status 로 멈춘 것을 확인한 뒤
+    (무선 디버깅을 켜고 connect 를 한 번) python excer_bot.py run. 하루 한 번 status 를 치는 습관이 가장 싼 감시다.
 
 명령(이 파일이 있는 폴더에서)
   python excer_bot.py setup           설정 파일(excer_bot.json)을 만든다. tablet 이면 카카오톡 목록의 방 이름을 번호로 고른다
   python excer_bot.py connect 포트     (tablet) 무선 디버깅 포트로 같은 기기에 붙는다
   python excer_bot.py check           사이트, 기기 연결, 클립보드를 확인한다(보내지 않음)
+  python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 최근 기록 다섯 줄,
+                                      저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
+  python excer_bot.py update          저장소의 새 봇 파일을 받아 이 파일을 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
   python excer_bot.py list            지금 목록을 찍어 본다(보내지 않음)
   python excer_bot.py test            시험 방에 지금 목록을 보내고 공지까지 걸어 본다
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
@@ -66,7 +71,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
-      excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot.log(한 일). 이 파일 옆에 생긴다.
+      excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot_alive.json(run 이 30초마다 남기는 살아 있음 표시),
+      excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import json
@@ -82,6 +88,8 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+VERSION = "2026-10-06"                               # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
+RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -228,10 +236,15 @@ def norm(p):
 
 
 def http_get(url, headers=None, timeout=15):
-    req = urllib.request.Request(url, headers=dict({"User-Agent": "excer-bot/1"}, **(headers or {})))
+    """압축(gzip)을 받는다: 20초마다 읽는 글 목록이 비압축이면 달마다 수백 MB 가 나간다"""
+    import gzip
+    req = urllib.request.Request(url, headers=dict({"User-Agent": "excer-bot/1", "Accept-Encoding": "gzip"}, **(headers or {})))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, r.read().decode("utf-8", "replace")
+            body = r.read()
+            if (r.headers.get("Content-Encoding") or "").lower() == "gzip":
+                body = gzip.decompress(body)
+            return r.status, body.decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode("utf-8", "replace")
 
@@ -3075,7 +3088,7 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
     ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -3087,6 +3100,15 @@ def main(argv=None):
     AdbSender.diag_path = base + "_ui.txt"
     if a.command == "setup":
         return cmd_setup(cfg, a.config)
+    if a.command == "status":                          # 기기를 건드리지 않고 파일만 본다. run 이 도는 동안 다른 창에서 쳐도 된다
+        for l in status_lines(base):
+            print(l)
+        ver, _ = remote_version()
+        print("저장소의 판: %s%s" % (ver or "읽지 못함", "" if not ver or ver == VERSION else " (새 판이 있습니다: Ctrl+C 로 run 을 멈추고 python excer_bot.py update)"))
+        return
+    if a.command == "update":
+        print(cmd_update(base))
+        return
     if a.command == "connect":
         port = a.arg
         if not re.match(r"^(\d{1,5}|[\w.-]+:\d{1,5})$", port):
@@ -3126,6 +3148,7 @@ def main(argv=None):
         print(notice_text(site.posts(), now(), cfg))
         return
     if a.command == "check":
+        print("봇 파일 판: %s" % VERSION)
         try:
             ps = site.posts()
             print("사이트: 오늘 이후 모임 모집 글 %d개 읽음, 모집 중인 벙 %d개" % (len(ps), sum(1 for v in ps if recruiting(v, now()))))
@@ -3222,7 +3245,7 @@ def main(argv=None):
     if a.command == "once":
         log("한 번 봄: " + bot.cycle())
         return
-    log("켬: %s 방%s, %s 방식, %d초마다 %s 확인" % (room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
+    log("켬(판 %s): %s 방%s, %s 방식, %d초마다 %s 확인" % (VERSION, room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
     voice = None
     if (cfg.get("voice") or {}).get("on"):
         if isinstance(bot.sender, AdbSender):
@@ -3232,7 +3255,7 @@ def main(argv=None):
             log("보이스룸 지키기는 tablet 방식에서만 돈다")
     wake_lock(True)                                     # Termux 가 잠들지 않게(태블릿일 때만 있는 명령)
     try:
-        run_loop(bot, log, voice)
+        run_loop(bot, log, voice, base + "_alive.json")
     finally:
         wake_lock(False)
 
@@ -3331,20 +3354,133 @@ def wake_lock(on):
             pass
 
 
-def run_loop(bot, log, voice=None):
+def run_loop(bot, log, voice=None, alive_path=None):
+    last_err, err_n, beat = "", 0, 0.0
     while True:
+        ran = False
         try:
             if bot.due():
+                ran = True
                 r = bot.cycle()
                 if r not in ("none", "quiet"):
                     log("차례: " + r)
             if voice and voice.due():
+                ran = True
                 voice.tick()                            # 보이스룸 끊김은 tick 안에서 적는다
+            if ran and last_err:
+                log("오류가 멎음(%d번 이어졌음)" % err_n)
+                last_err, err_n = "", 0
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            log("오류: %s" % e)
+            msg = "%s" % e
+            err_n = err_n + 1 if msg == last_err else 1
+            last_err = msg
+            if err_n == 1 or err_n % 30 == 0:           # 같은 오류가 2초마다 이어지면 처음과 30번째마다만 적는다(설정 오타 등)
+                log("오류%s: %s" % ("(%d번째, 같은 오류가 이어짐)" % err_n if err_n > 1 else "", msg))
+        if alive_path and time.time() - beat >= 30:    # 살아 있다는 표시: status 명령이 읽는다
+            beat = time.time()
+            write_alive(alive_path, bot, voice, last_err)
         time.sleep(2)
+
+
+def write_alive(path, bot, voice, err=""):
+    try:
+        save_json(path, {"at": datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S"), "ts": time.time(), "pid": os.getpid(), "version": VERSION,
+                         "last_check": float(getattr(bot, "last_check", 0) or 0), "read_fails": int(getattr(bot, "read_fails", 0) or 0),
+                         "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
+                         "voice": (voice.st.get("state") or "") if voice else "", "error": err})
+    except OSError:
+        pass
+
+
+def pid_alive(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def status_lines(base, now_ts=None):
+    """run 이 살아 있는지, 마지막으로 사이트를 본 때, 공지 첫 줄, 보이스룸, 최근 기록. 기기는 건드리지 않는다"""
+    now_ts = now_ts or time.time()
+    out = ["봇 파일 판: %s" % VERSION]
+    alive = {}
+    try:
+        with open(base + "_alive.json", encoding="utf-8-sig") as f:
+            alive = json.load(f)
+    except (OSError, ValueError):
+        pass
+    if not alive:
+        out.append("run: 돈 적 없음(또는 옛 판으로 돌고 있음). python excer_bot.py run")
+    else:
+        age = now_ts - float(alive.get("ts") or 0)
+        live = age < 90 and pid_alive(alive.get("pid"))
+        out.append("run: %s(마지막 표시 %s, %s)" % ("돌고 있음" if live else "멈춤", alive.get("at", "?"), "%d초 전" % age if age < 120 else "%d분 전" % (age // 60)))
+        if not live:
+            out.append("  다시 켜려면: python excer_bot.py run   (재부팅했으면 무선 디버깅을 켜고 python excer_bot.py connect 먼저)")
+        if alive.get("version") and alive["version"] != VERSION:
+            out.append("  돌고 있는 판(%s)이 이 파일(%s)과 다릅니다. Ctrl+C 로 멈추고 다시 켜세요" % (alive["version"], VERSION))
+        lc = float(alive.get("last_check") or 0)
+        out.append("사이트 마지막 확인: %s%s" % (datetime.fromtimestamp(lc, KST).strftime("%m-%d %H:%M:%S") if lc else "없음", ", 읽기 실패 %d번 이어짐" % alive["read_fails"] if alive.get("read_fails") else ""))
+        if alive.get("notice"):
+            out.append("공지 첫 줄: " + alive["notice"])
+        if alive.get("voice"):
+            out.append("보이스룸: " + {"on": "켜짐", "off": "꺼짐"}.get(alive["voice"], alive["voice"]))
+        if alive.get("error"):
+            out.append("이어지는 오류: " + alive["error"])
+    try:
+        with open(base + ".log", encoding="utf-8", errors="replace") as f:
+            tail = [l.rstrip("\n") for l in f.readlines()[-5:]]
+        if tail:
+            out.append("최근 기록:")
+            out.extend("  " + l for l in tail)
+    except OSError:
+        pass
+    return out
+
+
+def remote_version(get=None):
+    """저장소(main)의 봇 파일 판. 못 읽으면 빈 글자"""
+    try:
+        code, body = (get or http_get)(RAW_URL, timeout=20)
+        m = code == 200 and re.search(r'^VERSION = "([^"]+)"', body, re.M)
+        return (m.group(1) if m else ""), body if code == 200 else ""
+    except Exception:
+        return "", ""
+
+
+def cmd_update(base, get=None, me=None):
+    """저장소의 봇 파일을 받아 이 파일을 바꾼다. 문법 검사가 통과해야 바꾸고, 옛 파일은 .bak 으로 둔다. run 이 돌고 있으면 먼저 멈추라고 한다"""
+    import py_compile
+    me = me or os.path.abspath(__file__)
+    try:
+        with open(base + "_alive.json", encoding="utf-8-sig") as f:
+            alive = json.load(f)
+        if time.time() - float(alive.get("ts") or 0) < 90 and pid_alive(alive.get("pid")):
+            return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py update"
+    except (OSError, ValueError):
+        pass
+    ver, body = remote_version(get)
+    if not body:
+        return "저장소에서 봇 파일을 읽지 못했습니다(망 확인). 받은 판 없음"
+    if ver == VERSION:
+        return "이미 최신 판(%s)입니다" % VERSION
+    new = me + ".new"
+    with open(new, "w", encoding="utf-8") as f:
+        f.write(body)
+    try:
+        py_compile.compile(new, doraise=True)
+    except py_compile.PyCompileError as e:
+        os.remove(new)
+        return "받은 파일이 깨져 있어 바꾸지 않았습니다: %s" % str(e).split("\n")[0]
+    try:
+        os.replace(me, me + ".bak")
+    except OSError:
+        pass
+    os.replace(new, me)
+    return "바꿨습니다: %s -> %s (옛 파일은 %s). 이제 python excer_bot.py run" % (VERSION, ver or "?", os.path.basename(me) + ".bak")
 
 
 if __name__ == "__main__":

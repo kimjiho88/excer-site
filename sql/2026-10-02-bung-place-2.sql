@@ -3,6 +3,7 @@
 do $g$ begin
   if to_regprocedure('public.bung_attend(bigint,text,text)') is null then raise exception '참석 기능 SQL(2026-10-01) 네 쪽을 먼저 실행하세요'; end if;
   if post_meta_clean('벙 소식', '{"date":"2030-01-01","lat":"37.5","lng":"127.0"}'::jsonb) ->> 'lat' is null then raise exception '1쪽을 먼저 실행하세요'; end if;
+  if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '끝나는 시간 판(2026-10-05)이 이미 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(함수가 옛 판으로 돌아갑니다)'; end if;
 end $g$;
 
 -- 모임장이 참석자를 적는다(댓글로 참석을 밝힌 사람 등). 글 비밀번호나 운영진 비밀번호.

@@ -7,6 +7,7 @@
 do $g$ begin
   if to_regprocedure('public.bung_is_open(bigint,jsonb)') is null then raise exception '1쪽을 먼저 실행하세요'; end if;
   if post_meta_clean('벙 소식', '{"dup":"consent"}'::jsonb) is null then raise exception '2쪽을 먼저 실행하세요'; end if;
+  if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '끝나는 시간 판(2026-10-05)이 이미 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(함수가 옛 판으로 돌아갑니다)'; end if;
 end $g$;
 
 create or replace function bung_check(p_meta jsonb, p_self bigint, p_old jsonb)

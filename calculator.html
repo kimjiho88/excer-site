@@ -904,6 +904,7 @@
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
             <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
+            <li><a href="news.html?cat=free&amp;write=suggest">건의하기</a></li>
           </ul>
         </nav>
       </div>
@@ -3270,9 +3271,9 @@
     openFoldsWithContent();
     bindEvents();
     refreshSettleStatus();
-    // 입금 현황: 이 화면으로 돌아올 때와 열어 둔 동안 30초마다 다시 읽는다(멤버가 보냈어요를 누르면 새로고침 없이 바뀌게)
+    // 입금 현황: 이 화면으로 돌아올 때와 열어 둔 동안 60초마다 다시 읽는다(멤버가 보냈어요를 누르면 새로고침 없이 바뀌게. 응답에 영수증 사진이 들어 있어 더 잦게는 안 읽는다)
     document.addEventListener("visibilitychange", () => { if (!document.hidden && state.shareId) refreshSettleStatus(); });
-    setInterval(() => { if (!document.hidden && state.shareId) refreshSettleStatus(); }, 30000);
+    setInterval(() => { if (!document.hidden && state.shareId) refreshSettleStatus(); }, 60000);
     // 소식 모임 글의 '정산하기'(calculator.html?bung=글번호): 그 모임의 참석 명단을 넣는다. 주소에서 bung 은 지운다
     try {
       const u = new URL(location.href), b = Number(u.searchParams.get("bung"));

@@ -12,6 +12,8 @@
 --   설치가 끝나면 sql/set_admin_password.sql 을 한 번 실행하세요.
 --   그 전까지는 발행·공지 작성·글 강제삭제가 모두 막힌 상태입니다.
 -- ============================================================
+do $g$ begin if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-05 끝나는 시간)이 적용되어 있습니다. 이 파일을 다시 돌리면 함수와 보기가 옛 판으로 돌아가므로 멈춥니다. sql/README.md 의 "설치 파일을 다시 돌리지 않는다" 절을 보세요'; end if; end $g$;
+
 create extension if not exists pgcrypto;
 
 -- 뷰 먼저 정리(재실행/버전 충돌 42P16 방지)
