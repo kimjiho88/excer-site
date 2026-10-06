@@ -7,6 +7,8 @@
 --        공지·모임 모집·모임 후기·정보 네 유형. 자유 글에는 meta 를 두지 않는다.
 -- ============================================================
 
+do $g$ begin if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-05 끝나는 시간)이 적용되어 있습니다. 이 파일을 다시 돌리면 함수와 보기가 옛 판으로 돌아가므로 멈춥니다. sql/README.md 의 "설치 파일을 다시 돌리지 않는다" 절을 보세요'; end if; end $g$;
+
 create or replace function site_meta_text(p jsonb, k text, maxlen int)
 returns text language sql immutable as $$
   select case when nullif(trim(p ->> k), '') is null then null

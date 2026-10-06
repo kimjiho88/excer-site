@@ -2,7 +2,7 @@
 -- 1쪽부터 4쪽까지 차례로 SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(기존 글, 댓글, 참석 명단은 그대로).
 -- 참석: 같은 글에 같은 닉네임은 한 번, 넣은 비밀번호로 본인 확인. 모집 마감, 신청 마감 지남, 정원 참이면 안 됨.
 -- 취소: 본인은 모임 시작 전까지, 모임장(글 비밀번호)과 운영진은 언제든.
-do $g$ begin if to_regprocedure('public.bung_check(jsonb,bigint,jsonb)') is null then raise exception '3쪽을 먼저 실행하세요'; end if; end $g$;
+do $g$ begin if to_regprocedure('public.bung_check(jsonb,bigint,jsonb)') is null then raise exception '3쪽을 먼저 실행하세요'; end if;   if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '끝나는 시간 판(2026-10-05)이 이미 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(함수가 옛 판으로 돌아갑니다)'; end if; end $g$;
 
 create or replace function bung_attend(p_post_id bigint, p_nick text, p_pass text)
 returns jsonb language plpgsql security definer set search_path = public as $$

@@ -8,6 +8,8 @@
 -- 재실행해도 안전(idempotent)합니다.
 -- ============================================================
 
+do $g$ begin if to_regprocedure('public.bung_end(jsonb)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-05 끝나는 시간)이 적용되어 있습니다. 이 파일을 다시 돌리면 함수와 보기가 옛 판으로 돌아가므로 멈춥니다. sql/README.md 의 "설치 파일을 다시 돌리지 않는다" 절을 보세요'; end if; end $g$;
+
 -- ── 1) 카테고리 개편 ─────────────────────────────────────────
 -- 옛 제약을 먼저 풀어야 '후기'/'자유'로 이관하는 UPDATE 가 위반 없이 실행된다.
 alter table site_posts drop constraint if exists site_posts_category_check;

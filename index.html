@@ -179,7 +179,7 @@
   </style>
   <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=2"></script>
-  <script src="assets/content.js?v=7"></script>
+  <script src="assets/content.js?v=8"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -343,6 +343,7 @@
             <li><a href="places.html">맛집</a></li>
             <li><a href="games.html">게임</a></li>
             <li><a href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅</a></li>
+            <li><a href="news.html?cat=free&amp;write=suggest">건의하기</a></li>
           </ul>
         </nav>
       </div>
@@ -448,9 +449,20 @@
       }
       function loadLive() {
         return C.caps().then(function (c) {   // 참석 기능이 있는 서버면 참석 수 열도(없는 서버에서 부르면 400)
-          return supaGet("/rest/v1/site_posts_v?select=id,category,title,body,author,pinned,meta,created_at,comment_count" + (c && c.attend ? ",attend_count" : "") + "&order=pinned.desc,created_at.desc&limit=100");
+          var cols = "select=id,category,title,body,author,pinned,meta,created_at,comment_count" + (c && c.attend ? ",attend_count" : "");
+          // 최근 글 30건(공지, 후기, 새 글 수)과 어제 이후 날짜의 모임 글(먼 날짜의 모임이 최근 글 밖으로 밀려도 홈에서 빠지지 않게. 어제는 자정을 넘긴 모임)
+          var t = C.kstToday(), d = new Date(Date.parse(t + "T00:00:00+09:00") - 86400000);
+          var yday = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+          return Promise.all([
+            supaGet("/rest/v1/site_posts_v?" + cols + "&order=pinned.desc,created_at.desc&limit=30"),
+            supaGet("/rest/v1/site_posts_v?" + cols + "&category=eq." + encodeURIComponent("벙 소식") + "&" + encodeURIComponent("meta->>date") + "=gte." + yday + "&order=created_at.desc&limit=100")
+          ]);
         })
-          .then(function (rows) { renderLive(rows); })
+          .then(function (r) {
+            var seen = {}, rows = [];
+            [].concat(r[0] || [], r[1] || []).forEach(function (p) { if (p && !seen[p.id]) { seen[p.id] = 1; rows.push(p); } });
+            renderLive(rows);
+          })
           .catch(function () { note($("liveList"), "소식을 불러오지 못했습니다.", loadLive); });
       }
 
