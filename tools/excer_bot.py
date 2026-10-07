@@ -41,6 +41,8 @@ tablet 준비(태블릿 하나로)
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
   - 재부팅이나 Termux 종료 뒤에는 봇이 저절로 다시 켜지지 않는다. Termux 를 열고 python excer_bot.py status 로 멈춘 것을 확인한 뒤
     (무선 디버깅을 켜고 connect 를 한 번) python excer_bot.py run. 하루 한 번 status 를 치는 습관이 가장 싼 감시다.
+    Termux 의 상단 알림을 지우거나 최근 앱 목록에서 밀어내면 봇이 꺼진다. 카카오톡 자동 업데이트를 꺼 두면 화면 글자가
+    갑자기 바뀌어 올리기와 공지가 실패하는 일을 줄인다(Play 스토어 > 카카오톡 > 자동 업데이트 사용 끄기).
 
 명령(이 파일이 있는 폴더에서)
   python excer_bot.py setup           설정 파일(excer_bot.json)을 만든다. tablet 이면 카카오톡 목록의 방 이름을 번호로 고른다
@@ -452,6 +454,8 @@ def people_line(v, host=False, live=True):
     parts = []
     if live and v.get("attend") is not None and v.get("cap"):
         parts.append("참석 %d/%d" % (v["attend"], v["cap"]))
+    elif live and v.get("attend"):
+        parts.append("참석 %d명" % v["attend"])          # 인원을 정하지 않은 모임(49차부터 선택)
     elif v.get("cap"):
         parts.append("정원 %d명" % v["cap"])
     if host and v.get("author"):
@@ -582,6 +586,7 @@ class Bot:
         self.empty_streak = 0                           # 알던 벙이 있는데 사이트가 빈 목록을 준 횟수
         self.read_fails = 0                             # 사이트 읽기가 연속으로 실패한 횟수(망 끊김)
         self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
+        self.send_fails = 0                             # 보내기가 연속으로 실패한 횟수(adb 안 붙음, 카카오톡 화면 다름)
 
     def save(self):
         save_json(self.state_path, self.st)
@@ -666,16 +671,25 @@ class Bot:
             self.sender.send(self.room, text)
         except Exception:
             self.st["send_fail_text"] = text
+            self.send_fails += 1
             self.save()
             raise
         self.st["send_fail_text"] = ""
+        if self.send_fails:
+            self.log("보내기 다시 됨(%d번 실패 뒤)" % self.send_fails)
+            self.send_fails = 0
+
+    def send_log(self, what, e):
+        """보내기 실패는 처음과 10번째마다만 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게)"""
+        if self.send_fails == 1 or self.send_fails % 10 == 0:
+            self.log("%s 실패%s: %s" % (what, "(%d번째, 붙을 때까지 1분마다 다시)" % self.send_fails if self.send_fails > 1 else "(다음 차례에 다시)", e))
 
     def _post(self, st, cfg, now, cur, alert, ntext, dg):
         if alert:
             try:
                 self.send_once(alert)
             except Exception as e:
-                self.log("알림 보내기 실패(다음 차례에 다시): %s" % e)
+                self.send_log("알림 보내기", e)
                 self.hold_until = now.ts + 60
                 return "send-fail"
             self.log("알림: " + alert.split("\n")[0])
@@ -686,7 +700,7 @@ class Bot:
         try:
             self.send_once(ntext)
         except Exception as e:
-            self.log("공지 글 보내기 실패(다음 차례에 다시): %s" % e)
+            self.send_log("공지 글 보내기", e)
             self.hold_until = now.ts + 60
             return "send-fail"
         st.update(last_post_at=now.ts, last_post_ymd=now.ymd)
@@ -2612,8 +2626,9 @@ class AdbSender:
                  and abs(self.center(n)[1] - self.center(box)[1]) < bh]
         return max(cands, key=lambda n: n["b"][2]) if cands else None
 
-    def voice_create(self, nodes, title, word):
-        """방에서 + 메뉴, 보이스룸, (제목), 시작. 보이스룸 화면을 돌려준다. 안 되면 화면을 적고 KakaoError"""
+    def voice_create(self, nodes, title, word, v=None):
+        """방에서 + 메뉴, 보이스룸, (제목), 시작. 보이스룸 화면을 돌려준다. 안 되면 화면을 적고 KakaoError.
+        시작을 누른 뒤 화면을 못 알아봐도 '참여 중' 알림이 뜨면 만들어진 것이다(실기기 로그: 화면이 아니라고 적은 13초 뒤 켜짐)"""
         plus = self.voice_plus(nodes)
         if not plus:
             self.save_diag(nodes)
@@ -2643,9 +2658,9 @@ class AdbSender:
         self.tap(start)
         scr = self.voice_perm(self.wait_change(dlg, tries=4))
         self.snap("시작을 누른 뒤", scr)
-        if not self.voice_ui(scr):
+        if not self.voice_ui(scr) and not self.voice_wait_on(v, tries=3):
             self.save_diag(scr)
-            raise KakaoError("시작을 눌렀는데 보이스룸 화면이 아님" + self.diag_note())
+            raise KakaoError("시작을 눌렀는데 보이스룸 화면이 아니고 '참여 중' 알림도 없음" + self.diag_note())
         return scr
 
     def voice_recover(self, room, v=None):
@@ -2676,12 +2691,12 @@ class AdbSender:
                 self.tap(join)
                 scr = self.voice_perm(self.wait_change(nodes, tries=4))
                 self.snap("'참여' 를 누른 뒤", scr)
-                if not self.voice_ui(scr):
+                if not self.voice_ui(scr) and not self.voice_wait_on(v, tries=3):
                     self.save_diag(scr)
-                    raise KakaoError("참여를 눌렀는데 보이스룸 화면이 아님" + self.diag_note())
+                    raise KakaoError("참여를 눌렀는데 보이스룸 화면이 아니고 '참여 중' 알림도 없음" + self.diag_note())
                 how = "joined"
             else:
-                scr = self.voice_create(nodes, title, w["word"])
+                scr = self.voice_create(nodes, title, w["word"], v)
                 how = "created"
             if v.get("mute", True):
                 scr = self.voice_mute(scr)
@@ -3259,6 +3274,11 @@ def main(argv=None):
     # 기록은 따로: 시험 파일(--feed), 시험 방(--test), 알릴 방. 시험 파일로 흉내 낸 것이 실제 시험에 섞이지 않게
     state_path = base + ("_feed_state.json" if a.feed else "_test_state.json" if a.test else "_state.json")
     bot = Bot(cfg, make_sender(cfg, log), site, state_path, log, room=room)
+    if isinstance(bot.sender, AdbSender):              # 켤 때 adb 가 안 붙어 있으면 바로 말한다(재부팅 뒤 무선 디버깅이 꺼진 채 켜는 일)
+        try:
+            bot.sender.device()
+        except KakaoError as e:
+            log("adb 가 안 붙음: %s. 사이트는 지켜보지만 붙을 때까지 올리지 못한다" % e)
     if a.command == "once":
         log("한 번 봄: " + bot.cycle())
         return
@@ -3405,6 +3425,8 @@ def write_alive(path, bot, voice, err=""):
     try:
         save_json(path, {"at": datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S"), "ts": time.time(), "pid": os.getpid(), "version": VERSION,
                          "last_check": float(getattr(bot, "last_check", 0) or 0), "read_fails": int(getattr(bot, "read_fails", 0) or 0),
+                         "send_fails": int(getattr(bot, "send_fails", 0) or 0),
+                         "notice_fail": int((bot.st.get("notice_fail") or 0) if getattr(bot, "st", None) else 0),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
                          "voice": (voice.st.get("state") or "") if voice else "", "error": err})
     except OSError:
@@ -3441,6 +3463,10 @@ def status_lines(base, now_ts=None):
             out.append("  돌고 있는 판(%s)이 이 파일(%s)과 다릅니다. Ctrl+C 로 멈추고 다시 켜세요" % (alive["version"], VERSION))
         lc = float(alive.get("last_check") or 0)
         out.append("사이트 마지막 확인: %s%s" % (datetime.fromtimestamp(lc, KST).strftime("%m-%d %H:%M:%S") if lc else "없음", ", 읽기 실패 %d번 이어짐" % alive["read_fails"] if alive.get("read_fails") else ""))
+        if alive.get("send_fails"):
+            out.append("보내기 실패 %d번 이어짐: adb 가 안 붙었거나(무선 디버깅, connect) 카카오톡 화면이 달라짐(excer_bot_ui.txt)" % alive["send_fails"])
+        if alive.get("notice_fail"):
+            out.append("공지 걸기 실패 %d번: 글은 올렸지만 공지로 못 걸었음(봇 계정이 부방장인지)" % alive["notice_fail"])
         if alive.get("notice"):
             out.append("공지 첫 줄: " + alive["notice"])
         if alive.get("voice"):
