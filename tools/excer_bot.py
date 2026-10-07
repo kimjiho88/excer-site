@@ -36,6 +36,8 @@ tablet 준비(태블릿 하나로)
     connect 는 고정 포트(5555)도 열어 두어 무선 디버깅이 저절로 꺼져도 붙는다(처음 한 번 화면의 허용 창). 재부팅하면 무선 디버깅을 켜고 connect 만 다시.
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
+  - 와이파이 절전을 끈다(설정 > 연결 > Wi-Fi > 고급 또는 인텔리전트 Wi-Fi 에서 절전 모드 끔, 배터리 > 절전 예외 앱에 Termux 와 카카오톡).
+    화면이 꺼진 채 몇 시간씩 망이 끊기면 그동안 공지가 멈추고 보이스룸도 끊긴다. 봇은 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번).
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
   - 재부팅이나 Termux 종료 뒤에는 봇이 저절로 다시 켜지지 않는다. Termux 를 열고 python excer_bot.py status 로 멈춘 것을 확인한 뒤
     (무선 디버깅을 켜고 connect 를 한 번) python excer_bot.py run. 하루 한 번 status 를 치는 습관이 가장 싼 감시다.
@@ -88,7 +90,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-06"                               # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
+VERSION = "2026-10-07"                               # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -105,6 +107,7 @@ DEFAULTS = {
     "digest_late_min": 180,              # 이 시각에서 이만큼 지나도록 못 올렸으면 그날은 건너뛴다
     "min_gap_sec": 60,                   # 한 번 올린 뒤 다음에 올리기까지(그 사이 바뀜은 모았다가)
     "quiet": [],                         # 이 사이에는 올리지 않는다. 예: ["00:00", "07:00"]. [] 이면 늘 올린다
+    "net_kick": True,                    # (tablet) 사이트를 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번). 유선이나 데이터만 쓰면 false
     "max_lines": 15,                     # 목록 줄 수 한도
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
@@ -578,6 +581,7 @@ class Bot:
         self.hold_until = 0.0                           # 읽기나 보내기가 실패하면 잠시 쉰다
         self.empty_streak = 0                           # 알던 벙이 있는데 사이트가 빈 목록을 준 횟수
         self.read_fails = 0                             # 사이트 읽기가 연속으로 실패한 횟수(망 끊김)
+        self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
 
     def save(self):
         save_json(self.state_path, self.st)
@@ -601,6 +605,13 @@ class Bot:
             self.read_fails += 1
             if self.read_fails == 1 or self.read_fails % 10 == 0:
                 self.log("사이트 읽기 실패%s: %s" % ("(%d번째, 망이 끊겼으면 돌아올 때까지 1분마다 다시 봄)" % self.read_fails if self.read_fails > 1 else "", e))
+            # 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번). 화면이 꺼진 채 절전으로 잠든 와이파이를 깨우는 가장 싼 방법
+            if self.read_fails >= 3 and cfg.get("net_kick", True) and hasattr(self.sender, "net_kick") and now.ts - self.net_kick_at >= 900:
+                self.net_kick_at = now.ts
+                try:
+                    self.log("망 끊김 %d분: 와이파이를 껐다 켬(그전 망: %s)" % (self.read_fails, self.sender.net_kick()))
+                except Exception as e2:
+                    self.log("와이파이 껐다 켜기 실패: %s" % e2)
             self.hold_until = now.ts + 60
             return "read-fail"
         if self.read_fails:
@@ -2215,6 +2226,12 @@ class AdbSender:
         sig["net"] = net_state(get("ip route get 1.1.1.1; ip route", 20), get("dumpsys connectivity", 40))
         return sig
 
+    def net_kick(self):
+        """망이 끊겼을 때 와이파이를 껐다 켠다(svc wifi). 그전 망 상태를 돌려준다. 다시 붙는 데 몇 초에서 십여 초가 걸리므로 다음 차례에 확인한다"""
+        before = net_state(self.sh("ip route get 1.1.1.1 2>/dev/null; ip route 2>/dev/null; true", 20), self.sh("dumpsys connectivity 2>/dev/null; true", 40))
+        self.sh("svc wifi disable; sleep 3; svc wifi enable; true", 30)
+        return before
+
     def voice_raw(self, v=None):
         """신호의 원문을 적는다(해석기를 맞추는 근거). 대화 글은 들어가지 않게: 알림 글자는 보이스룸이 든 것만 그대로, 나머지는 글자 수.
         전화번호 꼴 숫자는 가린다"""
@@ -3362,7 +3379,7 @@ def run_loop(bot, log, voice=None, alive_path=None):
             if bot.due():
                 ran = True
                 r = bot.cycle()
-                if r not in ("none", "quiet"):
+                if r not in ("none", "quiet", "read-fail", "read-empty", "send-fail"):   # 실패는 cycle 이 이미 적는다(망이 끊긴 동안 1분마다 한 줄씩 쌓이지 않게)
                     log("차례: " + r)
             if voice and voice.due():
                 ran = True
