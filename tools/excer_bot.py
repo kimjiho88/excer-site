@@ -51,6 +51,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 최근 기록 다섯 줄,
                                       저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
   python excer_bot.py update          저장소의 새 봇 파일을 받아 이 파일을 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
+  python excer_bot.py quiet 00:30-07:30   이 사이에는 방에 올리지 않는다(새벽 글은 끝나는 시각에 한꺼번에). quiet off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py list            지금 목록을 찍어 본다(보내지 않음)
   python excer_bot.py test            시험 방에 지금 목록을 보내고 공지까지 걸어 본다
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
@@ -3120,8 +3121,8 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off")
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
@@ -3140,6 +3141,9 @@ def main(argv=None):
         return
     if a.command == "update":
         print(cmd_update(base))
+        return
+    if a.command == "quiet":                           # 이 사이에는 방에 올리지 않는다(새벽에 올라온 글은 끝나는 시각에 한꺼번에). run 을 다시 켜야 적용된다
+        print(cmd_quiet(cfg, a.config, a.arg))
         return
     if a.command == "connect":
         port = a.arg
@@ -3379,6 +3383,23 @@ def cmd_voice(cfg, a, base, log):
         print("다 적었습니다(%s). 클립보드에도 담았으니 대화창에 붙여넣어 보내 주세요." % os.path.basename(path))
     except KakaoError:
         print("다 적었습니다: %s (cat 으로 보세요)" % path)
+
+
+def cmd_quiet(cfg, path, arg):
+    """quiet 00:30-07:30: 그 사이에는 올리지 않는다. quiet off: 늘 올린다. 인자가 없으면 지금 설정을 보여 준다"""
+    arg = (arg or "").strip()
+    if not arg:
+        q = cfg.get("quiet") or []
+        return "조용한 시간: %s" % ("%s~%s" % (q[0], q[1]) if len(q) == 2 else "없음(늘 올림)") + ". 바꾸려면 python excer_bot.py quiet 00:30-07:30 또는 quiet off"
+    if arg == "off":
+        cfg["quiet"] = []
+    else:
+        m = re.match(r"^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$", arg)
+        if not m or arg[:5] == arg[6:]:
+            return "모양이 다릅니다. 예: python excer_bot.py quiet 00:30-07:30 (시작-끝, 24시간), 끄려면 quiet off"
+        cfg["quiet"] = [arg[:5], arg[6:]]
+    save_json(path, cfg)
+    return ("조용한 시간을 %s~%s 로 정했습니다" % tuple(cfg["quiet"]) if cfg["quiet"] else "조용한 시간을 껐습니다(늘 올림)") + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
 
 
 def wake_lock(on):
