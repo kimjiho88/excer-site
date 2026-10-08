@@ -52,6 +52,8 @@ tablet 준비(태블릿 하나로)
                                       저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
   python excer_bot.py update          저장소의 새 봇 파일을 받아 이 파일을 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
   python excer_bot.py quiet 00:30-07:30   이 사이에는 방에 올리지 않는다(새벽 글은 끝나는 시각에 한꺼번에). quiet off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py reset           본 글 기록을 비운다. 다음 run 은 처음 켤 때처럼 알리지 않고 기억만 한 뒤 공지 글을 새로 올린다
+                                      (사이트 글을 한꺼번에 옮기거나 지운 뒤, 새 벙과 취소 알림이 쏟아지지 않게). run 을 먼저 Ctrl+C
   python excer_bot.py list            지금 목록을 찍어 본다(보내지 않음)
   python excer_bot.py test            시험 방에 지금 목록을 보내고 공지까지 걸어 본다
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
@@ -93,7 +95,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-07"                               # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
+VERSION = "2026-10-08"                            # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -3121,10 +3123,10 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
     ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
-    ap.add_argument("--test", action="store_true", help="run, once: 알릴 방 대신 시험 방으로(기록도 따로)")
+    ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
     a = ap.parse_args(argv)
     cfg = load_cfg(a.config)
@@ -3144,6 +3146,9 @@ def main(argv=None):
         return
     if a.command == "quiet":                           # 이 사이에는 방에 올리지 않는다(새벽에 올라온 글은 끝나는 시각에 한꺼번에). run 을 다시 켜야 적용된다
         print(cmd_quiet(cfg, a.config, a.arg))
+        return
+    if a.command == "reset":                           # 본 글 기록을 비운다(사이트 글을 한꺼번에 옮기거나 지운 뒤). run 을 먼저 멈춘다
+        print(cmd_reset(base, base + ("_feed_state.json" if a.feed else "_test_state.json" if a.test else "_state.json")))
         return
     if a.command == "connect":
         port = a.arg
@@ -3402,6 +3407,20 @@ def cmd_quiet(cfg, path, arg):
     return ("조용한 시간을 %s~%s 로 정했습니다" % tuple(cfg["quiet"]) if cfg["quiet"] else "조용한 시간을 껐습니다(늘 올림)") + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
 
 
+def cmd_reset(base, state_path):
+    """본 글 기록을 비운다. 다음 run 은 처음 켤 때처럼 지금 글을 알리지 않고 기억만 한 뒤 공지 글을 새로 올려 건다.
+    도는 run 은 기록을 제 손에 들고 있다가 다시 써 버리므로, run 이 돌고 있으면 먼저 멈추라고 한다"""
+    if run_alive(base):
+        return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py reset"
+    st = load_state(state_path)
+    n = len(st.get("known") or {})
+    for k in ("init", "notice_text", "send_fail_text", "notice_fail", "notice_fail_text", "notice_retry_at"):
+        st.pop(k, None)
+    st["known"] = {}
+    save_json(state_path, st)
+    return "기록을 비웠습니다(기억하던 글 %d개). 다음 run 은 지금 글을 알리지 않고 기억만 한 뒤 공지 글을 새로 올려 겁니다. 이제 python excer_bot.py run" % n
+
+
 def wake_lock(on):
     import shutil
     cmd = "termux-wake-lock" if on else "termux-wake-unlock"
@@ -3462,6 +3481,16 @@ def pid_alive(pid):
         return False
 
 
+def run_alive(base, now_ts=None):
+    """run 이 돌고 있는가: 살아 있음 표시가 90초 안이고 그 프로세스가 있다"""
+    try:
+        with open(base + "_alive.json", encoding="utf-8-sig") as f:
+            alive = json.load(f)
+        return (now_ts or time.time()) - float(alive.get("ts") or 0) < 90 and pid_alive(alive.get("pid"))
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+
+
 def status_lines(base, now_ts=None):
     """run 이 살아 있는지, 마지막으로 사이트를 본 때, 공지 첫 줄, 보이스룸, 최근 기록. 기기는 건드리지 않는다"""
     now_ts = now_ts or time.time()
@@ -3519,13 +3548,8 @@ def cmd_update(base, get=None, me=None):
     """저장소의 봇 파일을 받아 이 파일을 바꾼다. 문법 검사가 통과해야 바꾸고, 옛 파일은 .bak 으로 둔다. run 이 돌고 있으면 먼저 멈추라고 한다"""
     import py_compile
     me = me or os.path.abspath(__file__)
-    try:
-        with open(base + "_alive.json", encoding="utf-8-sig") as f:
-            alive = json.load(f)
-        if time.time() - float(alive.get("ts") or 0) < 90 and pid_alive(alive.get("pid")):
-            return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py update"
-    except (OSError, ValueError):
-        pass
+    if run_alive(base):
+        return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py update"
     ver, body = remote_version(get)
     if not body:
         return "저장소에서 봇 파일을 읽지 못했습니다(망 확인). 받은 판 없음"
