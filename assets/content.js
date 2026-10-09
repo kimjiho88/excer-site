@@ -431,7 +431,7 @@
       })
       .catch(function () {
         capsPromise = null;   // 한 번 못 읽었다고 페이지가 살아 있는 동안 옛 서버로 굳지 않게: 다음 호출이 다시 읽는다
-        return { contentFormat: 1, location: false, attend: false, place: false, end: false };
+        return { contentFormat: 1, location: false, attend: false, place: false, end: false, failed: true };   // failed: 옛 서버가 아니라 못 읽은 것(화면이 한 번 더 묻는다)
       });
     return capsPromise;
   }
