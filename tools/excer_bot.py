@@ -1855,7 +1855,8 @@ MEMBER_SELF = ("나", "본인", "me")                     # 봇 자신의 줄 �
 MEMBER_LABELS = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공지사항 사진동영상 사진 동영상 파일 링크 일정 톡캘린더 캘린더 투표 앨범 음성메시지
     보이스룸 라이브톡 채팅방설정 설정 채팅방관리 멤버관리 오픈채팅 오픈채팅정보 대화상대 참여자 멤버 대화상대초대 초대하기 초대 친구초대
     대화상대검색 검색 대화내용검색 알림 알림끄기 알림켜기 즐겨찾기 나가기 채팅방나가기 메뉴 닫기 뒤로 뒤로가기 이전 프로필 내프로필
-    11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍의 메뉴와 칸 이름, 표시)
+    11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인
+    퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
 MEMBER_RID_RE = re.compile(r"name|nick", re.I)        # 이름 칸 id 로 볼 것(name, nickname, profile_name)
 MEMBER_RID_NOT = re.compile(r"room|title|menu|header|section|count|badge|status|message", re.I)
 MEMBER_LIST_RE = re.compile(r"RecyclerView|ListView|ScrollView|GridView")
@@ -2839,16 +2840,22 @@ class AdbSender:
         self.tap(n)
 
     def mem_button(self, nodes):
-        """방 오른쪽 위 메뉴(서랍) 단추. study 와 같은 자리(방 칸 위쪽 8% 안의 누를 수 있는 것)의 글자 없는 그림 단추 중
-        이름에 메뉴나 서랍이 든 것, 없으면 가장 오른쪽. 방 이름 글, 뒤로, 검색, 통화, 나가기, 설정 같은 것은 고르지 않는다"""
+        """방 오른쪽 위 메뉴(서랍, 세 줄) 단추. study 와 같은 자리(방 칸 위쪽 8% 안의 누를 수 있는 것)의 글자 없는 작은 그림 단추 중
+        맨 위 줄(방 이름 줄)의 것만(그 아래 공지 띠의 닫기 X 는 고르지 않는다). 이름에 메뉴나 서랍이 든 것, 없으면 가장 오른쪽.
+        방 이름 글, 뒤로, 검색, 통화, 보이스룸, 공지, 닫기, 나가기, 설정 같은 것은 고르지 않는다"""
         hgt = max(n["b"][3] for n in nodes)
+        wid = max(n["b"][2] for n in nodes)
         e = find(nodes, cls="EditText")
         l0 = min(n["b"][0] for n in e) if e else 0
         top = [n for n in nodes if n["click"] and n["b"][1] < hgt * 0.08 and n["b"][0] >= l0 - 60 and not n["text"].strip()
-               and not n["cls"].endswith("EditText") and not self.mem_never(n)]
-        named = [n for n in top if re.search(r"메뉴|서랍", n["desc"])]
-        top = named or [n for n in top if not re.search(r"뒤로|검색|통화|보이스|페이스|라이브|프로필|사진|선물", n["desc"])]
-        return max(top, key=lambda n: n["b"][2]) if top else None
+               and not n["cls"].endswith("EditText") and not self.mem_never(n) and n["b"][2] - n["b"][0] <= max(240, (wid - l0) * 0.25)
+               and not re.search(r"뒤로|검색|통화|보이스|페이스|라이브|프로필|사진|선물|공지|닫기|접기|고정", n["desc"])]
+        if not top:
+            return None
+        y0 = min(self.center(n)[1] for n in top)            # 맨 위 줄의 가운데
+        row = [n for n in top if self.center(n)[1] - y0 <= max(24, (n["b"][3] - n["b"][1]) // 2)]
+        named = [n for n in row if re.search(r"메뉴|서랍", n["desc"])]
+        return max(named or row, key=lambda n: n["b"][2])
 
     @staticmethod
     def mem_under(nodes, i):
@@ -2888,10 +2895,16 @@ class AdbSender:
         hgt = max(1, box["b"][3] - box["b"][1])
         out = []
 
+        def headed(k):
+            """대화상대 머리를 품은 큰 묶음(머리 글 높이의 세 배 넘게): 머리와 멤버 줄을 한 카드에 담은 판. 풀어야 첫 쪽의 멤버도 읽는다"""
+            n = nodes[k]
+            hs = [x for x in self.mem_under(nodes, k)[1:] if MEMBER_HEAD_RE.match(member_name(x["text"]))]
+            return bool(hs) and n["b"][3] - n["b"][1] > 3 * max(1, hs[0]["b"][3] - hs[0]["b"][1])
+
         def sub(i, depth):
             for k in nodes[i]["kids"]:
                 n = nodes[k]
-                if n["kids"] and depth < 6 and (MEMBER_LIST_RE.search(n["cls"]) or n.get("scroll") or n["b"][3] - n["b"][1] > hgt * 0.34):
+                if n["kids"] and depth < 6 and (MEMBER_LIST_RE.search(n["cls"]) or n.get("scroll") or n["b"][3] - n["b"][1] > hgt * 0.34 or headed(k)):
                     sub(k, depth + 1)
                 else:
                     out.append((n, self.mem_under(nodes, k)))
@@ -2959,6 +2972,7 @@ class AdbSender:
             if h and (h[1] or not any(x["click"] for x in ns)) and st["head"] in (None, h[0]):
                 st["head"], st["n"], hi = h[0], st["n"] or h[1], i
                 break
+        st["head_vis"] = hi is not None
         if hi is not None:
             body, look, sec = rows[hi + 1:], rows[hi:], rows[hi][0]["b"][1]
         elif st["head"] or st["inmore"]:
@@ -3074,15 +3088,18 @@ class AdbSender:
         k, step, idle = 1, 0.5, 0
         while res["swipes"] < limit and st["more"] is None:
             was = self.mem_sig(nodes, box)
-            self.mem_swipe(box, dh, step, self.mem_danger(nodes, box, area))
+            found = st["head"] is not None or st["inmore"]
+            self.mem_swipe(box, dh, step if found else min(step, 0.35), self.mem_danger(nodes, box, area))   # 머리를 찾기 전에는 덜 민다(늦게 뜬 대화상대 머리를 건너뛰지 않게)
             res["swipes"] += 1
             nodes, box = again(nodes, box)
             if self.mem_sig(nodes, box) == was:
                 break                                        # 더 내려가지 않는다(끝)
             k += 1
+            vis = found and st.get("head_vis")               # 앞 쪽에 머리가 보였나
             prev, (page, add) = page, look(nodes, box, k)
             moved = {member_key(x) for x in page} != {member_key(x) for x in prev}
-            if prev and page and not {member_key(x) for x in prev} & {member_key(x) for x in page} and step > 0.3 and res["swipes"] < limit:
+            gap = vis and not prev and page and not st.get("head_vis")   # 앞 쪽은 머리만 보였는데 이번 쪽에는 머리가 없다: 그 사이 줄을 건너뛰었을 수 있다
+            if (gap or prev and page and not {member_key(x) for x in prev} & {member_key(x) for x in page}) and step > 0.3 and res["swipes"] < limit:
                 step = 0.3                                   # 사이를 건너뛰었다: 앞으로는 덜 밀고, 한 번 되돌려 그 사이를 읽는다
                 self.mem_swipe(box, dh, step, self.mem_danger(nodes, box, area), back=True)
                 res["swipes"] += 1
@@ -3128,7 +3145,10 @@ class AdbSender:
             self.mem_tap(btn)
             depth = 1                                        # 누른 순간부터 열렸다고 본다(바로 뒤 화면 읽기가 실패해도 닫게)
             drawer = self.wait_change(nodes, tries=3)
-            new = [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and self.center(n)[0] >= l0 - 60]
+            now_ = {(n["b"], n["text"], n["desc"]) for n in drawer}
+            side = [k for k in pre if (k[0][0] + k[0][2]) // 2 < l0 - 60]   # 태블릿 왼쪽 채팅 목록의 글
+            full = sum(1 for k in side if k in now_) * 2 < len(side)   # 왼쪽 목록이 가려졌다: 방 정보가 화면 전체로 열렸다(새 카카오톡)
+            new = [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and (full or self.center(n)[0] >= l0 - 60)]
             if not new:
                 self.save_diag()
                 raise KakaoError("메뉴 단추를 눌렀는데 서랍이 열리지 않음" + self.diag_note())
