@@ -13,12 +13,12 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
-  - 공지: 모집 중인 벙만 벙 시간 차례대로(같은 시간이면 먼저 올라온 글이 위). 첫 줄이 다음 벙(신청 마감이 따로 있으면 그 시각도),
-    그 아래로 이후 벙. 벙이 시작하면 끝나는 시간까지 첫 줄에 '진행 중 제목 21:00까지'로 남고, 끝나면 빠진다(끝나는 시간이 없는 옛 글은 시작하면 빠진다).
-    모집 중은 마감하지 않았고, 모임장이 정한 신청 마감이 지나지 않았고, 참석이 정원에 차지 않은 벙이다.
-    진행 중인 벙이 마감되면 첫 줄 자리를 내주어 같은 시간대의 새 벙이 첫 줄로 오고, 마감된 벙은 끝날 때까지 그 아래 '진행 중' 줄로 남는다.
-    이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 취소, 시작, 끝, 신청 마감이 되어 다음 벙이 첫 줄로 올라올 때)
-    방에 올리고 길게 눌러 공지로 건다.
+  - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건', 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감.
+    벙 시간 차례대로(같은 시간이면 먼저 올라온 글이 위), 카드는 넷까지이고 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은
+    그 아래 '마감' 한 줄씩, 그다음 내일 이후 모집 중인(마감 안 함, 정원 남음, 신청 마감 전) 벙은 첫 벙만 한 줄('외 N건'). 오늘 벙이 없으면 다음 벙을 장소까지.
+    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다(시작, 끝, 신청 마감 때 다시 올리지 않는다).
+    오늘은 조용한 시간이 끝날 때 다음 날로 넘어간다(quiet 00:30-07:30 이면 07:30. 조용한 시간이 없거나 끝이 12:00 이후면 자정).
+    이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 다시 모집, 취소, 오늘이 넘어갈 때) 방에 올리고 길게 눌러 공지로 건다.
   - 알림: 새 벙, 날짜와 시간과 장소와 신청 마감 바뀜, 마감, 정원 참, 다시 모집(마감 풀림, 자리 남), 취소(모집 글 삭제)는
     공지 글 앞에 알림 메시지를 따로 올린다. 하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
   - 24시간 돈다. 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec).
@@ -33,8 +33,13 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
   - 운영 화면(ops.html 데이터 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
     그동안 바뀐 것은 기억만)을 누르면 1분 안에 따른다. 멈춤이 끝나면(정한 시간이 지나거나 다시 켜기) 공지 글을 다시 올려 건다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
-가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
+  - 멤버: 매일 05:10(members_at) 알릴 방 오른쪽 위 메뉴(서랍)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는 멤버의 닉네임을
+    읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 메뉴 단추, 대화상대 칸의 더보기 단추,
+    뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
+    줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다.
+가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
+공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 tablet 준비(태블릿 하나로)
   - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤
@@ -57,7 +62,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py setup           설정 파일(excer_bot.json)을 만든다. tablet 이면 카카오톡 목록의 방 이름을 번호로 고른다
   python excer_bot.py connect 포트     (tablet) 무선 디버깅 포트로 같은 기기에 붙는다
   python excer_bot.py check           사이트, 기기 연결, 클립보드를 확인한다(보내지 않음)
-  python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 최근 기록 다섯 줄,
+  python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 멤버 자동 갱신, 최근 기록 다섯 줄,
                                       저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
   python excer_bot.py update          저장소의 봇 파일이 이 파일과 다르면 받아 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
   python excer_bot.py quiet 00:30-07:30   이 사이에는 방에 올리지 않는다(새벽 글은 끝나는 시각에 한꺼번에). quiet off 로 끈다. run 을 다시 켜야 적용
@@ -84,11 +89,19 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py voice now       지금 바로 확인하고 꺼져 있으면 다시 켠다(한 번)
   python excer_bot.py voice look      켜 둔 보이스룸(알릴 방)의 띠와 보이스룸 화면 단추 이름을 excer_bot_voice_look.txt 에 적고
                                       클립보드에 담는다(갱신이 안 될 때 원인 찾기. 나가기는 누르지 않고 작게 접는다, 대화 글은 안 들어감)
+  python excer_bot.py members         (tablet) 알릴 방 메뉴(서랍)에서 멤버를 지금 읽어 수와 가린 보기 다섯을 보이고
+                                      excer_bot_members.txt 에 적는다(사이트에 올리지 않음). run 을 먼저 Ctrl+C
+  python excer_bot.py members push    지금 읽어 사이트 닉네임 목록에 올린다. run 을 먼저 Ctrl+C
+  python excer_bot.py members key     운영 화면 데이터 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
+                                      끝 네 글자만 보인다. members key off 로 지운다)
+  python excer_bot.py members study   대화상대 칸 화면을 단계마다 excer_bot_members_study.txt 에 적고 클립보드에 담는다
+                                      (멤버 이름은 가린다. 읽기가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
+  python excer_bot.py members at 05:10   매일 멤버를 읽어 올리는 시각. members at off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
       excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot_alive.json(run 이 30초마다 남기는 살아 있음 표시),
-      excer_bot.log(한 일). 이 파일 옆에 생긴다.
+      excer_bot_members.txt(members 로 읽은 멤버 이름), excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import json
@@ -98,13 +111,14 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import urllib.request
 import urllib.error
 import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-09.3"                       # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-09.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -126,6 +140,9 @@ DEFAULTS = {
     "notice_max_chars": 400,             # 공지 글 길이 한도(넘치는 벙은 '외 N건'). 카카오톡은 긴 글을 접어 보여 줘 봇이 말풍선을 찾기 어렵다
     "bulk_quiet": 6,                     # 한 차례에 새 벙과 지운 벙이 합쳐 이만큼 이상이면 알리지 않고 공지 글만(한꺼번에 옮기거나 지운 것). 알림이 이만큼 이상이면 한 줄로. 0 이면 끔
     "heartbeat_at": "09:00",             # 매일 이 시각에 시험 방에 '봇 정상' 한 줄(안 오면 태블릿을 본다). 조용한 시간이면 끝난 뒤. "" 이면 끔
+    "members_at": "05:10",               # (tablet) 매일 이 시각에 알릴 방 메뉴(서랍)의 멤버를 읽어 사이트 닉네임 목록에 올린다. "" 이나 "off" 면 안 한다
+    "members_key": "",                   # 봇 열쇠(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key 로 넣는다). 멤버 목록만 바꿀 수 있다
+    "members": {"min_ratio": 0.9, "min": 20, "rid": ""},   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
     "link": True,                        # 목록 끝에 벙 일정 주소(pc 에서 공지가 자주 실패하면 false: 주소 미리보기가 늦게 떠 자리가 밀린다)
@@ -316,9 +333,24 @@ def http_get(url, headers=None, timeout=15):
         return e.code, e.read().decode("utf-8", "replace")
 
 
+def http_post(url, data, headers=None, timeout=20):
+    """POST(JSON 몸통 data, bytes). 받는 것은 http_get 과 같다(압축, 응답 코드, 오류 응답의 글)"""
+    import gzip
+    req = urllib.request.Request(url, data=data, method="POST", headers=dict(
+        {"User-Agent": "excer-bot/1", "Accept-Encoding": "gzip", "Content-Type": "application/json"}, **(headers or {})))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            body = r.read()
+            if (r.headers.get("Content-Encoding") or "").lower() == "gzip":
+                body = gzip.decompress(body)
+            return r.status, body.decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")
+
+
 class Site:
-    def __init__(self, cfg, get=None):
-        self.cfg, self.get, self.key = cfg, get or http_get, ""
+    def __init__(self, cfg, get=None, post=None):
+        self.cfg, self.get, self.post, self.key = cfg, get or http_get, post or http_post, ""
 
     def anon_key(self, fresh=False):
         if self.key and not fresh:
@@ -344,6 +376,25 @@ class Site:
             raise RuntimeError("조종 값을 읽지 못함(HTTP %s)" % code)
         d = json.loads(body)
         return d if isinstance(d, dict) else None
+
+    def push_members(self, names, key):
+        """봇 멤버 자동 갱신(2026-10-09-memberbot.sql): 읽은 멤버 이름을 봇 열쇠와 함께 올린다(member_sync).
+        서버의 답(ok, n, skipped 또는 error)을 돌려준다. 그 SQL 을 아직 안 돌린 서버는 None. 열쇠는 어디에도 적지 않는다"""
+        url = self.cfg["supa"] + "/rest/v1/rpc/member_sync"
+        data = json.dumps({"p_key": key, "p_names": list(names)}, ensure_ascii=False).encode("utf-8")
+        for fresh in (False, True):
+            k = self.anon_key(fresh)
+            code, body = self.post(url, data, {"apikey": k, "Authorization": "Bearer " + k})
+            if code != 401:
+                break
+        if code == 404:
+            return None
+        if not 200 <= code < 300:
+            raise RuntimeError("멤버 목록을 올리지 못함(HTTP %s)" % code)
+        d = json.loads(body)
+        if not isinstance(d, dict):
+            raise RuntimeError("멤버 목록을 올린 답의 모양이 다름")
+        return d
 
     def posts(self):
         """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
@@ -543,16 +594,105 @@ def beat_text(bot, now):
         out.append("보내기 실패 %d번 이어짐" % bot.send_fails)
     if ctl_text(bot, now.ts):
         out.append("운영 화면: " + ctl_text(bot, now.ts))
+    if members_beat(bot):
+        out.append(members_beat(bot))
     return "\n".join(out)
+
+
+def members_at(cfg):
+    """매일 멤버를 읽어 올리는 시각(HH:MM). 꺼 두었거나('' 또는 off) 모양이 틀리면 ''"""
+    at = str(cfg.get("members_at") or "").strip()
+    return at if TIME_RE.match(at) and at < "24:00" else ""
+
+
+def members_on(bot):
+    """이 run 이 멤버 자동 갱신을 하는가: tablet 방식, 알릴 방(시험 방이나 시험 파일이 아님), 사이트에 올리는 길이 있음"""
+    cfg = getattr(bot, "cfg", None) or {}
+    return isinstance(getattr(bot, "sender", None), AdbSender) and hasattr(getattr(bot, "site", None), "push_members") \
+        and bool(cfg.get("room")) and getattr(bot, "room", "") == cfg.get("room")
+
+
+def member_key_tag(key):
+    """열쇠를 알아보는 짧은 표(기록에는 열쇠 대신 이것만 남긴다)"""
+    import hashlib
+    return hashlib.sha256((key or "").encode("utf-8")).hexdigest()[:10]
+
+
+def members_short(why):
+    """기록과 '봇 정상' 줄에 남길 짧은 까닭: 첫 문장만, 앞의 '멤버 목록을 올리지 못함' 같은 말은 빼고(고칠 방법은 기록 파일에)"""
+    t = re.sub(r"^멤버(?: 목록을 올리지 (?:못함|않음)|를 다 읽지 못함)[:\s]*", "", re.split(r"\.\s", str(why))[0])
+    return clean(t[1:-1] if t.startswith("(") and t.endswith(")") else t, 60)
+
+
+def members_result(r):
+    """member_sync 의 답을 (가름, 한 줄)로. 가름: ok, stop(오늘은 다시 안 함), key(열쇠를 바꿀 때까지 안 함), retry(30분 뒤 다시)"""
+    if r is None:
+        return "stop", "멤버 목록을 올리지 못함: 서버에 2026-10-09-memberbot.sql 을 먼저 실행해야 함"
+    if r.get("ok"):
+        sk = int(r.get("skipped") or 0)
+        return "ok", "멤버 목록 %d명을 사이트에 올림%s" % (int(r.get("n") or 0), "(겹치거나 쓸 수 없는 이름 %d개 뺌)" % sk if sk else "")
+    e = str(r.get("error") or "")
+    if e == "SHRINK":
+        return "stop", ("멤버 목록을 올리지 않음: 사이트 목록 %s명에서 %s명으로 줄어 서버가 막음. 방 메뉴의 멤버를 다 읽었는지 python excer_bot.py members 로 확인. "
+                        "방 인원이 실제로 그만큼 줄었으면 운영 화면 데이터 탭의 '사이트에 올리기' 로 한 번 올리면 다음 날부터 다시 됨" % (r.get("now"), r.get("got")))
+    if e == "BAD_KEY":
+        return "key", "멤버 목록을 올리지 못함: 봇 열쇠가 맞지 않음. 운영 화면 데이터 탭에서 봇 열쇠를 다시 만들고 python excer_bot.py members key"
+    if e == "NO_KEY":
+        return "key", "멤버 목록을 올리지 못함: 서버에 봇 열쇠가 없음(운영 화면에서 껐거나 아직 안 만듦). 운영 화면 데이터 탭에서 봇 열쇠를 만들고 python excer_bot.py members key"
+    if e == "RATE_LIMIT":
+        return "retry", "멤버 목록을 올리지 못함: 서버가 잠시 막음(1시간에 30번까지)"
+    if e in ("EMPTY", "BAD_NAMES", "TOO_MANY"):
+        return "stop", "멤버 목록을 올리지 못함: 서버가 이름을 받지 않음(%s)" % e
+    return "retry", "멤버 목록을 올리지 못함(%s)" % (e or "알 수 없는 답")
+
+
+def members_last_text(last, when=True):
+    """마지막 멤버 갱신: '10/10 05:10 123명' 또는 '10/10 05:40 읽기 실패(까닭)'. when=False 면 실패에 때를 붙이지 않는다"""
+    if not isinstance(last, dict) or not last.get("at"):
+        return ""
+    m = re.match(r"^\d{4}-(\d{2})-(\d{2}) (\d{2}:\d{2})", str(last["at"]))
+    t = "%d/%d %s" % (int(m.group(1)), int(m.group(2)), m.group(3)) if m else str(last["at"])
+    if last.get("error"):
+        return (t + " " if when else "") + "%s 실패(%s)" % ("올리기" if last.get("step") == "push" else "읽기", last["error"])
+    return "%s %d명" % (t, int(last.get("n") or 0))
+
+
+def members_beat(bot):
+    """'봇 정상' 줄에 붙일 멤버 한 줄: '멤버: 10/10 05:10 123명' 또는 '멤버: 읽기 실패(까닭)'. 하지 않거나 아직 없으면 ''"""
+    cfg = getattr(bot, "cfg", None) or {}
+    if not (members_on(bot) and members_at(cfg) and cfg.get("members_key")):
+        return ""
+    t = members_last_text((getattr(bot, "st", None) or {}).get("members_last"), when=False)
+    return "멤버: " + t if t else ""
+
+
+def members_alive(bot):
+    """살아 있음 표시에 남길 멤버 자동 갱신 상태(status 가 '멤버 자동 갱신:' 으로 보인다). 이 run 이 하지 않는 일이면 ''"""
+    if not members_on(bot):
+        return ""
+    cfg, st = bot.cfg, bot.st
+    at, key = members_at(cfg), cfg.get("members_key") or ""
+    if not at:
+        return "꺼짐(켜려면 python excer_bot.py members at 05:10)"
+    if not key:
+        return "봇 열쇠 없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"
+    t = members_last_text(st.get("members_last"))
+    out = ["매일 " + at, "마지막 " + t if t else "아직 안 함"]
+    if st.get("members_badkey") == member_key_tag(key):
+        out.append("열쇠를 바꿀 때까지 쉼")
+    elif float(st.get("members_retry_at") or 0) > bot.ts():
+        out.append("%s 에 다시" % hm_of(st["members_retry_at"])[6:])
+    return ", ".join(out)
 
 
 def has_changes(ch):
     return bool(ch["new"] or ch["chg"] or ch["cls"] or ch.get("full") or ch.get("del"))
 
 
-# 카카오톡은 글자만 보내므로 이모지로 줄의 뜻을 표시한다. 공지 띠에는 첫 100자쯤이 보여 첫 두 줄에 날짜, 시간, 제목, 장소를 둔다
+# 카카오톡은 글자만 보내므로 이모지로 줄의 뜻을 표시한다. 공지 띠에는 첫 100자쯤이 보여 첫 줄에 오늘 날짜와 벙 수, 그 아래 첫 카드를 둔다
 EMO = {"next": "\U0001F4E3", "place": "\U0001F4CD", "people": "\U0001F465", "later": "\U0001F5D3", "go": "\U0001F449", "bell": "\U0001F514", "live": "⏳",
        "새 벙": "\U0001F195", "벙 변경": "\u270F\uFE0F", "벙 마감": "\U0001F512", "벙 다시 모집": "\U0001F513", "벙 취소": "\u274C"}
+CARD_NO = ["%d\uFE0F\u20E3" % n for n in range(1, 5)]   # 공지 카드 번호(숫자 이모지 1부터 4). 카드는 넷까지
 
 
 def place_line(v):
@@ -584,39 +724,82 @@ def live_line(v):
         (" " + v["end"] + "까지" if v.get("end") else "") + " (" + live_reason(v) + ")"
 
 
+def day_turn(cfg):
+    """공지 글의 오늘이 다음 날로 넘어가는 시각: 조용한 시간이 끝나는 때(12:00 전일 때만). 조용한 시간이 없으면 자정"""
+    q = cfg.get("quiet") or []
+    e = str(q[1]) if len(q) == 2 and q[0] != q[1] else ""
+    return e if TIME_RE.match(e) and e < "12:00" and e[3:] < "60" else "00:00"   # 손으로 고친 설정의 07:60 같은 값은 자정
+
+
+def notice_day(now, cfg):
+    """공지 글의 오늘. 넘어가는 시각 전이면 전날(조용한 시간 00:30~07:30 이면 07:30 전까지는 전날 벙 공지 그대로)"""
+    if now.hm >= day_turn(cfg):
+        return now.ymd
+    y, m, d = (int(x) for x in now.ymd.split("-"))
+    return (date(y, m, d) - timedelta(days=1)).isoformat()
+
+
+def span(v):
+    """카드의 시간: 19:00~21:00, 끝나는 시간이 없는 옛 글은 19:00, 시간이 없으면 '시간 미정'"""
+    return (v["time"] + ("~" + v["end"] if v.get("end") else "")) if v["time"] else "시간 미정"
+
+
 def notice_text(posts, now, cfg):
-    """공지로 걸 글. 첫 줄이 다음 벙(공지 띠에 보이는 줄), 둘째 줄이 장소, 그 아래로 이후 벙.
-    모집 중인 벙이 시작하면 끝날 때까지 첫 줄에 '진행 중 제목 21:00까지'로 남고, 끝나면 다음 벙이 첫 줄로 올라온다.
-    진행 중인데 마감된 벙(모집 마감, 정원 참, 설정한 신청 마감 지남)은 첫 줄 자리를 내주고 그 아래 '진행 중' 줄로 남는다"""
-    up = sorted([v for v in posts if recruiting(v, now)], key=skey)
-    live = sorted([v for v in posts if ongoing(v, now) and not recruiting(v, now)], key=skey)
-    link = cfg["site"] + "/bung"
-    if not up:
-        return "\n".join([EMO["next"] + " 다음 벙 아직 없음"] + [live_line(v) for v in live] + (["벙 올리기 " + EMO["go"] + " " + link] if cfg.get("link", True) else []))
-    first, rest = up[0], up[1:]
-    same = sum(1 for v in rest if v["date"] == first["date"] and v["time"] == first["time"])
-    if ongoing(first, now):                              # 지금 하는 벙: 날짜 대신 끝나는 시각(공지 띠에 제목이 보이게 짧게)
-        out = [EMO["next"] + " 진행 중 " + first["title"] + (" " + first["end"] + "까지" if first.get("end") else "") + (" 외 %d건" % same if same else "")]
-    else:
-        out = [EMO["next"] + " 다음 벙 " + head(first) + (" 외 %d건" % same if same else "")]
-    out += [l for l in (place_line(first), people_line(first, live=bool(cfg.get("notice_attend")))) if l]
-    out += [live_line(v) for v in live]
-    tail = ["", "참석 신청 " + EMO["go"] + " " + link] if cfg.get("link", True) else []
-    if rest:
-        mx = max(1, int(cfg.get("max_lines", 15)))
-        cap = int(cfg.get("notice_max_chars", 400) or 0)    # 글 길이 한도(0 이면 없음). 넘치는 벙은 '외 N건'
-        out += ["", EMO["later"] + " 이후 %d건" % len(rest)]
-        shown = []
-        for v in rest[:mx]:
-            left = len(rest) - len(shown) - 1
-            trial = out + [line(x) for x in shown + [v]] + (["외 %d건" % left] if left else []) + tail
-            if shown and cap and u16("\n".join(trial)) > cap:
-                break
-            shown.append(v)
-        out += [line(v) for v in shown]
-        if len(rest) > len(shown):
-            out.append("외 %d건" % (len(rest) - len(shown)))
-    return "\n".join(out + tail)
+    """공지로 걸 글(카드형). 첫 줄 '오늘의 벙 10/9(금) 3건'(공지 띠에 보이는 줄), 오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감).
+    카드는 넷까지, 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은 그 아래 '마감' 한 줄씩, 그다음 이후 벙 한 줄(오늘 벙이 없으면 장소까지).
+    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다. 글은 벙 글과 공지 글의 오늘로만 정해져
+    시작, 끝, 신청 마감 때 다시 올리지 않는다. 오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다"""
+    today = notice_day(now, cfg)
+    y, m, d = (int(x) for x in today.split("-"))
+    t0 = day_turn(cfg)
+    day0 = Now(datetime(y, m, d, int(t0[:2]), int(t0[3:]), tzinfo=KST))   # 이후 벙은 오늘이 시작한 때 기준으로 모집 중(그날 신청 마감이 지나도 글이 그대로)
+    nextday = (date(y, m, d) + timedelta(days=1)).isoformat()
+    # 오늘 날짜의 벙 가운데 오늘이 시작하기 전에 이미 끝난 것(조용한 시간 07:30 이면 새벽 01:50~02:50 벙)은 넣지 않는다(전날 공지의 이후 줄에 있었다)
+    gone = lambda v: t0 != "00:00" and end_key(v) <= now_key(day0)
+    on = sorted([v for v in posts if v["date"] == today and not gone(v) and not v["closed"] and not v.get("full")], key=skey)
+    off = sorted([v for v in posts if v["date"] == today and not gone(v) and (v["closed"] or v.get("full"))], key=skey)
+    later = sorted([v for v in posts if v["date"] > today and recruiting(v, day0)], key=skey)
+    live = bool(cfg.get("notice_attend"))
+    lock = EMO["벙 마감"] + " 마감 "
+
+    def build(nc, ns, pin):
+        """nc: 카드 수, ns: 마감 줄 수(0 이면 '마감 N건' 한 줄), pin: 다음 벙의 장소 줄"""
+        out = [EMO["next"] + " 오늘의 벙 " + md(today) + (" %d건" % len(on) if on else " 모두 마감" if off else " 없음")]
+        for n, v in enumerate(on[:nc]):
+            out += ["", CARD_NO[n] + " " + span(v) + " " + v["title"]] + \
+                [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l]   # 장소 이름만(상세 주소는 글에)
+        if len(on) > nc:
+            out += ["", "외 %d건" % (len(on) - nc)]
+        if off and ns:
+            out += [""] + [lock + " ".join(x for x in (v["time"], v["title"]) if x) for v in off[:ns]] + \
+                (["%s외 %d건" % (lock, len(off) - ns)] if len(off) > ns else [])
+        elif off:
+            out += ["", "%s%d건" % (lock, len(off))]
+        if later:
+            v = later[0]
+            k = sum(1 for x in later[1:] if x["date"] == v["date"])   # '외 N건' 은 그 날의 다른 벙만(내일 3건처럼 읽히지 않게)
+            more = " 외 %d건" % k if k else ""
+            if on or off:                                # 오늘 벙이 있으면 한 줄(다음 날이면 '내일'), 끝 줄(주소)이 바로 아래
+                out += ["", " ".join(x for x in (EMO["later"], "내일" if v["date"] == nextday else "다음 벙", md(v["date"]), v["time"], v["title"]) if x) + more]
+            else:                                        # 오늘 벙이 없으면 다음 벙을 시간 범위와 장소까지
+                out += ["", " ".join((EMO["later"], "다음 벙", md(v["date"]), span(v), v["title"])) + more] + \
+                    ([EMO["place"] + " " + v["place"]] if pin and v["place"] else [])
+        if cfg.get("link", True):
+            out += ([] if later and (on or off) else [""]) + [("참석 신청 " if on else "벙 올리기 ") + EMO["go"] + " " + cfg["site"] + "/bung"]
+        return "\n".join(out)
+
+    cap = int(cfg.get("notice_max_chars", 400) or 0)    # 글 길이 한도(0 이면 없음). 넘치면 마감 줄부터 줄이고('마감 N건'), 카드를 줄이고('외 N건'), 다음 벙의 장소 줄을 뺀다
+    nc, ns, pin = min(len(on), len(CARD_NO)), min(len(off), 3), True
+    text = build(nc, ns, pin)
+    while cap and u16(text) > cap and (nc > 1 or ns or pin):
+        if ns:
+            ns -= 1                                          # 신청할 수 있는 카드보다 마감 줄을 먼저 줄인다
+        elif nc > 1:
+            nc -= 1
+        else:
+            pin = False
+        text = build(nc, ns, pin)
+    return text
 
 
 def alert_text(ch, cfg):
@@ -761,6 +944,61 @@ class Bot:
         self.save()
         self.log("시험 방에 봇 정상 한 줄")
         return "beat"
+
+    def members_tick(self):
+        """매일 members_at 에 알릴 방 메뉴(서랍)의 멤버를 읽어 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때).
+        방에 올리는 것이 없어 조용한 시간에도 한다. 운영 화면의 전체 멈춤 중에는 쉰다. 실패하면 30분 뒤 다시(하루 세 번까지),
+        서버가 줄어서 막거나(SHRINK) SQL 이 없으면 그날은 그만, 열쇠가 맞지 않으면 열쇠를 바꿀 때까지 쉰다. 무엇을 했는지 한 낱말로"""
+        now, cfg, st = Now(self.clock()), self.cfg, self.st
+        at, key = members_at(cfg), cfg.get("members_key") or ""
+        if not (at and key and members_on(self)) or now.hm < at:
+            return ""
+        if st.get("members_fail") and str((st.get("members_last") or {}).get("at") or "")[:10] != now.ymd:
+            st["members_fail"] = 0                          # 전날 실패는 오늘 세지 않는다
+        if st.get("members_ymd") == now.ymd or now.ts < float(st.get("members_retry_at") or 0) or now.ts < self.hold_until:
+            return ""                                       # 오늘 이미 했거나, 다시 할 때가 아니거나, 보내기나 읽기가 막 실패해 쉬는 중
+        if st.get("members_badkey") == member_key_tag(key):
+            return ""                                       # 맞지 않던 열쇠 그대로다(members key 로 새 열쇠를 넣으면 다시)
+        if self.control(now)["pause"] > now.ts:
+            return ""                                       # 운영 화면의 전체 멈춤 중에는 화면을 건드리지 않는다
+        names, step = [], "read"
+        try:
+            names = self.sender.read_members(self.room, cfg.get("members") or {})
+            step = "push"
+            r = self.site.push_members(names, key)
+        except Exception as e:
+            return self.members_failed(now, step, e, len(names))
+        finally:
+            if hasattr(self.sender, "done"):
+                self.sender.done()
+        kind, msg = members_result(r)
+        if kind == "retry":
+            return self.members_failed(now, "push", msg, len(names))
+        st.update(members_ymd=now.ymd, members_retry_at=0, members_fail=0, members_last={
+            "at": "%s %s" % (now.ymd, now.hm), "n": int(r.get("n") or 0) if kind == "ok" else len(names),
+            "error": "" if kind == "ok" else members_short(msg), "step": "push"})
+        if kind == "key":
+            st["members_badkey"] = member_key_tag(key)
+        else:
+            st.pop("members_badkey", None)
+        self.save()
+        self.log(msg + {"ok": "", "stop": ". 오늘은 다시 하지 않음", "key": ". 새 열쇠를 넣을 때까지 하지 않음"}[kind])
+        return "members" if kind == "ok" else "members-fail"
+
+    def members_failed(self, now, step, e, n):
+        """멤버 갱신 실패: 30분 뒤 다시, 하루 세 번까지. 마지막 실패는 기록(members_last)에"""
+        st, why = self.st, str(e)
+        k = int(st.get("members_fail") or 0) + 1
+        if k >= 3:
+            st.update(members_ymd=now.ymd, members_fail=0, members_retry_at=0)
+            tail = "오늘은 그만, 내일 %s 에 다시" % members_at(self.cfg)
+        else:
+            st.update(members_fail=k, members_retry_at=self.ts() + 1800)
+            tail = "30분 뒤 다시"
+        st["members_last"] = {"at": "%s %s" % (now.ymd, now.hm), "n": n, "error": members_short(why), "step": step}
+        self.save()
+        self.log("멤버 %s 실패(%d번째, %s): %s" % ("읽기" if step == "read" else "올리기", k, tail, why))
+        return "members-fail"
 
     def net_up(self):
         """사이트 말고 다른 주소가 열리는가(망은 살아 있나). 못 보면 False"""
@@ -1609,11 +1847,95 @@ def find(nodes, text=None, desc=None, starts=None, cls=None, rid=None):
     return out
 
 
+MEMBER_NEVER = ("나가기", "내보내기", "강퇴", "신고", "차단", "삭제", "가리기", "초대", "종료", "설정")   # 멤버 읽기에서 누르지 않는 말(VOICE_NEVER 에 더해)
+MEMBER_HEAD_RE = re.compile(r"^(?:대화\s*상대|참여자|참여\s*(?:인원|멤버)|채팅방\s*멤버|멤버)\s*[(\[]?\s*(\d[\d,]*)?\s*명?\s*[)\]]?$")   # 대화상대 칸 머리: '대화상대 37', '대화상대(25)', '참여자 12명'
+MEMBER_COUNT_RE = re.compile(r"^[(\[]?\s*\d[\d,]*\s*명?\s*[)\]]?$")   # 수만 있는 글(머리 옆의 '37' 같은)
+MEMBER_MORE = ("더보기", "전체보기", "모두보기", "대화상대더보기", "대화상대전체보기", "참여자더보기", "참여자전체보기", "멤버더보기", "멤버전체보기")   # 대화상대 칸의 더보기 단추(띄어쓰기와 기호를 뺀 모양)
+MEMBER_SELF = ("나", "본인", "me")                     # 봇 자신의 줄 표시
+MEMBER_LABELS = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공지사항 사진동영상 사진 동영상 파일 링크 일정 톡캘린더 캘린더 투표 앨범 음성메시지
+    보이스룸 라이브톡 채팅방설정 설정 채팅방관리 멤버관리 오픈채팅 오픈채팅정보 대화상대 참여자 멤버 대화상대초대 초대하기 초대 친구초대
+    대화상대검색 검색 대화내용검색 알림 알림끄기 알림켜기 즐겨찾기 나가기 채팅방나가기 메뉴 닫기 뒤로 뒤로가기 이전 프로필 내프로필
+    11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍의 메뉴와 칸 이름, 표시)
+MEMBER_RID_RE = re.compile(r"name|nick", re.I)        # 이름 칸 id 로 볼 것(name, nickname, profile_name)
+MEMBER_RID_NOT = re.compile(r"room|title|menu|header|section|count|badge|status|message", re.I)
+MEMBER_LIST_RE = re.compile(r"RecyclerView|ListView|ScrollView|GridView")
+MEMBER_KEY_RE = re.compile(r"(?<![0-9A-Za-z_])mbk_[0-9a-f]{48}(?![0-9A-Za-z_])")   # 봇 열쇠: mbk_ 뒤에 소문자 16진수 48자
+
+
+def member_mk(s):
+    """견주기용: 띄어쓰기와 기호를 빼고 소문자('사진/동영상' 은 '사진동영상', '전체보기 >' 는 '전체보기')"""
+    return re.sub(r"[\W_]+", "", s or "").lower()
+
+
+def member_name(s):
+    """사이트와 같은 닉네임 정리: NFC(분해된 한글을 모은다), 공백 묶음은 하나로, 앞뒤 공백 뗌"""
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", s or "")).strip()
+
+
+def member_key(s):
+    """같은 사람 가르기(사이트의 bung_nick_key 처럼): 보이지 않는 글자를 빼고 소문자"""
+    return re.sub(r"\s+", " ", INVIS_RE.sub("", member_name(s))).strip().lower()
+
+
+def member_label(s, room=""):
+    """이름이 아닌 글: 서랍의 메뉴와 칸 이름, 표시(방장, 나), 대화상대 머리, 수, 방 이름, 기호뿐인 글"""
+    t = member_name(s)
+    k = member_mk(t)
+    return not k or k in MEMBER_LABELS or bool(MEMBER_HEAD_RE.match(t) or MEMBER_COUNT_RE.match(t)) or (bool(room) and t == member_name(room))
+
+
+def member_headish(s):
+    """모르는 대화상대 머리로 보이는 글('참여 중인 멤버 8', '구성원 8'): 머리 말과 수만. 닉네임(끝이 수)은 머리 말이 없어 아니다"""
+    t = member_name(s)
+    return len(t) <= 14 and bool(re.match(r"^[가-힣\s]*(대화|참여|멤버|인원|구성원|참가)[가-힣\s]*[(\[]?\s*\d[\d,]*\s*명?\s*[)\]]?$", t))
+
+
+def member_isbot(s):
+    """봇 이름(운영 화면과 같은 규칙: 끝이 '봇' 이거나 ' bot', '_bot')"""
+    return bool(re.search(r"(^|[\s_])bot$", s, re.I)) or s.endswith("봇")
+
+
+def member_mask(s):
+    """화면에 보일 때 이름을 가린다: 첫 글자만, 나머지는 *(띄어쓰기는 그대로)"""
+    return s[:1] + "".join(c if c == " " else "*" for c in s[1:])
+
+
+def member_merge(names, page, back=False):
+    """한 쪽의 이름을 목록에 넣는다(처음 본 차례, 겹침 없이). 넣은 수를 돌려준다.
+    앞으로 민 쪽은 새 이름을 끝에 붙이고, 되돌려 읽은 쪽(back)은 아는 이름 사이 제자리에 끼운다"""
+    ks = [member_key(x) for x in names]
+    added, pos, pend, pk = 0, None, [], set()
+    for nm in page:
+        k = member_key(nm)
+        if not k or k in pk:
+            continue
+        if k in ks:
+            if back:
+                j = ks.index(k)
+                names[j:j], ks[j:j] = pend, [member_key(x) for x in pend]
+                added, pos, pend, pk = added + len(pend), j + len(pend) + 1, [], set()
+            continue
+        if back and pos is None:
+            pend.append(nm)
+            pk.add(k)
+        elif back:
+            names.insert(pos, nm)
+            ks.insert(pos, k)
+            pos, added = pos + 1, added + 1
+        else:
+            names.append(nm)
+            ks.append(k)
+            added += 1
+    names.extend(pend)
+    return added + len(pend)
+
+
 class AdbSender:
     """태블릿(또는 폰) 안의 Termux 에서 돈다. adb 로 같은 기기에 붙어 화면을 읽고(uiautomator dump) 누른다(input)"""
     TMP = "/data/local/tmp/excer_ui.xml"
     JAR = "/data/local/tmp/excer_dump.jar"
     diag_path = None                                             # 안 될 때 그때 화면을 적을 파일(main 이 정한다)
+    mem_left = None                                              # 멤버 읽기가 서랍을 닫았다고 보지 못하고 끝났으면 {pre, marks}. 다음 open_room 이 먼저 닫는다
 
     def __init__(self, cfg, log, run=None):
         self.t, self.log, self.sleep = cfg["tablet"], log, time.sleep
@@ -1846,7 +2168,7 @@ class AdbSender:
                 a = el.attrib
                 m = BOUNDS_RE.match(a.get("bounds", ""))
                 n = {"text": a.get("text", ""), "desc": a.get("content-desc", ""), "rid": a.get("resource-id", ""),
-                     "cls": a.get("class", ""), "click": a.get("clickable") == "true", "pkg": a.get("package", ""),
+                     "cls": a.get("class", ""), "click": a.get("clickable") == "true", "scroll": a.get("scrollable") == "true", "pkg": a.get("package", ""),
                      "b": tuple(int(x) for x in m.groups()) if m else (0, 0, 0, 0), "kids": [], "i": len(out)}
                 out.append(n)
                 if parent is not None:
@@ -2016,6 +2338,8 @@ class AdbSender:
     def open_room(self, room):
         self.trace = []
         nodes = self.voice_guard(self.launch())                  # 보이스룸 화면이 앞에 떠 있으면 최소화만(나가기는 안 누른다)
+        if self.mem_left:                                        # 멤버 읽기가 서랍을 닫지 못하고 끝났다: 입력 칸 자리를 누르기 전에 닫는다(서랍 아래 띠에 나가기)
+            nodes = self.mem_unstick(nodes)
         if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
             return nodes
         nodes = self.goto_list(nodes)
@@ -2500,6 +2824,445 @@ class AdbSender:
                 self.key(4)
         else:
             out.append("== 11 '다음 벙' 말풍선이 화면에 없어 길게 누르기는 건너뜀\n")
+        return "\n".join(out)
+
+    # ── 멤버 읽기: 알릴 방 오른쪽 위 메뉴(서랍)의 대화상대 칸. 방을 연 뒤 누르는 것은 서랍 단추, 대화상대 칸의 더보기 단추 하나, 뒤로 키뿐 ──
+    def mem_never(self, n):
+        """멤버 읽기에서 누르지 않을 것: 나가기, 내보내기, 강퇴, 신고, 차단, 삭제, 가리기, 초대, 종료, 설정이 든 것"""
+        lab = n["text"] + " " + n["desc"]
+        return any(w in lab for w in MEMBER_NEVER + self.VOICE_NEVER)
+
+    def mem_tap(self, n):
+        """멤버 읽기에서 누르는 것은 이것으로만(서랍 단추, 더보기 단추). 위험한 말이 들었으면 누르지 않고 멈춘다"""
+        if self.mem_never(n):
+            raise KakaoError("누르지 않음(%s)" % (ws(n["text"]) or ws(n["desc"]))[:20])
+        self.tap(n)
+
+    def mem_button(self, nodes):
+        """방 오른쪽 위 메뉴(서랍) 단추. study 와 같은 자리(방 칸 위쪽 8% 안의 누를 수 있는 것)의 글자 없는 그림 단추 중
+        이름에 메뉴나 서랍이 든 것, 없으면 가장 오른쪽. 방 이름 글, 뒤로, 검색, 통화, 나가기, 설정 같은 것은 고르지 않는다"""
+        hgt = max(n["b"][3] for n in nodes)
+        e = find(nodes, cls="EditText")
+        l0 = min(n["b"][0] for n in e) if e else 0
+        top = [n for n in nodes if n["click"] and n["b"][1] < hgt * 0.08 and n["b"][0] >= l0 - 60 and not n["text"].strip()
+               and not n["cls"].endswith("EditText") and not self.mem_never(n)]
+        named = [n for n in top if re.search(r"메뉴|서랍", n["desc"])]
+        top = named or [n for n in top if not re.search(r"뒤로|검색|통화|보이스|페이스|라이브|프로필|사진|선물", n["desc"])]
+        return max(top, key=lambda n: n["b"][2]) if top else None
+
+    @staticmethod
+    def mem_under(nodes, i):
+        """요소 i 와 그 아래 요소들(위에서부터 차례대로)"""
+        out, stack = [], [i]
+        while stack:
+            k = stack.pop(0)
+            out.append(nodes[k])
+            stack[:0] = nodes[k]["kids"]
+        return out
+
+    def mem_list(self, nodes, area):
+        """area(왼, 위, 오른, 아래) 안의 목록 칸: 밀리는 칸(RecyclerView, ListView 같은 것, 판에 따라 scroll 표시).
+        대화상대 머리를 품은 것 중 가장 안쪽, 없으면 메뉴 이름이 많은 것, 오른쪽, 큰 것. 목록이 없으면 자식이 셋 넘는 큰 칸"""
+        l, t, r, b = area
+        big = lambda n: n["b"][0] >= l - 5 and n["b"][2] <= r + 5 and n["b"][1] >= t - 5 and n["b"][3] <= b + 5 and n["b"][3] - n["b"][1] > (b - t) * 0.25
+        c = [n for n in nodes if big(n) and n["kids"] and (n.get("scroll") or MEMBER_LIST_RE.search(n["cls"]))] or \
+            [n for n in nodes if big(n) and len(n["kids"]) >= 3]
+
+        def score(n):
+            under = [x for x in self.mem_under(nodes, n["i"]) if x["text"].strip()]
+            has = any(MEMBER_HEAD_RE.match(member_name(x["text"])) for x in under)
+            size = (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1])
+            return (has, -size if has else 0, sum(1 for x in under if member_mk(x["text"]) in MEMBER_LABELS), n["b"][0], size)
+        return max(c, key=score) if c else None
+
+    def mem_box(self, nodes, box, area):
+        """민 뒤 화면의 같은 목록 칸(종류, id, 자리가 같은 것). 없으면 다시 고른다"""
+        for n in nodes:
+            if n["b"] == box["b"] and n["cls"] == box["cls"] and n["rid"] == box["rid"] and n["kids"]:
+                return n
+        return self.mem_list(nodes, area)
+
+    def mem_rows(self, nodes, box):
+        """목록 칸의 줄들 [(줄, 그 아래 요소들)], 위에서 아래로. 목록의 자식 하나가 한 줄.
+        목록 안의 목록이나 목록 높이의 1/3 넘는 묶음(감싼 칸)은 풀어서 그 자식을 줄로 본다"""
+        hgt = max(1, box["b"][3] - box["b"][1])
+        out = []
+
+        def sub(i, depth):
+            for k in nodes[i]["kids"]:
+                n = nodes[k]
+                if n["kids"] and depth < 6 and (MEMBER_LIST_RE.search(n["cls"]) or n.get("scroll") or n["b"][3] - n["b"][1] > hgt * 0.34):
+                    sub(k, depth + 1)
+                else:
+                    out.append((n, self.mem_under(nodes, k)))
+        sub(box["i"], 0)
+        out.sort(key=lambda x: (x[0]["b"][1], x[0]["b"][0]))
+        return out
+
+    @staticmethod
+    def mem_head(ns):
+        """대화상대 칸 머리 줄이면 (머리 이름, 수 또는 None), 아니면 None. 수는 같은 글('대화상대 37')이나 옆 글('37')에서"""
+        labs = [member_name(x) for n in ns for x in (n["text"], n["desc"]) if x.strip()]
+        for t in labs:
+            m = MEMBER_HEAD_RE.match(t)
+            if m:
+                num = re.sub(r"\D", "", m.group(1) or next((x for x in labs if MEMBER_COUNT_RE.match(x)), ""))
+                return member_mk(re.sub(r"[\d,()\[\]\s]+명?[)\]]?$", "", t)), (int(num) if num else None)
+        return None
+
+    def mem_row(self, ns, room=""):
+        """한 줄 가르기: ('self', []) 봇 자신의 줄(나, 본인 표시), ('label', []) 이름이 없는 줄(메뉴, 초대, 더보기 같은),
+        ('member', 이름 후보들) 후보는 위에서 아래, 왼쪽에서 오른쪽 차례"""
+        marks = [member_mk(x) for n in ns for x in (n["text"] + "," + n["desc"]).split(",") if x.strip()]   # 컴포즈는 글을 '이름, 방장' 처럼 묶기도 한다
+        if any(m in MEMBER_SELF for m in marks) or any(re.match(r"^[(\[]\s*(나|본인|me)\s*[)\]]", n["text"].strip(), re.I) for n in ns):
+            return "self", []                                # '나' 표시가 따로 있거나 이름 앞에 '(나)' 가 붙은 줄
+        c = sorted([n for n in ns if n["text"].strip() and not member_label(n["text"], room)], key=lambda n: (n["b"][1], n["b"][0]))
+        return ("member" if c else "label"), c
+
+    @staticmethod
+    def mem_rid(rows):
+        """이름 칸 id 를 스스로 찾는다: name, nick 이 든 id 가 줄마다 하나씩, 세 줄 넘게 줄의 6할 넘게 있고 왼쪽 끝이 고르면 그 id. 없으면 ''"""
+        got = {}
+        for c in rows:
+            for rid in {n["rid"] for n in c if MEMBER_RID_RE.search(n["rid"].split("/")[-1]) and not MEMBER_RID_NOT.search(n["rid"].split("/")[-1])}:
+                got.setdefault(rid, []).append(next(n for n in c if n["rid"] == rid))
+        if not got:
+            return ""
+        rid, ns = max(got.items(), key=lambda kv: len(kv[1]))
+        lefts = [n["b"][0] for n in ns]
+        return rid if len(ns) >= 3 and len(ns) >= len(rows) * 0.6 and max(lefts) - min(lefts) <= 40 else ""
+
+    def mem_names(self, rows, st):
+        """대화상대 칸의 줄들에서 줄마다 이름 하나. 이름 칸 id(설정 members.rid, 없으면 스스로 찾은 것)가 있으면 그 칸의 글,
+        없으면 줄의 첫 글. 봇 자신, 이름이 없는 줄, 30자 넘는 글, 봇 이름은 뺀다"""
+        cands = [c for kind, c in (self.mem_row(ns, st["room"]) for _, ns in rows) if kind == "member"]
+        if not st["rid"] and not st["rid_fixed"]:
+            st["rid"] = self.mem_rid(cands)
+        rid = st["rid"]
+        picks = [[n for n in c if rid in n["rid"]] for c in cands] if rid else cands
+        if rid and not st["rid_fixed"] and not any(picks) and len(cands) >= 3:
+            st["rid"], picks = "", cands                     # 정한 id 가 이 화면에 없다(다른 모양): 줄의 첫 글로
+        out = []
+        for p in picks:
+            nm = re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", member_name(p[0]["text"])) if p else ""   # 묶인 글 끝의 표시는 뗀다
+            if nm and len(nm) <= 30 and not member_isbot(nm):
+                out.append(nm)
+        return out
+
+    def mem_page(self, nodes, box, st):
+        """목록 칸 한 쪽 읽기: 대화상대 머리 아래 줄(머리를 앞 쪽에서 봤거나 전체 멤버 화면이면 모든 줄)의 이름. 머리 위(메뉴)는 읽지 않는다.
+        대화상대 칸 안의 더보기 단추를 보면 st more 에 둔다. 돌려주는 것: (이름들, 줄 수, 대화상대 칸이 시작하는 y 또는 None)"""
+        rows = self.mem_rows(nodes, box)
+        hi = None
+        for i, (_, ns) in enumerate(rows):
+            h = self.mem_head(ns)                            # 수가 없는 머리('대화상대')는 누를 수 없는 것만(누르는 '멤버' 메뉴와 가르려고)
+            if h and (h[1] or not any(x["click"] for x in ns)) and st["head"] in (None, h[0]):
+                st["head"], st["n"], hi = h[0], st["n"] or h[1], i
+                break
+        if hi is not None:
+            body, look, sec = rows[hi + 1:], rows[hi:], rows[hi][0]["b"][1]
+        elif st["head"] or st["inmore"]:
+            body, look, sec = rows, rows, box["b"][1]
+        else:
+            return [], len(rows), None
+        hs = sorted(r["b"][3] - r["b"][1] for r, _ in body)
+        full = hs[len(hs) // 2] if hs else 0                 # 위 끝에 반쯤 가린 줄(이름은 가려지고 상태 글만 보일 수 있다)은 앞 쪽에서 다 보였다
+        body = [(r, ns) for r, ns in body if not (r["b"][1] <= box["b"][1] + 2 and r["b"][3] - r["b"][1] < full * 0.8)]
+        if not st["more_done"] and not st["inmore"]:          # 더보기 단추는 쪽마다 새로 찾는다(되돌려 읽은 화면의 옛 자리를 누르지 않게)
+            kinds = [self.mem_row(ns, st["room"])[0] for _, ns in look]
+            last = max([i for i, k in enumerate(kinds) if k != "label"], default=-1)
+            st["more"] = None
+            for i, (_, ns) in enumerate(look):               # 머리 줄이나 마지막 멤버 줄 아래의 이름 없는 줄만(멤버 줄마다 붙은 더보기는 그 사람의 메뉴)
+                if kinds[i] != "label" or 0 < i <= last:
+                    continue
+                for n in ns:
+                    if (member_mk(n["text"]) in MEMBER_MORE or member_mk(n["desc"]) in MEMBER_MORE) and not self.mem_never(n):
+                        st["more"] = st["more"] or n
+        return self.mem_names(body, st), len(rows), sec
+
+    def mem_sig(self, nodes, box):
+        """목록 칸 안의 글과 자리(밀어도 그대로면 끝)"""
+        return [(n["text"], n["desc"], n["b"]) for n in self.mem_under(nodes, box["i"])]
+
+    def mem_danger(self, nodes, box, area):
+        """밀 때 피할 것: area 안의 누르면 안 되는 단추(나가기, 설정 같은). (목록 줄 밖의 것, 모두)"""
+        rowids = {x["i"] for _, ns in self.mem_rows(nodes, box) for x in ns}
+        bad = [n for n in nodes if self.mem_never(n) and area[0] <= self.center(n)[0] <= area[2] and area[1] <= self.center(n)[1] <= area[3]]
+        return [n for n in bad if n["i"] not in rowids], bad
+
+    def mem_swipe(self, box, dh, frac, danger=((), ()), back=False):
+        """목록 칸 안에서 손가락을 천천히 위로(back 이면 아래로) 민다. 서랍 높이(dh)의 아래 15%(나가기 단추가 있는 아래 띠 쪽),
+        목록 칸의 위아래 끝과 가장자리는 건드리지 않고, 위험한 단추(초대, 내보내기 같은) 위에서는 손가락을 대지 않는다"""
+        l, t, r, b = box["b"]
+        h = b - t
+        lo, hi = int(b - dh * 0.15), int(t + h * 0.12)
+        for d in danger[0]:                                  # 목록 밖의 위험한 단추가 목록 아래쪽에 걸치면 그 위까지만
+            if d["b"][1] > t + h * 0.4 and d["b"][0] < r and d["b"][2] > l:
+                lo = min(lo, d["b"][1] - int(dh * 0.03))
+        dist = min(int(h * frac), lo - hi)
+        if dist < h * 0.1:
+            raise KakaoError("멤버 목록 칸이 작아 밀 수 없음")
+        y1, y2 = (lo - dist, lo) if back else (lo, lo - dist)
+        hit = lambda x, y: any(d["b"][0] <= x <= d["b"][2] and d["b"][1] <= y <= d["b"][3] for d in danger[1])
+        for f in (0.4, 0.3, 0.5, 0.6):                       # 누름은 손가락을 대는 자리에서만 생긴다(미는 동안과 떼는 자리는 아님)
+            x = l + int((r - l) * f)
+            if not hit(x, y1):
+                break
+        else:
+            raise KakaoError("멤버 목록을 밀 자리가 없음(누르면 안 되는 단추가 겹침)")
+        self.sh("input swipe %d %d %d %d 900" % (x, y1, x, y2))   # 천천히(던지듯 밀면 줄을 건너뛴다)
+        self.sleep(0.8)
+
+    def mem_mask(self, nodes, box=None, sec=None, before=None, keep=(), only=None):
+        """멤버 화면 한 장을 적는다(멤버 이름은 가림). 메뉴와 칸 이름, 대화상대 머리(모르는 머리도 '참여 중인 멤버 8' 같은 모양이면), 수,
+        표시(방장, 나), 더보기는 그대로. 목록 칸 안(목록 칸을 못 찾았으면 서랍에 새로 나온 것 모두)의 다른 글은 글자 수만,
+        목록 칸 밖(위쪽 띠, 아래 띠)은 6자까지, 누를 수 있는 것만 글 12자, 이름 16자까지. id, 종류, 자리는 그대로.
+        sec(대화상대 칸이 시작하는 y)는 쓰지 않는다(머리를 못 알아봐도 이름이 새지 않게). 줄: 종류|글|이름|id|누름|자리"""
+        inbox = {x["i"] for x in self.mem_under(nodes, box["i"])} if box else set()
+        seen = {(n["b"], n["text"], n["desc"]) for n in before} if before is not None else set()
+        rows = []
+        for n in nodes:
+            if (n["b"], n["text"], n["desc"]) in seen or (only and not only(n)):
+                continue
+            if not (n["text"] or n["desc"] or n["click"] or n["cls"].endswith("EditText")):
+                continue
+            btn = n["click"] or bool(re.search(r"Button|ImageView", n["cls"]))
+            inlist = n["i"] in inbox if box else before is not None
+            lt, ld = (0, 0) if inlist else (6, 6) if not btn else (12, 16)
+            t, d = ws(n["text"]), ws(n["desc"])
+            if t and t not in keep and not member_label(t) and not member_headish(t) and len(t) > lt:
+                t = "(글 %d자)" % len(t)
+            if d and d not in keep and not member_label(d) and not member_headish(d) and len(d) > ld:
+                d = "(이름 %d자)" % len(d)
+            rows.append("%s|%s|%s|%s|%s|[%d,%d][%d,%d]" % (n["cls"].split(".")[-1], t[:60], d[:60], n["rid"].split("/")[-1], "누름" if n["click"] else "", *n["b"]))
+        return rows[:90]
+
+    def mem_snap(self, label, rows):
+        """안 될 때 남길 지나온 화면(이름을 가린 줄)에 넣는다. 처음 셋(방 위쪽, 서랍)과 마지막 다섯을 둔다"""
+        self.trace.append((label, rows))
+        if len(self.trace) > 8:
+            self.trace = self.trace[:3] + self.trace[-5:]
+
+    def mem_read(self, nodes, box, area, st, res, limit, note, what, before=()):
+        """목록 칸을 끝까지 밀며 이름을 모은다(res names). 두 쪽 잇달아 새 이름이 없거나 화면이 그대로면 끝, 민 횟수는 limit 까지.
+        대화상대 칸 안에 더보기 단추가 보이면 멈춘다(st more). 밀림이 커서 앞 쪽과 겹치는 이름이 없으면 덜 밀고 한 번 되돌려 읽는다.
+        before: 열기 전 화면(서랍 뒤의 방). 그 요소는 적지 않는다. 돌려주는 것: (마지막 화면, 목록 칸)"""
+        dh = max(1, area[3] - area[1])
+        old = {(n["b"], n["text"], n["desc"]) for n in before}
+        mine = lambda n: area[0] <= self.center(n)[0] <= area[2] and area[1] <= self.center(n)[1] <= area[3] and (n["b"], n["text"], n["desc"]) not in old
+
+        def look(nodes, box, k, back=False):
+            if st["head"] is None and not st["inmore"]:      # 머리가 목록 칸 밖(위에 붙은 띠)에 있는 판: 목록 칸 전체가 대화상대 칸
+                under = {x["i"] for x in self.mem_under(nodes, box["i"])}
+                out = [n for n in nodes if mine(n) and n["i"] not in under and n["b"][3] <= box["b"][1] + 5]
+                h = self.mem_head([n for n in out if not n["click"]])
+                if h:
+                    st["head"], st["n"] = h
+            page, nrow, sec = self.mem_page(nodes, box, st)
+            add = member_merge(res["names"], page, back)
+            res["pages"].append((what, len(page), add))
+            note("%s %d쪽%s(줄 %d, 이름 %d, 새 이름 %d)" % (what, k, " 되돌려" if back else "", nrow, len(page), add), nodes, box, sec, None, mine)
+            return page, add
+
+        def again(nodes, box):
+            nodes = self.dump()
+            box = self.mem_box(nodes, box, area)
+            if box is None:
+                raise KakaoError("멤버 목록 칸이 사라짐")
+            return nodes, box
+        page, _ = look(nodes, box, 1)
+        k, step, idle = 1, 0.5, 0
+        while res["swipes"] < limit and st["more"] is None:
+            was = self.mem_sig(nodes, box)
+            self.mem_swipe(box, dh, step, self.mem_danger(nodes, box, area))
+            res["swipes"] += 1
+            nodes, box = again(nodes, box)
+            if self.mem_sig(nodes, box) == was:
+                break                                        # 더 내려가지 않는다(끝)
+            k += 1
+            prev, (page, add) = page, look(nodes, box, k)
+            moved = {member_key(x) for x in page} != {member_key(x) for x in prev}
+            if prev and page and not {member_key(x) for x in prev} & {member_key(x) for x in page} and step > 0.3 and res["swipes"] < limit:
+                step = 0.3                                   # 사이를 건너뛰었다: 앞으로는 덜 밀고, 한 번 되돌려 그 사이를 읽는다
+                self.mem_swipe(box, dh, step, self.mem_danger(nodes, box, area), back=True)
+                res["swipes"] += 1
+                nodes, box = again(nodes, box)
+                k += 1
+                page, more = look(nodes, box, k, back=True)
+                add += more
+            idle = 0 if add or (st["head"] is None and not st["inmore"]) or (st["inmore"] and moved) else idle + 1   # 머리 전(메뉴)은 세지 않는다. 전체 멤버 화면은 서랍에서 읽은 이름을 지나가는 동안도
+            if idle >= 2:
+                break
+        return nodes, box
+
+    def mem_walk(self, room, mcfg=None, rec=None, limit=120, more_limit=120):
+        """방을 열고 오른쪽 위 메뉴(서랍)를 열어 대화상대 칸을 끝까지 읽는다. 대화상대 칸에 더보기 단추가 있으면 한 번 눌러 열린 화면에서 읽는다.
+        끝나면(안 되어도) 연 화면을 뒤로 키로 닫는다(Termux 로 돌아가는 done 은 부르는 쪽이). 지나온 화면은 이름을 가려 trace 에 둔다.
+        rec(이름표, 줄들): members_study 가 화면마다 받는다. 돌려주는 것: {names, n(대화상대 수), head, rid, swipes, more, pages}"""
+        fixed = str((mcfg or {}).get("rid") or "").strip()
+        st = {"head": None, "n": None, "rid": fixed, "rid_fixed": bool(fixed), "more": None, "more_done": False, "inmore": False, "room": room}
+        res = {"names": [], "n": None, "head": "", "rid": "", "swipes": 0, "more": False, "pages": []}
+
+        def note(label, nodes, box=None, sec=None, before=None, only=None):
+            rows = self.mem_mask(nodes, box, sec, before, (room,), only)
+            self.mem_snap(label, rows)
+            if rec:
+                rec(label, rows)
+        bbox = lambda ns: (min(n["b"][0] for n in ns), min(n["b"][1] for n in ns), max(n["b"][2] for n in ns), max(n["b"][3] for n in ns))
+        mark = lambda ns, old: {(n["b"], n["text"], n["desc"]) for n in ns if (n["text"] or n["desc"]) and (n["b"], n["text"], n["desc"]) not in old}
+        depth, marks, pre = 0, set(), None                   # 뒤로 키로 닫을 화면 수(서랍, 전체 멤버 화면), 그 화면에만 있던 글(닫혔는지 보려고), 열기 전 방 화면
+        nodes = self.open_room(room)
+        self.trace = []                                      # 채팅 목록 화면(대화 글)은 남기지 않는다. 멤버 화면은 이름을 가려 남긴다
+        try:
+            hgt = max(n["b"][3] for n in nodes)
+            e = find(nodes, cls="EditText")
+            l0 = min(n["b"][0] for n in e) if e else 0
+            note("방 위쪽(메뉴 단추 자리)", nodes, only=lambda n: n["b"][1] < hgt * 0.08 and n["b"][0] >= l0 - 60)
+            btn = self.mem_button(nodes)
+            if not btn:
+                self.save_diag()
+                raise KakaoError("방 오른쪽 위 메뉴(서랍) 단추를 찾지 못함" + self.diag_note())
+            seen = {(n["b"], n["text"], n["desc"]) for n in nodes}
+            pre = {k for k in seen if k[1] or k[2]}
+            self.mem_left = {"pre": pre, "marks": set()}
+            self.mem_tap(btn)
+            depth = 1                                        # 누른 순간부터 열렸다고 본다(바로 뒤 화면 읽기가 실패해도 닫게)
+            drawer = self.wait_change(nodes, tries=3)
+            new = [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and self.center(n)[0] >= l0 - 60]
+            if not new:
+                self.save_diag()
+                raise KakaoError("메뉴 단추를 눌렀는데 서랍이 열리지 않음" + self.diag_note())
+            marks = mark(drawer, seen)
+            self.mem_left["marks"] = set(marks)
+            area = bbox(new)
+            box = self.mem_list(drawer, area)
+            if box is None:
+                note("서랍(새로 나온 것)", drawer, before=nodes)
+                self.save_diag()
+                raise KakaoError("서랍에서 목록 칸을 찾지 못함" + self.diag_note())
+            cur, box = self.mem_read(drawer, box, area, st, res, limit, note, "서랍", nodes)
+            if st["more"] is not None:
+                st["more_done"] = True
+                self.mem_tap(st["more"])
+                scr = self.wait_change(cur, tries=3)
+                if [(n["b"], n["text"]) for n in scr] == [(n["b"], n["text"]) for n in cur]:
+                    st["more"] = None                        # 눌러도 그대로: 서랍을 이어 읽는다
+                    self.mem_read(cur, box, area, st, res, limit, note, "서랍 이어서", nodes)
+                else:
+                    depth, res["more"] = 2, True
+                    marks |= mark(scr, {(n["b"], n["text"], n["desc"]) for n in cur})
+                    self.mem_left["marks"] = set(marks)
+                    st.update(inmore=True, rid=fixed, more=None)
+                    h = self.mem_head(scr)                   # 전체 멤버 화면 위쪽 띠의 '대화상대 37'
+                    if h and h[1]:
+                        st["n"] = max(st["n"] or 0, h[1])
+                    area2 = bbox(scr)
+                    box2 = self.mem_list(scr, area2)
+                    if box2 is None:
+                        note("더보기를 누른 뒤(목록 칸 못 찾음)", scr, before=cur)
+                    else:
+                        self.mem_read(scr, box2, area2, st, res, min(120, res["swipes"] + more_limit), note, "전체", cur)
+                    self.key(4)                              # 서랍으로
+                    self.sleep(0.6)
+                    depth = 1
+            res.update(n=st["n"], head=st["head"] or "", rid=st["rid"])
+            return res
+        finally:
+            self.mem_close(depth, marks, (self.mem_left or {}).get("pre"))
+
+    def mem_open(self, nodes, marks, pre):
+        """서랍이나 전체 멤버 화면이 아직 떠 있는지. 그 화면에만 있던 글(marks)이 보이면 떠 있다. marks 를 모르면(열자마자 실패)
+        열기 전 방 화면(pre)에 없던 글이 방 칸에 여섯 넘게 있으면 떠 있다고 본다(새 대화 글이 많아도 그렇게 보지만 뒤로 한 번이면 그만)"""
+        cur = {(n["b"], n["text"], n["desc"]) for n in nodes if n["text"] or n["desc"]}
+        if marks:
+            return bool(marks & cur)
+        if not pre or not find(nodes, cls="EditText"):
+            return False                                     # 방 화면이 아니다(목록으로 나갔으면 서랍도 없다)
+        return len(cur - pre) > 6
+
+    def mem_close(self, depth, marks, pre=None):
+        """연 화면(전체 멤버, 서랍)을 뒤로 키로 닫는다. 누를 때마다 먼저 보고 떠 있을 때만 누른다(depth 에 두 번 더까지).
+        닫혔다고 본 뒤에야 mem_left 를 지운다. adb 가 끊겨 못 보면 남겨 두어 다음 open_room 이 먼저 닫게 한다
+        (서랍이 남아 있으면 다음 보내기가 입력 칸 자리를 눌러 서랍의 아래 띠(나가기)를 누를 수 있다)"""
+        if not depth:
+            self.mem_left = None
+            return
+        for i in range(depth + 2):
+            try:
+                ns = self.dump()
+            except KakaoError:
+                ns = None                                    # 화면을 못 읽으면 처음 depth 번은 그냥 누른다(adb 가 살아 있으면 닫힌다)
+            try:
+                if ns is not None and not self.mem_open(ns, marks, pre):
+                    self.mem_left = None
+                    return
+                if ns is None and i >= depth:
+                    return                                   # 못 본 채로 더 누르지 않는다(mem_left 를 남겨 다음 open_room 이 닫게)
+                self.key(4)
+                self.sleep(0.6)
+            except KakaoError:
+                return
+        try:
+            if not self.mem_open(self.dump(), marks, pre):
+                self.mem_left = None
+        except KakaoError:
+            pass
+
+    def mem_unstick(self, nodes):
+        """지난 멤버 읽기가 닫지 못한 서랍을 닫는다(open_room 이 방을 쓰기 전에). 두 번 눌러도 남으면 멈춘다(입력 칸 자리를 누르지 않게)"""
+        left = self.mem_left or {}
+        for _ in range(3):
+            if not self.mem_open(nodes, left.get("marks") or set(), left.get("pre")):
+                self.mem_left = None
+                return nodes
+            self.key(4)
+            self.sleep(0.6)
+            nodes = self.dump()
+        self.save_diag(nodes)
+        raise KakaoError("멤버 읽기 뒤 방 메뉴(서랍)가 닫히지 않음. 태블릿에서 서랍을 닫아 주세요" + self.diag_note())
+
+    def read_members(self, room, cfg_members=None):
+        """알릴 방 메뉴(서랍)의 대화상대 칸에서 멤버 닉네임을 읽는다(봇 자신 빼고, 처음 본 차례, 사이트처럼 정리).
+        다 읽었는지 본다: 대화상대 수 N 을 읽었으면 (N - 1) x min_ratio 명 넘게, 못 읽었으면 min 명 넘게. 아니면 KakaoError
+        (이름을 가린 지나온 화면은 diag 파일에). 기록이나 화면에 이름을 적지 않는다"""
+        m = dict(DEFAULTS["members"], **(cfg_members or {}))
+        res = self.mem_walk(room, m)
+        self.mem_info = {k: res[k] for k in ("n", "head", "rid", "swipes", "more")}
+        names, n = res["names"], res["n"]
+        ratio, least = float(m.get("min_ratio") or 0.9), int(m.get("min") or 20)
+        why = ""
+        if not res["head"]:
+            why = "방 메뉴(서랍)에서 대화상대 칸을 찾지 못함"
+        elif n and len(names) < (n - 1) * ratio:
+            why = "멤버를 다 읽지 못함(대화상대 %d명 중 %d명)" % (n, len(names))
+        elif n and len(names) > n + max(3, n // 10):
+            why = "멤버보다 많이 읽음(대화상대 %d명인데 이름 %d개)" % (n, len(names))
+        elif not n and len(names) < least:
+            why = "멤버를 다 읽지 못함(%d명, 대화상대 수를 못 읽어 %d명은 넘어야 함)" % (len(names), least)
+        if why:
+            self.save_diag()
+            raise KakaoError(why + ". python excer_bot.py members study 로 화면을 적어 보내 주세요" + self.diag_note())
+        return names
+
+    def members_study(self, room, cfg_members=None):
+        """알릴 방 메뉴(서랍)의 대화상대 칸 화면을 단계마다 적는다(멤버 이름은 가림). 누르는 것은 read_members 와 같다
+        (서랍 단추, 더보기 하나, 뒤로). 서랍은 15번, 전체 멤버 화면은 5번까지 민다. 끝에 무엇을 찾았는지 정리한다"""
+        out = ["# 멤버 읽기 화면 살피기 %s (판 %s)" % (time.strftime("%Y-%m-%d %H:%M"), VERSION),
+               "멤버 이름은 적지 않음: 메뉴와 칸 이름, 대화상대 머리, 수, 표시(방장, 나)만 그대로, 나머지는 글자 수. 줄: 종류|글|이름|id|누름|자리", ""]
+
+        def rec(label, rows):
+            out.extend(["== %s (%d)" % (label, len(rows))] + rows + [""])
+        res = None
+        try:
+            res = self.mem_walk(room, cfg_members, rec=rec, limit=15, more_limit=5)
+        except KakaoError as e:
+            out += ["== 멈춤: %s" % e, ""]
+        if res:
+            out += ["== 정리",
+                    "대화상대 머리: %s%s" % (res["head"] or "못 찾음", ", 수 %d" % res["n"] if res["n"] else ", 수 못 읽음"),
+                    "이름 칸 id: %s" % (res["rid"].split("/")[-1] if res["rid"] else "없음(줄의 첫 글)"),
+                    "읽은 이름: %d개(이름은 적지 않음)%s" % (len(res["names"]), ", 봇을 빼면 %d명이어야 다 읽은 것" % (res["n"] - 1) if res["n"] else ""),
+                    "민 횟수: %d, 더보기: %s" % (res["swipes"], "누름" if res["more"] else "없음")]
         return "\n".join(out)
 
     # ── 보이스룸(docs/BOT_VOICE_ROOM.md) ──
@@ -3373,13 +4136,13 @@ def cmd_feed(path, op):
     except (OSError, ValueError):
         raise SystemExit("시험 파일이 없음. 먼저 python excer_bot.py sample-feed")
     now = datetime.now(KST)
-    if op == "soon":                                    # 3분 뒤 시작, 6분 뒤 끝: 시작하면 첫 줄이 '진행 중'이 되고, 끝나면 다음 벙으로 넘어가는지 본다
+    if op == "soon":                                    # 3분 뒤 시작, 6분 뒤 끝: 오늘 벙이면 공지 카드에 들어가고, 시작과 끝에는 공지 글이 그대로인지 본다
         n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
         at, till = now + timedelta(minutes=3), now + timedelta(minutes=6)
         rows.append({"id": n, "title": "곧 시작 시험 벙 %d" % (n - 900000), "author": "시험", "created_at": now.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
                      "meta": {"kind": "bung", "date": at.strftime("%Y-%m-%d"), "time": at.strftime("%H:%M"), "end": till.strftime("%H:%M"), "place": "시험 장소", "cap": 4}})
         save_json(path, rows)
-        print("고쳤습니다: %s 에 시작해 %s 에 끝나는 벙. 곧 공지 첫 줄에 오고, 시작하면 '진행 중', 끝나면 다음 벙으로 넘어갑니다." % (at.strftime("%H:%M"), till.strftime("%H:%M")))
+        print("고쳤습니다: %s 에 시작해 %s 에 끝나는 벙. 20초 안에 새 벙 알림과 공지 카드가 올라오고, 시작과 끝에는 공지 글이 그대로입니다." % (at.strftime("%H:%M"), till.strftime("%H:%M")))
         return
     if op == "add":
         n = max([r.get("id", 900000) for r in rows] + [900000]) + 1
@@ -3396,12 +4159,12 @@ def cmd_feed(path, op):
             h = int(((r.get("meta") or {}).get("time") or "18:00")[:2])
             r.setdefault("meta", {})["time"] = "%02d:00" % ((h + 1) % 24)
             what = "%s 시간을 %s 로" % (r["title"], r["meta"]["time"])
-        elif op == "full":                               # 정원을 채운다(다음 벙으로 넘어가는지)
+        elif op == "full":                               # 정원을 채운다(오늘 벙이면 카드가 '마감' 줄로 옮겨 가는지)
             cap = int((r.get("meta") or {}).get("cap") or 4)
             r.setdefault("meta", {})["cap"] = cap
             r["attend_count"] = cap
             what = "%s 정원 %d명 다 참" % (r["title"], cap)
-        elif op == "deadline":                           # 2분 뒤 신청 마감(그 시각이 지나면 다음 벙으로 넘어가는지)
+        elif op == "deadline":                           # 2분 뒤 신청 마감(카드에 '신청 HH:MM까지' 가 붙고, 그 시각이 지나도 공지 글은 그대로인지)
             at = now + timedelta(minutes=2)
             r.setdefault("meta", {})["deadline"] = at.strftime("%Y-%m-%dT%H:%M")
             what = "%s 신청 마감 %s" % (r["title"], at.strftime("%H:%M"))
@@ -3417,8 +4180,9 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off")
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members"])
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, study, key, at")
+    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
@@ -3523,6 +4287,8 @@ def main(argv=None):
         except KakaoError:
             print("다 적었습니다: %s (cat 으로 보세요)" % path)
         return
+    if a.command == "members":                         # 봇 멤버 자동 갱신: 지금 읽기, 올리기, 화면 살피기, 열쇠, 매일 시각
+        return cmd_members(cfg, a, base, log)
     if a.command == "voice":
         return cmd_voice(cfg, a, base, log)
     if a.command == "ui":
@@ -3686,6 +4452,125 @@ def cmd_voice(cfg, a, base, log):
         print("다 적었습니다: %s (cat 으로 보세요)" % path)
 
 
+def clip_text():
+    """안드로이드 클립보드의 글(termux-clipboard-get). 못 읽으면 ''"""
+    try:
+        p = subprocess.run(["termux-clipboard-get"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return p.stdout.decode("utf-8", "replace") if p.returncode == 0 else ""
+
+
+def members_key_cmd(cfg, path, val, clip=None):
+    """members key [열쇠]: 봇 열쇠를 저장한다. 적지 않으면 클립보드에서 읽는다. 열쇠는 끝 네 글자만 보인다(off 는 지운다)"""
+    val = (val or "").strip()
+    if val == "off":
+        cfg["members_key"] = ""
+        save_cfg(path, cfg)
+        return "봇 열쇠를 지웠습니다. 멤버 자동 갱신을 하지 않습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
+    src = "적은 글"
+    if not val:
+        val, src = (clip or clip_text)() or "", "클립보드의 글"
+        if not val.strip():
+            return ("클립보드가 비어 있거나 읽지 못했습니다(Termux:API 앱이 있어야 합니다). 운영 화면 데이터 탭에서 복사 단추를 누른 뒤 다시 "
+                    "python excer_bot.py members key, 안 되면 열쇠를 길게 눌러 붙여 넣어 python excer_bot.py members key 열쇠")
+    got = sorted(set(MEMBER_KEY_RE.findall(INVIS_RE.sub("", val))))
+    if len(got) != 1:
+        return "%s(%d자)%s. 운영 화면 데이터 탭에서 봇 열쇠를 만들고 복사 단추를 다시 누르세요" % (
+            src, len(val.strip()), "에 열쇠가 %d개 들어 있습니다" % len(got) if got else "이 봇 열쇠 모양이 아닙니다(mbk_ 뒤에 0~9, a~f 48자)")
+    cfg["members_key"] = got[0]
+    save_cfg(path, cfg)
+    return "봇 열쇠를 저장했습니다(끝 %s). run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다. 바로 올려 보려면 run 을 멈춘 채 python excer_bot.py members push" % got[0][-4:]
+
+
+def members_at_cmd(cfg, path, val):
+    """members at 05:10: 매일 이 시각에 멤버를 읽어 올린다. members at off: 끈다. 인자가 없으면 지금 설정을 보인다"""
+    val = (val or "").strip()
+    if not val:
+        at = members_at(cfg)
+        return "멤버 자동 갱신: %s%s. 바꾸려면 python excer_bot.py members at 05:10 또는 members at off" % (
+            "매일 " + at if at else "꺼짐", "" if cfg.get("members_key") else ", 봇 열쇠 없음(python excer_bot.py members key)")
+    if val == "off":
+        cfg["members_at"] = "off"
+    else:
+        m = re.match(r"^(\d{1,2}):(\d{2})$", val)
+        if not m or int(m.group(1)) > 23 or int(m.group(2)) > 59:
+            return "모양이 다릅니다. 예: python excer_bot.py members at 05:10 (24시간), 끄려면 members at off"
+        cfg["members_at"] = "%02d:%02d" % (int(m.group(1)), int(m.group(2)))
+    save_cfg(path, cfg)
+    return ("멤버 자동 갱신을 매일 %s 로 정했습니다" % cfg["members_at"] if cfg["members_at"] != "off" else "멤버 자동 갱신을 껐습니다") + \
+        ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
+
+
+def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
+    """members: 알릴 방 메뉴(서랍)의 멤버를 지금 읽는다(올리지 않음). push 는 읽어 올리고, study 는 화면을 적고,
+    key 는 봇 열쇠를, at 은 매일 시각을 정한다. 화면을 쓰는 것(members, push, study)은 run 이 돌면 하지 않는다"""
+    sub, val = (a.arg or "").strip(), (getattr(a, "arg2", "") or "").strip()
+    if sub == "key":
+        print(members_key_cmd(cfg, a.config, val, clip))
+        return
+    if sub == "at":
+        print(members_at_cmd(cfg, a.config, val))
+        return
+    if sub not in ("", "push", "study"):
+        raise SystemExit("python excer_bot.py members | members push | members study | members key [열쇠] | members at 05:10 (또는 off)")
+    if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py members" + (" " + sub if sub else ""))
+    room, key = cfg.get("room") or "", cfg.get("members_key") or ""
+    if not room:
+        raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
+    if sub == "push" and not key:
+        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 데이터 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
+    sender = sender or make_sender(cfg, log)
+    if not isinstance(sender, AdbSender):
+        raise SystemExit("members 는 tablet 방식에서 씁니다.")
+    if sub == "study":
+        print("알릴 방(%s) 메뉴(서랍)의 대화상대 칸 화면을 적습니다(멤버 이름은 가림, 누르는 것은 메뉴 단추와 더보기뿐). 1~2분 걸립니다. 태블릿을 만지지 마세요." % room)
+        try:
+            txt = sender.members_study(room, cfg.get("members") or {})
+        finally:
+            sender.done()
+        path = base + "_members_study.txt"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt)
+        try:
+            sender.set_clip(txt)
+            print("다 적었습니다(%s). 클립보드에도 담았으니 개발 대화창에 붙여넣어 보내 주세요." % os.path.basename(path))
+        except KakaoError:
+            print("다 적었습니다: %s (cat 으로 보세요)" % path)
+        return
+    print("알릴 방(%s) 메뉴(서랍)에서 멤버를 읽습니다. 1~5분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요." % room)
+    try:
+        names = sender.read_members(room, cfg.get("members") or {})
+    finally:
+        sender.done()
+    path = base + "_members.txt"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(names) + "\n")
+    n = (getattr(sender, "mem_info", None) or {}).get("n")
+    print("멤버 %d명을 읽었습니다%s. 보기: %s" % (len(names), "(방의 대화상대 %d명에서 봇을 빼면 %d명)" % (n, n - 1) if n else "", ", ".join(member_mask(x) for x in names[:5])))
+    print("전체 목록: %s" % path)
+    if sub != "push":
+        print("사이트에는 올리지 않았습니다. 올리려면 python excer_bot.py members push")
+        return
+    try:
+        r = (site or Site(cfg)).push_members(names, key)
+        kind, msg = members_result(r)
+    except Exception as e:                              # 망, 서버 오류: 파이썬 오류 화면 대신 한 줄
+        r, kind, msg = None, "retry", "멤버 목록을 올리지 못함(%s). 망을 확인하고 다시 python excer_bot.py members push" % e
+    print(msg)
+    sp = base + "_state.json"                           # run 이 멈춰 있으니 기록을 여기서 고친다(status 와 '봇 정상' 줄에 보인다)
+    st, now = load_state(sp), Now(datetime.now(KST))
+    st["members_last"] = {"at": "%s %s" % (now.ymd, now.hm), "n": int((r or {}).get("n") or 0) if kind == "ok" else len(names),
+                          "error": "" if kind == "ok" else members_short(msg), "step": "push"}
+    if kind == "ok":
+        st.update(members_ymd=now.ymd, members_fail=0, members_retry_at=0)
+        st.pop("members_badkey", None)
+    elif kind == "key":
+        st["members_badkey"] = member_key_tag(key)
+    save_json(sp, st)
+
+
 def cmd_quiet(cfg, path, arg):
     """quiet 00:30-07:30: 그 사이에는 올리지 않는다. quiet off: 늘 올린다. 인자가 없으면 지금 설정을 보여 준다"""
     arg = (arg or "").strip()
@@ -3742,6 +4627,8 @@ def run_loop(bot, log, voice=None, alive_path=None):
                 voice.tick()                            # 보이스룸 끊김은 tick 안에서 적는다
             if hasattr(bot, "heartbeat") and bot.heartbeat():
                 ran = True
+            if hasattr(bot, "members_tick") and bot.members_tick():   # 하루 한 번 방 메뉴의 멤버를 사이트에(tablet, 봇 열쇠가 있을 때)
+                ran = True
             if ran and last_err:
                 log("오류가 멎음(%d번 이어졌음)" % err_n)
                 last_err, err_n = "", 0
@@ -3768,8 +4655,8 @@ def write_alive(path, bot, voice, err=""):
                          "notice_gaveup": int((bot.st.get("notice_gaveup") or 0) if getattr(bot, "st", None) else 0),
                          "ctl": ctl_text(bot, bot.ts() if callable(getattr(bot, "ts", None)) else time.time()),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
-                         "voice": (voice.st.get("state") or "") if voice else "", "error": err})
-    except OSError:
+                         "voice": (voice.st.get("state") or "") if voice else "", "members": members_alive(bot), "error": err})
+    except (OSError, ValueError, TypeError, AttributeError):   # 표시를 못 남겨도 run 은 그대로 돈다(이 함수는 run_loop 의 try 밖)
         pass
 
 
@@ -3805,7 +4692,7 @@ def run_alive(base, now_ts=None):
 
 
 def status_lines(base, now_ts=None):
-    """run 이 살아 있는지, 마지막으로 사이트를 본 때, 공지 첫 줄, 보이스룸, 최근 기록. 기기는 건드리지 않는다"""
+    """run 이 살아 있는지, 마지막으로 사이트를 본 때, 공지 첫 줄, 보이스룸, 멤버 자동 갱신, 최근 기록. 기기는 건드리지 않는다"""
     now_ts = now_ts or time.time()
     out = ["봇 파일 판: %s" % VERSION]
     alive = {}
@@ -3839,6 +4726,8 @@ def status_lines(base, now_ts=None):
             out.append("공지 첫 줄: " + alive["notice"])
         if alive.get("voice"):
             out.append("보이스룸: " + {"on": "켜짐", "off": "꺼짐"}.get(alive["voice"], alive["voice"]))
+        if alive.get("members"):
+            out.append("멤버 자동 갱신: " + alive["members"])
         if alive.get("error"):
             out.append("이어지는 오류: " + alive["error"])
     try:

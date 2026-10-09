@@ -2,7 +2,7 @@
 -- 아무것도 바꾸지 않는다. 표가 없어도 죽지 않는다(to_regclass 로 먼저 보고, 있을 때만 query_to_xml 로 센다).
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 안(붙여넣다 잘리지 않게).
--- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄.
+-- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄.
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
@@ -29,7 +29,7 @@ admin as (
 inner_fn (sig) as (values
   ('public.site_is_admin(text)'), ('public.site_hash(text)'), ('public.site_kst_now()'),
   ('public.bung_is_open(bigint,jsonb)'), ('public.bung_attend_list(bigint)'), ('public.bung_check(jsonb,bigint,jsonb)'),
-  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)')
+  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)')
 ),
 locks as (
   select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
@@ -49,6 +49,14 @@ botctl as (
                      case when pause_until > now() then '전체 멈춤 ' || to_char(pause_until at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || '까지' end,
                      case when notice_until > now() then '공지 멈춤 ' || to_char(notice_until at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || '까지' end) as c
                      from site_bot_control where id = 1$q$, false, true, '')))[1]::text, '') end as ctl
+),
+-- 멤버 자동 갱신: 봇 열쇠가 있는가, 봇이 마지막으로 올린 때와 수, 마지막 실패. fn: 이 파일의 같은 시간대 검사와 멤버 함수가 그대로인가(옛 파일을 다시 돌리면 2)
+mbot as (
+  select (select count(*) from pg_proc where (proname = 'bung_check' and prosrc like '%bung_start(o.meta) < v_end%') or (proname = 'member_info' and prosrc like '%site_member_bot%')) as fn,
+         case when to_regclass('public.site_member_bot') is null then null
+              else (xpath('/row/c/text()', query_to_xml($q$select concat_ws(', ', case when key_hash is null then '열쇠 없음' else '열쇠 있음' end,
+                     '마지막 ' || to_char(last_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || ' ' || last_n || '명',
+                     '실패 ' || to_char(last_error_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || ' ' || last_error) as c from site_member_bot where id = 1$q$, false, true, '')))[1]::text end as v
 )
 
 select 항목, 값, 판정 from (
@@ -74,6 +82,10 @@ union all
 select 17, '진행 중 참석, 봇 원격 조종', case when ctl is null then '표가 없어요' when ctl = '' then '평소대로' else ctl end,
        case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' else '' end
   from botctl
+union all
+select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v is null then '2026-10-09-memberbot.sql 을 돌리면 생겨요'
+       when fn < 2 then '옛 판으로 돌아갔어요. 2026-10-09-memberbot.sql 을 다시 돌리세요' when v like '열쇠 없음%' then '켜려면 운영 화면 데이터 탭에서 봇 열쇠 만들기' when v like '%실패%' then '봇이 목록을 못 바꿨어요. 운영 화면 데이터 탭을 보세요' else '' end
+  from mbot
 union all
 select 20, '안쪽 함수 잠금', format('%s개 가운데 %s개 열림', 있음, 열림),
        case when 열림 > 0 then '위험. sql/README.md 의 권한 절을 보고 revoke 하세요'
