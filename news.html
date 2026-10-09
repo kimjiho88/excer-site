@@ -248,6 +248,25 @@
     .att-label { display: block; margin: 0 0 4px; font-size: var(--fs-caption); font-weight: 700; color: var(--ink); }
     .att-label small { color: var(--ink-2); font-weight: 500; }
     #attNick { margin-bottom: 10px; }
+    /* 내 닉네임: 이 기기에 고른 채팅방 닉네임. 참석과 모임 올리기가 이 이름을 그대로 쓴다 */
+    .me-row { margin-top: 12px; }
+    .me-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; max-width: 100%; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: var(--fs-sm); cursor: pointer; }
+    .me-chip .ic { flex: none; width: 16px; height: 16px; color: var(--brand); }
+    .me-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .me-chip small { flex: none; color: var(--ink-2); font-size: var(--fs-caption); }
+    .me-chip.is-empty { border-color: var(--brand); color: var(--brand); font-weight: 700; }
+    .att-me { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 10px; padding: 4px 4px 4px 12px; border-radius: 10px; background: var(--brand-soft); }
+    .att-me b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--brand); font-size: 15px; }
+    .att-me .text-btn { flex: none; }
+    .me-pick { width: 100%; justify-content: center; }
+    .me-list { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; max-height: min(320px, 46vh); overflow: auto; }
+    .me-list[hidden] { display: none; }
+    .me-list.is-sugg { margin: -4px 0 10px; }
+    .me-opt { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 15px; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+    .me-opt:hover, .me-opt:focus-visible { border-color: var(--brand); background: var(--brand-soft); }
+    .me-opt.is-now { border-color: var(--brand); color: var(--brand); font-weight: 700; }
+    #meBackdrop { z-index: 250; }
+    @media (max-width: 640px) { #meBackdrop { place-items: start center; padding-top: max(16px, 6vh); } }
     /* 모집 글 상세의 모임 카드: 언제, 어디서, 몇 명이 먼저 보이고 참석 단추가 그 바로 아래 */
     .bung-card { margin: 0 0 16px; padding: 16px; border: 1px solid rgba(75, 42, 130, 0.14); border-radius: 14px; background: linear-gradient(180deg, #F7F4FB, var(--surface) 70%); }
     .bc-when { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -348,7 +367,7 @@
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
   <script src="assets/site-core.js?v=11"></script>
-  <script src="assets/icons.js?v=2"></script>
+  <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=8"></script>
 </head>
 <body>
@@ -405,6 +424,7 @@
             <button type="button" data-cat="자유" aria-pressed="false">자유</button>
           </div>
         </div>
+        <div class="me-row"><button type="button" class="me-chip is-empty" id="meChip"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><b>내 닉네임 정하기</b></button></div>
         <div class="prompt-card" id="promptCard" hidden>
           <!-- 글감 종류 그림(2세대 posts-*, 후기는 flow-record) 96px. 못 읽으면 전구 아이콘으로 -->
           <img class="spot-img pc-art" id="promptArt" src="assets/img/posts-free-320.webp" width="320" height="320" alt="" decoding="async" onerror="this.closest('.prompt-card').classList.add('no-image')" />
@@ -525,8 +545,10 @@
         <!-- 이 브라우저에 닉네임과 비밀번호가 저장돼 있으면 칸 대신 한 줄로. 바꾸기를 누르면 칸이 열린다 -->
         <p class="author-sum is-wide" id="authorSum" hidden><span id="authorSumText"></span><button type="button" class="text-btn" id="authorSumEdit">바꾸기</button></p>
         <div class="field" data-field="wNick" id="wNickWrap">
-          <label for="wNick">닉네임</label>
-          <input id="wNick" class="input" type="text" maxlength="24" placeholder="예: 엑서" autocomplete="nickname" />
+          <label id="wNickLabel">닉네임</label>
+          <div class="att-me" id="wMe" hidden><b id="wMeName"></b><button type="button" class="text-btn" id="wMeChange">바꾸기</button></div>
+          <button type="button" class="btn btn-secondary me-pick" id="wNickPick" aria-describedby="wNickLabel">닉네임 고르기</button>
+          <input id="wNick" type="hidden" />
           <span class="field-error" hidden></span>
         </div>
         <div class="field" data-field="wPass" id="wPassWrap">
@@ -572,8 +594,10 @@
         <button id="attClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <p id="attDesc" class="field-hint" style="margin:0 0 10px"></p>
-      <label class="att-label" for="attNick">닉네임</label>
-      <input id="attNick" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="nickname" enterkeyhint="next" list="wNick-list" />
+      <label class="att-label" for="attNick" id="attNickLabel">닉네임</label>
+      <div class="att-me" id="attMe" hidden><b id="attMeName"></b><button type="button" class="text-btn" id="attMeChange">바꾸기</button></div>
+      <input id="attNick" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" enterkeyhint="next" />
+      <ul id="attSugg" class="me-list is-sugg" hidden aria-label="찾은 닉네임"></ul>
       <label class="att-label" for="attPass">비밀번호 <small id="attPassWhy">취소할 때 필요, 4자 이상</small></label>
       <input id="attPass" class="input" type="password" placeholder="비밀번호" autocomplete="off" enterkeyhint="done" />
       <p id="attPassHint" class="field-hint" hidden style="margin:6px 0 0">이 브라우저에 저장된 비밀번호를 채웠습니다.</p>
@@ -583,6 +607,31 @@
       <div class="modal-foot">
         <button id="attCancel" class="btn btn-secondary" type="button">취소</button>
         <button id="attOk" class="btn btn-primary" type="button">참석하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 닉네임 고르기: 서버의 멤버 목록(운영 화면에서 올림)에서 찾아 고른다. 목록이 없거나 이름이 없으면 직접 적는다 -->
+  <div id="meBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="meTitle">
+      <div class="modal-head">
+        <h3 id="meTitle">내 닉네임</h3>
+        <button id="meClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div id="meFind">
+        <label class="att-label" for="meQ">채팅방 닉네임 찾기</label>
+        <input id="meQ" class="input" type="search" maxlength="24" placeholder="앞 글자나 초성 (예: 엑서, ㅇㅅ)" autocomplete="off" enterkeyhint="search" />
+        <ul id="meList" class="me-list" aria-label="찾은 닉네임"></ul>
+        <p id="meNote" class="field-hint" aria-live="polite" style="margin:8px 0 0"></p>
+      </div>
+      <div id="meFreeWrap" hidden>
+        <label class="att-label" for="meFree">닉네임 직접 적기</label>
+        <input id="meFree" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" enterkeyhint="done" />
+        <p id="meFreeErr" class="field-error" role="alert" hidden style="margin:6px 0 0"></p>
+      </div>
+      <div class="modal-foot">
+        <button id="meFreeBtn" class="btn btn-secondary" type="button">목록에 없음</button>
+        <button id="meOk" class="btn btn-primary" type="button" hidden>이 이름으로</button>
       </div>
     </div>
   </div>
@@ -1437,6 +1486,7 @@
       $("wCount").textContent = $("wBody").value.length + " / 4000";
       $("wNick").value = post ? post.author : savedNick();   // 수정 창에 남은 다른 사람 이름을 새 글에 물려주지 않는다
       $("wNickWrap").hidden = !!post;
+      syncWNick();
       $("wPass").value = post ? (post.category === "공지" ? "" : ownPass(post)) : savedPass();   // 남의 글을 고칠 때는 내 저장 비밀번호를 채우지 않는다
       $("writeSubmitBtn").textContent = post ? "저장" : cat === "벙 소식" ? "모임 올리기" : "등록";
       $("writeTitle").textContent = post ? "글 수정" : cat === "벙 소식" ? "모임 올리기" : "글쓰기";
@@ -1480,7 +1530,7 @@
       clearErrors();
       let ok = true;
       const cat = $("wCat").value;
-      if (!state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 입력해 주세요."); ok = false; }
+      if (!state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 골라 주세요."); ok = false; }
       if ($("wPass").value.trim().length < 4) { setError("wPass", "비밀번호는 4자 이상 입력해 주세요."); ok = false; }
       if (!$("wTitle").value.trim()) { setError("wTitle", cat === "벙 소식" ? "모임명을 입력해 주세요." : "제목을 입력해 주세요."); ok = false; }
       else if ($("wTitle").value.trim().length > 100) { setError("wTitle", "제목은 100자까지입니다."); ok = false; }
@@ -1689,12 +1739,18 @@
       const list = (state.attend[id] || {}).list || [];
       const me = list.find((x) => isMe(x.nick, id));
       const host = mode === "host";
+      const meMode = mode === "attend" && !!savedNick();   // 내 닉네임이 있으면 칸 대신 그 이름 한 줄(바꾸기)
       $("attTitle").textContent = mode === "attend" ? "참석" : host ? "참석자 추가" : "참석 취소";
-      $("attDesc").textContent = mode === "attend" ? "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다."
+      $("attDesc").textContent = mode === "attend" ? (meMode ? "비밀번호는 참석을 취소할 때 씁니다." : "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다.")
         : host ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다."
         : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 잊었으면 모임장(글 비밀번호)이나 운영진이 명단에서 뺄 수 있습니다.";
       $("attNick").value = mode === "attend" ? savedNick() : host ? "" : (me ? me.nick : "");
-      $("attNick").placeholder = host ? "참석자 닉네임" : "채팅방 닉네임 그대로";
+      $("attNick").placeholder = host ? "참석자 닉네임 앞 글자" : "채팅방 닉네임 그대로";
+      $("attNick").hidden = meMode; $("attMe").hidden = !meMode; $("attMeName").textContent = meMode ? savedNick() : "";
+      if (meMode) $("attNickLabel").removeAttribute("for"); else $("attNickLabel").setAttribute("for", "attNick");
+      $("attSugg").hidden = true; $("attSugg").innerHTML = "";
+      if (host) memberInfo().then((i) => { if (attCtx && attCtx.mode === "host") { if (i.n) $("attNick").removeAttribute("list"); else $("attNick").setAttribute("list", "wNick-list"); } });
+      else $("attNick").removeAttribute("list");
       $("attPass").value = savedPass();
       $("attPassWhy").textContent = mode === "attend" ? "취소할 때 필요, 4자 이상" : host ? "글 비밀번호나 운영진 비밀번호" : "참석할 때 넣은 것";
       $("attPassHint").hidden = !$("attPass").value;
@@ -1703,7 +1759,7 @@
       $("attBackdrop").hidden = false;
       setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
     }
-    function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; }
+    function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; clearTimeout(ME.sTimer); ME.sSeq++; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; }
     /* 참석 창에서만 쓰는 오류 문구(같은 코드라도 글 수정 때와 뜻이 다르다) */
     const ATT_ERR = {
       attend: { NICK_TAKEN: "이 닉네임으로 이미 참석했거나 모임장이 적어 둔 이름입니다. 다른 기기에서 참석했다면 그때 넣은 비밀번호를 입력해 주세요." },
@@ -1735,7 +1791,7 @@
         if (attCtx === ctx) {
           if (mode === "host") {   // 여러 명을 이어서 적을 수 있게 창은 열어 둔다
             $("attErr").hidden = true; $("attDone").textContent = "추가됨: " + nick; $("attDone").hidden = false;
-            $("attNick").value = ""; $("attNick").focus();
+            $("attNick").value = ""; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; $("attNick").focus();
           } else closeAttend();
         }
         renderList();
@@ -1745,12 +1801,7 @@
         const code = String((err && err.message) || "");
         fail(attError(mode, err));
         if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
-        if (/NOT_FOUND/.test(code)) {   // 그사이 지워진 글
-          state.posts = state.posts.filter((p) => p.id !== id); if (state.expandedId === id) state.expandedId = null;
-          if (attCtx === ctx) closeAttend();
-          renderList();
-        } else if (/CLOSED|DEADLINE|NOT_BUNG/.test(code)) refreshPost(id);   // 다른 기기에서 마감했거나 고친 글: 글 항목을 새로 읽는다
-        else if (/FULL|NICK_TAKEN|NOT_ATTENDING/.test(code)) loadAttend([id]);
+        attendFollowUp(id, code, ctx);
         if (attCtx === ctx) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
       } finally {
         state.busy = false; $("attOk").removeAttribute("aria-busy");
@@ -1769,10 +1820,156 @@
     function claimAttend() {   // 이미 명단에 있는 이름을 내 것으로: 이 기기에 닉네임만 기억한다(서버는 바꾸지 않는다)
       if (!attCtx) return;
       const nick = $("attNick").value.trim(); if (!nick) return;
-      saveNick(nick);
+      saveNick(nick); syncMe();
       closeAttend(); renderList();
       showToast("이 기기에서 " + nick + " 을(를) 내 이름으로 기억합니다.");
     }
+    /* 참석하기: 내 닉네임이 없으면 먼저 고르고, 이 기기에 비밀번호도 있으면 창 없이 바로 참석한다 */
+    function startAttend(id) {
+      if (!findPost(id)) return;
+      if (!savedNick()) { openMe(() => startAttend(id)); return; }
+      if (savedPass().trim().length >= 4) { quickAttend(id); return; }
+      openAttend(id, "attend");
+    }
+    async function quickAttend(id) {
+      if (state.busy) return;
+      const nick = savedNick(), pass = savedPass();
+      const btn = document.querySelector(`.bung-card[data-post="${id}"] [data-act="attend"]`);
+      state.busy = true;
+      if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+      try {
+        const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass }) });
+        applyAttendList(id, res); rememberAttend(id, nick);
+        renderList();
+        const nb = document.querySelector(`.bung-card[data-post="${id}"] .att-acts button`); if (nb) nb.focus({ preventScroll: true });
+        showToast("참석했습니다. " + nick);
+      } catch (err) {
+        const code = String((err && err.message) || "");
+        state.busy = false;
+        if (/NICK_TAKEN/.test(code)) {   // 다른 기기에서 다른 비밀번호로 참석한 이름: 창을 열어 그 비밀번호를 받는다
+          openAttend(id, "attend");
+          $("attErr").textContent = attError("attend", err); $("attErr").hidden = false; $("attClaim").hidden = false;
+        } else showToast(attError("attend", err));
+        attendFollowUp(id, code, null);
+      } finally {
+        state.busy = false;
+        if (btn && btn.isConnected) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
+      }
+    }
+    /* 참석이 안 된 뒤: 그사이 지워진 글은 목록에서 빼고, 마감이나 고친 글은 글을, 정원과 이름 문제는 명단을 다시 읽는다 */
+    function attendFollowUp(id, code, ctx) {
+      if (/NOT_FOUND/.test(code)) {
+        state.posts = state.posts.filter((p) => p.id !== id); if (state.expandedId === id) state.expandedId = null;
+        if (ctx && attCtx === ctx) closeAttend();
+        renderList();
+      } else if (/CLOSED|DEADLINE|NOT_BUNG/.test(code)) refreshPost(id);
+      else if (/FULL|NICK_TAKEN|NOT_ATTENDING/.test(code)) loadAttend([id]);
+    }
+
+    /* ── 내 닉네임: 운영 화면이 올린 멤버 목록(member_find)에서 찾아 고르고 이 기기에 저장한다(NICK_KEY, 맛집과 같은 열쇠).
+       참석 단추와 모임 올리기가 이 이름을 그대로 쓴다. 목록이 없는 서버이거나 목록에 없는 사람은 직접 적는다 ── */
+    const ME = { cb: null, back: null, seq: 0, timer: 0, sSeq: 0, sTimer: 0, cache: new Map(), info: null, infoP: null };
+    const nfc = (s) => String(s || "").normalize("NFC").trim().replace(/\s+/g, " ");
+    function memberInfo() {
+      if (ME.info) return Promise.resolve(ME.info);
+      if (!ME.infoP) ME.infoP = supaFetch("/rest/v1/rpc/member_info", { method: "POST", body: "{}" })
+        .then((r) => (ME.info = { n: Number(r && r.n) || 0 }))
+        .catch((e) => { ME.infoP = null; if (e && e.status === 404) ME.info = { n: 0 }; return { n: 0 }; });   // 함수가 없는 서버는 목록 없음, 끊김이면 다음에 다시
+      return ME.infoP;
+    }
+    /* 찾기: 끝에 붙은 낱자음(입력 중인 '엑ㅅ')은 떼고 찾은 뒤 다음 글자의 초성으로 거른다. 모두 초성이면(ㅇㅅ) 서버가 초성으로 찾는다 */
+    async function memberFind(q) {
+      q = nfc(q); if (!q) return [];
+      const tail = !C.isChosungQuery(q) && /[ㄱ-ㅎ]$/.test(q) ? q.slice(-1) : "";
+      const send = tail ? q.slice(0, -1).trim() : q;
+      if (!send) return [];
+      const k = send.toLowerCase();
+      let names = ME.cache.get(k);
+      if (!names) {
+        const rows = await supaFetch("/rest/v1/rpc/member_find", { method: "POST", body: JSON.stringify({ p_q: send }) });
+        names = (Array.isArray(rows) ? rows : []).map((r) => r && r.name).filter(Boolean);
+        ME.cache.set(k, names);
+      }
+      if (!tail) return names;
+      return names.filter((n) => { const i = n.toLowerCase().indexOf(k), ch = i >= 0 ? n.charAt(i + k.length) : ""; return !!ch && C.chosung(ch) === tail; });
+    }
+    function renderMeList(ul, names) {
+      const now = nickKey(savedNick());
+      ul.innerHTML = names.map((n) => `<li><button type="button" class="me-opt${nickKey(n) === now ? " is-now" : ""}" data-name="${esc(n)}">${esc(n)}</button></li>`).join("");
+      ul.hidden = !names.length;
+    }
+    function syncMe() {
+      const n = savedNick();
+      $("meChip").classList.toggle("is-empty", !n);
+      $("meChip").innerHTML = icon("user") + (n ? `<b>${esc(n)}</b><small>바꾸기</small>` : "<b>내 닉네임 정하기</b>");
+      $("meChip").setAttribute("aria-label", n ? "내 닉네임 " + n + " 바꾸기" : "내 닉네임 정하기");
+    }
+    function syncWNick() {
+      const v = $("wNick").value.trim();
+      $("wMe").hidden = !v; $("wMeName").textContent = v;
+      $("wNickPick").hidden = !!v;
+    }
+    function meNow() { const n = savedNick(); $("meNote").textContent = n ? "지금: " + n : ""; }
+    function showMeFree(on) {
+      $("meFind").hidden = on; $("meFreeWrap").hidden = !on;
+      $("meFreeBtn").hidden = on; $("meOk").hidden = !on;
+      $("meFreeErr").hidden = true;
+      if (on) { if (nfc($("meQ").value)) $("meFree").value = nfc($("meQ").value); setTimeout(() => $("meFree").focus(), 30); }
+    }
+    /* cb: 고른 뒤 할 일(참석 이어 하기, 글쓰기 칸 채우기). 닫으면 하지 않는다 */
+    async function openMe(cb) {
+      ME.cb = cb || null; ME.back = document.activeElement; ME.seq++;
+      $("meQ").value = ""; $("meList").innerHTML = ""; $("meFree").value = savedNick();
+      showMeFree(false); meNow();
+      $("meBackdrop").hidden = false;
+      setTimeout(() => $("meQ").focus(), 30);
+      const info = await memberInfo();
+      if (!$("meBackdrop").hidden && !info.n) showMeFree(true);   // 올라온 목록이 없으면 바로 직접 적기
+    }
+    function closeMe() {
+      if ($("meBackdrop").hidden) return;
+      $("meBackdrop").hidden = true; clearTimeout(ME.timer); ME.seq++; ME.cb = null;
+      const back = ME.back; ME.back = null;
+      if (back && back.isConnected) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+    }
+    function chooseMe(name) {
+      const nick = nfc(name).slice(0, 24); if (!nick) return;
+      const cb = ME.cb; ME.cb = null;
+      saveNick(nick); closeMe(); syncMe(); renderList();
+      if (cb) cb(nick); else showToast("내 닉네임: " + nick);
+    }
+    function onMeInput() {
+      clearTimeout(ME.timer);
+      const q = $("meQ").value, seq = ++ME.seq;
+      if (!nfc(q)) { $("meList").innerHTML = ""; meNow(); return; }
+      ME.timer = setTimeout(async () => {
+        let names;
+        try { names = await memberFind(q); }
+        catch (err) { if (seq !== ME.seq) return; $("meList").innerHTML = ""; $("meNote").textContent = /RATE_LIMIT/.test(String(err && err.message)) ? ERROR_MAP.RATE_LIMIT : "찾지 못했습니다. 잠시 뒤 다시 해 주세요."; return; }
+        if (seq !== ME.seq) return;
+        renderMeList($("meList"), names);
+        $("meNote").textContent = names.length ? "" : "맞는 이름이 없습니다.";
+      }, 250);
+    }
+    function submitMeFree() {
+      const v = nfc($("meFree").value);
+      if (!v) { $("meFreeErr").textContent = "닉네임을 적어 주세요."; $("meFreeErr").hidden = false; $("meFree").focus(); return; }
+      chooseMe(v);
+    }
+    /* 모임장의 참석자 추가: 적는 칸 아래에 목록에서 찾은 이름을 보여 준다 */
+    function onHostNickInput() {
+      if (!attCtx || attCtx.mode !== "host") return;
+      clearTimeout(ME.sTimer);
+      const q = $("attNick").value, seq = ++ME.sSeq;
+      if (!nfc(q)) { $("attSugg").hidden = true; $("attSugg").innerHTML = ""; return; }
+      ME.sTimer = setTimeout(async () => {
+        const info = await memberInfo(); if (!info.n) return;
+        let names = []; try { names = await memberFind(q); } catch (e) { return; }
+        if (seq !== ME.sSeq || !attCtx || attCtx.mode !== "host") return;
+        renderMeList($("attSugg"), names.filter((n) => nickKey(n) !== nickKey(q)).slice(0, 5));
+      }, 250);
+    }
+    function wNickPicked(nick) { $("wNick").value = nick; syncWNick(); syncAuthor(); renderPreview(); setError("wNick", ""); }
     /* ── 지도에서 장소 찾기(카카오 장소 검색): 모집 글의 장소 칸. 서버 bung_place 와 KAKAO.jsKey 가 있을 때만 단추가 보인다. SDK 는 처음 찾을 때 읽는다 ── */
     const MAP = { loading: null, failed: false, map: null, marker: null, results: [], picked: null };
     const SEOUL_GANGNAM = { lat: 37.4979, lng: 127.0276 };
@@ -2178,7 +2375,22 @@
         e.preventDefault(); const n = bs[(i + (e.key === "ArrowRight" ? 1 : bs.length - 1)) % bs.length]; n.focus(); pickCat(n.dataset.cat);
       });
       $("catNudgeBtn").addEventListener("click", () => { pickCat("벙 소식"); const d = $("wf_date"); if (d) d.closest(".field").scrollIntoView({ block: "center" }); });
-      $("authorSumEdit").addEventListener("click", () => { openAuthor(); $(state.editingId ? "wPass" : "wNick").focus(); });
+      $("authorSumEdit").addEventListener("click", () => { openAuthor(); $(state.editingId ? "wPass" : $("wNick").value ? "wMeChange" : "wNickPick").focus(); });
+      $("wNickPick").addEventListener("click", () => openMe(wNickPicked));
+      $("wMeChange").addEventListener("click", () => openMe(wNickPicked));
+      $("meChip").addEventListener("click", () => openMe(null));
+      $("attMeChange").addEventListener("click", () => openMe((nick) => { $("attNick").value = nick; $("attMeName").textContent = nick; }));
+      $("meQ").addEventListener("input", onMeInput);
+      $("meQ").addEventListener("keydown", (e) => { if (e.key !== "Enter") return; e.preventDefault(); const b = $("meList").querySelector(".me-opt"); if (b && $("meList").querySelectorAll(".me-opt").length === 1) chooseMe(b.dataset.name); });
+      $("meList").addEventListener("click", (e) => { const b = e.target.closest(".me-opt"); if (b) chooseMe(b.dataset.name); });
+      $("meFreeBtn").addEventListener("click", () => showMeFree(true));
+      $("meOk").addEventListener("click", submitMeFree);
+      $("meFree").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitMeFree(); } });
+      $("meFree").addEventListener("input", () => { $("meFreeErr").hidden = true; });
+      $("meClose").addEventListener("click", closeMe);
+      $("meBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeMe(); });
+      $("attNick").addEventListener("input", onHostNickInput);
+      $("attSugg").addEventListener("click", (e) => { const b = e.target.closest(".me-opt"); if (!b) return; $("attNick").value = b.dataset.name; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; $("attPass").focus(); });
       let pvTimer = null, slotTimer = null;
       $("writeForm").addEventListener("input", (e) => {
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
@@ -2259,7 +2471,7 @@
         if (act === "open-write") { if (el.dataset.cat) openWriteModal(null, { category: el.dataset.cat }); else openWriteDefault(); return; }
         if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
-        if (act === "attend") { openAttend(id, "attend"); return; }
+        if (act === "attend") { startAttend(id); return; }
         if (act === "unattend") { openAttend(id, "unattend"); return; }
         if (act === "host-attend") { openAttend(id, "host"); return; }
         if (act === "repost") { repostBung(id); return; }
@@ -2303,6 +2515,7 @@
       $("passInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); } });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
+        if (!$("meBackdrop").hidden) { closeMe(); return; }
         if (!$("mapBackdrop").hidden) { closeMapPicker(); return; }
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
         if (!$("dupBackdrop").hidden) { closeDup(null); return; }
@@ -2314,6 +2527,7 @@
     // ── 초기화 ──
     $("wNick").value = savedNick();
     bindEvents();
+    syncMe(); syncWNick();
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
     renderTypeFields("자유", null);
     const capsReady = C.caps().then((c) => {

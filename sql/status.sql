@@ -2,11 +2,13 @@
 -- 아무것도 바꾸지 않는다. 표가 없어도 죽지 않는다(to_regclass 로 먼저 보고, 있을 때만 query_to_xml 로 센다).
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 안(붙여넣다 잘리지 않게).
+-- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄.
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
   (7, 'site_places', '맛집'), (8, 'site_place_notes', '한줄평'), (9, 'site_visit_counts', '방문 횟수(날짜 수)'),
-  (11, 'ops_store', '운영 원장'), (12, 'site_rate_hit', '속도 제한 기록(하루치)'), (13, 'site_config', '설정')
+  (11, 'ops_store', '운영 원장'), (12, 'site_rate_hit', '속도 제한 기록(하루치)'), (13, 'site_config', '설정'),
+  (16, 'site_members', '멤버 닉네임 목록')
 ),
 cnt as (
   select ord, t, 부름, to_regclass('public.' || t) as reg,
@@ -42,7 +44,8 @@ rate as (select (select count(*) from pg_trigger where tgname = 'site_rate_trg')
 
 select 항목, 값, 판정 from (
 select ord, 부름 as 항목, case when reg is null then '표가 없어요' else n::text || '줄' end as 값,
-       case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' else '설치가 덜 됐어요' end else '' end as 판정
+       case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' when t = 'site_members' then '2026-10-09-members.sql 을 돌리면 생겨요' else '설치가 덜 됐어요' end
+            when t = 'site_members' and n = 0 then '운영 화면 데이터 탭에서 사이트에 올리기' else '' end as 판정
   from cnt
 union all
 select 10, '벙 날짜, 장소 칸', case when ok then '있음' else '없음' end,

@@ -471,6 +471,11 @@
             <textarea id="rosterText" class="textarea" rows="6" aria-label="현재 명단"></textarea>
             <div class="chips"><button id="rosterSave" class="btn btn-secondary" type="button">명단 저장</button></div>
           </div>
+          <div class="panel">
+            <h2>사이트 닉네임 목록 <small id="memInfo"></small></h2>
+            <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 명단이 대화 기록보다 새로우면 명단을, 아니면 대화 기록의 지금 멤버를 올립니다. 명단 저장이나 서버 저장을 하면 사흘 안의 자료일 때 함께 올라갑니다.</p>
+            <div class="chips"><button id="memPush" class="btn btn-secondary" type="button">사이트에 올리기</button></div>
+          </div>
           <div id="dataDyn" style="display:grid;gap:14px;min-width:0"></div>
           <div class="panel" id="unreadPanel" hidden>
             <h2>읽지 못한 줄 <small id="unreadCount"></small></h2>
@@ -621,6 +626,7 @@
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
+        memLoad();
         try {
           localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(소식과 맛집이 글 비밀번호를 저장하지 않는다). 비밀번호는 저장하지 않는다
           if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
@@ -1881,6 +1887,7 @@
         $("saveState").textContent = "저장했습니다. 다른 기기에서 열면 이 결과가 보입니다.";
         toast("서버에 저장했습니다.");
         renderAll();
+        memPush(true);
       } catch (e) {
         $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요.";
       } finally { saving = false; btn.disabled = !S.unsaved; btn.textContent = "서버에 저장"; }
@@ -1893,9 +1900,51 @@
       S.roster = { at: todayKST(), names: uniq };
       renderAll();
       if (localOnly) { toast("명단을 이 화면에만 넣었습니다."); return; }
-      try { await opsPut("roster", S.roster); toast("명단을 저장했습니다. " + rosterNames().length + "명"); }
+      try { await opsPut("roster", S.roster); toast("명단을 저장했습니다. " + rosterNames().length + "명"); memPush(true); }
       catch (e) { toast(e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "명단을 저장하지 못했습니다. 연결을 확인해 주세요."); }
     });
+    /* 사이트 닉네임 목록(소식 화면의 내 닉네임 고르기, 2026-10-09 SQL). 명단이 대화 기록보다 새로우면 명단, 아니면 대화 기록의 지금 멤버.
+       저장할 때 함께 올리는 것은 사흘 안의 자료일 때만(옛 대화 파일로 지금 목록을 덮지 않게). 절반 아래로 줄면 묻는다 */
+    let memState = null, memBusy = false;
+    function siteNames() {
+      const rn = rosterNames(), L = S.ledger;
+      const useRoster = !!rn.length && (!L || (S.roster.at || "") >= L.range.to);
+      const names = useRoster ? rn : members().map((p) => p.name);
+      return { names: [...new Set(names.map(norm).filter((n) => n && !OpsAnalyzer.isBot(n)))], src: useRoster ? "명단 " + md(S.roster.at) : L ? "대화 기록 " + md(L.range.to) + "까지" : "", day: useRoster ? S.roster.at : L ? L.range.to : "" };
+    }
+    function memShow() {
+      const el = $("memInfo"); if (!el) return;
+      el.textContent = !memState ? "" : memState.missing ? "서버에 아직 없음(2026-10-09-members.sql)" : memState.n ? nf(memState.n) + "명, " + md(kstDate(memState.at)) + " " + kstHM(memState.at) + " 올림" : "아직 안 올림";
+    }
+    async function memLoad() {
+      if (localOnly) return;
+      try { memState = await rpc("member_info", {}); } catch (e) { memState = missingFn(e) ? { missing: true } : null; }
+      memShow();
+    }
+    async function memPush(auto) {
+      if (localOnly || !PASS || memBusy) return;
+      const { names, src, day } = siteNames();
+      if (auto && (!day || day < new Date(Date.now() + 9 * 3600000 - 3 * 86400000).toISOString().slice(0, 10))) return;
+      if (!names.length) { if (!auto) toast("올릴 멤버가 없습니다. 대화 파일이나 명단을 먼저 넣어 주세요."); return; }
+      if (memState && memState.missing) { if (!auto) toast("서버에 2026-10-09-members.sql 을 먼저 실행해 주세요."); return; }
+      const prev = (memState && memState.n) || 0;
+      if (prev >= 20 && names.length < prev / 2) {
+        if (auto) { toast("사이트 닉네임 목록은 그대로 두었습니다. " + nf(prev) + "명에서 " + nf(names.length) + "명으로 줄어듭니다."); return; }
+        if (!window.confirm("사이트 닉네임 목록이 " + nf(prev) + "명에서 " + nf(names.length) + "명으로 줄어듭니다. 올릴까요?")) return;
+      }
+      memBusy = true; $("memPush").disabled = true;
+      try {
+        const r = await rpc("member_set", { p_pass: PASS, p_names: names });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        memState = { n: r.n, at: r.at }; memShow();
+        toast("사이트 닉네임 목록을 올렸습니다. " + nf(r.n) + "명, " + src + (r.skipped ? ", 겹치거나 쓸 수 없는 이름 " + nf(r.skipped) + "개 뺌" : ""));
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        if (missingFn(e)) { memState = { missing: true }; memShow(); }
+        toast(missingFn(e) ? "서버에 2026-10-09-members.sql 을 먼저 실행해 주세요." : "사이트 닉네임 목록을 올리지 못했습니다. 연결을 확인해 주세요.");
+      } finally { memBusy = false; $("memPush").disabled = false; }
+    }
+    $("memPush").addEventListener("click", () => memPush(false));
     function renderFilesExtra() {
       const rn = (S.roster && S.roster.names) || [];
       $("rosterInfo").textContent = rn.length ? md(S.roster.at) + ", " + rn.length + "명" : "없음";
