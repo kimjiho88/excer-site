@@ -6,6 +6,7 @@
 -- 2) 같은 시간대(앞뒤 2시간) 검사가 날짜가 다른 모임도 본다(23:30 모임과 다음 날 00:30 모임).
 -- 3) 봇 원격 조종: 운영 화면이 '공지 멈춤'(공지 걸기만 쉼)과 '전체 멈춤'(알림과 공지 모두 쉼)을 정하면 봇이 1분 안에 따른다.
 do $g$ begin
+  if to_regclass('public.site_member_bot') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-09-memberbot.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 같은 시간대 검사와 멤버 함수가 옛 판으로 돌아갑니다)'; end if;
   if to_regprocedure('public.bung_end(jsonb)') is null then raise exception '끝나는 시간 두 쪽(2026-10-05)을 먼저 실행하세요'; end if;
   if to_regprocedure('public.bung_nick_key(text)') is null then raise exception '참석 다섯째 쪽(2026-10-03-bung-attend-5.sql)을 먼저 실행하세요'; end if;
   if to_regprocedure('public.ops_auth(text)') is null then raise exception '운영 대시보드 저장소(2026-09-27-ops-store.sql)를 먼저 실행하세요'; end if;

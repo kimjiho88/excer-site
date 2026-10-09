@@ -368,7 +368,7 @@
   </style>
   <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=9"></script>
+  <script src="assets/content.js?v=10"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -665,8 +665,8 @@
         <button id="dupClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <ul id="dupList" class="dup-list"></ul>
-      <p class="field-hint" style="margin:0 0 8px">같은 시간대(앞뒤 2시간) 중복 개설은 원칙적으로 금지입니다. 정원이 찼거나 신청 마감이 지난 모임은 예외로 칩니다.</p>
-      <label class="dup-ok"><input type="checkbox" id="dupConsent" /> 기존 모임장이 사전에 동의했습니다</label>
+      <p class="field-hint" style="margin:0 0 8px">앞 벙주가 동의하면 같은 시간대에도 열 수 있습니다.</p>
+      <label class="dup-ok"><input type="checkbox" id="dupConsent" /> 앞 벙주에게 동의를 받았습니다.</label>
       <div class="modal-foot">
         <button id="dupCancel" class="btn btn-secondary is-sm" type="button">돌아가기</button>
         <button id="dupOk" class="btn btn-primary is-sm" type="button" disabled>이대로 등록</button>
@@ -750,7 +750,7 @@
       BUNG_END: "끝나는 시간이 시작 시간과 같습니다.",
       BUNG_PAST: "지난 시각입니다. 날짜와 시간을 확인해 주세요.",
       BUNG_DEADLINE: "신청 마감은 모임 시작보다 늦을 수 없고, 지금보다 뒤여야 합니다.",
-      BUNG_DUP: "같은 시간대(앞뒤 2시간)에 모집 중인 모임이 있습니다. 기존 모임장의 동의가 있어야 합니다.",
+      BUNG_DUP: "같은 시간대에 모집 중인 모임이 있습니다. 앞 벙주의 동의를 받아야 합니다.",
       BUNG_CAP: "모집 인원이 이미 참석한 사람 수보다 적습니다. 먼저 명단에서 빼 주세요.",
       HAS_ATTENDEES: "참석자가 있는 모집 글은 글 종류를 바꿀 수 없습니다. 먼저 명단을 비워 주세요.",
       NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
@@ -1674,7 +1674,7 @@
       const sub = [];
       const recent = !past || (days != null && days >= -7);   // 모임장은 시작 뒤에도(일주일 안) 늦게 온 사람을 적거나 안 온 사람을 뺄 수 있다(서버도 허용)
       sub.push(`<button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>`);
-      if ((!past || st.ongoing) && st.why !== "nodate") sub.push(m.status === "closed"   // 진행 중에도 마감할 수 있다(마감하면 봇 공지의 첫 줄을 다음 모임에 내준다)
+      if ((!past || st.ongoing) && st.why !== "nodate") sub.push(m.status === "closed"   // 진행 중에도 마감할 수 있다(마감하면 봇 공지에서 카드가 '마감' 줄로 옮겨 간다)
         ? `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="">다시 모집</button>`
         : `<button type="button" class="text-btn is-quiet" data-act="recruit" data-id="${post.id}" data-to="closed">모집 마감</button>`);
       if (state.placeOn && recent) sub.push(`<button type="button" class="text-btn is-quiet" data-act="host-attend" data-id="${post.id}">참석자 추가</button>`);
@@ -2089,30 +2089,32 @@
       if (!st.start || m.status === "closed" || (st.cap && st.n >= st.cap)) return false;
       return nowKey() < (m.deadline || st.end);
     }
-    /* 같은 날 앞뒤 2시간 안에 모집 중인 다른 모임. 마감했거나, 신청 마감이 지났거나, 정원이 찬 모임은 예외라 묻지 않는다(서버도 같은 기준) */
+    /* 같은 시간대: 모임 시간이 겹치는 모집 중인 다른 모임. 시작이 상대의 끝보다 이르고 끝이 상대의 시작보다 늦으면 겹친다(19:00~21:00 과 21:00~23:00 은 아님).
+       끝나는 시간이 시작보다 이르거나 같으면 다음 날(19:00~01:00), 끝나는 시간이 없는 옛 글은 시작에서 2시간.
+       마감했거나, 신청 마감이 지났거나, 정원이 찬 모임은 묻지 않는다(서버 bung_check 와 같은 기준) */
     async function sameSlot(meta, selfId) {
       const sel = "id,title,author,meta,category" + (state.attendOn ? ",attend_count" : "");
-      const near = (n) => { const d = new Date(meta.date + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-      const days = [near(-1), meta.date, near(1)];   // 23:30 모임과 다음 날 00:30 모임도 같은 시간대(서버 bung_check 와 같은 기준)
+      const days = [addDays(meta.date, -1), meta.date, addDays(meta.date, 1)];   // 앞날 23:30~01:30 모임과 다음 날 00:30 모임도 겹친다
       const rows = await supaFetch("/rest/v1/site_posts_v?select=" + sel + "&category=eq." + encodeURIComponent("벙 소식") + "&" + encodeURIComponent("meta->>date") + "=in.(" + days.join(",") + ")&order=created_at.desc&limit=100");
       const hm = (t) => (/^\d{2}:\d{2}$/.test(t || "") ? t : "23:59");   // 시간이 없는 글은 서버처럼 23:59 로 본다
       const at = (d, t) => Date.parse(d + "T" + hm(t) + ":00Z") / 60000;
-      const me = at(meta.date, meta.time);
+      const span = (m) => { const s = at(m.date, m.time); if (!/^\d{2}:\d{2}$/.test(m.end || "")) return [s, s + 120]; const e = at(m.date, m.end); return [s, e > s ? e : e + 1440]; };   // [시작, 끝] 분
+      const [s0, e0] = span(meta);
       const md = (d) => Number(d.slice(5, 7)) + "/" + Number(d.slice(8, 10));
       return (rows || []).filter((p) => p.id !== selfId).map((p) => ({ p, m: C.postMeta(p) }))
-        .filter(({ p, m }) => m && days.includes(m.date) && Math.abs(at(m.date, m.time) - me) <= 120 && slotOpen(p, p.attend_count))
-        .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", at: at(m.date, m.time), time: (m.date !== meta.date ? md(m.date) + " " : "") + (/^\d{2}:\d{2}$/.test(m.time || "") ? m.time : "시간 미정"), place: m.place || "" }))
-        .sort((a, b) => a.at - b.at);
+        .filter(({ p, m }) => { if (!m || !days.includes(m.date)) return false; const [s, e] = span(m); return s < e0 && s0 < e && slotOpen(p, p.attend_count); })
+        .map(({ p, m }) => ({ title: p.title || "", author: p.author || "", start: span(m)[0], time: (m.date !== meta.date ? md(m.date) + " " : "") + (C.timeRange(m) || "시간 미정"), place: m.place || "" }))
+        .sort((a, b) => a.start - b.start);
     }
-    /* 날짜와 시간을 고르는 순간 같은 시간대(앞뒤 2시간)의 모집 중인 모임을 시간 칸 아래 한 줄로 알린다. 등록 때의 동의 창은 그대로 */
+    /* 날짜와 시간을 고르는 순간 시간이 겹치는 모집 중인 모임을 시간 칸 아래 한 줄로 알린다. 끝나는 시간을 아직 비워 두었으면 시작에서 2시간으로 본다. 등록 때의 동의 확인 창은 그대로 */
     let slotSeq = 0;
     async function checkSlotEarly() {
       const box = $("slotWarn"); if (!box) return;
-      const d = ($("wf_date") || {}).value, t = ($("wf_time") || {}).value;
+      const d = ($("wf_date") || {}).value, t = ($("wf_time") || {}).value, en = ($("wf_end") || {}).value || "";
       if ($("wCat").value !== "벙 소식" || !d || !t || !slotChanged(d, t)) { box.hidden = true; return; }
       const seq = ++slotSeq;
       let near = [];
-      try { near = await sameSlot({ date: d, time: t }, state.editingId); } catch (e) { near = []; }
+      try { near = await sameSlot({ date: d, time: t, end: en !== t ? en : "" }, state.editingId); } catch (e) { near = []; }   // 끝이 시작과 같으면(고치는 중) 비운 것으로
       if (seq !== slotSeq || !$("slotWarn")) return;
       box.hidden = !near.length;
       if (near.length) box.textContent = "같은 시간대에 모집 중: " + near.slice(0, 2).map((n) => n.time + " " + n.title + (n.author ? "(" + n.author + ")" : "")).join(", ") + (near.length > 2 ? " 외 " + (near.length - 2) + "건" : "");
@@ -2170,7 +2172,7 @@
           }
         } else {
           const old = C.postMeta(findPost(state.editingId) || {}) || {};
-          if (old.dup) meta.dup = old.dup;                 // 날짜와 시간이 그대로면 예전 동의를 지킨다
+          if (old.dup) meta.dup = old.dup;                 // 날짜와 시간이 그대로면 예전 동의 표시를 지킨다
         }
       }
       state.busy = true;
@@ -2183,11 +2185,12 @@
       let newId = null;
       try {
         try { newId = await send(); }
-        catch (err) {   // 화면이 못 본 같은 시간대 겹침(목록 밖의 글, 시간 없는 글)은 서버가 BUNG_DUP 으로 알려 준다: 동의를 받아 한 번 더
+        catch (err) {   // 화면이 못 본 같은 시간대 겹침(목록 밖의 글, 시간 없는 글)은 서버가 BUNG_DUP 으로 알려 준다: 동의를 받았는지 묻고 한 번 더
           if (!meta || meta.dup || !/BUNG_DUP/.test(String(err && err.message))) throw err;
           let near = [];
           try { near = await sameSlot(meta, state.editingId); } catch (e) { near = []; }
-          if (!near.length) near = [{ time: "", title: `${meta.time || ""} 앞뒤 2시간 안에 모집 중인 모임이 있습니다. 모임 모집 탭에서 그 모임을 확인해 주세요.`.trim(), author: "", place: "" }];
+          const tr = C.timeRange(meta);
+          if (!near.length) near = [{ time: "", title: "이 시간" + (tr ? "(" + tr + ")" : "") + "과 겹치는 모집 중인 모임이 있습니다. 모임 모집 탭에서 그 모임을 확인해 주세요.", author: "", place: "" }];
           if (!(await askDup(near))) return;
           meta.dup = "consent";
           newId = await send();
@@ -2429,7 +2432,7 @@
         if (e.target.closest("#typeFields")) syncChips();
         if (e.target.id === "wTitle" || e.target.id === "wBody") syncCatNudge();
         if (e.target.id === "wPass") syncPassHint();
-        if (e.target.id === "wf_date" || e.target.id === "wf_time") { clearTimeout(slotTimer); slotTimer = setTimeout(checkSlotEarly, 350); }
+        if (e.target.id === "wf_date" || e.target.id === "wf_time" || e.target.id === "wf_end") { clearTimeout(slotTimer); slotTimer = setTimeout(checkSlotEarly, 350); }
       });
       $("typeFields").addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");

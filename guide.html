@@ -583,7 +583,7 @@
           if (typeof v === "string") out.push(v);
           else if (Array.isArray(v)) v.forEach(function (x) { walk(x); });
           else if (v && typeof v === "object") {
-            if (v.type === "rulecards") out.push("원칙 예외" + (v.need ? " 자격" : ""));
+            if (v.type === "rulecards") out.push("원칙" + (v.ex && v.ex.length ? " 예외" : "") + (v.need ? " 자격" : ""));
             Object.keys(v).forEach(function (k) { walk(v[k], k); });
           }
         })(obj);
@@ -678,7 +678,7 @@
               { title: "사람에게", items: ["과도한 플러팅", "함부로 연락처를 묻거나 주고받기", "서로 합의하지 않은 반말", "사생활 침해", "비매너, 폭언, 성희롱"] },
               { title: "방 안에서", items: ["다른 방 홍보 또는 초대", "동의 없이 사진이나 개인정보 퍼뜨리기", "비방, 편 가르기, 뒷담화", "공개 채팅방에서의 감정싸움과 소모적인 말다툼", "기혼자 출입"] },
               { title: "약속", items: [{ t: "무단 노쇼와 불참", sub: "참석 버튼을 누르고 오지 않는 경우 포함" }] } ] },
-            { type: "seealso", text: "다른 장에 있는 규칙: [[연락 없는 임의 참여|rule-walkin]] 금지, [[같은 시간대 중복 개설|rule-dup]] 원칙적 금지(예외 있음), [[비벙|rule-bibung]] 지양" },
+            { type: "seealso", text: "다른 장에 있는 규칙: [[연락 없는 임의 참여|rule-walkin]] 금지, [[비벙|rule-bibung]] 지양" },
             { type: "ladders", anchor: "rule-sanction", title: "조치 단계", keywords: ["경고", "면담", "강제퇴장", "쫓겨", "추방", "내보내", "퇴출", "조치", "비벙 조치", "재적발"], tracks: [
               { label: "금지 행동 위반, 비벙 관련", steps: [{ tag: "1차", text: "구두 경고" }, { tag: "2차", text: "운영진 면담", sub: "사유 확인" }, { tag: "3차", text: "강제퇴장", final: true }] } ] }
           ] },
@@ -707,8 +707,8 @@
               steps: ["소식의 모임 모집 탭", "모임 올리기", "제목, 날짜, 시작과 끝나는 시간, 장소 입력(인원은 선택)", "비밀번호 4자 이상", "모임 올리기 누르기"],
               after: "올리면 봇이 채팅방 공지에 겁니다. 올린 뒤에는 시간을 지키고, 바뀌면 글을 고치고 **참여자에게 먼저** 알립니다. 비밀번호는 글을 고치거나 마감할 때 씁니다.",
               cta: { text: "모임 모집 글은 소식에서 올립니다.", href: "news.html?cat=bung&write=1", label: "모임 올리기" } },
-            { type: "rulecards", anchor: "rule-dup", title: "같은 시간대 중복 모임", keywords: ["중복 벙", "중복 모임"],
-              rule: "중복 개설은 원칙적으로 **금지**합니다.", ex: ["기존 모임 정원 마감", "기존 모임의 설정 마감 시간이 지남", "기존 모임장이 사전에 동의"] },
+            { type: "rulecards", anchor: "rule-dup", title: "같은 시간대 모임", keywords: ["중복 벙", "중복 모임", "같은 시간대", "동시간대", "동의", "허락", "앞 벙주", "겹치는 모임"],
+              rule: "시간이 겹치는 모집 중인 모임이 있어도 **앞 벙주가 동의**하면 열 수 있습니다." },
             { type: "note", danger: true, anchor: "rule-bibung", keywords: ["비벙", "지양", "후일담"],
               title: "비벙은 지양합니다.", text: "비벙은 공지 없이 따로 모이는 모임입니다. 비벙 이야기, 사진, 후일담도 채팅방에 올리지 않습니다.", to: "rule-sanction", toLabel: "조치 단계" }
           ] }
@@ -784,7 +784,8 @@
             return (b.title ? "<div" + aid(b.anchor) + '><h3 class="list-title">' + esc(b.title) + "</h3>" : "") +
               '<div class="rc"' + (b.title ? "" : aid(b.anchor)) + ">" + (b.need ? '<div class="rc-line"><span class="rc-b is-need">자격</span> <span>' + em(b.need) + "</span></div>" : "") +
               '<div class="rc-line"><span class="rc-b">원칙</span> <span>' + em(b.rule) + "</span></div>" +
-              '<div class="rc-line"><span class="rc-b is-ex">예외</span> <ul class="rc-chips" role="list">' + b.ex.map(function (x) { return "<li>" + esc(keepTail(x)) + "</li>"; }).join("") + "</ul></div></div>" + (b.title ? "</div>" : "");
+              (b.ex && b.ex.length ? '<div class="rc-line"><span class="rc-b is-ex">예외</span> <ul class="rc-chips" role="list">' + b.ex.map(function (x) { return "<li>" + esc(keepTail(x)) + "</li>"; }).join("") + "</ul></div>" : "") +   // 예외가 없는 카드(같은 시간대 모임)는 원칙 줄만
+              "</div>" + (b.title ? "</div>" : "");
           case "path":
             return "<div" + aid(b.anchor) + '><h3 class="list-title">' + esc(b.title) + '</h3><ol class="tap-path" role="list">' + b.steps.map(function (s, i) {
                 return '<li><span class="tp' + (i === b.steps.length - 1 ? " is-final" : "") + '">' + esc(s) + "</span></li>";
@@ -855,7 +856,7 @@
         return '<li><a href="#' + esc(c.id) + '" data-chip="' + esc(c.id) + '"><small>' + (i + 1) + "</small>" + esc(c.title) + "</a></li>";
       }).join("");
       /* 자주 찾는 규칙 — 답은 본문 한 곳에만 있고, 여기서는 그 자리로 이동만 */
-      var FAQ = [["닉네임 변경", "rule-nick-change"], ["재입장 횟수", "rule-reentry"], ["같은 시간대 중복 모임", "rule-dup"], ["메시지 삭제", "rule-delete"], ["규칙에 없는 상황", "rule-judge"]];
+      var FAQ = [["닉네임 변경", "rule-nick-change"], ["재입장 횟수", "rule-reentry"], ["같은 시간대 모임", "rule-dup"], ["메시지 삭제", "rule-delete"], ["규칙에 없는 상황", "rule-judge"]];
       tocFaq.innerHTML = FAQ.map(function (f) { return '<li><a href="#' + f[1] + '" data-jump="' + f[1] + '">' + esc(f[0]) + "</a></li>"; }).join("");
 
 

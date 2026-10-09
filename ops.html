@@ -293,6 +293,8 @@
     .ppl { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .ppl .nchip { min-height: 26px; padding: 0 8px; }
     .token-box { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+    .mem-bot { display: grid; gap: 8px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
+    .mem-bot-key { display: grid; gap: 6px; min-width: 0; }
     .steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.55; }
     .tbl.lft th, .tbl.lft td { text-align: left; white-space: normal; vertical-align: top; }
     .tbl.lft td.num, .tbl.lft th.num { text-align: right; white-space: nowrap; }
@@ -481,8 +483,13 @@
           </div>
           <div class="panel">
             <h2>사이트 닉네임 목록 <small id="memInfo"></small></h2>
-            <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 명단이 대화 기록보다 새로우면 명단을, 아니면 대화 기록의 지금 멤버를 올립니다. 명단 저장이나 서버 저장을 하면 사흘 안의 자료일 때 함께 올라갑니다.</p>
+            <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 명단이 대화 기록보다 새로우면 명단을, 아니면 대화 기록의 지금 멤버를 올립니다. 명단 저장이나 서버 저장을 하면 사흘 안의 자료일 때 함께 올라갑니다. 봇 자동 갱신이 돌고 있으면 저장할 때 함께 올리지 않습니다(봇이 방 메뉴에서 읽은 목록을 덮지 않게).</p>
             <div class="chips"><button id="memPush" class="btn btn-secondary" type="button">사이트에 올리기</button></div>
+            <div class="mem-bot" id="memBot" hidden>
+              <p class="sub"><b>봇 자동 갱신</b>: <span id="memBotInfo"></span></p>
+              <div class="chips"><button id="memBotNew" class="btn btn-secondary is-sm" type="button">봇 열쇠 만들기</button><button id="memBotOff" class="btn btn-secondary is-sm" type="button" hidden>자동 갱신 끄기</button></div>
+              <div class="mem-bot-key" id="memBotKey" hidden></div>
+            </div>
           </div>
           <div id="dataDyn" style="display:grid;gap:14px;min-width:0"></div>
           <div class="panel" id="unreadPanel" hidden>
@@ -1922,12 +1929,16 @@
     }
     function memShow() {
       const el = $("memInfo"); if (!el) return;
-      el.textContent = !memState ? "" : memState.missing ? "서버에 아직 없음(2026-10-09-members.sql)" : memState.n ? nf(memState.n) + "명, " + md(kstDate(memState.at)) + " " + kstHM(memState.at) + " 올림" : "아직 안 올림";
+      // 봇이 마지막으로 올린 때가 목록 시각과 1분 안이면 봇이 올린 목록(2026-10-09-memberbot.sql 전 서버는 bot 칸이 없다)
+      const b = memState && memState.bot, byBot = !!(b && b.last_at && memState.at && Math.abs(Date.parse(b.last_at) - Date.parse(memState.at)) <= 60000);
+      el.textContent = !memState ? "" : memState.missing ? "서버에 아직 없음(2026-10-09-members.sql)" : memState.n ? nf(memState.n) + "명, " + md(kstDate(memState.at)) + " " + kstHM(memState.at) + (byBot ? " 봇이 올림" : " 운영 화면에서 올림") : "아직 안 올림";
+      memBotShow();
     }
     async function memLoad() {
       if (localOnly) return;
       try { memState = await rpc("member_info", {}); } catch (e) { memState = missingFn(e) ? { missing: true } : null; }
       memShow();
+      memBotLoad();
     }
     async function memPush(auto) {
       if (localOnly || !PASS || memBusy) return;
@@ -1935,6 +1946,10 @@
       if (auto && (!day || day < new Date(Date.now() + 9 * 3600000 - 3 * 86400000).toISOString().slice(0, 10))) return;
       if (!names.length) { if (!auto) toast("올릴 멤버가 없습니다. 대화 파일이나 명단을 먼저 넣어 주세요."); return; }
       if (memState && memState.missing) { if (!auto) toast("서버에 2026-10-09-members.sql 을 먼저 실행해 주세요."); return; }
+      if (memBotActive()) {                                // 봇이 방 메뉴에서 읽어 올리는 중: 저장 뒤 자동으로는 덮지 않고, 손으로 올릴 때는 묻는다
+        if (auto) return;
+        if (!window.confirm("봇이 방 메뉴에서 읽어 올린 목록을 " + (src.indexOf("명단") === 0 ? "명단" : "대화 기록") + "으로 바꿉니다. 올릴까요?")) return;
+      }
       const prev = (memState && memState.n) || 0;
       if (prev >= 20 && names.length < prev / 2) {
         if (auto) { toast("사이트 닉네임 목록은 그대로 두었습니다. " + nf(prev) + "명에서 " + nf(names.length) + "명으로 줄어듭니다."); return; }
@@ -1944,7 +1959,7 @@
       try {
         const r = await rpc("member_set", { p_pass: PASS, p_names: names });
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
-        memState = { n: r.n, at: r.at }; memShow();
+        memState = Object.assign({}, memState, { n: r.n, at: r.at }); memShow();
         toast("사이트 닉네임 목록을 올렸습니다. " + nf(r.n) + "명, " + src + (r.skipped ? ", 겹치거나 쓸 수 없는 이름 " + nf(r.skipped) + "개 뺌" : ""));
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -1953,6 +1968,70 @@
       } finally { memBusy = false; $("memPush").disabled = false; }
     }
     $("memPush").addEventListener("click", () => memPush(false));
+    /* 봇 멤버 자동 갱신(2026-10-09-memberbot.sql): 태블릿의 봇이 하루 한 번 방 메뉴의 멤버를 읽어 올린다. 봇은 운영진 비밀번호 대신
+       봇 열쇠로 목록만 바꾼다. 열쇠는 만든 이 화면에서 한 번만 보이고(메모리에만), 끝 네 글자는 상태(운영진 비밀번호)로만 받는다 */
+    let memBot = null, memBotBusy = false, memBotKey = "";
+    const memWhen = (t) => (t ? mdS(kstDate(t)) + " " + kstHM(t) : "");
+    const memBotCur = () => (memBot && !memBot.missing ? memBot : memState && memState.bot) || null;
+    /* 봇 자동 갱신이 돌고 있는가: 열쇠가 있고, 이틀 안에 실패 없이 올렸다 */
+    const memBotActive = () => { const b = memBotCur(); return !!(b && b.has_key && b.last_at && !b.last_error && Date.now() - Date.parse(b.last_at) < 2 * 86400000); };
+    const memBotWhy = (e) => { const m = /^SHRINK (\d+) (\d+)$/.exec(e || ""); return m ? "(" + nf(m[1]) + "명에서 " + nf(m[2]) + "명으로 줄어 그대로 둠)" : e === "EMPTY" ? "(읽은 이름 없음)" : ""; };
+    function memBotShow() {
+      const box = $("memBot"); if (!box) return;
+      const b = memBotCur(), missing = !!(memBot && memBot.missing);
+      box.hidden = !b && !missing;   // 아무것도 모르면(파일만 보기, 연결 실패) 숨긴다
+      let t = "";
+      if (missing) t = "서버에 아직 없음(2026-10-09-memberbot.sql)";
+      else if (b && !b.has_key) t = "열쇠 없음";
+      else if (b) {
+        const k = [b.key_hint ? "끝 " + b.key_hint : "", b.key_at ? mdS(kstDate(b.key_at)) + " 만듦" : ""].filter(Boolean).join(", ");
+        t = "열쇠 있음" + (k ? "(" + k + ")" : "");
+        if (b.last_error) t += ", " + ["실패", memWhen(b.last_error_at), b.last_error].filter(Boolean).join(" ") + memBotWhy(b.last_error);
+        else if (b.last_at) t += ", 마지막 " + memWhen(b.last_at) + " " + nf(b.last_n) + "명";
+      }
+      $("memBotInfo").textContent = t;
+      $("memBotNew").textContent = b && b.has_key ? "봇 열쇠 다시 만들기" : "봇 열쇠 만들기";
+      $("memBotOff").hidden = !(b && b.has_key);
+      const kb = $("memBotKey");
+      if (kb.dataset.k !== memBotKey) {
+        kb.dataset.k = memBotKey;
+        kb.innerHTML = memBotKey ? `<div class="token-box"><input class="input" id="memBotTok" readonly value="${esc(memBotKey)}" aria-label="봇 열쇠" /><button type="button" class="btn btn-primary is-sm" data-copy="memBotTok">복사</button></div><p class="sub">태블릿에서 이 열쇠를 복사한 뒤 Termux 에서 python excer_bot.py members key 를 치면 봇에 저장됩니다. 이 열쇠는 지금 한 번만 보입니다.</p>` : "";
+      }
+      kb.hidden = !memBotKey;
+    }
+    async function memBotCall(action) {
+      const r = await rpc("member_bot_key", { p_pass: PASS, p_action: action });
+      if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+      return r;
+    }
+    async function memBotLoad() {
+      if (localOnly || !PASS) return;
+      try { memBot = await memBotCall("status"); }
+      catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } memBot = missingFn(e) ? { missing: true } : memBot; }   // 연결 실패는 앞서 안 것을 그대로
+      memBotShow();
+    }
+    async function memBotAct(action) {
+      if (localOnly || !PASS || memBotBusy) return;
+      if (memBot && memBot.missing) { toast("서버에 2026-10-09-memberbot.sql 을 먼저 실행해 주세요."); return; }
+      const b = memBotCur();
+      if (action === "new" && b && b.has_key && !window.confirm("새 열쇠를 만들면 지금 봇의 열쇠는 바로 못 씁니다. 만들까요?")) return;
+      if (action === "off" && !window.confirm("자동 갱신을 끄면 봇이 보내도 목록을 바꾸지 않습니다. 끌까요?")) return;
+      memBotBusy = true; $("memBotNew").disabled = $("memBotOff").disabled = true;
+      try {
+        const r = await memBotCall(action);
+        memBotKey = action === "new" ? r.key : "";
+        memBot = Object.assign({}, memBotCur(), action === "new" ? { has_key: true, key_hint: String(r.key).slice(-4), key_at: new Date().toISOString(), last_error: null } : { has_key: false });
+        memBotShow();
+        toast(action === "new" ? "봇 열쇠를 만들었습니다." : "자동 갱신을 껐습니다.");
+        await memBotLoad();
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        if (missingFn(e)) { memBot = { missing: true }; memBotShow(); }
+        toast(missingFn(e) ? "서버에 2026-10-09-memberbot.sql 을 먼저 실행해 주세요." : action === "new" ? "봇 열쇠를 만들지 못했습니다. 연결을 확인해 주세요." : "자동 갱신을 끄지 못했습니다. 연결을 확인해 주세요.");
+      } finally { memBotBusy = false; $("memBotNew").disabled = $("memBotOff").disabled = false; }
+    }
+    $("memBotNew").addEventListener("click", () => memBotAct("new"));
+    $("memBotOff").addEventListener("click", () => memBotAct("off"));
     /* 봇 원격 조종(2026-10-09 SQL): 공지 멈춤(공지 걸기만 쉼)과 전체 멈춤(알림과 공지). 봇이 1분마다 읽는다 */
     let botCtl = null, botCtlBusy = false;
     function botCtlShow() {
@@ -2360,7 +2439,7 @@
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
       }
       const botHtml = `<div class="panel"><h2>카카오 봇 <small>벙 일정 공지</small></h2>
-          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 모집 중인 다음 벙이 첫 줄인 일정 글을 공지로 겁니다. 신청 마감(없으면 끝나는 시각)이 되거나 정원이 차면 다음 벙으로 넘어가고, 새 벙, 바뀜, 마감, 정원 참, 다시 모집, 취소는 알림을 따로 올립니다.</p>
+          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 오늘 벙을 카드로 적은 글(첫 줄 '오늘의 벙 10/9(금) 3건')을 공지로 겁니다. 새 벙, 바뀜, 마감, 정원 참, 다시 모집, 취소가 있거나 날이 바뀌면 다시 올려 걸고, 벙이 시작하거나 끝나거나 신청 마감이 지날 때는 그대로 둡니다. 바뀐 것은 알림을 따로 올리고, 하루 한 번 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꿉니다(봇 열쇠가 있을 때).</p>
           <ol class="steps">
             <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
             <li>태블릿에 F-Droid 에서 Termux 와 Termux:API 를 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤 pkg install python android-tools termux-api curl 을 실행합니다.</li>

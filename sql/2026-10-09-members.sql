@@ -5,6 +5,7 @@
 -- 소식 화면은 닉네임 앞 글자나 초성으로 찾아 고른다. 목록 전체를 돌려주는 함수는 없다.
 -- 찾기는 한 번에 8명까지, 접속 주소마다 10분에 300번까지.
 do $g$ begin
+  if to_regclass('public.site_member_bot') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-09-memberbot.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 같은 시간대 검사와 멤버 함수가 옛 판으로 돌아갑니다)'; end if;
   if to_regprocedure('public.ops_auth(text)') is null then raise exception '운영 대시보드 저장소(2026-09-27-ops-store.sql)를 먼저 실행하세요'; end if;
   if to_regprocedure('public.bung_nick_key(text)') is null then raise exception '참석 다섯째 쪽(2026-10-03-bung-attend-5.sql)을 먼저 실행하세요'; end if;
   if to_regprocedure('public.site_rate_ok(text,integer,interval)') is null then raise exception '속도 제한(2026-10-06-rate-limit.sql)을 먼저 실행하세요'; end if;
