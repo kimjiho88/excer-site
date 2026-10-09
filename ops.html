@@ -456,6 +456,14 @@
         <section id="panel-signals" role="tabpanel" aria-labelledby="tab-signals" data-panel="signals" hidden></section>
         <section id="panel-records" role="tabpanel" aria-labelledby="tab-records" data-panel="records" hidden></section>
         <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" data-panel="data" hidden>
+          <div class="panel" id="botCtlPanel">
+            <h2>봇 원격 조종 <small id="botCtlInfo"></small></h2>
+            <p class="sub">태블릿이 집에 있어도 이 화면에서 봇을 잠시 쉬게 합니다. 봇은 1분 안에 따르고, 쉬는 시간이 끝나거나 다시 켜면 봇 공지를 다시 겁니다.</p>
+            <p class="sub"><b>공지 멈춤</b>: 운영진이 직접 건 공지를 덮지 않게 공지 걸기만 쉽니다. 새 벙 알림은 그대로 올라갑니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="notice:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:1440">하루</button><button type="button" class="btn btn-secondary" data-botctl="notice:0">공지 다시 켜기</button></div>
+            <p class="sub"><b>전체 멈춤</b>: 알림과 공지를 모두 쉽니다. 그동안 바뀐 것은 알리지 않습니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="pause:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:0">전체 다시 켜기</button></div>
+          </div>
           <div class="panel">
             <h2>대화 파일</h2>
             <p class="sub">카카오톡 채팅방 메뉴의 대화 내보내기로 받은 .txt 파일입니다. 전체 파일을 올립니다. 여러 파일을 함께 올리면 겹치는 부분은 한 번만 셉니다. 파일은 이 기기 안에서만 읽고, 서버에는 분석 결과와 신호에 걸린 줄의 짧은 발췌만 저장합니다.</p>
@@ -626,7 +634,7 @@
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
-        memLoad();
+        memLoad(); botCtlLoad();
         try {
           localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(소식과 맛집이 글 비밀번호를 저장하지 않는다). 비밀번호는 저장하지 않는다
           if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
@@ -1945,6 +1953,37 @@
       } finally { memBusy = false; $("memPush").disabled = false; }
     }
     $("memPush").addEventListener("click", () => memPush(false));
+    /* 봇 원격 조종(2026-10-09 SQL): 공지 멈춤(공지 걸기만 쉼)과 전체 멈춤(알림과 공지). 봇이 1분마다 읽는다 */
+    let botCtl = null, botCtlBusy = false;
+    function botCtlShow() {
+      const el = $("botCtlInfo"); if (!el) return;
+      if (!botCtl) { el.textContent = ""; return; }
+      if (botCtl.missing) { el.textContent = "서버에 아직 없음(2026-10-09-midjoin-botctl.sql)"; return; }
+      const until = (t) => md(kstDate(t)) + " " + kstHM(t) + "까지";
+      const parts = [botCtl.pause_until ? "전체 멈춤 " + until(botCtl.pause_until) : "", botCtl.notice_until ? "공지 멈춤 " + until(botCtl.notice_until) : ""].filter(Boolean);
+      el.textContent = parts.length ? parts.join(", ") : "평소대로";
+    }
+    async function botCtlLoad() {
+      if (localOnly) return;
+      try { botCtl = await rpc("bot_control", {}); } catch (e) { botCtl = missingFn(e) ? { missing: true } : null; }
+      botCtlShow();
+    }
+    async function botCtlSet(what, minutes) {
+      if (localOnly || !PASS || botCtlBusy) return;
+      if (botCtl && botCtl.missing) { toast("서버에 2026-10-09-midjoin-botctl.sql 을 먼저 실행해 주세요."); return; }
+      botCtlBusy = true;
+      try {
+        const r = await rpc("bot_control_set", { p_pass: PASS, p_what: what, p_minutes: minutes });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        botCtl = r; botCtlShow();
+        toast((what === "notice" ? "공지 " : "전체 ") + (minutes ? "멈춤을 정했습니다. 봇이 1분 안에 따릅니다." : "다시 켰습니다. 봇이 1분 안에 봇 공지를 다시 겁니다."));
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        if (missingFn(e)) { botCtl = { missing: true }; botCtlShow(); }
+        toast(missingFn(e) ? "서버에 2026-10-09-midjoin-botctl.sql 을 먼저 실행해 주세요." : "봇 조종을 바꾸지 못했습니다. 연결을 확인해 주세요.");
+      } finally { botCtlBusy = false; }
+    }
+    $("botCtlPanel").addEventListener("click", (e) => { const b = e.target.closest("[data-botctl]"); if (!b) return; const [w, m] = b.dataset.botctl.split(":"); botCtlSet(w, Number(m)); });
     function renderFilesExtra() {
       const rn = (S.roster && S.roster.names) || [];
       $("rosterInfo").textContent = rn.length ? md(S.roster.at) + ", " + rn.length + "명" : "없음";
