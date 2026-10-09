@@ -27,6 +27,9 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     tablet 은 글을 다시 올리지 않고 찾아서 건다. 위로 밀려 못 찾을 때만 한 번 더 올린다.
   - 공지 글은 400자 안으로(notice_max_chars, 넘치는 벙은 '외 N건'). 카카오톡은 긴 글을 접어(전체보기) 보여 줘서 말풍선을 찾기 어렵다.
   - 한 차례에 새 벙과 지운 벙이 합쳐 6건 이상이면(사이트에서 글을 한꺼번에 옮기거나 지운 것) 알림 없이 공지 글만 새로 올린다(bulk_quiet).
+    알릴 것이 6건 이상이면(조용한 시간 뒤 등) 한 줄씩 적지 않고 'N건' 한 줄과 주소만. 끝난 벙을 마감하거나 고친 것은 알리지 않는다.
+  - 매일 09:00(heartbeat_at, 조용한 시간이면 끝난 뒤) 시험 방에 '봇 정상' 한 줄(사이트를 본 때, 공지 상태). 안 오면 태블릿을 본다.
+  - 공지 걸기를 네 번 실패해 쉬는 동안은 status 와 '봇 정상' 줄에 '직접 공지로 걸어 주세요' 가 계속 보인다.
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
@@ -40,7 +43,8 @@ tablet 준비(태블릿 하나로)
   - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 와이파이 절전을 끈다(설정 > 연결 > Wi-Fi > 고급 또는 인텔리전트 Wi-Fi 에서 절전 모드 끔, 배터리 > 절전 예외 앱에 Termux 와 카카오톡).
-    화면이 꺼진 채 몇 시간씩 망이 끊기면 그동안 공지가 멈추고 보이스룸도 끊긴다. 봇은 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번).
+    화면이 꺼진 채 몇 시간씩 망이 끊기면 그동안 공지가 멈추고 보이스룸도 끊긴다. 봇은 3분 넘게 응답이 없고 다른 주소도 안 열리면
+    와이파이를 껐다 켠다(15분에 한 번). 사이트가 응답 코드를 주는 장애(서버 쪽)에는 와이파이를 건드리지 않는다.
   - 봇 계정을 방의 부방장으로 둔다(공지는 방장과 부방장만 건다).
   - 재부팅이나 Termux 종료 뒤에는 봇이 저절로 다시 켜지지 않는다. Termux 를 열고 python excer_bot.py status 로 멈춘 것을 확인한 뒤
     (무선 디버깅을 켜고 connect 를 한 번) python excer_bot.py run. 하루 한 번 status 를 치는 습관이 가장 싼 감시다.
@@ -53,7 +57,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py check           사이트, 기기 연결, 클립보드를 확인한다(보내지 않음)
   python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 최근 기록 다섯 줄,
                                       저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
-  python excer_bot.py update          저장소의 새 봇 파일을 받아 이 파일을 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
+  python excer_bot.py update          저장소의 봇 파일이 이 파일과 다르면 받아 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
   python excer_bot.py quiet 00:30-07:30   이 사이에는 방에 올리지 않는다(새벽 글은 끝나는 시각에 한꺼번에). quiet off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py reset           본 글 기록을 비운다. 다음 run 은 처음 켤 때처럼 알리지 않고 기억만 한 뒤 공지 글을 새로 올린다
                                       (사이트 글을 한꺼번에 옮기거나 지운 뒤, 새 벙과 취소 알림이 쏟아지지 않게). run 을 먼저 Ctrl+C
@@ -98,7 +102,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-09"                         # 이 파일의 판. status 와 check 가 보여 주고, update 가 저장소의 판과 견준다
+VERSION = "2026-10-09.2"                       # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -118,7 +122,8 @@ DEFAULTS = {
     "net_kick": True,                    # (tablet) 사이트를 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번). 유선이나 데이터만 쓰면 false
     "max_lines": 15,                     # 목록 줄 수 한도
     "notice_max_chars": 400,             # 공지 글 길이 한도(넘치는 벙은 '외 N건'). 카카오톡은 긴 글을 접어 보여 줘 봇이 말풍선을 찾기 어렵다
-    "bulk_quiet": 6,                     # 한 차례에 새 벙과 지운 벙이 합쳐 이만큼 이상이면 알리지 않고 공지 글만(한꺼번에 옮기거나 지운 것). 0 이면 끔
+    "bulk_quiet": 6,                     # 한 차례에 새 벙과 지운 벙이 합쳐 이만큼 이상이면 알리지 않고 공지 글만(한꺼번에 옮기거나 지운 것). 알림이 이만큼 이상이면 한 줄로. 0 이면 끔
+    "heartbeat_at": "09:00",             # 매일 이 시각에 시험 방에 '봇 정상' 한 줄(안 오면 태블릿을 본다). 조용한 시간이면 끝난 뒤. "" 이면 끔
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
     "link": True,                        # 목록 끝에 벙 일정 주소(pc 에서 공지가 자주 실패하면 false: 주소 미리보기가 늦게 떠 자리가 밀린다)
@@ -160,6 +165,24 @@ def load_cfg(path):
             else:
                 cfg[k] = v
     return cfg
+
+
+def cfg_diff(cfg, base=None):
+    """설정 파일에 적을 것: 기본값과 다른 값만(기본값까지 적으면 나중에 코드의 기본값을 바꿔도 태블릿에는 옛 값이 남는다)"""
+    base = DEFAULTS if base is None else base
+    out = {}
+    for k, v in cfg.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            d = cfg_diff(v, base[k])
+            if d:
+                out[k] = d
+        elif k not in base or base[k] != v:
+            out[k] = v
+    return out
+
+
+def save_cfg(path, cfg):
+    save_json(path, cfg_diff(cfg))
 
 
 def save_json(path, obj):
@@ -437,8 +460,8 @@ def diff(known, posts, now, init, full=False):
             if upcoming(v, now):
                 ch["new"].append(v)
             continue
-        if v["date"] and v["date"] < now.ymd and not ongoing(v, now):
-            continue                                   # 지난 벙은 알리지 않는다(자정을 넘겨 진행 중인 어제 벙은 아직 산 것)
+        if v["date"] and (now_key(now) >= end_key(v) if v.get("end") else v["date"] < now.ymd):
+            continue                                   # 끝난 벙은 알리지 않는다(끝난 뒤 정리하려고 마감하거나 고쳐도). 자정을 넘겨 진행 중인 어제 벙은 아직 산 것
         if v["closed"]:
             if not o.get("c"):
                 ch["cls"].append(v)
@@ -468,6 +491,24 @@ def diff(known, posts, now, init, full=False):
             continue
         cur[k] = o
     return cur, ch
+
+
+def beat_text(bot, now):
+    """시험 방에 매일 올리는 한 줄: 판, 사이트를 본 때와 실패, 공지 상태"""
+    st = bot.st
+    lc = float(getattr(bot, "last_check", 0) or 0)
+    out = ["\u2705 봇 정상 %s %s (판 %s)" % (md(now.ymd), now.hm, VERSION),
+           "사이트: %s 확인, %s" % (datetime.fromtimestamp(lc, KST).strftime("%H:%M") if lc else "아직 안 봄",
+                                 "읽기 실패 %d번 이어짐" % bot.read_fails if getattr(bot, "read_fails", 0) else "실패 없음")]
+    if st.get("notice_gaveup"):
+        out.append("공지: 걸기를 쉬는 중. 방에 올린 마지막 공지 글을 직접 공지로 걸어 주세요")
+    elif st.get("notice_fail"):
+        out.append("공지: 걸기 실패 %d번, 다시 거는 중" % int(st["notice_fail"]))
+    elif st.get("notice_text"):
+        out.append("공지: " + st["notice_text"].split("\n")[0])
+    if getattr(bot, "send_fails", 0):
+        out.append("보내기 실패 %d번 이어짐" % bot.send_fails)
+    return "\n".join(out)
 
 
 def has_changes(ch):
@@ -575,6 +616,13 @@ def alert_text(ch, cfg):
         if kind != "벙 취소" and cfg.get("link", True):
             out.append(EMO["go"] + " " + post_link(v))
         return "\n".join(out)
+    bulk = int(cfg.get("bulk_quiet", 6) or 0)
+    if bulk and len(items) >= bulk:                   # 많으면 한 줄로(조용한 시간 뒤나 여러 글을 한꺼번에 고친 때). 내용은 공지와 사이트에
+        cnt = {}
+        for kind, v, d in items:
+            cnt[kind] = cnt.get(kind, 0) + 1
+        parts = ["%s %d" % (k, cnt[k]) for k in ("새 벙", "벙 변경", "벙 다시 모집", "벙 마감", "벙 취소") if cnt.get(k)]
+        return "\n".join([EMO["bell"] + " 벙 알림 %d건 (%s)" % (len(items), ", ".join(parts))] + ([EMO["go"] + " " + cfg["site"] + "/bung"] if cfg.get("link", True) else []))
     out = [EMO["bell"] + " 벙 알림 %d건" % len(items)]
     for kind, v, d in items:
         out.append("%s %s%s" % (tag(kind), head(v), (" (" + d + ")") if d and kind != "새 벙" else ""))
@@ -629,6 +677,7 @@ class Bot:
         self.hold_until = 0.0                           # 읽기나 보내기가 실패하면 잠시 쉰다
         self.empty_streak = 0                           # 알던 벙이 있는데 사이트가 빈 목록을 준 횟수
         self.read_fails = 0                             # 사이트 읽기가 연속으로 실패한 횟수(망 끊김)
+        self.net_fails = 0                              # 그 가운데 응답 자체가 없던 실패(망, 시간 초과)가 이어진 횟수
         self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
         self.send_fails = 0                             # 보내기가 연속으로 실패한 횟수(adb 안 붙음, 카카오톡 화면 다름)
         self.prev_ids, self.prev_read = None, 0.0       # 바로 전에 사이트에서 읽은 글(한꺼번에 바뀐 것을 가리는 데 쓴다)
@@ -639,6 +688,37 @@ class Bot:
 
     def save(self):
         save_json(self.state_path, self.st)
+
+    def heartbeat(self):
+        """매일 heartbeat_at 에 시험 방에 '봇 정상' 한 줄. 못 보내면 30분 뒤 다시(그날 안). 무엇을 했는지 한 낱말로"""
+        now, cfg = Now(self.clock()), self.cfg
+        at, room = cfg.get("heartbeat_at") or "", cfg.get("test_room") or ""
+        if not (at and room and room != self.room and TIME_RE.match(at)) or now.hm < at or self.st.get("beat_ymd") == now.ymd:
+            return ""
+        if now.ts < float(self.st.get("beat_retry_at") or 0) or now.ts < self.hold_until or in_quiet(now.hm, cfg.get("quiet")):
+            return ""
+        try:
+            self.sender.send(room, beat_text(self, now))
+        except Exception as e:
+            self.st["beat_retry_at"] = self.ts() + 1800
+            self.save()
+            self.log("시험 방에 봇 정상 한 줄 보내기 실패(30분 뒤 다시): %s" % e)
+            return "beat-fail"
+        finally:
+            if hasattr(self.sender, "done"):
+                self.sender.done()
+        self.st.update(beat_ymd=now.ymd, beat_retry_at=0)
+        self.save()
+        self.log("시험 방에 봇 정상 한 줄")
+        return "beat"
+
+    def net_up(self):
+        """사이트 말고 다른 주소가 열리는가(망은 살아 있나). 못 보면 False"""
+        try:
+            code, _ = http_get("https://connectivitycheck.gstatic.com/generate_204", timeout=8)
+            return code in (200, 204)
+        except Exception:
+            return False
 
     def due(self):
         now = Now(self.clock())
@@ -657,20 +737,25 @@ class Bot:
             posts = self.site.posts()
         except Exception as e:                          # 사이트가 흔들리면 다음 차례에. 같은 오류가 이어지면 처음과 10번째마다만 적는다
             self.read_fails += 1
+            self.net_fails = self.net_fails + 1 if isinstance(e, OSError) else 0   # 응답 코드를 받은 실패(서버 장애, 사이트 모양)는 망이 살아 있는 것
             if self.read_fails == 1 or self.read_fails % 10 == 0:
                 self.log("사이트 읽기 실패%s: %s" % ("(%d번째, 망이 끊겼으면 돌아올 때까지 1분마다 다시 봄)" % self.read_fails if self.read_fails > 1 else "", e))
-            # 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번). 화면이 꺼진 채 절전으로 잠든 와이파이를 깨우는 가장 싼 방법
-            if self.read_fails >= 3 and cfg.get("net_kick", True) and hasattr(self.sender, "net_kick") and now.ts - self.net_kick_at >= 900:
+            # 3분 넘게 응답이 없으면 와이파이를 껐다 켠다(15분에 한 번). 화면이 꺼진 채 절전으로 잠든 와이파이를 깨우는 가장 싼 방법.
+            # 다른 주소는 열리면(사이트만 응답 없음) 그대로 둔다(껐다 켜면 무선 디버깅과 보이스룸이 끊길 수 있다)
+            if self.net_fails >= 3 and cfg.get("net_kick", True) and hasattr(self.sender, "net_kick") and now.ts - self.net_kick_at >= 900:
                 self.net_kick_at = now.ts
-                try:
-                    self.log("망 끊김 %d분: 와이파이를 껐다 켬(그전 망: %s)" % (self.read_fails, self.sender.net_kick()))
-                except Exception as e2:
-                    self.log("와이파이 껐다 켜기 실패: %s" % e2)
+                if self.net_up():
+                    self.log("사이트만 응답이 없음(다른 주소는 열림): 와이파이는 그대로 둠")
+                else:
+                    try:
+                        self.log("망 끊김 %d분: 와이파이를 껐다 켬(그전 망: %s)" % (self.read_fails, self.sender.net_kick()))
+                    except Exception as e2:
+                        self.log("와이파이 껐다 켜기 실패: %s" % e2)
             self.hold_until = now.ts + 60
             return "read-fail"
         if self.read_fails:
             self.log("사이트 다시 읽힘(%d번 실패 뒤)" % self.read_fails)
-            self.read_fails = 0
+            self.read_fails = self.net_fails = 0
         live_known = any(sig_live(o, now) for o in st.get("known", {}).values())
         if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다. 세 번 연속이어야 믿는다
             self.empty_streak += 1
@@ -779,7 +864,7 @@ class Bot:
                 if self.send_fails:
                     self.log("다시 됨(%d번 실패 뒤)" % self.send_fails)
                     self.send_fails = 0
-                st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0)
+                st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0, notice_gaveup=0)
                 self.save()
                 self.log("공지로 걸었음(이미 올린 글)")
                 return "pinned"
@@ -801,7 +886,7 @@ class Bot:
             self.sender.notice(self.room, ntext)
         except Exception as e:
             return self._notice_failed(st, now, ntext, e)
-        st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0)
+        st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0, notice_gaveup=0)
         self.save()
         self.log("공지로 걸었음")
         return "sent"
@@ -813,7 +898,7 @@ class Bot:
             st.update(notice_fail=n + 1, notice_fail_text=ntext, notice_retry_at=self.ts() + NOTICE_RETRY[n])
             self.log("공지 걸기 실패(%d번째, %d분 뒤 다시 건다): %s" % (n + 1, NOTICE_RETRY[n] // 60, e))
         else:
-            st.update(notice_text=ntext, notice_fail=0, notice_retry_at=0)   # 네 번 실패: 다음 바뀜까지 쉼
+            st.update(notice_text=ntext, notice_fail=0, notice_retry_at=0, notice_gaveup=1)   # 네 번 실패: 다음 바뀜까지 쉼(status 에 계속 보인다)
             self.log("공지 걸기 %d번 실패, 다음 바뀜 때 다시. 방에 올린 마지막 공지 글을 길게 눌러 직접 공지로 걸어 주세요: %s" % (n + 1, e))
         self.save()
         return "sent-no-notice"
@@ -3199,7 +3284,7 @@ def cmd_setup(cfg, cfg_path, ask=input, tab=None):
     v = ask("목록을 공지로 걸까요 y/n [%s]: " % ("y" if cfg["notice"] else "n")).strip().lower()
     if v in ("y", "n"):
         cfg["notice"] = v == "y"
-    save_json(cfg_path, cfg)
+    save_cfg(cfg_path, cfg)
     print("저장했습니다:", cfg_path)
     print("다음: python excer_bot.py check 로 연결 확인" + (", calibrate 로 공지 자리 잡기" if b == "pc" and cfg["notice"] else "") + ", test, run --test, 그다음 run.")
 
@@ -3302,7 +3387,7 @@ def main(argv=None):
         conn = AdbSender(cfg, log)
         serial, done = conn.connect(port)
         cfg["tablet"]["serial"] = serial                   # 이 기기로 정해 둔다(같은 기기가 다른 이름으로 하나 더 보여도 헷갈리지 않게)
-        save_json(a.config, cfg)
+        save_cfg(a.config, cfg)
         print("붙었습니다: %s%s" % (serial, (", 설정함: " + ", ".join(done)) if done else ""))
         if conn.pending_auth:
             print("태블릿 화면에 'USB 디버깅을 허용하시겠습니까?' 창이 떴으면 '이 컴퓨터에서 항상 허용' 을 켜고 허용을 누른 뒤 python excer_bot.py connect 를 한 번 더 치세요."
@@ -3400,7 +3485,7 @@ def main(argv=None):
             if not isinstance(sender, PcSender):
                 raise SystemExit("calibrate 는 pc 방식에서만 필요합니다.")
             cfg["pc"] = sender.calibrate(room, text)
-            save_json(a.config, cfg)
+            save_cfg(a.config, cfg)
             print("저장했습니다. python excer_bot.py test 로 확인하세요.")
             return
         try:
@@ -3427,6 +3512,8 @@ def main(argv=None):
     if a.command == "once":
         log("한 번 봄: " + bot.cycle())
         return
+    if run_alive(base):                                 # 다른 창에서 이미 도는 봇이 있으면 켜지 않는다(둘이 같은 화면을 번갈아 누르고 같은 글을 두 번 올림)
+        raise SystemExit("이미 run 이 돌고 있습니다. 그 창을 그대로 두세요. 상태는 python excer_bot.py status")
     log("켬(판 %s): %s 방%s, %s 방식, %d초마다 %s 확인" % (VERSION, room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
     voice = None
     if (cfg.get("voice") or {}).get("on"):
@@ -3446,7 +3533,7 @@ def cmd_voice(cfg, a, base, log):
     sub = a.arg
     if sub in ("on", "off"):
         cfg.setdefault("voice", {})["on"] = sub == "on"
-        save_json(a.config, cfg)
+        save_cfg(a.config, cfg)
         title = cfg["voice"].get("title") or DEFAULTS["voice"]["title"]
         print("보이스룸 지키기: " + ("켬. run 이 끊김을 알아채 다시 켭니다. 만들 때 제목: " + title if sub == "on" else "끔"))
         return
@@ -3539,7 +3626,7 @@ def cmd_quiet(cfg, path, arg):
         if not m or arg[:5] == arg[6:]:
             return "모양이 다릅니다. 예: python excer_bot.py quiet 00:30-07:30 (시작-끝, 24시간), 끄려면 quiet off"
         cfg["quiet"] = [arg[:5], arg[6:]]
-    save_json(path, cfg)
+    save_cfg(path, cfg)
     return ("조용한 시간을 %s~%s 로 정했습니다" % tuple(cfg["quiet"]) if cfg["quiet"] else "조용한 시간을 껐습니다(늘 올림)") + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
 
 
@@ -3580,6 +3667,8 @@ def run_loop(bot, log, voice=None, alive_path=None):
             if voice and voice.due():
                 ran = True
                 voice.tick()                            # 보이스룸 끊김은 tick 안에서 적는다
+            if hasattr(bot, "heartbeat") and bot.heartbeat():
+                ran = True
             if ran and last_err:
                 log("오류가 멎음(%d번 이어졌음)" % err_n)
                 last_err, err_n = "", 0
@@ -3603,6 +3692,7 @@ def write_alive(path, bot, voice, err=""):
                          "last_check": float(getattr(bot, "last_check", 0) or 0), "read_fails": int(getattr(bot, "read_fails", 0) or 0),
                          "send_fails": int(getattr(bot, "send_fails", 0) or 0),
                          "notice_fail": int((bot.st.get("notice_fail") or 0) if getattr(bot, "st", None) else 0),
+                         "notice_gaveup": int((bot.st.get("notice_gaveup") or 0) if getattr(bot, "st", None) else 0),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
                          "voice": (voice.st.get("state") or "") if voice else "", "error": err})
     except OSError:
@@ -3617,12 +3707,25 @@ def pid_alive(pid):
         return False
 
 
+def bot_pid(pid):
+    """그 pid 가 지금 도는 봇인가: 살아 있고 명령줄에 excer_bot 이 있다. 명령줄을 못 읽으면 None(모름)"""
+    if not pid_alive(pid):
+        return False
+    try:
+        with open("/proc/%d/cmdline" % int(pid), "rb") as f:
+            return b"excer_bot" in f.read()
+    except (OSError, ValueError, TypeError):
+        return None
+
+
 def run_alive(base, now_ts=None):
-    """run 이 돌고 있는가: 살아 있음 표시가 90초 안이고 그 프로세스가 있다"""
+    """run 이 돌고 있는가: 살아 있음 표시가 90초 안이고 그 프로세스가 있다. 표시가 오래됐어도(긴 일 하는 중) 그 프로세스가 봇이면 돌고 있다"""
     try:
         with open(base + "_alive.json", encoding="utf-8-sig") as f:
             alive = json.load(f)
-        return (now_ts or time.time()) - float(alive.get("ts") or 0) < 90 and pid_alive(alive.get("pid"))
+        if (now_ts or time.time()) - float(alive.get("ts") or 0) < 90 and pid_alive(alive.get("pid")):
+            return True
+        return int(alive.get("pid") or 0) != os.getpid() and bot_pid(alive.get("pid")) is True
     except (OSError, ValueError, TypeError, AttributeError):
         return False
 
@@ -3641,8 +3744,9 @@ def status_lines(base, now_ts=None):
         out.append("run: 돈 적 없음(또는 옛 판으로 돌고 있음). python excer_bot.py run")
     else:
         age = now_ts - float(alive.get("ts") or 0)
-        live = age < 90 and pid_alive(alive.get("pid"))
-        out.append("run: %s(마지막 표시 %s, %s)" % ("돌고 있음" if live else "멈춤", alive.get("at", "?"), "%d초 전" % age if age < 120 else "%d분 전" % (age // 60)))
+        busy = age >= 90 and bot_pid(alive.get("pid")) is True   # 표시는 오래됐지만 봇 프로세스는 살아 있음(공지 걸기 같은 긴 일 하는 중)
+        live = (age < 90 and pid_alive(alive.get("pid"))) or busy
+        out.append("run: %s(마지막 표시 %s, %s)" % ("돌고 있음, 일하는 중" if busy else "돌고 있음" if live else "멈춤", alive.get("at", "?"), "%d초 전" % age if age < 120 else "%d분 전" % (age // 60)))
         if not live:
             out.append("  다시 켜려면: python excer_bot.py run   (재부팅했으면 무선 디버깅을 켜고 python excer_bot.py connect 먼저)")
         if alive.get("version") and alive["version"] != VERSION:
@@ -3653,6 +3757,8 @@ def status_lines(base, now_ts=None):
             out.append("보내기 실패 %d번 이어짐: adb 가 안 붙었거나(무선 디버깅, connect) 카카오톡 화면이 달라짐(excer_bot_ui.txt)" % alive["send_fails"])
         if alive.get("notice_fail"):
             out.append("공지 걸기 실패 %d번: 글은 올렸지만 공지로 못 걸었음(봇 계정이 부방장인지)" % alive["notice_fail"])
+        if alive.get("notice_gaveup"):
+            out.append("공지 걸기를 쉬는 중: 방에 올린 마지막 공지 글을 길게 눌러 직접 공지로 걸어 주세요(다음에 벙이 바뀌면 봇이 다시 겁니다)")
         if alive.get("notice"):
             out.append("공지 첫 줄: " + alive["notice"])
         if alive.get("voice"):
@@ -3689,7 +3795,12 @@ def cmd_update(base, get=None, me=None):
     ver, body = remote_version(get)
     if not body:
         return "저장소에서 봇 파일을 읽지 못했습니다(망 확인). 받은 판 없음"
-    if ver == VERSION:
+    try:
+        with open(me, encoding="utf-8") as f:
+            same = f.read().replace("\r\n", "\n") == body.replace("\r\n", "\n")
+    except OSError:
+        same = False
+    if same:
         return "이미 최신 판(%s)입니다" % VERSION
     new = me + ".new"
     with open(new, "w", encoding="utf-8") as f:
