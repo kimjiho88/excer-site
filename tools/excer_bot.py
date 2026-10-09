@@ -144,6 +144,10 @@ class NotFound(KakaoError):
     """올린 글을 방 화면에서 찾지 못함(공지를 다시 걸 때 글을 한 번 더 올릴지 가른다)"""
 
 
+class RoomUnreachable(KakaoError):
+    """방까지 가지 못함(adb 끊김, 화면 읽기, 카카오톡). 공지 걸기 실패로 세지 않고 보내기 실패처럼 1분 뒤 다시"""
+
+
 # ── 설정, 기록, 남기기 ──
 def load_cfg(path):
     cfg = json.loads(json.dumps(DEFAULTS))
@@ -627,6 +631,11 @@ class Bot:
         self.read_fails = 0                             # 사이트 읽기가 연속으로 실패한 횟수(망 끊김)
         self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
         self.send_fails = 0                             # 보내기가 연속으로 실패한 횟수(adb 안 붙음, 카카오톡 화면 다름)
+        self.prev_ids, self.prev_read = None, 0.0       # 바로 전에 사이트에서 읽은 글(한꺼번에 바뀐 것을 가리는 데 쓴다)
+
+    def ts(self):
+        """지금 시각(초). 한 차례가 1분 넘게 걸리기도 해서 다시 시도 시각은 끝난 때부터 잰다"""
+        return Now(self.clock()).ts
 
     def save(self):
         save_json(self.state_path, self.st)
@@ -677,8 +686,17 @@ class Bot:
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
             ch = noch()
-        bulk = len(ch["new"]) + len(ch.get("del", []))
-        if bulk >= int(cfg.get("bulk_quiet", 6) or 10 ** 9):  # 사람이 하나씩 올린 것이 아니라 한꺼번에 옮기거나 지운 것: 알림 없이 공지만
+        # 한꺼번에 바뀜: 사람이 하나씩 올린 것이 아니라 글을 한꺼번에 옮기거나 지운 것이면 알림 없이 공지만.
+        # 바로 전 읽기(10분 안)와 견준다. 조용한 시간이나 보내기 실패로 쌓인 것은 세지 않는다. 켠 뒤 첫 차례는 기록과 견준다
+        new_ids, del_ids = {v["id"] for v in ch["new"]}, {o["id"] for o in ch.get("del", [])}
+        if self.prev_ids is None:
+            bulk = len(new_ids) + len(del_ids)
+        elif now.ts - self.prev_read <= 600:
+            bulk = len(new_ids - self.prev_ids) + len(del_ids & self.prev_ids)
+        else:
+            bulk = 0
+        self.prev_ids, self.prev_read = {v["id"] for v in posts}, now.ts
+        if bulk >= int(cfg.get("bulk_quiet", 6) or 10 ** 9):
             self.log("새 벙과 지운 벙이 한꺼번에 %d건이라 알리지 않음(글을 한꺼번에 옮기거나 지운 것으로 봄). 공지 글만 새로" % bulk)
             ch["new"], ch["del"] = [], []
         alert = alert_text(ch, cfg)
@@ -734,7 +752,7 @@ class Bot:
                 self.send_once(alert)
             except Exception as e:
                 self.send_log("알림 보내기", e)
-                self.hold_until = now.ts + 60
+                self.hold_until = self.ts() + 60
                 return "send-fail"
             self.log("알림: " + alert.split("\n")[0])
         st.update(known=cur, last_post_at=now.ts)
@@ -748,11 +766,19 @@ class Bot:
             # 위로 밀려 못 찾았을 때만 한 번 더 올린다(글은 두 번까지)
             try:
                 self.sender.pin_again(self.room, ntext)
+            except RoomUnreachable as e:                    # 방까지 못 감(adb 끊김 등): 공지 걸기 실패로 세지 않고 1분 뒤 다시
+                self.send_fails += 1
+                self.send_log("공지 다시 걸기", e)
+                self.hold_until = self.ts() + 60
+                return "send-fail"
             except Exception as e:
                 if not (isinstance(e, NotFound) and sends < 2):
                     return self._notice_failed(st, now, ntext, e)
                 self.log("이미 올린 공지 글을 찾지 못해 한 번 더 올림: %s" % e)
             else:
+                if self.send_fails:
+                    self.log("다시 됨(%d번 실패 뒤)" % self.send_fails)
+                    self.send_fails = 0
                 st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0)
                 self.save()
                 self.log("공지로 걸었음(이미 올린 글)")
@@ -761,7 +787,7 @@ class Bot:
             self.send_once(ntext)
         except Exception as e:
             self.send_log("공지 글 보내기", e)
-            self.hold_until = now.ts + 60
+            self.hold_until = self.ts() + 60
             return "send-fail"
         st.update(last_post_at=now.ts, last_post_ymd=now.ymd, notice_sends=sends + 1 if again else 1)
         if dg:
@@ -784,7 +810,7 @@ class Bot:
         """공지 걸기 실패: 1분, 5분, 15분 뒤 다시. 그래도 안 되면 다음 바뀜까지 쉰다(사람이 직접 걸 수 있게 알린다)"""
         n = int(st.get("notice_fail") or 0) if st.get("notice_fail_text") == ntext else 0
         if n < len(NOTICE_RETRY):
-            st.update(notice_fail=n + 1, notice_fail_text=ntext, notice_retry_at=now.ts + NOTICE_RETRY[n])
+            st.update(notice_fail=n + 1, notice_fail_text=ntext, notice_retry_at=self.ts() + NOTICE_RETRY[n])
             self.log("공지 걸기 실패(%d번째, %d분 뒤 다시 건다): %s" % (n + 1, NOTICE_RETRY[n] // 60, e))
         else:
             st.update(notice_text=ntext, notice_fail=0, notice_retry_at=0)   # 네 번 실패: 다음 바뀜까지 쉼
@@ -1922,7 +1948,7 @@ class AdbSender:
     def already_sent(self, room, text):
         """이 글이 방 화면(아래쪽)에 이미 올라가 있는지. 보내기 실패 뒤 다시 보내기 전에 본다"""
         nodes = self.open_room(room)
-        return self.own_bubble(nodes, text) is not None
+        return self.own_bubble(nodes, text, exact=True) is not None   # 접힌 옛 공지는 앞부분이 같아도 증거가 아니다(글 전체가 같아야)
 
     def chat_area(self, nodes):
         """대화가 흐르는 칸: 입력 칸과 같은 가로 범위, 방 이름 머리 아래부터 입력 칸 위까지"""
@@ -1944,7 +1970,7 @@ class AdbSender:
         self.sh("input swipe %d %d %d %d 250" % (x, y1, x, y1 + int(h * amount)))
         self.sleep(0.5)
 
-    def bubble(self, nodes, text):
+    def bubble(self, nodes, text, exact=False):
         """방금 보낸 목록 말풍선: 방(입력 칸과 같은 가로 범위) 안에서 글 전체가 같은 것 중 가장 아래.
         채팅 목록의 미리보기와 위쪽 머리, 공지 띠는 빠진다. 긴 글이 접혀 보이면(전체보기) 앞부분이 같은 것.
         이모지 변형 선택자 같은 보이지 않는 글자는 빼고 견준다"""
@@ -1955,7 +1981,7 @@ class AdbSender:
         inside = [n for n in nodes if l0 - 10 <= self.center(n)[0] <= r0 + 10 and n["text"] and not n["cls"].endswith("EditText")
                   and n["b"][3] > hgt * 0.12]
         c = [n for n in inside if norm_txt(n["text"]) == want]
-        if not c:
+        if not c and not exact:
             c = [n for n in inside if cut_of(norm_txt(n["text"]), want)]
         if not c:
             raise NotFound("보낸 목록 말풍선을 화면에서 찾지 못함")
@@ -2037,11 +2063,12 @@ class AdbSender:
         low = max(cs, key=lambda n: n["b"][1])
         return own is None or low["b"][1] > own["b"][1]
 
-    def own_bubble(self, nodes, text):
-        """봇이 보낸 글: 글 전체가 같은 말풍선 중 가장 아래('공지가 등록되었습니다' 카드 안 글은 뺀다). 없으면 None"""
+    def own_bubble(self, nodes, text, exact=False):
+        """봇이 보낸 글: 글 전체가 같은 말풍선 중 가장 아래('공지가 등록되었습니다' 카드 안 글은 뺀다). 없으면 None.
+        exact: 접혀 보이는 글(앞부분만 같음)은 치지 않는다"""
         inside = {id(t) for _, t in self.card_text_of(nodes)}
         try:
-            n = self.bubble([x for x in nodes if id(x) not in inside], text)
+            n = self.bubble([x for x in nodes if id(x) not in inside], text, exact)
         except KakaoError:
             return None
         return n
@@ -2087,8 +2114,16 @@ class AdbSender:
         return nodes
 
     def pin_again(self, room, text):
-        """공지 걸기만 실패했던 글: 방을 열고 맨 아래로 간 뒤, 이미 올린 글을 위로 올려 가며 찾아 공지로 건다(글을 다시 올리지 않는다)"""
-        self.to_latest(self.open_room(room))
+        """공지 걸기만 실패했던 글: 방을 열고 맨 아래로 간 뒤, 이미 올린 글을 위로 올려 가며 찾아 공지로 건다(글을 다시 올리지 않는다).
+        맨 아래에 붙은 화면은 새 글이 오면 따라 내려가 엉뚱한 말풍선을 누를 수 있어, 보낸 뒤처럼 살짝 올려 멈춘 다음 찾는다"""
+        try:
+            nodes = self.to_latest(self.open_room(room))
+            if self.t.get("freeze", True):
+                self.freeze(nodes)
+        except RoomUnreachable:
+            raise
+        except KakaoError as e:
+            raise RoomUnreachable(str(e))
         self.notice(room, text)
 
     def notice(self, room, text):
@@ -2097,6 +2132,9 @@ class AdbSender:
         nodes = self.dump()
         if not find(nodes, cls="EditText"):                      # 방 화면이 아니면(다른 창이 앞에) 방을 다시 연다
             nodes = self.open_room(room)
+            if self.t.get("freeze", True):                       # 다시 연 방은 맨 아래에 붙어 있다: 살짝 올려 멈춘다
+                self.freeze(nodes)
+                nodes = self.dump()
         self.trace = []                                          # 공지 단계만 남긴다(안 될 때 보낼 파일이 짧게)
         e = find(nodes, cls="EditText")
         l0 = min([n["b"][0] for n in e] or [0])
@@ -2115,8 +2153,8 @@ class AdbSender:
                 break
             if not t2:
                 again, t2 = self.find_own(again, text)
-                if not t2:
-                    raise NotFound("보낸 글이 화면에서 밀려 사라짐")
+                if not t2:                                       # 방금 보였던 글이다: 다시 올릴 일은 아니다(NotFound 가 아님)
+                    raise KakaoError("보낸 글이 화면에서 밀려 사라짐")
             nodes, target = again, t2
             self.sleep(0.6)
         pre = self.pinned(nodes, text, {target["b"]})            # 첫 줄이 같은 공지가 이미 걸려 있으면 띠로는 바뀐 것을 알 수 없다
