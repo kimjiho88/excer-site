@@ -31,6 +31,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 매일 09:00(heartbeat_at, 조용한 시간이면 끝난 뒤) 시험 방에 '봇 정상' 한 줄(사이트를 본 때, 공지 상태). 안 오면 태블릿을 본다.
   - 공지 걸기를 네 번 실패해 쉬는 동안은 status 와 '봇 정상' 줄에 '직접 공지로 걸어 주세요' 가 계속 보인다.
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
+  - 운영 화면(ops.html 데이터 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
+    그동안 바뀐 것은 기억만)을 누르면 1분 안에 따른다. 멈춤이 끝나면(정한 시간이 지나거나 다시 켜기) 공지 글을 다시 올려 건다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때뿐이다.
 가진 것: 없음. 사이트의 공개 글만 읽는다. 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
@@ -102,7 +104,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-09.2"                       # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-09.3"                       # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -328,6 +330,21 @@ class Site:
         self.key = m.group(1)
         return self.key
 
+    def control(self):
+        """운영 화면의 봇 원격 조종(공지 멈춤, 전체 멈춤). 이 SQL 을 아직 안 돌린 서버는 None"""
+        url = self.cfg["supa"] + "/rest/v1/rpc/bot_control"
+        for fresh in (False, True):
+            k = self.anon_key(fresh)
+            code, body = self.get(url, {"apikey": k, "Authorization": "Bearer " + k})
+            if code != 401:
+                break
+        if code == 404:
+            return None
+        if not 200 <= code < 300:
+            raise RuntimeError("조종 값을 읽지 못함(HTTP %s)" % code)
+        d = json.loads(body)
+        return d if isinstance(d, dict) else None
+
     def posts(self):
         """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
         어제 것도 읽는 까닭: 자정을 넘겨 끝나는 벙(19:00 시작 01:00 끝)이 자정에 공지에서 빠지지 않게"""
@@ -493,6 +510,22 @@ def diff(known, posts, now, init, full=False):
     return cur, ch
 
 
+def hm_of(ts):
+    """초를 '10-09 15:30' 으로(한국 시간)"""
+    try:
+        return datetime.fromtimestamp(float(ts), KST).strftime("%m-%d %H:%M")
+    except (ValueError, OverflowError, OSError, TypeError):
+        return "?"
+
+
+def ctl_text(bot, ts):
+    """운영 화면의 원격 조종 상태 한 줄. 평소면 빈 글자"""
+    c = getattr(bot, "ctl", None) or {}
+    parts = (["전체 멈춤 %s까지" % hm_of(c["pause"])] if float(c.get("pause") or 0) > ts else []) + \
+            (["공지 멈춤 %s까지" % hm_of(c["notice"])] if float(c.get("notice") or 0) > ts else [])
+    return ", ".join(parts)
+
+
 def beat_text(bot, now):
     """시험 방에 매일 올리는 한 줄: 판, 사이트를 본 때와 실패, 공지 상태"""
     st = bot.st
@@ -508,6 +541,8 @@ def beat_text(bot, now):
         out.append("공지: " + st["notice_text"].split("\n")[0])
     if getattr(bot, "send_fails", 0):
         out.append("보내기 실패 %d번 이어짐" % bot.send_fails)
+    if ctl_text(bot, now.ts):
+        out.append("운영 화면: " + ctl_text(bot, now.ts))
     return "\n".join(out)
 
 
@@ -681,6 +716,7 @@ class Bot:
         self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
         self.send_fails = 0                             # 보내기가 연속으로 실패한 횟수(adb 안 붙음, 카카오톡 화면 다름)
         self.prev_ids, self.prev_read = None, 0.0       # 바로 전에 사이트에서 읽은 글(한꺼번에 바뀐 것을 가리는 데 쓴다)
+        self.ctl, self.ctl_read = {"notice": 0.0, "pause": 0.0}, 0.0   # 운영 화면의 원격 조종(끝나는 때, 초)과 마지막으로 읽은 때
 
     def ts(self):
         """지금 시각(초). 한 차례가 1분 넘게 걸리기도 해서 다시 시도 시각은 끝난 때부터 잰다"""
@@ -688,6 +724,20 @@ class Bot:
 
     def save(self):
         save_json(self.state_path, self.st)
+
+    def control(self, now):
+        """운영 화면의 원격 조종을 1분에 한 번 읽는다. 못 읽으면 지난 값 그대로(망이 흔들려도 멈춤이 풀리지 않게)"""
+        get = getattr(self.site, "control", None)
+        if not get or (self.ctl_read and now.ts - self.ctl_read < 60):
+            return self.ctl
+        self.ctl_read = now.ts
+        try:
+            d = get()
+        except Exception:
+            return self.ctl
+        d = d or {}
+        self.ctl = {"notice": float(d.get("notice_until_ts") or 0), "pause": float(d.get("pause_until_ts") or 0)}
+        return self.ctl
 
     def heartbeat(self):
         """매일 heartbeat_at 에 시험 방에 '봇 정상' 한 줄. 못 보내면 30분 뒤 다시(그날 안). 무엇을 했는지 한 낱말로"""
@@ -771,6 +821,27 @@ class Bot:
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
             ch = noch()
+        # 운영 화면의 원격 조종: 전체 멈춤이면 바뀐 것은 기억만 하고 아무것도 올리지 않는다. 공지 멈춤이면 알림만 올린다.
+        # 멈춤이 끝나면 봇 공지를 다시 올려 건다(운영진이 그사이 건 공지 대신)
+        ctl = self.control(now)
+        paused, held = ctl["pause"] > now.ts, ctl["notice"] > now.ts
+        if paused:
+            if not st.get("ctl_paused"):
+                self.log("운영 화면에서 전체 멈춤(%s까지): 알림과 공지를 올리지 않고 바뀐 것은 기억만" % hm_of(ctl["pause"]))
+            st.update(known=cur, ctl_paused=1)
+            self.save()
+            self.prev_ids, self.prev_read = {v["id"] for v in posts}, now.ts
+            return "paused"
+        if st.pop("ctl_paused", None):
+            self.log("운영 화면의 전체 멈춤이 끝남" + ("" if held else ": 봇 공지를 다시 올려 겁니다"))
+            if not held:
+                st["notice_text"] = ""
+        if held and not st.get("ctl_notice"):
+            st["ctl_notice"] = 1
+            self.log("운영 화면에서 공지 멈춤(%s까지): 공지 글은 올리지 않고 알림만" % hm_of(ctl["notice"]))
+        elif not held and st.pop("ctl_notice", None):
+            st["notice_text"] = ""
+            self.log("운영 화면의 공지 멈춤이 끝남: 봇 공지를 다시 올려 겁니다")
         # 한꺼번에 바뀜: 사람이 하나씩 올린 것이 아니라 글을 한꺼번에 옮기거나 지운 것이면 알림 없이 공지만.
         # 바로 전 읽기(10분 안)와 견준다. 조용한 시간이나 보내기 실패로 쌓인 것은 세지 않는다. 켠 뒤 첫 차례는 기록과 견준다
         new_ids, del_ids = {v["id"] for v in ch["new"]}, {o["id"] for o in ch.get("del", [])}
@@ -791,7 +862,9 @@ class Bot:
             st["last_digest"] = now.ymd                 # 너무 늦었거나 오늘 이미 올렸다
             self.save()
             dg = False
-        want = (ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg)
+        if held:
+            dg = False                                  # 공지 멈춤 중에는 공지 글을 올리지 않는다(매일 다시 올리기도)
+        want = not held and ((ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg))
         if not alert and not want:
             st["known"] = cur                           # 제목만 바뀜, 지난 글 정리
             self.save()
@@ -3693,6 +3766,7 @@ def write_alive(path, bot, voice, err=""):
                          "send_fails": int(getattr(bot, "send_fails", 0) or 0),
                          "notice_fail": int((bot.st.get("notice_fail") or 0) if getattr(bot, "st", None) else 0),
                          "notice_gaveup": int((bot.st.get("notice_gaveup") or 0) if getattr(bot, "st", None) else 0),
+                         "ctl": ctl_text(bot, bot.ts() if callable(getattr(bot, "ts", None)) else time.time()),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
                          "voice": (voice.st.get("state") or "") if voice else "", "error": err})
     except OSError:
@@ -3757,6 +3831,8 @@ def status_lines(base, now_ts=None):
             out.append("보내기 실패 %d번 이어짐: adb 가 안 붙었거나(무선 디버깅, connect) 카카오톡 화면이 달라짐(excer_bot_ui.txt)" % alive["send_fails"])
         if alive.get("notice_fail"):
             out.append("공지 걸기 실패 %d번: 글은 올렸지만 공지로 못 걸었음(봇 계정이 부방장인지)" % alive["notice_fail"])
+        if alive.get("ctl"):
+            out.append("운영 화면의 원격 조종: " + alive["ctl"])
         if alive.get("notice_gaveup"):
             out.append("공지 걸기를 쉬는 중: 방에 올린 마지막 공지 글을 길게 눌러 직접 공지로 걸어 주세요(다음에 벙이 바뀌면 봇이 다시 겁니다)")
         if alive.get("notice"):
