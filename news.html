@@ -794,6 +794,7 @@
       NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
       NOT_ATTENDING: "그 닉네임으로 참석한 기록이 없습니다.",
       STARTED: "모임이 시작해 취소할 수 없습니다. 모임장에게 연락해 주세요.",
+      PAST_BUNG: "끝난 모임 글은 운영 기록으로 남습니다. 운영진 비밀번호로만 지울 수 있습니다.",
       DEADLINE: "신청 마감 시각이 지났습니다.",
       FULL: "정원이 찼습니다.",
       CLOSED: "모집이 마감된 모임입니다.",
@@ -2438,7 +2439,10 @@
       const post = findPost(id);
       // 참석자가 있는 모임 글은 명단도 함께 지워진다는 것을 먼저 말한다
       const n = post ? (((state.attend[id] || {}).list || []).length || Number(post.attend_count) || 0) : 0;
-      const pass = await askPassword("글 삭제", (n ? "참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ownPass(post));
+      const ended = !!(post && isPastBung(post));   // 끝난 모임은 운영 기록(서버도 운영진 비밀번호만 받는다, 2026-10-10 SQL 뒤)
+      const pass = await askPassword("글 삭제", ended
+        ? "끝난 모임은 운영 기록으로 남습니다. " + (n ? "지우면 참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "지우려면 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다."
+        : (n ? "참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ended ? "" : ownPass(post));
       if (pass === null) return;
       state.busy = true;
       try {
