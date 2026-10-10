@@ -1297,6 +1297,7 @@ class Bot:
         if not read:
             return "?"
         shown, sure = read(self.room, ntext)
+        self.room_miss = 0                                       # 방까지 가서 읽었다(다음 실패는 다시 1분부터)
         return band_verdict(shown, ntext, self.notice_alts(), sure)
 
     def look(self, ntext, unsure=False):
@@ -2467,11 +2468,11 @@ class AdbSender:
         for w in (ws_ if me else []):
             if not w["read"] and w["layer"] > me[0]["layer"] and w["b"][0] <= x < w["b"][2] and w["b"][1] <= y < w["b"][3]:
                 return w
-        mb = getattr(self, "mini_box", None)
-        if mb and mb[0] <= x < mb[2] and mb[1] <= y < mb[3]:
-            if n is not None and (n["b"], n["text"], n["desc"]) in (getattr(self, "mini_keys", None) or set()):
-                return None                                      # 작은 창 자신의 요소(보이스룸 흐름이 일부러 누르는 것)
-            return {"type": "3", "layer": 0, "active": False, "read": False, "pip": False, "pkg": self.t["package"], "b": mb, "tree": True}
+        for mb in getattr(self, "mini_boxes", None) or []:
+            if mb[0] <= x < mb[2] and mb[1] <= y < mb[3]:
+                if n is not None and (n["b"], n["text"], n["desc"]) in (getattr(self, "mini_keys", None) or set()):
+                    return None                                  # 작은 창 자신의 요소(보이스룸 흐름이 일부러 누르는 것)
+                return {"type": "3", "layer": 0, "active": False, "read": False, "pip": False, "pkg": self.t["package"], "b": mb, "tree": True}
         return None
 
     UI_WORDS = NAV_WORDS | {"지금", "숏폼", "전송", "공지", "확인", "예", "아니요", "메뉴", "붙여넣기", "핀", "고정", "상세보기"}
@@ -2537,15 +2538,16 @@ class AdbSender:
             sh = self.shape_of(nodes) or sh
         if sh:
             self.shape = sh
-        self.mini_box, self.mini_keys = None, set()             # 카카오톡 화면 안에 그려진 보이스룸 작은 창(그 자리는 누르지 않는다, cover_at)
+        self.mini_boxes, self.mini_keys = [], set()             # 카카오톡 화면 안에 그려진 보이스룸 작은 창(그 자리는 누르지 않는다, cover_at)
         try:
-            m = self.voice_mini(nodes)
+            inl = self.in_lists(nodes)
+            minis = [(box, under) for box, under in self.voice_minis(nodes) if box["i"] not in inl]   # 대화 칸, 목록 안의 카드는 아님
         except Exception:
-            m = set()
-        if m:
-            bs = [nodes[i]["b"] for i in m]
-            self.mini_box = (min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs))
-            self.mini_keys = {(nodes[i]["b"], nodes[i]["text"], nodes[i]["desc"]) for i in m}
+            minis = []
+        for box, under in minis:
+            self.mini_boxes.append(box["b"])
+            self.mini_keys |= {(nodes[i]["b"], nodes[i]["text"], nodes[i]["desc"]) for i in under}
+        self.mini_box = self.mini_boxes[0] if self.mini_boxes else None
         return nodes
 
     @staticmethod
@@ -2640,8 +2642,8 @@ class AdbSender:
     def chat_nav(self, nodes):
         """누를 '채팅' 메뉴: 아래(또는 옆) 메뉴의 것. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다. 여럿이면 아래 것.
         목록 칸 머리 제목 글자 '채팅'(화면 맨 위)은 누르지 않는다(보이스룸 작은 창이 그 자리에 떠 있곤 하다). 목록 안의 글(말풍선)도 아니다"""
-        inl = self.in_lists(nodes)
-        k = [n for n in nodes if n.get("pkg") == self.t["package"] and n["i"] not in inl]   # 목록 안(말풍선, 목록 줄)은 빼고
+        inl, right = self.in_lists(nodes), self.list_right(nodes)
+        k = [n for n in nodes if n.get("pkg") == self.t["package"] and n["i"] not in inl and self.center(n)[0] < right]   # 목록 안(말풍선, 목록 줄)과 방 칸은 빼고
         top = self.head_band(nodes)
         low = lambda c: sorted(c, key=lambda n: -n["b"][1])
         named = lambda ns: low(find(ns, desc="채팅")) + low([n for n in ns if n["desc"] != "채팅" and self.CHAT_NAV_RE.match(n["desc"])])
@@ -2800,7 +2802,7 @@ class AdbSender:
                 self.tap(tab)
                 new = self.wait_change(nodes, tries=3)
                 self.fact("채팅 메뉴(%s, %s) 누름%s" % ("이름" if tab["desc"] else "글자", "아래" if self.center(tab)[1] > self.head_band(nodes) * 5 else "옆",
-                                                     "" if self.changed else ", 안 바뀜"))
+                                                     "" if getattr(self, "changed", True) else ", 안 바뀜"))
                 return new
             if self.chat_head(nodes):                            # 머리 제목 '채팅' 만: 이미 채팅 목록(누르지도 뒤로 가지도 않는다)
                 self.fact("채팅 머리만")
@@ -2824,7 +2826,7 @@ class AdbSender:
     def room_item(self, nodes, room):
         """목록에서 이 방의 줄. 이름이 같은 방만(글자가 더 붙은 다른 방으로 보내지 않게, same_room). 화면 글자는 잘려 보여도 이름 전체가 들어온다.
         글자 그대로 같은 칸이 먼저, 그다음 줄이 칸 하나로 합쳐진 판(그 줄의 글이나 이름(content-desc)의 첫 마디). 다른 줄의 미리보기 글(줄 아래쪽)보다
-        줄 위쪽의 이름 칸을 먼저 고른다. '방 이름, 2호점' 같은 다른 방의 이름 칸은 첫 마디로 보지 않는다"""
+        줄 위쪽의 이름 칸을 먼저 고른다. '방 이름, 2호점' 같은 다른 방의 이름 칸은 첫 마디로 보지 않는다(줄바꿈으로 이은 칸, 쉼표 뒤가 사람 수인 칸은 본다)"""
         right = self.list_right(nodes) + 5
         par = {k: n["i"] for n in nodes for k in n["kids"]}
         row_of = lambda n: self.row_of(nodes, n, par)
@@ -2846,11 +2848,17 @@ class AdbSender:
             r = row_of(n)
             return r is None or (n["b"][1] + n["b"][3]) <= (r["b"][1] + r["b"][3])
 
-        def hit(n):                                              # 0: 글자가 이름 그대로, 1: 합쳐진 줄이나 이름(desc)만 있는 칸의 첫 마디, None: 아님
+        def hit(n):                                              # 0: 글자가 이름 그대로, 1: 합쳐진 칸이나 이름(desc)만 있는 칸의 첫 마디, None: 아님
             if same_room(n["text"], room):
                 return 0
-            if n["text"].strip():
-                return 1 if merged(n) and same_room(row_head(n["text"]), room) else None
+            t = n["text"].strip()
+            if t:
+                head, rest = t.split("\n", 1)[0], (t.split(", ", 1) + [""])[1]
+                if "\n" in t and same_room(head, room):
+                    return 1                                     # 줄바꿈으로 이은 칸(이름, 사람 수, 마지막 글, 시각)
+                if ", " in t and re.match(r"\d[\d,]*\s*명?\s*(,|$)", rest) and same_room(row_head(t), room):
+                    return 1                                     # '방 이름, 94명' 처럼 사람 수가 붙은 칸
+                return 1 if merged(n) and same_room(row_head(t), room) else None
             return 1 if same_room(row_head(n["desc"]), room) else None
         c = [(h, n) for n in nodes if n["b"][2] <= right for h in [hit(n)] if h is not None]
         return min(c, key=lambda hn: (hn[0], not upper(hn[1]), hn[1]["b"][1], hn[1]["b"][0]))[1] if c else None
@@ -2898,24 +2906,34 @@ class AdbSender:
         return [(n["text"], n["b"][1]) for n in nodes if n["text"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b]
 
     def row_like(self, nodes):
-        """목록 칸 안의 줄처럼 생긴 것(누를 수 있고, 높이가 화면의 4~20%, 폭이 칸의 4분의 1 넘게). 동영상 화면이나 보이스룸 화면에는 없다"""
+        """목록 칸 안의 줄처럼 생긴 것(누를 수 있고, 높이가 화면의 4~20%, 폭이 칸의 4분의 1 넘게). 동영상 화면에는 없다"""
         l, t, r, b = self.list_box(nodes)
         hgt = max(n["b"][3] for n in nodes)
         return [n for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b
                 and hgt * 0.04 <= n["b"][3] - n["b"][1] <= hgt * 0.2 and n["b"][2] - n["b"][0] >= (r - l) * 0.25]
 
+    def not_list(self, nodes):
+        """밀어 찾을 목록이 아닌 화면: 줄처럼 생긴 것이 하나도 없고, 목록(RecyclerView, ListView)이 없거나 한 장이 목록을 거의 다 채운다(숏폼 동영상)"""
+        if self.row_like(nodes):
+            return False
+        box = self.list_box(nodes)
+        lists = [n for n in nodes if n["b"] == box and re.search(r"RecyclerView|ListView", n["cls"])]
+        if not lists:
+            return True
+        h = max(1, box[3] - box[1])
+        return any(nodes[k]["b"][3] - nodes[k]["b"][1] >= h * 0.6 for k in lists[0]["kids"])
+
     def seek_room(self, nodes, room, seen):
         """지금 목록에서 방 찾기: 맨 위까지 올리며 본 뒤 끝까지 내리며 본다(지난번에 밀어 둔 자리에서 시작해도). (화면, 찾은 줄 또는 None).
-        목록이 아닌 화면(숏폼 동영상 같은, 줄이 둘도 없음)은 밀지 않는다"""
+        목록이 아닌 화면(숏폼 동영상 같은, not_list)은 밀지 않는다"""
         def kind(ns):                                            # 진단: 민 칸이 목록(RecyclerView, ListView)인지 화면 전체인지
             box = self.list_box(ns)
             return next((("RV" if "RecyclerView" in n["cls"] else "LV") for n in ns if n["b"] == box
                          and re.search(r"RecyclerView|ListView", n["cls"])), "화면")
         moved = []
         for up, most in ((True, 6), (False, 14)):
-            rows = len(self.row_like(nodes))
-            if rows < 2:
-                self.fact("목록 아님(줄 %d개)" % rows)
+            if self.not_list(nodes):
+                self.fact("목록 아님(줄 0개)")
                 break
             sig = self.list_sig(nodes)
             n_sw = n_mv = 0
@@ -2977,8 +2995,8 @@ class AdbSender:
 
     def open_subs(self, nodes):
         """목록 칸 위쪽(화면 위 30%)의 '오픈채팅' 칸: 글자나 이름이 '오픈채팅', '오픈채팅 300', '오픈채팅, 새 메시지 3개' 같은 것. 누를 수 있는 것부터, 위에서부터"""
-        right, hgt = self.list_right(nodes), max([n["b"][3] for n in nodes] or [0])
-        c = [n for n in nodes if n.get("pkg") == self.t["package"] and self.center(n)[0] < right and self.center(n)[1] < hgt * 0.3
+        right, hgt, inl = self.list_right(nodes), max([n["b"][3] for n in nodes] or [0]), self.in_lists(nodes)
+        c = [n for n in nodes if n.get("pkg") == self.t["package"] and self.center(n)[0] < right and self.center(n)[1] < hgt * 0.3 and n["i"] not in inl
              and any(self.OPEN_SUB_RE.match(ws(x)) for x in (n["text"], n["desc"]) if x)
              and not any(w in n["text"] + " " + n["desc"] for w in self.NEVER_WORDS)]
         return sorted(c, key=lambda n: (not n["click"], n["b"][1]))
@@ -2990,14 +3008,16 @@ class AdbSender:
         ok = (lambda ns: self.room_item(ns, room) is not None) if room else None
         sub = self.open_subs(nodes)
         if not sub:
-            top = self.head_band(nodes)
-            nav = [n for n in k if self.NOW_NAV_RE.match(n["desc"])] or sorted((n for n in find(k, text="지금") if n["b"][1] >= top), key=lambda n: -n["b"][1])
+            top, inl = self.head_band(nodes), self.in_lists(nodes)
+            k = [n for n in k if n["i"] not in inl]
+            nav = [n for n in k if self.NOW_NAV_RE.match(n["desc"])] or sorted((n for n in k if n["text"] in ("지금", "오픈채팅") and n["b"][1] >= top),
+                                                                                key=lambda n: -n["b"][1])
             if not nav:
                 self.fact("오픈채팅 칸 못 찾음")
                 return None
             self.tap(nav[0])
             nodes = self.wait_change(nodes, ok)
-            self.fact("지금(%s) 누름%s" % ("이름" if nav[0]["desc"] else "글자", "" if self.changed else ", 안 바뀜"))
+            self.fact("지금(%s) 누름%s" % ("이름" if nav[0]["desc"] else "글자", "" if getattr(self, "changed", True) else ", 안 바뀜"))
             self.snap("오픈채팅 메뉴를 누른 뒤", nodes)
             if ok and ok(nodes):
                 return nodes
@@ -3011,7 +3031,7 @@ class AdbSender:
             self.fact("오픈채팅 칸 가림 [%d,%d][%d,%d]" % sub[0]["b"])
             raise
         nodes = self.wait_change(nodes, ok)
-        self.fact("오픈채팅 칸 누름%s" % ("" if self.changed else ", 안 바뀜"))
+        self.fact("오픈채팅 칸 누름%s" % ("" if getattr(self, "changed", True) else ", 안 바뀜"))
         self.snap("'오픈채팅' 을 누른 뒤", nodes)
         return nodes
 
@@ -3035,8 +3055,9 @@ class AdbSender:
                 if k["text"].strip():
                     texts.append(k["text"].strip())
                 stack[:0] = k["kids"]
-            if len(texts) >= 2 and texts[0] not in NAV_WORDS and texts[0] not in names:
-                names.append(texts[0])
+            first = texts[0].split("\n", 1)[0].strip() if texts else ""   # 줄바꿈으로 이은 칸은 첫 줄(방 이름)만
+            if len(texts) >= 2 and first and first not in NAV_WORDS and first not in names:
+                names.append(first)
             elif not texts:                                      # 칸이 하나로 합쳐진 줄: 그 줄의 글이나 이름(content-desc)의 첫 마디
                 full = n["text"].strip() or n["desc"].strip()
                 head = row_head(full).strip()
@@ -4717,11 +4738,18 @@ class AdbSender:
     def voice_mini(self, nodes):
         """보이스룸 작은 창(제목, '1명 참여 중', 마이크, 스피커, 나가기가 든 작은 상자)의 요소 번호들.
         작은 창은 보이스룸 화면이 아니다(그것만 보고 뒤로 가기를 누르면 카카오톡이 닫힌다)"""
+        out = set()
+        for box, under in self.voice_minis(nodes):
+            out |= under
+        return out
+
+    def voice_minis(self, nodes):
+        """보이스룸 작은 창 같은 작은 상자 하나하나: (상자 요소, 그 안의 요소 번호들)"""
         if not nodes:
-            return set()
+            return []
         area = max(1, max(n["b"][2] for n in nodes) * max(n["b"][3] for n in nodes))
         par = {k: n["i"] for n in nodes for k in n["kids"]}
-        out = set()
+        out, seen = [], set()
         for n in nodes:
             if not self.VOICE_BAND_RE.search(n["text"] + " " + n["desc"]):
                 continue
@@ -4740,8 +4768,9 @@ class AdbSender:
                 if j not in under:
                     under.add(j)
                     stack.extend(nodes[j]["kids"])
-            if any(any(w in nodes[j]["text"] + " " + nodes[j]["desc"] for w in self.VOICE_LEAVE + ("마이크", "스피커")) for j in under):
-                out |= under
+            if box["i"] not in seen and any(any(w in nodes[j]["text"] + " " + nodes[j]["desc"] for w in self.VOICE_LEAVE + ("마이크", "스피커")) for j in under):
+                seen.add(box["i"])
+                out.append((box, under))
         return out
 
     def voice_front(self, nodes):
@@ -5079,8 +5108,8 @@ class AdbSender:
     def diag_head(self, fail=None):
         """진단 파일 맨 위 줄들: 판과 화면, 때, 읽는 방식, 창 목록, 실패(종류와 글 앞부분), 지나온 곳"""
         head = "# 판 %s, 화면 %s, %s, %s, 창 목록 %s" % (
-            VERSION, "%dx%d %s" % (self.shape[2], self.shape[3], ROT_NAME[self.shape[0]]) if self.shape else "모름",
-            time.strftime("%m-%d %H:%M:%S"), {True: "읽기 도우미", False: "기본"}.get(self.fast, "읽기 모름"),
+            VERSION, "%dx%d %s" % (self.shape[2], self.shape[3], ROT_NAME[self.shape[0]]) if getattr(self, "shape", None) else "모름",
+            time.strftime("%m-%d %H:%M:%S"), {True: "읽기 도우미", False: "기본"}.get(getattr(self, "fast", None), "읽기 모름"),
             "있음" if getattr(self, "windows", None) else "없음")
         if fail is not None:
             head += ", 실패 %s: %s" % (type(fail).__name__, ws(str(fail))[:120])
