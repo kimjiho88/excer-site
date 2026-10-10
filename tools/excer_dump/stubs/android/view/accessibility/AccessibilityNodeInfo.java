@@ -11,4 +11,5 @@ public class AccessibilityNodeInfo {
     public boolean isLongClickable() { return false; }
     public boolean isVisibleToUser() { return false; }
     public void getBoundsInScreen(android.graphics.Rect r) {}
+    public int getWindowId() { return 0; }
 }
