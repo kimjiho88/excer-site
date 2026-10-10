@@ -118,7 +118,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -1850,13 +1850,14 @@ def find(nodes, text=None, desc=None, starts=None, cls=None, rid=None):
 MEMBER_NEVER = ("나가기", "내보내기", "강퇴", "신고", "차단", "삭제", "가리기", "초대", "종료", "설정")   # 멤버 읽기에서 누르지 않는 말(VOICE_NEVER 에 더해)
 MEMBER_HEAD_RE = re.compile(r"^(?:대화\s*상대|참여자|참여\s*(?:인원|멤버)|채팅방\s*멤버|멤버)\s*[(\[]?\s*(\d[\d,]*)?\s*명?\s*[)\]]?$")   # 대화상대 칸 머리: '대화상대 37', '대화상대(25)', '참여자 12명'
 MEMBER_COUNT_RE = re.compile(r"^[(\[]?\s*\d[\d,]*\s*명?\s*[)\]]?$")   # 수만 있는 글(머리 옆의 '37' 같은)
+MEMBER_SECTION_RE = re.compile(r"^(운영진|방장|부방장|운영자|관리자|일반\s*멤버|멤버|참여자)\s*[(\[]?\s*\d[\d,]*\s*명?\s*[)\]]?$")   # 전체 멤버 화면의 칸 머리('운영진 4', '멤버 90')
 MEMBER_MORE = ("더보기", "전체보기", "모두보기", "대화상대더보기", "대화상대전체보기", "참여자더보기", "참여자전체보기", "멤버더보기", "멤버전체보기")   # 대화상대 칸의 더보기 단추(띄어쓰기와 기호를 뺀 모양)
 MEMBER_SELF = ("나", "본인", "me")                     # 봇 자신의 줄 표시
 MEMBER_LABELS = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공지사항 사진동영상 사진 동영상 파일 링크 일정 톡캘린더 캘린더 투표 앨범 음성메시지
     보이스룸 라이브톡 채팅방설정 설정 채팅방관리 멤버관리 오픈채팅 오픈채팅정보 대화상대 참여자 멤버 대화상대초대 초대하기 초대 친구초대
     대화상대검색 검색 대화내용검색 알림 알림끄기 알림켜기 즐겨찾기 나가기 채팅방나가기 메뉴 닫기 뒤로 뒤로가기 이전 프로필 내프로필
     11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인
-    퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
+    퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보 운영진 일반멤버""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
 MEMBER_RID_RE = re.compile(r"name|nick", re.I)        # 이름 칸 id 로 볼 것(name, nickname, profile_name)
 MEMBER_RID_NOT = re.compile(r"room|title|menu|header|section|count|badge|status|message", re.I)
 MEMBER_LIST_RE = re.compile(r"RecyclerView|ListView|ScrollView|GridView")
@@ -1882,7 +1883,7 @@ def member_label(s, room=""):
     """이름이 아닌 글: 서랍의 메뉴와 칸 이름, 표시(방장, 나), 대화상대 머리, 수, 방 이름, 기호뿐인 글"""
     t = member_name(s)
     k = member_mk(t)
-    return not k or k in MEMBER_LABELS or bool(MEMBER_HEAD_RE.match(t) or MEMBER_COUNT_RE.match(t)) or (bool(room) and t == member_name(room))
+    return not k or k in MEMBER_LABELS or bool(MEMBER_HEAD_RE.match(t) or MEMBER_COUNT_RE.match(t) or MEMBER_SECTION_RE.match(t)) or (bool(room) and t == member_name(room))
 
 
 def member_headish(s):
@@ -2877,8 +2878,11 @@ class AdbSender:
         대화상대 머리를 품은 것 중 가장 안쪽, 없으면 메뉴 이름이 많은 것, 오른쪽, 큰 것. 목록이 없으면 자식이 셋 넘는 큰 칸"""
         l, t, r, b = area
         big = lambda n: n["b"][0] >= l - 5 and n["b"][2] <= r + 5 and n["b"][1] >= t - 5 and n["b"][3] <= b + 5 and n["b"][3] - n["b"][1] > (b - t) * 0.25
-        c = [n for n in nodes if big(n) and n["kids"] and (n.get("scroll") or MEMBER_LIST_RE.search(n["cls"]))] or \
-            [n for n in nodes if big(n) and len(n["kids"]) >= 3]
+        root = nodes[0]["b"] if nodes else None
+        c = [n for n in nodes if big(n) and n["kids"] and (n.get("scroll") or MEMBER_LIST_RE.search(n["cls"]))]
+        if not c:
+            c = [n for n in nodes if big(n) and len(n["kids"]) >= 3]
+            c = [n for n in c if n["b"] != root] or c          # 화면 전체 묶음(위 띠, 보이스룸 작은 창까지 품은 것)보다 안쪽 칸
 
         def score(n):
             under = [x for x in self.mem_under(nodes, n["i"]) if x["text"].strip()]
@@ -2938,9 +2942,10 @@ class AdbSender:
         marks = [member_mk(x) for n in ns for x in (n["text"] + "," + n["desc"]).split(",") if x.strip()]   # 컴포즈는 글을 '이름, 방장' 처럼 묶기도 한다
         if any(m in MEMBER_SELF for m in marks) or any(re.match(r"^[(\[]\s*(나|본인|me)\s*[)\]]", n["text"].strip(), re.I) for n in ns):
             return "self", []                                # '나' 표시가 따로 있거나 이름 앞에 '(나)' 가 붙은 줄
-        c = sorted([n for n in ns if n["text"].strip() and not member_label(n["text"], room)], key=lambda n: (n["b"][1], n["b"][0]))
+        act = lambda n, t: self.mem_never(n) and not re.search(r"\d", t)   # '내보내기 해제', '채팅방 나가기' 같은 줄(닉네임에는 보통 출생 연도가 있다)
+        c = sorted([n for n in ns if n["text"].strip() and not member_label(n["text"], room) and not act(n, n["text"])], key=lambda n: (n["b"][1], n["b"][0]))
         r = ns[0] if ns else None
-        if not c and r and r["click"] and not r["text"].strip() and r["desc"].strip() and not member_label(re.split(r",\s+", r["desc"])[0], room):
+        if not c and r and r["click"] and not r["text"].strip() and r["desc"].strip() and not member_label(re.split(r",\s+", r["desc"])[0], room) and not act(r, r["desc"]):
             c = [r]                                          # 누르는 줄 하나가 이름을 desc 로만 가진 판(컴포즈가 '이름, 방장' 으로 묶은 줄)
         return ("member" if c else "label"), c
 
@@ -3233,8 +3238,10 @@ class AdbSender:
         """닫혔는지 볼 표시를 더한다: 읽는 목록 칸(종류, id, 자리)과 그 안의 글. 첫 화면이 넘어가는 중이었어도 마지막 화면을 알아보게"""
         if self.mem_left is None:
             return
-        self.mem_left.setdefault("boxes", set()).add((box["cls"], box["rid"], box["b"]))
-        self.mem_left.setdefault("marks", set()).update((n["b"], n["text"], n["desc"]) for n in self.mem_under(nodes, box["i"]) if n["text"] or n["desc"])
+        if (box.get("scroll") or MEMBER_LIST_RE.search(box["cls"])) and box["i"] != 0 and box["b"] != nodes[0]["b"]:
+            self.mem_left.setdefault("boxes", set()).add((box["cls"], box["rid"], box["b"]))
+        pre = self.mem_left.get("pre") or set()
+        self.mem_left.setdefault("marks", set()).update(k for k in ((n["b"], n["text"], n["desc"]) for n in self.mem_under(nodes, box["i"]) if n["text"] or n["desc"]) if k not in pre)
 
     def mem_room_count(self, nodes, room):
         """방 위쪽 줄에서 방 이름 옆의 수('94', '(94)'). 없으면 None"""
