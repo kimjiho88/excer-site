@@ -229,6 +229,13 @@
     .form-preview .post-head:hover .row-title { text-decoration: none; }
     .form-preview .kv { margin: 6px 0 4px; }
     .pass-modal { width: min(420px, 100%); }
+    /* 채팅방에 공유: 카카오톡에 올라갈 카드 미리보기(모임 날짜 달력 그림, 제목, 날짜와 장소, 단추) */
+    .kcard { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #FFFFFF; }
+    .kcard img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; background: var(--surface-2); }
+    .kcard figcaption { display: grid; gap: 4px; padding: 12px 14px 14px; text-align: center; }
+    .kcard figcaption b { color: var(--ink); font-size: var(--fs-body); overflow-wrap: anywhere; }
+    .kcard figcaption span { color: var(--ink-2); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    .kcard-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 1px solid var(--line); background: #F7F7F8; color: var(--ink); font-size: var(--fs-caption); }
     #passBackdrop, #dupBackdrop, #attBackdrop, #mapBackdrop { z-index: 240; }
     .attend { display: grid; gap: 10px; }
     .att-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
@@ -376,7 +383,7 @@
     /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=11"></script>
+  <script src="assets/site-core.js?v=12"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=12"></script>
 </head>
@@ -618,6 +625,26 @@
       <div class="modal-foot">
         <button id="attCancel" class="btn btn-secondary" type="button">취소</button>
         <button id="attOk" class="btn btn-primary" type="button">참석하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 채팅방에 공유(모임 모집): 모임 날짜로 그린 달력 그림과 제목, 날짜, 장소를 카카오톡 공유 카드로 보낸다. 카카오톡을 못 쓰면 글 복사 -->
+  <div id="shareBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <div class="modal-head">
+        <h3 id="shareTitle">채팅방에 공유</h3>
+        <button id="shareClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <figure class="kcard" aria-label="채팅방에 올라갈 카드">
+        <img id="shareImg" alt="" width="800" height="400" />
+        <figcaption><b id="shareCardTitle"></b><span id="shareCardDesc"></span></figcaption>
+        <div class="kcard-btn"><span id="shareCardBtn">참석하기</span><svg class="ic is-sm" aria-hidden="true"><use href="#i-chevRight"/></svg></div>
+      </figure>
+      <p id="shareNote" class="field-hint" aria-live="polite" style="margin:10px 0 0"></p>
+      <div class="modal-foot">
+        <button id="shareCopy" class="btn btn-secondary" type="button">글 복사</button>
+        <button id="shareSend" class="btn btn-primary" type="button">카카오톡으로 보내기</button>
       </div>
     </div>
   </div>
@@ -1779,6 +1806,100 @@
           <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }
+    /* ── 채팅방에 공유(모임 모집) ──
+       모임 날짜로 달력 그림(800x400)을 그려 카카오 서버에 올려 두고, 보내기를 누르면 그 자리에서 카카오톡 공유 카드로 보낸다
+       (카카오톡을 여는 일이라 누른 그때 불러야 한다). 그림을 못 올리면 페이지 미리보기 그림으로, 카카오톡을 못 쓰면 기기 공유 창이나 글 복사로 */
+    const SHARE = { id: null, seq: 0, img: "", ready: false, back: null };
+    const CARD_FONT = 'Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
+    function bungShareInfo(p) {
+      const m = C.postMeta(p) || {}, st = bungStatus(p), a = state.attend[p.id];
+      const n = a && a.list ? a.list.length : (Number.isFinite(Number(p.attend_count)) && p.attend_count != null ? Number(p.attend_count) : null);
+      const when = m.date ? C.dateText(m.date, { withDow: true }) + (C.timeRange(m) ? " " + C.timeRange(m) : "") : "";
+      const count = state.attendOn && n != null ? "참석 " + n + (m.cap ? "/" + m.cap : "") + "명" : (m.cap ? m.cap + "명 모집" : "");
+      const title = String(p.title || "모임").slice(0, 100), url = postUrl(p.id);
+      return {
+        m, title, url,
+        desc: [when, m.place, count].filter(Boolean).join(", ").slice(0, 100),
+        btn: st.open ? "참석하기" : "자세히 보기",
+        text: ["[모임 모집] " + title, when, m.place ? "장소 " + m.place : "", count, url].filter(Boolean).join("\n")
+      };
+    }
+    function ogImage() { const og = document.querySelector('meta[property="og:image"]'); return (og && og.content) || location.origin + "/assets/og-news.jpg"; }
+    /* 달력 그림: 흰 바탕 가운데 달력(위 띠에 달, 아래에 큰 날짜). 카드 아래 글이 제목과 날짜, 장소를 맡는다 */
+    function drawBungCard(ymd) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd || "")) return null;
+      const c = document.createElement("canvas"); c.width = 800; c.height = 400;
+      const g = c.getContext && c.getContext("2d"); if (!g) return null;
+      const css = getComputedStyle(document.documentElement);
+      const brand = css.getPropertyValue("--brand").trim() || "#4B2A82", line = css.getPropertyValue("--line").trim() || "#E3DFE4";
+      const W = 800, H = 400, bw = 220, bh = 236, x = (W - bw) / 2, y = (H - bh) / 2, r = 22, bar = 70;
+      const box = () => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + bw, y, x + bw, y + bh, r); g.arcTo(x + bw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + bw, y, r); g.closePath(); };
+      g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, W, H);
+      g.save(); g.shadowColor = "rgba(36, 30, 44, 0.14)"; g.shadowBlur = 26; g.shadowOffsetY = 8; box(); g.fillStyle = "#FFFFFF"; g.fill(); g.restore();
+      g.save(); box(); g.clip(); g.fillStyle = brand; g.fillRect(x, y, bw, bar); g.restore();
+      box(); g.lineWidth = 2; g.strokeStyle = line; g.stroke();
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillStyle = "#FFFFFF"; g.font = "700 38px " + CARD_FONT; g.fillText(Number(ymd.slice(5, 7)) + "월", W / 2, y + bar / 2 + 2);
+      g.fillStyle = brand; g.font = "800 124px " + CARD_FONT; g.fillText(String(Number(ymd.slice(8, 10))), W / 2, y + bar + (bh - bar) / 2 + 6);
+      return c;
+    }
+    function cardFonts() {   // 달력 글자(숫자와 '월')의 웹 글꼴을 먼저 받는다. 늦으면 기기 글꼴로
+      const load = document.fonts && document.fonts.load ? Promise.all([document.fonts.load("800 124px Pretendard", "0123456789"), document.fonts.load("700 38px Pretendard", "0123456789월")]).catch(() => null) : Promise.resolve();
+      return Promise.race([load, new Promise((r) => setTimeout(r, 1500))]);
+    }
+    function openShare(id, opener) {
+      const p = findPost(id); if (!p) return;
+      const i = bungShareInfo(p), seq = ++SHARE.seq;
+      Object.assign(SHARE, { id, img: "", ready: false, back: opener || null });
+      $("shareCardTitle").textContent = i.title; $("shareCardDesc").textContent = i.desc; $("shareCardBtn").textContent = i.btn;
+      $("shareImg").removeAttribute("src");
+      $("shareSend").disabled = true; $("shareSend").setAttribute("aria-busy", "true");
+      $("shareNote").textContent = "카드를 준비하는 중입니다.";
+      $("shareBackdrop").hidden = false;
+      setTimeout(() => $("shareCopy").focus(), 30);
+      cardFonts().then(() => {
+        if (seq !== SHARE.seq) return;
+        const c = drawBungCard(i.m.date);
+        try { $("shareImg").src = c ? c.toDataURL("image/png") : ogImage(); } catch (e) { $("shareImg").src = ogImage(); }
+        prepareShare(seq, c);
+      });
+    }
+    async function prepareShare(seq, canvas) {
+      let url = "";
+      try {
+        if (canvas && window.KSHARE && KSHARE.upload) {
+          const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+          if (blob) url = await Promise.race([KSHARE.upload(blob), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 9000))]);
+        } else if (window.KSHARE && KSHARE.load) await KSHARE.load().catch(() => null);   // 그림이 없어도 SDK 는 미리 읽는다(누를 때 바로 보내게)
+      } catch (e) { url = ""; }
+      if (seq !== SHARE.seq) return;
+      SHARE.img = url; SHARE.ready = true;
+      $("shareSend").disabled = false; $("shareSend").removeAttribute("aria-busy");
+      $("shareNote").textContent = "";
+    }
+    function closeShare() {
+      $("shareBackdrop").hidden = true; SHARE.seq++; SHARE.id = null;
+      const b = SHARE.back; SHARE.back = null;
+      if (b && document.body.contains(b)) b.focus({ preventScroll: true });
+    }
+    function sendShare() {
+      const p = findPost(SHARE.id); if (!p || !SHARE.ready) return;
+      const i = bungShareInfo(p);
+      const sent = !!(window.KSHARE && KSHARE.sendNow && KSHARE.sendNow({ title: i.title, description: i.desc, url: i.url, buttonTitle: i.btn,
+        imageUrl: SHARE.img || ogImage(), imageWidth: SHARE.img ? 800 : 0, imageHeight: SHARE.img ? 400 : 0 }));
+      if (sent) { closeShare(); return; }
+      if (navigator.share) {   // 카카오톡 공유를 못 쓰면 기기 공유 창(카카오톡을 고를 수 있다), 그것도 안 되면 글 복사
+        navigator.share({ title: i.title, text: i.text }).then(closeShare).catch((e) => { if (!(e && e.name === "AbortError")) copyShareText(); });
+        return;
+      }
+      copyShareText();
+    }
+    async function copyShareText() {
+      const p = findPost(SHARE.id); if (!p) return;
+      const ok = await copyText(bungShareInfo(p).text);
+      showToast(ok ? "글을 복사했습니다. 채팅방에 붙여넣어 주세요." : "복사에 실패했습니다.");
+      if (ok) closeShare();
+    }
     async function copyAttendList(id) {
       const post = findPost(id); const list = (state.attend[id] || {}).list || [];
       if (!post || !list.length) return;
@@ -2573,6 +2694,7 @@
         if (act === "goto") { e.preventDefault(); gotoPost(id); return; }
         if (act === "share") {
           const p = findPost(id); if (!p) return;
+          if (p.category === "벙 소식") { openShare(id, el); return; }   // 모임 모집: 달력 카드로(채팅방에 공유 창)
           const v = C.postView(p);
           let desc = String(v.subline.text || v.excerpt || ""), btnTitle = "글 보기";
           if (p.category === "벙 소식" && state.attendOn) {
@@ -2624,6 +2746,10 @@
       $("attPass").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitAttend(); } });
       $("attPass").addEventListener("input", () => { $("attPassHint").hidden = true; });
       $("attClaim").addEventListener("click", (e) => { if (e.target.closest('[data-act="att-claim"]')) claimAttend(); });
+      $("shareSend").addEventListener("click", sendShare);
+      $("shareCopy").addEventListener("click", copyShareText);
+      $("shareClose").addEventListener("click", closeShare);
+      $("shareBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeShare(); });
       $("mapGo").addEventListener("click", runMapSearch);
       $("mapQ").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); runMapSearch(); } });
       $("mapResults").addEventListener("click", (e) => { const b = e.target.closest("button[data-i]"); if (b) pickMapResult(Number(b.dataset.i)); });
@@ -2641,6 +2767,7 @@
       $("passInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("passOk").click(); } });
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
+        if (!$("shareBackdrop").hidden) { closeShare(); return; }
         if (!$("meBackdrop").hidden) { closeMe(); return; }
         if (!$("mapBackdrop").hidden) { closeMapPicker(); return; }
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }

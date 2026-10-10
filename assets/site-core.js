@@ -46,6 +46,7 @@
      SDK 를 못 읽거나 키가 없으면 기기 공유 창(navigator.share) → 링크 복사 순으로 물러선다.
      share(opts) → Promise<"kakao" | "share" | "copy" | "abort" | "fail">
        opts: { title, description, url, imageUrl, buttonTitle }
+     모임 달력 카드(소식 화면의 채팅방에 공유): load() 로 SDK 를 미리 읽고, upload(blob) 으로 그림 주소를 받고, 누를 때 sendNow(opts)
      ────────────────────────────────────────────────────────── */
   var KSHARE = (function () {
     var SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
@@ -107,11 +108,37 @@
         return copy(url);
       });
     }
+    /* 이 기기에서 그린 그림(모임 달력 카드)을 카카오 서버에 올려 공유 카드에 쓸 주소를 받는다. 못 올리면 거절 */
+    function upload(blob) {
+      return loadSdk().then(function (Kakao) {
+        if (!Kakao.Share.uploadImage) throw new Error("no upload");
+        var file = new File([blob], "card.png", { type: blob.type || "image/png" });
+        return Kakao.Share.uploadImage({ file: [file] });
+      }).then(function (res) {
+        var u = res && res.infos && res.infos.original && res.infos.original.url;
+        if (!u) throw new Error("no url");
+        return u;
+      });
+    }
+    /* 이미 읽은 SDK 로 그 자리에서 보낸다. 카카오톡을 여는 일이라 누른 그때 불러야 막히지 않는다(SDK 는 미리 load 로). 못 보내면 false
+       opts: { title, description, url, imageUrl, imageWidth, imageHeight, buttonTitle } */
+    function sendNow(opts) {
+      opts = opts || {};
+      var K = window.Kakao;
+      if (!(K && K.Share && K.isInitialized && K.isInitialized())) return false;
+      var url = opts.url || location.href;
+      var content = { title: opts.title || document.title, description: opts.description || "", imageUrl: opts.imageUrl, link: { mobileWebUrl: url, webUrl: url } };
+      if (opts.imageWidth && opts.imageHeight) { content.imageWidth = opts.imageWidth; content.imageHeight = opts.imageHeight; }
+      try {
+        K.Share.sendDefault({ objectType: "feed", content: content, buttons: [{ title: opts.buttonTitle || "자세히 보기", link: { mobileWebUrl: url, webUrl: url } }] });
+        return true;
+      } catch (e) { return false; }
+    }
     /* 결과를 사람 말로 */
     function message(result) {
       return { kakao: "", share: "", abort: "", copy: "링크를 복사했습니다. 채팅창에 붙여넣어 주세요.", fail: "복사에 실패했습니다. 주소창에서 직접 복사해 주세요." }[result] || "";
     }
-    return { share: share, message: message, available: function () { return !!(window.KAKAO && window.KAKAO.jsKey); } };
+    return { share: share, message: message, upload: upload, sendNow: sendNow, load: loadSdk, available: function () { return !!(window.KAKAO && window.KAKAO.jsKey); } };
   })();
   window.KSHARE = KSHARE;
 
