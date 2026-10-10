@@ -40,7 +40,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾으면 1, 2, 5, 10, 15분 간격으로 다시 본다.
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾거나 누를 자리가 보이스룸 작은 창에
+    가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목은 누르지 않는다.
 가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
@@ -83,7 +84,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py study           시험 방에서 카카오톡 화면을 단계마다 적고 클립보드에 담는다(목록, 방, 방 메뉴, 톡게시판,
                                       길게 누른 메뉴, 공지 창. 글을 올리거나 공지를 거는 단추는 누르지 않는다)
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
-                                      시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다)
+                                      시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다. 맨 위에 창 목록)
   python excer_bot.py voice study     (tablet) 시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과
                                       신호(알림, 소리, 서비스)를 excer_bot_voice_study.txt 에 적고 클립보드에 담는다. docs/BOT_VOICE_ROOM.md
   python excer_bot.py voice status    보이스룸이 켜져 있는지(화면을 건드리지 않고 알림, 소리, 서비스로)와 최근 끊김 기록
@@ -125,7 +126,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.8"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.9"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -183,6 +184,11 @@ class RoomUnreachable(KakaoError):
 
 class RoomNotFound(RoomUnreachable):
     """채팅 목록을 끝까지 훑어도 방이 없음(방 이름이 바뀜 등). 되풀이할수록 길게 쉰다(ROOM_MISS_WAIT)"""
+
+
+class Covered(KakaoError):
+    """누를 자리가 다른 창(보이스룸 작은 창 등)에 다 가려 누르지 않음. 방을 못 찾은 것처럼 되풀이할수록 길게 쉰다.
+    방까지 못 간 것(RoomUnreachable)으로 보지 않는다: 공지를 걸다 가리면 공지 걸기 실패로 센다"""
 
 
 ROOM_MISS_WAIT = (60, 120, 300, 600, 900)               # 방을 못 찾은 뒤 다시 하기까지(초): 1분마다 목록을 헛되이 훑지 않게
@@ -996,6 +1002,7 @@ class Bot:
         self.ctl, self.ctl_read = {"notice": 0.0, "pause": 0.0}, 0.0   # 운영 화면의 원격 조종(끝나는 때, 초)과 마지막으로 읽은 때
         self.first = True                               # run 을 켠 뒤 아직 방 공지를 사이트 글과 견주지 않았다
         self.look_fails = 0                             # 방 공지 보기(look)가 이어서 실패한 횟수
+        self.fail_keys = []                             # 최근 실패의 종류와 글 앞부분(새 실패는 바로 적는다)
 
     def ts(self):
         """지금 시각(초). 한 차례가 1분 넘게 걸리기도 해서 다시 시도 시각은 끝난 때부터 잰다"""
@@ -1226,6 +1233,10 @@ class Bot:
                     self.log("지난번 글이 이미 올라가 있어 다시 보내지 않음")
                     self.st["send_fail_text"] = ""
                     return
+            except (RoomUnreachable, Covered):                   # 방까지 못 갔다: 보내기도 같은 길이라 이번에는 그만(한 번에 한 번만 방을 연다)
+                self.send_fails += 1
+                self.save()
+                raise
             except Exception:
                 pass
         try:
@@ -1242,17 +1253,26 @@ class Bot:
             self.send_fails = 0
 
     def send_wait(self, e):
-        """보내기 실패 뒤 쉬는 시간(초). 채팅 목록에서 방을 못 찾는 실패는 되풀이할수록 길게(1, 2, 5, 10, 15분), 나머지는 1분"""
-        if isinstance(e, RoomNotFound):
+        """보내기 실패 뒤 쉬는 시간(초). 채팅 목록에서 방을 못 찾거나 누를 자리가 가린 실패는 되풀이할수록 길게(1, 2, 5, 10, 15분), 나머지는 1분"""
+        if isinstance(e, (RoomNotFound, Covered)) or isinstance(getattr(e, "__cause__", None), (RoomNotFound, Covered)):
             self.room_miss += 1
             return ROOM_MISS_WAIT[min(self.room_miss, len(ROOM_MISS_WAIT)) - 1]
         return 60
 
+    def fail_changed(self, e):
+        """최근 실패들과 종류나 글 앞부분이 다른 새 실패인지(같은 실패만 되풀이되면 처음과 10번째마다만 적고, 새 실패는 바로 적는다.
+        두 실패가 번갈아 나도 1분마다 쌓이지 않게 최근 셋을 본다)"""
+        key = (type(e).__name__, str(e)[:40])
+        recent = getattr(self, "fail_keys", None) or []
+        self.fail_keys = ([k for k in recent if k != key] + [key])[-3:]
+        return key not in recent
+
     def send_log(self, what, e, wait=60):
-        """보내기 실패는 처음과 10번째마다만 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게). 길게 쉬는 실패(방을 못 찾음)는 매번"""
+        """보내기 실패는 처음과 10번째마다, 그리고 실패가 달라질 때 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게). 길게 쉬는 실패(방을 못 찾음)는 매번"""
+        new = self.fail_changed(e)
         if wait > 60:
             self.log("%s 실패(%d번째, %d분 뒤 다시): %s" % (what, self.send_fails, wait // 60, e))
-        elif self.send_fails == 1 or self.send_fails % 10 == 0:
+        elif self.send_fails == 1 or self.send_fails % 10 == 0 or new:
             self.log("%s 실패%s: %s" % (what, "(%d번째, 붙을 때까지 1분마다 다시)" % self.send_fails if self.send_fails > 1 else "(다음 차례에 다시)", e))
 
     def notice_alts(self):
@@ -1279,7 +1299,7 @@ class Bot:
             self.look_fails += 1
             wait = self.send_wait(e)
             self.hold_until = self.ts() + wait
-            if self.look_fails == 1 or self.look_fails % 10 == 0:
+            if self.fail_changed(e) or self.look_fails == 1 or self.look_fails % 10 == 0:
                 self.log("방 공지를 읽지 못함(지난번에 건 글을 믿고 그대로 둠, %d분 뒤 다시 봄): %s" % (max(1, wait // 60), e))
             return None
         finally:
@@ -2198,6 +2218,8 @@ class AdbSender:
         self.run = run or self._run
         self.serial = ""
         self.trace = []                                          # 안 될 때 원인을 보려고 지나온 화면을 모아 둔다
+        self.facts, self.changed = [], False                     # 지나온 곳(진단 한 마디씩), 누른 뒤 화면이 바뀌었는지(wait_change)
+        self.mini_box, self.mini_keys = None, set()              # 카카오톡 화면 안에 그려진 보이스룸 작은 창(dump)
         self.fast = None                                         # 화면 읽기 도우미: None 아직 모름, True 됨, False 이 기기에서 안 됨(기본 방식만)
         self.fast_fail = 0
         self.vcfg = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))   # 보이스룸 제목(띠와 작은 창 글자를 공지나 보이스룸 화면으로 보지 않게)
@@ -2425,36 +2447,59 @@ class AdbSender:
             parts.append("%s %dx%d+%d+%d%s%s" % (self.win_name(w), r - l, b - t, l, t, " 활성" if w["active"] else "", " 읽음" if w["read"] else ""))
         return "창: " + ", ".join(parts) + (" (작은 창이 활성이라 앱 창을 읽음)" if getattr(self, "picked", "") == "app" else "")
 
-    def cover_at(self, x, y):
-        """(x, y) 를 덮은 창: 읽은 창보다 위에 겹친 다른 창(보이스룸 작은 창, 화면 가장자리 막대 같은). 그 자리를 누르면 그 창이 눌린다. 없으면 None"""
+    def cover_at(self, x, y, n=None):
+        """(x, y) 를 덮은 창: 읽은 창보다 위에 겹친 다른 창(보이스룸 작은 창, 화면 가장자리 막대 같은). 그 자리를 누르면 그 창이 눌린다.
+        창 목록에 없어도 카카오톡 화면 안에 그려진 보이스룸 작은 창 자리면 가린 것으로 본다(작은 창 자신의 요소 n 은 빼고). 없으면 None"""
         ws_ = getattr(self, "windows", None) or []
         me = [w for w in ws_ if w["read"]]
-        if not me:
-            return None
-        for w in ws_:
+        for w in (ws_ if me else []):
             if not w["read"] and w["layer"] > me[0]["layer"] and w["b"][0] <= x < w["b"][2] and w["b"][1] <= y < w["b"][3]:
                 return w
+        mb = getattr(self, "mini_box", None)
+        if mb and mb[0] <= x < mb[2] and mb[1] <= y < mb[3]:
+            if n is not None and (n["b"], n["text"], n["desc"]) in (getattr(self, "mini_keys", None) or set()):
+                return None                                      # 작은 창 자신의 요소(보이스룸 흐름이 일부러 누르는 것)
+            return {"type": "3", "layer": 0, "active": False, "read": False, "pip": False, "pkg": self.t["package"], "b": mb, "tree": True}
         return None
 
-    def covered_err(self, w):
-        return KakaoError("누를 곳이 %s에 가려 있음(%s)" % (self.win_name(w), self.win_text()))
+    UI_WORDS = NAV_WORDS | {"지금", "숏폼", "전송", "공지", "확인", "예", "아니요", "메뉴", "붙여넣기", "핀", "고정", "상세보기"}
 
-    def point(self, n):
-        """요소를 누를 자리: 가운데. 가운데가 다른 창에 가려 있으면 요소 안의 가리지 않은 자리. 다 가려 있으면 KakaoError(가린 창을 누르지 않게)"""
+    def tap_label(self, n):
+        """누르려던 것의 이름(진단): 정해진 화면 낱말이면 그 낱말, 아니면 요소 종류(방 이름이나 대화 글은 적지 않는다)"""
+        if n is None:
+            return "밀 자리"
+        lab = ws(n["text"]) or ws(n["desc"])
+        head = re.split(r"[\s,]", lab)[0] if lab else ""
+        if head in self.UI_WORDS or lab in self.ENTER_WORDS:
+            return lab if lab in self.ENTER_WORDS else head
+        return n["cls"].split(".")[-1] or "요소"
+
+    def covered_err(self, w, n=None, what=None):
+        l, t, r, b = w["b"]
+        where = "화면 안 작은 창 [%d,%d][%d,%d]" % (l, t, r, b) if w.get("tree") else self.win_text()
+        msg = "누를 곳이 %s에 가려 있음(%s). 누르려던 것: %s" % (self.win_name(w), where, what or self.tap_label(n))
+        if n is not None:
+            msg += " [%d,%d][%d,%d]" % n["b"]
+        if "작은 창" in self.win_name(w):
+            msg += ". 작은 창을 화면 왼쪽 가장자리 가운데 높이로 옮겨 주세요"
+        return Covered(msg)
+
+    def point(self, n, what=None):
+        """요소를 누를 자리: 가운데. 가운데가 다른 창에 가려 있으면 요소 안의 가리지 않은 자리. 다 가려 있으면 Covered(가린 창을 누르지 않게)"""
         x, y = self.center(n)
-        w = self.cover_at(x, y)
+        w = self.cover_at(x, y, n)
         if w is None:
             return x, y
         l, t, r, b = n["b"]
         for fy in (0.5, 0.25, 0.75, 0.1, 0.9):
             for fx in (0.5, 0.25, 0.75, 0.1, 0.9):
                 px, py = l + int((r - l) * fx), t + int((b - t) * fy)
-                if self.cover_at(px, py) is None:
+                if self.cover_at(px, py, n) is None:
                     return px, py
-        raise self.covered_err(w)
+        raise self.covered_err(w, n, what)
 
     def free_x(self, x, y, l, r):
-        """밀기를 시작할 자리(x, y)가 다른 창에 가려 있으면 같은 높이에서 l..r 안의 가리지 않은 x(가린 창을 끌지 않게). 없으면 KakaoError"""
+        """밀기를 시작할 자리(x, y)가 다른 창에 가려 있으면 같은 높이에서 l..r 안의 가리지 않은 x(가린 창을 끌지 않게). 없으면 Covered"""
         w = self.cover_at(x, y)
         if w is None:
             return x
@@ -2477,6 +2522,15 @@ class AdbSender:
             sh = self.shape_of(nodes) or sh
         if sh:
             self.shape = sh
+        self.mini_box, self.mini_keys = None, set()             # 카카오톡 화면 안에 그려진 보이스룸 작은 창(그 자리는 누르지 않는다, cover_at)
+        try:
+            m = self.voice_mini(nodes)
+        except Exception:
+            m = set()
+        if m:
+            bs = [nodes[i]["b"] for i in m]
+            self.mini_box = (min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs))
+            self.mini_keys = {(nodes[i]["b"], nodes[i]["text"], nodes[i]["desc"]) for i in m}
         return nodes
 
     @staticmethod
@@ -2543,7 +2597,7 @@ class AdbSender:
         self.sleep(0.6)
 
     def hold(self, n, ms=1000):
-        x, y = self.point(n)
+        x, y = self.point(n, "길게 누를 글")
         self.sh("input swipe %d %d %d %d %d" % (x, y, x, y, ms))
         self.sleep(0.9)
 
@@ -2560,11 +2614,33 @@ class AdbSender:
     def on_kakao(self, nodes):
         return any(n.get("pkg") == self.t["package"] for n in nodes)
 
-    def chat_tab(self, nodes):
-        """아래(또는 옆) 메뉴의 '채팅'. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다"""
+    CHAT_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?채팅(\s*탭)?\s*(,|$)")
+    NOW_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?(지금|오픈채팅)(\s*탭)?\s*(,|$)")
+
+    @staticmethod
+    def head_band(nodes):
+        """화면 맨 위 머리 띠의 아래 끝(높이의 12%). 목록 칸 머리 제목 '채팅' 은 이 안에 있다"""
+        return max([n["b"][3] for n in nodes] or [0]) * 0.12
+
+    def chat_nav(self, nodes):
+        """누를 '채팅' 메뉴: 아래(또는 옆) 메뉴의 것. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다.
+        목록 칸 머리 제목 '채팅'(화면 맨 위)은 누를 것이 아니다(보이스룸 작은 창이 그 자리에 떠 있곤 하다). 여럿이면 아래 것"""
         k = [n for n in nodes if n.get("pkg") == self.t["package"]]
-        c = find(k, desc="채팅") or find(k, text="채팅") or [n for n in k if re.match(r"^채팅(\s*탭)?\s*(,|$)", n["desc"])]
+        top = self.head_band(nodes)
+        low = lambda c: sorted(c, key=lambda n: -n["b"][1])
+        c = (low(find(k, desc="채팅")) + low([n for n in k if n["desc"] != "채팅" and self.CHAT_NAV_RE.match(n["desc"])])
+             + low([n for n in find(k, text="채팅") if n["b"][1] >= top]))
         return c[0] if c else None
+
+    def chat_head(self, nodes):
+        """목록 칸 머리 제목 '채팅'(화면 맨 위): 채팅 목록이 떠 있다는 표시"""
+        top = self.head_band(nodes)
+        c = [n for n in find(nodes, text="채팅") if n.get("pkg") == self.t["package"] and n["b"][1] < top]
+        return c[0] if c else None
+
+    def chat_tab(self, nodes):
+        """채팅 목록이나 그리로 가는 메뉴가 보이는지(누를 것은 chat_nav)"""
+        return self.chat_nav(nodes) or self.chat_head(nodes)
 
     # 화면 방향
     def rot_want(self):
@@ -2702,11 +2778,18 @@ class AdbSender:
                 nodes = self.launch()
                 launched += 1
                 continue
-            tab = self.chat_tab(nodes)
+            tab = self.chat_nav(nodes)
             if tab:
                 self.tap(tab)
-                return self.wait_change(nodes, tries=3)
+                new = self.wait_change(nodes, tries=3)
+                self.fact("채팅 메뉴(%s, %s) 누름%s" % ("이름" if tab["desc"] else "글자", "아래" if self.center(tab)[1] > self.head_band(nodes) * 5 else "옆",
+                                                     "" if self.changed else ", 안 바뀜"))
+                return new
+            if self.chat_head(nodes):                            # 머리 제목 '채팅' 만: 이미 채팅 목록(누르지도 뒤로 가지도 않는다)
+                self.fact("채팅 머리만")
+                return nodes
             self.key(4)                                          # 폰은 방 안이면 뒤로 가서 목록으로, 알림 창이면 닫는다
+            self.fact("뒤로")
             self.sleep(0.8)
             nodes = self.dump()
         self.save_diag(nodes)
@@ -2715,17 +2798,49 @@ class AdbSender:
 
     @staticmethod
     def list_right(nodes):
-        """채팅 목록 칸의 오른쪽 끝. 태블릿은 목록 옆에 방이 열려 있으니 그 입력 칸 왼쪽까지"""
-        e = find(nodes, cls="EditText")
+        """채팅 목록 칸의 오른쪽 끝. 태블릿은 목록 옆에 방이 열려 있으니 그 입력 칸 왼쪽까지(화면 왼쪽 4분의 1 안의 입력 칸, 목록 칸의 찾기 칸은 빼고)"""
+        w = max([n["b"][2] for n in nodes] or [0])
+        e = [n for n in find(nodes, cls="EditText") if n["b"][0] >= w * 0.25]
         return min(n["b"][0] for n in e) if e else 10 ** 9
 
     def room_item(self, nodes, room):
-        # 이름이 같은 방만(글자가 더 붙은 다른 방으로 보내지 않게, same_room). 화면 글자는 잘려 보여도 이름 전체가 들어온다.
-        # 글자 칸이 없고 줄 이름(content-desc)만 있는 판은 이름의 첫 마디
+        """목록에서 이 방의 줄. 이름이 같은 방만(글자가 더 붙은 다른 방으로 보내지 않게, same_room). 화면 글자는 잘려 보여도 이름 전체가 들어온다.
+        글자 그대로 같은 칸이 먼저, 그다음 줄이 칸 하나로 합쳐진 판(그 줄의 글이나 이름(content-desc)의 첫 마디). 다른 줄의 미리보기 글(줄 아래쪽)보다
+        줄 위쪽의 이름 칸을 먼저 고른다. '방 이름, 2호점' 같은 다른 방의 이름 칸은 첫 마디로 보지 않는다"""
         right = self.list_right(nodes) + 5
-        c = [n for n in nodes if n["b"][2] <= right and (same_room(n["text"], room) or same_room(row_head(n["text"]), room)
-                                                          or (not n["text"].strip() and same_room(row_head(n["desc"]), room)))]
-        return min(c, key=lambda n: (n["b"][1], n["b"][0])) if c else None
+        par = {k: n["i"] for n in nodes for k in n["kids"]}
+
+        def row_of(n):                                           # 그 칸을 품은 누를 수 있는 줄
+            j = n["i"]
+            while j is not None and not nodes[j]["click"]:
+                j = par.get(j)
+            return nodes[j] if j is not None else None
+
+        def texts_under(r):
+            out, st = set(), [r["i"]]
+            while st:
+                j = st.pop()
+                st.extend(nodes[j]["kids"])
+                if nodes[j]["text"].strip():
+                    out.add(j)
+            return out
+
+        def merged(n):                                           # 줄 안에 글자 칸이 이것 하나뿐(이름, 사람 수, 마지막 글이 한 칸에)
+            r = row_of(n)
+            return r is not None and texts_under(r) <= {n["i"]}
+
+        def upper(n):                                            # 줄의 위쪽 절반(이름 자리)
+            r = row_of(n)
+            return r is None or (n["b"][1] + n["b"][3]) <= (r["b"][1] + r["b"][3])
+
+        def hit(n):                                              # 0: 글자가 이름 그대로, 1: 합쳐진 줄이나 이름(desc)만 있는 칸의 첫 마디, None: 아님
+            if same_room(n["text"], room):
+                return 0
+            if n["text"].strip():
+                return 1 if merged(n) and same_room(row_head(n["text"]), room) else None
+            return 1 if same_room(row_head(n["desc"]), room) else None
+        c = [(h, n) for n in nodes if n["b"][2] <= right for h in [hit(n)] if h is not None]
+        return min(c, key=lambda hn: (hn[0], not upper(hn[1]), hn[1]["b"][1], hn[1]["b"][0]))[1] if c else None
 
     def list_box(self, nodes):
         """채팅 목록 칸: 가장 큰 목록(RecyclerView, ListView), 태블릿 두 칸이면 입력 칸 왼쪽. 없으면 화면(입력 칸 왼쪽까지)"""
@@ -2750,12 +2865,31 @@ class AdbSender:
         l, t, r, b = self.list_box(nodes)
         return [(n["text"], n["b"][1]) for n in nodes if n["text"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b]
 
+    def row_like(self, nodes):
+        """목록 칸 안의 줄처럼 생긴 것(누를 수 있고, 높이가 화면의 4~20%, 폭이 칸의 4분의 1 넘게). 동영상 화면이나 보이스룸 화면에는 없다"""
+        l, t, r, b = self.list_box(nodes)
+        hgt = max(n["b"][3] for n in nodes)
+        return [n for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b
+                and hgt * 0.04 <= n["b"][3] - n["b"][1] <= hgt * 0.2 and n["b"][2] - n["b"][0] >= (r - l) * 0.25]
+
     def seek_room(self, nodes, room, seen):
-        """지금 목록에서 방 찾기: 맨 위까지 올리며 본 뒤 끝까지 내리며 본다(지난번에 밀어 둔 자리에서 시작해도). (화면, 찾은 줄 또는 None)"""
+        """지금 목록에서 방 찾기: 맨 위까지 올리며 본 뒤 끝까지 내리며 본다(지난번에 밀어 둔 자리에서 시작해도). (화면, 찾은 줄 또는 None).
+        목록이 아닌 화면(숏폼 동영상 같은, 줄이 둘도 없음)은 밀지 않는다"""
+        def kind(ns):                                            # 진단: 민 칸이 목록(RecyclerView, ListView)인지 화면 전체인지
+            box = self.list_box(ns)
+            return next((("RV" if "RecyclerView" in n["cls"] else "LV") for n in ns if n["b"] == box
+                         and re.search(r"RecyclerView|ListView", n["cls"])), "화면")
+        moved = []
         for up, most in ((True, 6), (False, 14)):
+            rows = len(self.row_like(nodes))
+            if rows < 2:
+                self.fact("목록 아님(줄 %d개)" % rows)
+                break
             sig = self.list_sig(nodes)
+            n_sw = n_mv = 0
             for _ in range(most):
                 self.scroll_list(nodes, up)
+                n_sw += 1
                 nodes = self.dump()
                 seen.update(self._names(nodes))
                 item = self.room_item(nodes, room)
@@ -2764,19 +2898,30 @@ class AdbSender:
                 now = self.list_sig(nodes)
                 if now == sig:
                     break
+                n_mv += 1
                 sig = now
+            moved.append("%s %d/%d" % ("위" if up else "아래", n_sw, n_mv))
+        if moved:
+            self.fact("밀기 %s %s" % (kind(nodes), " ".join(moved)))
         return nodes, None
 
     @staticmethod
     def near_names(room, seen):
-        """못 찾았을 때: 목록에서 본 방 이름 가운데 이름이 비슷한 것(방 이름이 바뀌었는지 보게)"""
+        """못 찾았을 때: 목록에 이 방 이름이 보였는데 못 골랐는지, 이름이 비슷한 방(방 이름이 바뀌었는지 보게), 이름이 더 긴 다른 방(시험 방 같은, 고르지 않음).
+        아무것도 없으면 본 방 수"""
         import difflib
+        if any(same_room(x, room) for x in seen):
+            return "목록에 이 방 이름이 보였지만 누를 줄로 고르지 못함(excer_bot_ui.txt 를 보내 주세요)"
         want = norm_txt(room)
-        near = sorted(((difflib.SequenceMatcher(None, want, norm_txt(x)).ratio(), x) for x in seen if x), reverse=True)
+        longer = sorted(x for x in seen if x and want and want in norm_txt(x))[:2]
+        near = sorted(((difflib.SequenceMatcher(None, want, norm_txt(x)).ratio(), x) for x in seen if x and x not in longer), reverse=True)
         near = [x for r, x in near if r >= 0.6][:2]
+        out = []
         if near:
-            return "목록에 비슷한 이름: %s. 방 이름이 바뀌었으면 python excer_bot.py setup 으로 다시 고르세요" % ", ".join("'%s'" % x for x in near)
-        return "목록에서 본 방 %d개, 방 이름이 똑같은지 확인" % len(seen)
+            out.append("목록에 비슷한 이름: %s. 방 이름이 바뀌었으면 python excer_bot.py setup 으로 다시 고르세요" % ", ".join("'%s'" % x for x in near))
+        if longer:
+            out.append("이름이 더 긴 다른 방(고르지 않음): %s" % ", ".join("'%s'" % x for x in longer))
+        return ". ".join(out) if out else "목록에서 본 방 %d개, 방 이름이 똑같은지 확인" % len(seen)
 
     def wait_change(self, nodes, ok=None, tries=4):
         """누른 뒤 화면이 바뀔 때까지(또는 ok(새 화면) 가 참일 때까지) 기다린다. 바로 읽으면 바뀌기 전 화면을 읽는다"""
@@ -2786,31 +2931,55 @@ class AdbSender:
             self.sleep(0.8)
             new = self.dump()
             if ok and ok(new):
+                self.changed = True
                 return new
             if not ok and [(n["b"], n["text"]) for n in new] != old:
                 self.sleep(0.6)                                  # 바뀌는 중일 수 있어 한 번 더
+                self.changed = True
                 return self.dump()
+        self.changed = [(n["b"], n["text"]) for n in new] != old   # 진단(지나온 곳): 누른 뒤 화면이 바뀌었는지
         return new
 
+    OPEN_SUB_RE = re.compile(r"^오픈\s*채팅(\s*탭)?\s*(\(?\d[\d,+]*\)?\s*개?)?\s*(,.*)?$", re.S)
+    NEVER_WORDS = ("나가기", "삭제", "신고", "차단")
+
+    def open_subs(self, nodes):
+        """목록 칸 위쪽(화면 위 30%)의 '오픈채팅' 칸: 글자나 이름이 '오픈채팅', '오픈채팅 300', '오픈채팅, 새 메시지 3개' 같은 것. 누를 수 있는 것부터, 위에서부터"""
+        right, hgt = self.list_right(nodes), max([n["b"][3] for n in nodes] or [0])
+        c = [n for n in nodes if n.get("pkg") == self.t["package"] and self.center(n)[0] < right and self.center(n)[1] < hgt * 0.3
+             and any(self.OPEN_SUB_RE.match(ws(x)) for x in (n["text"], n["desc"]) if x)
+             and not any(w in n["text"] + " " + n["desc"] for w in self.NEVER_WORDS)]
+        return sorted(c, key=lambda n: (not n["click"], n["b"][1]))
+
     def goto_open_list(self, nodes, room=None):
-        """오픈채팅 목록으로. 채팅 목록 위의 '오픈채팅' 칸이 있는 판, 아래 메뉴 '지금'(오픈채팅) 안의 '오픈채팅' 칸인 판"""
+        """오픈채팅 목록으로. 채팅 목록 위의 '오픈채팅' 칸이 있는 판, 아래 메뉴 '지금'(오픈채팅) 안의 '오픈채팅' 칸인 판.
+        '오픈채팅' 칸이 작은 창에 다 가려 있으면 Covered"""
         k = [n for n in nodes if n.get("pkg") == self.t["package"]]
         ok = (lambda ns: self.room_item(ns, room) is not None) if room else None
-        sub = find(k, text="오픈채팅")
+        sub = self.open_subs(nodes)
         if not sub:
-            nav = [n for n in k if re.match(r"^(지금|오픈채팅)(\s*탭)?\s*(,|$)", n["desc"])] or find(k, text="지금")
+            top = self.head_band(nodes)
+            nav = [n for n in k if self.NOW_NAV_RE.match(n["desc"])] or sorted((n for n in find(k, text="지금") if n["b"][1] >= top), key=lambda n: -n["b"][1])
             if not nav:
+                self.fact("오픈채팅 칸 못 찾음")
                 return None
             self.tap(nav[0])
             nodes = self.wait_change(nodes, ok)
+            self.fact("지금(%s) 누름%s" % ("이름" if nav[0]["desc"] else "글자", "" if self.changed else ", 안 바뀜"))
             self.snap("오픈채팅 메뉴를 누른 뒤", nodes)
             if ok and ok(nodes):
                 return nodes
-            sub = find(nodes, text="오픈채팅")
+            sub = self.open_subs(nodes)
             if not sub:
+                self.fact("오픈채팅 칸 못 찾음")
                 return nodes
-        self.tap(sub[0])
+        try:
+            self.tap(sub[0])
+        except Covered:
+            self.fact("오픈채팅 칸 가림 [%d,%d][%d,%d]" % sub[0]["b"])
+            raise
         nodes = self.wait_change(nodes, ok)
+        self.fact("오픈채팅 칸 누름%s" % ("" if self.changed else ", 안 바뀜"))
         self.snap("'오픈채팅' 을 누른 뒤", nodes)
         return nodes
 
@@ -2843,10 +3012,52 @@ class AdbSender:
                     names.append(head)
         return names
 
+    def new_trace(self):
+        """지나온 화면(trace)과 지나온 곳(facts)을 새로 모은다(진단 파일 excer_bot_ui.txt)"""
+        self.trace, self.facts = [], []
+
+    def fact(self, s):
+        """지나온 곳 한 마디(진단). 정해진 낱말과 수, 자리만 적는다(방 이름과 대화 글은 넣지 않는다)"""
+        facts = getattr(self, "facts", None)
+        if facts is not None:
+            facts.append(s[:60])
+            del facts[:-24]
+
+    def facts_note(self):
+        """실패 글 끝에 붙이는 지나온 곳(400자까지)"""
+        s = ", ".join(getattr(self, "facts", None) or [])
+        return " | 지나온 곳: " + (s if len(s) <= 400 else s[:397] + "...") if s else ""
+
+    def with_note(self, msg):
+        """실패 글에 진단 파일 안내를 한 번만 붙인다"""
+        note = self.diag_note()
+        return msg if not note or msg.endswith(note) else msg + note
+
+    def mini_fact(self, nodes):
+        """보이스룸 작은 창이 어디에 어떻게(따로 된 창, 카카오톡 화면 안) 떠 있는지 한 마디"""
+        for w in getattr(self, "windows", None) or []:
+            if "작은 창" in self.win_name(w) and not w["read"]:
+                return "작은 창 [%d,%d][%d,%d] 창 목록" % w["b"]
+        mb = getattr(self, "mini_box", None)
+        return "작은 창 [%d,%d][%d,%d] 화면 안" % mb if mb else ""
+
     def open_room(self, room):
-        self.trace = []
+        """방을 연다(알릴 방은 오픈채팅 주소로, 아니면 채팅 목록에서). 연 방의 화면. 안 되면 KakaoError(지나온 화면은 excer_bot_ui.txt)"""
+        self.new_trace()
+        try:
+            return self._open_room(room)
+        except KakaoError as e:
+            if isinstance(e, Covered) and " | 지나온 곳: " not in str(e):
+                e.args = (self.with_note(str(e) + self.facts_note()),)
+            self.save_diag(fail=e)                               # 진단 파일 맨 위에 실패를 적는다(진단을 남기지 않고 나가는 실패도)
+            raise
+
+    def _open_room(self, room):
         nodes = self.launch()
         self.brief("카카오톡을 띄운 화면", nodes, room)
+        mf = self.mini_fact(nodes)
+        if mf:
+            self.fact(mf)
         nodes = self.voice_guard(nodes)                          # 보이스룸 화면이 앞에 떠 있으면 최소화만(나가기는 안 누른다, 작은 창은 그대로)
         if self.mem_left:                                        # 멤버 읽기가 서랍을 닫지 못하고 끝났다: 입력 칸 자리를 누르기 전에 닫는다(서랍 아래 띠에 나가기)
             nodes = self.mem_unstick(nodes)
@@ -2856,31 +3067,50 @@ class AdbSender:
             got = self.open_by_link(room)
             if got is not None:
                 return got
-            nodes = self.dump()
+            nodes = self.wait_change(self.dump(), lambda ns: self.room_open(ns, room), tries=2)
+            if self.room_open(nodes, room):                      # 주소로 연 방이 늦게 떴다(목록으로 가려고 뒤로 가기를 누르면 방이 닫힌다)
+                self.fact("주소로 연 방이 늦게 뜸")
+                return nodes
         nodes = self.goto_list(nodes)
         self.snap("채팅 목록", nodes)
         seen = set(self._names(nodes))
         item = self.room_item(nodes, room)
+        covered = None
         if not item:                                             # 오픈채팅 목록부터(알릴 방은 오픈채팅)
-            op = self.goto_open_list(nodes, room)
+            op = None
+            try:
+                op = self.goto_open_list(nodes, room)
+            except Covered as e:                                 # '오픈채팅' 칸이 작은 창에 가렸다: 채팅 탭에서라도 찾는다
+                covered = e
+                nodes = self.goto_list(self.dump())
+                seen.update(self._names(nodes))
+                item = self.room_item(nodes, room)
             if op:
                 nodes = op
                 seen.update(self._names(nodes))
                 item = self.room_item(nodes, room)
+                if not item:                                     # 오픈채팅 목록을 훑고, 없으면 채팅 탭으로 돌아가 훑는다
+                    nodes, item = self.seek_room(nodes, room, seen)
+                if not item:
+                    nodes = self.goto_list(nodes)
+                    seen.update(self._names(nodes))
+                    item = self.room_item(nodes, room)
         if not item:                                             # 그래도 없으면 지금 목록을 맨 위까지 올렸다가 끝까지 내리며
             nodes, item = self.seek_room(nodes, room, seen)
         if not item:
             self.save_diag(nodes)
+            if covered is not None:
+                raise Covered(self.with_note("%s. 채팅 탭에도 없음%s" % (str(covered), self.facts_note())))
             l, t, r, b = self.list_box(nodes)
             taps = sum(1 for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b)
-            raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s, 화면 요소 %d개, 누를 수 있는 것 %d개)%s" % (
-                room, self.near_names(room, seen), len(nodes), taps, self.diag_note()))
+            raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s, 화면 요소 %d개, 누를 수 있는 것 %d개)%s%s" % (
+                room, self.near_names(room, seen), len(nodes), taps, self.facts_note(), self.diag_note()))
         self.tap(item)
         nodes = self.wait_change(nodes, lambda ns: self.room_open(ns, room), tries=5)
         if not self.room_open(nodes, room):                      # 연 방의 머리가 이 방이어야 한다(다른 방, 공지 상세보기에 올리지 않게)
             self.save_diag(nodes)
             raise KakaoError(("목록에서 누른 줄로 연 방의 머리가 이 방이 아님(목록이 움직였거나 다른 방). 보내지 않음"
-                              if find(nodes, cls="EditText") else "방은 열었는데 입력 칸이 없음") + self.diag_note())
+                              if find(nodes, cls="EditText") else "방은 열었는데 입력 칸이 없음") + self.facts_note() + self.diag_note())
         return nodes
 
     ENTER_WORDS = ("채팅방 들어가기", "채팅방으로 이동", "채팅방 입장", "채팅방 가기", "들어가기", "입장", "입장하기", "채팅하기", "대화하기")
@@ -2894,21 +3124,40 @@ class AdbSender:
             urls.append(("kakaoopen://join?l=%s&r=EW" % m.group(1), ""))
         nodes = []
         for url, pkg in urls:
+            kind = "kakaoopen" if url.startswith("kakaoopen") else "https"
             out = self.sh("am start -a android.intent.action.VIEW -d '%s'%s 2>&1; true" % (url.replace("'", ""), pkg), timeout=30)
             if re.search(r"^\s*Error|Exception|unable to resolve", out, re.M | re.I):
+                self.fact("주소 %s 열리지 않음" % kind)
                 continue
+            how = "떠 있던 화면에 넘김" if re.search(r"Warning: Activity not started", out) else "엶"
             for wait in (2.0, 1.5, 2.5, 2.5):
                 self.sleep(wait)
                 nodes = self.dump()
                 if self.room_open(nodes, room):
                     self.brief("오픈채팅 주소로 연 방", nodes, room)
+                    self.fact("주소 %s %s, 방" % (kind, how))
                     return nodes
                 btn = self.vpick(nodes, self.ENTER_WORDS) if self.on_kakao(nodes) and not find(nodes, cls="EditText") else None
                 if btn:
                     self.tap(btn)
+                    self.fact("들어가기 누름")
             self.brief("오픈채팅 주소로 연 화면(그 방이 아님)", nodes, room)
+            self.fact("주소 %s %s, 그 방 아님" % (kind, how))
+            self.top_fact()
             return None
+        self.brief("오픈채팅 주소가 열리지 않은 화면", self.dump(), room)
+        self.top_fact()
         return None
+
+    def top_fact(self):
+        """주소로 방을 못 열었을 때 앞에 뜬 화면(앱과 화면 종류 이름만) 한 마디"""
+        try:
+            out = self.sh("dumpsys activity activities 2>/dev/null | grep -m1 -E 'topResumedActivity|mResumedActivity'; true", timeout=20)
+        except Exception:
+            return
+        m = re.search(r"\s([\w.]+)/([\w.$]+)", out or "")
+        if m:
+            self.fact("앞 화면 %s %s" % ("카카오톡" if m.group(1) == self.t["package"] else m.group(1).split(".")[-1], m.group(2).split(".")[-1]))
 
     def diag_note(self):
         return ". 지나온 화면을 %s 에 적었습니다" % os.path.basename(self.diag_path) if self.diag_path else ""
@@ -3291,8 +3540,8 @@ class AdbSender:
         except RoomUnreachable:
             raise
         except KakaoError as e:
-            self.save_diag()
-            raise RoomUnreachable(str(e) + self.diag_note())
+            self.save_diag(fail=e)
+            raise RoomUnreachable(self.with_note(str(e))) from e   # 가림이면 길게 쉰다(send_wait)
         self.notice(room, text)
 
     def notice(self, room, text):
@@ -3304,7 +3553,7 @@ class AdbSender:
             if self.t.get("freeze", True):                       # 다시 연 방은 맨 아래에 붙어 있다: 살짝 올려 멈춘다
                 self.freeze(nodes)
                 nodes = self.dump()
-        self.trace = []                                          # 공지 단계만 남긴다(안 될 때 보낼 파일이 짧게)
+        self.new_trace()                                         # 공지 단계만 남긴다(안 될 때 보낼 파일이 짧게)
         e = find(nodes, cls="EditText")
         l0 = min([n["b"][0] for n in e] or [0])
         hgt = max([n["b"][3] for n in nodes] or [0])
@@ -3440,7 +3689,7 @@ class AdbSender:
             return self.open_room(room)
         nodes = self.launch()
         take("1 카카오톡을 띄운 화면", nodes, private=True)
-        tab = self.chat_tab(nodes)
+        tab = self.chat_nav(nodes)
         if tab:
             self.tap(tab)
             nodes = self.wait_change(nodes, tries=3)
@@ -3846,7 +4095,7 @@ class AdbSender:
         mark = lambda ns, old: {(n["b"], n["text"], n["desc"]) for n in ns if (n["text"] or n["desc"]) and (n["b"], n["text"], n["desc"]) not in old}
         depth, marks, pre = 0, set(), None                   # 뒤로 키로 닫을 화면 수(서랍, 전체 멤버 화면), 그 화면에만 있던 글(닫혔는지 보려고), 열기 전 방 화면
         nodes = self.open_room(room)
-        self.trace = []                                      # 채팅 목록 화면(대화 글)은 남기지 않는다. 멤버 화면은 이름을 가려 남긴다
+        self.new_trace()                                     # 채팅 목록 화면(대화 글)은 남기지 않는다. 멤버 화면은 이름을 가려 남긴다
         try:
             hgt = max(n["b"][3] for n in nodes)
             e = find(nodes, cls="EditText")
@@ -4571,7 +4820,7 @@ class AdbSender:
         title = v.get("title") or DEFAULTS["voice"]["title"]
         if voice_state(self.voice_signals(), v)[0] == "on":    # 신호로 켜져 있으면 화면을 건드리지 않는다
             return "on"
-        self.trace = []
+        self.new_trace()
         try:
             nodes = self.launch()
             self.snap("카카오톡을 띄운 화면", nodes)
@@ -4613,7 +4862,7 @@ class AdbSender:
     def voice_end(self, room, v=None):
         """켜 둔 보이스룸을 끝낸다(48시간 갱신). 봇이 진행자라 나가면 끝난다: 나가기, 종료 확인"""
         v = v or {}
-        self.trace = []
+        self.new_trace()
         try:
             nodes = self.voice_close_dialog(self.launch())
             scr = nodes if self.voice_screen(nodes, v) else self.voice_open_screen(room, v)
@@ -4658,7 +4907,7 @@ class AdbSender:
             inl = self.in_lists(nodes)
             rs = [row(n, bool(show and show(n)), where(n) if where else "", n["i"] in inl) for n in nodes if (n["text"] or n["desc"] or n["click"]) and (only is None or only(n))]
             out.extend(["== %s (%d)" % (label, len(rs))] + rs[:80] + [""])
-        self.trace = []
+        self.new_trace()
         try:
             nodes = self.open_room(room)
             area = self.room_top(nodes)
@@ -4747,14 +4996,21 @@ class AdbSender:
 
     @staticmethod
     def rows(nodes):
-        return ["%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], n["text"][:60].replace("\n", " / "), n["desc"], n["rid"],
+        return ["%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], n["text"][:60].replace("\n", " / "), n["desc"][:80].replace("\n", " / "), n["rid"],
                 "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"], n.get("pkg", "")) for n in nodes
                 if n["text"] or n["desc"] or n["rid"] or n["click"] or n["cls"].endswith("EditText")]
 
-    def dump_file(self, path, nodes=None):
+    def dump_file(self, path, nodes=None, head=False, fail=None):
+        """지금 화면을 파일에. head: 맨 위에 판과 창 목록(ui), 안 됐으면 그 까닭과 지나온 화면도 아래에(한 파일로 보내게)"""
         rows = self.rows(self.dump() if nodes is None else nodes)
+        out = rows
+        if head:
+            out = self.diag_head(fail) + ["", "== 지금 화면 (%d줄)" % len(rows)] + rows
+            if fail is not None:
+                for label, tr in self.trace:
+                    out += ["", "== %s (%d줄)" % (label, len(tr))] + tr
         with open(path, "w", encoding="utf-8") as f:
-            f.write("\n".join(rows))
+            f.write("\n".join(out))
         return len(rows)
 
     def snap(self, label, nodes, before=None):
@@ -4777,18 +5033,38 @@ class AdbSender:
             parts.append("보이스룸 작은 창")
         if self.voice_front(nodes):
             parts.append("보이스룸 화면")
-        line = ", ".join(parts) + ", 요소 %d개" % len(nodes)
+        nav = self.chat_nav(nodes)
+        menu = ("채팅 메뉴 %s(%s)" % ("아래" if self.center(nav)[1] > self.head_band(nodes) * 5 else "옆", "이름" if nav["desc"] else "글자")
+                if nav else "채팅 머리만" if self.chat_head(nodes) else "채팅 메뉴 없음")
+        line = ", ".join(parts) + ", 요소 %d개, %s" % (len(nodes), menu)
+        mf = self.mini_fact(nodes)
+        if mf:
+            line += ", " + mf
         wt = self.win_text()
         self.trace = (self.trace + [(label, [line] + ([wt] if wt else []))])[-8:]
 
-    def save_diag(self, nodes=None):
+    def diag_head(self, fail=None):
+        """진단 파일 맨 위 줄들: 판과 화면, 때, 읽는 방식, 창 목록, 실패(종류와 글 앞부분), 지나온 곳"""
+        head = "# 판 %s, 화면 %s, %s, %s, 창 목록 %s" % (
+            VERSION, "%dx%d %s" % (self.shape[2], self.shape[3], ROT_NAME[self.shape[0]]) if self.shape else "모름",
+            time.strftime("%m-%d %H:%M:%S"), {True: "읽기 도우미", False: "기본"}.get(self.fast, "읽기 모름"),
+            "있음" if getattr(self, "windows", None) else "없음")
+        if fail is not None:
+            head += ", 실패 %s: %s" % (type(fail).__name__, ws(str(fail))[:120])
+        out = [head]
+        wt = self.win_text()
+        out += ["# " + wt] if wt else []
+        facts = getattr(self, "facts", None)
+        if facts:
+            out.append("# 지나온 곳: " + ", ".join(facts))
+        return out
+
+    def save_diag(self, nodes=None, fail=None):
         if not self.diag_path:
             return
         if nodes is not None:
             self.snap("마지막 화면", nodes)
-        out = ["# 판 %s, 화면 %s" % (VERSION, "%dx%d %s" % (self.shape[2], self.shape[3], ROT_NAME[self.shape[0]]) if self.shape else "모름")]
-        wt = self.win_text()
-        out += (["# " + wt] if wt else []) + [""]
+        out = self.diag_head(fail) + [""]
         for label, rows in self.trace:
             out += ["== %s (%d줄)" % (label, len(rows))] + rows + [""]
         try:
@@ -5168,13 +5444,14 @@ def main(argv=None):
                         sender.open_room(cfg["test_room"])
                     else:
                         sender.goto_list()
-                except KakaoError as e:                 # 못 가도 지금 화면은 적는다(원인 찾기용)
+                except KakaoError as e:                 # 못 가도 지금 화면은 적는다(원인 찾기용. 지나온 화면도 같은 파일 아래에)
                     err = e
-                n = sender.dump_file(base + "_ui.txt")
+                n = sender.dump_file(base + "_ui.txt", head=True, fail=err)
             finally:
                 sender.done()
             if err:
                 print("안 됨:", err)
+            print(sender.win_text() or "창: 창 목록 없음(기본 방식으로 읽음)")
         elif isinstance(sender, AndroidSender):
             n = sender.dump(base + "_ui.txt")
         else:
