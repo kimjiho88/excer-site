@@ -1281,6 +1281,7 @@
         if (undated.length) html += (tab ? `<div class="day-head">날짜 미정</div>` : "") + undated.map(rowHTML).join("");
       } else if (tab) html += `<p class="list-empty">다가오는 모임이 없습니다.</p>`;
       if (past.length) {
+        if (state.expandedId != null && past.some((p) => p.id === state.expandedId)) state.past.open = true;   // 펼쳐 둔 글이 지나 지난 모임이 되어도 눈앞에서 사라지지 않게
         const n = past.length + (state.past.more ? "건 이상" : "건");
         html += `<button type="button" class="past-toggle" data-act="past-toggle" aria-expanded="${state.past.open}">${icon(state.past.open ? "chevDown" : "chevRight", "is-sm")}지난 모임 <small>${n}</small></button>`;
         if (state.past.open) {
@@ -1885,11 +1886,15 @@
           } else closeAttend();
         }
         renderList();
-        if (mode !== "host" && attCtx === null) { const nb = document.querySelector(`#post-${id} .att-acts button, #post-${id} .att-sub button`); if (nb) nb.focus({ preventScroll: true }); }
+        if (mode !== "host" && attCtx === null) {   // 꺼진 단추(참석함, 신청 마감)에는 포커스가 가지 않으므로 건너뛴다. 명단에서 빼기 뒤에는 그 단추로(이어서 뺄 수 있게)
+          const nb = document.querySelector(mode === "kick" ? `#post-${id} [data-act="kick"]` : `#post-${id} .att-acts button:not([disabled])`) || document.querySelector(`#post-${id} .host-menu summary`);
+          if (nb) nb.focus({ preventScroll: true });
+        }
         showToast(mode === "attend" ? "참석했습니다." : mode === "host" ? "참석자를 추가했습니다." : mode === "kick" ? "명단에서 뺐습니다." : "참석을 취소했습니다.");
       } catch (err) {
         const code = String((err && err.message) || "");
-        fail(attError(mode, err));
+        const st = /STARTED/.test(code) && mode === "unattend" && findPost(id) ? bungStatus(findPost(id)) : null;   // 진행 중에 누른 참석도 끝나면 STARTED
+        fail(st && st.started && !st.ongoing ? "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요." : attError(mode, err));
         if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
         attendFollowUp(id, code, ctx);
         if (attCtx === ctx) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
@@ -1957,7 +1962,7 @@
         state.posts = state.posts.filter((p) => p.id !== id); if (state.expandedId === id) state.expandedId = null;
         if (ctx && attCtx === ctx) closeAttend();
         renderList();
-      } else if (/CLOSED|DEADLINE|NOT_BUNG/.test(code)) refreshPost(id);
+      } else if (/CLOSED|DEADLINE|NOT_BUNG|STARTED/.test(code)) refreshPost(id);   // STARTED: 화면이 그린 뒤 시각이 지나 취소할 때가 끝남
       else if (/FULL|NICK_TAKEN|NOT_ATTENDING/.test(code)) loadAttend([id]);
     }
 
@@ -2558,7 +2563,11 @@
         const id = Number(el.dataset.id);
         const card = el.closest(".post-row");
         if (act === "toggle") { toggleExpand(id); return; }
-        if (act === "past-toggle") { state.past.open = !state.past.open; renderList(); const b = $("postList").querySelector('[data-act="past-toggle"]'); if (b) b.focus({ preventScroll: true }); return; }
+        if (act === "past-toggle") {
+          state.past.open = !state.past.open;
+          if (!state.past.open && state.expandedId != null) { const ep = findPost(state.expandedId); if (ep && isPastBung(ep)) { state.expandedId = null; syncHash(null); } }   // 칸을 접으면 그 안에 펼친 글도 닫는다
+          renderList(); const b = $("postList").querySelector('[data-act="past-toggle"]'); if (b) b.focus({ preventScroll: true }); return;
+        }
         if (act === "past-more") { loadPast(); return; }
         if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "goto") { e.preventDefault(); gotoPost(id); return; }

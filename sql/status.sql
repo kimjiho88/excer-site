@@ -33,7 +33,7 @@ inner_fn (sig) as (values
 ),
 locks as (
   select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
-         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림
+         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open') as 빠짐
     from inner_fn
 ),
 schema_v as (
@@ -71,7 +71,7 @@ select 10, '벙 날짜, 장소 칸', case when ok then '있음' else '없음' en
 union all
 select 14, '서버 형식(site_schema_v)', coalesce(keys, '보기가 없어요'),
        case when keys is null then '설치가 덜 됐어요'
-            when keys = 'bung_attend, bung_cancel, bung_end, bung_place, content_format, places_location' then '정상(최신)'
+            when string_to_array(keys, ', ') @> array['bung_attend', 'bung_cancel', 'bung_end', 'bung_place', 'content_format', 'places_location'] then '정상(최신)'
             else '빠진 줄이 있어요. sql/README.md 에서 아직 안 돌린 쪽을 차례대로' end
   from schema_v
 union all
@@ -89,7 +89,7 @@ select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v 
 union all
 select 20, '안쪽 함수 잠금', format('%s개 가운데 %s개 열림', 있음, 열림),
        case when 열림 > 0 then '위험. sql/README.md 의 권한 절을 보고 revoke 하세요'
-            when 있음 < 9 then '설치가 덜 됐어요(없는 함수가 있어요)' else '정상' end
+            when 빠짐 > 0 then '설치가 덜 됐어요(없는 함수가 있어요)' else '정상' end
   from locks
 union all
 select 30, '운영진 비밀번호', case when n is null then '확인 불가' when n > 0 then '설정됨' else '아직 없음' end,
