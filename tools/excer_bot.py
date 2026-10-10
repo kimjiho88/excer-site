@@ -209,6 +209,7 @@ def load_cfg(path):
                 cfg[k].update(v)
             else:
                 cfg[k] = v
+    cfg["site"] = str(cfg.get("site") or DEFAULTS["site"]).rstrip("/")   # 끝의 / 는 뗀다(주소를 이어 붙일 때 //bung 이 되지 않게)
     return cfg
 
 
@@ -958,6 +959,14 @@ def alert_text(ch, cfg):
     return "\n\n".join(alert_msgs(ch, cfg))
 
 
+URL_RE = re.compile(r"(?:https?://|www\.)\S+", re.I)
+
+
+def nourl(s):
+    """알림 글의 제목, 장소 줄에서 주소를 뺀다(카카오톡 미리보기 상자가 끝 줄의 그 벙 주소 대신 다른 주소를 잡지 않게)"""
+    return re.sub(r" {2,}", " ", URL_RE.sub("", s or "")).strip()
+
+
 def alert_key(a):
     """보낸 알림을 알아보는 열쇠. 한 벙 알림은 끝의 그 벙 주소 줄(다시 보내는 사이 참석 수가 바뀌어도 같은 알림), 여럿을 묶은 알림은 글 전체"""
     last = a.rsplit("\n", 1)[-1]
@@ -985,14 +994,14 @@ def alert_msgs(ch, cfg):
     tag = lambda kind: EMO.get(kind, "") + " " + kind
 
     def one(kind, v, d):
-        out = [tag(kind) + " " + head(v)]
-        cl = changes_line(ch, v) if kind in ("벙 변경", "벙 다시 모집") else ""
+        out = [tag(kind) + " " + nourl(head(v))]
+        cl = nourl(changes_line(ch, v)) if kind in ("벙 변경", "벙 다시 모집") else ""
         if cl:
             out.append("바뀜: " + cl)
         elif d:
             out.append(d)
         if kind in ("새 벙", "벙 다시 모집", "벙 변경"):
-            out += [l for l in (place_line(v), people_line(v, host=True)) if l]
+            out += [l for l in (nourl(place_line(v)), people_line(v, host=True)) if l and l != EMO["place"]]
         if kind != "벙 취소" and cfg.get("link", True):
             go = " 참석 " if kind == "새 벙" and not v["closed"] and not v.get("full") else " "   # 올릴 때 이미 마감했거나 정원이 찬 벙은 주소만
             out.append(EMO["go"] + go + bung_link(cfg, v))   # 미리보기 상자를 눌러도 그 벙으로
@@ -1010,7 +1019,7 @@ def alert_msgs(ch, cfg):
         msgs.append(one(*rest[0]))
     elif rest:
         msgs.append("\n".join([EMO["bell"] + " 벙 알림 %d건" % len(rest)] +
-                               ["%s %s%s" % (tag(kind), head(v), (" (" + d + ")") if d else "") for kind, v, d in rest]))
+                               ["%s %s%s" % (tag(kind), nourl(head(v)), (" (" + d + ")") if d else "") for kind, v, d in rest]))
     return msgs
 
 
