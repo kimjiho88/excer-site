@@ -90,6 +90,16 @@
     .post-row.is-linked .post-head { background: var(--brand-soft); }
     .day-head { margin: 16px 0 0; padding-bottom: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .day-head:first-child { margin-top: 0; }
+    .sec-head { margin: 20px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: var(--fs-body); font-weight: 700; }
+    .sec-head:first-child { margin-top: 0; }
+    .sec-head small, .past-toggle small { margin-left: 4px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+    .past-toggle { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 48px; margin: 12px 0 0; padding: 10px 4px; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: var(--fs-body); font-weight: 700; text-align: left; cursor: pointer; }
+    .past-toggle:first-child { margin-top: 0; }
+    .past-toggle:hover { background: var(--brand-soft); }
+    .past-toggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .past-list .day-head:first-child { margin-top: 12px; }
+    .past-more { display: flex; justify-content: center; margin: 12px 0 4px; }
+    .list-empty { margin: 0; padding: 14px 4px; color: var(--ink-2); font-size: var(--fs-caption); }
 
     /* ── 펼친 글 ── */
     .post-detail { margin: 0 0 16px; padding: 20px 24px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); }
@@ -438,6 +448,7 @@
           <span id="listNote" aria-live="polite"></span>
           <label class="sr-only" for="sortSelect">정렬</label>
           <select id="sortSelect" class="sort-select">
+            <option value="date">모임 날짜순</option>
             <option value="latest">최신순</option>
             <option value="popular">반응순</option>
           </select>
@@ -832,7 +843,8 @@
     };
 
     const state = {
-      category: "전체", sort: "latest", search: "",
+      category: "전체", sort: "date", search: "",
+      past: { offset: 0, more: false, open: false, loading: false },   // 모임 날짜순의 지난 모임 칸(처음에는 접힘)
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
       myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {}, hostMenu: {},
@@ -964,41 +976,61 @@
     }
 
     // ── 데이터 로드 ──
-    function orderParam() {
-      return state.sort === "popular" ? "order=pinned.desc,reaction_count.desc,created_at.desc" : "order=pinned.desc,created_at.desc";
+    /* 정렬: 모임 날짜순(기본)은 전체와 모임 모집 탭에서만(검색 없을 때). 다른 탭(모임이 없는 글)과 검색은 최신순으로 */
+    const bungView = () => (state.category === "전체" || state.category === "벙 소식") && !state.search;
+    function effSort() { return state.sort === "date" && !bungView() ? "latest" : state.sort; }
+    function dateMode() { return effSort() === "date"; }
+    function syncSortSel() {
+      const sel = $("sortSelect"), o = sel.querySelector('option[value="date"]');
+      if (o) { o.hidden = !bungView(); o.disabled = !bungView(); }
+      sel.value = effSort();
     }
+    function orderParam() {
+      return effSort() === "popular" ? "order=pinned.desc,reaction_count.desc,created_at.desc" : "order=pinned.desc,created_at.desc";
+    }
+    function ymdAdd(ymd, n) { const t = Date.parse(ymd + "T00:00:00Z") + n * 86400000; return new Date(t).toISOString().slice(0, 10); }
     let reqSeq = 0;
-    /* 모임 모집 탭(검색 없음): 다가오는 모임은 날짜순으로 전부 받고, 지난 모임만 20건씩 더 보기. 최근에 쓴 20건만 보면 오래전에 올린 먼 날짜 벙이 빠진다 */
-    function bungSplit() { return state.category === "벙 소식" && !state.search; }
+    /* 모임 날짜순(검색 없음): 다가오는 모임과 날짜 없는 모임은 날짜순으로 전부, 지난 모임은 최근 날짜부터 20건씩(접힌 칸),
+       전체 탭은 모임이 아닌 글만 최신순 20건씩. 어제 날짜도 다가오는 쪽으로 받는다(자정 넘어 진행 중일 수 있다, 나누기는 그릴 때) */
     async function loadPosts(reset) {
       if (state.loading && !reset) return;
       const seq = ++reqSeq;
       state.loading = true;
-      if (reset) state.offset = 0;
+      if (reset) { state.offset = 0; state.past = { offset: 0, more: false, open: state.past.open, loading: false }; }
       updateMoreBtn();
       await capsReady;   // 참석 기능 여부를 알고 나서 질의(참석 수 열)
       if (seq !== reqSeq) return;
-      const base = [postSelect()];
-      if (state.category !== "전체") base.push("category=eq." + encodeURIComponent(state.category));
-      const orFilter = searchOrParam(state.search);
-      if (orFilter) base.push(orFilter);
-      const split = bungSplit(), today = C.kstToday(), dk = encodeURIComponent("meta->>date");
-      const pageParams = base.concat(split ? ["or=" + encodeURIComponent("(meta->>date.lt." + today + ",meta->>date.is.null)")] : [], [orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset]);
-      const upParams = base.concat([dk + "=gte." + today, "order=" + encodeURIComponent("meta->>date.asc,meta->>time.asc,created_at.asc"), "limit=100"]);
+      const base = [postSelect()], dm = dateMode(), today = C.kstToday(), dk = encodeURIComponent("meta->>date"), bc = "category=eq." + encodeURIComponent("벙 소식");
+      const get = (params) => supaFetch("/rest/v1/site_posts_v?" + params.join("&")).then((r) => r || []);
       try {
-        const [page, up] = await Promise.all([
-          supaFetch("/rest/v1/site_posts_v?" + pageParams.join("&")).then((r) => r || []),
-          split && reset ? supaFetch("/rest/v1/site_posts_v?" + upParams.join("&")).then((r) => r || []) : Promise.resolve([])
-        ]);
+        let page = [], up = [], past = [];
+        if (dm) {
+          const jobs = [];
+          if (reset) {
+            jobs.push(get(base.concat([bc, "or=" + encodeURIComponent("(meta->>date.gte." + ymdAdd(today, -1) + ",meta->>date.is.null)"),
+              "order=" + encodeURIComponent("meta->>date.asc.nullslast,meta->>time.asc,created_at.asc"), "limit=100"])).then((r) => { up = r; }));
+            jobs.push(get(base.concat([bc, dk + "=lt." + today, "order=" + encodeURIComponent("meta->>date.desc,meta->>time.desc,created_at.desc"),
+              "limit=" + PAGE_SIZE, "offset=0"])).then((r) => { past = r; }));
+          }
+          if (state.category === "전체") jobs.push(get(base.concat(["category=neq." + encodeURIComponent("벙 소식"), orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset])).then((r) => { page = r; }));
+          await Promise.all(jobs);
+        } else {
+          if (state.category !== "전체") base.push("category=eq." + encodeURIComponent(state.category));
+          const orFilter = searchOrParam(state.search);
+          if (orFilter) base.push(orFilter);
+          page = await get(base.concat([orderParam(), "limit=" + PAGE_SIZE, "offset=" + state.offset]));
+        }
         if (seq !== reqSeq) return;
-        const rows = up.concat(page.filter((r) => !up.some((u) => u.id === r.id)));
+        const rows = [];
+        up.concat(past, page).forEach((r) => { if (!rows.some((x) => x.id === r.id)) rows.push(r); });
         rows.forEach((r) => { r.reactions = r.reactions || {}; });
         state.degraded = false;
         $("setupBanner").hidden = true;
         if (reset) { state.posts = rows; state.expandedId = null; state.commentsCache = {}; }
         else state.posts = state.posts.concat(rows.filter((r) => !state.posts.some((x) => x.id === r.id)));   // 링크로 먼저 불러온 글과 겹치지 않게
         state.offset += page.length;
-        state.hasMore = page.length === PAGE_SIZE;
+        state.hasMore = (!dm || state.category === "전체") && page.length === PAGE_SIZE;
+        if (dm && reset) { state.past.offset = past.length; state.past.more = past.length === PAGE_SIZE; }
         state.loading = false;
         renderList();
         loadMyReactions(rows.map((r) => r.id));
@@ -1010,6 +1042,23 @@
       }
       state.loading = false;
       renderList();
+    }
+    /* 지난 모임 더 보기(펼친 칸 안의 단추) */
+    async function loadPast() {
+      if (state.past.loading || !state.past.more) return;
+      state.past.loading = true; renderList();
+      const seq = reqSeq, today = C.kstToday();
+      try {
+        const rows = (await supaFetch("/rest/v1/site_posts_v?" + [postSelect(), "category=eq." + encodeURIComponent("벙 소식"), encodeURIComponent("meta->>date") + "=lt." + today,
+          "order=" + encodeURIComponent("meta->>date.desc,meta->>time.desc,created_at.desc"), "limit=" + PAGE_SIZE, "offset=" + state.past.offset].join("&"))) || [];
+        if (seq !== reqSeq) return;
+        rows.forEach((r) => { r.reactions = r.reactions || {}; });
+        state.posts = state.posts.concat(rows.filter((r) => !state.posts.some((x) => x.id === r.id)));
+        state.past.offset += rows.length; state.past.more = rows.length === PAGE_SIZE;
+        loadMyReactions(rows.map((r) => r.id));
+        loadAttend(bungIds(rows));
+      } catch (err) { showToast("지난 모임을 불러오지 못했습니다. 잠시 뒤 다시 해 주세요."); }
+      state.past.loading = false; renderList();
     }
     function enterDegraded() {
       state.degraded = true;
@@ -1189,15 +1238,16 @@
         const b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
         if (b && (b.value || (a && a.checked))) drafts[row.id] = { body: b.value, nick: n ? n.value : "", pass: p ? p.value : "", att: !!(a && a.checked) };
       });
-      listEl.innerHTML = posts.length ? groupedHTML(posts) : emptyStateHTML();
+      listEl.innerHTML = posts.length ? listHTML(posts) : emptyStateHTML();
       Object.keys(drafts).forEach((rid) => {
         const row = document.getElementById(rid); if (!row) return;
         const d = drafts[rid], b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
         if (b) b.value = d.body; if (n && d.nick) n.value = d.nick; if (p && d.pass) p.value = d.pass; if (a) a.checked = d.att;
       });
       listEl.removeAttribute("aria-busy");
+      const shown = dateMode() ? posts.filter((p) => !isPastBung(p)).length : posts.length;   // 모임 날짜순은 접힌 지난 모임을 세지 않는다
       $("listNote").textContent = state.degraded ? "" :
-        (posts.length ? `${posts.length}건${state.hasMore ? " 이상" : ""}${state.category !== "전체" ? ", " + C.catLabel(state.category) : ""}${state.search ? ', "' + state.search + '"' : ""}` : "");
+        (posts.length ? `${shown}건${state.hasMore ? " 이상" : ""}${state.category !== "전체" ? ", " + C.catLabel(state.category) : ""}${state.search ? ', "' + state.search + '"' : ""}` : "");
       if (keep) { const b = listEl.querySelector(`[data-act="${keep[0]}"][data-id="${keep[1]}"]`); if (b) b.focus({ preventScroll: true }); }
       applyLinkedMark();
       updateMoreBtn();
@@ -1205,29 +1255,49 @@
       renderPopular();
       if (!state.degraded && posts.length) C.nickSuggest($("wNick"), posts.map((p) => p.author));
     }
-    /* 모임 모집만 볼 때는 날짜 순으로 묶는다. 모집 글은 "언제"가 제목보다 먼저 궁금하다 */
-    function groupedHTML(posts) {
-      if (state.category !== "벙 소식") return posts.map(rowHTML).join("");
-      const today = C.kstToday();
-      const dateOf = (p) => { const m = C.postMeta(p); return m && m.date ? m.date : ""; };
-      const withDate = posts.filter((p) => dateOf(p));
-      const without = posts.filter((p) => !dateOf(p));
-      withDate.sort((a, b) => {
-        const da = dateOf(a), db = dateOf(b);
-        const pa = da < today, pb = db < today;
-        if (pa !== pb) return pa ? 1 : -1;
-        return pa ? db.localeCompare(da) : da.localeCompare(db);
-      });
-      const groups = [];
-      withDate.forEach((p) => { const d = dateOf(p); const g = groups[groups.length - 1]; if (g && g.date === d) g.items.push(p); else groups.push({ date: d, items: [p] }); });
-      let html = groups.map((g) => `<div class="day-head">${esc(dayLabel(g.date, today))}</div>` + g.items.map(rowHTML).join("")).join("");
-      if (without.length) html += `<div class="day-head">날짜 미정</div>` + without.map(rowHTML).join("");
+    const dateOf = (p) => { const m = C.postMeta(p); return m && m.date ? m.date : ""; };
+    const timeOf = (p) => { const m = C.postMeta(p); return m && m.time ? m.time : ""; };
+    /* 지난 모임: 끝난 모임 모집 글(카드의 '지난 모임'과 같은 기준). 오늘 끝난 모임도 여기. 자정을 넘겨 진행 중인 어제 모임은 다가오는 쪽 */
+    function isPastBung(p) { if (p.category !== "벙 소식" || !dateOf(p)) return false; const s = bungStatus(p); return s.started && !s.ongoing; }
+    /* 모임 날짜순: 다가오는 모임(날짜 가까운 순), 지난 모임(접는 칸, 펼치면 최근 날짜부터), 전체 탭은 그 아래 모임이 아닌 글(최신순).
+       고정한 글은 맨 위. 모임 모집 탭은 날짜마다 머리 줄. 최신순과 반응순은 받은 차례 그대로 */
+    function listHTML(posts) {
+      if (!dateMode()) return posts.map(rowHTML).join("");
+      const today = C.kstToday(), tab = state.category === "벙 소식";
+      const key = (p) => dateOf(p) + " " + timeOf(p);
+      const bungs = posts.filter((p) => p.category === "벙 소식"), others = posts.filter((p) => p.category !== "벙 소식");
+      const up = bungs.filter((p) => dateOf(p) && !isPastBung(p)).sort((a, b) => key(a).localeCompare(key(b)));
+      const undated = bungs.filter((p) => !dateOf(p));
+      const past = bungs.filter(isPastBung).sort((a, b) => key(b).localeCompare(key(a)));
+      const days = (list) => {
+        const groups = [];
+        list.forEach((p) => { const d = dateOf(p), g = groups[groups.length - 1]; if (g && g.date === d) g.items.push(p); else groups.push({ date: d, items: [p] }); });
+        return groups.map((g) => `<div class="day-head">${esc(dayLabel(g.date, today))}</div>` + g.items.map(rowHTML).join("")).join("");
+      };
+      let html = (tab ? others : others.filter((p) => p.pinned)).map(rowHTML).join("");   // 모임 모집 탭의 다른 글은 링크로 연 글뿐
+      if (up.length || undated.length) {
+        if (!tab) html += `<div class="sec-head">다가오는 모임 <small>${up.length + undated.length}건</small></div>`;
+        html += tab ? days(up) : up.map(rowHTML).join("");
+        if (undated.length) html += (tab ? `<div class="day-head">날짜 미정</div>` : "") + undated.map(rowHTML).join("");
+      } else if (tab) html += `<p class="list-empty">다가오는 모임이 없습니다.</p>`;
+      if (past.length) {
+        const n = past.length + (state.past.more ? "건 이상" : "건");
+        html += `<button type="button" class="past-toggle" data-act="past-toggle" aria-expanded="${state.past.open}">${icon(state.past.open ? "chevDown" : "chevRight", "is-sm")}지난 모임 <small>${n}</small></button>`;
+        if (state.past.open) {
+          html += `<div class="past-list">${tab ? days(past) : past.map(rowHTML).join("")}</div>`;
+          if (state.past.more) html += `<div class="past-more"><button type="button" class="btn btn-secondary is-sm" data-act="past-more"${state.past.loading ? " disabled" : ""}>${state.past.loading ? "불러오는 중" : "지난 모임 더 보기"}</button></div>`;
+        }
+      }
+      if (!tab) {
+        const rest = others.filter((p) => !p.pinned);
+        if (rest.length) html += `<div class="sec-head">최근 글</div>` + rest.map(rowHTML).join("");
+      }
       return html;
     }
     function dayLabel(ymd, today) {
       const base = C.dateText(ymd, { withDow: true });
       if (ymd === today) return "오늘, " + base;
-      if (ymd < today) return base + ", 지난 모임";
+      if (ymd === ymdAdd(today, -1)) return "어제, " + base;   // 지난 모임 칸, 또는 자정을 넘겨 진행 중인 모임
       return base;
     }
     function renderListLoading() {
@@ -2240,7 +2310,8 @@
       try {
         await supaFetch("/rest/v1/rpc/post_delete", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass }) });
         state.posts = state.posts.filter((p) => p.id !== id);
-        state.offset = Math.max(0, state.offset - 1);   // 지운 만큼 다음 페이지 시작점도 당긴다
+        if (dateMode() && post && post.category === "벙 소식") { if (dateOf(post) && dateOf(post) < C.kstToday()) state.past.offset = Math.max(0, state.past.offset - 1); }
+        else state.offset = Math.max(0, state.offset - 1);   // 지운 만큼 다음 페이지 시작점도 당긴다(모임 날짜순의 모임 글은 지난 모임 쪽)
         if (state.expandedId === id) state.expandedId = null;
         renderList();
         showToast("글을 삭제했습니다.");
@@ -2360,6 +2431,7 @@
       }
       if (!post) { showToast("링크의 글을 찾을 수 없습니다. 삭제된 글일 수 있습니다."); syncHash(null); return; }
       state.expandedId = id;
+      if (dateMode() && isPastBung(post)) state.past.open = true;
       renderList();
       if (state.commentsCache[id] === undefined) loadComments(id);
       if (state.attendOn && !(state.attend[id] && state.attend[id].list)) loadAttend([id]);   // 첫 쪽 밖의 글(봇 알림 링크)도 명단을 읽는다
@@ -2386,6 +2458,7 @@
       if (state.attendOn) loadAttend([id]);   // 펼 때마다 새로 읽는다(그사이 자리가 났거나 찼을 수 있다)
     }
     function refetchList() {
+      syncSortSel();
       state.expandedId = null;
       syncHash(null);
       if (state.degraded) renderList(); else { renderListLoading(); loadPosts(true); }
@@ -2477,6 +2550,8 @@
         const id = Number(el.dataset.id);
         const card = el.closest(".post-row");
         if (act === "toggle") { toggleExpand(id); return; }
+        if (act === "past-toggle") { state.past.open = !state.past.open; renderList(); const b = $("postList").querySelector('[data-act="past-toggle"]'); if (b) b.focus({ preventScroll: true }); return; }
+        if (act === "past-more") { loadPast(); return; }
         if (act === "copy-link") { copyPostLink(id); return; }
         if (act === "goto") { e.preventDefault(); gotoPost(id); return; }
         if (act === "share") {
@@ -2562,7 +2637,7 @@
     $("wNick").value = savedNick();
     bindEvents();
     syncMe(); syncWNick();
-    { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } }
+    { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } syncSortSel(); }
     renderTypeFields("자유", null);
     function applyCaps(c) {
       state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.capsFailed = !!c.failed;
