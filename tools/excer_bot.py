@@ -121,7 +121,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -1510,6 +1510,11 @@ def rot_info(out):
             "usr": rot_num(g(r"\bUSR=(\S*)")), "fixed": (g(r"\bmFixedToUserRotation=(\S+)") or "").lower() == "true"}
 
 
+def row_head(s):
+    """줄 글의 첫 마디. 여러 칸이 한 글로 합쳐진 줄(방 이름, 사람 수, 마지막 글, 시각이 줄바꿈이나 쉼표로 이어짐)의 앞 칸"""
+    return re.split(r"\n|, ", s or "", maxsplit=1)[0]
+
+
 def same_room(t, room):
     """방 이름이 같은가: 보이지 않는 글자와 공백 차이는 보지 않고, 앞뒤에 그림 글자(보이스룸 표시 같은)만 붙은 것도 같다.
     글자나 숫자가 더 붙은 다른 방('... 시험' 같은)은 아니다"""
@@ -2026,6 +2031,7 @@ class AdbSender:
         self.fast_fail = 0
         self.vcfg = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))   # 보이스룸 제목(띠와 작은 창 글자를 공지나 보이스룸 화면으로 보지 않게)
         self.rot_fixed, self.rot_note, self.shape, self.turn_note = False, 0.0, None, 0.0   # 화면 방향 고정, 지난번 화면 모양(가로나 세로, 넓이)
+        self.comps = {}                                          # 앱의 첫 화면 이름(am start 로 띄울 때)
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -2368,6 +2374,42 @@ class AdbSender:
         auto = {"0": "자동 회전 끔", "1": "자동 회전 켜짐"}.get(info["acc"] or "", "자동 회전 모름")
         return "%s(%s%s)" % (shape, auto, ", 앱이 돌리지 못하게 고정" if info["fixed"] else "")
 
+    # 앱 띄우기: monkey 는 끝날 때마다 화면 회전 잠금을 풀고(자동 회전 켜짐) 회전을 0 으로 돌려 놓는다(Monkey.java 의 finally:
+    # freezeRotation(0) 뒤 thawRotation). 자동 회전이 저절로 다시 켜지고 화면이 세로로 돌던 원인이라 am start 로 띄운다
+    LAUNCH_FLAGS = "0x10200000"                                  # 새 작업 + 작업이 있으면 그대로 앞으로(런처 아이콘을 누른 것처럼)
+
+    def app_component(self, pkg):
+        """앱의 첫 화면(런처 화면) 이름 '패키지/화면'. 한 번 읽어 둔다. 못 읽으면 ''"""
+        comps = self.comps
+        if pkg in comps:
+            return comps[pkg]
+        comp = ""
+        for sub in ("resolve-activity", "query-activities"):     # 고르는 창(ResolverActivity)이 나오면 목록에서 그 앱 것을 고른다
+            try:
+                out = self.sh("cmd package %s --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER %s 2>/dev/null; true" % (sub, pkg), timeout=20)
+            except KakaoError:
+                break
+            got = [l.strip() for l in out.splitlines() if re.match(r"^%s/[\w.$]+$" % re.escape(pkg), l.strip())]
+            if got:
+                comp = got[0]
+                break
+        comps[pkg] = comp
+        return comp
+
+    def start_app(self, pkg):
+        """앱을 앞으로(am start). 안 되면 monkey 로 띄우고 화면 방향을 다시 고정한다. monkey 를 썼으면 True"""
+        comp = self.app_component(pkg)
+        out = self.sh("am start %s -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f %s 2>&1; true"
+                      % (("-n " + comp) if comp else ("-p " + pkg), self.LAUNCH_FLAGS), timeout=30)
+        if not re.search(r"^\s*Error|Exception|unable to resolve", out, re.M | re.I):
+            return False
+        self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; true" % pkg)
+        try:
+            self.lock_rotation()                                 # monkey 가 풀어 놓은 회전 잠금을 다시
+        except KakaoError:
+            pass
+        return True
+
     def launch(self):
         """화면을 켜고 카카오톡을 앞으로. 뜨는 중이면 조금 더 기다린다(화면이 꺼져 있어도 된다, 잠금만 없으면).
         그 전에 화면 방향을 정한 방향으로 고정한다(자동 회전이 저절로 다시 켜졌어도)"""
@@ -2380,7 +2422,7 @@ class AdbSender:
         except KakaoError:
             pass                                                 # 방향을 못 고쳐도 올리기는 한다
         self.sh("cmd statusbar collapse; true")                  # 남은 알림 창이 있으면 접는다(없으면 아무 일 없음)
-        self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
+        self.start_app(self.t["package"])
         nodes = []
         for wait in (2.0, 1.5, 2.5):
             self.sleep(wait)
@@ -2428,8 +2470,8 @@ class AdbSender:
         # 이름이 같은 방만(글자가 더 붙은 다른 방으로 보내지 않게, same_room). 화면 글자는 잘려 보여도 이름 전체가 들어온다.
         # 글자 칸이 없고 줄 이름(content-desc)만 있는 판은 이름의 첫 마디
         right = self.list_right(nodes) + 5
-        c = [n for n in nodes if n["b"][2] <= right and (same_room(n["text"], room)
-                                                          or (not n["text"].strip() and same_room(n["desc"].split(",")[0], room)))]
+        c = [n for n in nodes if n["b"][2] <= right and (same_room(n["text"], room) or same_room(row_head(n["text"]), room)
+                                                          or (not n["text"].strip() and same_room(row_head(n["desc"]), room)))]
         return min(c, key=lambda n: (n["b"][1], n["b"][0])) if c else None
 
     def list_box(self, nodes):
@@ -2540,6 +2582,11 @@ class AdbSender:
                 stack[:0] = k["kids"]
             if len(texts) >= 2 and texts[0] not in NAV_WORDS and texts[0] not in names:
                 names.append(texts[0])
+            elif not texts:                                      # 칸이 하나로 합쳐진 줄: 그 줄의 글이나 이름(content-desc)의 첫 마디
+                full = n["text"].strip() or n["desc"].strip()
+                head = row_head(full).strip()
+                if head and head != full and head not in NAV_WORDS and head not in names:
+                    names.append(head)
         return names
 
     def open_room(self, room):
@@ -2565,7 +2612,10 @@ class AdbSender:
             nodes, item = self.seek_room(nodes, room, seen)
         if not item:
             self.save_diag(nodes)
-            raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s)%s" % (room, self.near_names(room, seen), self.diag_note()))
+            l, t, r, b = self.list_box(nodes)
+            taps = sum(1 for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b)
+            raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s, 화면 요소 %d개, 누를 수 있는 것 %d개)%s" % (
+                room, self.near_names(room, seen), len(nodes), taps, self.diag_note()))
         self.tap(item)
         nodes = self.wait_change(nodes, lambda ns: bool(find(ns, cls="EditText")))
         if not find(nodes, cls="EditText"):
@@ -4218,7 +4268,7 @@ class AdbSender:
         app = self.t.get("return_to") or ""
         if app:
             try:
-                self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % app)
+                self.start_app(app)
             except KakaoError:
                 pass
 
