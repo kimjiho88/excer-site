@@ -346,6 +346,12 @@ def strict_core(s):
     return "".join(c for c in s if not c.isspace() and unicodedata.category(c) not in ("So", "Sk", "Me", "Mn", "Cf", "Co", "Cn", "Cs"))
 
 
+def notice_head(text):
+    """공지 글의 머리: 첫 줄, 둘째 줄이 참석 주소 줄이면 그 줄까지(공지 띠에 보이는 두 줄. 주소 줄은 모든 공지에 같아 머리만으로는 글을 가를 수 없다)"""
+    ls = (text or "").split("\n")
+    return "\n".join(ls[:2]) if len(ls) > 1 and ls[1].startswith(EMO["go"]) else ls[0]
+
+
 def band_shows(band, text, others=()):
     """방 위쪽 공지 띠나 상세보기에서 읽은 글(band)이 이 공지 글(text)인가(strict_core 로 견준다).
     글 전체가 보이면(앞뒤에 글쓴이 줄이나 댓글이 붙어도) 같은 글. 다만 이 글을 품은 더 긴 다른 후보 글이 통째로 보이면 아니다(끝 줄만 뺀 새 글).
@@ -357,8 +363,7 @@ def band_shows(band, text, others=()):
     alts = {strict_core(x) for x in others if x} - {sb, ""}
     if sb in sa:
         return whole_notice(band, text) and not any(len(o) > len(sb) and sb in o and o in sa for o in alts)
-    ls = text.split("\n")
-    first = strict_core(ls[0] + (ls[1] if len(ls) > 1 and ls[1].startswith(EMO["go"]) else ""))   # 첫 줄과 둘째 줄의 참석 주소(모든 공지에 같다)
+    first = strict_core(notice_head(text))                 # 첫 줄과 둘째 줄의 참석 주소(모든 공지에 같다)
     if not alts:
         return False
     for j in range(min(8, len(sa)) + 1):
@@ -372,7 +377,7 @@ def notice_line(line):
     """봇 공지 글의 줄처럼 생겼는지(📣, 👉, 카드 번호, 📍, 👥, 🔒, 🗓, ⏳ 로 시작하거나 '외 N건')"""
     t = (line or "").strip()
     return t.startswith((EMO["next"], EMO["go"], EMO["place"], EMO["people"], EMO["벙 마감"], EMO["later"], EMO["live"]) + tuple(CARD_NO)) \
-        or bool(re.match(r"외 \d+건$", t))
+        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기) https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
 
 
 def whole_notice(band, text):
@@ -959,6 +964,10 @@ def alert_text(ch, cfg):
     return "\n\n".join(alert_msgs(ch, cfg))
 
 
+def alert_msgs(ch, cfg):
+    return [t for _, t in alert_items(ch, cfg)]
+
+
 URL_RE = re.compile(r"(?:https?://|www\.)\S+", re.I)
 
 
@@ -967,15 +976,16 @@ def nourl(s):
     return re.sub(r" {2,}", " ", URL_RE.sub("", s or "")).strip()
 
 
-def alert_key(a):
-    """보낸 알림을 알아보는 열쇠. 한 벙 알림은 끝의 그 벙 주소 줄(다시 보내는 사이 참석 수가 바뀌어도 같은 알림), 여럿을 묶은 알림은 글 전체"""
-    last = a.rsplit("\n", 1)[-1]
-    return last if "/bung?id=" in last else a
+def alert_key(kind, v, d=""):
+    """보낸 알림을 알아보는 열쇠: 종류, 벙 번호, 알린 내용(날짜, 시간, 끝나는 시간, 장소, 신청 마감, 정원). 다시 보내는 사이 참석 수가
+    바뀌거나 정원이 차도 같은 알림이고, 날짜나 시간, 장소를 고쳤으면 다른 알림"""
+    return "|".join(str(v.get(k) or "") for k in ("id", "date", "time", "end", "place", "deadline", "cap")) + "|" + kind
 
 
-def alert_msgs(ch, cfg):
-    """바뀐 것 알림(공지와 따로 올리는 메시지들). 새 벙은 하나씩 따로(채팅방에 한 번 공유: 장소, 인원, 벙주, 그 벙으로 바로 가는 주소).
-    나머지(바뀜, 마감, 다시 모집, 취소)는 하나면 자세히, 여럿이면 한 메시지에 한 줄씩. 모두 bulk_quiet(6)건 넘으면 한 줄 요약"""
+def alert_items(ch, cfg, done=()):
+    """바뀐 것 알림(공지와 따로 올리는 메시지들)과 그 열쇠들: [(열쇠들, 글)]. 새 벙은 하나씩 따로(채팅방에 한 번 공유: 장소, 인원,
+    벙주, 그 벙으로 바로 가는 주소). 나머지(바뀜, 마감, 다시 모집, 취소)는 하나면 자세히, 여럿이면 한 메시지에 한 줄씩.
+    모두 bulk_quiet(6)건 넘으면 한 줄 요약. done: 보내다 실패해 다시 할 때 이미 올린 알림의 열쇠(빼고 만든다. 요약에도 세지 않는다)"""
     items = []
     for v in sorted(ch["new"], key=skey):
         items.append(("새 벙", v, ""))
@@ -989,6 +999,7 @@ def alert_msgs(ch, cfg):
         items.append(("벙 마감", v, ("참석 %d명, 정원 %d명" % (v["attend"], v["cap"])) if over else "정원 %d명 다 참" % v["cap"]))
     for v in ch.get("del", []):
         items.append(("벙 취소", v, "모집 글 삭제"))
+    items = [it for it in items if alert_key(*it) not in done]
     if not items:
         return []
     tag = lambda kind: EMO.get(kind, "") + " " + kind
@@ -1012,14 +1023,15 @@ def alert_msgs(ch, cfg):
         for kind, v, d in items:
             cnt[kind] = cnt.get(kind, 0) + 1
         parts = ["%s %d" % (k, cnt[k]) for k in ("새 벙", "벙 변경", "벙 다시 모집", "벙 마감", "벙 취소") if cnt.get(k)]
-        return ["\n".join([EMO["bell"] + " 벙 알림 %d건 (%s)" % (len(items), ", ".join(parts))] + ([EMO["go"] + " " + cfg["site"] + "/bung"] if cfg.get("link", True) else []))]
-    msgs = [one(*it) for it in items if it[0] == "새 벙"]   # 새 벙은 하나씩 따로(그 벙의 미리보기 상자가 붙게)
+        return [([alert_key(*it) for it in items], "\n".join([EMO["bell"] + " 벙 알림 %d건 (%s)" % (len(items), ", ".join(parts))]
+                                                           + ([EMO["go"] + " " + cfg["site"] + "/bung"] if cfg.get("link", True) else [])))]
+    msgs = [([alert_key(*it)], one(*it)) for it in items if it[0] == "새 벙"]   # 새 벙은 하나씩 따로(그 벙의 미리보기 상자가 붙게)
     rest = [it for it in items if it[0] != "새 벙"]
     if len(rest) == 1:
-        msgs.append(one(*rest[0]))
+        msgs.append(([alert_key(*rest[0])], one(*rest[0])))
     elif rest:
-        msgs.append("\n".join([EMO["bell"] + " 벙 알림 %d건" % len(rest)] +
-                               ["%s %s%s" % (tag(kind), nourl(head(v)), (" (" + d + ")") if d else "") for kind, v, d in rest]))
+        msgs.append(([alert_key(*it) for it in rest], "\n".join([EMO["bell"] + " 벙 알림 %d건" % len(rest)] +
+                                                                ["%s %s%s" % (tag(kind), nourl(head(v)), (" (" + d + ")") if d else "") for kind, v, d in rest])))
     return msgs
 
 
@@ -1236,7 +1248,7 @@ class Bot:
             self.empty_streak = 0
         cur, ch = diff(st.get("known", {}), posts, now, bool(st.get("init")), bool(getattr(self.site, "last_full", False)))
         if not st.get("init"):
-            st.update(known=cur, init=True)
+            st.update(known=cur, init=True, alert_done=[])
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
             ch = noch()
@@ -1247,7 +1259,7 @@ class Bot:
         if paused:
             if not st.get("ctl_paused"):
                 self.log("운영 화면에서 전체 멈춤(%s까지): 알림과 공지를 올리지 않고 바뀐 것은 기억만" % hm_of(ctl["pause"]))
-            st.update(known=cur, ctl_paused=1)
+            st.update(known=cur, ctl_paused=1, alert_done=[])
             self.save()
             self.prev_ids, self.prev_read = {v["id"] for v in posts}, now.ts
             return "paused"
@@ -1274,9 +1286,9 @@ class Bot:
         if bulk >= int(cfg.get("bulk_quiet", 6) or 10 ** 9):
             self.log("새 벙과 지운 벙이 한꺼번에 %d건이라 알리지 않음(글을 한꺼번에 옮기거나 지운 것으로 봄). 공지 글만 새로" % bulk)
             ch["new"], ch["del"] = [], []
-        alert = alert_msgs(ch, cfg)
+        alert = alert_items(ch, cfg, st.get("alert_done") or ())   # 지난 차례에 보내다 실패했으면 이미 올린 알림은 빼고
         fresh, shown = notice_build(posts, now, cfg)
-        ntext = self.same_order(st, posts, now, cfg, fresh, shown)
+        ntext, built = self.same_order(st, posts, now, cfg, fresh, shown)
         dg = digest_due(st, now, cfg)
         if dg == "skip" or (dg and st.get("last_post_ymd") == now.ymd and ntext == st.get("notice_text")):
             st["last_digest"] = now.ymd                 # 너무 늦었거나 오늘 이미 올렸다
@@ -1285,7 +1297,7 @@ class Bot:
         if held:
             dg = False                                  # 공지 멈춤 중에는 공지 글을 올리지 않는다(매일 다시 올리기도)
         if dg:
-            ntext = fresh                               # 매일 다시 올리기는 지금 차례로
+            ntext, built = fresh, now.ts                # 매일 다시 올리기는 지금 차례로
         want = not held and ((ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg))
         seen, looked = None, False
         unsure = bool(st.get("notice_fail_text")) and st.get("notice_fail_text") != ntext   # 다른 글을 올렸는데 걸렸는지 모름(걸렸을 수 있다)
@@ -1295,13 +1307,13 @@ class Bot:
         if not looked or seen is not None:
             self.first = False                          # 못 읽었으면 쉬었다가 다시 본다
         if not alert and not want:
-            st["known"] = cur                           # 제목만 바뀜, 지난 글 정리
+            st.update(known=cur, alert_done=[])         # 제목만 바뀜, 지난 글 정리(보내다 남은 알림도 없다)
             self.save()
             return "none"
         if now.ts - float(st.get("last_post_at") or 0) < int(cfg.get("min_gap_sec", 60)):
             return "wait"                               # 방금 올렸다. 모았다가 한 번에
-        if want and ntext == fresh:
-            st["notice_built"] = {"text": ntext, "at": now.ts}   # 이 글을 만든 때(카드 차례를 정한 때)
+        if want:
+            st["notice_try"] = {"text": ntext, "at": built}   # 올리려는 글과 그 카드 차례를 정한 때(방에 올라가면 notice_built 로)
         try:
             return self._post(st, cfg, now, cur, alert, ntext if want else "", dg, seen)
         finally:
@@ -1309,14 +1321,31 @@ class Bot:
                 self.sender.done()
 
     def same_order(self, st, posts, now, cfg, fresh, ids):
-        """시각만 지나 카드 차례만 바뀌었으면 올린 공지 글 그대로(벙이 시작하거나 끝날 때마다 다시 올리지 않게).
-        '외 N건' 에 가려진 진행 중이나 시작 전 벙을 카드로 올려야 하면, 또는 벙 글이 바뀌었으면 지금 차례의 새 글"""
-        nb = st.get("notice_built") or {}
-        old = nb.get("text") or ""
-        if not old or old == fresh or old not in (st.get("notice_text"), st.get("notice_fail_text")):
-            return fresh
-        then, then_ids = notice_build(posts, now, cfg, Now(datetime.fromtimestamp(float(nb.get("at") or 0), KST)))
-        return old if then == old and not notice_reorder_due(posts, now, cfg, then_ids, ids) else fresh
+        """시각만 지나 카드 차례만 바뀌었으면 방에 올린 공지 글 그대로(벙이 시작하거나 끝날 때마다 다시 올리지 않게). 보내다 실패한 글은
+        같은 글로 다시 보낸다(이미 올라갔는지 확인할 수 있게). '외 N건' 에 가려진 진행 중이나 시작 전 벙을 카드로 올려야 하면, 또는
+        벙 글이 바뀌었으면 지금 차례의 새 글. 돌려주는 것: (글, 그 글의 카드 차례를 정한 때)"""
+        cands = []
+        t = st.get("notice_try") or {}
+        if t.get("text") and t["text"] == st.get("send_fail_text"):
+            cands.append(t)                                      # 보내다 실패한 글
+        b = st.get("notice_built")
+        if not b and st.get("notice_text"):
+            b = {"text": st["notice_text"], "at": 0}   # 이 판 전에 올린 글: 그때는 늘 시간 차례(모두 시작 전으로 보고 만들면 같은 차례)
+        if b and b.get("text") in (st.get("notice_text"), st.get("notice_fail_text")):
+            cands.append(b)
+        for nb in cands:
+            old = nb["text"]
+            if old == fresh:
+                return fresh, now.ts
+            then, then_ids = notice_build(posts, now, cfg, Now(datetime.fromtimestamp(float(nb.get("at") or 0), KST)))
+            if then == old and not notice_reorder_due(posts, now, cfg, then_ids, ids):
+                return old, float(nb.get("at") or 0)
+        return fresh, now.ts
+
+    def built(self, st, ntext, now):
+        """이 공지 글이 방에 올라갔다(이미 있었다): 카드 차례를 정한 때와 함께 기억한다(다음에 시각만 지난 것인지 견줄 때 쓴다)"""
+        t = st.get("notice_try") or {}
+        st["notice_built"] = {"text": ntext, "at": float(t["at"]) if t.get("text") == ntext and t.get("at") else now.ts}
 
     def send_once(self, text):
         """보낸다. 지난번에 같은 글을 보내다 실패했는데 실제로는 올라가 있으면(화면에서 확인) 또 보내지 않는다"""
@@ -1426,11 +1455,11 @@ class Bot:
         return "diff"
 
     def _post(self, st, cfg, now, cur, alert, ntext, dg, seen=None):
-        alerts = [alert] if isinstance(alert, str) and alert else list(alert or [])
+        alerts = [a if isinstance(a, tuple) else ([a], a) for a in ([alert] if isinstance(alert, str) else (alert or [])) if a]
         if alerts:
             done = list(st.get("alert_done") or [])
-            for a in alerts:
-                if alert_key(a) in done:
+            for keys, a in alerts:
+                if all(k in done for k in keys):
                     continue                                # 지난 차례에 올렸다(뒤의 알림을 보내다 실패해 다시 하는 중)
                 try:
                     self.send_once(a)
@@ -1439,7 +1468,7 @@ class Bot:
                     self.send_log("알림 보내기", e, wait)
                     self.hold_until = self.ts() + wait
                     return "send-fail"
-                done.append(alert_key(a))
+                done += [k for k in keys if k not in done]
                 st["alert_done"] = done
                 self.save()
                 self.log("알림: " + a.split("\n")[0])
@@ -1463,6 +1492,7 @@ class Bot:
                 self.log("다시 됨(%d번 실패 뒤)" % self.send_fails)
                 self.send_fails = 0
             st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0, notice_gaveup=0, send_fail_text="")
+            self.built(st, ntext, now)
             self.save()
             self.log("방 공지가 이미 지금 사이트 글과 같아 올리지 않음")
             return "same"
@@ -1489,6 +1519,7 @@ class Bot:
                     self.log("다시 됨(%d번 실패 뒤)" % self.send_fails)
                     self.send_fails = 0
                 st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0, notice_gaveup=0)
+                self.built(st, ntext, now)
                 self.save()
                 self.log("공지로 걸었음(이미 올린 글)")
                 return "pinned"
@@ -1501,6 +1532,7 @@ class Bot:
             return "send-fail"
         st.update(last_post_at=now.ts, last_post_ymd=now.ymd, notice_sends=sends + 1 if again else 1,
                   notice_posted=([x for x in (st.get("notice_posted") or []) if x != ntext] + [ntext])[-10:])
+        self.built(st, ntext, now)
         if dg:
             st["last_digest"] = now.ymd
         chg = notice_change(st.get("notice_text") or "", ntext)
@@ -3779,8 +3811,8 @@ class AdbSender:
             self.save_diag()
             raise KakaoError("공지 띠가 다른 글로 바뀜(봇 글이 아닌 글이 걸렸을 수 있음, 띠 글 '%s'). 다시 겁니다%s" % (ws(bt(done))[:40], self.diag_note()))
         if pre and c:                                            # 같은 첫 줄 공지가 이미 있어 첫 줄로는 알 수 없고, 확인은 눌렀다
-            dt = bt(done)
-            if (before and len(strict_core(before)) > len(strict_core(first)) + 4 and strict_core(dt) == strict_core(before)
+            dt = bt(done)                                        # 띠가 머리(첫 줄과 참석 주소 줄)만 보이면 알 수 없다: 걸린 것으로 본다
+            if (before and len(strict_core(before)) > len(strict_core(notice_head(text))) + 4 and strict_core(dt) == strict_core(before)
                     and not band_shows(dt, text)):              # 띠가 걸기 전 글 전체를 그대로 보인다: 걸리지 않았다
                 self.snap("마지막 화면(새로 나온 것)", done, nodes)
                 self.save_diag()
@@ -5948,7 +5980,7 @@ def cmd_reset(base, state_path):
         return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py reset"
     st = load_state(state_path)
     n = len(st.get("known") or {})
-    for k in ("init", "notice_text", "send_fail_text", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted"):
+    for k in ("init", "notice_text", "send_fail_text", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done"):
         st.pop(k, None)
     st["known"] = {}
     save_json(state_path, st)
