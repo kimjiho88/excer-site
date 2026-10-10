@@ -1140,7 +1140,7 @@ def changes_line(ch, v):
 
 def digest_due(st, now, cfg):
     at = cfg.get("digest_at") or ""
-    if not at or st.get("last_digest") == now.ymd:
+    if not at or not TIME_RE.match(at) or st.get("last_digest") == now.ymd:
         return False
     late = mins(now.hm) - mins(at)
     if late < 0:
@@ -1197,6 +1197,7 @@ class Bot:
         self.room_miss = 0                              # 그 가운데 채팅 목록에서 방을 못 찾은 횟수(되풀이할수록 길게 쉰다)
         self.prev_ids, self.prev_read = None, 0.0       # 바로 전에 사이트에서 읽은 글(한꺼번에 바뀐 것을 가리는 데 쓴다)
         self.ctl, self.ctl_read = {"notice": 0.0, "pause": 0.0}, 0.0   # 운영 화면의 원격 조종(끝나는 때, 초)과 마지막으로 읽은 때
+        self.ctl_ok = False                             # 켠 뒤 조종 값을 한 번이라도 읽었는지
         self.first = True                               # run 을 켠 뒤 아직 방 공지를 사이트 글과 견주지 않았다
         self.ctl_check = False                          # 운영 화면의 멈춤이 끝나 방 공지를 한 번 봐야 한다
         self.seen_shown = ""                            # 마지막으로 읽은 방 공지 글(띠나 상세보기)
@@ -1223,7 +1224,11 @@ class Bot:
         try:
             d = get()
         except Exception:
+            if not self.ctl_ok and (self.st.get("ctl_paused") or self.st.get("ctl_notice")):
+                far = now.ts + 3600                          # 멈춘 채 다시 켰는데 아직 못 읽음: 읽힐 때까지 멈춤 그대로(1분마다 다시 읽는다)
+                self.ctl = {"notice": far if self.st.get("ctl_notice") else 0.0, "pause": far if self.st.get("ctl_paused") else 0.0}
             return self.ctl
+        self.ctl_ok = True
         d = d or {}
         self.ctl = {"notice": float(d.get("notice_until_ts") or 0), "pause": float(d.get("pause_until_ts") or 0)}
         return self.ctl
@@ -1318,7 +1323,8 @@ class Bot:
         now = Now(self.clock())
         if now.ts < self.hold_until:
             return False
-        return now.ts - self.last_check >= int(self.cfg.get("check_sec", 20)) or digest_due(self.st, now, self.cfg) is True
+        dg = digest_due(self.st, now, self.cfg) is True and max(self.ctl.values()) <= now.ts and not in_quiet(now.hm, self.cfg.get("quiet"))
+        return now.ts - self.last_check >= int(self.cfg.get("check_sec", 20)) or dg
 
     def cycle(self):
         """사이트를 한 번 보고, 바뀐 것은 알림으로, 공지 글이 달라졌으면 공지로. 무엇을 했는지 한 낱말로 돌려준다"""
@@ -1365,12 +1371,13 @@ class Bot:
         cur, ch = diff(st.get("known", {}), posts, now, bool(st.get("init")), bool(getattr(self.site, "last_full", False)))
         if not st.get("init"):
             st.update(known=cur, init=True, alert_done=[])
+            st.pop("bulk_ids", None)
             self.save()
             self.log("처음 켬: 글 %d개를 기억함(알리지 않음)" % len(posts))
             ch = noch()
         # 운영 화면의 원격 조종: 전체 멈춤이면 바뀐 것은 기억만 하고 아무것도 올리지 않는다. 공지 멈춤이면 알림만 올린다.
         # 멈춤이 끝나면 봇 공지를 다시 올려 건다(운영진이 그사이 건 공지 대신)
-        ctl = self.control(now)
+        ctl = self.ctl = self.control(now)              # due() 도 이 값을 본다(멈춤 중에는 매일 다시 올리기 때라도 쉬지 않고 돌지 않게)
         paused, held = ctl["pause"] > now.ts, ctl["notice"] > now.ts
         if paused:
             if not st.get("ctl_paused"):
@@ -1378,6 +1385,7 @@ class Bot:
             if ch["new"]:
                 st["unshared"] = 1                      # 공유하지 않은 새 벙: 다음 공지는 맨 아래 이후 벙 줄까지 지금 글로
             st.update(known=cur, ctl_paused=1, alert_done=[])
+            st.pop("bulk_ids", None)
             self.save()
             self.prev_ids, self.prev_read = {v["id"] for v in posts}, now.ts
             return "paused"
@@ -1406,7 +1414,12 @@ class Bot:
             self.log("새 벙과 지운 벙이 한꺼번에 %d건이라 알리지 않음(글을 한꺼번에 옮기거나 지운 것으로 봄). 공지 글만 새로" % bulk)
             if ch["new"]:
                 st["unshared"] = 1
+            st["bulk_ids"] = sorted(set(st.get("bulk_ids") or []) | new_ids | del_ids)   # 기록에 넣을 때까지(기다림, 실패 뒤에도) 알리지 않게
             ch["new"], ch["del"] = [], []
+        elif st.get("bulk_ids"):
+            skip = set(st["bulk_ids"])                   # 앞서 한꺼번에 바뀐 것으로 본 글
+            ch["new"] = [v for v in ch["new"] if v["id"] not in skip]
+            ch["del"] = [o for o in ch.get("del", []) if o["id"] not in skip]
         alert = alert_items(ch, cfg, st.get("alert_done") or ())   # 지난 차례에 보내다 실패했으면 이미 올린 알림은 빼고
         own = {k for keys, _ in alert if len(keys) == 1 for k in keys} | set(st.get("alert_done") or ())
         if any(alert_key("새 벙", v, "") not in own for v in ch["new"]):
@@ -1440,6 +1453,7 @@ class Bot:
             self.ctl_check = False                      # 멈춤 끝의 방 공지 보기를 했다(사이트 글이 바뀌었으면 올리기 전에 어차피 본다)
         if not alert and not want:
             st.update(known=cur, alert_done=[])         # 제목만 바뀜, 지난 글 정리(보내다 남은 알림도 없다)
+            st.pop("bulk_ids", None)
             st.pop("settle", None)
             self.save()
             return "none"
@@ -1519,6 +1533,7 @@ class Bot:
         t = st.get("notice_try") or {}
         st["notice_built"] = {"text": ntext, "at": float(t["at"]) if t.get("text") == ntext and t.get("at") else now.ts}
         st.pop("unshared", None)
+        st.pop("pre_up", None)
 
     def send_once(self, text):
         """보낸다. 지난번에 같은 글을 보내다 실패했는데 실제로는 올라가 있으면(화면에서 확인) 또 보내지 않는다"""
@@ -1656,14 +1671,14 @@ class Bot:
 
     def _post(self, st, cfg, now, cur, alert, ntext, dg, seen=None):
         alerts = [a if isinstance(a, tuple) else ([a], a) for a in ([alert] if isinstance(alert, str) else (alert or [])) if a]
-        pre_up = False
-        if alerts and ntext and ntext in unsure_texts(st) and hasattr(self.sender, "already_sent"):
+        pre_up = bool(ntext) and st.get("pre_up") == ntext       # 지난 차례에 이 글이 이미 올라가 있는 것을 봤다(그 뒤 알림을 보내다 멈춤)
+        if not pre_up and alerts and ntext and ntext in unsure_texts(st) and hasattr(self.sender, "already_sent"):
             try:
                 pre_up = bool(self.sender.already_sent(self.room, ntext))   # 알림을 보내면 대화가 맨 아래로 내려가 그 글이 안 보일 수 있다
             except Exception:
                 pre_up = False
             if pre_up:
-                drop_unsure(st, ntext)
+                st["pre_up"] = ntext                         # 알림이나 띠 읽기에서 멈춰도 다음 차례에 또 보내지 않게
                 self.save()
                 self.log("지난번 공지 글이 이미 올라가 있어 다시 보내지 않음(알림보다 먼저 봄)")
         if alerts:
@@ -1684,6 +1699,7 @@ class Bot:
                 self.log("알림: " + a.split("\n")[0])
             st["alert_done"] = []
         st.update(known=cur, last_post_at=now.ts)
+        st.pop("bulk_ids", None)
         self.save()
         if not ntext:
             return "alert"
@@ -1738,6 +1754,8 @@ class Bot:
         try:
             if not pre_up:
                 self.send_once(ntext)
+            else:
+                drop_unsure(st, ntext)                       # 이미 올라가 있었다
         except Exception as e:
             wait = self.send_wait(e)
             self.send_log("공지 글 보내기", e, wait)
@@ -3753,6 +3771,11 @@ class AdbSender:
             self.sleep(0.3)
         self.sleep(0.6)
 
+    def newest_card_mine(self, nodes, text):
+        """화면의 가장 아래 '공지가 등록되었습니다' 카드가 이 글의 것(그 뒤에 다른 글이 공지로 걸리지 않았다)"""
+        heads = [h for h, _ in self.card_text_of(nodes)]
+        return bool(heads) and max(heads, key=lambda n: n["b"][1]) in self.cards(nodes, text)
+
     def registered_below(self, nodes, text):
         """맨 아래 화면에서: 이 글(첫 줄)의 '공지가 등록되었습니다' 카드가 봇 글보다 아래(뒤에 생긴 것)에 있는지"""
         cs = self.cards(nodes, text)
@@ -3959,8 +3982,8 @@ class AdbSender:
                 raise
             except KakaoError:                                   # 내린 뒤 방 화면이 아니면(다른 창이 앞에) 방을 한 번 다시 연다
                 nodes = self.to_latest(self.open_room(room))
-            if self.own_bubble(nodes, text) is not None and self.registered_below(nodes, text):
-                return "already"                                 # 지난번 걸기가 실제로는 됐다(이 글의 '공지가 등록되었습니다' 카드가 글 아래): 다시 걸지 않는다
+            if self.own_bubble(nodes, text) is not None and self.registered_below(nodes, text) and self.newest_card_mine(nodes, text):
+                return "already"                                 # 지난번 걸기가 실제로는 됐다(이 글의 '공지가 등록되었습니다' 카드가 글 아래, 그 뒤 다른 공지 카드 없음): 다시 걸지 않는다
             if self.t.get("freeze", True):
                 self.freeze(nodes)
         except RoomUnreachable:
@@ -4038,8 +4061,7 @@ class AdbSender:
         stale = lambda ns: bool(before) and bt(ns) == before    # 띠가 걸기 전 그대로(아직 안 바뀜)
 
         def newest_mine(ns):                                     # 화면의 가장 아래 '공지가 등록되었습니다' 카드가 이 글의 것
-            heads = [h for h, _ in self.card_text_of(ns)]
-            return bool(heads) and max(heads, key=lambda n: n["b"][1]) in self.cards(ns, text)
+            return self.newest_card_mine(ns, text)
         if not wrong(done) or stale(done):                       # 멈춘 화면이라 카드가 아래에 붙어 안 보일 수 있다: 맨 아래로 가서 본다
             if not find(done, cls="EditText"):                   # 확인 창이 막 닫히는 중이면 방 화면을 다시 읽는다
                 self.sleep(0.8)
@@ -6225,7 +6247,7 @@ def cmd_reset(base, state_path):
         return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py reset"
     st = load_state(state_path)
     n = len(st.get("known") or {})
-    for k in ("init", "notice_text", "send_fail_text", "send_unsure", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done", "settle", "notice_fail_band", "unshared"):
+    for k in ("init", "notice_text", "send_fail_text", "send_unsure", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done", "settle", "notice_fail_band", "unshared", "pre_up", "bulk_ids"):
         st.pop(k, None)
     st["known"] = {}
     save_json(state_path, st)
