@@ -33,8 +33,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
   - 운영 화면(ops.html 데이터 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
     그동안 바뀐 것은 기억만)을 누르면 1분 안에 따른다. 멈춤이 끝나면(정한 시간이 지나거나 다시 켜기) 공지 글을 다시 올려 건다.
-  - 멤버: 매일 05:10(members_at) 알릴 방 오른쪽 위 메뉴(서랍)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는 멤버의 닉네임을
-    읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 메뉴 단추, 대화상대 칸의 더보기 단추,
+  - 멤버: 매일 05:10(members_at) 알릴 방 오른쪽 위 세 줄 단추(방 메뉴)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는 멤버의 닉네임을
+    읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의 더보기 단추,
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다.
@@ -89,7 +89,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py voice now       지금 바로 확인하고 꺼져 있으면 다시 켠다(한 번)
   python excer_bot.py voice look      켜 둔 보이스룸(알릴 방)의 띠와 보이스룸 화면 단추 이름을 excer_bot_voice_look.txt 에 적고
                                       클립보드에 담는다(갱신이 안 될 때 원인 찾기. 나가기는 누르지 않고 작게 접는다, 대화 글은 안 들어감)
-  python excer_bot.py members         (tablet) 알릴 방 메뉴(서랍)에서 멤버를 지금 읽어 수와 가린 보기 다섯을 보이고
+  python excer_bot.py members         (tablet) 알릴 방 메뉴(세 줄 단추)에서 멤버를 지금 읽어 수와 가린 보기 다섯을 보이고
                                       excer_bot_members.txt 에 적는다(사이트에 올리지 않음). run 을 먼저 Ctrl+C
   python excer_bot.py members push    지금 읽어 사이트 닉네임 목록에 올린다. run 을 먼저 Ctrl+C
   python excer_bot.py members key     운영 화면 데이터 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
@@ -118,7 +118,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-09.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -140,7 +140,7 @@ DEFAULTS = {
     "notice_max_chars": 400,             # 공지 글 길이 한도(넘치는 벙은 '외 N건'). 카카오톡은 긴 글을 접어 보여 줘 봇이 말풍선을 찾기 어렵다
     "bulk_quiet": 6,                     # 한 차례에 새 벙과 지운 벙이 합쳐 이만큼 이상이면 알리지 않고 공지 글만(한꺼번에 옮기거나 지운 것). 알림이 이만큼 이상이면 한 줄로. 0 이면 끔
     "heartbeat_at": "09:00",             # 매일 이 시각에 시험 방에 '봇 정상' 한 줄(안 오면 태블릿을 본다). 조용한 시간이면 끝난 뒤. "" 이면 끔
-    "members_at": "05:10",               # (tablet) 매일 이 시각에 알릴 방 메뉴(서랍)의 멤버를 읽어 사이트 닉네임 목록에 올린다. "" 이나 "off" 면 안 한다
+    "members_at": "05:10",               # (tablet) 매일 이 시각에 알릴 방 메뉴(세 줄 단추)의 멤버를 읽어 사이트 닉네임 목록에 올린다. "" 이나 "off" 면 안 한다
     "members_key": "",                   # 봇 열쇠(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key 로 넣는다). 멤버 목록만 바꿀 수 있다
     "members": {"min_ratio": 0.9, "min": 20, "rid": ""},   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
     "site": "https://excer-site.vercel.app",
@@ -1888,6 +1888,8 @@ def member_label(s, room=""):
 def member_headish(s):
     """모르는 대화상대 머리로 보이는 글('참여 중인 멤버 8', '구성원 8'): 머리 말과 수만. 닉네임(끝이 수)은 머리 말이 없어 아니다"""
     t = member_name(s)
+    if re.search(r"(^|\s)(남|여)(\s|$)", t):
+        return False                                     # '대화왕 역삼 남 88' 같은 닉네임(성별 칸)은 머리가 아니다(study 에 그대로 나오지 않게)
     return len(t) <= 14 and bool(re.match(r"^[가-힣\s]*(대화|참여|멤버|인원|구성원|참가)[가-힣\s]*[(\[]?\s*\d[\d,]*\s*명?\s*[)\]]?$", t))
 
 
@@ -2840,22 +2842,25 @@ class AdbSender:
         self.tap(n)
 
     def mem_button(self, nodes):
-        """방 오른쪽 위 메뉴(서랍, 세 줄) 단추. study 와 같은 자리(방 칸 위쪽 8% 안의 누를 수 있는 것)의 글자 없는 작은 그림 단추 중
-        맨 위 줄(방 이름 줄)의 것만(그 아래 공지 띠의 닫기 X 는 고르지 않는다). 이름에 메뉴나 서랍이 든 것, 없으면 가장 오른쪽.
-        방 이름 글, 뒤로, 검색, 통화, 보이스룸, 공지, 닫기, 나가기, 설정 같은 것은 고르지 않는다"""
+        """방 오른쪽 위 세 줄(방 메뉴) 단추. study 와 같은 자리(방 칸 위쪽 8% 안의 누를 수 있는 것)의 글자 없는 작은 그림 단추 중
+        맨 위 줄(방 이름 줄)의 것만 본다(그 아래 공지 띠의 X, 핀 고정은 보지 않는다). 이름에 메뉴나 서랍이 든 것, 없으면 그 줄의 가장 오른쪽.
+        가장 오른쪽이 뒤로, 검색, 통화, 보이스룸, 공지, 닫기, 나가기, 설정 같은 것이면 다른 단추로 넘어가지 않고 None(아무것도 안 누른다)"""
         hgt = max(n["b"][3] for n in nodes)
         wid = max(n["b"][2] for n in nodes)
         e = find(nodes, cls="EditText")
         l0 = min(n["b"][0] for n in e) if e else 0
         top = [n for n in nodes if n["click"] and n["b"][1] < hgt * 0.08 and n["b"][0] >= l0 - 60 and not n["text"].strip()
-               and not n["cls"].endswith("EditText") and not self.mem_never(n) and n["b"][2] - n["b"][0] <= max(240, (wid - l0) * 0.25)
-               and not re.search(r"뒤로|검색|통화|보이스|페이스|라이브|프로필|사진|선물|공지|닫기|접기|고정", n["desc"])]
+               and not n["cls"].endswith("EditText") and n["b"][2] - n["b"][0] <= max(240, (wid - l0) * 0.25)]
         if not top:
             return None
         y0 = min(self.center(n)[1] for n in top)            # 맨 위 줄의 가운데
         row = [n for n in top if self.center(n)[1] - y0 <= max(24, (n["b"][3] - n["b"][1]) // 2)]
-        named = [n for n in row if re.search(r"메뉴|서랍", n["desc"])]
-        return max(named or row, key=lambda n: n["b"][2])
+        bad = lambda n: self.mem_never(n) or bool(re.search(r"뒤로|검색|통화|보이스|페이스|라이브|프로필|사진|선물|공지|닫기|접기|고정", n["desc"]))
+        named = [n for n in row if re.search(r"메뉴|서랍", n["desc"]) and not bad(n)]
+        if named:
+            return max(named, key=lambda n: n["b"][2])
+        right = max(row, key=lambda n: n["b"][2])
+        return None if bad(right) else right
 
     @staticmethod
     def mem_under(nodes, i):
@@ -2896,10 +2901,13 @@ class AdbSender:
         out = []
 
         def headed(k):
-            """대화상대 머리를 품은 큰 묶음(머리 글 높이의 세 배 넘게): 머리와 멤버 줄을 한 카드에 담은 판. 풀어야 첫 쪽의 멤버도 읽는다"""
+            """대화상대 머리와 멤버 줄을 한 카드에 담은 묶음(머리 글 높이의 세 배 넘고, 머리, 수, 메뉴 말이 아닌 글이 있음).
+            풀어야 첫 쪽의 멤버도 읽는다. 머리 줄만 높은 것('대화상대' 와 '94' 가 따로)은 풀지 않는다(수를 잃지 않게)"""
             n = nodes[k]
-            hs = [x for x in self.mem_under(nodes, k)[1:] if MEMBER_HEAD_RE.match(member_name(x["text"]))]
-            return bool(hs) and n["b"][3] - n["b"][1] > 3 * max(1, hs[0]["b"][3] - hs[0]["b"][1])
+            under = self.mem_under(nodes, k)[1:]
+            hs = [x for x in under if MEMBER_HEAD_RE.match(member_name(x["text"]))]
+            return bool(hs) and n["b"][3] - n["b"][1] > 3 * max(1, hs[0]["b"][3] - hs[0]["b"][1]) and \
+                any(x["text"].strip() and not member_label(x["text"]) for x in under)
 
         def sub(i, depth):
             for k in nodes[i]["kids"]:
@@ -2914,8 +2922,9 @@ class AdbSender:
 
     @staticmethod
     def mem_head(ns):
-        """대화상대 칸 머리 줄이면 (머리 이름, 수 또는 None), 아니면 None. 수는 같은 글('대화상대 37')이나 옆 글('37')에서"""
-        labs = [member_name(x) for n in ns for x in (n["text"], n["desc"]) if x.strip()]
+        """대화상대 칸 머리 줄이면 (머리 이름, 수 또는 None), 아니면 None. 수는 같은 글('대화상대 37')이나 옆 글('37')에서.
+        컴포즈처럼 한 글로 묶인 '대화상대, 94' 는 쉼표로 나눠 본다"""
+        labs = [member_name(p) for n in ns for x in (n["text"], n["desc"]) for p in re.split(r",\s+", x) if p.strip()]   # '1,234' 는 나누지 않는다
         for t in labs:
             m = MEMBER_HEAD_RE.match(t)
             if m:
@@ -2930,6 +2939,9 @@ class AdbSender:
         if any(m in MEMBER_SELF for m in marks) or any(re.match(r"^[(\[]\s*(나|본인|me)\s*[)\]]", n["text"].strip(), re.I) for n in ns):
             return "self", []                                # '나' 표시가 따로 있거나 이름 앞에 '(나)' 가 붙은 줄
         c = sorted([n for n in ns if n["text"].strip() and not member_label(n["text"], room)], key=lambda n: (n["b"][1], n["b"][0]))
+        r = ns[0] if ns else None
+        if not c and r and r["click"] and not r["text"].strip() and r["desc"].strip() and not member_label(re.split(r",\s+", r["desc"])[0], room):
+            c = [r]                                          # 누르는 줄 하나가 이름을 desc 로만 가진 판(컴포즈가 '이름, 방장' 으로 묶은 줄)
         return ("member" if c else "label"), c
 
     @staticmethod
@@ -2957,7 +2969,9 @@ class AdbSender:
             st["rid"], picks = "", cands                     # 정한 id 가 이 화면에 없다(다른 모양): 줄의 첫 글로
         out = []
         for p in picks:
-            nm = re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", member_name(p[0]["text"])) if p else ""   # 묶인 글 끝의 표시는 뗀다
+            nm = re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", member_name(p[0]["text"] or p[0]["desc"])) if p else ""   # 묶인 글 끝의 표시는 뗀다
+            if p and self.mem_never(p[0]) and not re.search(r"\d", nm):
+                continue                                     # 목록 아래의 '오픈채팅방 나가기', '채팅방 신고하기' 같은 줄(닉네임에는 보통 출생 연도가 있다)
             if nm and len(nm) <= 30 and not member_isbot(nm):
                 out.append(nm)
         return out
@@ -2970,6 +2984,11 @@ class AdbSender:
         for i, (_, ns) in enumerate(rows):
             h = self.mem_head(ns)                            # 수가 없는 머리('대화상대')는 누를 수 없는 것만(누르는 '멤버' 메뉴와 가르려고)
             if h and (h[1] or not any(x["click"] for x in ns)) and st["head"] in (None, h[0]):
+                if h[1] is None:                             # '대화상대' 와 '94' 가 따로 줄로 갈린 판(컴포즈): 같은 높이의 수만 있는 글
+                    r0 = rows[i][0]
+                    cy = (r0["b"][1] + r0["b"][3]) // 2
+                    same = [x for r, xs in rows if r is not r0 and abs((r["b"][1] + r["b"][3]) // 2 - cy) <= max(24, (r0["b"][3] - r0["b"][1]) // 2) for x in xs]
+                    h = self.mem_head(ns + same) or h
                 st["head"], st["n"], hi = h[0], st["n"] or h[1], i
                 break
         st["head_vis"] = hi is not None
@@ -3083,6 +3102,7 @@ class AdbSender:
             box = self.mem_box(nodes, box, area)
             if box is None:
                 raise KakaoError("멤버 목록 칸이 사라짐")
+            self.mem_keep(nodes, box)
             return nodes, box
         page, _ = look(nodes, box, 1)
         k, step, idle = 1, 0.5, 0
@@ -3138,40 +3158,48 @@ class AdbSender:
             btn = self.mem_button(nodes)
             if not btn:
                 self.save_diag()
-                raise KakaoError("방 오른쪽 위 메뉴(서랍) 단추를 찾지 못함" + self.diag_note())
+                raise KakaoError("방 오른쪽 위 세 줄 단추(방 메뉴)를 찾지 못함" + self.diag_note())
+            room_n = self.mem_room_count(nodes, room)       # 방 이름 옆의 수('94'): 대화상대 머리에서 수를 못 읽으면 쓴다
             seen = {(n["b"], n["text"], n["desc"]) for n in nodes}
             pre = {k for k in seen if k[1] or k[2]}
-            self.mem_left = {"pre": pre, "marks": set()}
+            self.mem_left = {"pre": pre, "marks": set(), "btn": (btn["b"], btn["desc"]), "boxes": set()}
             self.mem_tap(btn)
             depth = 1                                        # 누른 순간부터 열렸다고 본다(바로 뒤 화면 읽기가 실패해도 닫게)
-            drawer = self.wait_change(nodes, tries=3)
-            now_ = {(n["b"], n["text"], n["desc"]) for n in drawer}
-            side = [k for k in pre if (k[0][0] + k[0][2]) // 2 < l0 - 60]   # 태블릿 왼쪽 채팅 목록의 글
-            full = sum(1 for k in side if k in now_) * 2 < len(side)   # 왼쪽 목록이 가려졌다: 방 정보가 화면 전체로 열렸다(새 카카오톡)
-            new = [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and (full or self.center(n)[0] >= l0 - 60)]
+
+            def opened():
+                drawer = self.mem_settle(self.wait_change(nodes, tries=3))   # 밀려 들어오는 중인 화면으로 자리를 정하지 않게 멈출 때까지
+                now_ = {(n["b"], n["text"], n["desc"]) for n in drawer}
+                side = [k for k in pre if (k[0][0] + k[0][2]) // 2 < l0 - 60]   # 태블릿 왼쪽 채팅 목록의 글
+                full = sum(1 for k in side if k in now_) * 2 < len(side)   # 왼쪽 목록이 가려졌다: 방 정보가 화면 전체로 열렸다(새 카카오톡)
+                return drawer, [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and (full or self.center(n)[0] >= l0 - 60)]
+            drawer, new = opened()
+            if not new:
+                drawer, new = opened()                       # 늦게 뜨는 기기: 한 번 더 기다린다
             if not new:
                 self.save_diag()
-                raise KakaoError("메뉴 단추를 눌렀는데 서랍이 열리지 않음" + self.diag_note())
-            marks = mark(drawer, seen)
+                raise KakaoError("세 줄 단추를 눌렀는데 방 메뉴가 열리지 않음" + self.diag_note())
+            marks = mark(new, seen)                          # 새로 연 칸의 글만(왼쪽 채팅 목록이나 뒤의 방에서 바뀐 글은 넣지 않는다)
             self.mem_left["marks"] = set(marks)
             area = bbox(new)
             box = self.mem_list(drawer, area)
             if box is None:
-                note("서랍(새로 나온 것)", drawer, before=nodes)
+                note("방 메뉴(새로 나온 것)", drawer, before=nodes)
                 self.save_diag()
-                raise KakaoError("서랍에서 목록 칸을 찾지 못함" + self.diag_note())
-            cur, box = self.mem_read(drawer, box, area, st, res, limit, note, "서랍", nodes)
+                raise KakaoError("방 메뉴에서 목록 칸을 찾지 못함" + self.diag_note())
+            self.mem_keep(drawer, box)
+            cur, box = self.mem_read(drawer, box, area, st, res, limit, note, "방 메뉴", nodes)
             if st["more"] is not None:
                 st["more_done"] = True
                 self.mem_tap(st["more"])
-                scr = self.wait_change(cur, tries=3)
+                depth = 2                                    # 누른 순간부터(바로 뒤 화면 읽기가 실패해도 두 번 닫게)
+                scr = self.mem_settle(self.wait_change(cur, tries=3))
                 if [(n["b"], n["text"]) for n in scr] == [(n["b"], n["text"]) for n in cur]:
-                    st["more"] = None                        # 눌러도 그대로: 서랍을 이어 읽는다
-                    self.mem_read(cur, box, area, st, res, limit, note, "서랍 이어서", nodes)
+                    st["more"], depth = None, 1              # 눌러도 그대로: 방 메뉴를 이어 읽는다
+                    self.mem_read(cur, box, area, st, res, limit, note, "방 메뉴 이어서", nodes)
                 else:
-                    depth, res["more"] = 2, True
+                    res["more"] = True
                     marks |= mark(scr, {(n["b"], n["text"], n["desc"]) for n in cur})
-                    self.mem_left["marks"] = set(marks)
+                    self.mem_left["marks"] |= marks
                     st.update(inmore=True, rid=fixed, more=None)
                     h = self.mem_head(scr)                   # 전체 멤버 화면 위쪽 띠의 '대화상대 37'
                     if h and h[1]:
@@ -3181,49 +3209,99 @@ class AdbSender:
                     if box2 is None:
                         note("더보기를 누른 뒤(목록 칸 못 찾음)", scr, before=cur)
                     else:
+                        self.mem_keep(scr, box2)
                         self.mem_read(scr, box2, area2, st, res, min(120, res["swipes"] + more_limit), note, "전체", cur)
-                    self.key(4)                              # 서랍으로
+                    self.key(4)                              # 방 메뉴로
                     self.sleep(0.6)
                     depth = 1
-            res.update(n=st["n"], head=st["head"] or "", rid=st["rid"])
+            res.update(n=st["n"] or room_n, head=st["head"] or "", rid=st["rid"])
             return res
         finally:
-            self.mem_close(depth, marks, (self.mem_left or {}).get("pre"))
+            self.mem_close(depth)
 
-    def mem_open(self, nodes, marks, pre):
-        """서랍이나 전체 멤버 화면이 아직 떠 있는지. 그 화면에만 있던 글(marks)이 보이면 떠 있다. marks 를 모르면(열자마자 실패)
-        열기 전 방 화면(pre)에 없던 글이 방 칸에 여섯 넘게 있으면 떠 있다고 본다(새 대화 글이 많아도 그렇게 보지만 뒤로 한 번이면 그만)"""
+    def mem_settle(self, nodes, tries=2):
+        """화면이 멈출 때까지(두 번 읽은 것이 같을 때까지, tries 번까지) 조금 더 읽는다. 넘어가는 중인 화면을 보고 정하지 않게"""
+        for _ in range(tries):
+            self.sleep(0.5)
+            nxt = self.dump()
+            if [(n["b"], n["text"]) for n in nxt] == [(n["b"], n["text"]) for n in nodes]:
+                return nxt
+            nodes = nxt
+        return nodes
+
+    def mem_keep(self, nodes, box):
+        """닫혔는지 볼 표시를 더한다: 읽는 목록 칸(종류, id, 자리)과 그 안의 글. 첫 화면이 넘어가는 중이었어도 마지막 화면을 알아보게"""
+        if self.mem_left is None:
+            return
+        self.mem_left.setdefault("boxes", set()).add((box["cls"], box["rid"], box["b"]))
+        self.mem_left.setdefault("marks", set()).update((n["b"], n["text"], n["desc"]) for n in self.mem_under(nodes, box["i"]) if n["text"] or n["desc"])
+
+    def mem_room_count(self, nodes, room):
+        """방 위쪽 줄에서 방 이름 옆의 수('94', '(94)'). 없으면 None"""
+        hgt = max(n["b"][3] for n in nodes)
+        ts = [n for n in nodes if n["text"].strip() == room and n["b"][1] < hgt * 0.12]
+        for t in ts:
+            cy, h = (t["b"][1] + t["b"][3]) // 2, t["b"][3] - t["b"][1]
+            for n in nodes:
+                if n is not t and n["b"][0] >= t["b"][0] and MEMBER_COUNT_RE.match(n["text"].strip()) and abs((n["b"][1] + n["b"][3]) // 2 - cy) <= max(12, h):
+                    v = int(re.sub(r"\D", "", n["text"]) or 0)
+                    if v >= 2:
+                        return v
+        return None
+
+    def mem_open(self, nodes, left=None):
+        """방 메뉴(서랍, 방 정보)나 전체 멤버 화면이 아직 떠 있는지(left: mem_left). (1) 읽던 목록 칸(종류, id, 자리)이 그대로 있으면 떠 있다.
+        (2) 카카오톡인데 방도 채팅 목록도 아니면(입력 칸, 채팅 탭, 누른 세 줄 단추가 없음) 떠 있다고 본다(화면 전체로 열리는 방 정보).
+        (3) 그 화면에만 있던 글(marks)이 셋(적으면 모두) 보이면 떠 있다. marks 를 모르면(열자마자 실패) 열기 전 방 화면(pre)에 없던 글이
+        방 칸에 여섯 넘게 있으면 떠 있다고 본다(새 대화 글이 많아도 그렇게 보지만 뒤로 한 번이면 그만)"""
+        left = left or {}
+        boxes = left.get("boxes") or set()
+        if boxes and any(n["kids"] and (n["cls"], n["rid"], n["b"]) in boxes for n in nodes):
+            return True
+        btn = left.get("btn")
+        if self.on_kakao(nodes) and not find(nodes, cls="EditText") and self.chat_tab(nodes) is None and \
+                not (btn and any((n["b"], n["desc"]) == btn for n in nodes)):
+            return True
         cur = {(n["b"], n["text"], n["desc"]) for n in nodes if n["text"] or n["desc"]}
+        marks, pre = left.get("marks") or set(), left.get("pre")
         if marks:
-            return bool(marks & cur)
+            return len(marks & cur) >= min(3, len(marks))
         if not pre or not find(nodes, cls="EditText"):
-            return False                                     # 방 화면이 아니다(목록으로 나갔으면 서랍도 없다)
+            return False                                     # 방 화면이 아니다(목록으로 나갔으면 방 메뉴도 없다)
         return len(cur - pre) > 6
 
-    def mem_close(self, depth, marks, pre=None):
-        """연 화면(전체 멤버, 서랍)을 뒤로 키로 닫는다. 누를 때마다 먼저 보고 떠 있을 때만 누른다(depth 에 두 번 더까지).
+    def mem_close(self, depth):
+        """연 화면(전체 멤버, 방 메뉴)을 뒤로 키로 닫는다. 누를 때마다 먼저 보고 떠 있을 때만 누른다(depth 에 두 번 더까지).
+        누른 뒤에는 화면이 바뀌고 멈출 때까지 보고 다음을 정한다(느린 기기에서 두 번 눌러 방까지 나가지 않게).
         닫혔다고 본 뒤에야 mem_left 를 지운다. adb 가 끊겨 못 보면 남겨 두어 다음 open_room 이 먼저 닫게 한다
-        (서랍이 남아 있으면 다음 보내기가 입력 칸 자리를 눌러 서랍의 아래 띠(나가기)를 누를 수 있다)"""
+        (방 메뉴가 남아 있으면 다음 보내기가 입력 칸 자리를 눌러 그 화면의 다른 것을 누를 수 있다)"""
         if not depth:
             self.mem_left = None
             return
+        left, ns = self.mem_left or {}, None
         for i in range(depth + 2):
+            if ns is None:
+                try:
+                    ns = self.dump()
+                except KakaoError:
+                    ns = None                                # 화면을 못 읽으면 처음 depth 번은 그냥 누른다(adb 가 살아 있으면 닫힌다)
             try:
-                ns = self.dump()
-            except KakaoError:
-                ns = None                                    # 화면을 못 읽으면 처음 depth 번은 그냥 누른다(adb 가 살아 있으면 닫힌다)
-            try:
-                if ns is not None and not self.mem_open(ns, marks, pre):
+                if ns is not None and not self.mem_open(ns, left):
                     self.mem_left = None
                     return
                 if ns is None and i >= depth:
                     return                                   # 못 본 채로 더 누르지 않는다(mem_left 를 남겨 다음 open_room 이 닫게)
                 self.key(4)
-                self.sleep(0.6)
             except KakaoError:
                 return
+            try:
+                ns = self.mem_settle(self.wait_change(ns, tries=2), tries=1) if ns is not None else None
+            except KakaoError:
+                ns = None
+            if ns is None:
+                self.sleep(0.6)
         try:
-            if not self.mem_open(self.dump(), marks, pre):
+            if not self.mem_open(self.dump(), left):
                 self.mem_left = None
         except KakaoError:
             pass
@@ -3232,14 +3310,14 @@ class AdbSender:
         """지난 멤버 읽기가 닫지 못한 서랍을 닫는다(open_room 이 방을 쓰기 전에). 두 번 눌러도 남으면 멈춘다(입력 칸 자리를 누르지 않게)"""
         left = self.mem_left or {}
         for _ in range(3):
-            if not self.mem_open(nodes, left.get("marks") or set(), left.get("pre")):
+            if not self.mem_open(nodes, left):
                 self.mem_left = None
                 return nodes
             self.key(4)
-            self.sleep(0.6)
-            nodes = self.dump()
-        self.save_diag(nodes)
-        raise KakaoError("멤버 읽기 뒤 방 메뉴(서랍)가 닫히지 않음. 태블릿에서 서랍을 닫아 주세요" + self.diag_note())
+            nodes = self.mem_settle(self.wait_change(nodes, tries=2), tries=1)
+        self.mem_snap("마지막 화면(멤버 읽기 뒤 닫히지 않음)", self.mem_mask(nodes, before=[]))   # 이름은 가려 적는다
+        self.save_diag()
+        raise KakaoError("멤버 읽기 뒤 방 메뉴가 닫히지 않음. 태블릿에서 뒤로 가기로 방 메뉴를 닫아 주세요" + self.diag_note())
 
     def read_members(self, room, cfg_members=None):
         """알릴 방 메뉴(서랍)의 대화상대 칸에서 멤버 닉네임을 읽는다(봇 자신 빼고, 처음 본 차례, 사이트처럼 정리).
@@ -3252,7 +3330,7 @@ class AdbSender:
         ratio, least = float(m.get("min_ratio") or 0.9), int(m.get("min") or 20)
         why = ""
         if not res["head"]:
-            why = "방 메뉴(서랍)에서 대화상대 칸을 찾지 못함"
+            why = "방 메뉴에서 대화상대 칸을 찾지 못함"
         elif n and len(names) < (n - 1) * ratio:
             why = "멤버를 다 읽지 못함(대화상대 %d명 중 %d명)" % (n, len(names))
         elif n and len(names) > n + max(3, n // 10):
@@ -4545,7 +4623,7 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     if not isinstance(sender, AdbSender):
         raise SystemExit("members 는 tablet 방식에서 씁니다.")
     if sub == "study":
-        print("알릴 방(%s) 메뉴(서랍)의 대화상대 칸 화면을 적습니다(멤버 이름은 가림, 누르는 것은 메뉴 단추와 더보기뿐). 1~2분 걸립니다. 태블릿을 만지지 마세요." % room)
+        print("알릴 방(%s) 방 메뉴(오른쪽 위 세 줄 단추)의 대화상대 칸 화면을 적습니다(멤버 이름은 가림, 누르는 것은 세 줄 단추와 더보기뿐). 1~2분 걸립니다. 태블릿을 만지지 마세요." % room)
         try:
             txt = sender.members_study(room, cfg.get("members") or {})
         finally:
@@ -4559,7 +4637,7 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
         except KakaoError:
             print("다 적었습니다: %s (cat 으로 보세요)" % path)
         return
-    print("알릴 방(%s) 메뉴(서랍)에서 멤버를 읽습니다. 1~5분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요." % room)
+    print("알릴 방(%s) 방 메뉴(오른쪽 위 세 줄 단추)에서 멤버를 읽습니다. 1~5분 걸립니다. 끝날 때까지 태블릿을 만지지 마세요." % room)
     try:
         names = sender.read_members(room, cfg.get("members") or {})
     finally:
