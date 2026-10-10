@@ -37,7 +37,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의 더보기 단추,
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다.
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾으면 1, 2, 5, 10, 15분 간격으로 다시 본다.
 가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
@@ -47,7 +47,8 @@ tablet 준비(태블릿 하나로)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect (포트는 스스로 찾는다. 못 찾으면 무선 디버깅 화면의 'IP 주소 및 포트' 의 포트를 적는다).
     connect 는 고정 포트(5555)도 열어 두어 무선 디버깅이 저절로 꺼져도 붙는다(처음 한 번 화면의 허용 창). 재부팅하면 무선 디버깅을 켜고 connect 만 다시.
-  - 화면 잠금 없음, 자동 회전 끔, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
+  - 화면 잠금 없음, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
+    화면 방향은 봇이 카카오톡을 띄울 때마다 자동 회전을 끄고 가로로 고정한다(앱이 화면을 돌리는 것도 막는다. rotate 로 바꾼다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 와이파이 절전을 끈다(설정 > 연결 > Wi-Fi > 고급 또는 인텔리전트 Wi-Fi 에서 절전 모드 끔, 배터리 > 절전 예외 앱에 Termux 와 카카오톡).
     화면이 꺼진 채 몇 시간씩 망이 끊기면 그동안 공지가 멈추고 보이스룸도 끊긴다. 봇은 3분 넘게 응답이 없고 다른 주소도 안 열리면
@@ -97,6 +98,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py members study   대화상대 칸 화면을 단계마다 excer_bot_members_study.txt 에 적고 클립보드에 담는다
                                       (멤버 이름은 가린다. 읽기가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
   python excer_bot.py members at 05:10   매일 멤버를 읽어 올리는 시각. members at off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
+                                      바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
@@ -118,7 +121,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -150,7 +153,8 @@ DEFAULTS = {
     "pc": {"window": [40, 40, 460, 780], "input_dy": 80, "bubble": None, "menu_copy": None, "menu_notice": None, "confirm": None},
     "android": {"serial": "", "package": "com.kakao.talk"},
     "tablet": {"freeze": True,                 # 보낸 뒤 대화를 살짝 위로 올려 자동으로 내려가지 않게(바쁜 방에서 봇 글이 밀리지 않게)
-              "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux"},
+              "serial": "", "package": "com.kakao.talk", "adb": "adb", "clip": "termux-clipboard-set", "return_to": "com.termux",
+              "rotation": "landscape"},        # 화면 방향: landscape(가로), portrait(세로), off(건드리지 않음). 카카오톡을 띄울 때마다 자동 회전을 끄고 이 방향으로 고정
     # 보이스룸 지키기(docs/BOT_VOICE_ROOM.md): run 이 끊김을 알아채 기록하고 다시 켠다. room 이 비면 알릴 방
     "voice": {"on": False, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫",   # 봇이 보이스룸을 만들 때 쓰는 제목(운영자가 정함)
               "check_sec": 60, "notif_word": "보이스룸",
@@ -170,6 +174,13 @@ class NotFound(KakaoError):
 
 class RoomUnreachable(KakaoError):
     """방까지 가지 못함(adb 끊김, 화면 읽기, 카카오톡). 공지 걸기 실패로 세지 않고 보내기 실패처럼 1분 뒤 다시"""
+
+
+class RoomNotFound(RoomUnreachable):
+    """채팅 목록을 끝까지 훑어도 방이 없음(방 이름이 바뀜 등). 되풀이할수록 길게 쉰다(ROOM_MISS_WAIT)"""
+
+
+ROOM_MISS_WAIT = (60, 120, 300, 600, 900)               # 방을 못 찾은 뒤 다시 하기까지(초): 1분마다 목록을 헛되이 훑지 않게
 
 
 # ── 설정, 기록, 남기기 ──
@@ -898,6 +909,7 @@ class Bot:
         self.net_fails = 0                              # 그 가운데 응답 자체가 없던 실패(망, 시간 초과)가 이어진 횟수
         self.net_kick_at = 0.0                          # 마지막으로 와이파이를 껐다 켠 때
         self.send_fails = 0                             # 보내기가 연속으로 실패한 횟수(adb 안 붙음, 카카오톡 화면 다름)
+        self.room_miss = 0                              # 그 가운데 채팅 목록에서 방을 못 찾은 횟수(되풀이할수록 길게 쉰다)
         self.prev_ids, self.prev_read = None, 0.0       # 바로 전에 사이트에서 읽은 글(한꺼번에 바뀐 것을 가리는 데 쓴다)
         self.ctl, self.ctl_read = {"notice": 0.0, "pause": 0.0}, 0.0   # 운영 화면의 원격 조종(끝나는 때, 초)과 마지막으로 읽은 때
 
@@ -1133,13 +1145,23 @@ class Bot:
             self.save()
             raise
         self.st["send_fail_text"] = ""
+        self.room_miss = 0
         if self.send_fails:
             self.log("보내기 다시 됨(%d번 실패 뒤)" % self.send_fails)
             self.send_fails = 0
 
-    def send_log(self, what, e):
-        """보내기 실패는 처음과 10번째마다만 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게)"""
-        if self.send_fails == 1 or self.send_fails % 10 == 0:
+    def send_wait(self, e):
+        """보내기 실패 뒤 쉬는 시간(초). 채팅 목록에서 방을 못 찾는 실패는 되풀이할수록 길게(1, 2, 5, 10, 15분), 나머지는 1분"""
+        if isinstance(e, RoomNotFound):
+            self.room_miss += 1
+            return ROOM_MISS_WAIT[min(self.room_miss, len(ROOM_MISS_WAIT)) - 1]
+        return 60
+
+    def send_log(self, what, e, wait=60):
+        """보내기 실패는 처음과 10번째마다만 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게). 길게 쉬는 실패(방을 못 찾음)는 매번"""
+        if wait > 60:
+            self.log("%s 실패(%d번째, %d분 뒤 다시): %s" % (what, self.send_fails, wait // 60, e))
+        elif self.send_fails == 1 or self.send_fails % 10 == 0:
             self.log("%s 실패%s: %s" % (what, "(%d번째, 붙을 때까지 1분마다 다시)" % self.send_fails if self.send_fails > 1 else "(다음 차례에 다시)", e))
 
     def _post(self, st, cfg, now, cur, alert, ntext, dg):
@@ -1147,8 +1169,9 @@ class Bot:
             try:
                 self.send_once(alert)
             except Exception as e:
-                self.send_log("알림 보내기", e)
-                self.hold_until = self.ts() + 60
+                wait = self.send_wait(e)
+                self.send_log("알림 보내기", e, wait)
+                self.hold_until = self.ts() + wait
                 return "send-fail"
             self.log("알림: " + alert.split("\n")[0])
         st.update(known=cur, last_post_at=now.ts)
@@ -1164,14 +1187,16 @@ class Bot:
                 self.sender.pin_again(self.room, ntext)
             except RoomUnreachable as e:                    # 방까지 못 감(adb 끊김 등): 공지 걸기 실패로 세지 않고 1분 뒤 다시
                 self.send_fails += 1
-                self.send_log("공지 다시 걸기", e)
-                self.hold_until = self.ts() + 60
+                wait = self.send_wait(e)
+                self.send_log("공지 다시 걸기", e, wait)
+                self.hold_until = self.ts() + wait
                 return "send-fail"
             except Exception as e:
                 if not (isinstance(e, NotFound) and sends < 2):
                     return self._notice_failed(st, now, ntext, e)
                 self.log("이미 올린 공지 글을 찾지 못해 한 번 더 올림: %s" % e)
             else:
+                self.room_miss = 0
                 if self.send_fails:
                     self.log("다시 됨(%d번 실패 뒤)" % self.send_fails)
                     self.send_fails = 0
@@ -1182,8 +1207,9 @@ class Bot:
         try:
             self.send_once(ntext)
         except Exception as e:
-            self.send_log("공지 글 보내기", e)
-            self.hold_until = self.ts() + 60
+            wait = self.send_wait(e)
+            self.send_log("공지 글 보내기", e, wait)
+            self.hold_until = self.ts() + wait
             return "send-fail"
         st.update(last_post_at=now.ts, last_post_ymd=now.ymd, notice_sends=sends + 1 if again else 1)
         if dg:
@@ -1442,6 +1468,56 @@ class PcSender:
         else:
             self.pc["confirm"] = None
         return dict(self.pc)
+
+
+# ── 화면 방향: 자동 회전을 끄고 한 방향으로 고정(카카오톡 화면 모양이 바뀌면 자리와 목록이 흔들린다) ──
+ROT_WORDS = {"landscape": "landscape", "가로": "landscape", "portrait": "portrait", "세로": "portrait", "off": "off", "끔": "off"}
+ROT_NAME = {"landscape": "가로", "portrait": "세로"}
+ROT_CMD = ("dumpsys window displays 2>/dev/null | grep -E 'mRotation=|mLandscapeRotation=|mPortraitRotation=|mUserRotationMode=|mFixedToUserRotation=| init=| cur=' | head -40; "
+           "echo ACC=$(settings get system accelerometer_rotation 2>/dev/null) USR=$(settings get system user_rotation 2>/dev/null); true")
+
+
+def rot_num(s):
+    """'ROTATION_90' 이나 '1' 을 0~3 으로. 모르면 None"""
+    m = re.match(r"\s*(ROTATION_)?(\d+)\b", s or "")
+    if not m:
+        return None
+    v = int(m.group(2))
+    if m.group(1):
+        return v // 90 % 4
+    return v if 0 <= v <= 3 else None
+
+
+def rot_info(out):
+    """ROT_CMD 출력에서: 지금 회전(rot), 가로와 세로가 되는 회전 값(land, port), 지금 모양(shape), 자동 회전(acc), 고정 회전(usr),
+    앱이 돌리지 못하게 막혔는지(fixed). 모르는 값은 None"""
+    def g(pat):
+        m = re.search(pat, out or "")
+        return m.group(1) if m else None
+    land = [x for x in (rot_num(g(r"\bmLandscapeRotation=(\S+)")), rot_num(g(r"\bmSeascapeRotation=(\S+)"))) if x is not None]
+    port = [x for x in (rot_num(g(r"\bmPortraitRotation=(\S+)")), rot_num(g(r"\bmUpsideDownRotation=(\S+)"))) if x is not None]
+    nat, cur = re.search(r"\binit=(\d+)x(\d+)", out or ""), re.search(r"\bcur=(\d+)x(\d+)", out or "")
+    if (not land or not port) and nat:                   # 회전 값 줄이 없는 판: 처음 크기가 가로로 길면 0 이 가로
+        land, port = ([0, 2], [3, 1]) if int(nat.group(1)) > int(nat.group(2)) else ([1, 3], [0, 2])
+    rot = rot_num(g(r"\bmRotation=(\S+)"))
+    shape = None
+    if cur:
+        shape = "landscape" if int(cur.group(1)) > int(cur.group(2)) else "portrait"
+    elif rot is not None and land:
+        shape = "landscape" if rot in land else "portrait"
+    acc = g(r"\bACC=(\S*)")
+    return {"rot": rot, "land": land, "port": port, "shape": shape, "acc": acc if acc not in ("", "null") else None,
+            "usr": rot_num(g(r"\bUSR=(\S*)")), "fixed": (g(r"\bmFixedToUserRotation=(\S+)") or "").lower() == "true"}
+
+
+def same_room(t, room):
+    """방 이름이 같은가: 보이지 않는 글자와 공백 차이는 보지 않고, 앞뒤에 그림 글자(보이스룸 표시 같은)만 붙은 것도 같다.
+    글자나 숫자가 더 붙은 다른 방('... 시험' 같은)은 아니다"""
+    a, b = norm_txt(t), norm_txt(room)
+    if not a or not b:
+        return False
+    i = a.find(b)
+    return i >= 0 and not re.search(r"\w", a[:i] + a[i + len(b):])
 
 
 # ── 카카오톡 조작: 태블릿 하나로(Termux 안에서 adb 로 같은 기기에) ──
@@ -1948,6 +2024,8 @@ class AdbSender:
         self.trace = []                                          # 안 될 때 원인을 보려고 지나온 화면을 모아 둔다
         self.fast = None                                         # 화면 읽기 도우미: None 아직 모름, True 됨, False 이 기기에서 안 됨(기본 방식만)
         self.fast_fail = 0
+        self.vcfg = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))   # 보이스룸 제목(띠와 작은 창 글자를 공지나 보이스룸 화면으로 보지 않게)
+        self.rot_fixed, self.rot_note, self.shape, self.turn_note = False, 0.0, None, 0.0   # 화면 방향 고정, 지난번 화면 모양(가로나 세로, 넓이)
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -2140,7 +2218,32 @@ class AdbSender:
         return (nodes, "") if nodes else (None, "빈 화면")
 
     def dump(self):
-        """지금 화면의 요소들. 도우미로 먼저 읽고(바빠도 읽힘), 안 되면 기본 uiautomator dump 로(화면이 1초 멈출 때까지 기다림)"""
+        """지금 화면의 요소들. 화면이 막 가로와 세로로 바뀌었으면(돌아가는 중) 잠깐 기다렸다 다시 읽는다"""
+        nodes = self._dump()
+        sh = self.shape_of(nodes)
+        if sh and self.shape and sh[0] != self.shape[0] and sh[1] >= self.shape[1] * 0.6:
+            if time.time() - self.turn_note >= 600:              # 같은 줄이 쌓이지 않게 10분에 한 번만 적는다
+                self.turn_note = time.time()
+                self.log("화면이 %s로 바뀜. 다 돌 때까지 기다렸다 다시 읽음" % ROT_NAME[sh[0]])
+            self.sleep(1.5)
+            nodes = self._dump()
+            sh = self.shape_of(nodes) or sh
+        if sh:
+            self.shape = sh
+        return nodes
+
+    @staticmethod
+    def shape_of(nodes):
+        """화면 전체를 덮는 창이면 (가로나 세로, 넓이, 폭, 높이). 작은 창(메뉴, 확인 창)이면 None"""
+        if not nodes:
+            return None
+        l, t, r, b = nodes[0]["b"]
+        if l > 10 or t > 10 or r - l < 200 or b - t < 200:
+            return None
+        return ("landscape" if r - l > b - t else "portrait", (r - l) * (b - t), r - l, b - t)
+
+    def _dump(self):
+        """도우미로 먼저 읽고(바빠도 읽힘), 안 되면 기본 uiautomator dump 로(화면이 1초 멈출 때까지 기다림)"""
         if self.fast is None:
             self.fast = self.install_dumper() or False
         last = ""
@@ -2216,9 +2319,66 @@ class AdbSender:
         c = find(k, desc="채팅") or find(k, text="채팅") or [n for n in k if re.match(r"^채팅(\s*탭)?\s*(,|$)", n["desc"])]
         return c[0] if c else None
 
+    # 화면 방향
+    def rot_want(self):
+        return ROT_WORDS.get(str(self.t.get("rotation") or "landscape").strip().lower(), "landscape")
+
+    def rot_read(self):
+        return rot_info(self.sh(ROT_CMD, timeout=20))
+
+    def lock_rotation(self):
+        """자동 회전을 끄고 정한 방향(rotation: 가로나 세로)으로 고정한다. 앱이 화면을 돌리는 것도 막는다(wm fixed-to-user-rotation).
+        카카오톡을 띄울 때마다 본다(자동 회전이 저절로 다시 켜져도 봇이 읽는 화면 모양이 바뀌지 않게).
+        고친 것이 있으면 무엇이었는지 한 줄, 그대로면 ''. 같은 쪽 두 회전(0 과 180 처럼)은 지금 것을 그대로 둔다(화면이 뒤집히지 않게)"""
+        want = self.rot_want()
+        if want == "off":
+            return ""
+        info = self.rot_read()
+        good = info["land"] if want == "landscape" else info["port"]
+        if not good:
+            return ""                                            # 이 기기의 회전 값을 읽지 못함: 건드리지 않는다
+        cur = info["rot"]
+        target = cur if cur in good else info["usr"] if info["usr"] in good else good[0]
+        fixed = self.rot_fixed or info["fixed"]
+        if info["acc"] == "0" and info["usr"] == target and cur in (None, target) and fixed:
+            return ""
+        what = []
+        if info["acc"] not in ("0", None):
+            what.append("자동 회전이 켜져 있었음")
+        if info["shape"] and info["shape"] != want:
+            what.append("%s였음" % ROT_NAME["portrait" if want == "landscape" else "landscape"])
+        cmd = "settings put system accelerometer_rotation 0; settings put system user_rotation %d; wm user-rotation lock %d >/dev/null 2>&1; " % (target, target)
+        if not fixed:
+            cmd += "wm fixed-to-user-rotation enabled >/dev/null 2>&1; "
+        self.sh(cmd + "true", timeout=20)
+        self.rot_fixed = True
+        if info["shape"] and info["shape"] != want:
+            self.sleep(1.5)                                      # 돌아가는 동안
+        return ", ".join(what)
+
+    def rot_unlock(self):
+        """rotation off: 앱이 화면을 돌리는 것을 막던 것만 처음대로(자동 회전 켜고 끄기는 사람이)"""
+        self.sh("wm fixed-to-user-rotation default >/dev/null 2>&1; true", timeout=20)
+        self.rot_fixed = False
+
+    def rot_text(self, info=None):
+        """지금 화면 방향 한 줄(check, rotate)"""
+        info = info or self.rot_read()
+        shape = ROT_NAME.get(info["shape"] or "", "모름")
+        auto = {"0": "자동 회전 끔", "1": "자동 회전 켜짐"}.get(info["acc"] or "", "자동 회전 모름")
+        return "%s(%s%s)" % (shape, auto, ", 앱이 돌리지 못하게 고정" if info["fixed"] else "")
+
     def launch(self):
-        """화면을 켜고 카카오톡을 앞으로. 뜨는 중이면 조금 더 기다린다(화면이 꺼져 있어도 된다, 잠금만 없으면)"""
+        """화면을 켜고 카카오톡을 앞으로. 뜨는 중이면 조금 더 기다린다(화면이 꺼져 있어도 된다, 잠금만 없으면).
+        그 전에 화면 방향을 정한 방향으로 고정한다(자동 회전이 저절로 다시 켜졌어도)"""
         self.key(224)
+        try:
+            what = self.lock_rotation()
+            if what and time.time() - self.rot_note >= 300:
+                self.rot_note = time.time()
+                self.log("화면 방향: %s. %s로 고정함" % (what, ROT_NAME[self.rot_want()]))
+        except KakaoError:
+            pass                                                 # 방향을 못 고쳐도 올리기는 한다
         self.sh("cmd statusbar collapse; true")                  # 남은 알림 창이 있으면 접는다(없으면 아무 일 없음)
         self.sh("monkey -p %s -c android.intent.category.LAUNCHER 1" % self.t["package"])
         nodes = []
@@ -2236,7 +2396,7 @@ class AdbSender:
             return False
         l0 = min(n["b"][0] for n in e)
         hgt = max(n["b"][3] for n in nodes)
-        return any(n["text"].strip() == room and n["b"][0] >= l0 - 60 and n["b"][1] < hgt * 0.12 for n in nodes)
+        return any(same_room(n["text"], room) and n["b"][0] >= l0 - 60 and n["b"][1] < hgt * 0.12 for n in nodes)
 
     def goto_list(self, nodes=None):
         nodes, launched = (nodes, 0) if nodes is not None else ([], 0)
@@ -2265,19 +2425,62 @@ class AdbSender:
         return min(n["b"][0] for n in e) if e else 10 ** 9
 
     def room_item(self, nodes, room):
-        # 이름이 똑같은 방만(앞부분만 같은 다른 방으로 보내지 않게). 화면 글자는 잘려 보여도 이름 전체가 들어온다
+        # 이름이 같은 방만(글자가 더 붙은 다른 방으로 보내지 않게, same_room). 화면 글자는 잘려 보여도 이름 전체가 들어온다.
+        # 글자 칸이 없고 줄 이름(content-desc)만 있는 판은 이름의 첫 마디
         right = self.list_right(nodes) + 5
-        c = [n for n in find(nodes, text=room) if n["b"][2] <= right]
+        c = [n for n in nodes if n["b"][2] <= right and (same_room(n["text"], room)
+                                                          or (not n["text"].strip() and same_room(n["desc"].split(",")[0], room)))]
         return min(c, key=lambda n: (n["b"][1], n["b"][0])) if c else None
 
-    def scroll_list(self, nodes):
-        l = min(n["b"][0] for n in nodes)
-        t = min(n["b"][1] for n in nodes)
-        r = min(max(n["b"][2] for n in nodes), self.list_right(nodes))
-        b = max(n["b"][3] for n in nodes)
-        x = (l + r) // 2
-        self.sh("input swipe %d %d %d %d 400" % (x, t + (b - t) * 3 // 4, x, t + (b - t) // 3))
+    def list_box(self, nodes):
+        """채팅 목록 칸: 가장 큰 목록(RecyclerView, ListView), 태블릿 두 칸이면 입력 칸 왼쪽. 없으면 화면(입력 칸 왼쪽까지)"""
+        right = self.list_right(nodes) + 5
+        hgt = max(n["b"][3] for n in nodes)
+        c = [n for n in nodes if re.search(r"RecyclerView|ListView", n["cls"]) and n["b"][2] <= right and n["b"][3] - n["b"][1] >= hgt * 0.3]
+        if c:
+            return max(c, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1]))["b"]
+        return (min(n["b"][0] for n in nodes), min(n["b"][1] for n in nodes),
+                min(max(n["b"][2] for n in nodes), self.list_right(nodes)), hgt)
+
+    def scroll_list(self, nodes, up=False):
+        """목록을 민다. 보통은 아래로(손가락을 위로), up 이면 맨 위 쪽으로(손가락을 아래로)"""
+        l, t, r, b = self.list_box(nodes)
+        x, lo, hi = (l + r) // 2, t + (b - t) // 3, t + (b - t) * 3 // 4
+        self.sh("input swipe %d %d %d %d 400" % ((x, lo, x, hi) if up else (x, hi, x, lo)))
         self.sleep(0.8)
+
+    def list_sig(self, nodes):
+        """목록 칸에 보이는 글자와 자리(밀어도 그대로면 끝에 닿은 것)"""
+        l, t, r, b = self.list_box(nodes)
+        return [(n["text"], n["b"][1]) for n in nodes if n["text"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b]
+
+    def seek_room(self, nodes, room, seen):
+        """지금 목록에서 방 찾기: 맨 위까지 올리며 본 뒤 끝까지 내리며 본다(지난번에 밀어 둔 자리에서 시작해도). (화면, 찾은 줄 또는 None)"""
+        for up, most in ((True, 6), (False, 14)):
+            sig = self.list_sig(nodes)
+            for _ in range(most):
+                self.scroll_list(nodes, up)
+                nodes = self.dump()
+                seen.update(self._names(nodes))
+                item = self.room_item(nodes, room)
+                if item:
+                    return nodes, item
+                now = self.list_sig(nodes)
+                if now == sig:
+                    break
+                sig = now
+        return nodes, None
+
+    @staticmethod
+    def near_names(room, seen):
+        """못 찾았을 때: 목록에서 본 방 이름 가운데 이름이 비슷한 것(방 이름이 바뀌었는지 보게)"""
+        import difflib
+        want = norm_txt(room)
+        near = sorted(((difflib.SequenceMatcher(None, want, norm_txt(x)).ratio(), x) for x in seen if x), reverse=True)
+        near = [x for r, x in near if r >= 0.6][:2]
+        if near:
+            return "목록에 비슷한 이름: %s. 방 이름이 바뀌었으면 python excer_bot.py setup 으로 다시 고르세요" % ", ".join("'%s'" % x for x in near)
+        return "목록에서 본 방 %d개, 방 이름이 똑같은지 확인" % len(seen)
 
     def wait_change(self, nodes, ok=None, tries=4):
         """누른 뒤 화면이 바뀔 때까지(또는 ok(새 화면) 가 참일 때까지) 기다린다. 바로 읽으면 바뀌기 전 화면을 읽는다"""
@@ -2341,29 +2544,28 @@ class AdbSender:
 
     def open_room(self, room):
         self.trace = []
-        nodes = self.voice_guard(self.launch())                  # 보이스룸 화면이 앞에 떠 있으면 최소화만(나가기는 안 누른다)
+        nodes = self.launch()
+        self.brief("카카오톡을 띄운 화면", nodes, room)
+        nodes = self.voice_guard(nodes)                          # 보이스룸 화면이 앞에 떠 있으면 최소화만(나가기는 안 누른다, 작은 창은 그대로)
         if self.mem_left:                                        # 멤버 읽기가 서랍을 닫지 못하고 끝났다: 입력 칸 자리를 누르기 전에 닫는다(서랍 아래 띠에 나가기)
             nodes = self.mem_unstick(nodes)
         if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
             return nodes
         nodes = self.goto_list(nodes)
         self.snap("채팅 목록", nodes)
+        seen = set(self._names(nodes))
         item = self.room_item(nodes, room)
-        chat_nodes = nodes
         if not item:                                             # 오픈채팅 목록부터(알릴 방은 오픈채팅)
             op = self.goto_open_list(nodes, room)
             if op:
                 nodes = op
+                seen.update(self._names(nodes))
                 item = self.room_item(nodes, room)
-        for i in range(8):                                       # 그래도 없으면 지금 목록을 밀어 가며
-            if item:
-                break
-            self.scroll_list(nodes)
-            nodes = self.dump()
-            item = self.room_item(nodes, room)
+        if not item:                                             # 그래도 없으면 지금 목록을 맨 위까지 올렸다가 끝까지 내리며
+            nodes, item = self.seek_room(nodes, room, seen)
         if not item:
             self.save_diag(nodes)
-            raise KakaoError("채팅 목록에서 '%s' 방을 찾지 못함(방 이름이 똑같은지 확인)%s" % (room, self.diag_note()))
+            raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s)%s" % (room, self.near_names(room, seen), self.diag_note()))
         self.tap(item)
         nodes = self.wait_change(nodes, lambda ns: bool(find(ns, cls="EditText")))
         if not find(nodes, cls="EditText"):
@@ -2575,15 +2777,16 @@ class AdbSender:
             target = self.own_bubble(nodes, text)
         return nodes, target
 
-    def banner_text(self, nodes):
-        """방 위쪽 공지 띠의 글(방 이름 머리 바로 아래 한 줄). 없으면 ''"""
+    def banner_text(self, nodes, room=""):
+        """방 위쪽 공지 띠의 글(방 이름 머리 바로 아래 한 줄). 없으면 ''. 보이스룸 띠(제목, 'N명 참여')와 방 이름은 공지 띠로 보지 않는다"""
         e = find(nodes, cls="EditText")
         if not e:
             return ""
         l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
         hgt = max(n["b"][3] for n in nodes)
         c = [n for n in nodes if n["text"].strip() and l0 - 60 <= n["b"][0] and n["b"][2] <= r0 + 200
-             and hgt * 0.045 < n["b"][1] < hgt * 0.085 and n["b"][3] - n["b"][1] < hgt * 0.06 and not n["cls"].endswith("EditText")]
+             and hgt * 0.045 < n["b"][1] < hgt * 0.085 and n["b"][3] - n["b"][1] < hgt * 0.06 and not n["cls"].endswith("EditText")
+             and not self.voice_mark(n, self.vcfg) and not (room and same_room(n["text"], room))]
         return ws(max(c, key=lambda n: n["b"][2] - n["b"][0])["text"]) if c else ""   # 띠 안에서 가장 넓은 글(앞의 '공지' 표시 글자는 빼고)
 
     def to_latest(self, nodes, tries=8):
@@ -2655,7 +2858,7 @@ class AdbSender:
             self.save_diag()
             raise KakaoError("메뉴에 '공지'가 없음(봇 계정이 이 방의 방장이나 부방장인지 확인)%s" % self.diag_note())
         self.tap(m[0])
-        bt = lambda ns: norm_txt(self.banner_text(ns))
+        bt = lambda ns: norm_txt(self.banner_text(ns, room))
         wrong = lambda ns: bool(bt(ns)) and not (bt(ns).startswith(first) or first.startswith(bt(ns).rstrip(".\u2026 ")))
         ok = lambda ns: not wrong(ns) and (self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip)))
         dlg = self.wait_change(menu, lambda ns: ok(ns) or bool(self.labeled(ns, self.CONFIRM, menu) and any(
@@ -2684,7 +2887,7 @@ class AdbSender:
                 if not wrong(bottom) and self.registered_below(bottom, text):
                     return
                 done = bottom
-        if wrong(done) and self.banner_text(done) != self.banner_text(nodes):
+        if wrong(done) and self.banner_text(done, room) != self.banner_text(nodes, room):
             self.snap("마지막 화면(새로 나온 것)", done, nodes)
             self.save_diag()
             raise KakaoError("공지 띠가 다른 글로 바뀜(봇 글이 아닌 글이 걸렸을 수 있음). 다시 겁니다%s" % self.diag_note())
@@ -3246,7 +3449,7 @@ class AdbSender:
     def mem_room_count(self, nodes, room):
         """방 위쪽 줄에서 방 이름 옆의 수('94', '(94)'). 없으면 None"""
         hgt = max(n["b"][3] for n in nodes)
-        ts = [n for n in nodes if n["text"].strip() == room and n["b"][1] < hgt * 0.12]
+        ts = [n for n in nodes if same_room(n["text"], room) and n["b"][1] < hgt * 0.12]
         for t in ts:
             cy, h = (t["b"][1] + t["b"][3]) // 2, t["b"][3] - t["b"][1]
             for n in nodes:
@@ -3740,18 +3943,61 @@ class AdbSender:
                 return self.wait_change(nodes, tries=2)
         return nodes
 
+    def voice_mini(self, nodes):
+        """보이스룸 작은 창(제목, '1명 참여 중', 마이크, 스피커, 나가기가 든 작은 상자)의 요소 번호들.
+        작은 창은 보이스룸 화면이 아니다(그것만 보고 뒤로 가기를 누르면 카카오톡이 닫힌다)"""
+        if not nodes:
+            return set()
+        area = max(1, max(n["b"][2] for n in nodes) * max(n["b"][3] for n in nodes))
+        par = {k: n["i"] for n in nodes for k in n["kids"]}
+        out = set()
+        for n in nodes:
+            if not self.VOICE_BAND_RE.search(n["text"] + " " + n["desc"]):
+                continue
+            box, cur = None, (n if n["kids"] else nodes[par[n["i"]]] if n["i"] in par else None)
+            while cur is not None:                               # 그 글을 품은 작은 상자 가운데 가장 큰 것(화면의 5% 안, 띠처럼 길지 않은)
+                w, h = cur["b"][2] - cur["b"][0], cur["b"][3] - cur["b"][1]
+                if w * h > area * 0.05 or w > h * 4:
+                    break
+                box = cur
+                cur = nodes[par[cur["i"]]] if cur["i"] in par else None
+            if box is None:
+                continue
+            under, stack = set(), [box["i"]]
+            while stack:
+                j = stack.pop()
+                if j not in under:
+                    under.add(j)
+                    stack.extend(nodes[j]["kids"])
+            if any(any(w in nodes[j]["text"] + " " + nodes[j]["desc"] for w in self.VOICE_LEAVE + ("마이크", "스피커")) for j in under):
+                out |= under
+        return out
+
+    def voice_front(self, nodes):
+        """보이스룸 화면이 앞에 떠 있는지(작은 창은 빼고 본다)"""
+        if not self.on_kakao(nodes) or find(nodes, cls="EditText"):
+            return False
+        mini = self.voice_mini(nodes)
+        return self.voice_ui([n for n in nodes if n["i"] not in mini])
+
     def voice_guard(self, nodes):
-        """공지 흐름이 시작될 때 보이스룸 화면이 앞에 떠 있으면 최소화하고 방으로. 나가기는 누르지 않는다"""
-        if self.on_kakao(nodes) and self.voice_ui(nodes) and not find(nodes, cls="EditText"):
+        """공지 흐름이 시작될 때 보이스룸 화면이 앞에 떠 있으면 최소화하고 방으로. 나가기는 누르지 않는다. 작은 창은 그대로 둔다"""
+        if self.voice_front(nodes):
+            self.brief("보이스룸 화면이 앞에 떠 있어 접음", nodes)
             return self.voice_minimize(nodes)
         return nodes
 
     def voice_minimize(self, nodes):
-        mn = self.vpick(nodes, self.VOICE_MIN)
+        """보이스룸 화면을 작게 접는다: 최소화 단추, 없으면 뒤로. 보이스룸 화면이 아니면(방, 목록, 작은 창뿐) 아무것도 누르지 않는다"""
+        mini = self.voice_mini(nodes)
+        big = [n for n in nodes if n["i"] not in mini]
+        mn = self.vpick(big, self.VOICE_MIN)
         if mn:
             self.tap(mn)
-        else:
+        elif not find(nodes, cls="EditText") and self.voice_screen(big, self.vcfg):
             self.key(4)
+        else:
+            return nodes
         return self.wait_change(nodes, tries=3)
 
     def voice_perm(self, scr):
@@ -3841,7 +4087,7 @@ class AdbSender:
             nodes = self.launch()
             self.snap("카카오톡을 띄운 화면", nodes)
             nodes = self.voice_close_dialog(nodes)
-            if self.voice_ui(nodes):                            # 보이스룸 화면이 앞에 떠 있음: 아직 켜져 있을 수 있다
+            if self.voice_front(nodes):                         # 보이스룸 화면이 앞에 떠 있음: 아직 켜져 있을 수 있다
                 nodes = self.voice_minimize(nodes)
                 if voice_state(self.voice_signals(), v)[0] == "on":
                     return "on"
@@ -3870,7 +4116,7 @@ class AdbSender:
             if not self.voice_wait_on(v):
                 self.save_diag(scr)
                 raise KakaoError("보이스룸을 %s 했는데 '%s' 알림이 안 보임%s" % ("만들기" if how == "created" else "참여", w["on"], self.diag_note()))
-            self.voice_minimize(scr)
+            self.voice_minimize(self.dump())                    # 지금 화면으로(그새 접혔으면 아무것도 누르지 않는다)
             return how
         finally:
             self.done()
@@ -4003,6 +4249,11 @@ class AdbSender:
             out.append("화면 읽기: 됨(요소 %d개, %s)" % (n, "빠른 방식" if self.fast else "기본 방식: 글이 빨리 올라오는 방에서는 느릴 수 있음"))
         except KakaoError as e:
             out.append("화면 읽기: 안 됨(%s)" % e)
+        try:
+            want = self.rot_want()
+            out.append("화면 방향: %s. %s" % (self.rot_text(), "봇이 %s로 고정함(python excer_bot.py rotate)" % ROT_NAME[want] if want != "off" else "봇이 건드리지 않음"))
+        except KakaoError:
+            pass
         return out
 
     @staticmethod
@@ -4024,12 +4275,27 @@ class AdbSender:
             nodes = [n for n in nodes if (n["b"], n["text"], n["desc"]) not in seen]
         self.trace = (self.trace + [(label, self.rows(nodes)[:120])])[-8:]
 
+    def brief(self, label, nodes, room=""):
+        """지나온 화면을 한 줄로(무엇이 떠 있었는지만. 이름과 대화 글은 적지 않는다)"""
+        sh = self.shape_of(nodes)
+        parts = ["카카오톡" if self.on_kakao(nodes) else "다른 앱(%s)" % (nodes[0].get("pkg") if nodes else "?"),
+                 "%dx%d %s" % (sh[2], sh[3], ROT_NAME[sh[0]]) if sh else "작은 창",
+                 "입력 칸 있음" if find(nodes, cls="EditText") else "입력 칸 없음",
+                 "채팅 단추 있음" if self.chat_tab(nodes) else "채팅 단추 없음"]
+        if room:
+            parts.append("방 이름 보임" if any(same_room(n["text"], room) for n in nodes) else "방 이름 안 보임")
+        if self.voice_mini(nodes):
+            parts.append("보이스룸 작은 창")
+        if self.voice_front(nodes):
+            parts.append("보이스룸 화면")
+        self.trace = (self.trace + [(label, [", ".join(parts) + ", 요소 %d개" % len(nodes)])])[-8:]
+
     def save_diag(self, nodes=None):
         if not self.diag_path:
             return
         if nodes is not None:
             self.snap("마지막 화면", nodes)
-        out = []
+        out = ["# 판 %s, 화면 %s" % (VERSION, "%dx%d %s" % (self.shape[2], self.shape[3], ROT_NAME[self.shape[0]]) if self.shape else "모름"), ""]
         for label, rows in self.trace:
             out += ["== %s (%d줄)" % (label, len(rows))] + rows + [""]
         try:
@@ -4285,8 +4551,8 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, study, key, at")
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "rotate"])
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, study, key, at, rotate: 가로, 세로, off")
     ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -4394,6 +4660,9 @@ def main(argv=None):
         return
     if a.command == "members":                         # 봇 멤버 자동 갱신: 지금 읽기, 올리기, 화면 살피기, 열쇠, 매일 시각
         return cmd_members(cfg, a, base, log)
+    if a.command == "rotate":                          # 화면 방향 고정: 가로, 세로, off. 바로 고정하고 run 은 카카오톡을 띄울 때마다 다시 맞춘다
+        print(cmd_rotate(cfg, a.config, a.arg, log))
+        return
     if a.command == "voice":
         return cmd_voice(cfg, a, base, log)
     if a.command == "ui":
@@ -4459,6 +4728,12 @@ def main(argv=None):
     if run_alive(base):                                 # 다른 창에서 이미 도는 봇이 있으면 켜지 않는다(둘이 같은 화면을 번갈아 누르고 같은 글을 두 번 올림)
         raise SystemExit("이미 run 이 돌고 있습니다. 그 창을 그대로 두세요. 상태는 python excer_bot.py status")
     log("켬(판 %s): %s 방%s, %s 방식, %d초마다 %s 확인" % (VERSION, room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
+    if isinstance(bot.sender, AdbSender) and bot.sender.rot_want() != "off":
+        try:                                            # 화면 방향을 켤 때 바로 고정(그 뒤로는 카카오톡을 띄울 때마다 다시 맞춘다)
+            what = bot.sender.lock_rotation()
+            log("화면 방향: %s로 고정%s" % (ROT_NAME[bot.sender.rot_want()], "(%s)" % what if what else ""))
+        except KakaoError:
+            pass
     voice = None
     if (cfg.get("voice") or {}).get("on"):
         if isinstance(bot.sender, AdbSender):
@@ -4471,6 +4746,28 @@ def main(argv=None):
         run_loop(bot, log, voice, base + "_alive.json")
     finally:
         wake_lock(False)
+
+
+def cmd_rotate(cfg, path, arg, log, sender=None):
+    """rotate [가로|세로|off]: 정한 방향을 저장하고 바로 고정한다. 아무것도 안 적으면 지금 방향을 보이고 저장된 방향으로 고정"""
+    arg = (arg or "").strip().lower()
+    if arg and arg not in ROT_WORDS:
+        return "python excer_bot.py rotate 가로 | 세로 | off"
+    if arg:
+        cfg.setdefault("tablet", {})["rotation"] = ROT_WORDS[arg]
+        save_cfg(path, cfg)
+    saved = "저장했습니다. " if arg else ""
+    if cfg.get("backend", "tablet") != "tablet":
+        return saved + "화면 방향 고정은 tablet 방식에서 씁니다"
+    s = sender or AdbSender(cfg, log)
+    try:
+        if s.rot_want() == "off":
+            s.rot_unlock()
+            return "화면 방향을 봇이 건드리지 않습니다. 지금: %s" % s.rot_text()
+        what = s.lock_rotation()
+        return "%s로 고정했습니다%s. 지금: %s. run 은 카카오톡을 띄울 때마다 다시 맞춥니다" % (ROT_NAME[s.rot_want()], "(%s)" % what if what else "", s.rot_text())
+    except KakaoError as e:
+        return saved + "지금 고정하지는 못했습니다(%s). run 이 카카오톡을 띄울 때 고정합니다" % e
 
 
 def cmd_voice(cfg, a, base, log):
