@@ -40,8 +40,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾거나 누를 자리가 보이스룸 작은 창에
-    가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목은 누르지 않는다.
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
+    보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
 가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
@@ -1003,6 +1003,7 @@ class Bot:
         self.first = True                               # run 을 켠 뒤 아직 방 공지를 사이트 글과 견주지 않았다
         self.look_fails = 0                             # 방 공지 보기(look)가 이어서 실패한 횟수
         self.fail_keys = []                             # 최근 실패의 종류와 글 앞부분(새 실패는 바로 적는다)
+        self.fail_new_at = None                         # 새 실패로 따로 적은 때(10분에 한 번까지)
 
     def ts(self):
         """지금 시각(초). 한 차례가 1분 넘게 걸리기도 해서 다시 시도 시각은 끝난 때부터 잰다"""
@@ -1261,19 +1262,29 @@ class Bot:
 
     def fail_changed(self, e):
         """최근 실패들과 종류나 글 앞부분이 다른 새 실패인지(같은 실패만 되풀이되면 처음과 10번째마다만 적고, 새 실패는 바로 적는다.
-        두 실패가 번갈아 나도 1분마다 쌓이지 않게 최근 셋을 본다)"""
-        key = (type(e).__name__, str(e)[:40])
+        실패가 번갈아 나도 1분마다 쌓이지 않게 최근 셋을 보고, 새 실패로 따로 적는 것은 10분에 한 번까지)"""
+        key = (type(e).__name__, re.sub(r"\d+", "#", str(e))[:40])     # 자리, 횟수 같은 수는 빼고 견준다
         recent = getattr(self, "fail_keys", None) or []
         self.fail_keys = ([k for k in recent if k != key] + [key])[-3:]
         return key not in recent
+
+    def new_log_ok(self):
+        """새 실패로 따로 적어도 되는지: 10분에 한 번까지(실패 여럿이 돌아가며 나도 1분마다 쌓이지 않게)"""
+        now, last = getattr(self, "ts", time.time)(), getattr(self, "fail_new_at", None)
+        if last is not None and now - last < 600:
+            return False
+        self.fail_new_at = now
+        return True
 
     def send_log(self, what, e, wait=60):
         """보내기 실패는 처음과 10번째마다, 그리고 실패가 달라질 때 적는다(adb 가 안 붙은 동안 1분마다 쌓이지 않게). 길게 쉬는 실패(방을 못 찾음)는 매번"""
         new = self.fail_changed(e)
         if wait > 60:
             self.log("%s 실패(%d번째, %d분 뒤 다시): %s" % (what, self.send_fails, wait // 60, e))
-        elif self.send_fails == 1 or self.send_fails % 10 == 0 or new:
+        elif self.send_fails == 1 or self.send_fails % 10 == 0:
             self.log("%s 실패%s: %s" % (what, "(%d번째, 붙을 때까지 1분마다 다시)" % self.send_fails if self.send_fails > 1 else "(다음 차례에 다시)", e))
+        elif new and self.new_log_ok():
+            self.log("%s 실패(%d번째, 1분 뒤 다시): %s" % (what, self.send_fails, e))
 
     def notice_alts(self):
         """방에 걸려 있을 수 있는 다른 공지 글: 지난번에 건 글, 걸었는지 모르는 글, 최근에 올린 글"""
@@ -1299,7 +1310,8 @@ class Bot:
             self.look_fails += 1
             wait = self.send_wait(e)
             self.hold_until = self.ts() + wait
-            if self.fail_changed(e) or self.look_fails == 1 or self.look_fails % 10 == 0:
+            changed = self.fail_changed(e)
+            if self.look_fails == 1 or self.look_fails % 10 == 0 or (changed and self.new_log_ok()):
                 self.log("방 공지를 읽지 못함(지난번에 건 글을 믿고 그대로 둠, %d분 뒤 다시 봄): %s" % (max(1, wait // 60), e))
             return None
         finally:
@@ -2476,11 +2488,14 @@ class AdbSender:
 
     def covered_err(self, w, n=None, what=None):
         l, t, r, b = w["b"]
-        where = "화면 안 작은 창 [%d,%d][%d,%d]" % (l, t, r, b) if w.get("tree") else self.win_text()
+        where = "화면 안 작은 창 [%d,%d][%d,%d]" % (l, t, r, b) if w.get("tree") else "창: %s %dx%d+%d+%d" % (self.win_name(w), r - l, b - t, l, t)
         msg = "누를 곳이 %s에 가려 있음(%s). 누르려던 것: %s" % (self.win_name(w), where, what or self.tap_label(n))
         if n is not None:
             msg += " [%d,%d][%d,%d]" % n["b"]
-        if "작은 창" in self.win_name(w):
+        sw, sh = (self.shape[2], self.shape[3]) if self.shape else (max([x["b"][2] for x in getattr(self, "windows", None) or []] or [r]),
+                                                                   max([x["b"][3] for x in getattr(self, "windows", None) or []] or [b]))
+        there = l <= sw * 0.05 and sh * 0.3 <= (t + b) / 2 <= sh * 0.7    # 이미 왼쪽 가장자리 가운데 높이
+        if "작은 창" in self.win_name(w) and not there:
             msg += ". 작은 창을 화면 왼쪽 가장자리 가운데 높이로 옮겨 주세요"
         return Covered(msg)
 
@@ -2596,8 +2611,8 @@ class AdbSender:
         self.sh("input tap %d %d" % self.point(n))
         self.sleep(0.6)
 
-    def hold(self, n, ms=1000):
-        x, y = self.point(n, "길게 누를 글")
+    def hold(self, n, ms=1000, what="길게 누를 곳"):
+        x, y = self.point(n, what)
         self.sh("input swipe %d %d %d %d %d" % (x, y, x, y, ms))
         self.sleep(0.9)
 
@@ -2623,13 +2638,15 @@ class AdbSender:
         return max([n["b"][3] for n in nodes] or [0]) * 0.12
 
     def chat_nav(self, nodes):
-        """누를 '채팅' 메뉴: 아래(또는 옆) 메뉴의 것. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다.
-        목록 칸 머리 제목 '채팅'(화면 맨 위)은 누를 것이 아니다(보이스룸 작은 창이 그 자리에 떠 있곤 하다). 여럿이면 아래 것"""
-        k = [n for n in nodes if n.get("pkg") == self.t["package"]]
+        """누를 '채팅' 메뉴: 아래(또는 옆) 메뉴의 것. 이름이 '채팅 탭', '채팅, 새 메시지 3개' 처럼 붙어 나오는 판도 있다. 여럿이면 아래 것.
+        목록 칸 머리 제목 글자 '채팅'(화면 맨 위)은 누르지 않는다(보이스룸 작은 창이 그 자리에 떠 있곤 하다). 목록 안의 글(말풍선)도 아니다"""
+        inl = self.in_lists(nodes)
+        k = [n for n in nodes if n.get("pkg") == self.t["package"] and n["i"] not in inl]   # 목록 안(말풍선, 목록 줄)은 빼고
         top = self.head_band(nodes)
         low = lambda c: sorted(c, key=lambda n: -n["b"][1])
-        c = (low(find(k, desc="채팅")) + low([n for n in k if n["desc"] != "채팅" and self.CHAT_NAV_RE.match(n["desc"])])
-             + low([n for n in find(k, text="채팅") if n["b"][1] >= top]))
+        named = lambda ns: low(find(ns, desc="채팅")) + low([n for n in ns if n["desc"] != "채팅" and self.CHAT_NAV_RE.match(n["desc"])])
+        below, band = [n for n in k if n["b"][1] >= top], [n for n in k if n["b"][1] < top]
+        c = named(below) + low(find(below, text="채팅")) + named(band)   # 머리 띠의 것은 이름(content-desc)이 '채팅' 일 때만, 맨 나중에
         return c[0] if c else None
 
     def chat_head(self, nodes):
@@ -2798,9 +2815,10 @@ class AdbSender:
 
     @staticmethod
     def list_right(nodes):
-        """채팅 목록 칸의 오른쪽 끝. 태블릿은 목록 옆에 방이 열려 있으니 그 입력 칸 왼쪽까지(화면 왼쪽 4분의 1 안의 입력 칸, 목록 칸의 찾기 칸은 빼고)"""
-        w = max([n["b"][2] for n in nodes] or [0])
-        e = [n for n in find(nodes, cls="EditText") if n["b"][0] >= w * 0.25]
+        """채팅 목록 칸의 오른쪽 끝. 태블릿은 목록 옆에 방이 열려 있으니 그 입력 칸 왼쪽까지(화면 위쪽 30% 안의 입력 칸, 목록 칸의 찾기 칸은 빼고).
+        폰의 방 화면은 입력 칸이 왼쪽 끝에서 시작해 목록이 없는 것으로 본다"""
+        h = max([n["b"][3] for n in nodes] or [0])
+        e = [n for n in find(nodes, cls="EditText") if n["b"][1] >= h * 0.3]
         return min(n["b"][0] for n in e) if e else 10 ** 9
 
     def room_item(self, nodes, room):
@@ -2809,12 +2827,7 @@ class AdbSender:
         줄 위쪽의 이름 칸을 먼저 고른다. '방 이름, 2호점' 같은 다른 방의 이름 칸은 첫 마디로 보지 않는다"""
         right = self.list_right(nodes) + 5
         par = {k: n["i"] for n in nodes for k in n["kids"]}
-
-        def row_of(n):                                           # 그 칸을 품은 누를 수 있는 줄
-            j = n["i"]
-            while j is not None and not nodes[j]["click"]:
-                j = par.get(j)
-            return nodes[j] if j is not None else None
+        row_of = lambda n: self.row_of(nodes, n, par)
 
         def texts_under(r):
             out, st = set(), [r["i"]]
@@ -2841,6 +2854,25 @@ class AdbSender:
             return 1 if same_room(row_head(n["desc"]), room) else None
         c = [(h, n) for n in nodes if n["b"][2] <= right for h in [hit(n)] if h is not None]
         return min(c, key=lambda hn: (hn[0], not upper(hn[1]), hn[1]["b"][1], hn[1]["b"][0]))[1] if c else None
+
+    @staticmethod
+    def row_of(nodes, n, par=None):
+        """그 칸을 품은 누를 수 있는 줄(그 칸이 누를 수 있으면 그 칸). 없으면 None"""
+        par = par if par is not None else {k: x["i"] for x in nodes for k in x["kids"]}
+        j = n["i"]
+        while j is not None and not nodes[j]["click"]:
+            j = par.get(j)
+        return nodes[j] if j is not None else None
+
+    def tap_row(self, nodes, n):
+        """목록 줄의 이름 칸을 누른다. 이름 칸이 다 가려 있으면 그 줄의 가리지 않은 자리를 누른다"""
+        try:
+            self.tap(n)
+        except Covered:
+            r = self.row_of(nodes, n)
+            if r is None or r is n:
+                raise
+            self.tap(r)
 
     def list_box(self, nodes):
         """채팅 목록 칸: 가장 큰 목록(RecyclerView, ListView), 태블릿 두 칸이면 입력 칸 왼쪽. 없으면 화면(입력 칸 왼쪽까지)"""
@@ -2911,16 +2943,16 @@ class AdbSender:
         아무것도 없으면 본 방 수"""
         import difflib
         if any(same_room(x, room) for x in seen):
-            return "목록에 이 방 이름이 보였지만 누를 줄로 고르지 못함(excer_bot_ui.txt 를 보내 주세요)"
+            return "목록에 이 방 이름이 보였지만 누를 줄로 고르지 못함"
         want = norm_txt(room)
-        longer = sorted(x for x in seen if x and want and want in norm_txt(x))[:2]
+        longer = [x for x in seen if x and want and want in norm_txt(x)]   # 1:1 대화 이름일 수 있어 수만 적는다
         near = sorted(((difflib.SequenceMatcher(None, want, norm_txt(x)).ratio(), x) for x in seen if x and x not in longer), reverse=True)
         near = [x for r, x in near if r >= 0.6][:2]
         out = []
         if near:
             out.append("목록에 비슷한 이름: %s. 방 이름이 바뀌었으면 python excer_bot.py setup 으로 다시 고르세요" % ", ".join("'%s'" % x for x in near))
         if longer:
-            out.append("이름이 더 긴 다른 방(고르지 않음): %s" % ", ".join("'%s'" % x for x in longer))
+            out.append("이름이 더 긴 다른 방 %d개(고르지 않음)" % len(longer))
         return ". ".join(out) if out else "목록에서 본 방 %d개, 방 이름이 똑같은지 확인" % len(seen)
 
     def wait_change(self, nodes, ok=None, tries=4):
@@ -3105,7 +3137,7 @@ class AdbSender:
             taps = sum(1 for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b)
             raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s, 화면 요소 %d개, 누를 수 있는 것 %d개)%s%s" % (
                 room, self.near_names(room, seen), len(nodes), taps, self.facts_note(), self.diag_note()))
-        self.tap(item)
+        self.tap_row(nodes, item)
         nodes = self.wait_change(nodes, lambda ns: self.room_open(ns, room), tries=5)
         if not self.room_open(nodes, room):                      # 연 방의 머리가 이 방이어야 한다(다른 방, 공지 상세보기에 올리지 않게)
             self.save_diag(nodes)
@@ -3129,7 +3161,8 @@ class AdbSender:
             if re.search(r"^\s*Error|Exception|unable to resolve", out, re.M | re.I):
                 self.fact("주소 %s 열리지 않음" % kind)
                 continue
-            how = "떠 있던 화면에 넘김" if re.search(r"Warning: Activity not started", out) else "엶"
+            how = ("떠 있던 화면에 넘김" if re.search(r"delivered to currently running", out) else
+                   "앞으로만(주소 안 넘김)" if re.search(r"brought to the front", out) else "엶")
             for wait in (2.0, 1.5, 2.5, 2.5):
                 self.sleep(wait)
                 nodes = self.dump()
@@ -3579,7 +3612,7 @@ class AdbSender:
         first = text.split("\n")[0]
         skip = {n["b"] for n in nodes if same_head(n["text"], first)}   # 원래 있던 같은 글(말풍선)은 공지 띠로 치지 않는다
         before = self.band_text(nodes, room)                     # 걸기 전 공지 띠 글
-        self.hold(target, 1000)
+        self.hold(target, 1000, "길게 누를 글")
         menu = self.wait_change(nodes, lambda ns: bool(self.labeled(ns, ("공지", "공지 등록", "공지로 등록"), nodes)), tries=3)
         self.snap("말풍선을 길게 누른 뒤(새로 나온 것)", menu, nodes)
         m = self.labeled(menu, ("공지", "공지 등록", "공지로 등록"), nodes)
@@ -3752,7 +3785,7 @@ class AdbSender:
         bubbles = [n for n in nodes if ws(n["text"]).startswith(("[다음 벙]", EMO["next"])) and n["b"][0] >= l0 - 60 and n["b"][1] > hgt * 0.25 and id(n) not in inside]
         if bubbles:                                              # 봇이 올린 말풍선을 길게 눌러 메뉴, '공지' 를 누른 뒤 창은 '아니요' 로 닫는다
             target = max(bubbles, key=lambda n: n["b"][3])
-            self.hold(target, 1000)
+            self.hold(target, 1000, "길게 누를 글")
             menu = self.wait_change(nodes, tries=3)
             take("11 말풍선을 길게 누른 메뉴(새로 나온 것)", menu, nodes)
             m = self.labeled(menu, ("공지",), nodes)
@@ -5451,7 +5484,7 @@ def main(argv=None):
                 sender.done()
             if err:
                 print("안 됨:", err)
-            print(sender.win_text() or "창: 창 목록 없음(기본 방식으로 읽음)")
+            print(sender.win_text() or "창: 창 목록 없음" + ("" if sender.fast else "(기본 방식으로 읽음)"))
         elif isinstance(sender, AndroidSender):
             n = sender.dump(base + "_ui.txt")
         else:
