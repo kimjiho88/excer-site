@@ -13,16 +13,20 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
-  - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건', 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감.
-    벙 시간 차례대로(같은 시간이면 먼저 올라온 글이 위), 카드는 넷까지이고 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은
+  - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건', 둘째 줄 '참석' 과 사이트 주소(공지 띠에 보이는 두 줄),
+    카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감. 카드는 올릴 때 진행 중인 벙, 다음 시간 벙, 시간이 지난 벙 차례(같은 시각이면
+    먼저 등록한 글이 위), 넷까지이고 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은
     그 아래 '마감' 한 줄씩, 그다음 내일 이후 모집 중인(마감 안 함, 정원 남음, 신청 마감 전) 벙은 첫 벙만 한 줄('외 N건'). 오늘 벙이 없으면 다음 벙을 장소까지.
-    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다(시작, 끝, 신청 마감 때 다시 올리지 않는다).
+    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다. 시각만 지나 차례가 바뀌면 다시 올리지 않고,
+    '외 N건' 에 가려진 진행 중이나 시작 전 벙을 카드로 올려야 할 때만 지금 차례로 다시 올린다.
     오늘은 조용한 시간이 끝날 때 다음 날로 넘어간다(quiet 00:30-07:30 이면 07:30. 조용한 시간이 없거나 끝이 12:00 이후면 자정).
     이 글이 달라질 때마다(새 벙, 바뀜, 마감, 정원 참, 다시 모집, 취소, 오늘이 넘어갈 때) 방에 올리고 길게 눌러 공지로 건다.
     올리기 전과 run 을 켠 뒤 처음에 방 위쪽 공지 띠를 읽어(앞부분만 보이면 띠를 눌러 상세보기로 전체를 읽고 방으로 돌아온다) 이 글과 견준다.
     이미 이 글이면 올리지 않고, 켠 뒤 처음 읽은 방 공지가 이 글과 확실히 다르면 이미 올린 이 글을 찾아 다시 건다(tablet).
   - 알림: 새 벙, 날짜와 시간과 장소와 신청 마감 바뀜, 마감, 정원 참, 다시 모집(마감 풀림, 자리 남), 취소(모집 글 삭제)는
-    공지 글 앞에 알림 메시지를 따로 올린다. 하나면 장소, 인원, 벙주, 글 주소까지, 여럿이면 한 메시지에 한 줄씩.
+    공지 글 앞에 알림 메시지를 따로 올린다. 새 벙은 사이트에 처음 올라왔을 때 한 번, 벙마다 한 메시지(장소, 인원, 벙주, 끝 줄은
+    '참석' 과 그 벙 주소 /bung?id=번호. 카카오톡 미리보기 상자를 눌러도 소식의 그 글이 펼쳐져 참석 단추가 바로 보인다).
+    나머지는 하나면 자세히(그 벙 주소까지), 여럿이면 한 메시지에 한 줄씩.
   - 24시간 돈다. 한 번 올린 뒤 1분 안에 또 바뀌면 모았다가 1분이 지나면 올린다(min_gap_sec).
   - 처음 켤 때는 이미 올라와 있던 글을 알리지 않고, 지금의 공지 글만 올려 공지로 건다(방 공지가 이미 이 글이면 올리지 않는다).
   - 보내기에 실패하면 1분 쉬었다가 다시. 공지 걸기만 실패하면 1분, 5분, 15분 뒤 이미 올린 글을 찾아 다시 건다(세 번까지).
@@ -126,7 +130,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.9"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.10"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -351,14 +355,35 @@ def band_shows(band, text, others=()):
         return False
     alts = {strict_core(x) for x in others if x} - {sb, ""}
     if sb in sa:
-        return not any(len(o) > len(sb) and sb in o and o in sa for o in alts)
-    first = strict_core(text.split("\n")[0])
+        return whole_notice(band, text) and not any(len(o) > len(sb) and sb in o and o in sa for o in alts)
+    ls = text.split("\n")
+    first = strict_core(ls[0] + (ls[1] if len(ls) > 1 and ls[1].startswith(EMO["go"]) else ""))   # 첫 줄과 둘째 줄의 참석 주소(모든 공지에 같다)
     if not alts:
         return False
     for j in range(min(8, len(sa)) + 1):
         x = sa[j:]
         if len(x) > len(first) + 1 and sb.startswith(x) and not any(o.startswith(x) for o in alts):
             return True
+    return False
+
+
+def notice_line(line):
+    """봇 공지 글의 줄처럼 생겼는지(📣, 👉, 카드 번호, 📍, 👥, 🔒, 🗓, ⏳ 로 시작하거나 '외 N건')"""
+    t = (line or "").strip()
+    return t.startswith((EMO["next"], EMO["go"], EMO["place"], EMO["people"], EMO["벙 마감"], EMO["later"], EMO["live"]) + tuple(CARD_NO)) \
+        or bool(re.match(r"외 \d+건$", t))
+
+
+def whole_notice(band, text):
+    """읽은 글(band) 안에 이 공지 글(text)이 줄 단위로 통째로 들어 있고, 그 뒤에 공지 줄이 더 이어지지 않는지(끝 줄만 뺀 새 글을
+    더 긴 옛 공지 안에서 찾아 같다고 하지 않게. 상세보기의 글쓴이 줄과 아래 댓글은 붙어도 된다). 줄이 없이 한 줄로 보인 글은 글자로만"""
+    raw = [l for l in (band or "").split("\n") if strict_core(l)]
+    a, b = [strict_core(l) for l in raw], [strict_core(l) for l in (text or "").split("\n") if strict_core(l)]
+    if len(a) < 2 or not b:
+        return True
+    for i in range(len(a)):
+        if a[i].endswith(b[0]) and a[i + 1:i + len(b)] == b[1:]:
+            return not (i + len(b) < len(raw) and notice_line(raw[i + len(b)]))
     return False
 
 
@@ -580,7 +605,18 @@ def dl_text(v):
 
 
 def skey(v):
+    """날짜, 시작 시각, 사이트에 등록한 차례(글 번호가 작은 것이 먼저 등록한 글)"""
     return (v["date"], v["time"] or "99:99", int(v["id"]) if v["id"].isdigit() else 0)
+
+
+def notice_rank(v, at):
+    """공지 카드의 차례: 진행 중 0, 시작 전 1, 끝남 2. at 이 없으면 모두 1(시간 차례만)"""
+    if at is None:
+        return 1
+    k = now_key(at)
+    if start_key(v) <= k < end_key(v):
+        return 0
+    return 1 if k < start_key(v) else 2
 
 
 def head(v):
@@ -843,11 +879,17 @@ def span(v):
     return (v["time"] + ("~" + v["end"] if v.get("end") else "")) if v["time"] else "시간 미정"
 
 
-def notice_text(posts, now, cfg):
-    """공지로 걸 글(카드형). 첫 줄 '오늘의 벙 10/9(금) 3건'(공지 띠에 보이는 줄), 오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감).
-    카드는 넷까지, 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은 그 아래 '마감' 한 줄씩, 그다음 이후 벙 한 줄(오늘 벙이 없으면 장소까지).
-    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다. 글은 벙 글과 공지 글의 오늘로만 정해져
-    시작, 끝, 신청 마감 때 다시 올리지 않는다. 오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다"""
+def notice_text(posts, now, cfg, at="now"):
+    return notice_build(posts, now, cfg, at)[0]
+
+
+def notice_build(posts, now, cfg, at="now"):
+    """공지로 걸 글(카드형)과 카드로 보인 벙의 번호들. 첫 줄 '오늘의 벙 10/9(금) 3건', 둘째 줄 참석 주소(공지 띠에 보이는 두 줄),
+    오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감). 카드는 at(기본은 now) 때 진행 중인 벙, 다음 시간 벙, 시간이 지난 벙 차례
+    (같은 시각이면 먼저 등록한 글이 위). 넷까지, 넘으면 '외 N건'. 마감했거나 정원이 찬 오늘 벙은 그 아래 '마감' 한 줄씩,
+    그다음 이후 벙 한 줄(오늘 벙이 없으면 장소까지). 시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다.
+    오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다"""
+    at = now if at == "now" else at
     today = notice_day(now, cfg)
     y, m, d = (int(x) for x in today.split("-"))
     t0 = day_turn(cfg)
@@ -855,7 +897,7 @@ def notice_text(posts, now, cfg):
     nextday = (date(y, m, d) + timedelta(days=1)).isoformat()
     # 오늘 날짜의 벙 가운데 오늘이 시작하기 전에 이미 끝난 것(조용한 시간 07:30 이면 새벽 01:50~02:50 벙)은 넣지 않는다(전날 공지의 이후 줄에 있었다)
     gone = lambda v: t0 != "00:00" and end_key(v) <= now_key(day0)
-    on = sorted([v for v in posts if v["date"] == today and not gone(v) and not v["closed"] and not v.get("full")], key=skey)
+    on = sorted([v for v in posts if v["date"] == today and not gone(v) and not v["closed"] and not v.get("full")], key=lambda v: (notice_rank(v, at), skey(v)))
     off = sorted([v for v in posts if v["date"] == today and not gone(v) and (v["closed"] or v.get("full"))], key=skey)
     later = sorted([v for v in posts if v["date"] > today and recruiting(v, day0)], key=skey)
     live = bool(cfg.get("notice_attend"))
@@ -864,6 +906,8 @@ def notice_text(posts, now, cfg):
     def build(nc, ns, pin):
         """nc: 카드 수, ns: 마감 줄 수(0 이면 '마감 N건' 한 줄), pin: 다음 벙의 장소 줄"""
         out = [EMO["next"] + " 오늘의 벙 " + md(today) + (" %d건" % len(on) if on else " 모두 마감" if off else " 없음")]
+        if cfg.get("link", True):                        # 둘째 줄도 공지 띠에 보인다
+            out.append(EMO["go"] + (" 참석 " if on else " 벙 올리기 ") + cfg["site"] + "/bung")
         for n, v in enumerate(on[:nc]):
             out += ["", CARD_NO[n] + " " + span(v) + " " + v["title"]] + \
                 [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l]   # 장소 이름만(상세 주소는 글에)
@@ -883,8 +927,6 @@ def notice_text(posts, now, cfg):
             else:                                        # 오늘 벙이 없으면 다음 벙을 시간 범위와 장소까지
                 out += ["", " ".join((EMO["later"], "다음 벙", md(v["date"]), span(v), v["title"])) + more] + \
                     ([EMO["place"] + " " + v["place"]] if pin and v["place"] else [])
-        if cfg.get("link", True):
-            out += ([] if later and (on or off) else [""]) + [("참석 신청 " if on else "벙 올리기 ") + EMO["go"] + " " + cfg["site"] + "/bung"]
         return "\n".join(out)
 
     cap = int(cfg.get("notice_max_chars", 400) or 0)    # 글 길이 한도(0 이면 없음). 넘치면 마감 줄부터 줄이고('마감 N건'), 카드를 줄이고('외 N건'), 다음 벙의 장소 줄을 뺀다
@@ -898,11 +940,33 @@ def notice_text(posts, now, cfg):
         else:
             pin = False
         text = build(nc, ns, pin)
-    return text
+    return text, [v["id"] for v in on[:nc]]
+
+
+def notice_reorder_due(posts, now, cfg, then_ids, ids):
+    """시각만 지나 카드 차례가 바뀐 공지를 다시 올릴지: 지금 카드로 보여야 할 진행 중이나 시작 전 벙이 올린 공지에서는 '외 N건' 에 가려져 있었으면"""
+    alive = {v["id"] for v in posts if notice_rank(v, now) < 2}
+    return bool((set(ids) & alive) - set(then_ids))
+
+
+def bung_link(cfg, v):
+    """그 벙으로 바로 가는 주소(소식의 모임 모집 탭에서 그 글을 펼친다. 카카오톡 미리보기 상자를 눌러도 같은 곳)"""
+    return cfg["site"] + "/bung?id=" + v["id"]
 
 
 def alert_text(ch, cfg):
-    """바뀐 것 알림(공지와 따로 올리는 메시지). 하나면 자세히(장소, 인원, 벙주, 글 주소), 여럿이면 한 메시지에 한 줄씩"""
+    return "\n\n".join(alert_msgs(ch, cfg))
+
+
+def alert_key(a):
+    """보낸 알림을 알아보는 열쇠. 한 벙 알림은 끝의 그 벙 주소 줄(다시 보내는 사이 참석 수가 바뀌어도 같은 알림), 여럿을 묶은 알림은 글 전체"""
+    last = a.rsplit("\n", 1)[-1]
+    return last if "/bung?id=" in last else a
+
+
+def alert_msgs(ch, cfg):
+    """바뀐 것 알림(공지와 따로 올리는 메시지들). 새 벙은 하나씩 따로(채팅방에 한 번 공유: 장소, 인원, 벙주, 그 벙으로 바로 가는 주소).
+    나머지(바뀜, 마감, 다시 모집, 취소)는 하나면 자세히, 여럿이면 한 메시지에 한 줄씩. 모두 bulk_quiet(6)건 넘으면 한 줄 요약"""
     items = []
     for v in sorted(ch["new"], key=skey):
         items.append(("새 벙", v, ""))
@@ -917,11 +981,10 @@ def alert_text(ch, cfg):
     for v in ch.get("del", []):
         items.append(("벙 취소", v, "모집 글 삭제"))
     if not items:
-        return ""
-    post_link = lambda v: cfg["site"] + "/news.html#post-" + v["id"]
+        return []
     tag = lambda kind: EMO.get(kind, "") + " " + kind
-    if len(items) == 1:
-        kind, v, d = items[0]
+
+    def one(kind, v, d):
         out = [tag(kind) + " " + head(v)]
         cl = changes_line(ch, v) if kind in ("벙 변경", "벙 다시 모집") else ""
         if cl:
@@ -931,7 +994,8 @@ def alert_text(ch, cfg):
         if kind in ("새 벙", "벙 다시 모집", "벙 변경"):
             out += [l for l in (place_line(v), people_line(v, host=True)) if l]
         if kind != "벙 취소" and cfg.get("link", True):
-            out.append(EMO["go"] + " " + post_link(v))
+            go = " 참석 " if kind == "새 벙" and not v["closed"] and not v.get("full") else " "   # 올릴 때 이미 마감했거나 정원이 찬 벙은 주소만
+            out.append(EMO["go"] + go + bung_link(cfg, v))   # 미리보기 상자를 눌러도 그 벙으로
         return "\n".join(out)
     bulk = int(cfg.get("bulk_quiet", 6) or 0)
     if bulk and len(items) >= bulk:                   # 많으면 한 줄로(조용한 시간 뒤나 여러 글을 한꺼번에 고친 때). 내용은 공지와 사이트에
@@ -939,11 +1003,15 @@ def alert_text(ch, cfg):
         for kind, v, d in items:
             cnt[kind] = cnt.get(kind, 0) + 1
         parts = ["%s %d" % (k, cnt[k]) for k in ("새 벙", "벙 변경", "벙 다시 모집", "벙 마감", "벙 취소") if cnt.get(k)]
-        return "\n".join([EMO["bell"] + " 벙 알림 %d건 (%s)" % (len(items), ", ".join(parts))] + ([EMO["go"] + " " + cfg["site"] + "/bung"] if cfg.get("link", True) else []))
-    out = [EMO["bell"] + " 벙 알림 %d건" % len(items)]
-    for kind, v, d in items:
-        out.append("%s %s%s" % (tag(kind), head(v), (" (" + d + ")") if d and kind != "새 벙" else ""))
-    return "\n".join(out)
+        return ["\n".join([EMO["bell"] + " 벙 알림 %d건 (%s)" % (len(items), ", ".join(parts))] + ([EMO["go"] + " " + cfg["site"] + "/bung"] if cfg.get("link", True) else []))]
+    msgs = [one(*it) for it in items if it[0] == "새 벙"]   # 새 벙은 하나씩 따로(그 벙의 미리보기 상자가 붙게)
+    rest = [it for it in items if it[0] != "새 벙"]
+    if len(rest) == 1:
+        msgs.append(one(*rest[0]))
+    elif rest:
+        msgs.append("\n".join([EMO["bell"] + " 벙 알림 %d건" % len(rest)] +
+                               ["%s %s%s" % (tag(kind), head(v), (" (" + d + ")") if d else "") for kind, v, d in rest]))
+    return msgs
 
 
 def changes_line(ch, v):
@@ -1197,8 +1265,9 @@ class Bot:
         if bulk >= int(cfg.get("bulk_quiet", 6) or 10 ** 9):
             self.log("새 벙과 지운 벙이 한꺼번에 %d건이라 알리지 않음(글을 한꺼번에 옮기거나 지운 것으로 봄). 공지 글만 새로" % bulk)
             ch["new"], ch["del"] = [], []
-        alert = alert_text(ch, cfg)
-        ntext = notice_text(posts, now, cfg)
+        alert = alert_msgs(ch, cfg)
+        fresh, shown = notice_build(posts, now, cfg)
+        ntext = self.same_order(st, posts, now, cfg, fresh, shown)
         dg = digest_due(st, now, cfg)
         if dg == "skip" or (dg and st.get("last_post_ymd") == now.ymd and ntext == st.get("notice_text")):
             st["last_digest"] = now.ymd                 # 너무 늦었거나 오늘 이미 올렸다
@@ -1206,6 +1275,8 @@ class Bot:
             dg = False
         if held:
             dg = False                                  # 공지 멈춤 중에는 공지 글을 올리지 않는다(매일 다시 올리기도)
+        if dg:
+            ntext = fresh                               # 매일 다시 올리기는 지금 차례로
         want = not held and ((ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg))
         seen, looked = None, False
         unsure = bool(st.get("notice_fail_text")) and st.get("notice_fail_text") != ntext   # 다른 글을 올렸는데 걸렸는지 모름(걸렸을 수 있다)
@@ -1220,11 +1291,23 @@ class Bot:
             return "none"
         if now.ts - float(st.get("last_post_at") or 0) < int(cfg.get("min_gap_sec", 60)):
             return "wait"                               # 방금 올렸다. 모았다가 한 번에
+        if want and ntext == fresh:
+            st["notice_built"] = {"text": ntext, "at": now.ts}   # 이 글을 만든 때(카드 차례를 정한 때)
         try:
             return self._post(st, cfg, now, cur, alert, ntext if want else "", dg, seen)
         finally:
             if hasattr(self.sender, "done"):
                 self.sender.done()
+
+    def same_order(self, st, posts, now, cfg, fresh, ids):
+        """시각만 지나 카드 차례만 바뀌었으면 올린 공지 글 그대로(벙이 시작하거나 끝날 때마다 다시 올리지 않게).
+        '외 N건' 에 가려진 진행 중이나 시작 전 벙을 카드로 올려야 하면, 또는 벙 글이 바뀌었으면 지금 차례의 새 글"""
+        nb = st.get("notice_built") or {}
+        old = nb.get("text") or ""
+        if not old or old == fresh or old not in (st.get("notice_text"), st.get("notice_fail_text")):
+            return fresh
+        then, then_ids = notice_build(posts, now, cfg, Now(datetime.fromtimestamp(float(nb.get("at") or 0), KST)))
+        return old if then == old and not notice_reorder_due(posts, now, cfg, then_ids, ids) else fresh
 
     def send_once(self, text):
         """보낸다. 지난번에 같은 글을 보내다 실패했는데 실제로는 올라가 있으면(화면에서 확인) 또 보내지 않는다"""
@@ -1334,15 +1417,24 @@ class Bot:
         return "diff"
 
     def _post(self, st, cfg, now, cur, alert, ntext, dg, seen=None):
-        if alert:
-            try:
-                self.send_once(alert)
-            except Exception as e:
-                wait = self.send_wait(e)
-                self.send_log("알림 보내기", e, wait)
-                self.hold_until = self.ts() + wait
-                return "send-fail"
-            self.log("알림: " + alert.split("\n")[0])
+        alerts = [alert] if isinstance(alert, str) and alert else list(alert or [])
+        if alerts:
+            done = list(st.get("alert_done") or [])
+            for a in alerts:
+                if alert_key(a) in done:
+                    continue                                # 지난 차례에 올렸다(뒤의 알림을 보내다 실패해 다시 하는 중)
+                try:
+                    self.send_once(a)
+                except Exception as e:
+                    wait = self.send_wait(e)
+                    self.send_log("알림 보내기", e, wait)
+                    self.hold_until = self.ts() + wait
+                    return "send-fail"
+                done.append(alert_key(a))
+                st["alert_done"] = done
+                self.save()
+                self.log("알림: " + a.split("\n")[0])
+            st["alert_done"] = []
         st.update(known=cur, last_post_at=now.ts)
         self.save()
         if not ntext:

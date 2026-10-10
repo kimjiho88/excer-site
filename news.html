@@ -1817,7 +1817,7 @@
       const n = a && a.list ? a.list.length : (Number.isFinite(Number(p.attend_count)) && p.attend_count != null ? Number(p.attend_count) : null);
       const when = m.date ? C.dateText(m.date, { withDow: true }) + (C.timeRange(m) ? " " + C.timeRange(m) : "") : "";
       const count = state.attendOn && n != null ? "참석 " + n + (m.cap ? "/" + m.cap : "") + "명" : (m.cap ? m.cap + "명 모집" : "");
-      const title = String(p.title || "모임").slice(0, 100), url = postUrl(p.id);
+      const title = String(p.title || "모임").slice(0, 100), url = bungUrl(p.id);
       return {
         m, title, url,
         desc: [when, m.place, count].filter(Boolean).join(", ").slice(0, 100),
@@ -2529,6 +2529,9 @@
     // ── 글 단위 링크 (#post-N) ──
     function hashPostId() { const m = /^#post-(\d+)$/.exec(location.hash || ""); return m ? Number(m[1]) : null; }
     function postUrl(id) { return location.origin + location.pathname + "#post-" + id; }
+    /* 모임 모집 글은 /bung?id= 주소로 공유한다(카카오톡이 # 뒤를 버려도 그 벙이 열리게. bung.html 이 #post- 로 넘긴다) */
+    function bungUrl(id) { return location.origin + "/bung?id=" + id; }
+    function shareUrl(id) { const p = findPost(id); return p && p.category === "벙 소식" ? bungUrl(id) : postUrl(id); }
     function syncHash(id) { try { history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : location.pathname + location.search); } catch (e) {} }
     async function copyText(text) {
       try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
@@ -2540,7 +2543,7 @@
       } catch (e) { return false; }
     }
     async function copyPostLink(id) {
-      const ok = await copyText(postUrl(id));
+      const ok = await copyText(shareUrl(id));
       showToast(ok ? "글 링크를 복사했습니다." : "복사에 실패했습니다. 주소창에서 직접 복사해 주세요.");
     }
     function focusPostCard(id) {
