@@ -37,6 +37,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의 더보기 단추,
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
+  - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때와 하루 한 번 멤버를 읽을 때뿐이다. 채팅 목록에서 방을 못 찾으면 1, 2, 5, 10, 15분 간격으로 다시 본다.
 가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
@@ -122,7 +123,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.5"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.6"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -132,6 +133,7 @@ TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 DEFAULTS = {
     "backend": "tablet",                 # tablet, android, pc, dry
     "room": "",                          # 알릴 방 이름(카카오톡에 보이는 그대로)
+    "room_link": "https://open.kakao.com/o/geS7Tzy",   # (tablet) 알릴 방 오픈채팅 주소. 방이 열려 있지 않으면 이 주소로 바로 연다(목록을 훑지 않음). "" 이면 안 씀
     "test_room": "",                     # 시험 방(봇 계정과 나만 있는 방). test, calibrate 가 쓴다
     "notice": True,                      # 올린 목록을 공지로 걸지
     "check_sec": 20,                     # 사이트를 몇 초에 한 번 볼지
@@ -2034,6 +2036,7 @@ class AdbSender:
         self.rot_fixed, self.rot_note, self.shape, self.turn_note = False, 0.0, None, 0.0   # 화면 방향 고정, 지난번 화면 모양(가로나 세로, 넓이)
         self.comps = {}                                          # 앱의 첫 화면 이름(am start 로 띄울 때)
         self.rot_state = ""                                      # 마지막 방향 고정: '' 됨(또는 할 일 없음), unknown 회전 값을 못 읽음, failed 바꾸지 못함
+        self.main_room, self.room_link = cfg.get("room") or "", (cfg.get("room_link") or "").strip()   # 알릴 방과 그 오픈채팅 주소
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -2612,6 +2615,11 @@ class AdbSender:
             nodes = self.mem_unstick(nodes)
         if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
             return nodes
+        if self.room_link and same_room(room, self.main_room):  # 알릴 방은 오픈채팅 주소로 바로 연다(카카오톡이 첫 화면으로 돌아가 있어도)
+            got = self.open_by_link(room)
+            if got is not None:
+                return got
+            nodes = self.dump()
         nodes = self.goto_list(nodes)
         self.snap("채팅 목록", nodes)
         seen = set(self._names(nodes))
@@ -2636,6 +2644,33 @@ class AdbSender:
             self.save_diag(nodes)
             raise KakaoError("방은 열었는데 입력 칸이 없음%s" % self.diag_note())
         return nodes
+
+    ENTER_WORDS = ("채팅방 들어가기", "채팅방으로 이동", "채팅방 입장", "채팅방 가기", "들어가기", "입장", "입장하기", "채팅하기", "대화하기")
+
+    def open_by_link(self, room):
+        """알릴 방을 오픈채팅 주소로 연다. 봇이 이미 들어가 있는 방이라 카카오톡이 그 방을 연다(소개 화면이 뜨면 들어가기 단추).
+        https 주소가 안 열리면 카카오톡 주소(kakaoopen://join)로. 방 머리가 그 방이고 입력 칸이 있으면 그 화면, 아니면 None(목록에서 찾는다)"""
+        m = re.search(r"open\.kakao\.com/o/([A-Za-z0-9_]+)", self.room_link)
+        urls = [(self.room_link, " -p " + self.t["package"])]
+        if m:
+            urls.append(("kakaoopen://join?l=%s&r=EW" % m.group(1), ""))
+        nodes = []
+        for url, pkg in urls:
+            out = self.sh("am start -a android.intent.action.VIEW -d '%s'%s 2>&1; true" % (url.replace("'", ""), pkg), timeout=30)
+            if re.search(r"^\s*Error|Exception|unable to resolve", out, re.M | re.I):
+                continue
+            for wait in (2.0, 1.5, 2.5, 2.5):
+                self.sleep(wait)
+                nodes = self.dump()
+                if self.room_open(nodes, room):
+                    self.brief("오픈채팅 주소로 연 방", nodes, room)
+                    return nodes
+                btn = self.vpick(nodes, self.ENTER_WORDS) if self.on_kakao(nodes) and not find(nodes, cls="EditText") else None
+                if btn:
+                    self.tap(btn)
+            self.brief("오픈채팅 주소로 연 화면(그 방이 아님)", nodes, room)
+            return None
+        return None
 
     def diag_note(self):
         return ". 지나온 화면을 %s 에 적었습니다" % os.path.basename(self.diag_path) if self.diag_path else ""
