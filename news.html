@@ -378,7 +378,7 @@
   </style>
   <script src="assets/site-core.js?v=11"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=11"></script>
+  <script src="assets/content.js?v=12"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -848,7 +848,7 @@
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
       myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {}, hostMenu: {},
-      attendOn: false, placeOn: false, endOn: false, cancelOn: false, attend: {}
+      attendOn: false, placeOn: false, endOn: false, cancelLevel: 0, attend: {}
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
     const SEEN_KEY = "excer_news_seen";
@@ -1724,8 +1724,8 @@
       const failed = !!(a && a.failed);
       const meRow = list ? list.find((x) => isMe(x.nick, post.id)) : null;
       const mine = !!meRow;
-      // 진행 중에 누른 내 참석(시작한 뒤에 참석)은 끝나기 전까지 스스로 취소(서버 2026-10-10 SQL 뒤, 서버도 같은 기준)
-      const lateMine = !!(meRow && state.cancelOn && st.ongoing && kstKeyOf(meRow.at) >= st.start);
+      // 시작한 뒤 내 참석 취소(서버 2026-10-10 SQL 뒤, 서버도 같은 기준): 끝나기 전까지 누구나(판 2), 진행 중에 누른 참석만(판 1)
+      const lateMine = !!(meRow && st.ongoing && (state.cancelLevel >= 2 || (state.cancelLevel === 1 && kstKeyOf(meRow.at) >= st.start)));
       const host = nickKey(post.author);
       const m = C.postMeta(post) || {};
       // 신청 마감 글자: 시작 시각과 같으면 '시작 전까지', 모임 당일이면 날짜를 되풀이하지 않는다
@@ -1743,7 +1743,7 @@
       const links = coords ? `<span class="bc-links"><a href="https://map.kakao.com/link/map/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">지도</a><a href="https://map.kakao.com/link/to/${mapName},${Number(m.lat)},${Number(m.lng)}" target="_blank" rel="noopener noreferrer">길찾기</a></span>` : "";
       let btn = "";
       if (mine && (!st.started || lateMine)) btn = `<button type="button" class="btn btn-secondary" data-act="unattend" data-id="${post.id}">참석 취소</button>`;
-      else if (mine && !past) btn = `<button type="button" class="btn btn-secondary" disabled>참석함</button>`;   // 시작 전에 누른 참석을 시작한 뒤 빼는 것은 모임장이나 운영진(서버도 막음)
+      else if (mine && !past) btn = `<button type="button" class="btn btn-secondary" disabled>참석함</button>`;   // SQL 전 서버: 시작한 뒤 빼는 것은 모임장이나 운영진(서버도 막음)
       else if (st.open) btn = `<button type="button" class="btn btn-primary" data-act="attend" data-id="${post.id}">참석하기</button>`;
       else if (!past) btn = `<button type="button" class="btn btn-secondary" disabled>${esc(WHY_LABEL[st.why] || "참석할 수 없음")}</button>`;
       // 참석 단추 옆에 공유(올린 사람도, 친구를 부르는 멤버도 바로 채팅방으로). 지난 모임은 공유 대신 후기 쓰기가 아래에 있다
@@ -2657,7 +2657,7 @@
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } syncSortSel(); }
     renderTypeFields("자유", null);
     function applyCaps(c) {
-      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.cancelOn = !!c.cancel; state.capsFailed = !!c.failed;
+      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.cancelLevel = Number(c.cancel) || 0; state.capsFailed = !!c.failed;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
     }

@@ -418,21 +418,21 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1, loc = false, att = false, plc = false, en = false, cn = false;
+        var v = 1, loc = false, att = false, plc = false, en = false, cn = 0;
         (Array.isArray(rows) ? rows : []).forEach(function (x) {
           if (x.key === "content_format") v = Number(x.value) || 1;
           if (x.key === "places_location") loc = Number(x.value) >= 1;
           if (x.key === "bung_attend") att = Number(x.value) >= 1;
           if (x.key === "bung_place") plc = Number(x.value) >= 1;   // 모집 글의 주소와 좌표, 모임장 참석자 추가(2026-10-02 SQL)
           if (x.key === "bung_end") en = Number(x.value) >= 1;      // 끝나는 시간을 받고 모집 인원은 선택(2026-10-05 SQL). 없으면 서버가 인원을 꼭 받는다
-          if (x.key === "bung_cancel") cn = Number(x.value) >= 1;   // 진행 중에 누른 참석은 끝나기 전까지 스스로 취소(2026-10-10 SQL)
+          if (x.key === "bung_cancel") cn = Number(x.value) || 0;   // 시작한 뒤 참석 취소(2026-10-10 SQL): 2 끝나기 전까지 누구나, 1 진행 중에 누른 참석만
         });
         attendOn = att;
-        return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en, cancel: cn && att };
+        return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en, cancel: att ? cn : 0 };
       })
       .catch(function () {
         capsPromise = null;   // 한 번 못 읽었다고 페이지가 살아 있는 동안 옛 서버로 굳지 않게: 다음 호출이 다시 읽는다
-        return { contentFormat: 1, location: false, attend: false, place: false, end: false, cancel: false, failed: true };   // failed: 옛 서버가 아니라 못 읽은 것(화면이 한 번 더 묻는다)
+        return { contentFormat: 1, location: false, attend: false, place: false, end: false, cancel: 0, failed: true };   // failed: 옛 서버가 아니라 못 읽은 것(화면이 한 번 더 묻는다)
       });
     return capsPromise;
   }
