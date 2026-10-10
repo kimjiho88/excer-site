@@ -2,7 +2,7 @@
 -- 아무것도 바꾸지 않는다. 표가 없어도 죽지 않는다(to_regclass 로 먼저 보고, 있을 때만 query_to_xml 로 센다).
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 안(붙여넣다 잘리지 않게).
--- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지.
+-- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지, 끝난 모임 지키기.
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
@@ -43,7 +43,7 @@ schema_v as (
 rate as (select (select count(*) from pg_trigger where tgname = 'site_rate_trg') as n),
 -- 진행 중 참석(참석 함수가 끝나는 시각까지 받는가)과 봇 원격 조종(지금 멈춤이 있는가)
 botctl as (
-  select (select count(*) from pg_proc where proname = 'bung_attend' and prosrc like '%bung_end(rec.meta)%') as mid, (select count(*) from pg_proc where proname = 'bung_unattend' and prosrc like '%bung_cancel_open(rec.meta)%') as cn,
+  select (select count(*) from pg_proc where proname = 'bung_attend' and prosrc like '%bung_end(rec.meta)%') as mid, (select count(*) from pg_proc where proname = 'bung_unattend' and prosrc like '%bung_cancel_open(rec.meta)%') as cn, (select count(*) from pg_proc where proname = 'post_delete' and prosrc like '%PAST_BUNG%') as kp,
          case when to_regclass('public.site_bot_control') is null then null
               else coalesce((xpath('/row/c/text()', query_to_xml($q$select concat_ws(', ',
                      case when pause_until > now() then '전체 멈춤 ' || to_char(pause_until at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || '까지' end,
@@ -80,7 +80,7 @@ select 15, '속도 제한 트리거', n::text || '개',
   from rate
 union all
 select 17, '진행 중 참석, 봇 원격 조종', case when ctl is null then '표가 없어요' when ctl = '' then '평소대로' else ctl end,
-       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' else '' end
+       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' when kp = 0 then '끝난 모임 지키기는 2026-10-10-keep-past.sql 을 돌리면 생겨요' else '' end
   from botctl
 union all
 select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v is null then '2026-10-09-memberbot.sql 을 돌리면 생겨요'
