@@ -84,7 +84,9 @@ create view site_schema_v as
                                                        where attrelid = to_regclass('public.site_places') and attname = 'lat' and not attisdropped)
   union all select 'bung_attend', 1 where to_regprocedure('public.bung_attend(bigint,text,text)') is not null
   union all select 'bung_place', 1 where to_regprocedure('public.bung_host_attend(bigint,text,text)') is not null
-  union all select 'bung_end', 1 where to_regprocedure('public.bung_end(jsonb)') is not null;
+  union all select 'bung_end', 1 where to_regprocedure('public.bung_end(jsonb)') is not null
+  union all select 'bung_cancel', 1 where exists (select 1 from pg_proc   -- 2026-10-10 진행 중 참석 취소(그 파일을 돌린 서버에서만 생긴다)
+                                                  where oid = to_regprocedure('public.bung_unattend(bigint,text,text)') and prosrc like '%bung_cancel_open%');
 grant select on site_schema_v to anon, authenticated;
 
 -- 확인: 결과에 bung_end 1 줄이 보이면 끝
