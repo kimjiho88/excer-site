@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- /bung 의 미리보기 카드용 페이지. 카카오톡은 이 글의 og 태그로 카드를 만들고, 사람은 바로 소식의 모임 모집 탭으로 간다 -->
+  <!-- /bung 의 미리보기 카드용 페이지. 카카오톡은 이 글의 og 태그로 카드를 만들고, 사람은 바로 소식의 모임 모집 탭으로 간다.
+       /bung?id=번호 는 그 벙을 펼친다(봇의 새 벙 공유와 공유하기 카드). 카드를 눌러도 받은 주소 그대로 열리게 og:url 과 canonical 은 두지 않는다 -->
   <title>모임 일정 | 동네친구들</title>
   <meta name="description" content="동네친구들 다가오는 모임 일정과 참석 신청." />
-  <link rel="canonical" href="https://excer-site.vercel.app/bung" />
-  <meta property="og:url" content="https://excer-site.vercel.app/bung" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="모임 일정 | 동네친구들" />
@@ -17,7 +16,12 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="robots" content="noindex" />
-  <script>location.replace("/news.html?cat=bung" + (location.hash || ""));</script>
+  <script>
+    (function () {
+      var m = /[?&]id=(\d+)(?:&|$)/.exec(location.search);
+      location.replace("/news.html?cat=bung" + (m ? "#post-" + m[1] : (location.hash || "")));
+    })();
+  </script>
   <style>body{margin:0;font-family:system-ui,sans-serif;background:#F7F4FB;color:#1B1530}main{max-width:480px;margin:20vh auto;padding:0 16px;text-align:center}a{color:#4B2A82;font-weight:700}</style>
 </head>
 <body>
