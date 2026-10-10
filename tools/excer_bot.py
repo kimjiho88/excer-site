@@ -48,7 +48,8 @@ tablet 준비(태블릿 하나로)
     python excer_bot.py connect (포트는 스스로 찾는다. 못 찾으면 무선 디버깅 화면의 'IP 주소 및 포트' 의 포트를 적는다).
     connect 는 고정 포트(5555)도 열어 두어 무선 디버깅이 저절로 꺼져도 붙는다(처음 한 번 화면의 허용 창). 재부팅하면 무선 디버깅을 켜고 connect 만 다시.
   - 화면 잠금 없음, 충전기 연결, Termux 는 배터리 제한 없음(run 이 termux-wake-lock 을 직접 건다).
-    화면 방향은 봇이 카카오톡을 띄울 때마다 자동 회전을 끄고 가로로 고정한다(앱이 화면을 돌리는 것도 막는다. rotate 로 바꾼다).
+    화면 방향은 봇이 켤 때와 카카오톡을 띄울 때마다 자동 회전을 끄고 가로로 고정한다(자동 회전이 꺼진 동안은 앱이 화면을 돌리는 것도 막는다.
+    rotate 로 바꾼다).
     화면은 꺼져 있어도 된다. 봇이 올릴 때 화면을 켜고 카카오톡을 앞으로 가져온다.
   - 와이파이 절전을 끈다(설정 > 연결 > Wi-Fi > 고급 또는 인텔리전트 Wi-Fi 에서 절전 모드 끔, 배터리 > 절전 예외 앱에 Termux 와 카카오톡).
     화면이 꺼진 채 몇 시간씩 망이 끊기면 그동안 공지가 멈추고 보이스룸도 끊긴다. 봇은 3분 넘게 응답이 없고 다른 주소도 안 열리면
@@ -121,7 +122,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-10.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-10.5"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -2032,6 +2033,7 @@ class AdbSender:
         self.vcfg = dict(DEFAULTS["voice"], **(cfg.get("voice") or {}))   # 보이스룸 제목(띠와 작은 창 글자를 공지나 보이스룸 화면으로 보지 않게)
         self.rot_fixed, self.rot_note, self.shape, self.turn_note = False, 0.0, None, 0.0   # 화면 방향 고정, 지난번 화면 모양(가로나 세로, 넓이)
         self.comps = {}                                          # 앱의 첫 화면 이름(am start 로 띄울 때)
+        self.rot_state = ""                                      # 마지막 방향 고정: '' 됨(또는 할 일 없음), unknown 회전 값을 못 읽음, failed 바꾸지 못함
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -2333,20 +2335,22 @@ class AdbSender:
         return rot_info(self.sh(ROT_CMD, timeout=20))
 
     def lock_rotation(self):
-        """자동 회전을 끄고 정한 방향(rotation: 가로나 세로)으로 고정한다. 앱이 화면을 돌리는 것도 막는다(wm fixed-to-user-rotation).
-        카카오톡을 띄울 때마다 본다(자동 회전이 저절로 다시 켜져도 봇이 읽는 화면 모양이 바뀌지 않게).
+        """자동 회전을 끄고 정한 방향(rotation: 가로나 세로)으로 고정한다. 자동 회전이 꺼져 있는 동안은 앱이 화면을 돌리는 것도 막는다
+        (wm fixed-to-user-rotation enabled_if_no_auto_rotation: 사람이 자동 회전을 켜면 다시 돈다. 판 10.3 의 늘 고정은 화면이 세로에 묶였다).
+        카카오톡을 띄울 때마다 본다(자동 회전이 저절로 다시 켜져도 봇이 읽는 화면 모양이 바뀌지 않게). 바꾼 뒤 다시 읽어 확인한다.
         고친 것이 있으면 무엇이었는지 한 줄, 그대로면 ''. 같은 쪽 두 회전(0 과 180 처럼)은 지금 것을 그대로 둔다(화면이 뒤집히지 않게)"""
+        self.rot_state = ""
         want = self.rot_want()
         if want == "off":
             return ""
         info = self.rot_read()
         good = info["land"] if want == "landscape" else info["port"]
         if not good:
+            self.rot_state = "unknown"
             return ""                                            # 이 기기의 회전 값을 읽지 못함: 건드리지 않는다
         cur = info["rot"]
         target = cur if cur in good else info["usr"] if info["usr"] in good else good[0]
-        fixed = self.rot_fixed or info["fixed"]
-        if info["acc"] == "0" and info["usr"] == target and cur in (None, target) and fixed:
+        if info["acc"] == "0" and info["usr"] == target and cur in (None, target) and info["shape"] in (None, want) and self.rot_fixed:
             return ""
         what = []
         if info["acc"] not in ("0", None):
@@ -2354,13 +2358,23 @@ class AdbSender:
         if info["shape"] and info["shape"] != want:
             what.append("%s였음" % ROT_NAME["portrait" if want == "landscape" else "landscape"])
         cmd = "settings put system accelerometer_rotation 0; settings put system user_rotation %d; wm user-rotation lock %d >/dev/null 2>&1; " % (target, target)
-        if not fixed:
-            cmd += "wm fixed-to-user-rotation enabled >/dev/null 2>&1; "
+        if not self.rot_fixed:                                   # 켤 때 한 번(옛 판이 건 늘 고정도 이것으로 바뀐다)
+            cmd += "wm fixed-to-user-rotation enabled_if_no_auto_rotation >/dev/null 2>&1 || wm fixed-to-user-rotation default >/dev/null 2>&1; "
         self.sh(cmd + "true", timeout=20)
         self.rot_fixed = True
         if info["shape"] and info["shape"] != want:
             self.sleep(1.5)                                      # 돌아가는 동안
+            after = self.rot_read()
+            if after["shape"] and after["shape"] != want:
+                self.rot_state = "failed"
+                what.append("%s로 바꾸지 못함(지금 %s)" % (ROT_NAME[want], ROT_NAME[after["shape"]]))
         return ", ".join(what)
+
+    def rot_line(self, what):
+        """방향을 고친 뒤 남길 한 줄"""
+        if self.rot_state == "failed":
+            return "화면 방향: " + what
+        return "화면 방향: %s. %s로 고정함" % (what, ROT_NAME[self.rot_want()])
 
     def rot_unlock(self):
         """rotation off: 앱이 화면을 돌리는 것을 막던 것만 처음대로(자동 회전 켜고 끄기는 사람이)"""
@@ -2418,7 +2432,7 @@ class AdbSender:
             what = self.lock_rotation()
             if what and time.time() - self.rot_note >= 300:
                 self.rot_note = time.time()
-                self.log("화면 방향: %s. %s로 고정함" % (what, ROT_NAME[self.rot_want()]))
+                self.log(self.rot_line(what))
         except KakaoError:
             pass                                                 # 방향을 못 고쳐도 올리기는 한다
         self.sh("cmd statusbar collapse; true")                  # 남은 알림 창이 있으면 접는다(없으면 아무 일 없음)
@@ -4778,10 +4792,11 @@ def main(argv=None):
     if run_alive(base):                                 # 다른 창에서 이미 도는 봇이 있으면 켜지 않는다(둘이 같은 화면을 번갈아 누르고 같은 글을 두 번 올림)
         raise SystemExit("이미 run 이 돌고 있습니다. 그 창을 그대로 두세요. 상태는 python excer_bot.py status")
     log("켬(판 %s): %s 방%s, %s 방식, %d초마다 %s 확인" % (VERSION, room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트"))
-    if isinstance(bot.sender, AdbSender) and bot.sender.rot_want() != "off":
+    if isinstance(bot.sender, AdbSender):
         try:                                            # 화면 방향을 켤 때 바로 고정(그 뒤로는 카카오톡을 띄울 때마다 다시 맞춘다)
-            what = bot.sender.lock_rotation()
-            log("화면 방향: %s로 고정%s" % (ROT_NAME[bot.sender.rot_want()], "(%s)" % what if what else ""))
+            line = rot_start_line(bot.sender)
+            if line:
+                log(line)
         except KakaoError:
             pass
     voice = None
@@ -4796,6 +4811,18 @@ def main(argv=None):
         run_loop(bot, log, voice, base + "_alive.json")
     finally:
         wake_lock(False)
+
+
+def rot_start_line(s):
+    """run 을 켤 때 화면 방향을 고정하고 남길 한 줄(rotation off 면 '')"""
+    if s.rot_want() == "off":
+        return ""
+    what = s.lock_rotation()
+    if s.rot_state == "unknown":
+        return "화면 방향: 이 기기의 회전 값을 읽지 못해 그대로 둠"
+    if s.rot_state == "failed":
+        return "화면 방향: " + what
+    return "화면 방향: %s로 고정%s" % (ROT_NAME[s.rot_want()], "(%s)" % what if what else "")
 
 
 def cmd_rotate(cfg, path, arg, log, sender=None):
@@ -4815,7 +4842,12 @@ def cmd_rotate(cfg, path, arg, log, sender=None):
             s.rot_unlock()
             return "화면 방향을 봇이 건드리지 않습니다. 지금: %s" % s.rot_text()
         what = s.lock_rotation()
-        return "%s로 고정했습니다%s. 지금: %s. run 은 카카오톡을 띄울 때마다 다시 맞춥니다" % (ROT_NAME[s.rot_want()], "(%s)" % what if what else "", s.rot_text())
+        name = ROT_NAME[s.rot_want()]
+        if s.rot_state == "unknown":
+            return "이 기기의 회전 값을 읽지 못해 고정하지 못했습니다. 지금: %s" % s.rot_text()
+        if s.rot_state == "failed":
+            return "%s로 바꾸지 못했습니다. 지금: %s" % (name, s.rot_text())
+        return "%s로 고정했습니다%s. 지금: %s. run 은 카카오톡을 띄울 때마다 다시 맞춥니다" % (name, "(%s)" % what if what else "", s.rot_text())
     except KakaoError as e:
         return saved + "지금 고정하지는 못했습니다(%s). run 이 카카오톡을 띄울 때 고정합니다" % e
 
