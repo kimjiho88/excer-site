@@ -1,6 +1,6 @@
 -- 모임 모집 참석 보강 1/2: 닉네임 정리(NFC, 보이지 않는 글자, 유니코드 공백), 모임장이 적은 사람 표시(HOST), 시작 뒤 참석 금지, 정원 없는 글 상한, 잠금 완화
--- 참석 네 쪽(2026-10-01)과 장소 두 쪽(2026-10-02) 뒤에 실행. 다시 실행해도 안전하다(기존 명단은 새 규칙으로 옮긴다).
-do $g$ begin if to_regprocedure('public.bung_host_attend(bigint,text,text)') is null then raise exception '장소 2쪽을 먼저 실행하세요'; end if; end $g$;
+-- 참석 네 쪽(2026-10-01)과 장소 두 쪽(2026-10-02) 뒤에 실행. 다시 실행해도 안전하다(기존 명단은 새 규칙으로 옮긴다). 단 2026-10-09 진행 중 참석 뒤에는 첫 줄에서 멈춘다.
+do $g$ begin if to_regprocedure('public.bung_host_attend(bigint,text,text)') is null then raise exception '장소 2쪽을 먼저 실행하세요'; end if;   if to_regclass('public.site_bot_control') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-09 진행 중 참석)이 적용되어 있습니다. 이 쪽은 다시 돌리지 않습니다(돌리면 참석과 참석 취소가 옛 판으로 돌아갑니다)'; end if; end $g$;
 
 -- 저장할 닉네임: NFC 로 맞추고(iOS 분해형 한글), 앞뒤의 유니코드 공백(NBSP, 전각 공백 포함)을 뗀다. 글자는 그대로 둔다
 create or replace function bung_nick_clean(p text)
