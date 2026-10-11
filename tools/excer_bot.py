@@ -31,7 +31,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     '참석' 과 그 벙 주소 /bung?id=번호. 카카오톡 미리보기 상자를 눌러도 소식의 그 글이 펼쳐져 참석 단추가 바로 보인다).
     나머지는 하나면 자세히(그 벙 주소까지), 여럿이면 한 메시지에 한 줄씩.
   - 24시간 돈다. 사이트가 바뀌면 2분 동안 더 바뀌지 않을 때 올린다(settle_sec. 벙을 올리고 곧바로 고친 것까지 공유와 공지를 한 번에,
-    계속 바뀌어도 10분이면 올림). 한 번 올린 뒤 1분 안에는 다시 올리지 않고 모았다가 올린다(min_gap_sec).
+    계속 바뀌어도 10분이면 올림. 10분 안에 날이 바뀌면 공지는 날이 바뀔 때 한 번에). 한 번 올린 뒤 1분 안에는 다시 올리지 않고
+    모았다가 올린다(min_gap_sec).
   - 처음 켤 때는 이미 올라와 있던 글을 알리지 않고, 지금의 공지 글만 올려 공지로 건다(방 공지가 이미 이 글이면 올리지 않는다).
   - 보내기에 실패하면 1분 쉬었다가 다시. 공지 걸기만 실패하면 1분, 5분, 15분 뒤 이미 올린 글을 찾아 다시 건다(세 번까지).
     tablet 은 글을 다시 올리지 않고 찾아서 건다. 위로 밀려 못 찾을 때만 한 번 더 올린다. 건 뒤 공지 띠가 봇 글이 아닌 글로 바뀌면
@@ -44,7 +45,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
   - 운영 화면(ops.html 데이터 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
     그동안 바뀐 것은 기억만)을 누르면 1분 안에 따른다. 멈춤이 끝나면(정한 시간이 지나거나 다시 켜기) 방 공지 띠를 보고 봇 공지가
-    아니면 다시 올려 건다.
+    아니면 다시 올려 건다(조용한 시간 안에 멈췄다 풀려도 끝나면 본다).
   - 멤버: 매일 05:10(members_at) 알릴 방 오른쪽 위 세 줄 단추(방 메뉴)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는 멤버의 닉네임을
     읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의 더보기 단추,
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
@@ -1000,7 +1001,7 @@ def today_key(text):
 
 
 def today_same(base, posts, now, cfg, also=None):
-    """기준 글(base: 올린 공지 글이나 그날의 기준 글, 그리고 그 글의 카드 차례를 정한 때)의 오늘 부분(첫 두 줄, 카드, '외 N건')이,
+    """기준 글(base: 올린 공지 글이나 보내다 실패한 글, 그리고 그 글의 카드 차례를 정한 때)의 오늘 부분(첫 두 줄, 카드, '외 N건')이,
     지금 사이트 글로 그때 차례대로 다시 만든 글의 오늘 부분과 같은가(카드 차례만 다른 것은 같다). 그때 차례로 만든 글이나 지금 차례(also)로
     만든 글 가운데 하나라도 같으면 같다. 같으면 시각만 지났거나(벙의 시작과 끝, 마감 벙의 시각) 맨 아래 이후 벙 줄만 바뀐 것이라 공지를
     다시 올리지 않는다. 맨 아래 줄이 길어지거나 짧아져 글 길이 한도로 카드 수가 달라지지 않게, 기준 글의 맨 아래 줄 길이로 카드 수를 정해 다시 만든다"""
@@ -1019,6 +1020,11 @@ def quiet_soon(now, cfg, sec):
     """sec 초 안에 조용한 시간이 되는가(그러면 기다리지 않는다: 기다리면 조용한 시간이 끝날 때까지 밀린다)"""
     base = datetime.fromtimestamp(now.ts, KST)
     return any(in_quiet(Now(base + timedelta(minutes=m)).hm, cfg.get("quiet")) for m in range(1, int(sec) // 60 + 2))
+
+
+def turn_by(now, cfg, ts):
+    """ts 까지 공지 글의 날이 바뀌는가"""
+    return notice_day(Now(datetime.fromtimestamp(ts, KST)), cfg) != notice_day(now, cfg)
 
 
 NOTICE_LEAD_MIN = 10      # 공지 글을 만들 때 이만큼 안에 시작할 벙이 있으면 그 시각의 차례로 만든다
@@ -1329,6 +1335,12 @@ class Bot:
         self.last_check = now.ts
         st, cfg = self.st, self.cfg
         if in_quiet(now.hm, cfg.get("quiet")):
+            ctl = self.ctl = self.control(now)          # 조용한 시간에도 운영 화면의 멈춤은 기억한다(그 안에 멈췄다 풀려도 끝나면 방 공지를 본다)
+            for k, flag in (("pause", "ctl_paused"), ("notice", "ctl_notice")):
+                if ctl[k] > now.ts and not st.get(flag):
+                    st[flag] = 1
+                    self.save()
+            self.prev_sig = None                        # 끝난 뒤 처음 읽은 글은 막 바뀐 것으로 보지 않는다(밤사이 바뀐 것도 끝나는 시각에 바로)
             return "quiet"
         try:
             posts = self.site.posts()
@@ -1425,7 +1437,9 @@ class Bot:
             dg = False                                  # 공지 멈춤 중에는 공지 글을 올리지 않는다(매일 다시 올리기도)
         if dg:
             ntext, built = fresh, lead.ts               # 매일 다시 올리기는 지금 차례로
-        want = not held and ((ntext != st.get("notice_text") and now.ts >= float(st.get("notice_retry_at") or 0)) or bool(dg))
+        retry = float(st.get("notice_retry_at") or 0) if (st.get("notice_fail_text") or "").startswith(day_head(now, cfg)) else 0.0
+        # 걸기를 다시 하던 글이 지난날 글이면 날이 바뀐 지금 글은 다시 걸 때를 기다리지 않는다
+        want = not held and ((ntext != st.get("notice_text") and now.ts >= retry) or bool(dg))
         seen, looked = None, False
         unsure = bool(st.get("notice_fail_text")) and st.get("notice_fail_text") != ntext   # 다른 글을 올렸는데 걸렸는지 모름(걸렸을 수 있다)
         if not want and not held and cfg.get("notice") and ntext == st.get("notice_text") and (self.first or unsure or self.ctl_check):
@@ -1463,25 +1477,28 @@ class Bot:
         """사이트가 막 바뀐 참이면 잠깐 기다릴지(run 에서만, settle_sec 기본 120초). 벙을 올린 뒤 곧바로 고치면(오타, 신청 마감) 고친 것까지
         모아 공유와 공지를 한 번에 올린다(공지가 1분 간격으로 잇따라 걸리지 않게). 올릴 것이 또 바뀌면 그때부터 다시 기다리되, 처음 바뀐 때부터
         settle_max_sec(기본 600초)가 지나면 올린다. 사이트 글이 바뀐 때만 기다린다(켠 뒤 처음은 바로).
-        다시 하는 일(보내다 실패, 걸기 다시, 방 공지가 다름, 남은 알림)과 매일 다시 올리기도 기다리지 않는다"""
-        gap = int(cfg.get("settle_sec", 120) or 0)
+        다시 하는 일(보내다 실패, 걸기 다시, 방 공지가 다름, 남은 알림)과 매일 다시 올리기도 기다리지 않는다.
+        다만 공지 글의 날이 settle_max_sec 안에 바뀌면 공지 글은(다시 하는 일도) 날이 바뀔 때 날이 바뀐 글로 한 번에 올린다
+        (자정 직전에 올린 공지와 날이 바뀐 공지가 잇따라 걸리지 않게)"""
+        gap, top = int(cfg.get("settle_sec", 120) or 0), int(cfg.get("settle_max_sec", 600) or 0)
         if gap > 0 and quiet_soon(now, cfg, gap):
             return False                                 # 기다리는 사이에 조용한 시간이 된다: 지금 올린다
+        turn = bool(self.settle_on and gap > 0 and top > 0 and want and not dg and turn_by(now, cfg, now.ts + top))   # 곧 날이 바뀐다
         pending = unsure_texts(st)                       # 이번에 다시 보내는 글만 본다(옛 판이 남긴 글이나 그 뒤 바뀐 글은 다시 보내지 않는다)
         if not self.settle_on or gap <= 0 or dg or seen == "diff" or st.get("alert_done") \
                 or (want and ntext in pending) or any(t in pending for _, t in alert) \
                 or (want and st.get("notice_fail_text") == ntext):
-            return False
+            return turn
         key = hashlib.sha1(json.dumps([ntext if want else "", [t for _, t in alert]], ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
         old = st.get("settle") or {}
         if not old and not self.site_moved:
-            return False
+            return turn
         if old.get("key") != key:
             last = now.ts if self.site_moved else float(old.get("last") or now.ts)
             st["settle"] = {"key": key, "since": float(old.get("since") or now.ts), "last": last}
             self.save()
         cur = st["settle"]
-        return now.ts - float(cur["last"]) < gap and now.ts - float(cur["since"]) < int(cfg.get("settle_max_sec", 600) or 0)
+        return turn or (now.ts - float(cur["last"]) < gap and now.ts - float(cur["since"]) < top)
 
     def posted(self, st):
         """방에 마지막으로 올린 공지 글과 그 글의 카드 차례를 정한 때. 걸기를 다시 하는 중이면 그 글(notice_fail_text)이 마지막으로 올린 글.
@@ -1634,7 +1651,7 @@ class Bot:
             if hasattr(self.sender, "done"):
                 self.sender.done()
         self.look_fails = 0
-        what = "지금 사이트 글" if fresh is None or fresh == ntext else "지난번에 건 글"   # 그대로 두는 옛 글(날이 바뀜, 차례만 바뀜)과 견줬으면
+        what = "지금 사이트 글" if fresh is None or fresh == ntext else "지난번에 건 글"   # 그대로 두는 옛 글(차례만 바뀜, 맨 아래 줄만 바뀜)과 견줬으면
         if seen == "?" and ctl:                                  # 멈춤 끝: 띠가 봇 공지의 앞부분을 보일 때만 '모름' 을 믿는다(빈 띠나 다른 글이면 다시 건다)
             a, b = notice_core(self.seen_shown), notice_core(ntext)
             if not (a and any(a[j:] and b.startswith(a[j:]) for j in range(min(8, len(a)) + 1))):
@@ -1715,6 +1732,10 @@ class Bot:
             self.save()
             self.log("방 공지가 이미 지금 사이트 글과 같아 올리지 않음")
             return "same"
+        if not ntext.startswith(day_head(Now(self.clock()), cfg)):
+            # 이 차례를 시작한 뒤 날이 바뀌었다(화면 조작이 오래 걸림): 지난날 글은 올리지도 걸지도 않고 다음 차례에 그날 글을
+            self.log("올리는 사이 날이 바뀌어 지난날 공지 글은 올리지 않음")
+            return "alert" if alerts else "none"
         again = bool(cfg.get("notice")) and not dg and st.get("notice_fail_text") == ntext and int(st.get("notice_fail") or 0) > 0
         sends = int(st.get("notice_sends") or st.get("notice_fail") or 1)   # 이 글을 방에 올린 횟수(옛 판 기록은 실패 수가 곧 올린 수)
         if again and hasattr(self.sender, "pin_again"):
