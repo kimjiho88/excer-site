@@ -46,7 +46,7 @@
      SDK 를 못 읽거나 키가 없으면 기기 공유 창(navigator.share) → 링크 복사 순으로 물러선다.
      share(opts) → Promise<"kakao" | "share" | "copy" | "abort" | "fail">
        opts: { title, description, url, imageUrl, buttonTitle }
-     모임 달력 카드(소식 화면의 채팅방에 공유): 소식 화면이 뜰 때 load() 로 SDK 를 미리 읽고, 누를 때 sendNow(opts). 그림은 날짜마다 미리 만든 assets/cal/MM-DD.png
+     모임 카드(소식 화면의 채팅방에 공유): 소식 화면이 뜰 때 load() 로 SDK 를 미리 읽고, 누를 때 sendNow(opts). 그림은 벙 사진(assets/bung) 이나 날짜 그림(assets/cal), 글 부분은 항목 칸
      ────────────────────────────────────────────────────────── */
   var KSHARE = (function () {
     var SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
@@ -121,16 +121,22 @@
       });
     }
     /* 이미 읽은 SDK 로 그 자리에서 보낸다. 카카오톡을 여는 일이라 누른 그때 불러야 막히지 않는다(SDK 는 미리 load 로). 못 보내면 false
-       opts: { title, description, url, imageUrl, imageWidth, imageHeight, buttonTitle } */
+       opts: { title, description, url, imageUrl, imageWidth, imageHeight, buttonTitle,
+               itemContent(카카오 피드 항목 칸), social(좋아요, 댓글 수), buttons: [{ title, url }] 두 개까지 } */
     function sendNow(opts) {
       opts = opts || {};
       var K = window.Kakao;
       if (!(K && K.Share && K.isInitialized && K.isInitialized())) return false;
       var url = opts.url || location.href;
-      var content = { title: opts.title || document.title, description: opts.description || "", imageUrl: opts.imageUrl, link: { mobileWebUrl: url, webUrl: url } };
+      var content = { title: opts.title || document.title, imageUrl: opts.imageUrl, link: { mobileWebUrl: url, webUrl: url } };
+      if (opts.description) content.description = opts.description;
       if (opts.imageWidth && opts.imageHeight) { content.imageWidth = opts.imageWidth; content.imageHeight = opts.imageHeight; }
+      var btns = (opts.buttons && opts.buttons.length ? opts.buttons : [{ title: opts.buttonTitle || "자세히 보기", url: url }]).slice(0, 2);
+      var tpl = { objectType: "feed", content: content, buttons: btns.map(function (b) { var u = b.url || url; return { title: b.title, link: { mobileWebUrl: u, webUrl: u } }; }) };
+      if (opts.itemContent) tpl.itemContent = opts.itemContent;
+      if (opts.social) tpl.social = opts.social;
       try {
-        K.Share.sendDefault({ objectType: "feed", content: content, buttons: [{ title: opts.buttonTitle || "자세히 보기", link: { mobileWebUrl: url, webUrl: url } }] });
+        K.Share.sendDefault(tpl);
         return true;
       } catch (e) { return false; }
     }
