@@ -1435,6 +1435,11 @@ class Bot:
             dg = False
         if held:
             dg = False                                  # 공지 멈춤 중에는 공지 글을 올리지 않는다(매일 다시 올리기도)
+        near = self.turn_near(now, cfg)                 # 곧 날이 바뀐다: 공지 글은 날이 바뀔 때
+        if dg and near:
+            st["last_digest"] = now.ymd                 # 매일 다시 올리기는 날이 바뀔 때의 공지로 갈음한다
+            self.save()
+            dg = False
         if dg:
             ntext, built = fresh, lead.ts               # 매일 다시 올리기는 지금 차례로
         retry = float(st.get("notice_retry_at") or 0) if (st.get("notice_fail_text") or "").startswith(day_head(now, cfg)) else 0.0
@@ -1452,6 +1457,8 @@ class Bot:
             self.first = False                          # 못 읽었으면 쉬었다가 다시 본다
         if want or (looked and seen is not None):
             self.ctl_check = False                      # 멈춤 끝의 방 공지 보기를 했다(사이트 글이 바뀌었으면 올리기 전에 어차피 본다)
+        if want and near:
+            want = False                                # 공지 글은 날이 바뀔 때 날이 바뀐 글로(알림은 그대로 보낸다)
         if not alert and not want:
             st.update(known=cur, alert_done=[])         # 제목만 바뀜, 지난 글 정리(보내다 남은 알림도 없다)
             st.pop("bulk_ids", None)
@@ -1477,28 +1484,35 @@ class Bot:
         """사이트가 막 바뀐 참이면 잠깐 기다릴지(run 에서만, settle_sec 기본 120초). 벙을 올린 뒤 곧바로 고치면(오타, 신청 마감) 고친 것까지
         모아 공유와 공지를 한 번에 올린다(공지가 1분 간격으로 잇따라 걸리지 않게). 올릴 것이 또 바뀌면 그때부터 다시 기다리되, 처음 바뀐 때부터
         settle_max_sec(기본 600초)가 지나면 올린다. 사이트 글이 바뀐 때만 기다린다(켠 뒤 처음은 바로).
-        다시 하는 일(보내다 실패, 걸기 다시, 방 공지가 다름, 남은 알림)과 매일 다시 올리기도 기다리지 않는다.
-        다만 공지 글의 날이 settle_max_sec 안에 바뀌면 공지 글은(다시 하는 일도) 날이 바뀔 때 날이 바뀐 글로 한 번에 올린다
-        (자정 직전에 올린 공지와 날이 바뀐 공지가 잇따라 걸리지 않게)"""
-        gap, top = int(cfg.get("settle_sec", 120) or 0), int(cfg.get("settle_max_sec", 600) or 0)
+        다시 하는 일(보내다 실패, 걸기 다시, 방 공지가 다름, 남은 알림)과 매일 다시 올리기도 기다리지 않는다"""
+        gap = int(cfg.get("settle_sec", 120) or 0)
         if gap > 0 and quiet_soon(now, cfg, gap):
             return False                                 # 기다리는 사이에 조용한 시간이 된다: 지금 올린다
-        turn = bool(self.settle_on and gap > 0 and top > 0 and want and not dg and turn_by(now, cfg, now.ts + top))   # 곧 날이 바뀐다
         pending = unsure_texts(st)                       # 이번에 다시 보내는 글만 본다(옛 판이 남긴 글이나 그 뒤 바뀐 글은 다시 보내지 않는다)
         if not self.settle_on or gap <= 0 or dg or seen == "diff" or st.get("alert_done") \
                 or (want and ntext in pending) or any(t in pending for _, t in alert) \
                 or (want and st.get("notice_fail_text") == ntext):
-            return turn
+            return False
         key = hashlib.sha1(json.dumps([ntext if want else "", [t for _, t in alert]], ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
         old = st.get("settle") or {}
         if not old and not self.site_moved:
-            return turn
+            return False
         if old.get("key") != key:
             last = now.ts if self.site_moved else float(old.get("last") or now.ts)
             st["settle"] = {"key": key, "since": float(old.get("since") or now.ts), "last": last}
             self.save()
         cur = st["settle"]
-        return turn or (now.ts - float(cur["last"]) < gap and now.ts - float(cur["since"]) < top)
+        return now.ts - float(cur["last"]) < gap and now.ts - float(cur["since"]) < int(cfg.get("settle_max_sec", 600) or 0)
+
+    def turn_near(self, now, cfg):
+        """run 에서 공지 글의 날이 settle_max_sec(기본 600초) 안에 바뀌는가. 그동안 올릴 공지 글(다시 하는 일, 매일 다시 올리기도)은
+        날이 바뀔 때 날이 바뀐 글로 한 번에 올린다(자정 직전에 올린 공지와 날이 바뀐 공지가 잇따라 걸리지 않게). 알림은 기다리지 않는다.
+        그 안에 조용한 시간이 시작하면 아니다(조용한 시간 전에 올린다)"""
+        try:
+            gap, top = int(cfg.get("settle_sec", 120) or 0), int(cfg.get("settle_max_sec", 600) or 0)
+        except (TypeError, ValueError):
+            return False                                 # 손으로 잘못 적은 값
+        return bool(self.settle_on and gap > 0 and top > 0 and turn_by(now, cfg, now.ts + top) and not quiet_soon(now, cfg, top))
 
     def posted(self, st):
         """방에 마지막으로 올린 공지 글과 그 글의 카드 차례를 정한 때. 걸기를 다시 하는 중이면 그 글(notice_fail_text)이 마지막으로 올린 글.
@@ -1707,7 +1721,9 @@ class Bot:
                 self.save()
                 self.log("알림: " + a.split("\n")[0])
             st["alert_done"] = []
-        st.update(known=cur, last_post_at=now.ts)
+        st["known"] = cur
+        if alerts:
+            st["last_post_at"] = now.ts                 # 올린 것이 있을 때만(아무것도 올리지 않고 돌아가면 다음 차례를 늦추지 않게)
         st.pop("bulk_ids", None)
         self.save()
         if not ntext:
@@ -1786,6 +1802,13 @@ class Bot:
             st["notice_text"] = ntext
             drop_notices(st)
             self.save()
+            return "sent"
+        if not ntext.startswith(day_head(Now(self.clock()), cfg)):
+            # 보내는 사이 날이 바뀌었다: 지난날 글은 걸지 않는다(다음 차례에 그날 글을 올려 건다)
+            st.update(notice_text=ntext, notice_fail=0, notice_fail_text="", notice_retry_at=0, notice_sends=0, notice_gaveup=0)
+            drop_notices(st)
+            self.save()
+            self.log("올리는 사이 날이 바뀌어 지난날 공지 글은 걸지 않음")
             return "sent"
         self.sender.card_ok = True                          # 방금 올린 글: 그 아래 등록 카드는 이번에 건 것
         try:
