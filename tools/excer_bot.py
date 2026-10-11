@@ -138,7 +138,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -3190,9 +3190,23 @@ class AdbSender:
         e = find(nodes, cls="EditText")
         if not e or not self.on_kakao(nodes):
             return False
-        l0 = max(e, key=lambda n: n["b"][3])["b"][0]                 # 방 입력 칸(맨 아래 것. 목록 칸의 찾기 칸은 아님)
+        left = self.pane_left(nodes, max(e, key=lambda n: n["b"][3]))   # 방 입력 칸(맨 아래 것. 목록 칸의 찾기 칸은 아님)이 든 방 칸
         hgt = max(n["b"][3] for n in nodes)
-        return any(same_room(n["text"], room) and n["b"][0] >= l0 - 60 and n["b"][1] < hgt * 0.12 for n in nodes)
+        return any(same_room(n["text"], room) and n["b"][0] >= left and n["b"][1] < hgt * 0.12 for n in nodes)
+
+    @staticmethod
+    def pane_left(nodes, box):
+        """입력 칸이 든 방 칸의 왼쪽 끝: 입력 칸을 품은 칸 가운데 높이가 화면의 절반을 넘는 첫 칸(두 칸 화면이면 목록 칸의 오른쪽).
+        방 이름은 입력 칸보다 왼쪽에서 시작하기도 한다(입력 칸 앞에 + 단추). 그런 칸이 없으면 입력 칸 왼쪽에서 조금 더"""
+        par = {k: n["i"] for n in nodes for k in n["kids"]}
+        hgt = max(n["b"][3] for n in nodes)
+        j = box["i"]
+        while j in par:
+            j = par[j]
+            b = nodes[j]["b"]
+            if b[3] - b[1] >= hgt * 0.5:
+                return b[0] - 10
+        return box["b"][0] - 60
 
     def goto_list(self, nodes=None):
         nodes, launched = (nodes, 0) if nodes is not None else ([], 0)
