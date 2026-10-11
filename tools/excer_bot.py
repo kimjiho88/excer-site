@@ -1507,12 +1507,12 @@ class Bot:
     def turn_near(self, now, cfg):
         """run 에서 공지 글의 날이 settle_max_sec(기본 600초) 안에 바뀌는가. 그동안 올릴 공지 글(다시 하는 일, 매일 다시 올리기도)은
         날이 바뀔 때 날이 바뀐 글로 한 번에 올린다(자정 직전에 올린 공지와 날이 바뀐 공지가 잇따라 걸리지 않게). 알림은 기다리지 않는다.
-        그 안에 조용한 시간이 시작하면 아니다(조용한 시간 전에 올린다)"""
+        날이 바뀌는 때가 조용한 시간 안이면 아니다(그날 글은 조용한 시간이 끝나야 올라가니 기다릴 까닭이 없다)"""
         try:
             gap, top = int(cfg.get("settle_sec", 120) or 0), int(cfg.get("settle_max_sec", 600) or 0)
         except (TypeError, ValueError):
             return False                                 # 손으로 잘못 적은 값
-        return bool(self.settle_on and gap > 0 and top > 0 and turn_by(now, cfg, now.ts + top) and not quiet_soon(now, cfg, top))
+        return bool(self.settle_on and gap > 0 and top > 0 and turn_by(now, cfg, now.ts + top) and not in_quiet(day_turn(cfg), cfg.get("quiet")))
 
     def posted(self, st):
         """방에 마지막으로 올린 공지 글과 그 글의 카드 차례를 정한 때. 걸기를 다시 하는 중이면 그 글(notice_fail_text)이 마지막으로 올린 글.
