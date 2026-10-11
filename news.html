@@ -1654,9 +1654,13 @@
           if (el && !String(el.value || "").trim()) { setError(el.id, msg); ok = false; }
         });
         const d = $("wf_date"), t = $("wf_time"), en = $("wf_end");
+        let pastEdit = false;   // 고치는 글을 지난 시각으로 옮김: 운영진 비밀번호면 서버가 받는다(날짜를 잘못 적은 지난 모임을 바로잡을 때)
         if (d && t && d.value && t.value && slotChanged(d.value, t.value)) {
           const today = C.kstToday();
-          if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
+          if (d.value < today || (d.value === today && t.value <= C.kstNowHM())) {
+            if (state.editingId) pastEdit = true;
+            else { setError("wf_time", "지난 시각입니다. 날짜와 시간을 확인해 주세요."); ok = false; }
+          }
         }
         if (en && t && en.value && t.value && en.value === t.value) { setError("wf_end", "끝나는 시간이 시작 시간과 같습니다."); ok = false; }   // 시작보다 이른 값은 다음 날로 본다(19:00 시작 01:00 끝)
         const capEl = $("wf_cap");   // 고치는 글: 이미 참석한 사람보다 적은 정원은 안 된다(서버는 막지 않으니 화면에서 먼저)
@@ -1668,7 +1672,7 @@
         if (dl && dl.value && d && t && d.value && t.value) {
           const v = dl.value.slice(0, 16), old = state.editingId ? (C.postMeta(findPost(state.editingId) || {}) || {}).deadline || "" : "";
           if (v > d.value + "T" + t.value) { setError("wf_deadline", "신청 마감은 모임 시작보다 늦을 수 없습니다."); ok = false; }
-          else if ((v !== old || slotChanged(d.value, t.value)) && v <= nowKey()) { setError("wf_deadline", "신청 마감이 이미 지났습니다."); ok = false; }   // 날짜를 옮기면 신청 마감도 다시 본다(서버와 같은 규칙)
+          else if ((v !== old || slotChanged(d.value, t.value)) && v <= nowKey() && !pastEdit) { setError("wf_deadline", "신청 마감이 이미 지났습니다."); ok = false; }   // 날짜를 옮기면 신청 마감도 다시 본다(서버와 같은 규칙)
         }
       }
       const from = $("wf_from"), to = $("wf_to");
@@ -1813,7 +1817,6 @@
        모임 날짜로 달력 그림(800x400)을 그려 카카오 서버에 올려 두고, 보내기를 누르면 그 자리에서 카카오톡 공유 카드로 보낸다
        (카카오톡을 여는 일이라 누른 그때 불러야 한다). 그림을 못 올리면 페이지 미리보기 그림으로, 카카오톡을 못 쓰면 기기 공유 창이나 글 복사로 */
     const SHARE = { id: null, seq: 0, img: "", ready: false, back: null };
-    const CARD_FONT = 'Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
     function bungShareInfo(p) {
       const m = C.postMeta(p) || {}, st = bungStatus(p), a = state.attend[p.id];
       const n = a && a.list ? a.list.length : (Number.isFinite(Number(p.attend_count)) && p.attend_count != null ? Number(p.attend_count) : null);
@@ -1828,55 +1831,25 @@
       };
     }
     function ogImage() { const og = document.querySelector('meta[property="og:image"]'); return (og && og.content) || location.origin + "/assets/og-news.jpg"; }
-    /* 달력 그림: 흰 바탕 가운데 달력(위 띠에 달, 아래에 큰 날짜). 카드 아래 글이 제목과 날짜, 장소를 맡는다 */
-    function drawBungCard(ymd) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd || "")) return null;
-      const c = document.createElement("canvas"); c.width = 800; c.height = 400;
-      const g = c.getContext && c.getContext("2d"); if (!g) return null;
-      const css = getComputedStyle(document.documentElement);
-      const brand = css.getPropertyValue("--brand").trim() || "#4B2A82", line = css.getPropertyValue("--line").trim() || "#E3DFE4";
-      const W = 800, H = 400, bw = 220, bh = 236, x = (W - bw) / 2, y = (H - bh) / 2, r = 22, bar = 70;
-      const box = () => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + bw, y, x + bw, y + bh, r); g.arcTo(x + bw, y + bh, x, y + bh, r); g.arcTo(x, y + bh, x, y, r); g.arcTo(x, y, x + bw, y, r); g.closePath(); };
-      g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, W, H);
-      g.save(); g.shadowColor = "rgba(36, 30, 44, 0.14)"; g.shadowBlur = 26; g.shadowOffsetY = 8; box(); g.fillStyle = "#FFFFFF"; g.fill(); g.restore();
-      g.save(); box(); g.clip(); g.fillStyle = brand; g.fillRect(x, y, bw, bar); g.restore();
-      box(); g.lineWidth = 2; g.strokeStyle = line; g.stroke();
-      g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillStyle = "#FFFFFF"; g.font = "700 38px " + CARD_FONT; g.fillText(Number(ymd.slice(5, 7)) + "월", W / 2, y + bar / 2 + 2);
-      g.fillStyle = brand; g.font = "800 124px " + CARD_FONT; g.fillText(String(Number(ymd.slice(8, 10))), W / 2, y + bar + (bh - bar) / 2 + 6);
-      return c;
-    }
-    function cardFonts() {   // 달력 글자(숫자와 '월')의 웹 글꼴을 먼저 받는다. 늦으면 기기 글꼴로
-      const load = document.fonts && document.fonts.load ? Promise.all([document.fonts.load("800 124px Pretendard", "0123456789"), document.fonts.load("700 38px Pretendard", "0123456789월")]).catch(() => null) : Promise.resolve();
-      return Promise.race([load, new Promise((r) => setTimeout(r, 1500))]);
-    }
+    /* 달력 그림: 흰 바탕 가운데 달력(위 띠에 달, 아래에 큰 날짜). 날짜마다 미리 만들어 둔 그림(assets/cal/MM-DD.png, 800x400)을 쓴다.
+       공유할 때마다 그려 카카오 서버에 올리지 않는다(올리는 동안 보내기를 기다리던 것). 카드 아래 글이 제목과 날짜, 장소를 맡는다 */
+    function calImage(ymd) { return /^\d{4}-(\d{2})-(\d{2})$/.test(ymd || "") ? location.origin + "/assets/cal/" + ymd.slice(5) + ".png" : ""; }
     function openShare(id, opener) {
       const p = findPost(id); if (!p) return;
-      const i = bungShareInfo(p), seq = ++SHARE.seq;
-      Object.assign(SHARE, { id, img: "", ready: false, back: opener || null });
+      const i = bungShareInfo(p), seq = ++SHARE.seq, img = calImage(i.m.date);
+      Object.assign(SHARE, { id, img, ready: false, back: opener || null });
       $("shareCardTitle").textContent = i.title; $("shareCardDesc").textContent = i.desc; $("shareCardBtn").textContent = i.btn;
-      $("shareImg").removeAttribute("src");
+      $("shareImg").src = img || ogImage();
       $("shareSend").disabled = true; $("shareSend").setAttribute("aria-busy", "true");
       $("shareNote").textContent = "카드를 준비하는 중입니다.";
       $("shareBackdrop").hidden = false;
       setTimeout(() => $("shareCopy").focus(), 30);
-      cardFonts().then(() => {
-        if (seq !== SHARE.seq) return;
-        const c = drawBungCard(i.m.date);
-        try { $("shareImg").src = c ? c.toDataURL("image/png") : ogImage(); } catch (e) { $("shareImg").src = ogImage(); }
-        prepareShare(seq, c);
-      });
+      prepareShare(seq);
     }
-    async function prepareShare(seq, canvas) {
-      let url = "";
-      try {
-        if (canvas && window.KSHARE && KSHARE.upload) {
-          const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
-          if (blob) url = await Promise.race([KSHARE.upload(blob), new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 9000))]);
-        } else if (window.KSHARE && KSHARE.load) await KSHARE.load().catch(() => null);   // 그림이 없어도 SDK 는 미리 읽는다(누를 때 바로 보내게)
-      } catch (e) { url = ""; }
+    async function prepareShare(seq) {   // 카카오 SDK 를 읽는다(소식 화면이 뜰 때 미리 읽어 두면 바로)
+      if (window.KSHARE && KSHARE.load) await KSHARE.load().catch(() => null);
       if (seq !== SHARE.seq) return;
-      SHARE.img = url; SHARE.ready = true;
+      SHARE.ready = true;
       $("shareSend").disabled = false; $("shareSend").removeAttribute("aria-busy");
       $("shareNote").textContent = "";
     }
@@ -2429,6 +2402,7 @@
       } catch (err) {
         const msg = rpcErrorMessage(err);
         if (/BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { openAuthor(); setError("wPass", msg); firstInvalid(); }
+        else if (editing && /BUNG_PAST/.test(String(err && err.message))) { openAuthor(); setError("wf_time", "지난 시각입니다. 지난 시각으로는 운영진 비밀번호로만 고칠 수 있습니다."); firstInvalid(); }
         else showToast(msg);
       } finally {
         state.busy = false; btn.disabled = false; btn.textContent = editing ? "저장" : cat === "벙 소식" ? "모임 올리기" : "등록";
@@ -2809,6 +2783,7 @@
     }).catch(() => {});   // 열려 있는 창의 입력값은 지키고 칸만 다시 그린다. 글 목록 질의는 이것을 기다린다
     renderListLoading();
     loadPosts(true).then(openPromptFromHash).then(popularThen).then(openFromHash);
+    setTimeout(() => { if (window.KSHARE && KSHARE.available()) KSHARE.load().catch(() => {}); }, 2000);   // 카카오톡 공유 SDK 를 미리 읽어 둔다(모임 카드의 공유를 누르면 바로 보내게)
     window.addEventListener("hashchange", openFromHash);
     // 홈의 '모임 올리기'(news.html?cat=bung&write=1): 서버 형식을 안 뒤 모임 모집 창을 연다. 주소에서 write 는 지운다
     try {
