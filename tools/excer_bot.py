@@ -139,7 +139,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.8"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.9"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -947,7 +947,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
     today, _, on, off, later = notice_today(posts, now, cfg)
     fold = notice_fold(cfg)
     if fold:
-        gone = [v for v in on if key_add(end_key(v), fold) <= now_key(at)]   # 끝나고 오래된 벙: 카드 대신 '외 N건'
+        gone = [v for v in on if key_add(end_key(v) if v.get("end") else key_add(start_key(v), 180), fold) <= now_key(at)]   # 끝나고 오래된 벙: 카드 대신 '외 N건'. 끝나는 시간이 없는 옛 글은 시작에서 3시간을 끝으로
         on, off = [v for v in on if v not in gone], off + gone
     on = [v for part in notice_slots(on, at, off) for v in part]
     nextday = (date(*(int(x) for x in today.split("-"))) + timedelta(days=1)).isoformat()
@@ -1511,7 +1511,10 @@ class Bot:
         모아 공유와 공지를 한 번에 올린다(공지가 1분 간격으로 잇따라 걸리지 않게). 올릴 것이 또 바뀌면 그때부터 다시 기다리되, 처음 바뀐 때부터
         settle_max_sec(기본 600초)가 지나면 올린다. 사이트 글이 바뀐 때만 기다린다(켠 뒤 처음은 바로).
         다시 하는 일(보내다 실패, 걸기 다시, 방 공지가 다름, 남은 알림)과 매일 다시 올리기도 기다리지 않는다"""
-        gap = int(cfg.get("settle_sec", 120) or 0)
+        try:
+            gap = int(cfg.get("settle_sec", 120) or 0)
+        except (TypeError, ValueError):
+            gap = 0                                      # 손으로 잘못 적은 값: 기다리지 않는다
         if gap > 0 and quiet_soon(now, cfg, gap):
             return False                                 # 기다리는 사이에 조용한 시간이 된다: 지금 올린다
         pending = unsure_texts(st)                       # 이번에 다시 보내는 글만 본다(옛 판이 남긴 글이나 그 뒤 바뀐 글은 다시 보내지 않는다)
@@ -2681,6 +2684,7 @@ class AdbSender:
         self.comps = {}                                          # 앱의 첫 화면 이름(am start 로 띄울 때)
         self.rot_state = ""                                      # 마지막 방향 고정: '' 됨(또는 할 일 없음), unknown 회전 값을 못 읽음, failed 바꾸지 못함
         self.main_room, self.room_link = cfg.get("room") or "", (cfg.get("room_link") or "").strip()   # 알릴 방과 그 오픈채팅 주소
+        self.known_rooms = set(x for x in (cfg.get("room"), cfg.get("test_room")) if x)   # 이 실행에서 본 방 이름 모두(목록에서 읽은 것과 설정의 방). 머리를 못 읽은 방이 이 가운데 다른 방이면 보내지 않는다
 
     @staticmethod
     def _run(args, data=None, timeout=30):
@@ -3255,6 +3259,9 @@ class AdbSender:
             j = par[j]
             b = nodes[j]["b"]
             if b[3] - b[1] >= hgt * 0.5:
+                wid = max(n["b"][2] for n in nodes)
+                if b[0] <= 10 and b[2] >= wid - 10 and box["b"][0] > wid * 0.2:   # 화면 전체 너비 칸인데 입력 칸은 오른쪽에 있다(두 칸 화면의 바깥 칸): 목록 칸까지 머리로 읽지 않게
+                    break
                 return b[0] - 10
         return box["b"][0] - 60
 
@@ -3631,7 +3638,8 @@ class AdbSender:
                 room, self.near_names(room, seen), len(nodes), taps, self.facts_note(), self.diag_note()))
         self.tap_row(nodes, item)
         nodes = self.wait_change(nodes, lambda ns: self.room_open(ns, room), tries=5)
-        others = [x for x in seen if not same_room(x, room)]
+        self.known_rooms.update(seen)
+        others = [x for x in self.known_rooms if not same_room(x, room)]   # 이번 목록뿐 아니라 이 실행에서 본 방 이름 모두와 설정의 방(시험 방 뒤에 알릴 방을 열 때 등)
         if (not self.room_open(nodes, room) and self.room_screen(nodes)   # 방 머리를 읽지 못함: 목록에서 이 방 이름인 줄을 눌러 연 방 화면이면 그 방(2026-10-10.7 처럼).
                 and not any(name_shown(h, o) for h in self.head_texts(nodes) for o in others)):   # 머리가 목록에서 본 다른 방 이름이면 아님
             self.blind = True
@@ -3774,9 +3782,16 @@ class AdbSender:
         nodes = self.open_room(room)
         return self.own_bubble(nodes, text, exact=True) is not None   # 접힌 옛 공지는 앞부분이 같아도 증거가 아니다(글 전체가 같아야)
 
-    def chat_area(self, nodes):
-        """대화가 흐르는 칸: 입력 칸과 같은 가로 범위, 방 이름 머리 아래부터 입력 칸 위까지"""
+    @staticmethod
+    def room_boxes(nodes):
+        """방 입력 칸들(화면 아래쪽 절반의 입력 칸. 두 칸 화면의 목록 찾기 칸은 위쪽이라 빠진다). 아래쪽에 없으면 모두"""
         e = find(nodes, cls="EditText")
+        hgt = max([n["b"][3] for n in nodes] or [0])
+        return [n for n in e if n["b"][1] >= hgt * 0.5] or e
+
+    def chat_area(self, nodes):
+        """대화가 흐르는 칸: 방 입력 칸과 같은 가로 범위, 방 이름 머리 아래부터 입력 칸 위까지"""
+        e = self.room_boxes(nodes)
         if not e:                                                # 방 화면이 아니다(다른 창이 잠깐 앞에 있거나 확인 창)
             raise KakaoError("방 화면이 아님(입력 칸이 없음)")
         box = max(e, key=lambda n: n["b"][3])
@@ -3799,7 +3814,7 @@ class AdbSender:
         """방금 보낸 목록 말풍선: 방(입력 칸과 같은 가로 범위) 안에서 글 전체가 같은 것 중 가장 아래.
         채팅 목록의 미리보기와 위쪽 머리, 공지 띠는 빠진다. 긴 글이 접혀 보이면(전체보기) 앞부분이 같은 것.
         이모지 변형 선택자 같은 보이지 않는 글자는 빼고 견준다"""
-        e = find(nodes, cls="EditText")
+        e = self.room_boxes(nodes)
         l0, r0 = (min(n["b"][0] for n in e), max(n["b"][2] for n in e)) if e else (-1, 10 ** 9)
         hgt = max([n["b"][3] for n in nodes] or [0])
         want = norm_txt(text)
@@ -3827,7 +3842,7 @@ class AdbSender:
 
     def pinned(self, nodes, text, skip=()):
         """방 위쪽 공지 띠에 이 글(첫 줄)이 보이는지. 말풍선이 아니라 방 칸의 맨 위 쪽에 있는 것(skip: 원래 있던 말풍선 자리)"""
-        e = find(nodes, cls="EditText")
+        e = self.room_boxes(nodes)
         if not e:
             return False
         l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
@@ -3942,7 +3957,7 @@ class AdbSender:
 
     def banner_text(self, nodes, room=""):
         """방 위쪽 공지 띠의 글(방 이름 머리 바로 아래 한 줄). 없으면 ''. 보이스룸 띠(제목, 'N명 참여')와 방 이름은 공지 띠로 보지 않는다"""
-        e = find(nodes, cls="EditText")
+        e = self.room_boxes(nodes)
         if not e:
             return ""
         l0, r0 = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
@@ -6554,11 +6569,14 @@ def cmd_update(base, get=None, me=None):
         return "저장소에서 봇 파일을 읽지 못했습니다(망 확인). 받은 판 없음"
     try:
         with open(me, encoding="utf-8") as f:
-            same = f.read().replace("\r\n", "\n") == body.replace("\r\n", "\n")
+            cur = f.read().replace("\r\n", "\n")
     except OSError:
-        same = False
-    if same:
+        cur = ""
+    if cur and cur == body.replace("\r\n", "\n"):
         return "이미 최신 판(%s)입니다" % VERSION
+    tail = 'if __name__ == "__main__":'
+    if (tail in cur and tail not in body) or len(body) < len(cur) * 0.8:   # 끝까지 오지 않은 파일(문법 검사는 통과할 수 있다): 맨 끝 블록이 없거나 지금 파일의 8할이 안 된다
+        return "받은 파일이 끝까지 오지 않아 바꾸지 않았습니다(망 확인). 받은 판 %s" % (ver or "?")
     new = me + ".new"
     with open(new, "w", encoding="utf-8") as f:
         f.write(body)
