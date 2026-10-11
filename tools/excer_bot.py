@@ -13,7 +13,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
-  - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 '참석' 과 사이트 주소
+  - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 '벙 생성' 과 사이트 주소
     (공지 띠에 보이는 두 줄), 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감, 그 벙 주소('참여링크'). 카드는 모집 중인 오늘 벙만 넷까지, 차례는 시작 시각으로만
     정한다(끝나는 시각은 쓰지 않는다): 지금 벙(가장 늦게 시작한 시각의 벙. 다음 벙이 시작할 때까지, 길어도 세 시간), 다음 시간 벙,
     앞서 시작한 벙(늦게 시작한 벙이 위). 같은 시각이면 먼저 등록한 글이 위. 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄로 센다.
@@ -139,7 +139,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.6"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.7"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -364,7 +364,7 @@ def strict_core(s):
 
 
 def notice_head(text):
-    """공지 글의 머리: 첫 줄, 둘째 줄이 참석 주소 줄이면 그 줄까지(공지 띠에 보이는 두 줄. 주소 줄은 모든 공지에 같아 머리만으로는 글을 가를 수 없다)"""
+    """공지 글의 머리: 첫 줄, 둘째 줄이 벙 생성 주소 줄이면 그 줄까지(공지 띠에 보이는 두 줄. 주소 줄은 모든 공지에 같아 머리만으로는 글을 가를 수 없다)"""
     ls = (text or "").split("\n")
     return "\n".join(ls[:2]) if len(ls) > 1 and ls[1].startswith(EMO["go"]) else ls[0]
 
@@ -380,7 +380,7 @@ def band_shows(band, text, others=()):
     alts = {strict_core(x) for x in others if x} - {sb, ""}
     if sb in sa:
         return whole_notice(band, text) and not any(len(o) > len(sb) and sb in o and o in sa for o in alts)
-    first = strict_core(notice_head(text))                 # 첫 줄과 둘째 줄의 참석 주소(모든 공지에 같다)
+    first = strict_core(notice_head(text))                 # 첫 줄과 둘째 줄의 벙 생성 주소(모든 공지에 같다)
     if not alts:
         return False
     for j in range(min(8, len(sa)) + 1):
@@ -394,7 +394,7 @@ def notice_line(line):
     """봇 공지 글의 줄처럼 생겼는지(📣, 👉, 카드 번호, 📍, 👥, 🔒, 🗓, ⏳ 로 시작하거나 '외 N건')"""
     t = (line or "").strip()
     return t.startswith((EMO["next"], EMO["go"], EMO["place"], EMO["people"], EMO["벙 마감"], EMO["later"], EMO["live"]) + tuple(CARD_NO)) \
-        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기) https?://|참여링크 : https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
+        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기|벙 생성) https?://|참여링크 : https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
 
 
 def whole_notice(band, text):
@@ -935,7 +935,7 @@ def notice_today(posts, now, cfg):
 
 
 def notice_build(posts, now, cfg, at="now", room=None):
-    """공지로 걸 글(카드형)과 카드로 보인 벙의 번호들. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 참석 주소
+    """공지로 걸 글(카드형)과 카드로 보인 벙의 번호들. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 벙 생성 주소
     (공지 띠에 보이는 두 줄), 모집 중인 오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감). 카드는 at(기본은 now) 때의 시작 시각 차례
     (notice_slots: 지금 벙, 다음 벙, 앞서 시작한 벙). 넷까지, 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄.
     그다음 이후 벙 한 줄(오늘 모집 중인 벙이 없으면 장소까지. 모두 마감이면 첫 줄 'N건 모두 마감', 1건이면 '1건 마감').
@@ -959,7 +959,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
         """nc: 카드 수, pin: 다음 벙의 장소 줄, tail: 맨 아래 이후 벙 줄까지"""
         out = [EMO["next"] + " 오늘의 벙 " + md(today) + (" %d건" % total if on else (" 1건 마감" if total == 1 else " %d건 모두 마감" % total) if off else " 없음")]
         if cfg.get("link", True):                        # 둘째 줄도 공지 띠에 보인다
-            out.append(EMO["go"] + (" 참석 " if on else " 벙 올리기 ") + cfg["site"] + "/bung")
+            out.append(EMO["go"] + " 벙 생성 " + cfg["site"] + "/bung")
         for n, v in enumerate(on[:nc]):
             out += ["", CARD_NO[n] + CARD_GAP + span(v) + " " + v["title"]] + \
                 [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l] + \
@@ -4212,7 +4212,7 @@ class AdbSender:
             self.save_diag()
             raise WrongPin("공지 띠가 다른 글로 바뀜(봇 글이 아닌 글이 걸렸을 수 있음, 띠 글 %d자). 다시 겁니다%s" % (len(ws(bt(done))), self.diag_note()))
         if pre and c:                                            # 같은 첫 줄 공지가 이미 있어 첫 줄로는 알 수 없고, 확인은 눌렀다
-            dt = bt(done)                                        # 띠가 머리(첫 줄과 참석 주소 줄)만 보이면 알 수 없다: 걸린 것으로 본다
+            dt = bt(done)                                        # 띠가 머리(첫 줄과 벙 생성 주소 줄)만 보이면 알 수 없다: 걸린 것으로 본다
             if (before and len(strict_core(before)) > len(strict_core(notice_head(text))) + 4 and strict_core(dt) == strict_core(before)
                     and not band_shows(dt, text)):              # 띠가 걸기 전 글 전체를 그대로 보인다: 걸리지 않았다
                 self.snap("마지막 화면(새로 나온 것)", done, nodes)
