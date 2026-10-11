@@ -14,7 +14,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
   - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 '벙 생성' 과 사이트 주소
-    (공지 띠에 보이는 두 줄), 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감, 그 벙 주소('참여링크'). 카드는 모집 중인 오늘 벙만 넷까지, 차례는 시작 시각으로만
+    (공지 띠에 보이는 두 줄), 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감, 그 벙의 짧은 주소('참여링크' /b/번호). 카드는 모집 중인 오늘 벙만 넷까지, 차례는 시작 시각으로만
     정한다(끝나는 시각은 쓰지 않는다): 지금 벙(가장 늦게 시작한 시각의 벙. 다음 벙이 시작할 때까지, 길어도 세 시간), 다음 시간 벙,
     앞서 시작한 벙(늦게 시작한 벙이 위). 같은 시각이면 먼저 등록한 글이 위. 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄로 센다.
     그다음 내일 이후 모집 중인(마감 안 함, 정원 남음, 신청 마감 전) 벙은 첫 벙만 한 줄('외 N건'). 오늘 모집 중인 벙이 없으면 다음 벙을
@@ -139,7 +139,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.7"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.8"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -940,7 +940,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
     (notice_slots: 지금 벙, 다음 벙, 앞서 시작한 벙). 넷까지, 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄.
     그다음 이후 벙 한 줄(오늘 모집 중인 벙이 없으면 장소까지. 모두 마감이면 첫 줄 'N건 모두 마감', 1건이면 '1건 마감').
     시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고, at 때 끝나는 시각에서 notice_fold_min(기본 120분) 지난 벙은 카드 대신
-    '외 N건'(마감 벙처럼 센다. at 으로 가르므로 시간만 지나서는 오늘 부분이 바뀌지 않는다). 카드마다 그 벙 주소 줄(notice_links).
+    '외 N건'(마감 벙처럼 센다. at 으로 가르므로 시간만 지나서는 오늘 부분이 바뀌지 않는다). 카드마다 그 벙의 짧은 주소 줄(/b/번호, notice_links).
     오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다.
     room: 주면 글 길이 한도로 카드 수를 정할 때 맨 아래 이후 벙 줄(앞의 빈 줄까지)을 이 길이로 친다(올린 글과 오늘 부분만 견줄 때)"""
     at = now if at == "now" else at
@@ -963,7 +963,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
         for n, v in enumerate(on[:nc]):
             out += ["", CARD_NO[n] + CARD_GAP + span(v) + " " + v["title"]] + \
                 [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l] + \
-                ([EMO["go"] + " 참여링크 : " + bung_link(cfg, v)] if links else [])   # 장소 이름만(상세 주소는 글에), 그 벙 주소
+                ([EMO["go"] + " 참여링크 : " + bung_short(cfg, v)] if links else [])   # 장소 이름만(상세 주소는 글에), 그 벙 주소
         if on and total > nc:
             out += ["", "외 %d건" % (total - nc)]          # 카드에 못 든 벙과 마감했거나 정원이 찬 벙(모두 마감이면 첫 줄이 말한다)
         if later and tail:
@@ -1063,6 +1063,11 @@ def notice_at(posts, now, cfg):
 def bung_link(cfg, v):
     """그 벙으로 바로 가는 주소(소식의 모임 모집 탭에서 그 글을 펼친다. 카카오톡 미리보기 상자를 눌러도 같은 곳)"""
     return cfg["site"] + "/bung?id=" + v["id"]
+
+
+def bung_short(cfg, v):
+    """공지 카드의 그 벙 주소(짧게). 사이트의 /b/번호 는 /bung?id=번호 와 같은 곳으로 간다(vercel.json, bung.html)"""
+    return cfg["site"] + "/b/" + v["id"]
 
 
 def alert_text(ch, cfg):
