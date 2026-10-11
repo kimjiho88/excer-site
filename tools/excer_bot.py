@@ -138,7 +138,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -2120,6 +2120,15 @@ def same_room(t, room):
     return i >= 0 and not re.search(r"\w", a[:i] + a[i + len(b):])
 
 
+def name_shown(t, room):
+    """글(또는 이름)이 이 방 이름을 보이는가: 이름 그대로(same_room), 여러 칸이 줄바꿈으로 이어진 글의 첫 줄, '방 이름, 94명' 처럼 사람 수가 붙은 글"""
+    t = (t or "").strip()
+    if same_room(t, room) or ("\n" in t and same_room(t.split("\n", 1)[0], room)):
+        return True
+    rest = (t.split(", ", 1) + [""])[1]
+    return ", " in t and bool(re.match(r"\d[\d,]*\s*명?\s*(,|$)", rest)) and same_room(row_head(t), room)
+
+
 # ── 카카오톡 조작: 태블릿 하나로(Termux 안에서 adb 로 같은 기기에) ──
 # 화면 읽기 도우미(tools/excer_dump/ExcerDump.java 를 dex 로 바꾼 jar, base64). 안드로이드 기본 uiautomator dump 는
 # 화면이 1초 멈춰야 읽어서 글이 빨리 올라오는 방에서는 끝내 못 읽는다. 이것은 잠깐만 기다리고 그대로 읽는다.
@@ -3186,13 +3195,28 @@ class AdbSender:
         return nodes
 
     def room_open(self, nodes, room):
-        """이 방이 이미 열려 있는지: 입력 칸이 있고, 방 칸 맨 위 머리에 방 이름이 그대로"""
+        """이 방이 이미 열려 있는지: 카카오톡이고, 방 칸 머리(head_texts)의 글이나 이름(content-desc)이 이 방 이름(name_shown)"""
+        return self.on_kakao(nodes) and any(name_shown(x, room) for x in self.head_texts(nodes))
+
+    def head_texts(self, nodes):
+        """방 칸 머리의 글과 이름(content-desc): 맨 아래 입력 칸이 든 방 칸 안, 화면 위쪽 12%. 입력 칸이 없으면 빈 목록"""
         e = find(nodes, cls="EditText")
-        if not e or not self.on_kakao(nodes):
-            return False
+        if not e:
+            return []
         left = self.pane_left(nodes, max(e, key=lambda n: n["b"][3]))   # 방 입력 칸(맨 아래 것. 목록 칸의 찾기 칸은 아님)이 든 방 칸
         hgt = max(n["b"][3] for n in nodes)
-        return any(same_room(n["text"], room) and n["b"][0] >= left and n["b"][1] < hgt * 0.12 for n in nodes)
+        return [x for n in nodes if n["b"][0] >= left and n["b"][1] < hgt * 0.12 for x in (n["text"], n["desc"]) if x.strip()]
+
+    def room_screen(self, nodes):
+        """방 화면인지(머리는 보지 않는다): 카카오톡이고, 맨 아래 입력 칸이 화면 아래쪽 절반에 있고, 공지 상세보기나 댓글 칸이 아님"""
+        e = find(nodes, cls="EditText")
+        if not e or not self.on_kakao(nodes) or self.comment_box(nodes) or self.is_detail(nodes):
+            return False
+        return self.center(max(e, key=lambda n: n["b"][3]))[1] > max(n["b"][3] for n in nodes) * 0.5
+
+    def in_room(self, nodes, room):
+        """방에 돌아왔는지: 머리가 이 방(room_open). 이번에 방 머리를 읽지 못하고 목록 줄로 연 방이면(blind) 방 화면이면(room_screen)"""
+        return self.room_open(nodes, room) or (getattr(self, "blind", False) and self.room_screen(nodes))
 
     @staticmethod
     def pane_left(nodes, box):
@@ -3517,6 +3541,7 @@ class AdbSender:
     def open_room(self, room):
         """방을 연다(알릴 방은 오픈채팅 주소로, 아니면 채팅 목록에서). 연 방의 화면. 안 되면 KakaoError(지나온 화면은 excer_bot_ui.txt)"""
         self.new_trace()
+        self.blind = False
         try:
             return self._open_room(room)
         except KakaoError as e:
@@ -3536,7 +3561,7 @@ class AdbSender:
             nodes = self.mem_unstick(nodes)
         if self.room_open(nodes, room):                          # 지난번에 연 방이 그대로면 목록을 거치지 않는다
             return nodes
-        if self.room_link and same_room(room, self.main_room):  # 알릴 방은 오픈채팅 주소로 바로 연다(카카오톡이 첫 화면으로 돌아가 있어도)
+        if self.room_link and same_room(room, self.main_room) and not getattr(self, "blind_seen", False):   # 알릴 방은 오픈채팅 주소로 바로 연다(카카오톡이 첫 화면으로 돌아가 있어도). 방 머리를 못 읽는 기기면 주소로 연 방을 알아볼 수 없어 목록으로
             got = self.open_by_link(room)
             if got is not None:
                 return got
@@ -3580,6 +3605,16 @@ class AdbSender:
                 room, self.near_names(room, seen), len(nodes), taps, self.facts_note(), self.diag_note()))
         self.tap_row(nodes, item)
         nodes = self.wait_change(nodes, lambda ns: self.room_open(ns, room), tries=5)
+        others = [x for x in seen if not same_room(x, room)]
+        if (not self.room_open(nodes, room) and self.room_screen(nodes)   # 방 머리를 읽지 못함: 목록에서 이 방 이름인 줄을 눌러 연 방 화면이면 그 방(2026-10-10.7 처럼).
+                and not any(name_shown(h, o) for h in self.head_texts(nodes) for o in others)):   # 머리가 목록에서 본 다른 방 이름이면 아님
+            self.blind = True
+            self.fact("방 머리 못 읽음, 목록 줄로 연 방")
+            if not getattr(self, "blind_seen", False):           # 진단 파일과 기록은 한 번만(그 화면으로 머리 읽기를 고친다)
+                self.blind_seen = True
+                self.save_diag(nodes)
+                self.log("방 머리에서 방 이름을 읽지 못함. 목록에서 누른 방을 그 방으로 봄%s" % self.diag_note())
+            return nodes
         if not self.room_open(nodes, room):                      # 연 방의 머리가 이 방이어야 한다(다른 방, 공지 상세보기에 올리지 않게)
             self.save_diag(nodes)
             raise KakaoError(("목록에서 누른 줄로 연 방의 머리가 이 방이 아님(목록이 움직였거나 다른 방). 보내지 않음"
@@ -3983,11 +4018,11 @@ class AdbSender:
     def back_to_room(self, nodes, room):
         """상세보기(또는 띠를 눌러 열린 다른 화면)에서 방으로: 방이 보일 때까지 뒤로(세 번까지, 방이 보이면 누르지 않는다). 못 돌아오면 KakaoError"""
         for _ in range(3):
-            if self.room_open(nodes, room):
+            if self.in_room(nodes, room):
                 return nodes
             self.key(4)
-            nodes = self.wait_change(nodes, lambda ns: self.room_open(ns, room), tries=2)
-        if self.room_open(nodes, room):
+            nodes = self.wait_change(nodes, lambda ns: self.in_room(ns, room), tries=2)
+        if self.in_room(nodes, room):
             return nodes
         self.brief("공지를 본 뒤 방으로 못 돌아옴", nodes, room)
         raise KakaoError("공지 상세보기에서 방으로 돌아오지 못함")
@@ -4014,7 +4049,7 @@ class AdbSender:
             got = again if has(again) else got
             full = self.detail_text(got)
             self.brief("공지 상세보기 %d자" % len(full), got, room)
-        elif self.room_open(got, room):
+        elif self.in_room(got, room):
             return (self.band_text(got, room) or text), True    # 눌러도 그대로(상세보기가 안 뜸)
         else:
             self.brief("공지 띠를 누른 뒤 %s" % ("상세보기(글 없음)" if self.is_detail(got) else "다른 화면"), got, room)
