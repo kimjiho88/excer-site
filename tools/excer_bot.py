@@ -14,11 +14,12 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
 하는 일
   - 20초마다 사이트의 모임 모집 글을 읽는다(check_sec). 날짜가 있는 글만 벙으로 친다(사이트가 날짜, 시작 시간, 끝나는 시간, 장소를 꼭 받는다).
   - 공지: 오늘 벙을 카드로 적는다. 첫 줄 '오늘의 벙 10/9(금) 3건'(마감했거나 정원이 찬 오늘 벙도 센다), 둘째 줄 '참석' 과 사이트 주소
-    (공지 띠에 보이는 두 줄), 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감. 카드는 모집 중인 오늘 벙만 넷까지, 차례는 시작 시각으로만
+    (공지 띠에 보이는 두 줄), 카드마다 번호와 시간, 제목, 장소, 정원과 신청 마감, 그 벙 주소('참여링크'). 카드는 모집 중인 오늘 벙만 넷까지, 차례는 시작 시각으로만
     정한다(끝나는 시각은 쓰지 않는다): 지금 벙(가장 늦게 시작한 시각의 벙. 다음 벙이 시작할 때까지, 길어도 세 시간), 다음 시간 벙,
     앞서 시작한 벙(늦게 시작한 벙이 위). 같은 시각이면 먼저 등록한 글이 위. 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄로 센다.
     그다음 내일 이후 모집 중인(마감 안 함, 정원 남음, 신청 마감 전) 벙은 첫 벙만 한 줄('외 N건'). 오늘 모집 중인 벙이 없으면 다음 벙을
-    장소까지. 오늘 벙이 모두 마감이면 첫 줄 'N건 모두 마감'(1건이면 '1건 마감'). 시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다.
+    장소까지. 오늘 벙이 모두 마감이면 첫 줄 'N건 모두 마감'(1건이면 '1건 마감'). 시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고,
+    끝나는 시각에서 2시간 지난 벙은 카드 대신 '외 N건'으로 센다(notice_fold_min. 시간이 지난 것만으로 다시 올리지는 않고, 다음에 올리는 글부터).
     오늘 벙이 바뀌어 첫 두 줄과 카드, '외 N건' 이 달라질 때(새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소, 카드에 보이는
     벙의 제목)와 날이 바뀔 때 지금 글을 방에 올리고 길게 눌러 공지로 건다. 글을 만들 때 10분 안에 시작할 벙이 있으면 그 시각의 차례로 만든다.
     벙이 시작하거나 끝나 차례만 바뀔 때, 맨 아래 이후 벙 줄만 바뀔 때는 다시 올리지 않는다.
@@ -138,7 +139,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.5"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.6"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -161,6 +162,8 @@ DEFAULTS = {
     "net_kick": True,                    # (tablet) 사이트를 3분 넘게 못 읽으면 와이파이를 껐다 켠다(15분에 한 번). 유선이나 데이터만 쓰면 false
     "max_lines": 15,                     # 목록 줄 수 한도
     "notice_max_chars": 400,             # 공지 글 길이 한도(넘치는 벙은 '외 N건'). 카카오톡은 긴 글을 접어 보여 줘 봇이 말풍선을 찾기 어렵다
+    "notice_links": True,                # 공지 카드마다 그 벙 주소 줄('👉 참여링크 : 주소'). link 가 꺼져 있으면 넣지 않는다
+    "notice_fold_min": 120,              # 끝나는 시각에서 이만큼(분) 지난 오늘 벙은 카드 대신 '외 N건'. 0 이면 끝난 벙도 그날은 카드로
     "bulk_quiet": 6,                     # 한 차례에 새 벙과 지운 벙이 합쳐 이만큼 이상이면 알리지 않고 공지 글만(한꺼번에 옮기거나 지운 것). 알림이 이만큼 이상이면 한 줄로. 0 이면 끔
     "heartbeat_at": "09:00",             # 매일 이 시각에 시험 방에 '봇 정상' 한 줄(안 오면 태블릿을 본다). 조용한 시간이면 끝난 뒤. "" 이면 끔
     "members_at": "05:10",               # (tablet) 매일 이 시각에 알릴 방 메뉴(세 줄 단추)의 멤버를 읽어 사이트 닉네임 목록에 올린다. "" 이나 "off" 면 안 한다
@@ -391,7 +394,7 @@ def notice_line(line):
     """봇 공지 글의 줄처럼 생겼는지(📣, 👉, 카드 번호, 📍, 👥, 🔒, 🗓, ⏳ 로 시작하거나 '외 N건')"""
     t = (line or "").strip()
     return t.startswith((EMO["next"], EMO["go"], EMO["place"], EMO["people"], EMO["벙 마감"], EMO["later"], EMO["live"]) + tuple(CARD_NO)) \
-        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기) https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
+        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기) https?://|참여링크 : https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
 
 
 def whole_notice(band, text):
@@ -886,6 +889,14 @@ def people_line(v, host=False, live=True):
     return (EMO["people"] + " " + ", ".join(parts)) if parts else ""
 
 
+def notice_fold(cfg):
+    """끝나는 시각에서 몇 분 지난 오늘 벙을 카드 대신 '외 N건'으로 셀지(notice_fold_min). 0 이나 잘못 적은 값이면 끄기(0)"""
+    try:
+        return max(0, int(cfg.get("notice_fold_min", 120) or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def day_turn(cfg):
     """공지 글의 오늘이 다음 날로 넘어가는 시각: 조용한 시간이 끝나는 때(12:00 전일 때만). 조용한 시간이 없으면 자정"""
     q = cfg.get("quiet") or []
@@ -928,13 +939,20 @@ def notice_build(posts, now, cfg, at="now", room=None):
     (공지 띠에 보이는 두 줄), 모집 중인 오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감). 카드는 at(기본은 now) 때의 시작 시각 차례
     (notice_slots: 지금 벙, 다음 벙, 앞서 시작한 벙). 넷까지, 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄.
     그다음 이후 벙 한 줄(오늘 모집 중인 벙이 없으면 장소까지. 모두 마감이면 첫 줄 'N건 모두 마감', 1건이면 '1건 마감').
-    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 그날은 카드로 남는다. 오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다.
+    시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고, at 때 끝나는 시각에서 notice_fold_min(기본 120분) 지난 벙은 카드 대신
+    '외 N건'(마감 벙처럼 센다. at 으로 가르므로 시간만 지나서는 오늘 부분이 바뀌지 않는다). 카드마다 그 벙 주소 줄(notice_links).
+    오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다.
     room: 주면 글 길이 한도로 카드 수를 정할 때 맨 아래 이후 벙 줄(앞의 빈 줄까지)을 이 길이로 친다(올린 글과 오늘 부분만 견줄 때)"""
     at = now if at == "now" else at
     today, _, on, off, later = notice_today(posts, now, cfg)
+    fold = notice_fold(cfg)
+    if fold:
+        gone = [v for v in on if key_add(end_key(v), fold) <= now_key(at)]   # 끝나고 오래된 벙: 카드 대신 '외 N건'
+        on, off = [v for v in on if v not in gone], off + gone
     on = [v for part in notice_slots(on, at, off) for v in part]
     nextday = (date(*(int(x) for x in today.split("-"))) + timedelta(days=1)).isoformat()
     live = bool(cfg.get("notice_attend"))
+    links = bool(cfg.get("link", True) and cfg.get("notice_links", True))
     total = len(on) + len(off)
 
     def build(nc, pin, tail=True):
@@ -944,7 +962,8 @@ def notice_build(posts, now, cfg, at="now", room=None):
             out.append(EMO["go"] + (" 참석 " if on else " 벙 올리기 ") + cfg["site"] + "/bung")
         for n, v in enumerate(on[:nc]):
             out += ["", CARD_NO[n] + CARD_GAP + span(v) + " " + v["title"]] + \
-                [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l]   # 장소 이름만(상세 주소는 글에)
+                [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l] + \
+                ([EMO["go"] + " 참여링크 : " + bung_link(cfg, v)] if links else [])   # 장소 이름만(상세 주소는 글에), 그 벙 주소
         if on and total > nc:
             out += ["", "외 %d건" % (total - nc)]          # 카드에 못 든 벙과 마감했거나 정원이 찬 벙(모두 마감이면 첫 줄이 말한다)
         if later and tail:
