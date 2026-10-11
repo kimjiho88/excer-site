@@ -46,7 +46,7 @@
      SDK 를 못 읽거나 키가 없으면 기기 공유 창(navigator.share) → 링크 복사 순으로 물러선다.
      share(opts) → Promise<"kakao" | "share" | "copy" | "abort" | "fail">
        opts: { title, description, url, imageUrl, buttonTitle }
-     모임 달력 카드(소식 화면의 채팅방에 공유): load() 로 SDK 를 미리 읽고, upload(blob) 으로 그림 주소를 받고, 누를 때 sendNow(opts)
+     모임 달력 카드(소식 화면의 채팅방에 공유): 소식 화면이 뜰 때 load() 로 SDK 를 미리 읽고, 누를 때 sendNow(opts). 그림은 날짜마다 미리 만든 assets/cal/MM-DD.png
      ────────────────────────────────────────────────────────── */
   var KSHARE = (function () {
     var SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";

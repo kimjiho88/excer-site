@@ -138,7 +138,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-11.5"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -860,6 +860,7 @@ def has_changes(ch):
 EMO = {"next": "\U0001F4E3", "place": "\U0001F4CD", "people": "\U0001F465", "later": "\U0001F5D3", "go": "\U0001F449", "bell": "\U0001F514", "live": "⏳",
        "새 벙": "\U0001F195", "벙 변경": "\u270F\uFE0F", "벙 마감": "\U0001F512", "벙 다시 모집": "\U0001F513", "벙 취소": "\u274C"}
 CARD_NO = ["%d\uFE0F\u20E3" % n for n in range(1, 5)]   # 공지 카드 번호(숫자 이모지 1부터 4). 카드는 넷까지
+CARD_GAP = "  "           # 카드 번호 뒤 띄어쓰기 두 칸(PC 카카오톡은 숫자 이모지의 네모가 뒤 글자에 겹쳐 18:00 이 8:00 처럼 보인다)
 
 
 def place_line(v):
@@ -942,7 +943,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
         if cfg.get("link", True):                        # 둘째 줄도 공지 띠에 보인다
             out.append(EMO["go"] + (" 참석 " if on else " 벙 올리기 ") + cfg["site"] + "/bung")
         for n, v in enumerate(on[:nc]):
-            out += ["", CARD_NO[n] + " " + span(v) + " " + v["title"]] + \
+            out += ["", CARD_NO[n] + CARD_GAP + span(v) + " " + v["title"]] + \
                 [l for l in ((EMO["place"] + " " + v["place"]) if v["place"] else "", people_line(v, live=live)) if l]   # 장소 이름만(상세 주소는 글에)
         if on and total > nc:
             out += ["", "외 %d건" % (total - nc)]          # 카드에 못 든 벙과 마감했거나 정원이 찬 벙(모두 마감이면 첫 줄이 말한다)
@@ -988,13 +989,14 @@ def later_split(text):
 
 
 def today_key(text):
-    """공지 글의 오늘 부분을 견줄 꼴: (첫 두 줄, 번호를 뺀 카드들(차례 없이), 그 밖의 줄('외 N건')). 카드 차례만 다르면 같다"""
+    """공지 글의 오늘 부분을 견줄 꼴: (첫 두 줄, 번호를 뺀 카드들(차례 없이), 그 밖의 줄('외 N건')). 카드 차례만 다르면 같다.
+    번호 뒤 띄어쓰기 수는 보지 않는다(2026-10-11.4 까지 올린 글은 한 칸)"""
     parts = later_split(text)[0].split("\n\n")
     cards, rest = [], []
     for b in parts[1:]:
         num = next((c for c in CARD_NO if b.startswith(c + " ")), None)
         if num:
-            cards.append(b[len(num) + 1:])
+            cards.append(b[len(num):].lstrip(" "))
         else:
             rest.append(b)
     return parts[0], sorted(cards), rest
