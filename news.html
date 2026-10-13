@@ -203,6 +203,23 @@
     .bc-attend .att-empty { padding: 2px 0; }
     .post-row.is-event .host-menu { margin-top: 8px; padding-top: 0; border-top: 0; }
     .post-row.is-event .host-menu > summary { padding: 0 2px; }
+    /* 폰의 아래 붙인 참석 단추(탭바 위): 참석 수와 남은 자리, 카드와 같은 단추, 공유 */
+    .ev-dock { display: none; }
+    @media (max-width: 860px) {
+      .ev-dock { position: fixed; left: 0; right: 0; bottom: calc(74px + env(safe-area-inset-bottom)); z-index: calc(var(--z-tabbar) - 1); display: flex; align-items: center; gap: 10px; padding: 10px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px); box-shadow: 0 -10px 24px -18px rgba(36, 30, 44, 0.5); }
+      .ev-dock[hidden] { display: none; }
+      .ev-dock .ev-dock-info { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+      .ev-dock .ev-dock-info b { color: var(--ink); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .ev-dock .ev-dock-info small { color: var(--brand); font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ev-dock .ev-dock-info small.is-off { color: var(--ink-2); font-weight: 600; }
+      .ev-dock .btn { flex: none; min-height: 46px; }
+      .ev-dock .btn-primary { min-width: 124px; }
+      .ev-dock .is-share { width: 46px; padding: 0; }
+      .ev-dock .is-share .ic { width: 18px; height: 18px; }
+      body.has-dock .fab { bottom: calc(146px + env(safe-area-inset-bottom)); }   /* 띠 위로 올린다(숨기지 않는다: 모임 올리기는 늘 닿게) */
+      body.has-dock .toast { bottom: calc(154px + env(safe-area-inset-bottom)); }
+      html.is-typing .ev-dock { display: none; }
+    }
     /* 펼친 글의 작은 제목(모임 정보, 소개) */
     .pd-h { margin: 18px 0 8px; color: var(--ink); font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
     .post-row.is-event .post-detail .kv { margin-bottom: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
@@ -845,6 +862,8 @@
   </div>
 
   <button class="fab" id="fabWrite" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg><span id="fabLabel">글쓰기</span></button>
+  <!-- 폰: 펼친 모임 글의 참석 단추를 화면 아래에 붙여 둔다(카드의 단추가 화면 밖으로 나가면). 누르면 카드의 그 단추를 대신 누른다 -->
+  <div id="evDock" class="ev-dock" role="region" aria-label="참석" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- 공통 셸 JS -->
@@ -1477,6 +1496,7 @@
       renderPrompt();
       renderPopular();
       if (!state.degraded && posts.length) C.nickSuggest($("wNick"), posts.map((p) => p.author));
+      updateDock();
     }
     const dateOf = (p) => { const m = C.postMeta(p); return m && m.date ? m.date : ""; };
     const timeOf = (p) => { const m = C.postMeta(p); return m && m.time ? m.time : ""; };
@@ -1539,6 +1559,28 @@
       if (state.attendOn) items.push(["mine", "내 참석", cnt("mine")]);
       el.innerHTML = items.map(([k, label, n]) => `<button type="button" class="chip${state.evFilter === k ? " is-on" : ""}" data-ev="${k}" aria-pressed="${state.evFilter === k}"${!n && k !== "all" && state.evFilter !== k ? " disabled" : ""}>${label} <small>${n}</small></button>`).join("");
       el.hidden = !up.length && state.evFilter === "all";
+    }
+    /* 폰(탭바가 있는 너비): 펼친 모임 글의 참석 단추를 화면 아래에 붙여 둔다. 카드의 단추 줄이 화면 밖이고 그 글이 화면에 있을 때만 보인다.
+       누르면 카드의 그 단추를 대신 누른다(참석, 취소, 공유의 흐름은 하나). 글을 다시 그릴 때마다 새로 맞춘다 */
+    const DOCK = { io: null };
+    function dockHide() { const el = $("evDock"); if (DOCK.io) { DOCK.io.disconnect(); DOCK.io = null; } if (el) el.hidden = true; document.body.classList.remove("has-dock"); }
+    function updateDock() {
+      const el = $("evDock"); if (!el) return;
+      if (DOCK.io) { DOCK.io.disconnect(); DOCK.io = null; }
+      const id = state.expandedId, p = id != null ? findPost(id) : null;
+      const card = p ? document.querySelector(`.bung-card[data-post="${id}"]`) : null;
+      const acts = card ? card.querySelector(".att-acts") : null, row = card ? card.closest(".post-row") : null;
+      if (!acts || !row || !window.matchMedia("(max-width: 860px)").matches || !("IntersectionObserver" in window)) { dockHide(); return; }
+      const main = acts.querySelector('button[data-act="attend"], button[data-act="unattend"], button[disabled]'), share = acts.querySelector('[data-act="share"]');
+      const st = bungStatus(p), leftN = st.cap && st.open ? Math.max(0, st.cap - st.n) : 0;
+      const note = leftN ? leftN + "자리 남음" : st.open ? "모집 중" : (WHY_LABEL[st.why] || "");
+      el.innerHTML = `<div class="ev-dock-info"><b>참석 ${st.n}${st.cap ? " / " + st.cap : ""}명</b><small${st.open ? "" : ' class="is-off"'}>${esc(note)}</small></div>`
+        + (main ? `<button type="button" class="btn ${main.classList.contains("btn-primary") ? "btn-primary" : "btn-secondary"}" data-dock="${main.dataset.act || "none"}"${main.disabled ? " disabled" : ""}>${esc(main.textContent.trim())}</button>` : "")
+        + (share ? `<button type="button" class="btn btn-secondary is-share" data-dock="share" aria-label="공유">${icon("send")}</button>` : "");
+      let actsIn = true, rowIn = true;
+      const apply = () => { const show = rowIn && !actsIn; el.hidden = !show; document.body.classList.toggle("has-dock", show); };
+      DOCK.io = new IntersectionObserver((entries) => { entries.forEach((e) => { if (e.target === acts) actsIn = e.isIntersecting; else if (e.target === row) rowIn = e.isIntersecting; }); apply(); }, { rootMargin: "0px 0px -80px 0px", threshold: 0 });   // 아래 80px 은 탭바와 이 띠가 가린다
+      DOCK.io.observe(acts); DOCK.io.observe(row);
     }
     function dayLabel(ymd, today) {
       const base = C.dateText(ymd, { withDow: true });
@@ -3049,6 +3091,13 @@
       $("moreBtn").addEventListener("click", () => loadPosts(false));
       $("retryBtn").addEventListener("click", () => { capsAgain(); renderListLoading(); loadPosts(true).then(openPromptFromHash).then(popularThen).then(openFromHash); });
 
+      $("evDock").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-dock]"); if (!b || b.disabled) return;
+        const t = document.querySelector(`.bung-card[data-post="${state.expandedId}"] .att-acts [data-act="${b.dataset.dock}"]`);
+        if (t) t.click();
+      });
+      let dockTimer = 0;
+      window.addEventListener("resize", () => { clearTimeout(dockTimer); dockTimer = setTimeout(updateDock, 150); });
       $("evBar").addEventListener("click", (e) => {
         const b = e.target.closest("button[data-ev]"); if (!b) return;
         state.evFilter = b.dataset.ev === state.evFilter ? "all" : b.dataset.ev;
