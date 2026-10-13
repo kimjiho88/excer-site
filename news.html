@@ -143,8 +143,71 @@
     .ev-bar .chip small { color: var(--ink-2); font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
     .ev-bar .chip.is-on small { color: var(--brand); }
     .ev-bar .chip:disabled { opacity: 0.45; }
-    /* 펼친 글: 벙 사진 띠(2:1) */
-    .bc-photo { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; margin: 0 0 12px; border-radius: 10px; background: var(--surface-2); }
+    /* 행사 줄의 모임장 글자(동그라미 없이) */
+    .post-row.is-event .ev-host { color: var(--ink-2); font-weight: 600; }
+    /* ── 펼친 글: 사진 머리(hero). 벙 사진 위에 어두운 띠, 흰 제목과 참석, 모임장. 사진이 없으면 보라 바탕과 날짜 표 ── */
+    .post-row.is-event.is-open { box-shadow: 0 2px 6px rgba(31, 22, 44, 0.06), 0 16px 40px -24px rgba(75, 42, 130, 0.35); }
+    .post-row.is-event.is-open .post-head.ev-hero { position: relative; display: block; min-height: 210px; padding: 0; overflow: hidden; background: linear-gradient(135deg, #3A2068, #6D4AAE); color: #fff; }
+    .post-row.is-event.is-open .post-head.ev-hero[aria-expanded="true"] { background: linear-gradient(135deg, #3A2068, #6D4AAE); }
+    .ev-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .ev-hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 10, 35, 0.10) 0%, rgba(20, 10, 35, 0.08) 35%, rgba(20, 10, 35, 0.82) 100%); }
+    .ev-hero-badge { position: absolute; top: 16px; right: 16px; width: 88px; height: 88px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.5); }
+    .ev-hero-badge img { display: block; width: 100%; height: 100%; }
+    .ev-hero-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ev-hero-top .row-state { background: rgba(255, 255, 255, 0.92); color: var(--brand); box-shadow: none; }
+    .ev-hero-top .row-state.is-past { color: var(--ink-2); }
+    .ev-hero-fold { display: inline-grid; place-items: center; width: 32px; height: 32px; margin-left: auto; border-radius: 50%; background: rgba(255, 255, 255, 0.18); color: #fff; backdrop-filter: blur(6px); }
+    .ev-hero-fold .ic { width: 16px; height: 16px; transform: rotate(180deg); }
+    .ev-hero-body { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 4px; padding: 44px 16px 14px; }
+    .post-row.is-event.is-open .ev-hero-body .row-title { color: #fff; font-size: 21px; line-height: 1.3; font-weight: 800; -webkit-line-clamp: 3; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+    .post-row.is-event.is-open .ev-hero-body .nr-line { grid-column: auto; }
+    .post-row.is-event.is-open .ev-hero-body .ev-sub { grid-column: auto; margin: 0; color: rgba(255, 255, 255, 0.92); font-size: 14px; }
+    .post-row.is-event.is-open .ev-hero-body .ev-sub .ev-place { color: rgba(255, 255, 255, 0.78); }
+    .post-row.is-event.is-open .ev-hero-body .ev-sub .ev-place::before { background: rgba(255, 255, 255, 0.4); }
+    .post-row.is-event.is-open .ev-hero-body .row-meta { grid-column: auto; margin-top: 2px; }
+    .post-row.is-event.is-open .ev-hero-body .rm-who, .post-row.is-event.is-open .ev-hero-body .ev-host, .post-row.is-event.is-open .ev-hero-body .cap-mini, .post-row.is-event.is-open .ev-hero-body .ev-left, .post-row.is-event.is-open .ev-hero-body .ev-me { color: rgba(255, 255, 255, 0.9); }
+    .post-row.is-event.is-open .ev-hero-body .ev-faces i { border-color: rgba(255, 255, 255, 0.5); }
+    .post-row.is-event.is-open .ev-hero-body .cap-mini i { background: rgba(255, 255, 255, 0.3); }
+    .post-row.is-event.is-open .ev-hero-body .cap-mini i::after { background: #fff; }
+    .post-row.is-event.is-open .post-detail { border-top: 0; padding: 16px 16px 18px; }
+    @media (min-width: 641px) {
+      .post-row.is-event.is-open .post-head.ev-hero { min-height: 260px; }
+      .ev-hero-body { padding: 56px 24px 18px; }
+      .post-row.is-event.is-open .ev-hero-body .row-title { font-size: 26px; }
+      .post-row.is-event.is-open .post-detail { padding: 20px 24px 24px; }
+    }
+    /* ── 펼친 글의 모임 카드: 일시와 장소 칸(제목은 CSS 글자), 큰 참석 수와 막대, 남은 자리, 단추, 명단(얼굴표), 모임장 메뉴 ── */
+    .post-row.is-event .bung-card { padding: 0; border: 0; background: none; }
+    .bc-grid { display: grid; gap: 10px; }
+    @media (min-width: 641px) { .bc-grid { grid-template-columns: 1fr 1fr; } .bc-grid .bc-tile:only-child { grid-column: 1 / -1; } }
+    .bc-tile { position: relative; padding: 34px 14px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .bc-tile::before { position: absolute; top: 12px; left: 14px; color: var(--ink-2); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
+    .bc-tile.is-when::before { content: "일시"; }
+    .bc-tile.is-place::before { content: "장소"; }
+    .bc-tile .bc-when b { font-size: 18px; }
+    .bc-tile .bc-row { font-size: 16px; font-weight: 600; }
+    .bc-tile .bc-pl small { font-weight: 500; }
+    .bc-attend { position: relative; display: grid; gap: 12px; margin-top: 10px; padding: 34px 14px 14px; border: 1px solid rgba(75, 42, 130, 0.18); border-radius: 12px; background: linear-gradient(180deg, #F7F4FB, #FFFFFF 60%); }
+    .bc-attend::before { content: "참석"; position: absolute; top: 12px; left: 14px; color: var(--brand); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
+    .bc-attend .bc-n { align-items: baseline; }
+    .bc-attend .bc-n b { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+    .bc-attend .bc-n b em { font-style: normal; color: var(--ink); font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+    .bc-attend .cap-bar { height: 8px; }
+    .bc-remain::after { content: attr(data-left) "자리 남음"; color: var(--brand); font-size: var(--fs-caption); font-weight: 700; }
+    .bc-attend .att-acts .btn-primary { flex: 1 1 auto; }
+    .bc-attend .att-list { gap: 8px; }
+    .bc-attend .att-list li { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 4px 12px 4px 4px; background: var(--surface); border: 1px solid var(--line); }
+    .bc-attend .att-list li::before { content: attr(data-i); display: inline-grid; flex: none; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--av, #CFC1E6); color: #fff; font-size: 11px; font-weight: 800; line-height: 1; }
+    .bc-attend .att-list li.is-me { border-color: var(--brand); background: var(--brand-soft); box-shadow: none; }
+    .bc-attend .att-list li small { margin-left: 2px; }
+    .bc-attend .att-empty { padding: 2px 0; }
+    .post-row.is-event .host-menu { margin-top: 8px; padding-top: 0; border-top: 0; }
+    .post-row.is-event .host-menu > summary { padding: 0 2px; }
+    /* 펼친 글의 작은 제목(모임 정보, 소개) */
+    .pd-h { margin: 18px 0 8px; color: var(--ink); font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
+    .post-row.is-event .post-detail .kv { margin-bottom: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+    .post-row.is-event .post-detail .post-body { padding: 0 2px; }
+    .post-row.is-event .react-bar { margin-top: 18px; }
     .sec-head { margin: 20px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: var(--fs-body); font-weight: 700; }
     .sec-head:first-child { margin-top: 0; }
     .sec-head small, .past-toggle small { margin-left: 4px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
@@ -1242,17 +1305,20 @@
       const facts = card ? v.facts.filter((f) => !/^(when|place|cap|deadline|status)$/.test(f.key) && !(f.key === "apply" && !(v.meta && v.meta.apply))) : v.facts;   // 카드에 있는 것(모집 상태 포함)과 참석 단추 자체인 '신청 방법' 은 표에서 뺀다
       // 댓글로 참석: 모집 중인 모임이고 아직 참석하지 않았으면 댓글 등록에 '참석도 신청' 칸
       const canAtt = card && bungStatus(post).open && !(((state.attend[post.id] || {}).list) || []).some((x) => isMe(x.nick, post.id));
+      const cardShare = card && bungStatus(post).why !== "started";   // 카드에 공유 단추가 있으면 아래 동작 줄에서는 뺀다(두 번 보이지 않게)
+      const infoH = card && facts.length ? `<h4 class="pd-h">모임 정보</h4>` : "";
+      const bodyH = card && v.body.trim() ? `<h4 class="pd-h">소개</h4>` : "";
       return `
         ${lead}
         ${card ? attendHTML(post) : ""}
-        ${factsHTML(facts)}
-        ${body}
+        ${infoH}${factsHTML(facts)}
+        ${bodyH}${body}
         ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
         ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
         ${reactBarHTML(post)}
         <div class="post-actions">
-          <button type="button" class="text-btn" data-act="share" data-id="${post.id}">${icon("send", "is-sm")} 카카오톡 공유</button>
+          ${cardShare ? "" : `<button type="button" class="text-btn" data-act="share" data-id="${post.id}">${icon("send", "is-sm")} 카카오톡 공유</button>`}
           <button type="button" class="text-btn" data-act="copy-link" data-id="${post.id}">${icon("link", "is-sm")} 링크 복사</button>
           <button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>
           <button type="button" class="text-btn is-quiet is-danger" data-act="delete" data-id="${post.id}">${icon("trash", "is-sm")} 삭제</button>
@@ -1290,21 +1356,39 @@
       const n = list ? list.length : bs.n, leftN = bs.cap ? bs.cap - n : 0;
       const mine = !!(list && list.some((x) => isMe(x.nick, post.id)));
       const att = state.attendOn ? `<span class="ev-att">${list && list.length ? facesHTML(list, 4) : ""}<span class="cap-mini">${bs.cap ? `<i style="--p:${Math.min(100, Math.round(n / bs.cap * 100))}%"></i>` : ""}참석 ${n}${bs.cap ? "/" + bs.cap : ""}</span>${bs.open && bs.cap ? `<span class="ev-left">${leftN > 0 ? leftN + "자리 남음" : ""}</span>` : ""}${mine ? `<span class="ev-me">${icon("check")}내 참석</span>` : ""}</span>` : "";
-      const who = [`<b class="who" data-initial="${esc((v.author || "익명").slice(0, 1))}">${esc(v.author || "익명")}</b>`];
+      const who = [`<b class="ev-host">모임장 ${esc(v.author || "익명")}</b>`];
       if (v.comment_count) who.push("댓글 " + v.comment_count);
       if (v.reaction_count) who.push("반응 " + v.reaction_count);
+      const newDot = lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : "";
+      const stateEl = stateText ? `<span class="row-state${dim ? " is-past" : ""}">${esc(stateText)}</span>` : "";
+      if (expanded) {   // 펼친 글: 줄 대신 사진 머리(벙 사진, 없으면 날짜 표 위 보라 바탕). 제목과 참석, 모임장은 그 위에 흰 글자
+        const name = bungPhotoName(post);
+        const hero = name ? `<img class="ev-hero-img" src="assets/bung/${name}.jpg" alt="" width="800" height="400" decoding="async" onerror="this.remove()" />`
+          : `<span class="ev-hero-badge">${/^\d{4}-\d{2}-\d{2}$/.test(m.date || "") ? `<img src="assets/cal/sq/${m.date.slice(5)}.png" alt="" width="240" height="240" decoding="async" onerror="this.remove()" />` : ""}</span>`;
+        return `
+        <article class="row post-row is-event is-open${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
+          <h3 class="post-h">
+            <button type="button" class="post-head ev-hero" data-act="toggle" data-id="${post.id}" aria-expanded="true" title="접기">
+              ${hero}<span class="ev-hero-shade" aria-hidden="true"></span>
+              <span class="ev-hero-top">${stateEl}<span class="ev-hero-fold" aria-hidden="true">${icon("chevDown", "is-sm")}</span></span>
+              <span class="ev-hero-body"><span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+                ${sub}<span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span></span>
+            </button>
+          </h3>
+          <div class="post-detail">${detailHTML(post)}</div>
+        </article>`;
+      }
       return `
         <article class="row post-row is-event${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
-            <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
+            <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="false">
               <span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>
-              <span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
-              ${stateText ? `<span class="row-state${dim ? " is-past" : ""}">${esc(stateText)}</span>` : ""}
+              <span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              ${stateEl}
               ${sub}
               <span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span>
             </button>
           </h3>
-          ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
         </article>`;
     }
     function rowHTML(post) {
@@ -1933,15 +2017,19 @@
       if (failed) names = `<p class="att-empty">명단을 불러오지 못했습니다. <button type="button" class="text-btn" data-act="retry-att" data-id="${post.id}">다시 시도</button></p>`;
       else if (!list) names = `<p class="att-empty" aria-busy="true">참석 명단을 불러오는 중입니다.</p>`;
       else if (!list.length) names = `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`;
-      else names = `<ul class="att-list${many ? " is-many" : ""}" aria-label="참석자">${list.map((x) => `<li${isMe(x.nick, post.id) ? ' class="is-me"' : ""} title="${esc(x.nick)}${x.host ? " (모임장이 적음)" : ""}">${esc(x.nick)}${nickKey(x.nick) === host ? " <small>모임장</small>" : x.host ? " <small>모임장 추가</small>" : ""}</li>`).join("")}</ul>`
+      else names = `<ul class="att-list${many ? " is-many" : ""}" aria-label="참석자">${list.map((x) => `<li${isMe(x.nick, post.id) ? ' class="is-me"' : ""} data-i="${esc(Array.from(String(x.nick || "").trim())[0] || "?")}" style="--av:${avColor(x.nick)}" title="${esc(x.nick)}${x.host ? " (모임장이 적음)" : ""}">${esc(x.nick)}${nickKey(x.nick) === host ? " <small>모임장</small>" : x.host ? " <small>모임장 추가</small>" : ""}</li>`).join("")}</ul>`
         + (many ? `<p class="att-empty"><button type="button" class="text-btn" data-act="att-more" data-id="${post.id}">외 ${list.length - ATT_FOLD}명 보기</button></p>` : "");
-      const photo = bungPhotoName(post) ? `<img class="bc-photo" src="assets/bung/${bungPhotoName(post)}.jpg" alt="" width="800" height="400" loading="lazy" decoding="async" onerror="this.remove()" />` : "";
+      const leftN = st.cap && st.open ? Math.max(0, st.cap - n) : 0;   // 남은 자리는 CSS 글자로(카드 글 차례를 바꾸지 않게)
       return `<div class="attend bung-card" data-post="${post.id}" role="group" aria-label="모임 참석">
-          ${photo}<div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
-          ${m.place ? `<div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div>` : ""}
-          <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
-          ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
-          ${names}
+          <div class="bc-grid">
+            <div class="bc-tile is-when"><div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div></div>
+            ${m.place ? `<div class="bc-tile is-place"><div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div></div>` : ""}
+          </div>
+          <div class="bc-attend">
+            <div class="bc-cap"><div class="bc-n"><b>참석 <em>${n}</em>${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}${leftN ? `<span class="bc-remain" data-left="${leftN}" aria-hidden="true"></span>` : ""}</div>
+            ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
+            ${names}
+          </div>
           <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }
