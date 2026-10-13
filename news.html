@@ -132,7 +132,8 @@
     .ev-faces i:first-child { margin-left: 0; }
     .ev-faces i.is-more { background: var(--surface-2, #F3F0E8); color: var(--ink-2); }
     .ev-att .cap-mini { font-size: var(--fs-caption); color: var(--ink); font-weight: 600; }
-    .ev-left { color: var(--brand); font-size: var(--fs-caption); font-weight: 700; }
+    .ev-left { color: var(--brand); font-size: var(--fs-caption); font-weight: 700; white-space: nowrap; }
+    .ev-att .cap-mini, .ev-me { white-space: nowrap; }
     .ev-left.is-off { color: var(--ink-2); font-weight: 600; }
     .ev-me { display: inline-flex; align-items: center; gap: 3px; color: var(--brand); font-size: var(--fs-caption); font-weight: 700; }
     .ev-me .ic { width: 14px; height: 14px; }
@@ -220,6 +221,23 @@
       body.has-dock .toast { bottom: calc(154px + env(safe-area-inset-bottom)); }
       html.is-typing .ev-dock { display: none; }
     }
+    /* 글쓰기 창: 모임 종류 단추 한 줄(옆으로 넘김)과 카드 사진 미리보기 */
+    .kind-row { display: grid; gap: 6px; margin-top: 6px; }
+    .kind-row[hidden] { display: none; }
+    .kind-chips { display: flex; gap: 6px; overflow-x: auto; padding: 1px 0 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .kind-chips::-webkit-scrollbar { display: none; }
+    .kind-chips .chip { flex: none; min-height: 32px; padding: 0 12px; font-size: 13px; font-weight: 600; }
+    .kind-prev { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 2px 8px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.35; }
+    .kind-prev img { flex: none; width: 32px; height: 32px; border-radius: 7px; object-fit: cover; }
+    .kind-prev img[hidden] { display: none; }
+    .kind-prev b { color: var(--ink); }
+    .kind-prev.is-none { background: var(--gold-soft, #F3EAD5); }
+    /* 목록 줄의 바로 참석 단추(모집 중이고 아직 참석하지 않은 모임) */
+    .post-row.is-event { position: relative; }
+    .ev-quick { position: absolute; right: 12px; bottom: 12px; }
+    .ev-quick .btn { min-height: 36px; padding: 0 14px; font-size: 13px; }
+    .post-row.is-event.has-quick .row-meta { padding-right: 76px; }
+    @media (min-width: 641px) { .ev-quick { right: 16px; bottom: 14px; } .ev-quick .btn { min-height: 40px; padding: 0 16px; font-size: 14px; } .post-row.is-event.has-quick .row-meta { padding-right: 96px; } }
     /* 펼친 글의 작은 제목(모임 정보, 소개) */
     .pd-h { margin: 18px 0 8px; color: var(--ink); font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
     .post-row.is-event .post-detail .kv { margin-bottom: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
@@ -530,6 +548,7 @@
   <script src="assets/site-core.js?v=13"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=12"></script>
+  <script src="assets/bung-photo.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -697,6 +716,11 @@
           <label for="wTitle" id="wTitleLabel">제목</label>
           <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목" />
           <span class="field-error" hidden></span>
+          <!-- 모임 모집: 자주 여는 종류 단추(누르면 모임명에 그 말이 들어가 카드 사진이 정해진다)와 사진 미리보기 -->
+          <div id="wKindRow" class="kind-row" hidden>
+            <div class="kind-chips" id="wKindChips" role="group" aria-label="모임 종류"></div>
+            <div class="kind-prev" id="wKindPrev"><img id="wKindImg" alt="" width="32" height="32" hidden /><span id="wKindText"></span></div>
+          </div>
         </div>
         <div class="type-fields" id="typeFields"></div>
         <div class="field is-wide" data-field="wBody">
@@ -1397,8 +1421,9 @@
           <div class="post-detail">${detailHTML(post)}</div>
         </article>`;
       }
+      const quick = state.attendOn && bs.open && !mine ? `<div class="ev-quick"><button type="button" class="btn btn-primary" data-act="attend" data-id="${post.id}" aria-label="${esc(v.title || "모임")} 참석">참석</button></div>` : "";
       return `
-        <article class="row post-row is-event${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
+        <article class="row post-row is-event${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}${quick ? " has-quick" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="false">
               <span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>
@@ -1407,7 +1432,7 @@
               ${sub}
               <span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span>
             </button>
-          </h3>
+          </h3>${quick}
         </article>`;
     }
     function rowHTML(post) {
@@ -1855,7 +1880,7 @@
       syncPassHint();
       syncAuthor();
       renderPreview();
-      $("writeBackdrop").hidden = false;
+      renderKindRow(); $("writeBackdrop").hidden = false;
       // 종류가 정해져 열렸으면 바로 제목 칸, 아니면 종류 단추(폰 자판이 종류 단추를 가리지 않게)
       setTimeout(() => {
         if (post || (init && init.category)) $("wTitle").focus();
@@ -1872,6 +1897,7 @@
       if (cat === "공지" && $("wPass").value === savedPass()) $("wPass").value = "";   // 운영진 비밀번호는 저장값으로 채우지 않는다
       if (cat !== "공지" && !$("wPass").value) $("wPass").value = savedPass();
       renderTypeFields(cat, keep && C.postType(cat).kind === keep.kind ? keep : (catStash[cat] || null));
+      renderKindRow();
       syncCatNudge();
       if (!state.editingId) {
         $("writeSubmitBtn").textContent = cat === "벙 소식" ? "모임 올리기" : "등록";
@@ -1882,6 +1908,25 @@
     }
     /* 자유나 정보 글에 모임 모집처럼 보이는 말이 있으면 모임 모집으로 바꾸자고 한 줄 */
     const BUNG_WORDS = /(벙|번개|모임|모집|정모|[0-9]+\s*명|[0-9]{1,2}\s*시)/;
+    /* 모임 종류 단추: 채팅 기록에 자주 나온 종류. 누르면 모임명에 그 말을 넣는다(이미 있으면 그대로). 미리보기는 모임명과 장소로 고른 카드 사진 */
+    const KIND_CHIPS = [["커피", "커벙"], ["술 한잔", "술벙"], ["저녁", "저녁벙"], ["점심", "점심벙"], ["집", "집벙"], ["와인", "와인벙"], ["한강", "한강벙"], ["고기", "고기벙"], ["회", "회벙"], ["치맥", "치맥"], ["족발", "족발"], ["곱창", "곱창"], ["러닝", "러닝"], ["등산", "등산"], ["탁구", "탁구"], ["보드게임", "보드게임"], ["볼링", "볼링"], ["노래방", "노래방"], ["영화", "영화"], ["계곡", "계곡"], ["캠핑", "캠핑"], ["여행", "여행"]];
+    function renderKindRow() {
+      const row = $("wKindRow"); if (!row) return;
+      const on = $("wCat").value === "벙 소식";
+      row.hidden = !on;
+      if (!on) return;
+      if (!$("wKindChips").childElementCount) $("wKindChips").innerHTML = KIND_CHIPS.map(([label, word]) => `<button type="button" class="chip" data-kind="${esc(word)}">${esc(label)}</button>`).join("");
+      syncKindPreview();
+    }
+    function syncKindPreview() {
+      const row = $("wKindRow"); if (!row || row.hidden) return;
+      const title = $("wTitle").value, place = ($("wf_place") || {}).value || "";
+      const name = BUNGPHOTO.name({ id: state.editingId || 0, title }, { place });
+      const img = $("wKindImg"), txt = $("wKindText"), box = $("wKindPrev");
+      $("wKindChips").querySelectorAll(".chip").forEach((c) => c.classList.toggle("is-on", !!title && title.includes(c.dataset.kind)));
+      if (name) { img.src = "assets/bung/t/" + name + ".jpg"; img.hidden = false; box.classList.remove("is-none"); txt.innerHTML = `카드 사진: <b>${esc(BUNGPHOTO.label(name) || "")}</b>`; }
+      else { img.hidden = true; box.classList.add("is-none"); txt.textContent = title.trim() ? "맞는 사진이 없어 날짜 그림이 나갑니다. 위 종류를 누르거나 모임명에 메뉴나 활동을 적어 주세요." : "모임명에 메뉴나 활동을 적으면 카드 사진이 정해집니다."; }
+    }
     function syncCatNudge() {
       const cat = $("wCat").value;
       $("catNudge").hidden = !((cat === "자유" || cat === "정보") && !state.editingId && BUNG_WORDS.test($("wTitle").value + " " + $("wBody").value.slice(0, 200)));
@@ -2096,142 +2141,14 @@
     /* 달력 그림: 흰 바탕 가운데 달력(위 띠에 달, 아래에 큰 날짜). 날짜마다 미리 만들어 둔 그림(assets/cal/MM-DD.png, 800x400)을 쓴다.
        공유할 때마다 그려 카카오 서버에 올리지 않는다(올리는 동안 보내기를 기다리던 것). 카드 아래 글이 제목과 날짜, 장소를 맡는다 */
     function calImage(ymd) { return /^\d{4}-(\d{2})-(\d{2})$/.test(ymd || "") ? location.origin + "/assets/cal/" + ymd.slice(5) + ".png" : ""; }
-    /* 벙 사진: 제목의 낱말로 종류를 골라 미리 만들어 둔 사진(assets/bung/종류-NN.jpg, 800x400)을 쓴다. 위에서부터 먼저 맞는 줄,
-       사진이 여럿이면 글 번호로 골라 같은 벙은 늘 같은 사진. 맞는 줄이 없으면 달력 그림.
-       음식, 술, 카페 86 종류 300장과 모임 활동(볼링, 노래방, 영화, 게임, 독서, 등산, 운동, 여행, 집, 한강) 사진. 두루 쓰는 말(한잔, 밥, 카페 등)은 맨 아래 */
-    const BUNG_PHOTO = [
-      [/볼링/, ["bowling-01"]],
-      [/노래방|노래벙|코노|코인\s?노래/, ["karaoke-01"]],
-      [/영화|시네마|무비|메가박스|CGV|뮤지컬|연극|공연|콘서트/i, ["movie-01"]],
-      [/보드\s?게임|보드\s?겜|보겜|보드벙|고스톱|마작|방탈출|루미큐브/, ["game-01"]],
-      [/다트|당구|포켓볼|피방|피씨방|PC\s?방|겜방|게임벙|오락실|뽑기/i, ["game-02"]],
-      [/독서|북클럽|(^|[^산])책\s?(벙|모임)|공부|스터디/, ["book-01"]],
-      [/등산|산행|트레킹|둘레길|북한산|관악산|청계산|인왕산|아차산|도봉산|수락산|불암산/, ["hike-01"]],
-      [/탁구|탁벙/, ["sport-01"]],
-      [/러닝|런닝|마라톤|조깅/, ["sport-02"]],
-      [/배드민턴|테니스|헬스|운동|클라이밍|풋살|축구|농구|수영|(^|[^가-힣])요가/, ["sport-03"]],
-      [/계곡/, ["trip-01"]],
-      [/펜션/, ["trip-02"]],
-      [/바다|해변|해수욕|부산|속초|강릉|양양|제주|여수|통영/, ["trip-03"]],
-      [/캠핑|글램핑|불멍/, ["trip-04"]],
-      [/여행|드라이브|해외|당일치기|후쿠오카|오사카|도쿄|다낭|전주(?!비빔)|경주|가평|양평|춘천/, ["trip-01", "trip-02", "trip-03", "trip-04"]],
-      [/피크닉|포틀럭|돗자리/, ["river-01"]],
-      [/생일|생파/, ["home-02"]],
-      [/파티룸/, ["home-03"]],
-      [/홈술|집술/, ["home-04"]],
-      [/요리벙|쿠킹|파자마/, ["home-01"]],
-      [/빙수/, ["bingsu-01", "bingsu-02"]],
-      [/브런치/, ["brunch-01", "brunch-02", "brunch-03"]],
-      [/(루프탑|옥상|옥탑)\s?(카페|커피)/, ["cafe-01", "cafe-02", "cafe-03", "cafe-04", "cafe-05", "cafe-06", "cafe-07", "cafe-08", "cafe-09", "cafe-10", "cafe-11"]],
-      [/빵|베이커리|크루아상|소금빵/, ["bakery-01", "bakery-02", "bakery-03", "bakery-04", "bakery-05"]],
-      [/디저트|케이크|마카롱|크로플|도넛/, ["dessert-01", "dessert-02", "dessert-03", "dessert-04"]],
-      [/아이스크림|젤라또/, ["icecream-01", "icecream-02"]],
-      [/찻집|전통차|티룸/, ["tea-01", "tea-02"]],
-      [/곱창전골|곱도리/, ["gopjeongol-01", "gopjeongol-02"]],
-      [/곱창|대창/, ["gopchang-01", "gopchang-02", "gopchang-03", "gopchang-04"]],
-      [/막창/, ["makchang-01", "makchang-02", "makchang-03"]],
-      [/양갈비|양고기|램찹|양다리/, ["yanggalbi-01", "yanggalbi-02", "yanggalbi-03", "yanggalbi-04"]],
-      [/양꼬치|꿔바로우/, ["yangkkochi-01", "yangkkochi-02", "yangkkochi-03"]],
-      [/냉삼|냉동삼겹|대패/, ["naengsam-01", "naengsam-02", "naengsam-03", "naengsam-04"]],
-      [/돼지갈비|양념갈비/, ["dwaejigalbi-01", "dwaejigalbi-02", "dwaejigalbi-03", "dwaejigalbi-04"]],
-      [/소갈비|우대갈비|LA\s?갈비|갈비살/i, ["sogalbi-01", "sogalbi-02", "sogalbi-03", "sogalbi-04"]],
-      [/한우|소고기|등심|안심|차돌|특수부위/, ["hanwoo-01", "hanwoo-02", "hanwoo-03", "hanwoo-04", "hanwoo-05", "hanwoo-06", "hanwoo-07", "hanwoo-08", "hanwoo-09"]],
-      [/육회|육사시미/, ["yukhoe-01", "yukhoe-02"]],
-      [/삼겹|오겹|목살|고깃집/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12"]],
-      [/닭갈비/, ["dakgalbi-01", "dakgalbi-02", "dakgalbi-03"]],
-      [/쪽갈비|바비큐|바베큐|폭립|(^|[^가-힣])립($|[^가-힣])/, ["jjokgalbi-01", "jjokgalbi-02"]],
-      [/닭발|똥집|오돌뼈/, ["dakbal-01", "dakbal-02"]],
-      [/훈제오리|오리고기|(^|[^가-힣])오리/, ["ori-01", "ori-02"]],
-      [/족발|뽕족/, ["jokbal-01", "jokbal-02", "jokbal-03", "jokbal-04", "jokbal-05", "jokbal-06"]],
-      [/보쌈|수육/, ["bossam-01", "bossam-02", "bossam-03"]],
-      [/감자탕/, ["gamjatang-01", "gamjatang-02", "gamjatang-03"]],
-      [/해장/, ["haejang-01", "haejang-02"]],
-      [/설렁탕|곰탕|갈비탕/, ["seolleongtang-01", "seolleongtang-02", "seolleongtang-03"]],
-      [/국밥|순대/, ["gukbap-01", "gukbap-02", "gukbap-03"]],
-      [/장어/, ["jangeo-01", "jangeo-02", "jangeo-03"]],
-      [/백숙|삼계탕|닭한마리|보양|몸보신/, ["baeksuk-01", "baeksuk-02", "baeksuk-03", "baeksuk-04"]],
-      [/찜닭|닭볶음탕/, ["jjimdak-01", "jjimdak-02"]],
-      [/부대찌개/, ["budae-01", "budae-02"]],
-      [/찌개|김찌/, ["jjigae-01", "jjigae-02"]],
-      [/샤브|편백찜/, ["shabu-01", "shabu-02", "shabu-03"]],
-      [/게장|(^|[^가-힣])게벙/, ["gejang-01", "gejang-02", "gejang-03"]],
-      [/대게|킹크랩|랍스터|홍게/, ["daege-01", "daege-02", "daege-03"]],
-      [/조개|가리비/, ["jogae-01", "jogae-02", "jogae-03"]],
-      [/새우|대하/, ["saeu-01", "saeu-02"]],
-      [/아구|해물찜|해물탕/, ["agujjim-01", "agujjim-02", "agujjim-03"]],
-      [/낙지|쭈꾸미|주꾸미|오징어|문어/, ["nakji-01", "nakji-02", "nakji-03", "nakji-04"]],
-      [/굴벙|굴찜|생굴|과메기/, ["gul-01", "gul-02"]],
-      [/연어|사케동/, ["salmon-01", "salmon-02"]],
-      [/참치/, ["chamchi-01", "chamchi-02"]],
-      [/초밥|스시|오마카세/, ["sushi-01", "sushi-02", "sushi-03", "sushi-04", "sushi-05", "sushi-06"]],
-      [/회벙|횟집|모둠회|사시미|물회|광어|방어|우럭|도미|(^|[^가-힣\d])회([^가-힣\d]|$)/, ["hoe-01", "hoe-02", "hoe-03", "hoe-04", "hoe-05", "hoe-06", "hoe-07", "hoe-08", "hoe-09"]],
-      [/냉면|막국수|밀면/, ["naengmyeon-01", "naengmyeon-02", "naengmyeon-03"]],
-      [/칼국수|수제비/, ["kalguksu-01", "kalguksu-02"]],
-      [/쌀국수|분짜|베트남/, ["pho-01", "pho-02", "pho-03"]],
-      [/국수/, ["guksu-01", "guksu-02"]],
-      [/만두/, ["mandu-01", "mandu-02"]],
-      [/마라/, ["mala-01", "mala-02", "mala-03"]],
-      [/훠궈/, ["hotpot-01", "hotpot-02"]],
-      [/짜장|짬뽕|탕수육|중식|중국집/, ["jungsik-01", "jungsik-02", "jungsik-03", "jungsik-04"]],
-      [/딤섬|샤오롱바오/, ["dimsum-01", "dimsum-02"]],
-      [/팟타이|태국|똠얌/, ["thai-01", "thai-02"]],
-      [/커리|카레|인도/, ["curry-01", "curry-02"]],
-      [/타코|멕시칸|부리또/, ["mexican-01", "mexican-02"]],
-      [/라멘/, ["ramen-01", "ramen-02", "ramen-03"]],
-      [/우동|소바/, ["udon-01", "udon-02"]],
-      [/돈까스|돈카츠/, ["donkatsu-01", "donkatsu-02", "donkatsu-03"]],
-      [/텐동|규동|덮밥/, ["donburi-01", "donburi-02"]],
-      [/파스타|이탈리안/, ["pasta-01", "pasta-02", "pasta-03", "pasta-04"]],
-      [/피자|피맥/, ["pizza-01", "pizza-02", "pizza-03"]],
-      [/스테이크/, ["steak-01", "steak-02", "steak-03"]],
-      [/버거/, ["burger-01", "burger-02", "burger-03"]],
-      [/샐러드|포케|샌드위치/, ["salad-01", "salad-02"]],
-      [/떡볶이|분식|어묵|오뎅/, ["tteokbokki-01", "tteokbokki-02", "tteokbokki-03"]],
-      [/김밥|(^|[^가-힣])라면/, ["kimbap-01", "kimbap-02"]],
-      [/한정식|한식|정식(?!\s?오픈)|백반|쌈밥|비빔밥|집밥/, ["hansik-01", "hansik-02", "hansik-03", "hansik-04", "hansik-05"]],
-      [/생선구이|고등어|갈치/, ["saengseon-01"]],
-      [/치킨|치맥|통닭|후라이드/, ["chicken-01", "chicken-02", "chicken-03", "chicken-04", "chicken-05", "chicken-06", "chicken-07"]],
-      [/고기|꼬기|갈비|구이/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12", "hanwoo-01", "hanwoo-02", "hanwoo-03", "hanwoo-04", "hanwoo-05", "hanwoo-06", "hanwoo-07", "hanwoo-08", "hanwoo-09"]],
-      [/전골/, ["shabu-01", "shabu-02", "shabu-03"]],
-      [/양식/, ["pasta-01", "pasta-02", "pasta-03", "pasta-04", "steak-01", "steak-02", "steak-03"]],
-      [/일식/, ["sushi-01", "sushi-02", "sushi-03", "sushi-04", "sushi-05", "sushi-06", "izakaya-01", "izakaya-02", "izakaya-03", "izakaya-04"]],
-      [/포차|포장마차|오뎅바/, ["pocha-01", "pocha-02", "pocha-03", "pocha-04", "pocha-05", "pocha-06", "pocha-07", "pocha-08"]],
-      [/소주|술벙|술집/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"]],
-      [/수제맥주|펍|탭룸/, ["craftbeer-01", "craftbeer-02", "craftbeer-03"]],
-      [/호프|맥주|생맥|노가리|간맥/, ["hof-01", "hof-02", "hof-03", "hof-04", "hof-05"]],
-      [/이자카야|사케|하이볼/, ["izakaya-01", "izakaya-02", "izakaya-03", "izakaya-04"]],
-      [/꼬치|야키토리/, ["yakitori-01", "yakitori-02", "yakitori-03"]],
-      [/막걸리|파전|전집|빈대떡|동동주|부침개|담금주/, ["makgeolli-01", "makgeolli-02", "makgeolli-03", "makgeolli-04", "makgeolli-05"]],
-      [/야장|노상/, ["yajang-01", "yajang-02", "yajang-03"]],
-      [/와인|와벙|내추럴|샴페인|시음|낮와/, ["winebar-01", "winebar-02", "winebar-03", "winebar-04", "winebar-05", "winebar-06", "winebar-07"]],
-      [/위스키|싱글몰트/, ["whisky-01", "whisky-02", "whisky-03", "whisky-04", "whisky-05"]],
-      [/칵테일/, ["cocktail-01", "cocktail-02", "cocktail-03"]],
-      [/루프탑|옥상|옥탑/, ["rooftop-01", "rooftop-02", "rooftop-03"]],
-      [/LP\s?바|재즈/i, ["lpbar-01", "lpbar-02"]],
-      [/커벙|커피|카페|라떼|티타임|스벅|스타벅스|아아|수다|논알콜|무알콜/, ["cafe-01", "cafe-02", "cafe-03", "cafe-04", "cafe-05", "cafe-06", "cafe-07", "cafe-08", "cafe-09", "cafe-10", "cafe-11"]],
-      [/집벙|홈파티|집들이|하우스/, ["home-01", "home-03"]],
-      [/한강|산책|따릉이|자전거|야경|양재천|청계천|탄천|석촌호수|호수/, ["river-01", "river-02"]],
-      [/야식|야밤|새벽|심야/, ["yasik-01", "yasik-02"]],
-      [/한잔|낮술|간술|불금/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"]],
-      [/밥|식사|점심|점벙|저녁|맛집|맛벙|먹벙|먹는벙|아침|회식|무한리필|뒷풀이|뒤풀이/, ["dinner-01", "dinner-02", "dinner-03", "dinner-04"]],
-    ];
-    function bungPhotoName(p) {
-      const t = String((p && p.title) || "");
-      for (const [re, list] of BUNG_PHOTO) {
-        if (re.test(t)) return list[Math.abs(parseInt(p.id, 10) || 0) % list.length];
-      }
-      return "";
-    }
+    /* 벙 사진: 공용 규칙(assets/bung-photo.js, BUNGPHOTO)으로 고른다. 제목의 낱말이 먼저, 두루 쓰는 말이면 장소 이름으로 한 번 더. 없으면 달력 그림 */
+    function bungPhotoName(p) { return BUNGPHOTO.name(p, C.postMeta(p) || {}); }
     function bungImage(p, m) {
       const name = bungPhotoName(p);
       return name ? location.origin + "/assets/bung/" + name + ".jpg" : calImage(m && m.date);
     }
-    /* 목록 줄의 작은 사진(180x180, assets/bung/t). 맞는 낱말이 없으면 그 날짜의 네모 날짜 표(assets/cal/sq), 날짜도 없으면 소식 그림 */
-    function bungThumb(p, m) {
-      const name = bungPhotoName(p);
-      if (name) return "assets/bung/t/" + name + ".jpg";
-      return /^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || "") ? "assets/cal/sq/" + m.date.slice(5) + ".png" : "assets/img/news-spot-240.webp?v=2";
-    }
+    /* 목록 줄의 작은 사진(180x180). 맞는 낱말이 없으면 그 날짜의 네모 날짜 표, 날짜도 없으면 소식 그림 */
+    function bungThumb(p, m) { return BUNGPHOTO.thumb(p, m) || "assets/img/news-spot-240.webp?v=2"; }
     /* 공유 카드의 글 부분: 날짜 표(assets/cal/sq/MM-DD.png)와 제목, 모집 상태, 이름과 값 줄(일시, 장소, 모임장, 신청 마감, 정원), 남은 자리.
        카카오 피드의 항목 칸(itemContent)으로 보낸다. 글자 수는 넉넉히 잘라 보낸다 */
     const CARD_LABEL = "동네친구들 모임 모집";
@@ -3022,6 +2939,14 @@
 
       $("wCat").addEventListener("change", () => { renderTypeFields($("wCat").value, null); renderPreview(); });
       $("wCatChips").addEventListener("click", (e) => { const b = e.target.closest(".cat-chip"); if (b) pickCat(b.dataset.cat); });
+      $("wKindChips").addEventListener("click", (e) => {
+        const b = e.target.closest(".chip[data-kind]"); if (!b) return;
+        const t = $("wTitle"), w = b.dataset.kind;
+        if (!t.value.includes(w)) t.value = (t.value.trim() ? t.value.trim() + " " : "") + w;
+        syncKindPreview(); t.focus();
+      });
+      $("wTitle").addEventListener("input", syncKindPreview);
+      $("typeFields").addEventListener("input", (e) => { if (e.target && e.target.id === "wf_place") syncKindPreview(); });
       $("wCatChips").addEventListener("keydown", (e) => {   // 라디오 묶음처럼 좌우 화살표로 옮겨 고른다
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
         const bs = [...$("wCatChips").querySelectorAll(".cat-chip")], i = bs.indexOf(document.activeElement); if (i < 0) return;
