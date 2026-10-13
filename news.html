@@ -88,8 +88,63 @@
       .post-head .row-state { align-self: start; margin-top: 1px; }
     }
     .post-row.is-linked .post-head { background: var(--brand-soft); }
+    .post-list.ev-mode { border-bottom: 0; }
     .day-head { margin: 16px 0 0; padding-bottom: 6px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
     .day-head:first-child { margin-top: 0; }
+    /* 83차 모임 모집 탭: 날짜 머리는 굵은 줄(오늘은 보라), 건수는 CSS 로 붙인다(글자 내용은 그대로) */
+    .ev-mode .day-head { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding: 0 0 8px; color: var(--ink); font-size: 15px; font-weight: 800; }
+    .ev-mode .day-head::before { content: ""; flex: none; width: 4px; height: 16px; border-radius: 2px; background: var(--line-strong); }
+    .ev-mode .day-head.is-today { color: var(--brand); }
+    .ev-mode .day-head.is-today::before { background: var(--brand); }
+    .ev-mode .day-head[data-n]::after { content: attr(data-n) "건"; margin-left: auto; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
+    .ev-mode .day-head:first-child { margin-top: 4px; }
+    .ev-mode .past-list .day-head:first-child { margin-top: 12px; }
+    /* 행사 줄: 왼쪽 벙 사진(제목 낱말로 고른 것, 없으면 날짜 표), 가운데 제목과 시간, 장소, 모임장과 참석, 오른쪽 상태 */
+    .post-row.is-event { border-top: 0; margin-bottom: 8px; border: 1px solid rgba(75, 42, 130, 0.12); border-radius: 14px; background: var(--surface); box-shadow: 0 1px 2px rgba(31, 22, 44, 0.04); overflow: hidden; }
+    .post-row.is-event .post-head { grid-template-columns: 64px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; padding: 12px 12px 12px 12px; }
+    .post-row.is-event.is-pinned .post-head { padding-left: 12px; }
+    .post-row.is-event .ev-thumb { grid-row: 1 / span 3; width: 64px; height: 64px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+    .post-row.is-event .ev-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .post-row.is-event .nr-line { grid-column: 2; align-items: flex-start; }
+    .post-row.is-event .row-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 16px; font-weight: 700; line-height: 1.35; }
+    .post-row.is-event .row-state { grid-column: 3; grid-row: 1; align-self: start; }
+    .post-row.is-event .ev-sub { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin-top: 2px; color: var(--ink); font-size: var(--fs-sm); line-height: 1.45; overflow-wrap: anywhere; }
+    .post-row.is-event .ev-sub b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .post-row.is-event .ev-sub .ev-place { color: var(--ink-2); }
+    .post-row.is-event .ev-sub .ev-place::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px 0 0; background: var(--line-strong); vertical-align: -1px; }
+    .post-row.is-event .row-meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; white-space: normal; }
+    .post-row.is-event .rm-who { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; color: var(--ink-2); font-size: var(--fs-caption); }
+    .post-row.is-event.is-past-ev .ev-thumb { filter: grayscale(0.6); opacity: 0.8; }
+    .post-row.is-event.is-past-ev .row-title { color: var(--ink-2); }
+    @media (hover: hover) and (pointer: fine) { .post-row.is-event .post-head:hover { background: #FBF9FD; } }
+    .post-row.is-event .post-head[aria-expanded="true"] { background: var(--brand-soft); }
+    .post-row.is-event .post-detail { margin: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+    .post-row.is-event.is-linked .post-head { background: var(--brand-soft); }
+    @media (min-width: 641px) {
+      .post-row.is-event .post-head { grid-template-columns: 88px minmax(0, 1fr) auto; gap: 2px 16px; padding: 14px 16px; }
+      .post-row.is-event .ev-thumb { width: 88px; height: 88px; }
+      .post-row.is-event .row-title { font-size: 17px; }
+    }
+    /* 참석: 얼굴표(닉네임 첫 글자) 몇 개와 '참석 N/정원', 남은 자리. 내가 참석했으면 확인 표 */
+    .ev-att { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    .ev-faces { display: inline-flex; }
+    .ev-faces i { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: -6px; border: 2px solid var(--surface); border-radius: 50%; background: var(--av, #CFC1E6); color: #fff; font-size: 10px; font-weight: 800; font-style: normal; line-height: 1; }
+    .ev-faces i:first-child { margin-left: 0; }
+    .ev-faces i.is-more { background: var(--surface-2, #F3F0E8); color: var(--ink-2); }
+    .ev-att .cap-mini { font-size: var(--fs-caption); color: var(--ink); font-weight: 600; }
+    .ev-left { color: var(--brand); font-size: var(--fs-caption); font-weight: 700; }
+    .ev-left.is-off { color: var(--ink-2); font-weight: 600; }
+    .ev-me { display: inline-flex; align-items: center; gap: 3px; color: var(--brand); font-size: var(--fs-caption); font-weight: 700; }
+    .ev-me .ic { width: 14px; height: 14px; }
+    /* 빠른 거르기 띠: 모임 모집 탭(모임 날짜순)에서만. 건수는 다가오는 모임 기준 */
+    .ev-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 2px; }
+    .ev-bar[hidden] { display: none; }
+    .ev-bar .chip { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; font-size: 13px; font-weight: 600; }
+    .ev-bar .chip small { color: var(--ink-2); font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .ev-bar .chip.is-on small { color: var(--brand); }
+    .ev-bar .chip:disabled { opacity: 0.45; }
+    /* 펼친 글: 벙 사진 띠(2:1) */
+    .bc-photo { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; margin: 0 0 12px; border-radius: 10px; background: var(--surface-2); }
     .sec-head { margin: 20px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: var(--fs-body); font-weight: 700; }
     .sec-head:first-child { margin-top: 0; }
     .sec-head small, .past-toggle small { margin-left: 4px; color: var(--ink-2); font-size: var(--fs-caption); font-weight: 600; }
@@ -469,6 +524,8 @@
             <option value="popular">반응순</option>
           </select>
         </div>
+
+        <div id="evBar" class="ev-bar" role="group" aria-label="모임 거르기" hidden></div>
 
         <div id="setupBanner" class="status-line is-warn" hidden>
           <span>소식을 불러오지 못했습니다.</span>
@@ -888,7 +945,8 @@
       posts: [], offset: 0, hasMore: false, degraded: false, loading: false, busy: false,
       expandedId: null, linkedId: null, editingId: null, commentsCache: {},
       myReactions: {}, reactBusy: {}, caps: 1, popular: [], attMore: {}, hostMenu: {},
-      attendOn: false, placeOn: false, endOn: false, cancelLevel: 0, attend: {}
+      attendOn: false, placeOn: false, endOn: false, cancelLevel: 0, attend: {},
+      evFilter: "all"   // 모임 모집 탭의 빠른 거르기: all, open(모집 중), soon(오늘과 내일), weekend(이번 주말), mine(내 참석)
     };
     /* 지난 방문 뒤에 올라온 글에 점을 찍는다. 처음 온 사람에게는 찍지 않는다 */
     const SEEN_KEY = "excer_news_seen";
@@ -1214,9 +1272,45 @@
         </div>
         <div class="post-close"><button type="button" class="text-btn is-quiet" data-act="toggle" data-id="${post.id}">${icon("chevDown", "is-sm")} 글 접기</button></div>`;
     }
+    /* 83차 행사 줄(모임 모집 탭, 모임 날짜순): 벙 사진 썸네일(assets/bung/t, 없으면 날짜 표), 제목, 시간과 장소, 모임장과 참석 얼굴표, 남은 자리, 상태 */
+    const evMode = () => dateMode() && state.category === "벙 소식";
+    const AV_COLORS = ["#7C5CBF", "#C2652F", "#2F7D6B", "#B8862B", "#3B6FB6", "#A3466E", "#5D7A2E"];
+    function avColor(nick) { let h = 0; for (const ch of String(nick || "")) h = (h * 31 + ch.codePointAt(0)) % 9973; return AV_COLORS[h % AV_COLORS.length]; }
+    function facesHTML(list, max) {
+      const show = list.slice(0, max), more = list.length - show.length;
+      return `<span class="ev-faces" aria-hidden="true">${show.map((x) => `<i style="--av:${avColor(x.nick)}">${esc(Array.from(String(x.nick || "").trim())[0] || "?")}</i>`).join("")}${more > 0 ? `<i class="is-more">+${more}</i>` : ""}</span>`;
+    }
+    function eventRowHTML(post, v, expanded) {
+      const m = v.meta || {}, bs = bungStatus(post);
+      const list = (state.attend[post.id] || {}).list || null;
+      const past = bs.why === "started";
+      const stateText = bs.ongoing ? "진행 중" : past ? "지난 모임" : (bs.why === "full" || bs.why === "deadline" || bs.why === "closed") ? WHY_LABEL[bs.why] : (v.subline.state || "");
+      const dim = past || !bs.open;
+      const sub = `<span class="ev-sub">${C.timeRange(m) ? `<b>${esc(C.timeRange(m))}</b>` : ""}${m.place ? `<span class="ev-place">${esc(m.place)}</span>` : ""}</span>`;
+      const n = list ? list.length : bs.n, leftN = bs.cap ? bs.cap - n : 0;
+      const mine = !!(list && list.some((x) => isMe(x.nick, post.id)));
+      const att = state.attendOn ? `<span class="ev-att">${list && list.length ? facesHTML(list, 4) : ""}<span class="cap-mini">${bs.cap ? `<i style="--p:${Math.min(100, Math.round(n / bs.cap * 100))}%"></i>` : ""}참석 ${n}${bs.cap ? "/" + bs.cap : ""}</span>${bs.open && bs.cap ? `<span class="ev-left">${leftN > 0 ? leftN + "자리 남음" : ""}</span>` : ""}${mine ? `<span class="ev-me">${icon("check")}내 참석</span>` : ""}</span>` : "";
+      const who = [`<b class="who" data-initial="${esc((v.author || "익명").slice(0, 1))}">${esc(v.author || "익명")}</b>`];
+      if (v.comment_count) who.push("댓글 " + v.comment_count);
+      if (v.reaction_count) who.push("반응 " + v.reaction_count);
+      return `
+        <article class="row post-row is-event${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
+          <h3 class="post-h">
+            <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
+              <span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>
+              <span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
+              ${stateText ? `<span class="row-state${dim ? " is-past" : ""}">${esc(stateText)}</span>` : ""}
+              ${sub}
+              <span class="row-meta"><span class="rm-who">${att}${who.join(", ")}</span></span>
+            </button>
+          </h3>
+          ${expanded ? `<div class="post-detail">${detailHTML(post)}</div>` : ""}
+        </article>`;
+    }
     function rowHTML(post) {
       const v = C.postView(post);
       const expanded = state.expandedId === post.id;
+      if (evMode() && v.kind === "bung" && v.meta && v.meta.date) return eventRowHTML(post, v, expanded);
       if (v.kind === "bung" && state.attendOn && v.meta && v.meta.date) {
         const bs = bungStatus(post);
         if (bs.why === "full" || bs.why === "deadline") v.subline = Object.assign({}, v.subline, { state: WHY_LABEL[bs.why], past: true });
@@ -1280,7 +1374,10 @@
         const b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
         if (b && (b.value || (a && a.checked))) drafts[row.id] = { body: b.value, nick: n ? n.value : "", pass: p ? p.value : "", att: !!(a && a.checked) };
       });
+      listEl.classList.toggle("ev-mode", evMode());
+      if (!evMode()) { const eb = $("evBar"); if (eb) eb.hidden = true; }
       listEl.innerHTML = posts.length ? listHTML(posts) : emptyStateHTML();
+      if (evMode() && !posts.length) { const eb = $("evBar"); if (eb) eb.hidden = true; }
       Object.keys(drafts).forEach((rid) => {
         const row = document.getElementById(rid); if (!row) return;
         const d = drafts[rid], b = row.querySelector(".c-body"), n = row.querySelector(".c-nick"), p = row.querySelector(".c-pass"), a = row.querySelector(".c-attend");
@@ -1314,14 +1411,18 @@
       const days = (list) => {
         const groups = [];
         list.forEach((p) => { const d = dateOf(p), g = groups[groups.length - 1]; if (g && g.date === d) g.items.push(p); else groups.push({ date: d, items: [p] }); });
-        return groups.map((g) => `<div class="day-head">${esc(dayLabel(g.date, today))}</div>` + g.items.map(rowHTML).join("")).join("");
+        return groups.map((g) => `<div class="day-head${g.date === today ? " is-today" : ""}" data-n="${g.items.length}">${esc(dayLabel(g.date, today))}</div>` + g.items.map(rowHTML).join("")).join("");
       };
+      const ev = evMode();
+      const upAll = up.length + undated.length;
+      if (ev) renderEvBar(up.concat(undated), today);
       let html = (tab ? others : others.filter((p) => p.pinned)).map(rowHTML).join("");   // 모임 모집 탭의 다른 글은 링크로 연 글뿐
-      if (up.length || undated.length) {
+      const upF = ev ? up.filter((p) => evPass(p, today)) : up, undatedF = ev && state.evFilter !== "all" ? [] : undated;
+      if (upF.length || undatedF.length) {
         if (!tab) html += `<div class="sec-head">다가오는 모임 <small>${up.length + undated.length}건</small></div>`;
-        html += tab ? days(up) : up.map(rowHTML).join("");
-        if (undated.length) html += (tab ? `<div class="day-head">날짜 미정</div>` : "") + undated.map(rowHTML).join("");
-      } else if (tab) html += `<p class="list-empty">다가오는 모임이 없습니다.</p>`;
+        html += tab ? days(upF) : upF.map(rowHTML).join("");
+        if (undatedF.length) html += (tab ? `<div class="day-head" data-n="${undatedF.length}">날짜 미정</div>` : "") + undatedF.map(rowHTML).join("");
+      } else if (tab) html += `<p class="list-empty">${upAll && state.evFilter !== "all" ? "이 조건에 맞는 다가오는 모임이 없습니다." : "다가오는 모임이 없습니다."}</p>`;
       if (past.length) {
         if (state.expandedId != null && past.some((p) => p.id === state.expandedId)) state.past.open = true;   // 펼쳐 둔 글이 지나 지난 모임이 되어도 눈앞에서 사라지지 않게
         const n = past.length + (state.past.more ? "건 이상" : "건");
@@ -1336,6 +1437,24 @@
         if (rest.length) html += `<div class="sec-head">최근 글</div>` + rest.map(rowHTML).join("");
       }
       return html;
+    }
+    /* 빠른 거르기: open 모집 중(참석할 수 있음), soon 오늘과 내일, weekend 이번 주말(다가오는 토, 일), mine 내가 참석한 모임 */
+    function evPass(p, today) {
+      const f = state.evFilter; if (!f || f === "all") return true;
+      const d = dateOf(p);
+      if (f === "open") return bungStatus(p).open;
+      if (f === "soon") { const n = C.daysFromToday(d, today); return n === 0 || n === 1; }
+      if (f === "weekend") { const n = C.daysFromToday(d, today), dow = new Date(d + "T00:00:00Z").getUTCDay(); return n >= 0 && n <= 7 && (dow === 0 || dow === 6) && !(dow === 0 && n === 7); }
+      if (f === "mine") return (((state.attend[p.id] || {}).list) || []).some((x) => isMe(x.nick, p.id));
+      return true;
+    }
+    function renderEvBar(up, today) {
+      const el = $("evBar"); if (!el) return;
+      const cnt = (f) => { const keep = state.evFilter; state.evFilter = f; const n = up.filter((p) => evPass(p, today)).length; state.evFilter = keep; return n; };
+      const items = [["all", "모두", up.length], ["open", "모집 중", cnt("open")], ["soon", "오늘, 내일", cnt("soon")], ["weekend", "주말", cnt("weekend")]];
+      if (state.attendOn) items.push(["mine", "내 참석", cnt("mine")]);
+      el.innerHTML = items.map(([k, label, n]) => `<button type="button" class="chip${state.evFilter === k ? " is-on" : ""}" data-ev="${k}" aria-pressed="${state.evFilter === k}"${!n && k !== "all" && state.evFilter !== k ? " disabled" : ""}>${label} <small>${n}</small></button>`).join("");
+      el.hidden = !up.length && state.evFilter === "all";
     }
     function dayLabel(ymd, today) {
       const base = C.dateText(ymd, { withDow: true });
@@ -1816,8 +1935,9 @@
       else if (!list.length) names = `<p class="att-empty">아직 참석한 사람이 없습니다.</p>`;
       else names = `<ul class="att-list${many ? " is-many" : ""}" aria-label="참석자">${list.map((x) => `<li${isMe(x.nick, post.id) ? ' class="is-me"' : ""} title="${esc(x.nick)}${x.host ? " (모임장이 적음)" : ""}">${esc(x.nick)}${nickKey(x.nick) === host ? " <small>모임장</small>" : x.host ? " <small>모임장 추가</small>" : ""}</li>`).join("")}</ul>`
         + (many ? `<p class="att-empty"><button type="button" class="text-btn" data-act="att-more" data-id="${post.id}">외 ${list.length - ATT_FOLD}명 보기</button></p>` : "");
+      const photo = bungPhotoName(post) ? `<img class="bc-photo" src="assets/bung/${bungPhotoName(post)}.jpg" alt="" width="800" height="400" loading="lazy" decoding="async" onerror="this.remove()" />` : "";
       return `<div class="attend bung-card" data-post="${post.id}" role="group" aria-label="모임 참석">
-          <div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
+          ${photo}<div class="bc-when"><b>${esc(when)}</b>${dday ? `<span class="bc-dday${past ? " is-past" : ""}">${esc(dday)}</span>` : ""}${left ? `<span class="bc-left">${esc(left)}</span>` : ""}</div>
           ${m.place ? `<div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div>` : ""}
           <div class="bc-cap"><div class="bc-n"><b>참석 ${n}${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}</div>
           ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
@@ -1965,12 +2085,22 @@
       [/한잔|낮술|간술|불금/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"]],
       [/밥|식사|점심|점벙|저녁|맛집|맛벙|먹벙|먹는벙|아침|회식|무한리필|뒷풀이|뒤풀이/, ["dinner-01", "dinner-02", "dinner-03", "dinner-04"]],
     ];
-    function bungImage(p, m) {
+    function bungPhotoName(p) {
       const t = String((p && p.title) || "");
       for (const [re, list] of BUNG_PHOTO) {
-        if (re.test(t)) return location.origin + "/assets/bung/" + list[Math.abs(parseInt(p.id, 10) || 0) % list.length] + ".jpg";
+        if (re.test(t)) return list[Math.abs(parseInt(p.id, 10) || 0) % list.length];
       }
-      return calImage(m && m.date);
+      return "";
+    }
+    function bungImage(p, m) {
+      const name = bungPhotoName(p);
+      return name ? location.origin + "/assets/bung/" + name + ".jpg" : calImage(m && m.date);
+    }
+    /* 목록 줄의 작은 사진(180x180, assets/bung/t). 맞는 낱말이 없으면 그 날짜의 네모 날짜 표(assets/cal/sq), 날짜도 없으면 소식 그림 */
+    function bungThumb(p, m) {
+      const name = bungPhotoName(p);
+      if (name) return "assets/bung/t/" + name + ".jpg";
+      return /^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || "") ? "assets/cal/sq/" + m.date.slice(5) + ".png" : "assets/img/news-spot-240.webp?v=2";
     }
     /* 공유 카드의 글 부분: 날짜 표(assets/cal/sq/MM-DD.png)와 제목, 모집 상태, 이름과 값 줄(일시, 장소, 모임장, 신청 마감, 정원), 남은 자리.
        카카오 피드의 항목 칸(itemContent)으로 보낸다. 글자 수는 넉넉히 잘라 보낸다 */
@@ -2831,6 +2961,11 @@
       $("moreBtn").addEventListener("click", () => loadPosts(false));
       $("retryBtn").addEventListener("click", () => { capsAgain(); renderListLoading(); loadPosts(true).then(openPromptFromHash).then(popularThen).then(openFromHash); });
 
+      $("evBar").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-ev]"); if (!b) return;
+        state.evFilter = b.dataset.ev === state.evFilter ? "all" : b.dataset.ev;
+        renderList(); const nb = $("evBar").querySelector(`button[data-ev="${state.evFilter}"]`); if (nb) nb.focus({ preventScroll: true });
+      });
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
         if (!el) return;
