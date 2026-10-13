@@ -109,6 +109,14 @@
     .news-row .row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-row .row-meta { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .news-row .row-state { align-self: center; }
+    /* 모임 모집 줄의 벙 사진(왼쪽 56px). 83차 소식 목록과 같은 사진 */
+    .news-row.is-event { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start; }
+    .news-row.is-event .ev-thumb { grid-row: 1 / span 2; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+    .news-row.is-event .ev-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .news-row.is-event .nr-line { grid-column: 2; }
+    .news-row.is-event .row-state { grid-column: 3; grid-row: 1; }
+    .news-row.is-event .row-meta { grid-column: 2 / -1; }
+    .home-live .news-row.is-event .type-tag { display: none; }
     .rm-sub + .rm-who::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: var(--line-strong); vertical-align: -1px; }
     .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
     @media (max-width: 600px) {
@@ -180,6 +188,7 @@
   <script src="assets/site-core.js?v=13"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=12"></script>
+  <script src="assets/bung-photo.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -404,6 +413,7 @@
         return { text: "참석 " + n + (cap ? "/" + cap : ""), state: why };
       }
       function rowHTML(v) {
+        var m = v.meta || {};
         var tag = '<span class="type-tag' + (v.kind === "notice" ? " is-notice" : v.kind === "bung" ? " is-bung" : "") + '">' + esc(v.label) + "</span>";
         var sub = v.subline.text || v.excerpt;
         var w = [who(v.author), esc(C.relTime(v.created_at))];
@@ -411,7 +421,10 @@
         if (br) { w.push(br.text); if (br.state) { st = br.state; past = true; } }
         if (v.comment_count) w.push("댓글 " + v.comment_count);
         var state = st ? '<span class="row-state' + (past ? " is-past" : "") + '">' + esc(st) + "</span>" : "";
-        return '<a class="row news-row" href="news.html#post-' + v.id + '">' +
+        // 모임 모집 줄: 벙 사진(제목이나 장소의 낱말로, 없으면 날짜 표)을 왼쪽에
+        var thumb = v.kind === "bung" && m.date && window.BUNGPHOTO ? BUNGPHOTO.thumb(v.raw, m) : "";
+        return '<a class="row news-row' + (thumb ? " is-event" : "") + '" href="news.html#post-' + v.id + '">' +
+          (thumb ? '<span class="ev-thumb"><img src="' + esc(thumb) + '" alt="" width="56" height="56" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility=\'hidden\'" /></span>' : "") +
           '<span class="nr-line">' + tag + '<span class="row-title">' + esc(v.title || "제목 없음") + "</span></span>" +
           state +
           '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + w.join(", ") + "</span></span></a>";
