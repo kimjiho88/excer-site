@@ -221,17 +221,6 @@
       body.has-dock .toast { bottom: calc(154px + env(safe-area-inset-bottom)); }
       html.is-typing .ev-dock { display: none; }
     }
-    /* 글쓰기 창: 모임 종류 단추 한 줄(옆으로 넘김)과 카드 사진 미리보기 */
-    .kind-row { display: grid; gap: 6px; margin-top: 6px; }
-    .kind-row[hidden] { display: none; }
-    .kind-chips { display: flex; gap: 6px; overflow-x: auto; padding: 1px 0 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-    .kind-chips::-webkit-scrollbar { display: none; }
-    .kind-chips .chip { flex: none; min-height: 32px; padding: 0 12px; font-size: 13px; font-weight: 600; }
-    .kind-prev { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 2px 8px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.35; }
-    .kind-prev img { flex: none; width: 32px; height: 32px; border-radius: 7px; object-fit: cover; }
-    .kind-prev img[hidden] { display: none; }
-    .kind-prev b { color: var(--ink); }
-    .kind-prev.is-none { background: var(--gold-soft, #F3EAD5); }
     /* 목록 줄의 바로 참석 단추(모집 중이고 아직 참석하지 않은 모임) */
     .post-row.is-event { position: relative; }
     .ev-quick { position: absolute; right: 12px; bottom: 12px; }
@@ -548,7 +537,7 @@
   <script src="assets/site-core.js?v=13"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=12"></script>
-  <script src="assets/bung-photo.js?v=1"></script>
+  <script src="assets/bung-photo.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -716,11 +705,6 @@
           <label for="wTitle" id="wTitleLabel">제목</label>
           <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목" />
           <span class="field-error" hidden></span>
-          <!-- 모임 모집: 자주 여는 종류 단추(누르면 모임명에 그 말이 들어가 카드 사진이 정해진다)와 사진 미리보기 -->
-          <div id="wKindRow" class="kind-row" hidden>
-            <div class="kind-chips" id="wKindChips" role="group" aria-label="모임 종류"></div>
-            <div class="kind-prev" id="wKindPrev"><img id="wKindImg" alt="" width="32" height="32" hidden /><span id="wKindText"></span></div>
-          </div>
         </div>
         <div class="type-fields" id="typeFields"></div>
         <div class="field is-wide" data-field="wBody">
@@ -1880,7 +1864,7 @@
       syncPassHint();
       syncAuthor();
       renderPreview();
-      renderKindRow(); $("writeBackdrop").hidden = false;
+      $("writeBackdrop").hidden = false;
       // 종류가 정해져 열렸으면 바로 제목 칸, 아니면 종류 단추(폰 자판이 종류 단추를 가리지 않게)
       setTimeout(() => {
         if (post || (init && init.category)) $("wTitle").focus();
@@ -1897,7 +1881,6 @@
       if (cat === "공지" && $("wPass").value === savedPass()) $("wPass").value = "";   // 운영진 비밀번호는 저장값으로 채우지 않는다
       if (cat !== "공지" && !$("wPass").value) $("wPass").value = savedPass();
       renderTypeFields(cat, keep && C.postType(cat).kind === keep.kind ? keep : (catStash[cat] || null));
-      renderKindRow();
       syncCatNudge();
       if (!state.editingId) {
         $("writeSubmitBtn").textContent = cat === "벙 소식" ? "모임 올리기" : "등록";
@@ -1908,25 +1891,6 @@
     }
     /* 자유나 정보 글에 모임 모집처럼 보이는 말이 있으면 모임 모집으로 바꾸자고 한 줄 */
     const BUNG_WORDS = /(벙|번개|모임|모집|정모|[0-9]+\s*명|[0-9]{1,2}\s*시)/;
-    /* 모임 종류 단추: 채팅 기록에 자주 나온 종류. 누르면 모임명에 그 말을 넣는다(이미 있으면 그대로). 미리보기는 모임명과 장소로 고른 카드 사진 */
-    const KIND_CHIPS = [["커피", "커벙"], ["술 한잔", "술벙"], ["저녁", "저녁벙"], ["점심", "점심벙"], ["집", "집벙"], ["와인", "와인벙"], ["한강", "한강벙"], ["고기", "고기벙"], ["회", "회벙"], ["치맥", "치맥"], ["족발", "족발"], ["곱창", "곱창"], ["러닝", "러닝"], ["등산", "등산"], ["탁구", "탁구"], ["보드게임", "보드게임"], ["볼링", "볼링"], ["노래방", "노래방"], ["영화", "영화"], ["계곡", "계곡"], ["캠핑", "캠핑"], ["여행", "여행"]];
-    function renderKindRow() {
-      const row = $("wKindRow"); if (!row) return;
-      const on = $("wCat").value === "벙 소식";
-      row.hidden = !on;
-      if (!on) return;
-      if (!$("wKindChips").childElementCount) $("wKindChips").innerHTML = KIND_CHIPS.map(([label, word]) => `<button type="button" class="chip" data-kind="${esc(word)}">${esc(label)}</button>`).join("");
-      syncKindPreview();
-    }
-    function syncKindPreview() {
-      const row = $("wKindRow"); if (!row || row.hidden) return;
-      const title = $("wTitle").value, place = ($("wf_place") || {}).value || "";
-      const name = BUNGPHOTO.name({ id: state.editingId || 0, title }, { place });
-      const img = $("wKindImg"), txt = $("wKindText"), box = $("wKindPrev");
-      $("wKindChips").querySelectorAll(".chip").forEach((c) => c.classList.toggle("is-on", !!title && title.includes(c.dataset.kind)));
-      if (name) { img.src = "assets/bung/t/" + name + ".jpg"; img.hidden = false; box.classList.remove("is-none"); txt.innerHTML = `카드 사진: <b>${esc(BUNGPHOTO.label(name) || "")}</b>`; }
-      else { img.hidden = true; box.classList.add("is-none"); txt.textContent = title.trim() ? "맞는 사진이 없어 날짜 그림이 나갑니다. 위 종류를 누르거나 모임명에 메뉴나 활동을 적어 주세요." : "모임명에 메뉴나 활동을 적으면 카드 사진이 정해집니다."; }
-    }
     function syncCatNudge() {
       const cat = $("wCat").value;
       $("catNudge").hidden = !((cat === "자유" || cat === "정보") && !state.editingId && BUNG_WORDS.test($("wTitle").value + " " + $("wBody").value.slice(0, 200)));
@@ -2939,14 +2903,6 @@
 
       $("wCat").addEventListener("change", () => { renderTypeFields($("wCat").value, null); renderPreview(); });
       $("wCatChips").addEventListener("click", (e) => { const b = e.target.closest(".cat-chip"); if (b) pickCat(b.dataset.cat); });
-      $("wKindChips").addEventListener("click", (e) => {
-        const b = e.target.closest(".chip[data-kind]"); if (!b) return;
-        const t = $("wTitle"), w = b.dataset.kind;
-        if (!t.value.includes(w)) t.value = (t.value.trim() ? t.value.trim() + " " : "") + w;
-        syncKindPreview(); t.focus();
-      });
-      $("wTitle").addEventListener("input", syncKindPreview);
-      $("typeFields").addEventListener("input", (e) => { if (e.target && e.target.id === "wf_place") syncKindPreview(); });
       $("wCatChips").addEventListener("keydown", (e) => {   // 라디오 묶음처럼 좌우 화살표로 옮겨 고른다
         if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
         const bs = [...$("wCatChips").querySelectorAll(".cat-chip")], i = bs.indexOf(document.activeElement); if (i < 0) return;

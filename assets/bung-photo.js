@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    글 제목의 낱말로 종류를 골라 미리 만들어 둔 사진(assets/bung/종류-NN.jpg 800x400, 작은 것은 assets/bung/t 180x180)을 쓴다.
    위에서부터 먼저 맞는 줄이 이기고, 사진이 여럿이면 글 번호로 골라 같은 벙은 늘 같은 사진.
-   제목에 맞는 낱말이 없으면 장소 이름으로 한 번 더(논현 곱창집, 선릉역 카페). 그래도 없으면 그 날짜의 달력 그림.
+   제목에 맞는 낱말이 없으면 장소 이름(논현 곱창집, 선릉역 카페), 그다음 본문 앞부분으로 한 번 더. 그래도 없으면 그 날짜의 달력 그림.
    음식, 술, 카페 86 종류 300장과 모임 활동(볼링, 노래방, 영화, 게임, 독서, 등산, 운동, 여행, 집, 한강) 사진.
    규칙 글은 scratchpad gen.py 가 만든다(두루 쓰는 말은 맨 아래).
    ============================================================ */
@@ -225,22 +225,35 @@
     "home": "집"
   };
   /* 글(text)에 먼저 맞는 줄의 사진 이름. 사진이 여럿이면 글 번호로. 없으면 ''. g: 두루 쓰는 줄에 맞음 */
-  function match(text, id) {
+  function match(text, id, byPos) {
     var t = String(text || "");
+    var best = null, bestAt = -1, firstG = null;
     for (var i = 0; i < RULES.length; i++) {
-      if (RULES[i][0].test(t)) { var list = RULES[i][1]; return { name: list[Math.abs(parseInt(id, 10) || 0) % list.length], g: !!RULES[i][2] }; }
+      var rule = RULES[i];
+      if (!rule[0].test(t)) continue;
+      var list = rule[1], r = { name: list[Math.abs(parseInt(id, 10) || 0) % list.length], g: !!rule[2] };
+      if (!byPos) return r;                                   // 제목과 장소: 위에서부터 먼저 맞는 줄(구체적인 줄이 위)
+      if (r.g) { if (!firstG) firstG = r; continue; }         // 본문: 구체적인 낱말 가운데 먼저 나온 것(마라탕 먹고 2차 노래방이면 마라탕)
+      var m = rule[0].exec(t), at = m ? m.index : 0;
+      if (best === null || at < bestAt) { best = r; bestAt = at; }
     }
-    return null;
+    return best || firstG;
   }
   function pick(text, id) { var r = match(text, id); return r ? r.name : ""; }
-  /* 글의 사진 이름(없으면 ''). p: 글(id, title), m: 모임 항목(place).
-     제목의 낱말이 먼저. 제목이 두루 쓰는 말(한잔, 밥, 카페)에만 맞거나 안 맞으면 장소 이름(논현 곱창집)으로 한 번 더 */
+  /* 글의 사진 이름(없으면 ''). p: 글(id, title, body), m: 모임 항목(place, addr).
+     구성원이 고르지 않는다. 제목의 낱말이 먼저이고, 제목이 두루 쓰는 말(한잔, 밥, 카페)에만 맞거나 안 맞으면
+     장소 이름(논현 곱창집), 그다음 본문 앞부분(300자)의 낱말로 고른다. 두루 쓰는 말보다 구체적인 낱말이 어디에 있든 이긴다 */
   function name(p, m) {
-    p = p || {};
-    var a = match(p.title, p.id), b = m && m.place ? match(m.place, p.id) : null;
-    if (a && !a.g) return a.name;
-    if (b && !b.g) return b.name;
-    return a ? a.name : b ? b.name : "";
+    p = p || {}; m = m || {};
+    var srcs = [p.title, m.place, String(p.body || "").slice(0, 300)];
+    var first = null;
+    for (var i = 0; i < srcs.length; i++) {
+      if (!srcs[i]) continue;
+      var r = match(srcs[i], p.id, i === 2);
+      if (r && !r.g) return r.name;
+      if (r && !first) first = r;
+    }
+    return first ? first.name : "";
   }
   function kindOf(nm) { return nm ? nm.replace(/-\d\d$/, "") : ""; }
   function label(nm) { return LABEL[kindOf(nm)] || ""; }
