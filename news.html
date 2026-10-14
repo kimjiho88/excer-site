@@ -464,6 +464,17 @@
     .chip.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 700; }
     .chip:disabled { opacity: 0.4; cursor: default; }
     .fg-h { margin: 4px 0 -6px; color: var(--ink-2); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+    /* 85차: 필수 칸 표시. 이름표 옆의 보라 '필수' 표와 왼쪽 보라 줄. 다 적으면 표가 '적음' 으로 바뀌고 줄은 옅어진다. 선택 칸은 회색 글자 그대로 */
+    .req-tag { display: inline-block; vertical-align: 1px; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; line-height: 16px; }
+    .field.is-req { border-left: 3px solid var(--brand); padding-left: 10px; border-radius: 2px; transition: border-color .2s; }
+    .field.is-req.is-done { border-left-color: var(--line-strong); }
+    .field.is-req.is-done .req-tag { background: var(--brand-soft); color: var(--brand); }
+    .field.is-req.is-done .req-tag::before { content: ""; display: inline-block; width: 5px; height: 9px; margin: 0 5px 1px 0; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .field.is-req.is-invalid { border-left-color: var(--danger); }
+    .field.is-req.is-invalid .req-tag { background: var(--danger); color: #fff; }
+    .req-left { margin-right: auto; align-self: center; color: var(--brand); font-size: var(--fs-caption); font-weight: 700; white-space: nowrap; }
+    .req-left[hidden] { display: none; }
+    @media (max-width: 640px) { .modal-backdrop.is-sheet .write-modal .modal-foot .req-left { flex: none; } }
     /* 모임 카드의 장소: 이름, 주소, 지도와 길찾기 링크(좌표가 있을 때). 시작 하루 안이면 남은 시간 */
     .bc-left { color: var(--brand); font-size: 13px; font-weight: 700; }
     .bc-place { align-items: flex-start; }
@@ -701,9 +712,9 @@
           <p class="cat-nudge" id="catNudge" hidden><span>모임을 모집하는 글이면 모임 모집으로 올려야 참석 버튼이 생깁니다.</span> <button type="button" class="btn btn-secondary is-sm" id="catNudgeBtn">모임 모집으로 바꾸기</button></p>
         </div>
         <p class="form-note is-wide" id="capsNote" hidden>서버 업데이트 전이라 이 종류의 항목은 저장되지 않습니다. 날짜와 장소는 본문에 적어 주세요.</p>
-        <div class="field is-wide" data-field="wTitle">
-          <label for="wTitle" id="wTitleLabel">제목</label>
-          <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목" />
+        <div class="field is-wide is-req" data-field="wTitle">
+          <label for="wTitle" id="wTitleLabel">제목 <small class="req-tag">필수</small></label>
+          <input id="wTitle" class="input" type="text" maxlength="100" placeholder="제목" aria-required="true" />
           <span class="field-error" hidden></span>
         </div>
         <div class="type-fields" id="typeFields"></div>
@@ -716,16 +727,16 @@
         <div class="form-sec is-wide">작성 정보</div>
         <!-- 이 브라우저에 닉네임과 비밀번호가 저장돼 있으면 칸 대신 한 줄로. 바꾸기를 누르면 칸이 열린다 -->
         <p class="author-sum is-wide" id="authorSum" hidden><span id="authorSumText"></span><button type="button" class="text-btn" id="authorSumEdit">바꾸기</button></p>
-        <div class="field" data-field="wNick" id="wNickWrap">
-          <label id="wNickLabel">닉네임</label>
+        <div class="field is-req" data-field="wNick" id="wNickWrap">
+          <label id="wNickLabel">닉네임 <small class="req-tag">필수</small></label>
           <div class="att-me" id="wMe" hidden><b id="wMeName"></b><button type="button" class="text-btn" id="wMeChange">바꾸기</button></div>
           <button type="button" class="btn btn-secondary me-pick" id="wNickPick" aria-describedby="wNickLabel">닉네임 고르기</button>
           <input id="wNick" type="hidden" />
           <span class="field-error" hidden></span>
         </div>
-        <div class="field" data-field="wPass" id="wPassWrap">
-          <label for="wPass">비밀번호</label>
-          <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" />
+        <div class="field is-req" data-field="wPass" id="wPassWrap">
+          <label for="wPass">비밀번호 <small class="req-tag">필수</small></label>
+          <input id="wPass" class="input" type="password" placeholder="4자 이상" autocomplete="new-password" aria-required="true" />
           <span class="field-hint" id="wPassHint">글을 수정하거나 삭제할 때 필요합니다.</span>
           <span class="field-hint" id="passHint" hidden>이 브라우저에 저장된 비밀번호를 사용합니다. <button type="button" class="text-btn is-quiet" id="passForget" style="min-height:24px;padding:0">지우기</button></span>
           <span class="field-error" hidden></span>
@@ -736,6 +747,7 @@
         </div>
       </div>
       <div class="modal-foot">
+        <span class="req-left" id="reqLeft" hidden></span>
         <button id="writeCancelBtn" class="btn btn-secondary" type="button">취소</button>
         <button id="writeSubmitBtn" class="btn btn-primary" type="button">등록</button>
       </div>
@@ -1658,11 +1670,12 @@
     function fieldHTML(f) {
       const id = "wf_" + f.key;
       if (f.type === "hidden") return `<input type="hidden" id="${id}" data-key="${f.key}"${f.num ? ' data-num="1"' : ""} />`;
-      const label = `<label for="${id}">${esc(f.label)} <small>${f.req ? "필수" : "선택"}</small></label>`;
+      const label = `<label for="${id}">${esc(f.label)} ${f.req ? '<small class="req-tag">필수</small>' : "<small>선택</small>"}</label>`;
+      const req = f.req ? ' aria-required="true"' : "";
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
-      else if (f.type === "number") input = `<input id="${id}" class="input" type="number" inputmode="numeric" step="1" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}" />`;
-      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}" />`;
+      else if (f.type === "number") input = `<input id="${id}" class="input" type="number" inputmode="numeric" step="1" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}"${req} />`;
+      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}"${req} />`;
       const withMap = !!(f.map && mapOK());   // 장소 칸: 지도에서 찾기 단추(서버 bung_place 와 카카오 키가 있을 때), 고른 장소의 주소 줄
       if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
       const picked = f.map ? `<p class="place-picked" id="wf_placePicked" hidden>${icon("pin")}<span id="wf_placeAddr"></span><button type="button" class="text-btn is-quiet" data-act="place-clear">지우기</button></p>` : "";
@@ -1671,7 +1684,7 @@
       // 새 모임 글: 모임장도 참석자로 넣을지(기본 켬). 켜 두면 올리자마자 명단 첫 줄에 들어가 인원에 셈된다
       const self = f.self && state.attendOn && !state.editingId ? `<label class="self-att"><input type="checkbox" id="wSelfAttend" checked /> 나도 참석자로 넣기</label>` : "";
       const slot = f.key === "time" ? `<p class="slot-warn" id="slotWarn" role="status" hidden></p>` : f.key === "end" ? `<span class="field-hint" id="endHint" hidden></span>` : "";   // 끝나는 시간 아래: 몇 시간짜리인지, 다음 날로 넘어가는지
-      return `<div class="field${f.wide || withMap ? " is-wide" : ""}" data-field="${id}">${label}${input}${picked}${chips}${slot}${self}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
+      return `<div class="field${f.wide || withMap ? " is-wide" : ""}${f.req ? " is-req" : ""}" data-field="${id}">${label}${input}${picked}${chips}${slot}${self}${hint ? `<span class="field-hint">${esc(hint)}</span>` : ""}<span class="field-error" hidden></span></div>`;
     }
     /* 한 번에 고르는 단추: 날짜는 오늘부터 두 주, 시작 시간은 자주 쓰는 값, 끝나는 시간은 시작에서 1~4시간 뒤, 신청 마감은 시작 시각에서 셈 */
     const DOW = "일월화수목금토";
@@ -1769,9 +1782,10 @@
       if (bf && isBung) $("moreBody").appendChild(bf);
       $("typeDesc").textContent = typeDesc(cat);
       $("capsNote").hidden = !(state.caps < 2 && cat !== "자유" && !isBung);
-      $("wTitleLabel").textContent = isBung ? "모임명" : "제목";
+      $("wTitleLabel").innerHTML = (isBung ? "모임명" : "제목") + ' <small class="req-tag">필수</small>';
       $("wTitle").placeholder = isBung ? "예: 금요일 논현 고깃집 모임" : (cat === "후기" ? "예: 한강 산책 모임 다녀왔어요" : "제목");
-      $("wBodyLabel").innerHTML = isBung ? "내용 <small>선택</small>" : cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용";
+      $("wBodyLabel").innerHTML = isBung ? "내용 <small>선택</small>" : (cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용") + ' <small class="req-tag">필수</small>';
+      if (bf) bf.classList.toggle("is-req", !isBung);   // 모임 모집만 내용이 선택
       $("wBody").placeholder = isBung ? "예: 편하게 오세요. 가게는 정해지면 알려드릴게요." : "내용";
       $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
       // 모임 모집은 올린 글의 카드가 곧 미리보기라 아래 미리보기 상자를 빼서 창을 줄인다
@@ -1799,6 +1813,19 @@
       $("wNickWrap").classList.toggle("is-folded", fold);
       $("wPassWrap").classList.toggle("is-folded", fold);
       if (fold) $("authorSumText").textContent = editing ? "저장된 비밀번호로 저장합니다." : nick + " 이름으로 올립니다. 비밀번호는 저장된 것을 씁니다.";
+      syncReq();
+    }
+    /* 85차: 필수 칸마다 적었는지(is-done) 표시하고 아래 띠에 '필수 N개 남음'. 보이는 칸만 센다(접힌 닉네임과 비밀번호 칸은 값이 있다, 수정 창의 닉네임 칸은 숨김) */
+    function syncReq() {
+      let left = 0;
+      document.querySelectorAll("#writeForm .field.is-req").forEach((w) => {
+        const el = w.querySelector("input, textarea, select");
+        const done = !!(el && String(el.value || "").trim());
+        w.classList.toggle("is-done", done);
+        if (!done && !w.hidden && !w.classList.contains("is-folded")) left++;
+      });
+      const box = $("reqLeft");
+      if (box) { box.hidden = !left; box.textContent = left ? "필수 " + left + "개 남음" : ""; }
     }
     function openAuthor() { authorOpen = true; syncAuthor(); }
     function readMeta() {
@@ -2929,6 +2956,7 @@
       $("writeForm").addEventListener("input", (e) => {
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
         const w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
+        syncReq();
         clearTimeout(pvTimer); pvTimer = setTimeout(() => { renderPreview(); saveDraft(); }, 120);
         if (e.target.id === "wf_time") followEnd(e.target.value);
         if (e.target.closest("#typeFields")) syncChips();
