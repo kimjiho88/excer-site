@@ -106,6 +106,7 @@
     [/전골/, ["shabu-01", "shabu-02", "shabu-03"]],
     [/양식/, ["pasta-01", "pasta-02", "pasta-03", "pasta-04", "steak-01", "steak-02", "steak-03"]],
     [/일식/, ["sushi-01", "sushi-02", "sushi-03", "sushi-04", "sushi-05", "sushi-06", "izakaya-01", "izakaya-02", "izakaya-03", "izakaya-04"]],
+    [/편맥|편의점|(^|[^A-Za-z])(CU|GS25)($|[^A-Za-z0-9])|세븐일레븐|이마트24/, ["yajang-01", "yajang-02", "yajang-03", "hof-01", "hof-02", "hof-03", "hof-04", "hof-05"]],
     [/포차|포장마차|오뎅바|골뱅이/, ["pocha-01", "pocha-02", "pocha-03", "pocha-04", "pocha-05", "pocha-06", "pocha-07", "pocha-08"]],
     [/소주|술벙|술집/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"]],
     [/수제맥주|펍|탭룸/, ["craftbeer-01", "craftbeer-02", "craftbeer-03"]],
