@@ -14,7 +14,8 @@
   <link rel="stylesheet" href="assets/site.css?v=20" />
   <script src="assets/chat-parser.js?v=10"></script>
   <script src="assets/ops-analyzer.js?v=5"></script>
-  <script src="assets/ops-sheet.js?v=5"></script>
+  <script src="assets/ops-sheet.js?v=6"></script>
+  <script src="assets/bung-photo.js?v=4"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
     :root {
@@ -440,6 +441,8 @@
     .bg .bn b { font-size: 13px; color: var(--ink); }
     .bg .ppl { grid-column: 1 / -1; margin-top: 0; }
     .bg .nchip { background: #fff; }
+    .bg .bt .linkish { font-weight: 700; }
+    .bg .bn .text-btn { min-height: 24px; padding: 0 0 0 6px; font-size: 12px; }
     .nchip.host { border-color: var(--brand); background: var(--brand-soft) !important; color: var(--brand); }
     .nchip.host em { color: var(--brand); }
     .hb[data-smember] { cursor: pointer; border-radius: 4px; }
@@ -973,7 +976,21 @@
       });
       return F;
     }
-    function sheetLinks() { SH.links = sheetLinkMaps(); if (SH.parsed) OpsSheet.applyChat(SH.parsed, chatFacts(), { to: S.ledger ? S.ledger.range.to : "" }); }
+    /* 벙 기록은 소식 모임 글이 원본(OpsSheet.applyBoard): 시작한 글의 글쓴이와 참석 명단을 멤버와 잇고, 같은 날 같은 벙인 시트 줄은 소식 글로 대신한다.
+       닉네임은 이름 바꿔 읽기, 대화 기록에서 같은 닉네임과 이은 시트 멤버, 멤버 탭 이름, 닉네임 첫 칸과 출생연도, 성별 차례로 찾는다 */
+    function boardFeed() { return BG.loaded ? { posts: BG.posts, att: BG.att, now: kstNowKey() } : null; }
+    function chatResolve() {
+      if (!S.ledger) return null;
+      const idx = new Map(); people().filter((p) => !p.dflt).forEach((p) => { const k = norm(p.name); if (!idx.has(k) || p.status === "in") idx.set(k, p.pid); });
+      return (nick) => { const pid = idx.get(norm(nick)); return pid ? SH.links.p2m.get(pid) || "" : ""; };
+    }
+    function sheetLinks() {
+      SH.links = sheetLinkMaps();
+      if (!SH.parsed) return;
+      OpsSheet.applyChat(SH.parsed, chatFacts(), { to: S.ledger ? S.ledger.range.to : "" });
+      const rec = sheetRec();
+      OpsSheet.applyBoard(SH.parsed, boardFeed(), { alias: rec.alias, ignore: rec.ignore, resolve: chatResolve() });
+    }
     function sheetProcess() {
       const rec = sheetRec(), latest = SH.snaps.get(SH.latestId);
       SH.guard = null; SH.latestParsed = null;
@@ -993,7 +1010,7 @@
         else { SH.mode = g.state; SH.parsed = pA && pA.structure.ok ? pA : null; }
       }
       // 보는 판의 수를 적어 둔다(그 판이 서버에서 지워져도 다음 판과 견줄 수 있게)
-      if (SH.parsed && rec.acceptedId) rec.acceptedSum = { members: SH.parsed.members.length, counted: SH.parsed.counted, issues: SH.parsed.issues.length };
+      if (SH.parsed && rec.acceptedId) rec.acceptedSum = { members: SH.parsed.members.length, counted: SH.parsed.sheetCounted != null ? SH.parsed.sheetCounted : SH.parsed.counted, issues: SH.parsed.issues.length };
       sheetLinks();
     }
     /* 받기: 처음에는 보는 판과 최신 판, 그 뒤로는 새 판이 있을 때만 */
@@ -1057,10 +1074,10 @@
     let visBound = false;
     function sheetStartPoll() {
       if (shTimer || localOnly) return;
-      shTimer = setInterval(() => { if (document.visibilityState === "visible" && PASS) sheetLoad({ poll: true }); }, 60000);
+      shTimer = setInterval(() => { if (document.visibilityState === "visible" && PASS) { sheetLoad({ poll: true }); bungRefresh(); } }, 60000);
       if (visBound) return;
       visBound = true;
-      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && PASS && !$("app").hidden) { pullRecords(); if (SH.ready) sheetLoad({ poll: true }); } });
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && PASS && !$("app").hidden) { pullRecords(); if (SH.ready) sheetLoad({ poll: true }); bungRefresh(); } });
     }
 
     /* 연동 상태: 마지막으로 제대로 받은 시각으로 판단(스크립트는 바뀐 것이 없어도 10분마다 알린다) */
@@ -1140,6 +1157,8 @@
     const mismatchOf = (m) => { const g = statusGap(m); return g ? g.msg : ""; };
     const sheetWord = (m) => (m.sheet0 ? m.statusRaw || ST_LABEL[m.sheet0.status] : "");
 
+    // 소식 모임 글의 종류: 소식 화면 사진과 같은 규칙(제목, 장소)의 이름
+    const bungKind = (b) => { try { const BP = window.BUNGPHOTO; return BP ? BP.label(BP.name({ id: b.post, title: b.title }, { place: b.place })) || "" : ""; } catch (e) { return ""; } };
     /* 한 판에 한 번 셈: 입장일, 멤버별 8주, 인사이트, 할 일 */
     function sheetCalc(P) {
       if (SH.calc && SH.calc.P === P && SH.calc.links === SH.links) return SH.calc;
@@ -1155,7 +1174,7 @@
       const cmp = (f) => (a, b) => { const x = f(a.m), y = f(b.m); return x < y ? -1 : x > y ? 1 : a.m.name.localeCompare(b.m.name, "ko"); };
       const todo = SBOARD.map((b) => ({ b, rows: pool.map((m) => ({ m, c: m.checks.find((c) => b.codes.includes(c.c)) })).filter((x) => x.c).sort(cmp(b.ord)) }));
       const todoN = new Set(todo.filter((t) => !(typeof t.b.noTodo === "function" ? t.b.noTodo() : t.b.noTodo)).flatMap((t) => t.rows.map((x) => x.m.id))).size;
-      const ins = OpsSheet.insights(P, { joins });
+      const ins = OpsSheet.insights(P, { joins, kindOf: bungKind });
       SH.calc = { P, links: SH.links, set, joins, wk, ins, todo, todoN, liveIds: Object.fromEntries(pool.filter((m) => m.status !== "away").map((m) => [m.id, 1])) };
       return SH.calc;
     }
@@ -1240,7 +1259,7 @@
       const wkMax = Math.max(1, ...I.weeks.map((x) => x.bungs));
       const mini = `<div class="wmini-w"><div class="wmini" role="img" aria-label="주마다 벙 수, 8주">${I.weeks.map((x) => `<i class="${x.partial ? "part" : ""}" style="height:${Math.max(3, (x.bungs / wkMax) * 100)}%"${tipAttr(mdS(x.from) + "~" + mdS(x.to) + ": 벙 " + x.bungs + "개" + (x.partial ? ", 기록이 일부" : ""))}></i>`).join("")}</div><span>주마다 벙, 8주</span></div>`;
       const vb = vsPrev(w.bungs, w.prevBungs, w.curDays, w.prevDays, "개"), vh = vsPrev(w.heads, w.prevHeads, w.curDays, w.prevDays, "번");
-      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : (() => { const sn = SH.snaps.get(rec.acceptedId || SH.latestId); return sn ? "시트 " + esc(mdS(kstDate(sn.at))) + " " + esc(kstHM(sn.at)) + " 판" : "판 " + esc(rec.acceptedId || SH.latestId); })()}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지${rosterNames().length && S.roster.at > S.ledger.range.to ? ", 명단 " + esc(mdS(S.roster.at)) : ""})` : "대화 기록 없음"}, 벙은 시트(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일), 최근 30일 기준</small></h2><div class="kpis">
+      return `<section class="dsec" id="sh-glance"><h2>한눈에 <small>${SH.latestId < 0 ? "이 화면에 넣은 판" : (() => { const sn = SH.snaps.get(rec.acceptedId || SH.latestId); return sn ? "시트 " + esc(mdS(kstDate(sn.at))) + " " + esc(kstHM(sn.at)) + " 판" : "판 " + esc(rec.acceptedId || SH.latestId); })()}, ${S.ledger ? `사람은 대화 기록(${esc(mdS(S.ledger.range.to))}까지${rosterNames().length && S.roster.at > S.ledger.range.to ? ", 명단 " + esc(mdS(S.roster.at)) : ""})` : "대화 기록 없음"}, 벙은 ${P.board ? "소식 모임 글과 시트" : "시트"}(${esc(mdS(P.cover.from))}~${esc(mdS(P.cover.to))}, ${nf(P.cover.from ? P.cover.days + 1 : 0)}일)${boardNote(P)}, 최근 30일 기준</small></h2><div class="kpis">
         <div class="kpi hero"><div><span class="k-l">최근 30일 벙</span><strong class="k-v">${nf(w.bungs)}<small>개</small></strong><span class="k-s">${vb.html}</span></div>${mini}</div>
         <div class="kpi"><span class="k-l">참석 합계</span><strong class="k-v">${nf(w.heads)}<small>번</small></strong><span class="k-s">벙 한 번에 ${nf(w.avgSize)}명</span><span class="k-s">${vh.html}</span></div>
         <div class="kpi"><span class="k-l">벙에 온 멤버</span><strong class="k-v">${pctN(came, actIn.length)}<small>%</small></strong><span class="k-s">활동 멤버 ${nf(actIn.length)}명 중 ${nf(came)}명</span></div>
@@ -1282,7 +1301,12 @@
         <div class="sub-h">나이대, 1인당 참석</div>${hbars(I.bands.filter((b) => b.members).map((b) => ({ l: b.l + ", " + b.members + "명", v: r1(b.heads / b.members), vt: r1(b.heads / b.members) + "번", tip: b.l + ": 멤버 " + b.members + "명, 참석 " + b.heads + "번" })))}`,
         bandTop ? `1인당 참석이 가장 많은 나이대 ${esc(bandTop.l)}(${r1(bandTop.r)}번)` : "", "span-3");
       const c10 = card("자주 간 곳", "최근 30일, 장소 칸 " + nf(I.placeN) + "곳", I.places.length ? hbars(I.places.map((x) => ({ l: x.l, v: x.n, tip: x.l + ": " + x.n + "번" })), { unit: "번" }) : `<p class="cap">장소 칸이 비어 있습니다.</p>`, "", "span-3");
-      return `<section class="dsec" id="sh-insight"><h2>인사이트 <small>최근 30일은 ${esc(mdS(OpsSheet.dateOf(T - 29)))}~${esc(mdS(P.today))}</small></h2><div class="cgrid">${c1}${c2}${c3}${c4}${c5}${c6}${c7}${c8}${c9}${c10}</div></section>`;
+      const BD = I.board;
+      const c11 = BD ? card("소식 모임 글", "최근 30일", BD.n ? `<div class="sub-h">시작 시각</div>${vbars(BD.hours.map((x) => ({ l: x.l, v: x.v, tip: x.l + " 시작: 벙 " + x.v + "개" })))}
+          <div class="sub-h">참석 신청 시점</div>${hbars(BD.lead.map((x) => ({ l: x.l, v: x.v, tip: x.l + ": " + x.v + "명" })), { unit: "명" })}` : `<p class="cap">최근 30일에 시작한 소식 모임 글이 없습니다.</p>`,
+        `벙 ${nf(BD.of)}개 중 소식 글 ${nf(BD.n)}개${BD.cap ? `, 정원 있는 글 ${nf(BD.cap)}개 중 ${nf(BD.full)}개 정원 참` : ""}${BD.empty ? `, 참석자 없이 시작한 글 ${nf(BD.empty)}개` : ""}`, "span-6") : "";
+      const c12 = BD ? card("모임 종류", "최근 30일 소식 글", BD.kinds.length ? hbars(BD.kinds.map((x) => ({ l: x.l, v: x.n, tip: x.l + ": " + x.n + "개" })), { unit: "개" }) : `<p class="cap">없습니다.</p>`, "", "span-6") : "";
+      return `<section class="dsec" id="sh-insight"><h2>인사이트 <small>최근 30일은 ${esc(mdS(OpsSheet.dateOf(T - 29)))}~${esc(mdS(P.today))}</small></h2><div class="cgrid">${c1}${c2}${c3}${c4}${c5}${c6}${c7}${c8}${c9}${c10}${c11}${c12}</div></section>`;
     }
 
     /* 할 일: 종류마다 한 줄, 없는 것은 끝에 한 줄로 */
@@ -1301,7 +1325,7 @@
         const notIn = members().filter((p) => !SH.links.p2m.has(p.pid)).length;
         if (unlinked || notIn) rows.push(`<div class="td lv-info"><div class="td-h"><h3>잇지 못한 사람</h3><span class="cap">시트 멤버 ${nf(unlinked)}명, 시트에 없는 방 멤버 ${nf(notIn)}명</span><button type="button" class="text-btn" data-jump="sh-link">잇기 보기</button></div></div>`);
       }
-      return `<section class="dsec" id="sh-todo"><h2>할 일 <small>첫 모임 ${nf(set.firstMeetDays)}일, 정기 참여 ${nf(set.regularDays)}일 기준. 벙, 경고, 노쇼는 시트 기록(참고)</small></h2>
+      return `<section class="dsec" id="sh-todo"><h2>할 일 <small>첫 모임 ${nf(set.firstMeetDays)}일, 정기 참여 ${nf(set.regularDays)}일 기준. ${P.board ? "벙은 소식 모임 글과 시트, 경고와 노쇼는 시트 기록(참고)" : "벙, 경고, 노쇼는 시트 기록(참고)"}</small></h2>
         ${rows.length ? `<div class="todo">${rows.join("")}</div>` : `<p class="empty">없습니다.</p>`}${zero.length ? `<p class="cap zero">${ICON.good}<span class="sr-only">좋음</span>해당 없음: ${esc(zero.join(", "))}</p>` : ""}${wait.length ? `<p class="cap">판정 전: ${esc(wait.join(", "))}</p>` : ""}</section>`;
     }
 
@@ -1334,8 +1358,8 @@
       h += `<section class="dsec" id="sh-input"><h2>입력 확인 <small>시트에서 고치면 다음 판에서 사라집니다. 여기서 정한 규칙은 다음 판에도 적용됩니다.</small></h2>${problemsHtml(P)}</section>`;
       h += `<section class="dsec" id="sh-rank"><h2>벙 순위</h2><div class="cgrid">${rankHtml(P, X)}</div></section>`;
       h += insightHtml(P, X);
-      h += `<section class="dsec" id="sh-members"><h2>멤버 <small>벙 횟수는 시트의 벙 탭에서 다시 셈</small></h2>${memberTableHtml(P, X)}</section>`;
-      h += `<section class="dsec" id="sh-bung"><h2>벙 기록 <small>${nf(P.counted)}줄 셈${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}${P.ignored.length ? ", 뺀 줄 " + nf(P.ignored.length) : ""}</small></h2>${bungHtml(P)}</section>`;
+      h += `<section class="dsec" id="sh-members"><h2>멤버 <small>벙 횟수는 ${P.board ? "소식 모임 글과 시트 벙 탭에서 셈" : "시트의 벙 탭에서 다시 셈"}</small></h2>${memberTableHtml(P, X)}</section>`;
+      h += `<section class="dsec" id="sh-bung"><h2>벙 기록 <small>${bungCount(P)}</small></h2>${bungHtml(P)}</section>`;
       h += issueHtml(P);
       if (S.ledger) h += linkHtml(P);
       h += syncSecHtml();
@@ -1379,8 +1403,9 @@
     }
 
     /* 입력 확인: 고칠 것과 참고. 같은 종류끼리 묶는다 */
-    const PWHERE = (p) => `${p.tab} ${p.row}행 ${p.col}열`;
-    const PTITLE = { c_status: "대화 기록과 다른 활동중 여부", c_join: "대화 기록과 다른 입장일", c_outs: "대화 기록과 다른 나간횟수", c_region: "닉네임과 다른 거주지", c_couple: "닉네임 하트와 다른 커플여부", m_warn_at: "경고일이 비어 있음", m_warn_n: "경고 횟수와 사유 수가 다름", m_dup: "같은 사람이 두 줄", b_twice: "같은 벙이 두 줄", m_issue_warn: "이슈 탭 경고가 경고일에 없음", m_calc: "시트 계산 값과 다름", b_note: "참여자 칸의 메모(세지 않음)" };
+    const PWHERE = (p) => p.where || `${p.tab} ${p.row}행${p.col ? " " + p.col + "열" : ""}`;
+    const PTITLE = { c_status: "대화 기록과 다른 활동중 여부", c_join: "대화 기록과 다른 입장일", c_outs: "대화 기록과 다른 나간횟수", c_region: "닉네임과 다른 거주지", c_couple: "닉네임 하트와 다른 커플여부", m_warn_at: "경고일이 비어 있음", m_warn_n: "경고 횟수와 사유 수가 다름", m_dup: "같은 사람이 두 줄", b_twice: "같은 벙이 두 줄", m_issue_warn: "이슈 탭 경고가 경고일에 없음", m_calc: "시트 계산 값과 다름", b_note: "참여자 칸의 메모(세지 않음)",
+      n_unknown: "소식 닉네임을 멤버 탭에서 찾지 못함", n_amb: "소식 닉네임이 멤버 둘에 맞음", n_diff: "시트 줄과 소식 명단이 다름", n_sheet_only: "소식에 글이 없는 시트 줄", n_empty: "참석자 없이 시작한 모임 글" };
     const ptitle = (p) => PTITLE[p.code] || (p.code === "b_draft" ? (p.stalled ? "적다가 멈춘 줄" : "작성 중인 줄(세지 않음)") : p.msg.replace(/\(.*\)$/, ""));
     function problemsHtml(P) {
       const rec = sheetRec();
@@ -1391,8 +1416,10 @@
       const item = (p) => {
         let fx = "";
         if (p.code === "b_unknown") fx = (p.suggest || []).map((n, i) => `<button type="button" class="fx${i ? "" : " pri"}" data-alias="${esc(p.value)}" data-to="${esc(n)}">${esc(n)}로 읽기</button>`).join("") + `<button type="button" class="fx" data-alias="${esc(p.value)}" data-to="게스트">게스트로</button><button type="button" class="fx" data-aliaspick="${esc(p.value)}">다른 이름</button>`;
-        if (p.code === "b_amb") fx = (p.ids || []).map((id) => { const m = shMember(id); return m ? `<button type="button" class="fx" data-alias="${esc(p.value)}" data-to="${esc(id)}">${esc(mLabel(m))}${m.status !== "active" ? "(" + esc(ST_LABEL[m.status]) + ")" : ""}</button>` : ""; }).join("");
-        if (p.sig) fx += `<button type="button" class="fx" data-ignore="${esc(p.sig)}" data-row="${esc(p.row)}" data-text="${esc(p.value || "")}">이 줄 빼기</button>`;
+        if (p.code === "n_unknown") fx = (p.suggest || []).map((id, i) => { const m = shMember(id); return m ? `<button type="button" class="fx${i ? "" : " pri"}" data-alias="${esc(p.value)}" data-to="${esc(id)}">${esc(mLabel(m))}로 읽기</button>` : ""; }).join("") + `<button type="button" class="fx" data-alias="${esc(p.value)}" data-to="게스트">게스트로</button><button type="button" class="fx" data-aliaspick="${esc(p.value)}">다른 이름</button>`;
+        if (p.code === "b_amb" || p.code === "n_amb") fx = (p.ids || []).map((id) => { const m = shMember(id); return m ? `<button type="button" class="fx" data-alias="${esc(p.value)}" data-to="${esc(id)}">${esc(mLabel(m))}${m.status !== "active" ? "(" + esc(ST_LABEL[m.status]) + ")" : ""}</button>` : ""; }).join("");
+        if (p.sig) fx += `<button type="button" class="fx" data-ignore="${esc(p.sig)}" data-row="${esc(p.row)}" data-text="${esc(p.value || "")}">${/^n\|/.test(p.sig) ? "이 글 빼기" : "이 줄 빼기"}</button>`;
+        if (/^n_/.test(p.code) && p.tab === "소식" && p.row) fx += `<button type="button" class="fx" data-bgjump="${esc(p.row)}">소식 탭에서 보기</button>`;
         const pick = SH.fixOpen === "alias:" + p.value ? `<select class="input" data-aliasto="${esc(p.value)}" aria-label="누구로 읽을지"><option value="">누구로 읽을까요</option>${names.map((n) => `<option>${esc(n)}</option>`).join("")}</select>` : "";
         const more = p.msg !== ptitle(p) && p.code !== "b_draft" ? p.msg : "";
         return `<li><span>${p.who ? `<b>${esc(p.who)}</b> ` : ""}${p.value ? esc(String(p.value).slice(0, 120)) : ""}${more ? ` <span class="cap">${esc(more)}</span>` : ""}</span><span class="where">${esc(PWHERE(p))}</span>${fx || pick ? `<span class="fixes">${fx}${pick}</span>` : ""}</li>`;
@@ -1401,7 +1428,7 @@
         return `<details class="group"${info || (list.length > 8 && p0.code !== "c_status") ? "" : " open"}><summary><h3>${info ? "" : ICON[p0.level === "rule" ? "rule" : "watch"] + `<span class="sr-only">${p0.level === "rule" ? "규칙" : "살펴보기"}</span>`}${esc(ptitle(p0))} <span class="tag">${nf(list.length)}</span></h3></summary><ul class="plist">${list.slice(0, 60).map(item).join("")}</ul>${list.length > 60 ? `<p class="cap">처음 60개만 보입니다.</p>` : ""}</details>`; };
       const a = keys.filter((k) => k[0] === "a"), b = keys.filter((k) => k[0] === "b");
       const fixes = Object.keys(rec.alias).map((k) => ({ t: "alias", k, x: k + " 를 " + (shMember(rec.alias[k]) ? mLabel(shMember(rec.alias[k])) : /^m:/.test(rec.alias[k]) ? idName(rec.alias[k]) + "(멤버 탭에서 나이나 성별이 바뀌어 맞는 줄 없음)" : rec.alias[k]) + "(으)로 읽기" }))
-        .concat(Object.keys(rec.ignore).map((k) => ({ t: "ignore", k, x: "뺀 줄: " + ((rec.ignore[k] && rec.ignore[k].text) || k.split("|").slice(1).join(" ")) })));
+        .concat(Object.keys(rec.ignore).map((k) => ({ t: "ignore", k, x: (/^n\|/.test(k) ? "뺀 소식 글: " : "뺀 줄: ") + ((rec.ignore[k] && rec.ignore[k].text) || k.split("|").slice(1).join(" ")) })));
       return `<div class="cgrid"><article class="card span-8"><h3>고칠 것 <small class="cap">${nf(a.reduce((n, k) => n + groups.get(k).length, 0))}건</small>${a.length ? `<button type="button" class="text-btn" data-copyfix>고칠 것 복사</button>` : ""}</h3>${a.length ? a.map(grp).join("") : `<p class="cap">없습니다.</p>`}</article>
         <article class="card span-4"><h3>참고 <small class="cap">세지 않았거나 시트 값과 다른 것</small></h3>${b.length ? b.map(grp).join("") : `<p class="cap">없습니다.</p>`}
           ${fixes.length ? `<h3>여기서 정한 규칙 <small class="cap">${nf(fixes.length)}개</small></h3><ul class="plist">${fixes.map((f) => `<li><span>${esc(f.x)}</span><button type="button" class="fx" data-unfix="${esc(f.t)}" data-key="${esc(f.k)}">풀기</button></li>`).join("")}</ul>` : ""}</article></div>`;
@@ -1454,6 +1481,12 @@
         <p class="cap">${nf(list.length)}명. 30일 벙은 최근 30일 참석, 8주 추이는 주마다 벙 수(오늘까지 7일씩), 8주 추이로 줄 세우면 최근 4주 합입니다.</p>`;
     }
 
+    /* 벙 기록 수와 소식 글 읽기 상태 */
+    function boardNote(P) { return P.board ? "" : BG.failed ? ", 소식 모임 글을 읽지 못함" : !localOnly && PASS && !BG.loaded ? ", 소식 모임 글 읽는 중" : ""; }
+    function bungCount(P) {
+      const nB = P.bungs.filter((b) => b.src === "board" && b.state === "ok").length, bd = P.board;
+      return `벙 ${nf(P.counted)}개 셈${bd ? `(소식 글 ${nf(nB)}개, 시트 ${nf(P.counted - nB)}줄)` : ""}${P.drafts ? ", 작성 중 " + nf(P.drafts) + "줄" : ""}${P.ignored.length ? ", 뺀 줄 " + nf(P.ignored.length) : ""}${bd && bd.ignored ? ", 뺀 글 " + nf(bd.ignored) : ""}${boardNote(P)}`;
+    }
     /* 벙 기록: 날마다 벙 수(최근 8주)와 날짜별 묶음 */
     function bungHtml(P) {
       const ok = P.bungs.filter((b) => b.state === "ok");
@@ -1463,15 +1496,17 @@
       const chart = `<div class="dbars" role="img" aria-label="최근 8주 날마다 벙 수">${per.map((v, i) => { const d = OpsSheet.dateOf(endD - (days - 1 - i)); return `<span class="dcol${OpsSheet.dnum(d) < OpsSheet.dnum(P.cover.from || d) ? " pre" : ""}"${tipAttr(mdS(d) + "(" + wdOf(d) + "): 벙 " + v + "개, 참석 " + ppl[i] + "번")}><i style="height:${v ? Math.max(3, (v / mx) * 100) : 0}%"></i></span>`; }).join("")}</div>
         <div class="dx">${Array.from({ length: 8 }, (_, k) => `<span>${esc(mdS(OpsSheet.dateOf(endD - (days - 1 - k * 7))))}</span>`).join("")}</div>`;
       const q = SH.bq.trim().toLowerCase();
-      let rows = P.bungs.slice();
-      if (q) rows = rows.filter((b) => [b.title, b.place, b.hostRaw].concat(b.people.map(idName), b.guests).some((x) => String(x || "").toLowerCase().includes(q)));
+      let rows = P.bungs.filter((b) => b.state !== "board");   // 소식 글로 대신한 시트 줄은 소식 글 카드에 '시트 N행'으로
+      if (q) rows = rows.filter((b) => [b.title, b.place, b.hostRaw].concat(b.people.map(idName), b.guests, b.unknown).some((x) => String(x || "").toLowerCase().includes(q)));
       const byDay = new Map();
       rows.forEach((b) => { const k = b.date || ""; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(b); });
       const dayKeys = [...byDay.keys()].sort((a, b) => (a === "" ? 1 : b === "" ? -1 : b.localeCompare(a)));
-      const STATE = { draft: "작성 중", bad: "날짜 확인", dup: "두 번째 줄", ignored: "뺀 줄" };
-      const card = (b) => `<div class="bg${b.state !== "ok" ? " mute" : ""}"><span class="bt">${esc(b.title || "제목 없음")}${STATE[b.state] ? ` <span class="tag ${b.state === "ignored" ? "" : "watch"}">${STATE[b.state]}</span>` : ""}${b.place ? `<small>${esc(b.place)}</small>` : ""}</span>
-        <span class="bn"><b>${nf((b.host ? 1 : 0) + b.people.length)}명</b>${b.guests.length ? `, 게스트 ${nf(b.guests.length)}` : ""}<br />${esc(b.row)}행</span>
-        <span class="ppl">${b.host ? mChip(b.host, "벙주", "host") : b.hostRaw ? `<span class="tag">${esc(b.hostRaw)} 벙주</span>` : `<span class="tag watch">벙주 없음</span>`}${b.people.map((id) => mChip(id)).join("")}${b.guests.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${b.noshows.map((id) => `<span class="tag watch">${esc(idName(id))} 노쇼</span>`).join("")}${b.unknown.map((x) => `<span class="tag rule">${esc(x)}, 명단에 없음</span>`).join("")}${b.amb.map((x) => `<span class="tag rule">${esc(x)}, 누구인지 모름</span>`).join("")}${b.notes.map((x) => `<span class="tag"${tipAttr(x)}>메모</span>`).join("")}</span></div>`;
+      const STATE = { draft: "작성 중", bad: "날짜 확인", dup: "두 번째 줄", ignored: "뺀 줄", empty: "참석자 없음", sheet: "시트 줄로 셈" };
+      const card = (b) => { const nb = b.src === "board", st = nb && b.state === "ignored" ? "뺀 글" : STATE[b.state];
+        const meta = [nb && b.time ? b.time + (b.end ? "~" + b.end : "") : "", b.place].filter(Boolean).join(" ");
+        return `<div class="bg${b.state !== "ok" ? " mute" : ""}${nb ? " nb" : ""}"><span class="bt">${nb ? `<button type="button" class="linkish" data-bgjump="${esc(b.post)}"${tipAttr("소식 탭에서 이 글 보기")}>${esc(b.title || "제목 없음")}</button> <span class="tag in">소식</span>` : esc(b.title || "제목 없음")}${st ? ` <span class="tag ${b.state === "ignored" || b.state === "sheet" ? "" : "watch"}">${st}</span>` : ""}${meta ? `<small>${esc(meta)}</small>` : ""}</span>
+        <span class="bn"><b>${nf((b.host ? 1 : 0) + b.people.length)}명</b>${b.guests.length ? `, 게스트 ${nf(b.guests.length)}` : ""}${nb && b.cap ? `, 정원 ${nf(b.cap)}` : ""}<br />${nb ? `${b.sheetRow ? "시트 " + esc(b.sheetRow) + "행" : ""}${b.state === "ok" ? ` <button type="button" class="text-btn" data-ignore="${esc(b.sig)}" data-row="${esc(b.post)}" data-text="${esc(b.title || "")}">세지 않기</button>` : ""}` : `${esc(b.row)}행`}</span>
+        <span class="ppl">${b.host ? mChip(b.host, "벙주", "host") : b.hostRaw ? (nb ? `<span class="tag rule">${esc(b.hostRaw)} 벙주, ${b.amb.includes(b.hostRaw) ? "누구인지 모름" : "멤버 탭에 없음"}</span>` : `<span class="tag">${esc(b.hostRaw)} 벙주</span>`) : `<span class="tag watch">벙주 없음</span>`}${b.people.map((id) => mChip(id)).join("")}${b.guests.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${b.noshows.map((id) => `<span class="tag watch">${esc(idName(id))} 노쇼</span>`).join("")}${b.unknown.filter((x) => !nb || x !== b.hostRaw || b.host).map((x) => `<span class="tag rule">${esc(x)}, ${nb ? "멤버 탭에 없음" : "명단에 없음"}</span>`).join("")}${b.amb.filter((x) => !nb || x !== b.hostRaw || b.host).map((x) => `<span class="tag rule">${esc(x)}, 누구인지 모름</span>`).join("")}${b.notes.map((x) => `<span class="tag"${tipAttr(x)}>메모</span>`).join("")}</span></div>`; };
       const shown = dayKeys.slice(0, SH.bDays);
       const dayHtml = (k) => { const list = byDay.get(k), okL = list.filter((b) => b.state === "ok"), heads = okL.reduce((a, b) => a + (b.host ? 1 : 0) + b.people.length, 0);
         return `<div class="day"><h4>${k ? `${esc(mdS(k))}(${wdOf(k)})` : "날짜를 읽지 못한 줄"} <small>${k ? `벙 ${nf(okL.length)}개, 참석 ${nf(heads)}번` : nf(list.length) + "줄"}</small></h4><div class="bgs">${list.map(card).join("")}</div></div>`; };
@@ -1594,7 +1629,7 @@
           <p class="sub">싫어하는 사람: ${m.dislike.length ? m.dislike.map(esc).join(", ") : "없음"}</p>
           <p class="sub">이 사람을 싫어하는 사람으로 적은 멤버: ${disliked.length ? disliked.map((x) => esc(x.name)).join(", ") : "없음"}</p>
           ${m.co.length ? `<div class="sub-h">자주 같이 간 멤버</div><div class="nchips">${m.co.map((c) => mChip(c.id, c.n + "번")).join("")}</div>` : ""}</div>
-        <div class="panel"><h2>참석한 벙 <small>${nf(m.attend.length)}번</small></h2>${m.attend.length ? `<ul class="ev">${m.attend.slice().reverse().slice(0, 40).map((a) => `<li><time>${esc(mdS(a.date))}(${wdOf(a.date)})</time><span>${esc(a.title)}${a.host ? ` <span class="tag in">벙주</span>` : ""}</span></li>`).join("")}</ul>${m.attend.length > 40 ? `<p class="cap">최근 40번만 보입니다.</p>` : ""}` : `<p class="sub">없습니다.</p>`}</div>
+        <div class="panel"><h2>참석한 벙 <small>${nf(m.attend.length)}번${SH.parsed.board ? ", 소식 글 " + nf(m.attend.filter((a) => a.post && !a.row).length) + "번" : ""}</small></h2>${m.attend.length ? `<ul class="ev">${m.attend.slice().reverse().slice(0, 40).map((a) => `<li><time>${esc(mdS(a.date))}(${wdOf(a.date)})${a.time ? " " + esc(a.time) : ""}</time><span>${esc(a.title)}${a.host ? ` <span class="tag in">벙주</span>` : ""}${a.post && !a.row ? ` <button type="button" class="text-btn" data-bgjump="${esc(a.post)}">소식</button>` : ""}</span></li>`).join("")}</ul>${m.attend.length > 40 ? `<p class="cap">최근 40번만 보입니다.</p>` : ""}` : `<p class="sub">없습니다.</p>`}</div>
         ${S.ledger ? `<div class="panel"><h2>대화 기록</h2>${p ? `<p class="sub">${esc(p.name)}</p><div class="chips"><button type="button" class="btn btn-secondary is-sm" data-person="${esc(p.pid)}">대화 기록 보기</button><button type="button" class="text-btn" data-linkclear="${esc(m.id)}">${sheetRec().link[m.id] ? "직접 이은 것 풀기" : "다른 사람과 잇기"}</button></div>` : `<p class="sub">잇지 못했습니다.</p>${linkSelect(m)}`}</div>` : ""}`;
     }
 
@@ -1644,7 +1679,8 @@
       const sm = t.closest("[data-smember]"); if (sm) { openSheetMember(sm.dataset.smember); return; }
       const al = t.closest("[data-alias]"); if (al) { sheetRec().alias[tightK(al.dataset.alias)] = al.dataset.to; SH.fixOpen = ""; fixChanged("'" + al.dataset.alias + "'를 " + (shMember(al.dataset.to) ? mLabel(shMember(al.dataset.to)) : al.dataset.to) + "(으)로 읽습니다."); return; }
       const ap = t.closest("[data-aliaspick]"); if (ap) { SH.fixOpen = "alias:" + ap.dataset.aliaspick; renderSheetTab(); const s = document.querySelector(`[data-aliasto="${CSS.escape(ap.dataset.aliaspick)}"]`); if (s) s.focus(); return; }
-      const ig = t.closest("[data-ignore]"); if (ig) { sheetRec().ignore[ig.dataset.ignore] = { row: +ig.dataset.row, text: ig.dataset.text, at: todayKST() }; fixChanged("이 줄을 빼고 셉니다."); return; }
+      const ig = t.closest("[data-ignore]"); if (ig) { sheetRec().ignore[ig.dataset.ignore] = { row: +ig.dataset.row, text: ig.dataset.text, at: todayKST() }; fixChanged(/^n\|/.test(ig.dataset.ignore) ? "이 글을 빼고 셉니다." : "이 줄을 빼고 셉니다."); return; }
+      const bj = t.closest("[data-bgjump]"); if (bj) { BG.focus = Number(bj.dataset.bgjump); BG.scroll = true; BG.more = true; if (!$("sheet").hidden) closeSheet(); setTab("bung"); renderBung(); return; }
       const uf = t.closest("[data-unfix]"); if (uf) { const rec = sheetRec(); delete rec[uf.dataset.unfix][uf.dataset.key]; fixChanged("풀었습니다."); return; }
       const rkFocus = (sel) => { const x = document.querySelector(sel); if (x) x.focus({ preventScroll: true }); };
       const rp = t.closest("[data-rkp]"); if (rp) { SH.rk.p = rp.dataset.rkp; renderSheetTab(); rkFocus(`[data-rkp="${CSS.escape(SH.rk.p)}"]`); return; }
@@ -2137,24 +2173,42 @@
       if (m.deadline && now >= String(m.deadline).slice(0, 16)) return { text: "신청 마감", cls: "watch", past: false, start };
       return { text: "모집 중", cls: "in", past: false, start };
     }
-    async function bungLoad() {
+    // 모임 글은 모두(벙 기록의 원본), 1000개씩 나눠 읽는다. 참석 명단은 글 100개씩
+    async function restAll(path) {
+      const out = [];
+      for (let off = 0; off < 20000; off += 1000) { const rows = await rest(path + "&limit=1000&offset=" + off); if (!Array.isArray(rows)) break; out.push(...rows); if (rows.length < 1000) break; }
+      return out;
+    }
+    async function bungLoad(opt) {
       if (localOnly || !PASS || BG.busy) return;
-      BG.busy = true; BG.failed = false; renderBung();
+      const quiet = !!(opt && opt.quiet);
+      let same = false;   // 다시 읽었는데 바뀐 것이 없으면 다시 그리지 않는다(펼쳐 둔 칸이 그대로)
+      BG.busy = true; if (!quiet) { BG.failed = false; renderBung(); }
       try {
-        const posts = await rest("site_posts_v?select=*&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=300");
-        BG.posts = Array.isArray(posts) ? posts : [];
+        const posts = await restAll("site_posts_v?select=id,category,title,author,pinned,meta,created_at,updated_at&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc,id.desc");
         const others = await rest("site_posts_v?select=id,title,category,author,pinned,created_at&category=neq." + encodeURIComponent("벙 소식") + "&order=pinned.desc,created_at.desc&limit=40");
-        BG.others = Array.isArray(others) ? others : [];   // 공지, 후기, 정보, 자유: 고정, 글 비밀번호, 삭제(소식 화면에는 운영진 단추를 두지 않는다)
-        BG.att = {};
-        const ids = BG.posts.map((p) => p.id);
-        if (ids.length) {
-          const rows = await rest("site_bung_attend_v?select=*&post_id=in.(" + ids.join(",") + ")&order=created_at.asc");
-          (Array.isArray(rows) ? rows : []).forEach((r) => { (BG.att[r.post_id] = BG.att[r.post_id] || []).push({ nick: r.nick, at: r.created_at, host: !!r.host_added }); });
+        const att = {}, ids = posts.map((p) => p.id);
+        for (let i = 0; i < ids.length; i += 100) {
+          const rows = await restAll("site_bung_attend_v?select=*&post_id=in.(" + ids.slice(i, i + 100).join(",") + ")&order=created_at.asc");
+          rows.forEach((r) => { (att[r.post_id] = att[r.post_id] || []).push({ nick: r.nick, at: r.created_at, host: !!r.host_added }); });
         }
-        BG.loaded = true;
-        await bungLogLoad(null);
-      } catch (e) { BG.failed = true; }
-      finally { BG.busy = false; renderBung(); }
+        const sig = JSON.stringify([posts.map((p) => [p.id, p.title, p.author, p.pinned, p.meta]), others, att]);
+        same = quiet && BG.loaded && sig === BG.sig; BG.sig = sig;
+        BG.posts = posts; BG.others = Array.isArray(others) ? others : []; BG.att = att;   // 공지, 후기, 정보, 자유: 고정, 글 비밀번호, 삭제(소식 화면에는 운영진 단추를 두지 않는다)
+        BG.loaded = true; BG.failed = false; BG.at = Date.now();
+        if (!quiet) await bungLogLoad(null);
+      } catch (e) { if (quiet) { same = true; BG.at = Date.now(); } else BG.failed = true; }
+      finally { BG.busy = false; if (!same) boardChanged(); }
+    }
+    /* 모임 글이나 명단이 바뀌면 소식 탭과 함께 시트 탭(벙 기록, 순위, 인사이트, 할 일)과 대시보드도 다시 */
+    function boardChanged() {
+      if (SH.parsed) { SH.calc = null; softRender(); if (deferRender) renderBung(); }   // 읽지 못했을 때도(머리의 '읽는 중'을 '읽지 못함'으로)
+      else renderBung();
+    }
+    // 열어 둔 채로 있으면 10분마다, 화면으로 돌아오면 다시 읽는다(조치 입력 칸을 펴 둔 동안은 미룸)
+    function bungRefresh() {
+      if (!BG.loaded || BG.busy || document.querySelector(".bg-ask")) return;
+      if (Date.now() - (BG.at || 0) >= 600000) bungLoad({ quiet: true });
     }
     async function bungLogLoad(postId) {
       if (!PASS) return;
@@ -2184,13 +2238,19 @@
       if (!rows.length) return `<p class="sub">기록이 없습니다.</p>`;
       return `<table class="bg-logt"><tbody>${rows.map((r) => `<tr title="${esc(r.ip || "")}"><td>${esc(md(kstDate(r.at)))} ${esc(kstHM(r.at))}</td><td>${esc(BG_LABEL[r.action] || r.action)}</td><td>${esc(r.nick || "")}</td><td class="by ${esc(r.by_kind || "")}">${esc(BG_BY[r.by_kind] || r.by_kind || "")}</td><td>${esc(bgDetail(r))}</td>${perPost ? "" : `<td>${r.title ? esc(r.title) : r.detail && r.detail.title ? esc(r.detail.title) + " (지움)" : ""}</td>`}</tr>`).join("")}</tbody></table>`;
     }
+    // 소식 닉네임이 시트 멤버와 이어졌는지(벙 기록에 세는지). 시트를 받지 않았으면 표시하지 않는다
+    function bgWho(nick) {
+      const W = SH.parsed && SH.parsed.boardWho; if (!W) return "";
+      const r = W(nick);
+      return r.k === "unknown" ? `<span class="tag rule">멤버 탭에 없음</span>` : r.k === "amb" ? `<span class="tag rule">같은 이름 둘</span>` : r.k === "guest" ? `<span class="tag">게스트</span>` : "";
+    }
     function bgCard(p) {
       const m = p.meta || {}, st = bgStatus(p), list = BG.att[p.id] || [], n = list.length, dis = BG.missing ? " disabled" : "";
       const when = m.date ? md(m.date) + (m.time ? " " + m.time : "") + (m.end ? " ~ " + m.end : "") : "날짜 없음";
-      const row = (a) => `<li><span class="pn">${esc(a.nick)}</span>${a.host ? `<span class="tag out">모임장이 적음</span>` : ""}<span class="bg-when">${esc(md(kstDate(a.at)))} ${esc(kstHM(a.at))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="rename" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>이름 고치기</button><button type="button" class="text-btn" data-bg="reset" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>비밀번호 초기화</button><button type="button" class="text-btn is-danger" data-bg="kick" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>빼기</button></span></li>`;
+      const row = (a) => `<li><span class="pn">${esc(a.nick)}</span>${bgWho(a.nick)}${a.host ? `<span class="tag out">모임장이 적음</span>` : ""}<span class="bg-when">${esc(md(kstDate(a.at)))} ${esc(kstHM(a.at))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="rename" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>이름 고치기</button><button type="button" class="text-btn" data-bg="reset" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>비밀번호 초기화</button><button type="button" class="text-btn is-danger" data-bg="kick" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>빼기</button></span></li>`;
       return `<article class="bg-post${st.past ? " is-past" : ""}${BG.hi === p.id ? " is-hi" : ""}" id="bung-${p.id}" data-bid="${p.id}">
         <div><div class="bg-title"><b>${esc(p.title)}</b><span class="tag ${st.cls}">${st.text}</span>${p.pinned ? `<span class="tag in">고정</span>` : ""}</div>
-          <div class="bg-meta"><span>${esc(when)}</span>${m.place ? `<span>${esc(m.place)}</span>` : ""}<span>모임장 <b>${esc(p.author)}</b></span><span>참석 <b>${n}</b>${m.cap ? " / " + esc(m.cap) : ""}명</span><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></div></div>
+          <div class="bg-meta"><span>${esc(when)}</span>${m.place ? `<span>${esc(m.place)}</span>` : ""}<span>모임장 <b>${esc(p.author)}</b>${bgWho(p.author)}</span><span>참석 <b>${n}</b>${m.cap ? " / " + esc(m.cap) : ""}명</span><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></div></div>
         <div class="chips bg-acts">
           <button type="button" class="btn btn-secondary" data-bg="author" data-id="${p.id}"${dis}>모임장 바꾸기</button>
           <button type="button" class="btn btn-secondary" data-bg="pass" data-id="${p.id}"${dis}>글 비밀번호 재설정</button>
@@ -2288,12 +2348,12 @@
         if (missingFn(e)) { BG.missing = true; toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); }
         else toast(BG_ERR[e.code] || "처리하지 못했습니다. 연결을 확인해 주세요.");
         return false;
-      } finally { BG.busy = false; renderBung(); }
+      } finally { BG.busy = false; boardChanged(); }
     }
     document.querySelector('[data-panel="bung"]').addEventListener("click", async (e) => {
       const b = e.target.closest("[data-bg]"); if (!b || b.disabled || BG.busy) return;
       const k = b.dataset.bg;
-      if (k === "reload") { BG.loaded = false; bungLoad(); return; }
+      if (k === "reload") { bungLoad(); return; }
       if (k === "more") { BG.more = true; renderBung(); return; }
       const id = Number(b.dataset.id), p = BG.posts.find((x) => x.id === id) || BG.others.find((x) => x.id === id); if (!p) return;
       if (BG.missing) { toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); return; }
@@ -2622,7 +2682,7 @@
         </div>
         <div class="gridwrap"><table class="grid"><thead><tr>${cols.map((c) => `<th class="${c.cls || ""}${c.num ? " num" : ""}" aria-sort="${view.sheet.sort === c.k ? (dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-sort="${c.k}">${c.t}</button></th>`).join("")}</tr></thead>
         <tbody>${list.length ? list.map((p) => `<tr data-person="${esc(p.pid)}" tabindex="0">${cols.map((c) => cell(p, c.k, E)).join("")}</tr>`).join("") : `<tr><td colspan="${cols.length}" class="empty">해당하는 사람이 없습니다.</td></tr>`}</tbody></table></div>
-        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 대화 기록 끝(${esc(md(S.ledger.range.to))})까지 30일 메시지, 12주 추이는 주마다 메시지 수입니다.${SH.parsed ? " 벙 30일과 마지막 벙은 시트 기록(참고)이고 오늘(" + esc(md(todayKST())) + ")까지 셉니다." : ""}</p>`;
+        <p class="cap">${nf(list.length)}명. 재입장은 규칙 기준일 ${esc(md(ruleFrom()))} 뒤 횟수/한도, 30일은 대화 기록 끝(${esc(md(S.ledger.range.to))})까지 30일 메시지, 12주 추이는 주마다 메시지 수입니다.${SH.parsed ? " 벙 30일과 마지막 벙은 " + (SH.parsed.board ? "소식 모임 글과 시트 기록" : "시트 기록(참고)") + "이고 오늘(" + esc(md(todayKST())) + ")까지 셉니다." : ""}</p>`;
       if (focusQ) { const el = $("sq"); el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} }
     }
     function csv() {

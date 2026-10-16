@@ -245,6 +245,7 @@
       return res.sort(function (a, b) { return a.jd - b.jd; }).slice(0, 3).map(function (x) { return x.n; });
     }
     var memberIds = {}; members.forEach(function (m) { memberIds[m.id] = m; });
+    out.byId = memberIds;
     function classify(text) {
       var t = squash(text); if (!t) return null;
       var raw = t, al = Object.prototype.hasOwnProperty.call(alias, tight(t)) ? alias[tight(t)] : null;
@@ -359,40 +360,15 @@
     }
 
     /* 사람마다 참석 집계(세는 줄: 날짜가 맞고, 두 번째 줄이 아니고, 빼지 않은 줄) */
-    var monthFrom = edate(snapDate, -1), d30 = dateOf(dnum(today) - 30);
-    var S = {}; members.forEach(function (m) { S[m.id] = { attend: [], hosted: 0, noshows: [], co: {} }; });
-    var counted = bungs.filter(function (b) { return b.state === "ok"; });
-    counted.forEach(function (b, bi) {
-      var all = (b.host ? [b.host] : []).concat(b.people);
-      all.forEach(function (id) {
-        var s = S[id]; if (!s) return;
-        s.attend.push({ date: b.date, row: b.row, title: b.title, host: id === b.host });
-        if (id === b.host) s.hosted += 1;
-        all.forEach(function (o) { if (o !== id) s.co[o] = (s.co[o] || 0) + 1; });
-      });
-      b.noshows.forEach(function (id) { if (S[id]) S[id].noshows.push({ date: b.date, row: b.row, title: b.title }); });
-    });
-    var coverFrom = counted.length ? counted.reduce(function (a, b) { return b.date < a ? b.date : a; }, counted[0].date) : "";
-    var coverTo = counted.length ? counted.reduce(function (a, b) { return b.date > a ? b.date : a; }, counted[0].date) : "";
-    out.cover = { from: coverFrom, to: coverTo, days: coverFrom ? dnum(today) - dnum(coverFrom) : 0, rows: counted.length };
+    var counted = tally(out);
+    out.sheetCounted = counted.length;   // 시트 벙 탭에서 센 줄(소식 모임 글을 합치기 전)
     members.forEach(function (m) {
-      var s = S[m.id];
-      s.attend.sort(function (a, b) { return a.date.localeCompare(b.date) || a.row - b.row; });
-      m.attend = s.attend;
-      m.total = s.attend.length;
-      m.month = s.attend.filter(function (a) { return a.date >= monthFrom && a.date <= snapDate; }).length;
-      m.d30 = s.attend.filter(function (a) { return a.date > d30 && a.date <= today; }).length;
-      m.hosted = s.hosted;
-      m.last = s.attend.length ? s.attend[s.attend.length - 1].date : "";
-      m.first = s.attend.length ? s.attend[0].date : "";
-      m.noshows = s.noshows;
-      m.co = Object.keys(s.co).map(function (id) { return { id: id, n: s.co[id] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
-      // 시트 수식 값과 다시 센 값
+      // 시트 수식 값과 벙 탭에서 다시 센 값
       var diff = [];
-      if (m.sheet.total !== null && !isNaN(m.sheet.total) && m.sheet.total !== m.total) diff.push("총 벙참 시트 " + m.sheet.total + ", 다시 셈 " + m.total);
-      if (m.sheet.month !== null && !isNaN(m.sheet.month) && m.sheet.month !== m.month) diff.push("한 달 시트 " + m.sheet.month + ", 다시 셈 " + m.month);
-      if (m.sheet.hosted !== null && !isNaN(m.sheet.hosted) && m.sheet.hosted !== m.hosted) diff.push("벙주 시트 " + m.sheet.hosted + ", 다시 셈 " + m.hosted);
-      if ((m.sheet.lastBung || "") !== m.last && (m.sheet.lastBung || m.last)) diff.push("마지막 벙참 시트 " + (m.sheet.lastBung || "없음") + ", 다시 셈 " + (m.last || "없음"));
+      if (m.sheet.total !== null && !isNaN(m.sheet.total) && m.sheet.total !== m.total) diff.push("총 벙참 시트 " + m.sheet.total + ", 벙 탭 다시 셈 " + m.total);
+      if (m.sheet.month !== null && !isNaN(m.sheet.month) && m.sheet.month !== m.month) diff.push("한 달 시트 " + m.sheet.month + ", 벙 탭 다시 셈 " + m.month);
+      if (m.sheet.hosted !== null && !isNaN(m.sheet.hosted) && m.sheet.hosted !== m.hosted) diff.push("벙주 시트 " + m.sheet.hosted + ", 벙 탭 다시 셈 " + m.hosted);
+      if ((m.sheet.lastBung || "") !== m.last && (m.sheet.lastBung || m.last)) diff.push("마지막 벙참 시트 " + (m.sheet.lastBung || "없음") + ", 벙 탭 다시 셈 " + (m.last || "없음"));
       m.calcDiff = diff;
       if (diff.length) P({ tab: TN, row: m.row, col: colName(mh.map.total != null ? mh.map.total : mh.map.name), level: "info", code: "m_calc", msg: "시트 계산 값과 다름", value: diff.join(", "), who: m.name });
       // 이슈의 경고가 멤버 탭 경고일에 있는지
@@ -410,20 +386,61 @@
       m.dislike.forEach(function (n) {
         var lk = lookup(n);
         if (!lk || !lk.id) { if (!lk || !lk.amb) P({ tab: TN, row: m.row, col: colName(mh.map.dislike), level: "info", code: "m_dislike", msg: "싫어하는 사람 칸의 이름이 멤버 탭에 없음", value: n, who: m.name }); return; }
-        var both = counted.filter(function (b) { var all = [b.host].concat(b.people); return all.indexOf(m.id) >= 0 && all.indexOf(lk.id) >= 0; });
-        pairs.push({ a: m.id, b: lk.id, mutual: false, together: both.length, last: both.length ? both[both.length - 1].date : "" });
+        pairs.push({ a: m.id, b: lk.id, mutual: false, together: 0, last: "" });
       });
     });
     pairs.forEach(function (p) { p.mutual = pairs.some(function (q) { return q.a === p.b && q.b === p.a; }); });
     out.pairs = pairs;
+    together(out, counted);
 
     /* 적다가 멈춘 줄: 시트가 한동안 그대로인데 남아 있는 작성 중 줄 */
     var idle = opts.idleMin != null ? opts.idleMin : 0;
     probs.forEach(function (p) { if (p.draft && idle >= set.idleMin) { p.level = "watch"; p.msg = "적다가 멈춘 줄(" + p.msg + ")"; p.stalled = true; } });
     out.drafts = drafts.length;
-    out.counted = counted.length;
-    out.byId = memberIds;
     return out;
+  }
+
+  /* 사람마다 참석 집계와 기록 기간(세는 벙: state ok). 소식 모임 글을 합친 뒤(applyBoard)에도 다시 부른다 */
+  function tally(out) {
+    var today = out.today, monthFrom = edate(out.snapDate, -1), d30 = dateOf(dnum(today) - 30);
+    var S = {}; out.members.forEach(function (m) { S[m.id] = { attend: [], hosted: 0, noshows: [], co: {} }; });
+    var counted = okBungs(out);
+    counted.forEach(function (b) {
+      var all = whoOf(b);
+      all.forEach(function (id) {
+        var s = S[id]; if (!s) return;
+        s.attend.push({ date: b.date, row: b.row, title: b.title, host: id === b.host, post: b.post || 0, time: b.time || "" });
+        if (id === b.host) s.hosted += 1;
+        all.forEach(function (o) { if (o !== id) s.co[o] = (s.co[o] || 0) + 1; });
+      });
+      b.noshows.forEach(function (id) { if (S[id]) S[id].noshows.push({ date: b.date, row: b.row, title: b.title }); });
+    });
+    var from = "", to = "";
+    counted.forEach(function (b) { if (!from || b.date < from) from = b.date; if (!to || b.date > to) to = b.date; });
+    out.cover = { from: from, to: to, days: from ? dnum(today) - dnum(from) : 0, rows: counted.length };
+    out.members.forEach(function (m) {
+      var s = S[m.id];
+      s.attend.sort(function (a, b) { return a.date.localeCompare(b.date) || a.time.localeCompare(b.time) || a.row - b.row; });
+      m.attend = s.attend;
+      m.total = s.attend.length;
+      m.month = s.attend.filter(function (a) { return a.date >= monthFrom && a.date <= out.snapDate; }).length;
+      m.d30 = s.attend.filter(function (a) { return a.date > d30 && a.date <= today; }).length;
+      m.hosted = s.hosted;
+      m.last = s.attend.length ? s.attend[s.attend.length - 1].date : "";
+      m.first = s.attend.length ? s.attend[0].date : "";
+      m.noshows = s.noshows;
+      m.co = Object.keys(s.co).map(function (id) { return { id: id, n: s.co[id] }; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+    });
+    out.counted = counted.length;
+    return counted;
+  }
+  // 서로 불편한 사이가 같이 간 벙 수와 마지막 날
+  function together(out, counted) {
+    (out.pairs || []).forEach(function (p) {
+      var n = 0, last = "";
+      counted.forEach(function (b) { var all = whoOf(b); if (all.indexOf(p.a) >= 0 && all.indexOf(p.b) >= 0) { n += 1; if (b.date > last) last = b.date; } });
+      p.together = n; p.last = last;
+    });
   }
 
   /* 관리 점검: 처음 2주, 2개월에 1회, 경고, 노쇼, 나간횟수. 대화 기록을 맞춘 뒤(applyChat)에도 다시 부른다 */
@@ -510,6 +527,155 @@
     return P;
   }
 
+  /* ── 소식 모임 글로 벙 기록 맞추기 ──
+     벙 모집을 웹사이트에서 하므로 소식의 모임 모집 글과 참석 명단이 벙 기록의 원본이다. 시트 벙 탭은 그 전 기록과 소식에 글이 없는 벙을 채운다.
+     B = { posts: [{ id, title, author, meta: { date, time, end, place, cap } }], att: { 글 id: [{ nick, at, host }] }, now: "YYYY-MM-DDTHH:MM"(한국 시간) }
+     o = { alias: 이름 바꿔 읽기(시트와 같은 규칙), ignore: 뺀 글("n|글 id"), resolve: 닉네임으로 멤버 id 찾기(대화 기록과 이은 사람) }
+     - 시작한 글만 센다. 벙주는 글쓴이, 참여자는 참석 명단(벙주 빼고). '게스트'로 적은 이름은 게스트. 벙주 말고 참석자가 없으면 세지 않는다.
+     - 같은 날 같은 벙인 시트 줄(벙주가 같거나 사람이 반 넘게 같음)은 소식 글로 대신하고, 그 줄의 노쇼는 소식 글에 붙인다.
+       소식 글에 참석자가 없으면 시트 줄로 센다.
+     - 닉네임으로 멤버 찾기: 이름 바꿔 읽기, 대화 기록과 이은 사람, 멤버 탭 이름 그대로, 닉네임 첫 칸(출생연도와 성별이 있으면 같은 사람) 차례.
+     여러 번 불러도 같은 결과(시트 줄은 P.sheetBungs). B 가 없으면 시트 줄만으로 되돌린다 */
+  var HM = /^\d{2}:\d{2}$/, GUEST_RE = /^(게스트|게)\s*\d*\s*(?:[(（].*[)）])?$/;
+  function nickBits(s) {
+    var t = squash(s).split(" ").filter(Boolean), w = t.map(function (x) { return x.replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ]/g, ""); });
+    var rest = w.slice(1);
+    return { nick: w[0] || t[0] || "", sex: rest.filter(function (x) { return x === "남" || x === "여"; })[0] || "", birth: rest.filter(function (x) { return /^\d{2}$/.test(x); })[0] || "" };
+  }
+  function boardWho(P, o) {
+    var alias = o.alias || {}, byId = P.byId || {}, byName = Object.create(null), memo = Object.create(null);
+    P.members.forEach(function (m) { var k = tight(m.name); (byName[k] = byName[k] || []).push(m); });
+    var live = function (m) { return m.status !== "left" && m.status !== "kicked"; };
+    var one = function (list) {
+      if (!list.length) return null;
+      if (list.length === 1) return { k: "member", id: list[0].id };
+      var l = list.filter(live);
+      return l.length === 1 ? { k: "member", id: l[0].id } : { k: "amb", ids: (l.length ? l : list).map(function (m) { return m.id; }) };
+    };
+    // 이름은 같은데 출생연도나 성별이 다른 멤버, 그다음 한 글자 다른 이름
+    var suggest = function (nick) {
+      var k = tight(nick), jk = jamo(k), res = [];
+      if (!k) return res;
+      P.members.forEach(function (m) {
+        var n = tight(m.name);
+        if (n === k) { res.push({ id: m.id, d: -1, l: live(m) }); return; }
+        if (Math.abs(n.length - k.length) > 1 || lev(k, n) > 1) return;
+        var jd = lev(jk, jamo(n)); if (jd <= (k.length <= 1 ? 1 : 2)) res.push({ id: m.id, d: jd, l: live(m) });
+      });
+      return res.sort(function (a, b) { return a.d - b.d || b.l - a.l; }).slice(0, 3).map(function (x) { return x.id; });
+    };
+    var find = function (raw) {
+      var t = squash(raw), key = tight(t);
+      var al = Object.prototype.hasOwnProperty.call(alias, key) ? alias[key] : null;
+      if (al) { if (byId[al]) return { k: "member", id: al, via: "alias" }; t = squash(al); key = tight(t); }
+      if (GUEST_RE.test(t)) return { k: "guest" };
+      if (!al && o.resolve) { var rid = o.resolve(t); if (rid && byId[rid]) return { k: "member", id: rid, via: "chat" }; }
+      var r = one(byName[key] || []); if (r) return r;
+      var b = nickBits(t);
+      if (b.nick && tight(b.nick) !== key) {
+        r = one((byName[tight(b.nick)] || []).filter(function (m) { return (!b.birth || !m.birth || m.birth === b.birth) && (!b.sex || !m.sex || m.sex === b.sex); }));
+        if (r) return r;
+      }
+      return { k: "unknown", suggest: suggest(b.nick || t) };
+    };
+    return function (nick) { var k = tight(nick); if (!k) return { k: "none" }; return memo[k] || (memo[k] = find(nick)); };
+  }
+  function applyBoard(P, B, o) {
+    o = o || {};
+    if (!P || !Array.isArray(P.members) || !P.byId) return P;
+    if (!P.sheetBungs) P.sheetBungs = (P.bungs || []).filter(function (b) { return b.src !== "board"; });
+    P.sheetBungs.forEach(function (b) { if (b.state0 == null) b.state0 = b.state; b.state = b.state0; b.post = 0; });
+    P.problems = P.problems.filter(function (p) { return p.code.indexOf("n_") !== 0; });
+    P.board = null; P.boardWho = null;
+    var board = [];
+    if (B && Array.isArray(B.posts)) {
+      var who = boardWho(P, o), today = P.today, now = String(B.now || today + "T23:59"), ign = o.ignore || {};
+      var bt = (P.structure && P.structure.tabs && P.structure.tabs.bung) || {}, BT = bt.name || "벙", BC = (bt.cols || {}).date || "";
+      var where = function (b) { return "소식 " + mdot(b.date, today) + " " + (b.title || "제목 없음"); };
+      var prob = function (q) { q.tab = q.tab || "소식"; q.col = q.col || ""; q.id = q.id || [q.tab, q.code, q.row, q.value || ""].join("|"); P.problems.push(q); return q; };
+      // 찾지 못한 닉네임은 닉네임마다 하나로(가장 최근 글, 외 N개 글)
+      var seenN = Object.create(null);
+      var miss = function (b, nick, r) {
+        var k = r.k + "|" + tight(nick), q = seenN[k];
+        if (!q) q = seenN[k] = prob(r.k === "amb"
+          ? { code: "n_amb", level: "watch", msg: "같은 이름 멤버가 둘이라 누구인지 모름", value: squash(nick), ids: r.ids, fix: "alias", posts: [], id: "소식|n_amb|" + tight(nick) }
+          : { code: "n_unknown", level: "watch", msg: "멤버 탭에서 찾지 못한 닉네임", value: squash(nick), suggest: r.suggest || [], fix: "alias", posts: [], id: "소식|n_unknown|" + tight(nick) });
+        if (q.posts.indexOf(b.post) < 0) q.posts.push(b.post);
+        if (!q.date || b.date >= q.date) { q.date = b.date; q.row = b.post; q.one = where(b); }
+        q.where = q.one + (q.posts.length > 1 ? " 외 " + (q.posts.length - 1) + "개 글" : "");
+      };
+      B.posts.forEach(function (p) {
+        var m = (p && p.meta) || {};
+        if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(String(m.date || ""))) return;
+        var time = HM.test(m.time || "") ? m.time : "";
+        if (m.date + "T" + (time || "23:59") > now) return;   // 아직 시작 전
+        var list = (B.att && B.att[p.id]) || [];
+        var b = { src: "board", post: p.id, row: 0, sig: "n|" + p.id, dateRaw: m.date, date: m.date, time: time, end: HM.test(m.end || "") ? m.end : "", cap: +m.cap > 0 ? +m.cap : 0,
+          title: squash(p.title), place: squash(m.place), hostRaw: squash(p.author), host: "", people: [], guests: [], noshows: [], notes: [], unknown: [], amb: [], flags: [], att: [], signed: list.length };
+        var seen = {}, others = 0, h = who(b.hostRaw);
+        if (h.k === "member") { b.host = h.id; seen[h.id] = 1; }
+        else if (h.k === "amb") b.amb.push(b.hostRaw);
+        else if (h.k === "unknown") b.unknown.push(b.hostRaw);
+        list.forEach(function (a) {
+          var r = who(a.nick), nk = squash(a.nick);
+          b.att.push({ nick: nk, at: a.at || "", host: !!a.host, id: r.k === "member" ? r.id : "", k: r.k });
+          if (tight(nk) === tight(b.hostRaw)) return;   // 글쓴이 본인의 참석
+          if (r.k === "member") { if (seen[r.id]) return; seen[r.id] = 1; b.people.push(r.id); others += 1; }
+          else if (r.k === "guest") { b.guests.push(nk); others += 1; }
+          else if (r.k === "amb") { b.amb.push(nk); others += 1; }
+          else if (r.k === "unknown") { b.unknown.push(nk); others += 1; }
+        });
+        b.state = ign[b.sig] ? "ignored" : others ? "ok" : "empty";
+        if (b.state !== "ignored") {
+          if (h.k === "amb" || h.k === "unknown") miss(b, b.hostRaw, h);
+          b.att.forEach(function (a) { if ((a.k === "amb" || a.k === "unknown") && tight(a.nick) !== tight(b.hostRaw)) miss(b, a.nick, who(a.nick)); });
+        }
+        board.push(b);
+      });
+      board.sort(function (x, y) { return x.date.localeCompare(y.date) || x.time.localeCompare(y.time) || x.post - y.post; });
+      // 같은 날 같은 벙인 시트 줄: 벙주가 같은 쌍을 먼저, 그다음 같은 사람이 많은 쌍
+      var sOk = P.sheetBungs.filter(function (s) { return s.state === "ok"; }), byDate = Object.create(null), cand = [];
+      sOk.forEach(function (s) { (byDate[s.date] = byDate[s.date] || []).push(s); });
+      board.forEach(function (b) {
+        if (b.state !== "ok" && b.state !== "empty") return;
+        var bw = whoOf(b);
+        (byDate[b.date] || []).forEach(function (s) {
+          var sw = whoOf(s), shared = sw.filter(function (id) { return bw.indexOf(id) >= 0; }).length, host = !!(s.host && s.host === b.host);
+          if (!host && shared < Math.max(2, Math.ceil(Math.min(sw.length, bw.length) / 2))) return;
+          cand.push({ b: b, s: s, sc: (host ? 100 : 0) + shared });
+        });
+      });
+      cand.sort(function (x, y) { return y.sc - x.sc; });
+      var nm = function (id) { return (P.byId[id] || {}).name || String(id); };
+      cand.forEach(function (c) {
+        if (c.b.sheetRow || c.s.post) return;
+        c.s.post = c.b.post; c.b.sheetRow = c.s.row;
+        if (c.b.state === "empty") { c.b.state = "sheet"; return; }
+        c.s.state = "board";
+        c.s.noshows.forEach(function (id) { if (c.b.noshows.indexOf(id) < 0) c.b.noshows.push(id); });
+        c.b.people = c.b.people.filter(function (id) { return c.b.noshows.indexOf(id) < 0; });
+        var sw = whoOf(c.s), bw = whoOf(c.b);
+        var onlyS = sw.filter(function (id) { return bw.indexOf(id) < 0; }), onlyB = bw.filter(function (id) { return sw.indexOf(id) < 0; });
+        if (onlyS.length || onlyB.length) prob({ code: "n_diff", level: "info", row: c.b.post, msg: "시트 줄과 소식 명단이 다름", where: where(c.b) + ", " + BT + " " + c.s.row + "행",
+          value: [onlyS.length ? "시트에만 " + onlyS.map(nm).join(", ") : "", onlyB.length ? "소식에만 " + onlyB.map(nm).join(", ") : ""].filter(Boolean).join(", ") });
+      });
+      var okB = board.filter(function (b) { return b.state === "ok"; });
+      var from = okB.length ? okB[0].date : "", to = okB.length ? okB[okB.length - 1].date : "";
+      // 소식으로 모집한 뒤에 시트에만 있는 벙(세기는 센다)과 참석자 없이 시작한 글
+      if (from) sOk.forEach(function (s) { if (!s.post && s.date >= from) prob({ tab: BT, row: s.row, col: BC, code: "n_sheet_only", level: "info", msg: "소식에 글이 없는 시트 줄", value: mdot(s.date, today) + " " + (s.title || "제목 없음"), sig: s.sig, fix: "ignore" }); });
+      board.forEach(function (b) { if (b.state === "empty") prob({ code: "n_empty", level: "info", row: b.post, msg: "참석자 없이 시작한 모임 글", value: b.title || "제목 없음", where: where(b), sig: b.sig, fix: "ignore" }); });
+      var cnt = function (st) { return board.filter(function (b) { return b.state === st; }).length; };
+      // 시작한 소식 글이 하나라도 있을 때만 '소식 모임 글과 시트'로 본다(닉네임 찾기는 다가오는 글에도 쓴다)
+      if (board.length) P.board = { posts: board.length, ok: okB.length, empty: cnt("empty"), sheet: cnt("sheet"), ignored: cnt("ignored"), replaced: P.sheetBungs.filter(function (s) { return s.state === "board"; }).length, from: from, to: to, unknown: Object.keys(seenN).length };
+      P.boardWho = who;
+    }
+    P.bungs = P.sheetBungs.concat(board);
+    var counted = tally(P);
+    together(P, counted);
+    checkMembers(P);
+    return P;
+  }
+
   /* ── 두 판의 차이(멤버 칸, 벙 줄, 이슈 줄) ── */
   var MFIELDS = ["region", "statusRaw", "joinMD", "note", "dislike", "couple", "warnN", "warnings", "outs", "extra", "birth", "sex"];
   function diff(a, b) {
@@ -525,17 +691,18 @@
       if (f.length) res.members.changed.push({ id: id, name: bm[id].name, row: bm[id].row, fields: f.map(function (k) { return { k: k, from: fv(am[id], k), to: fv(bm[id], k) }; }) });
     });
     Object.keys(am).forEach(function (id) { if (!bm[id]) res.members.removed.push({ id: id, name: am[id].name, row: am[id].row }); });
+    // 시트 벙 탭의 줄끼리(소식 모임 글을 합쳤어도 시트 값으로)
     var bk = function (list) {
       var o = {}, n = {};
-      (list || []).forEach(function (x) { if (x.state === "draft") return; var k = (x.date || x.dateRaw) + "|" + tight(x.title) + "|" + (x.host || tight(x.hostRaw)); n[k] = (n[k] || 0) + 1; o[k + "#" + n[k]] = x; });
+      (list || []).forEach(function (x) { if (x.src === "board" || st0(x) === "draft") return; var k = (x.date || x.dateRaw) + "|" + tight(x.title) + "|" + (x.host || tight(x.hostRaw)); n[k] = (n[k] || 0) + 1; o[k + "#" + n[k]] = x; });
       return o;
     };
-    var ab = bk(a.bungs), bb = bk(b.bungs);
+    var ab = bk(sheetRows(a)), bb = bk(sheetRows(b));
     Object.keys(bb).forEach(function (k) {
       if (!ab[k]) { res.bungs.added.push(bb[k]); return; }
       var x = ab[k], y = bb[k];
       var px = [x.host].concat(x.people, x.guests, x.noshows).join(","), py = [y.host].concat(y.people, y.guests, y.noshows).join(",");
-      if (px !== py || x.place !== y.place || x.state !== y.state) res.bungs.changed.push({ from: x, to: y, plus: y.people.filter(function (p) { return x.people.indexOf(p) < 0; }), minus: x.people.filter(function (p) { return y.people.indexOf(p) < 0; }) });
+      if (px !== py || x.place !== y.place || st0(x) !== st0(y)) res.bungs.changed.push({ from: x, to: y, plus: y.people.filter(function (p) { return x.people.indexOf(p) < 0; }), minus: x.people.filter(function (p) { return y.people.indexOf(p) < 0; }) });
     });
     Object.keys(ab).forEach(function (k) { if (!bb[k]) res.bungs.removed.push(ab[k]); });
     var ik = function (list) { var o = {}; (list || []).forEach(function (e) { o[(e.date || e.dateRaw) + "|" + tight(e.text).slice(0, 40)] = e; }); return o; };
@@ -545,13 +712,16 @@
     return res;
   }
 
-  /* ── 반영 판정: 구조가 깨졌거나 한꺼번에 많이 사라지면 바로 반영하지 않는다 ── */
+  function st0(x) { return x.state0 != null ? x.state0 : x.state; }
+  function sheetRows(P) { return P.sheetBungs || (P.bungs || []).filter(function (x) { return x.src !== "board"; }); }
+
+  /* ── 반영 판정: 구조가 깨졌거나 한꺼번에 많이 사라지면 바로 반영하지 않는다(시트 벙 탭의 줄로) ── */
   function guard(prev, next) {
     if (!next || !next.structure.ok) return { state: "broken", why: next ? next.structure.missing : ["읽지 못함"] };
     if (!prev || !prev.structure.ok) return { state: "ok" };
     var d = diff(prev, next), why = [];
-    var pm = prev.members.length, pb = prev.bungs.filter(function (x) { return x.state !== "draft"; }).length;
-    var bad = function (P) { return P.bungs.filter(function (x) { return x.state === "bad"; }).length; };
+    var pm = prev.members.length, pb = sheetRows(prev).filter(function (x) { return st0(x) !== "draft"; }).length;
+    var bad = function (P) { return sheetRows(P).filter(function (x) { return st0(x) === "bad"; }).length; };
     var badUp = Math.max(0, bad(next) - bad(prev));
     var rm = d.members.removed.length, rb = Math.max(0, d.bungs.removed.length - badUp);
     var many = function (n, base) { return n >= 10 || (n >= 3 && n / Math.max(1, base) >= 0.1); };
@@ -564,7 +734,7 @@
     var bc = d.bungs.changed.length;
     if (bc >= 5 && bc / Math.max(1, pb) >= 0.05) why.push("벙 " + bc + "줄의 사람이 한꺼번에 바뀜");
     if (pm && !next.members.length) why.push("멤버가 하나도 없음");
-    if (pb && !next.bungs.length) why.push("벙이 하나도 없음");
+    if (pb && !sheetRows(next).length) why.push("벙이 하나도 없음");
     return why.length ? { state: "hold", why: why, diff: d } : { state: "ok", diff: d };
   }
 
@@ -684,10 +854,31 @@
     out.newbies = nw.map(function (x) { var f = x.m.attend.filter(function (a) { return a.date >= x.j; })[0]; var g = f ? dnum(f.date) - dnum(x.j) : null; if (g != null) gaps.push(g); return { id: x.m.id, join: x.j, first: f ? f.date : "", gap: g, gone: x.m.status === "left" || !!(o.gone && o.gone[x.m.id]) }; })
       .sort(function (a, b) { return b.join.localeCompare(a.join); });
     out.newMid = median(gaps);
+    // 소식 모임 글(최근 30일): 시작 시각, 참석 신청 시점(모임장이 적은 이름 빼고), 정원, 종류(o.kindOf)
+    out.board = null;
+    if (P.board) {
+      var nb = cur.filter(function (b) { return b.src === "board"; }), hb = [0, 0, 0, 0, 0, 0], lead = [0, 0, 0, 0, 0], kinds = Object.create(null);
+      nb.forEach(function (b) {
+        if (b.time) { var hh = +b.time.slice(0, 2); hb[hh >= 23 || hh < 6 ? 5 : hh < 11 ? 0 : hh < 14 ? 1 : hh < 17 ? 2 : hh < 20 ? 3 : 4] += 1; }
+        var st = b.time ? Date.UTC(+b.date.slice(0, 4), +b.date.slice(5, 7) - 1, +b.date.slice(8, 10), +b.time.slice(0, 2) - 9, +b.time.slice(3, 5)) : null;
+        (b.att || []).forEach(function (a) {
+          if (st == null || a.host || !a.at || tight(a.nick) === tight(b.hostRaw)) return;
+          var t = Date.parse(a.at); if (isNaN(t)) return;
+          var h = (st - t) / 3600000; lead[h >= 72 ? 0 : h >= 24 ? 1 : h >= 3 ? 2 : h >= 0 ? 3 : 4] += 1;
+        });
+        if (o.kindOf) { var k = o.kindOf(b) || "기타"; kinds[k] = (kinds[k] || 0) + 1; }
+      });
+      out.board = { n: nb.length, of: cur.length,
+        hours: ["6~11시", "11~14시", "14~17시", "17~20시", "20~23시", "23~6시"].map(function (l, i) { return { l: l, v: hb[i] }; }),
+        lead: ["3일 넘게 전", "1~3일 전", "3~24시간 전", "3시간 안", "시작 뒤"].map(function (l, i) { return { l: l, v: lead[i] }; }),
+        cap: nb.filter(function (b) { return b.cap; }).length, full: nb.filter(function (b) { return b.cap && b.signed >= b.cap; }).length,
+        empty: (P.bungs || []).filter(function (b) { var n = b.date ? dnum(b.date) : 0; return b.src === "board" && b.state === "empty" && n > T - 30 && n <= T; }).length,
+        kinds: Object.keys(kinds).map(function (k) { return { l: k, n: kinds[k] }; }).sort(function (a, b) { return b.n - a.n || (a.l === "기타") - (b.l === "기타") || a.l.localeCompare(b.l, "ko"); }).slice(0, 8) };
+    }
     return out;
   }
 
-  var OpsSheet = { applyChat: applyChat, rank: rank, insights: insights, parse: parse, diff: diff, guard: guard, fromPaste: fromPaste, parseDate: parseDate, edate: edate, colName: colName, dnum: dnum, dateOf: dateOf, jamo: jamo, LABEL: LABEL };
+  var OpsSheet = { applyChat: applyChat, applyBoard: applyBoard, nickBits: nickBits, rank: rank, insights: insights, parse: parse, diff: diff, guard: guard, fromPaste: fromPaste, parseDate: parseDate, edate: edate, colName: colName, dnum: dnum, dateOf: dateOf, jamo: jamo, LABEL: LABEL };
   if (typeof module !== "undefined" && module.exports) module.exports = OpsSheet;
   else global.OpsSheet = OpsSheet;
 })(typeof self !== "undefined" ? self : this);
