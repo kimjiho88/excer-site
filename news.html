@@ -454,12 +454,6 @@
     .host-menu > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
     .host-menu[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
     .host-menu .att-sub { margin-top: 0; }
-    /* 운영진 줄(운영진 기기에서만): 점선 위, 보라 '운영진' 이름표 */
-    .host-menu .att-adm { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
-    .host-menu .att-adm > small { color: var(--brand); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; }
-    .host-menu .att-adm a.text-btn { text-decoration: none; }
-    .post-row.is-event .host-menu .att-adm { margin-top: 8px; padding-top: 8px; }
-    .post-row.is-event .host-menu .att-adm .text-btn { border-color: var(--brand-soft); background: var(--brand-soft); color: var(--brand); }
     /* 참석 창: 폰에서는 위쪽에 붙여 키보드가 올라와도 단추가 보이게. 라벨은 보이게 */
     @media (max-width: 640px) { .att-backdrop { place-items: start center; padding-top: max(16px, 6vh); } }
     .att-label { display: block; margin: 0 0 4px; font-size: var(--fs-caption); font-weight: 700; color: var(--ink); }
@@ -474,11 +468,6 @@
     .me-chip.is-empty { border-color: var(--brand); color: var(--brand); font-weight: 700; }
     .att-me { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 10px; padding: 4px 4px 4px 12px; border-radius: 10px; background: var(--brand-soft); }
     .att-me b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--brand); font-size: 15px; }
-    /* 운영진의 명단 이름 고치기: 고른 이름 한 줄(다시 고르기) */
-    .att-from { display: flex; align-items: center; gap: 8px; min-height: 40px; margin: 0 0 10px; padding: 2px 4px 2px 12px; border-radius: 10px; background: var(--brand-soft); font-size: 14px; }
-    .att-from small { color: var(--ink-2); font-weight: 600; }
-    .att-from b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--brand); }
-    .att-from[hidden] { display: none; }
     .att-me .text-btn { flex: none; }
     .me-pick { width: 100%; justify-content: center; }
     .me-list { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; max-height: min(320px, 46vh); overflow: auto; }
@@ -602,7 +591,7 @@
   <script src="assets/site-core.js?v=13"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=13"></script>
-  <script src="assets/bung-photo.js?v=3"></script>
+  <script src="assets/bung-photo.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -832,7 +821,6 @@
         <button id="attClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
       <p id="attDesc" class="field-hint" style="margin:0 0 10px"></p>
-      <p id="attFrom" class="att-from" hidden><small>고칠 이름</small> <b id="attFromName"></b> <button type="button" class="text-btn" id="attFromChange">다시 고르기</button></p>
       <label class="att-label" for="attNick" id="attNickLabel">닉네임</label>
       <div class="att-me" id="attMe" hidden><b id="attMeName"></b><button type="button" class="text-btn" id="attMeChange">바꾸기</button></div>
       <input id="attNick" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" enterkeyhint="next" />
@@ -1417,7 +1405,6 @@
           <button type="button" class="text-btn" data-act="copy-link" data-id="${post.id}">${icon("link", "is-sm")} 링크 복사</button>
           <button type="button" class="text-btn is-quiet" data-act="edit" data-id="${post.id}">${icon("pencil", "is-sm")} 수정</button>
           <button type="button" class="text-btn is-quiet is-danger" data-act="delete" data-id="${post.id}">${icon("trash", "is-sm")} 삭제</button>
-          <button type="button" class="text-btn is-quiet" data-act="pin" data-id="${post.id}">${icon("pin", "is-sm")} ${post.pinned ? "고정 해제" : "고정"} <small>운영진</small></button>
         </div>
         <div class="comment-sec">
           <p class="comment-head">댓글 <b class="cm-n">${Number(post.comment_count) || 0}</b></p>
@@ -2144,16 +2131,6 @@
       if (list && list.length) sub.push(`<button type="button" class="text-btn is-quiet" data-act="copy-att" data-id="${post.id}">명단 복사</button>`);
       sub.push(`<button type="button" class="text-btn is-quiet" data-act="repost" data-id="${post.id}">이 글로 또 열기</button>`);
       if (past || (list && list.length)) sub.push(`<button type="button" class="text-btn is-quiet" data-act="settle" data-id="${post.id}">정산하기</button>`);
-      // 운영진 줄(운영진 기기, 서버 2026-10-15 SQL 뒤): 모임장 바꾸기, 글 비밀번호 재설정, 명단 이름 고치기, 참석 비밀번호 초기화, 운영 화면(기록과 나머지 조치)
-      const adm = [];
-      if (isAdminDevice() && state.adminOn) {
-        adm.push(`<small>운영진</small>`);
-        adm.push(`<button type="button" class="text-btn is-quiet" data-act="adm-author" data-id="${post.id}">모임장 바꾸기</button>`);
-        adm.push(`<button type="button" class="text-btn is-quiet" data-act="adm-pass" data-id="${post.id}">글 비밀번호 재설정</button>`);
-        if (list && list.length) adm.push(`<button type="button" class="text-btn is-quiet" data-act="adm-rename" data-id="${post.id}">명단 이름 고치기</button>`);
-        if (list && list.length) adm.push(`<button type="button" class="text-btn is-quiet" data-act="adm-reset" data-id="${post.id}">참석 비밀번호 초기화</button>`);
-        adm.push(`<a class="text-btn is-quiet" href="ops.html#bung-${post.id}">운영 화면</a>`);
-      }
       const isAuthor = !!savedNick() && nickKey(savedNick()) === host;
       const menuOpen = state.hostMenu[post.id] != null ? state.hostMenu[post.id] : isAuthor;
       const many = !!(list && list.length > ATT_FOLD && !state.attMore[post.id]);
@@ -2176,7 +2153,7 @@
             ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
             ${names}
           </div>
-          <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div>${adm.length ? `<div class="att-sub att-adm">${adm.join("")}</div>` : ""}</details>
+          <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }
     /* ── 채팅방에 공유(모임 모집) ──
@@ -2320,81 +2297,47 @@
     }
     // 참석 창
     let attCtx = null;
-    /* mode: attend(본인 참석), unattend(취소), host(모임장이 참석자를 적음, 글 비밀번호나 운영진 비밀번호), kick(명단에서 빼기)
-       운영진(운영진 기기, 서버 bung_admin): adm-author(모임장 바꾸기), adm-pass(글 비밀번호 재설정), adm-rename(명단 이름 고치기), adm-reset(참석 비밀번호 초기화) */
-    const ADM_MODE = {
-      "adm-author": { title: "모임장 바꾸기", desc: "글쓴이(모임장)를 다른 사람으로 바꿉니다. 글 비밀번호는 그대로이니 새 모임장에게 알려 주거나 재설정해 주세요.", label: "새 모임장 닉네임", ph: "닉네임 앞 글자", ok: "바꾸기", done: "모임장을 바꿨습니다." },
-      "adm-pass": { title: "글 비밀번호 재설정", desc: "모임장이 글 비밀번호를 잊었을 때 새로 정합니다. 새 비밀번호를 모임장에게 알려 주세요.", label: "새 글 비밀번호 (4자 이상)", ph: "새 비밀번호", ok: "재설정", done: "글 비밀번호를 다시 정했습니다. 모임장에게 알려 주세요." },
-      "adm-rename": { title: "명단 이름 고치기", desc: "명단에서 고칠 이름을 고른 뒤 바른 이름을 적습니다. 참석 비밀번호는 그대로입니다.", label: "고칠 이름", ph: "명단에서 고르기", ok: "고치기", done: "명단의 이름을 고쳤습니다." },
-      "adm-reset": { title: "참석 비밀번호 초기화", desc: "참석자가 비밀번호를 잊었을 때. 초기화하면 모임장이 적은 줄이 되고, 본인이 참석하기를 눌러 새 비밀번호로 넘겨받습니다.", label: "참석자 닉네임", ph: "명단에서 고르기", ok: "초기화", done: "참석 비밀번호를 초기화했습니다." }
-    };
-    const isAdmMode = (m) => Object.prototype.hasOwnProperty.call(ADM_MODE, m || "");
-    // 닉네임 칸의 도움: 멤버 목록에서 찾기(모임장 참석자 추가, 새 모임장, 이름 고치기의 바른 이름) / 이 글의 명단에서 고르기(빼기, 초기화, 고칠 이름)
-    const attMemberSearch = () => !!attCtx && (attCtx.mode === "host" || attCtx.mode === "adm-author" || (attCtx.mode === "adm-rename" && !!attCtx.from));
-    const attListPick = () => !!attCtx && (attCtx.mode === "kick" || attCtx.mode === "adm-reset" || (attCtx.mode === "adm-rename" && !attCtx.from));
+    /* mode: attend(본인 참석), unattend(취소), host(모임장이 참석자를 적음, 글 비밀번호나 운영진 비밀번호) */
     function openAttend(id, mode) {
       const post = findPost(id); if (!post) return;
-      attCtx = { id, mode, from: null };
+      attCtx = { id, mode };
       const list = (state.attend[id] || {}).list || [];
       const me = list.find((x) => isMe(x.nick, id));
       const host = mode === "host", kick = mode === "kick";   // kick: 모임장 메뉴의 명단에서 빼기(글 비밀번호나 운영진 비밀번호)
-      const A = ADM_MODE[mode] || null;
       const meMode = mode === "attend" && !!savedNick();   // 내 닉네임이 있으면 칸 대신 그 이름 한 줄(바꾸기)
-      $("attTitle").textContent = A ? A.title : mode === "attend" ? "참석" : host ? "참석자 추가" : kick ? "명단에서 빼기" : "참석 취소";
-      $("attDesc").textContent = A ? A.desc : mode === "attend" ? (meMode ? "비밀번호는 참석을 취소할 때 씁니다." : "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다.")
+      $("attTitle").textContent = mode === "attend" ? "참석" : host ? "참석자 추가" : kick ? "명단에서 빼기" : "참석 취소";
+      $("attDesc").textContent = mode === "attend" ? (meMode ? "비밀번호는 참석을 취소할 때 씁니다." : "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다.")
         : host ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다."
         : kick ? "뺄 사람의 닉네임과 이 글의 비밀번호나 운영진 비밀번호를 입력합니다."
         : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 잊었으면 모임장(글 비밀번호)이나 운영진이 명단에서 뺄 수 있습니다.";
-      $("attNickLabel").textContent = A ? A.label : "닉네임";
-      $("attFrom").hidden = true; $("attFromName").textContent = "";
-      $("attNick").value = mode === "attend" ? savedNick() : host || kick || A ? "" : (me ? me.nick : "");
-      $("attNick").placeholder = A ? A.ph : host ? "참석자 닉네임 앞 글자" : kick ? "뺄 닉네임" : "채팅방 닉네임 그대로";
+      $("attNick").value = mode === "attend" ? savedNick() : host || kick ? "" : (me ? me.nick : "");
+      $("attNick").placeholder = host ? "참석자 닉네임 앞 글자" : kick ? "뺄 닉네임" : "채팅방 닉네임 그대로";
       $("attNick").hidden = meMode; $("attMe").hidden = !meMode; $("attMeName").textContent = meMode ? savedNick() : "";
       if (meMode) $("attNickLabel").removeAttribute("for"); else $("attNickLabel").setAttribute("for", "attNick");
       $("attSugg").hidden = true; $("attSugg").innerHTML = "";
-      if (host || mode === "adm-author") memberInfo().then((i) => { if (attCtx && attCtx.mode === mode) { if (i.n) $("attNick").removeAttribute("list"); else $("attNick").setAttribute("list", "wNick-list"); } });
+      if (host) memberInfo().then((i) => { if (attCtx && attCtx.mode === "host") { if (i.n) $("attNick").removeAttribute("list"); else $("attNick").setAttribute("list", "wNick-list"); } });
       else $("attNick").removeAttribute("list");
-      $("attPass").value = A ? "" : savedPass();   // 운영진 비밀번호는 기기에 없다(저장하지 않는다)
-      $("attPassWhy").textContent = A ? "운영진 비밀번호" : mode === "attend" ? "취소할 때 필요, 4자 이상" : host || kick ? "글 비밀번호나 운영진 비밀번호" : "참석할 때 넣은 것";
+      $("attPass").value = savedPass();
+      $("attPassWhy").textContent = mode === "attend" ? "취소할 때 필요, 4자 이상" : host || kick ? "글 비밀번호나 운영진 비밀번호" : "참석할 때 넣은 것";
       $("attPassHint").hidden = !$("attPass").value;
-      $("attOk").textContent = A ? A.ok : mode === "attend" ? "참석하기" : host ? "추가" : kick ? "빼기" : "참석 취소";
+      $("attOk").textContent = mode === "attend" ? "참석하기" : host ? "추가" : kick ? "빼기" : "참석 취소";
       $("attErr").hidden = true; $("attDone").hidden = true; $("attClaim").hidden = true;
       $("attBackdrop").hidden = false;
-      if (attListPick()) renderMeList($("attSugg"), list.map((x) => x.nick).slice(0, ATT_FOLD));   // 명단의 이름을 눌러 고른다
+      if (kick) renderMeList($("attSugg"), list.map((x) => x.nick).slice(0, ATT_FOLD));   // 명단의 이름을 눌러 고른다
       setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
-    }
-    /* 이름 고치기: 명단에서 고른 이름을 위 줄에 두고, 칸에는 그 이름을 채워 고치게 한다(바른 이름은 멤버 목록에서 찾아 준다) */
-    function admRenameFrom(name) {
-      if (!attCtx || attCtx.mode !== "adm-rename") return;
-      attCtx.from = name || null;
-      $("attFrom").hidden = !name; $("attFromName").textContent = name || "";
-      $("attNickLabel").textContent = name ? "바른 이름" : ADM_MODE["adm-rename"].label;
-      $("attNick").placeholder = name ? "바른 닉네임" : ADM_MODE["adm-rename"].ph;
-      $("attNick").value = name || "";
-      $("attSugg").hidden = true; $("attSugg").innerHTML = "";
-      if (!name) renderMeList($("attSugg"), ((state.attend[attCtx.id] || {}).list || []).map((x) => x.nick).slice(0, ATT_FOLD));
-      $("attErr").hidden = true;
-      $("attNick").focus(); if (name) { try { $("attNick").select(); } catch (e) {} }
     }
     function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; clearTimeout(ME.sTimer); ME.sSeq++; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; }
     /* 참석 창에서만 쓰는 오류 문구(같은 코드라도 글 수정 때와 뜻이 다르다) */
-    const ADM_ERR = { BAD_PASS: "운영진 비밀번호가 아닙니다.", LOCKED: "여러 번 틀려서 이 연결을 잠시 막았습니다. 15분 뒤 다시 시도해 주세요.", NOT_ATTENDING: "그 닉네임은 명단에 없습니다.", NICK_TAKEN: "그 이름은 이미 명단에 있습니다.", BAD_NICK: "닉네임을 확인해 주세요.", PASS_TOO_SHORT: "새 비밀번호는 4자 이상이어야 합니다.", NOT_BUNG: "모임 글이 아닙니다." };
     const ATT_ERR = {
       attend: { NICK_TAKEN: "이 닉네임으로 이미 참석했거나 모임장이 적어 둔 이름입니다. 다른 기기에서 참석했다면 그때 넣은 비밀번호를 입력해 주세요." },
       unattend: { BAD_PASS: "참석할 때 넣은 비밀번호가 아닙니다. 잊었거나 다른 사람이 내 닉네임으로 참석했으면 모임장이나 운영진에게 알려 주세요.", NOT_ATTENDING: "그 닉네임은 명단에 없습니다. 닉네임을 확인해 주세요." },
       host: { BAD_PASS: "이 글의 비밀번호나 운영진 비밀번호가 아닙니다." },
-      kick: { BAD_PASS: "이 글의 비밀번호나 운영진 비밀번호가 아닙니다.", NOT_ATTENDING: "그 닉네임은 명단에 없습니다." },
-      "adm-author": ADM_ERR, "adm-pass": ADM_ERR, "adm-rename": ADM_ERR, "adm-reset": ADM_ERR
+      kick: { BAD_PASS: "이 글의 비밀번호나 운영진 비밀번호가 아닙니다.", NOT_ATTENDING: "그 닉네임은 명단에 없습니다." }
     };
     function attError(mode, err) {
       const msg = String((err && err.message) || ""), own = ATT_ERR[mode] || {};
       for (const code of Object.keys(own)) if (msg.includes(code)) return own[code];
       return rpcErrorMessage(err);
-    }
-    /* 운영진 조치의 답: 글(글쓴이, 날짜와 정원, 고정)과 명단을 화면의 것과 바꾼다 */
-    function applyAdminResult(id, res) {
-      if (res && res.post) { const i = state.posts.findIndex((p) => p.id === id); if (i >= 0) state.posts[i] = Object.assign({}, state.posts[i], res.post, { reactions: res.post.reactions || state.posts[i].reactions || {} }); }
-      if (res && res.attend) applyAttendList(id, res.attend);
     }
     async function submitAttend() {
       if (!attCtx || state.busy) return;
@@ -2402,14 +2345,10 @@
       const nick = String($("attNick").value || "").normalize("NFC").trim(), pass = $("attPass").value;   // iOS 분해형 한글을 서버 키와 같게
       const fail = (m) => { if (attCtx !== ctx) return; $("attErr").textContent = m; $("attErr").hidden = false; $("attDone").hidden = true; };
       $("attClaim").hidden = true;
-      const { id, mode } = ctx;
-      const adm = isAdmMode(mode);
-      if (!nick) { fail(mode === "adm-pass" ? "새 비밀번호를 입력해 주세요." : "닉네임을 입력해 주세요."); $("attNick").focus(); return; }
-      if (mode === "adm-pass" && nick.length < 4) { fail(ADM_ERR.PASS_TOO_SHORT); $("attNick").focus(); return; }
-      if (mode === "adm-rename" && !ctx.from) { fail("명단에서 고칠 이름을 먼저 고르세요."); $("attNick").focus(); return; }
+      if (!nick) { fail("닉네임을 입력해 주세요."); $("attNick").focus(); return; }
       if (pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
       if (state.degraded) { fail(OFFLINE_MSG); return; }
-      if (adm) { await submitAdmin(ctx, nick, pass, fail); return; }
+      const { id, mode } = ctx;
       const fn = mode === "attend" ? "bung_attend" : mode === "host" ? "bung_host_attend" : "bung_unattend";
       const row = ((state.attend[id] || {}).list || []).find((x) => nickKey(x.nick) === nickKey(nick));
       const claim = mode === "unattend" && !!(row && row.host) && nickKey(nick) === nickKey(savedNick());   // 모임장이 적은 내 이름: 내 비밀번호로 넘겨받은 뒤 취소
@@ -2440,31 +2379,6 @@
         if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
         attendFollowUp(id, code, ctx);
         if (attCtx === ctx) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
-      } finally {
-        state.busy = false; $("attOk").removeAttribute("aria-busy");
-      }
-    }
-    /* 운영진 조치(bung_admin): 함수는 거절을 예외가 아니라 {ok:false, error} 로 돌려준다. 운영진 비밀번호는 기기에 남기지 않는다 */
-    async function submitAdmin(ctx, value, pass, fail) {
-      const { id, mode } = ctx, action = mode.slice(4);
-      const args = action === "author" ? { author: value } : action === "pass" ? { pass: value } : action === "rename" ? { nick: ctx.from, to: value } : { nick: value };
-      state.busy = true; $("attOk").setAttribute("aria-busy", "true");
-      try {
-        const res = await supaFetch("/rest/v1/rpc/bung_admin", { method: "POST", body: JSON.stringify({ p_pass: pass, p_action: action, p_post_id: id, p_args: args }) });
-        if (!res || !res.ok) { const e = new Error((res && res.error) || "FAIL"); e.code = res && res.error; throw e; }
-        applyAdminResult(id, res);
-        if (action === "rename" && nickKey(attendedMap()[id]) === nickKey(ctx.from)) rememberAttend(id, value);   // 이 기기의 내 참석 이름도 따라간다
-        if (attCtx === ctx) closeAttend();
-        renderList();
-        const nb = document.querySelector(`#post-${id} [data-act="${mode}"]`) || document.querySelector(`#post-${id} .host-menu summary`);
-        if (nb) nb.focus({ preventScroll: true });
-        showToast(ADM_MODE[mode].done);
-      } catch (err) {
-        const code = String((err && err.code) || (err && err.message) || "");
-        fail(attError(mode, err));
-        if (/NOT_FOUND/.test(code)) attendFollowUp(id, code, ctx);
-        else if (/NICK_TAKEN|NOT_ATTENDING/.test(code)) loadAttend([id]);
-        if (attCtx === ctx) { const el = /BAD_PASS|LOCKED/.test(code) ? $("attPass") : $("attNick"); el.focus(); try { el.select(); } catch (e) {} }
       } finally {
         state.busy = false; $("attOk").removeAttribute("aria-busy");
       }
@@ -2627,20 +2541,20 @@
     }
     /* 모임장의 참석자 추가: 적는 칸 아래에 목록에서 찾은 이름을 보여 준다 */
     function onHostNickInput() {
-      if (attListPick()) {   // 빼기, 초기화, 고칠 이름: 이 글의 명단에서 거른다(서버에 묻지 않음)
+      if (attCtx && attCtx.mode === "kick") {   // 빼기: 이 글의 명단에서 거른다(서버에 묻지 않음)
         const q = nickKey($("attNick").value), cq = C.isChosungQuery(q) ? q.replace(/\s+/g, "") : "";
         const all = ((state.attend[attCtx.id] || {}).list || []).map((x) => x.nick);
         renderMeList($("attSugg"), (q ? all.filter((n) => nickKey(n) !== q && (nickKey(n).includes(q) || (cq && C.chosung(n).startsWith(cq)))) : all).slice(0, ATT_FOLD));
         return;
       }
-      if (!attMemberSearch()) return;
+      if (!attCtx || attCtx.mode !== "host") return;
       clearTimeout(ME.sTimer);
-      const ctx = attCtx, q = $("attNick").value, seq = ++ME.sSeq;
+      const q = $("attNick").value, seq = ++ME.sSeq;
       if (!nfc(q)) { $("attSugg").hidden = true; $("attSugg").innerHTML = ""; return; }
       ME.sTimer = setTimeout(async () => {
         const info = await memberInfo(); if (!info.n) return;
         let names = []; try { names = await memberFind(q); } catch (e) { return; }
-        if (seq !== ME.sSeq || attCtx !== ctx || !attMemberSearch()) return;
+        if (seq !== ME.sSeq || !attCtx || attCtx.mode !== "host") return;
         renderMeList($("attSugg"), names.filter((n) => nickKey(n) !== nickKey(q)).slice(0, 5));
       }, 250);
     }
@@ -2902,25 +2816,6 @@
       } catch (err) { showToast(rpcErrorMessage(err)); }
       finally { state.busy = false; }
     }
-    async function togglePin(id) {
-      if (state.busy) return;
-      const post = findPost(id);
-      if (!post) return;
-      const next = !post.pinned;
-      const pass = await askPassword(next ? "글 고정 (운영진)" : "고정 해제 (운영진)", "운영진 비밀번호를 입력해 주세요.");
-      if (pass === null) return;
-      state.busy = true;
-      try {
-        await supaFetch("/rest/v1/rpc/post_pin", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_pinned: next }) });
-        showToast(next ? "글을 고정했습니다." : "고정을 해제했습니다.");
-        state.busy = false;
-        renderListLoading();
-        await loadPosts(true);
-        return;
-      } catch (err) { showToast(rpcErrorMessage(err)); }
-      state.busy = false;
-    }
-
     // ── 댓글 ──
     async function addComment(card, postId) {
       if (state.busy) return;
@@ -3082,12 +2977,7 @@
       $("meClose").addEventListener("click", closeMe);
       $("meBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeMe(); });
       $("attNick").addEventListener("input", onHostNickInput);
-      $("attSugg").addEventListener("click", (e) => {
-        const b = e.target.closest(".me-opt"); if (!b) return;
-        if (attCtx && attCtx.mode === "adm-rename" && !attCtx.from) { admRenameFrom(b.dataset.name); return; }   // 먼저 고칠 이름, 그다음 바른 이름
-        $("attNick").value = b.dataset.name; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; $("attPass").focus();
-      });
-      $("attFromChange").addEventListener("click", () => admRenameFrom(null));
+      $("attSugg").addEventListener("click", (e) => { const b = e.target.closest(".me-opt"); if (!b) return; $("attNick").value = b.dataset.name; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; $("attPass").focus(); });
       let pvTimer = null, slotTimer = null;
       $("writeForm").addEventListener("input", (e) => {
         if (e.target.id === "wBody") $("wCount").textContent = $("wBody").value.length + " / 4000";
@@ -3192,7 +3082,6 @@
         if (act === "unattend") { openAttend(id, "unattend"); return; }
         if (act === "host-attend") { openAttend(id, "host"); return; }
         if (act === "kick") { openAttend(id, "kick"); return; }
-        if (isAdmMode(act)) { openAttend(id, act); return; }   // 운영진 줄(모임장 바꾸기, 글 비밀번호 재설정, 명단 이름 고치기, 참석 비밀번호 초기화)
         if (act === "repost") { repostBung(id); return; }
         if (act === "settle") { location.href = "calculator.html?bung=" + id; return; }
         if (act === "retry-att") { delete state.attend[id]; renderList(); loadAttend([id]); return; }
@@ -3201,7 +3090,6 @@
         if (act === "recruit") { setRecruit(id, el.dataset.to === "closed"); return; }
         if (act === "edit") { const p = findPost(id); if (p) openWriteModal(p); return; }
         if (act === "delete") { deletePost(id); return; }
-        if (act === "pin") { togglePin(id); return; }
         if (act === "add-comment") { addComment(card, id); return; }
         if (act === "del-comment") { deleteComment(id, Number(el.dataset.post)); return; }
       });
@@ -3256,7 +3144,7 @@
     { const c0 = catFromUrl(); if (c0) { state.category = c0; setCatChips(); } syncSortSel(); }
     renderTypeFields("자유", null);
     function applyCaps(c) {
-      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.cancelLevel = Number(c.cancel) || 0; state.adminOn = !!c.admin; state.capsFailed = !!c.failed;
+      state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.cancelLevel = Number(c.cancel) || 0; state.capsFailed = !!c.failed;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
     }
