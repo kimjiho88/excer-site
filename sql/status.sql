@@ -3,7 +3,7 @@
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 안(붙여넣다 잘리지 않게).
 -- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지, 끝난 모임 지키기. 2026-10-11: 운영진의 지난 날짜 고치기.
--- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(bung_admin, bung_log 잠금).
+-- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin).
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
@@ -72,7 +72,7 @@ select 10, '벙 날짜, 장소 칸', case when ok then '있음' else '없음' en
 union all
 select 14, '서버 형식(site_schema_v)', coalesce(keys, '보기가 없어요'),
        case when keys is null then '설치가 덜 됐어요'
-            when string_to_array(keys, ', ') @> array['bung_attend', 'bung_cancel', 'bung_end', 'bung_place', 'content_format', 'places_location'] then '정상(최신)'
+            when string_to_array(keys, ', ') @> array['bung_admin', 'bung_attend', 'bung_cancel', 'bung_end', 'bung_place', 'content_format', 'places_location'] then '정상(최신)'
             else '빠진 줄이 있어요. sql/README.md 에서 아직 안 돌린 쪽을 차례대로' end
   from schema_v
 union all
@@ -81,7 +81,7 @@ select 15, '속도 제한 트리거', n::text || '개',
   from rate
 union all
 select 17, '진행 중 참석, 봇 원격 조종', case when ctl is null then '표가 없어요' when ctl = '' then '평소대로' else ctl end,
-       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' when kp = 0 then '끝난 모임 지키기는 2026-10-10-keep-past.sql 을 돌리면 생겨요' when ap = 0 then '운영진의 지난 날짜 고치기는 2026-10-11-admin-past.sql 을 돌리면 생겨요' when adm = 0 then '운영진 모임 관리와 명단 기록은 2026-10-15-admin-bung.sql 을 돌리면 생겨요' else '' end
+       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' when kp = 0 then '끝난 모임 지키기는 2026-10-10-keep-past.sql 을 돌리면 생겨요' when ap = 0 then '운영진의 지난 날짜 고치기는 2026-10-11-admin-past.sql 을 돌리면 생겨요' when adm = 0 then '운영진 모임 관리와 명단 기록은 2026-10-15-admin-bung-1.sql 부터 세 쪽을 차례로 돌리면 생겨요' else '' end
   from botctl
 union all
 select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v is null then '2026-10-09-memberbot.sql 을 돌리면 생겨요'

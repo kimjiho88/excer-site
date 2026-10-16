@@ -286,6 +286,8 @@
     .bg-list .bg-when { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
     .bg-list .bg-ab { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0 4px; }
     .bg-list .bg-ab .text-btn { min-height: 32px; font-size: 12px; }
+    .bg-others .pn { flex: 1 1 200px; min-width: 0; }
+    .bg-others a.text-btn { text-decoration: none; }
     .text-btn.is-danger { color: var(--danger); }
     .bg-ask { display: inline-flex; flex-wrap: wrap; align-items: end; gap: 6px; padding: 8px; border: 1px dashed var(--brand); border-radius: var(--r-sm); background: var(--brand-soft); max-width: 100%; }
     .bg-ask label { display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); font-weight: 600; }
@@ -483,7 +485,7 @@
     <div id="app" hidden>
       <nav class="ops-tabs" aria-label="운영 대시보드"><div class="wrap ops-tabs-in" role="tablist">
         <button type="button" role="tab" id="tab-dash" aria-controls="panel-dash" tabindex="0" data-tab="dash" aria-selected="true">대시보드</button>
-        <button type="button" role="tab" id="tab-bung" aria-controls="panel-bung" tabindex="-1" data-tab="bung" aria-selected="false">모임</button>
+        <button type="button" role="tab" id="tab-bung" aria-controls="panel-bung" tabindex="-1" data-tab="bung" aria-selected="false">소식</button>
         <button type="button" role="tab" id="tab-sheet" aria-controls="panel-sheet" tabindex="-1" data-tab="sheet" aria-selected="false">시트</button>
         <button type="button" role="tab" id="tab-signals" aria-controls="panel-signals" tabindex="-1" data-tab="signals" aria-selected="false">신호 근거</button>
         <button type="button" role="tab" id="tab-records" aria-controls="panel-records" tabindex="-1" data-tab="records" aria-selected="false">조치</button>
@@ -2110,8 +2112,8 @@
     /* ── 모임 탭: 운영진의 모임 관리(서버 bung_admin, 2026-10-15 SQL).
        글과 명단은 공개 보기(site_posts_v, site_bung_attend_v)에서 읽고, 조치는 운영진 비밀번호로 bung_admin 을 부른다. 함수는 거절을 {ok:false, error} 로 돌려준다.
        조치마다 서버가 기록을 남기고(site_bung_log, 180일), 참석과 취소도 같은 기록에 쌓인다 ── */
-    const BG = { posts: [], att: {}, log: undefined, logs: {}, loaded: false, busy: false, missing: false, failed: false, more: false, logOpen: false, open: new Set(), focus: null, scroll: false, hi: null };
-    const BG_SQL = "2026-10-15-admin-bung.sql";
+    const BG = { posts: [], others: [], att: {}, log: undefined, logs: {}, loaded: false, busy: false, missing: false, failed: false, more: false, logOpen: false, open: new Set(), focus: null, scroll: false, hi: null };
+    const BG_SQL = "2026-10-15-admin-bung-1.sql 부터 세 쪽";   // 100줄 안의 세 파일(1, 2, 3)
     const BG_LABEL = { attend: "참석", unattend: "참석 취소", kick: "명단에서 뺌", host_add: "참석자 적음", claim: "넘겨받음", admin_author: "모임장 바꿈", admin_pass: "글 비밀번호 재설정", admin_rename: "이름 고침", admin_reset: "참석 비밀번호 초기화", admin_kick: "명단에서 뺌", admin_add: "참석자 적음", admin_status: "모집 상태", admin_cap: "정원", admin_pin: "고정", admin_delete: "글 삭제" };
     const BG_BY = { self: "본인", host: "모임장", admin: "운영진" };
     const BG_ERR = { NOT_FOUND: "그 글이 없습니다. 지워졌나 봅니다.", NOT_BUNG: "모임 글이 아닙니다.", NOT_ATTENDING: "그 이름은 명단에 없습니다.", NICK_TAKEN: "그 이름은 이미 명단에 있습니다.", BAD_NICK: "닉네임을 확인해 주세요.", PASS_TOO_SHORT: "비밀번호는 4자 이상이어야 합니다.", BAD_CAP: "정원은 1에서 200 사이 숫자입니다. 비우면 정원 없음.", BUNG_CAP: "이미 참석한 사람보다 적게는 안 됩니다. 먼저 명단에서 빼 주세요.", BAD_ACTION: "모르는 조치입니다." };
@@ -2141,6 +2143,8 @@
       try {
         const posts = await rest("site_posts_v?select=*&category=eq." + encodeURIComponent("벙 소식") + "&order=created_at.desc&limit=300");
         BG.posts = Array.isArray(posts) ? posts : [];
+        const others = await rest("site_posts_v?select=id,title,category,author,pinned,created_at&category=neq." + encodeURIComponent("벙 소식") + "&order=pinned.desc,created_at.desc&limit=40");
+        BG.others = Array.isArray(others) ? others : [];   // 공지, 후기, 정보, 자유: 고정, 글 비밀번호, 삭제(소식 화면에는 운영진 단추를 두지 않는다)
         BG.att = {};
         const ids = BG.posts.map((p) => p.id);
         if (ids.length) {
@@ -2174,7 +2178,7 @@
       return "";
     }
     function bgLogHTML(rows, perPost) {
-      if (BG.missing) return `<p class="sub">서버에 ${BG_SQL} 을 실행하면 기록이 쌓입니다.</p>`;
+      if (BG.missing) return `<p class="sub">서버에 ${BG_SQL}을 차례로 실행하면 기록이 쌓입니다.</p>`;
       if (rows === undefined) return `<p class="sub" aria-busy="true">읽는 중</p>`;
       if (rows === null) return `<p class="sub">기록을 읽지 못했습니다.</p>`;
       if (!rows.length) return `<p class="sub">기록이 없습니다.</p>`;
@@ -2200,23 +2204,28 @@
         <details class="bg-log" data-bgopen="${p.id}"${BG.open.has(p.id) ? " open" : ""}><summary>이 글의 기록</summary><div class="bg-logc">${BG.open.has(p.id) ? bgLogHTML(BG.logs[p.id], true) : ""}</div></details>
       </article>`;
     }
+    function bgOther(p) {
+      const dis = BG.missing ? " disabled" : "";
+      return `<li id="bung-${p.id}" data-bid="${p.id}"><span class="tag in">${esc(p.category)}</span><span class="pn">${esc(p.title)}</span>${p.pinned ? `<span class="tag good">고정</span>` : ""}<span class="bg-when">${esc(p.author)} ${esc(md(kstDate(p.created_at)))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="pin" data-id="${p.id}" data-to="${p.pinned ? "0" : "1"}"${dis}>${p.pinned ? "고정 해제" : "고정"}</button><button type="button" class="text-btn" data-bg="pass" data-id="${p.id}"${dis}>글 비밀번호 재설정</button><button type="button" class="text-btn is-danger" data-bg="delete" data-id="${p.id}"${dis}>삭제</button><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></span></li>`;
+    }
     function renderBung() {
       const host = document.querySelector('[data-panel="bung"]'); if (!host) return;
-      if (localOnly) { host.innerHTML = `<div class="panel"><h2>모임</h2><p class="sub">서버에 연결해 열었을 때만 볼 수 있습니다.</p></div>`; return; }
+      if (localOnly) { host.innerHTML = `<div class="panel"><h2>소식 관리</h2><p class="sub">서버에 연결해 열었을 때만 볼 수 있습니다.</p></div>`; return; }
       const names = [...new Set(people().filter((p) => p.status === "in" && !p.dflt).map((p) => p.name))].sort((a, b) => a.localeCompare(b, "ko"));
       const all = BG.posts.map((p) => ({ p, st: bgStatus(p) }));
       const up = all.filter((x) => !x.st.past).sort((a, b) => (a.st.start || "~").localeCompare(b.st.start || "~"));
       const past = all.filter((x) => x.st.past).sort((a, b) => (b.st.start || "").localeCompare(a.st.start || ""));
       const shown = BG.more ? past : past.slice(0, 8);
       const was = document.activeElement && host.contains(document.activeElement) ? document.activeElement.dataset : null;   // 다시 그려도 포커스를 같은 단추에
-      host.innerHTML = `<div class="panel"><h2>모임 관리 <small>${BG.busy && !BG.loaded ? "읽는 중" : BG.loaded ? "모임 글 " + BG.posts.length + "건" : ""}</small></h2>
-          <p class="sub">모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 고정, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 참석과 취소, 모든 조치는 아래 기록에 남고 180일 뒤 지워집니다.</p>
-          ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL} 을 한 번 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
+      host.innerHTML = `<div class="panel"><h2>소식 관리 <small>${BG.busy && !BG.loaded ? "읽는 중" : BG.loaded ? "모임 글 " + BG.posts.length + "건, 다른 글 " + BG.others.length + "건" : ""}</small></h2>
+          <p class="sub">운영진의 소식 관리는 모두 이 탭에서 합니다(소식 화면에는 운영진 단추가 없습니다). 모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 고정, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 공지와 다른 글은 아래 '다른 글' 에서 고정, 글 비밀번호, 삭제. 참석과 취소, 모든 조치는 맨 아래 기록에 남고 180일 뒤 지워집니다.</p>
+          ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL}을 차례로 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
           ${BG.failed ? `<p class="notice">모임 글을 읽지 못했습니다. 연결을 확인하고 다시 읽기를 눌러 주세요.</p>` : ""}
           <div class="chips"><button type="button" class="btn btn-secondary" data-bg="reload"${BG.busy ? " disabled" : ""}>다시 읽기</button><a class="btn btn-secondary" href="news.html?cat=bung" target="_blank" rel="noopener">소식의 모임 모집</a></div>
           <datalist id="bgNames">${names.map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist></div>
         <div class="panel"><h2>다가오는 모임 <small>${up.length}건</small></h2>${up.length ? up.map((x) => bgCard(x.p)).join("") : `<p class="sub">${BG.loaded ? "모집 중이거나 진행 중인 모임이 없습니다." : ""}</p>`}</div>
         <div class="panel"><h2>지난 모임 <small>${past.length}건</small></h2>${shown.map((x) => bgCard(x.p)).join("")}${past.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-bg="more">${past.length - shown.length}건 더 보기</button></div>` : ""}</div>
+        <div class="panel"><h2>다른 글 <small>공지, 후기, 정보, 자유. 고정한 글과 최근 글 40건</small></h2>${BG.others.length ? `<ul class="nlist bg-list bg-others" aria-label="다른 글">${BG.others.map(bgOther).join("")}</ul>` : `<p class="sub">${BG.loaded ? "다른 글이 없습니다." : ""}</p>`}</div>
         <details class="panel bg-logp" data-bgopen="log"${BG.logOpen ? " open" : ""}><summary><h2>최근 기록 <small>참석, 취소, 운영진 조치. 최근 100줄</small></h2></summary><div class="bg-logc">${bgLogHTML(BG.log, false)}</div></details>`;
       host.querySelectorAll("details[data-bgopen]").forEach((d) => d.addEventListener("toggle", () => {
         const k = d.dataset.bgopen, box = d.querySelector(".bg-logc");
@@ -2262,10 +2271,12 @@
       try {
         const r = await rpc("bung_admin", { p_pass: PASS, p_action: action, p_post_id: id, p_args: args || {} });
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
-        if (action === "delete") { BG.posts = BG.posts.filter((p) => p.id !== id); delete BG.att[id]; delete BG.logs[id]; BG.open.delete(id); BG.focus = null; }
+        if (action === "delete") { BG.posts = BG.posts.filter((p) => p.id !== id); BG.others = BG.others.filter((p) => p.id !== id); delete BG.att[id]; delete BG.logs[id]; BG.open.delete(id); BG.focus = null; }
         else {
           const i = BG.posts.findIndex((p) => p.id === id); if (i >= 0 && r.post) BG.posts[i] = r.post;
-          if (r.attend) BG.att[id] = (r.attend.attendees || []).map((x) => ({ nick: x.nick, at: x.at, host: !!x.host }));
+          if (i >= 0 && r.attend) BG.att[id] = (r.attend.attendees || []).map((x) => ({ nick: x.nick, at: x.at, host: !!x.host }));
+          const k = BG.others.findIndex((p) => p.id === id);
+          if (k >= 0 && r.post) { BG.others[k] = r.post; BG.others.sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || String(b.created_at).localeCompare(String(a.created_at))); }
           if (BG.open.has(id)) await bungLogLoad(id);
         }
         await bungLogLoad(null);
@@ -2273,8 +2284,8 @@
         return true;
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return false; }
-        if (e.code === "NOT_FOUND") { BG.posts = BG.posts.filter((p) => p.id !== id); BG.focus = null; }
-        if (missingFn(e)) { BG.missing = true; toast("서버에 " + BG_SQL + " 을 먼저 실행해 주세요."); }
+        if (e.code === "NOT_FOUND") { BG.posts = BG.posts.filter((p) => p.id !== id); BG.others = BG.others.filter((p) => p.id !== id); BG.focus = null; }
+        if (missingFn(e)) { BG.missing = true; toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); }
         else toast(BG_ERR[e.code] || "처리하지 못했습니다. 연결을 확인해 주세요.");
         return false;
       } finally { BG.busy = false; renderBung(); }
@@ -2284,8 +2295,8 @@
       const k = b.dataset.bg;
       if (k === "reload") { BG.loaded = false; bungLoad(); return; }
       if (k === "more") { BG.more = true; renderBung(); return; }
-      const id = Number(b.dataset.id), p = BG.posts.find((x) => x.id === id); if (!p) return;
-      if (BG.missing) { toast("서버에 " + BG_SQL + " 을 먼저 실행해 주세요."); return; }
+      const id = Number(b.dataset.id), p = BG.posts.find((x) => x.id === id) || BG.others.find((x) => x.id === id); if (!p) return;
+      if (BG.missing) { toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); return; }
       const m = p.meta || {}, nick = b.dataset.nick || "", t = (s) => String(s || "").normalize("NFC").trim();
       if (k === "author") { const v = t(await bgAsk(b, { label: "새 모임장 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "바꾸기" })); if (v) bungAct(id, "author", { author: v }, "모임장을 바꿨습니다: " + v); return; }
       if (k === "pass") { const v = await bgAsk(b, { label: "새 글 비밀번호 (4자 이상)", ph: "모임장에게 알려 줄 비밀번호", ok: "재설정", max: 64 }); if (v == null) return; if (t(v).length < 4) { toast(BG_ERR.PASS_TOO_SHORT); return; } bungAct(id, "pass", { pass: v }, "글 비밀번호를 다시 정했습니다. 모임장에게 알려 주세요."); return; }
