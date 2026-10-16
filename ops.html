@@ -2111,7 +2111,7 @@
        글과 명단은 공개 보기(site_posts_v, site_bung_attend_v)에서 읽고, 조치는 운영진 비밀번호로 bung_admin 을 부른다. 함수는 거절을 {ok:false, error} 로 돌려준다.
        조치마다 서버가 기록을 남기고(site_bung_log, 180일), 참석과 취소도 같은 기록에 쌓인다 ── */
     const BG = { posts: [], att: {}, log: undefined, logs: {}, loaded: false, busy: false, missing: false, failed: false, more: false, logOpen: false, open: new Set(), focus: null, scroll: false, hi: null };
-    const BG_SQL = "2026-10-15-admin-bung.sql";
+    const BG_SQL = "2026-10-15-admin-bung-1.sql 부터 세 쪽";   // 100줄 안의 세 파일(1, 2, 3)
     const BG_LABEL = { attend: "참석", unattend: "참석 취소", kick: "명단에서 뺌", host_add: "참석자 적음", claim: "넘겨받음", admin_author: "모임장 바꿈", admin_pass: "글 비밀번호 재설정", admin_rename: "이름 고침", admin_reset: "참석 비밀번호 초기화", admin_kick: "명단에서 뺌", admin_add: "참석자 적음", admin_status: "모집 상태", admin_cap: "정원", admin_pin: "고정", admin_delete: "글 삭제" };
     const BG_BY = { self: "본인", host: "모임장", admin: "운영진" };
     const BG_ERR = { NOT_FOUND: "그 글이 없습니다. 지워졌나 봅니다.", NOT_BUNG: "모임 글이 아닙니다.", NOT_ATTENDING: "그 이름은 명단에 없습니다.", NICK_TAKEN: "그 이름은 이미 명단에 있습니다.", BAD_NICK: "닉네임을 확인해 주세요.", PASS_TOO_SHORT: "비밀번호는 4자 이상이어야 합니다.", BAD_CAP: "정원은 1에서 200 사이 숫자입니다. 비우면 정원 없음.", BUNG_CAP: "이미 참석한 사람보다 적게는 안 됩니다. 먼저 명단에서 빼 주세요.", BAD_ACTION: "모르는 조치입니다." };
@@ -2174,7 +2174,7 @@
       return "";
     }
     function bgLogHTML(rows, perPost) {
-      if (BG.missing) return `<p class="sub">서버에 ${BG_SQL} 을 실행하면 기록이 쌓입니다.</p>`;
+      if (BG.missing) return `<p class="sub">서버에 ${BG_SQL}을 차례로 실행하면 기록이 쌓입니다.</p>`;
       if (rows === undefined) return `<p class="sub" aria-busy="true">읽는 중</p>`;
       if (rows === null) return `<p class="sub">기록을 읽지 못했습니다.</p>`;
       if (!rows.length) return `<p class="sub">기록이 없습니다.</p>`;
@@ -2211,7 +2211,7 @@
       const was = document.activeElement && host.contains(document.activeElement) ? document.activeElement.dataset : null;   // 다시 그려도 포커스를 같은 단추에
       host.innerHTML = `<div class="panel"><h2>모임 관리 <small>${BG.busy && !BG.loaded ? "읽는 중" : BG.loaded ? "모임 글 " + BG.posts.length + "건" : ""}</small></h2>
           <p class="sub">모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 고정, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 참석과 취소, 모든 조치는 아래 기록에 남고 180일 뒤 지워집니다.</p>
-          ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL} 을 한 번 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
+          ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL}을 차례로 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
           ${BG.failed ? `<p class="notice">모임 글을 읽지 못했습니다. 연결을 확인하고 다시 읽기를 눌러 주세요.</p>` : ""}
           <div class="chips"><button type="button" class="btn btn-secondary" data-bg="reload"${BG.busy ? " disabled" : ""}>다시 읽기</button><a class="btn btn-secondary" href="news.html?cat=bung" target="_blank" rel="noopener">소식의 모임 모집</a></div>
           <datalist id="bgNames">${names.map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist></div>
@@ -2274,7 +2274,7 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return false; }
         if (e.code === "NOT_FOUND") { BG.posts = BG.posts.filter((p) => p.id !== id); BG.focus = null; }
-        if (missingFn(e)) { BG.missing = true; toast("서버에 " + BG_SQL + " 을 먼저 실행해 주세요."); }
+        if (missingFn(e)) { BG.missing = true; toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); }
         else toast(BG_ERR[e.code] || "처리하지 못했습니다. 연결을 확인해 주세요.");
         return false;
       } finally { BG.busy = false; renderBung(); }
@@ -2285,7 +2285,7 @@
       if (k === "reload") { BG.loaded = false; bungLoad(); return; }
       if (k === "more") { BG.more = true; renderBung(); return; }
       const id = Number(b.dataset.id), p = BG.posts.find((x) => x.id === id); if (!p) return;
-      if (BG.missing) { toast("서버에 " + BG_SQL + " 을 먼저 실행해 주세요."); return; }
+      if (BG.missing) { toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); return; }
       const m = p.meta || {}, nick = b.dataset.nick || "", t = (s) => String(s || "").normalize("NFC").trim();
       if (k === "author") { const v = t(await bgAsk(b, { label: "새 모임장 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "바꾸기" })); if (v) bungAct(id, "author", { author: v }, "모임장을 바꿨습니다: " + v); return; }
       if (k === "pass") { const v = await bgAsk(b, { label: "새 글 비밀번호 (4자 이상)", ph: "모임장에게 알려 줄 비밀번호", ok: "재설정", max: 64 }); if (v == null) return; if (t(v).length < 4) { toast(BG_ERR.PASS_TOO_SHORT); return; } bungAct(id, "pass", { pass: v }, "글 비밀번호를 다시 정했습니다. 모임장에게 알려 주세요."); return; }
