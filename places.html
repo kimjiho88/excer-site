@@ -28,8 +28,8 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=22" />
-  <script src="assets/site-core.js?v=13"></script>
+  <link rel="stylesheet" href="assets/site.css?v=23" />
+  <script src="assets/site-core.js?v=14"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=13"></script>
   <style>
@@ -624,7 +624,7 @@
         <div class="explore-row">
           <label class="search-box">
             <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-            <input id="placeSearch" class="input" type="search" placeholder="식당, 메뉴, 한줄평" aria-label="맛집 검색" autocomplete="off" />
+            <input id="placeSearch" class="input" type="search" placeholder="식당, 메뉴, 한줄평" aria-label="맛집 검색" autocomplete="off" enterkeyhint="search" />
           </label>
           <button class="btn btn-secondary filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel">
             필터 <svg class="ic is-sm" aria-hidden="true"><use href="#i-chevDown"/></svg>
@@ -764,7 +764,7 @@
         <div class="field is-wide" data-field="pPlaceSearch" id="pSearchWrap" hidden>
           <label for="pPlaceSearch">장소 검색 <small>선택</small></label>
           <div class="search-inline">
-            <input id="pPlaceSearch" class="input" type="search" maxlength="60" placeholder="식당 이름으로 카카오맵에서 찾기" autocomplete="off" />
+            <input id="pPlaceSearch" class="input" type="search" maxlength="60" placeholder="식당 이름으로 카카오맵에서 찾기" autocomplete="off" enterkeyhint="search" />
             <button type="button" class="btn btn-secondary" id="pSearchBtn">검색</button>
           </div>
           <ul class="place-results" id="pSearchResults" aria-live="polite"></ul>
@@ -834,7 +834,7 @@
             </div>
             <div class="field is-wide" data-field="pMap">
               <label for="pMap">지도 링크 <small>선택</small></label>
-              <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵 또는 네이버지도 공유 링크" />
+              <input id="pMap" class="input" type="url" maxlength="400" placeholder="카카오맵 또는 네이버지도 공유 링크" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" />
               <span class="field-hint">비워 두면 지역과 식당 이름으로 카카오맵 검색을 엽니다.</span>
               <span class="field-error" hidden></span>
             </div>
@@ -870,7 +870,7 @@
               </div>
               <div class="field" data-field="pPer">
                 <label for="pPer">1인 금액 <small>선택, 주류 제외</small></label>
-                <input id="pPer" class="input" type="number" min="0" max="1000000" step="1000" placeholder="예: 25000" />
+                <input id="pPer" class="input" type="number" min="0" max="1000000" step="1000" placeholder="예: 25000" inputmode="numeric" />
                 <span class="field-error" hidden></span>
               </div>
             </div>
@@ -946,7 +946,7 @@
             </div>
             <div class="field" data-field="nPer">
               <label for="nPer">1인 금액 <small>선택, 주류 제외</small></label>
-              <input id="nPer" class="input" type="number" min="0" max="1000000" step="1000" placeholder="예: 25000" />
+              <input id="nPer" class="input" type="number" min="0" max="1000000" step="1000" placeholder="예: 25000" inputmode="numeric" />
               <span class="field-error" hidden></span>
             </div>
           </div>
@@ -1543,6 +1543,8 @@
             fillSelects();
             render();
             syncMapButtons();
+            // 뒤로 와서 처음 그렸으면 보던 자리로(목록은 읽은 뒤에 그려서 브라우저가 못 돌려준다)
+            if (!state.restored) { state.restored = true; if (window.EXCER_SCROLL) EXCER_SCROLL.restore(); }
           })
           .catch(function () {
             $("placeList").innerHTML = errorHTML();
@@ -1736,7 +1738,8 @@
       }
 
       /* ── 보기 탭 ── */
-      function setView(v, focus) {
+      /* nav: "push" 는 기록에 칸을 넣어 뒤로 가기로 돌아올 수 있게(탭을 누를 때), "none" 은 주소를 건드리지 않음(뒤로 가기로 돌아왔을 때), 비우면 지금 칸의 주소만 고친다 */
+      function setView(v, focus, nav) {
         if (VIEWS.indexOf(v) < 0) v = "list";
         var was = state.view;
         state.view = v;
@@ -1754,7 +1757,7 @@
           } catch (e) {}
         }
         renderView();
-        syncViewUrl();
+        if (nav !== "none") syncViewUrl(nav === "push");
         if (focus) $("tab-" + v).focus();
       }
       function renderView() {
@@ -1762,15 +1765,27 @@
         else if (state.view === "stamp") renderStamp();
         else if (state.view === "cup") renderCup();
       }
-      function syncViewUrl() {
+      function syncViewUrl(push) {
         try {
           var u = new URL(location.href);
           if (state.view === "list") u.searchParams.delete("view"); else u.searchParams.set("view", state.view);
           // 도장판 주소에는 보고 있는 사람을 늘 적는다(주소를 그대로 보내도 같은 도장판이 열리게)
           if (state.view === "stamp") u.searchParams.set("who", state.who || savedNick() || ALL); else u.searchParams.delete("who");
-          history.replaceState(null, "", u.pathname + u.search + u.hash);
+          var next = u.pathname + u.search + u.hash, cur = location.pathname + location.search + location.hash;
+          // 탭을 눌러 바꾼 보기는 기록에 남겨 뒤로 가기로 되돌아온다(카카오톡 안에서 뒤로 가기가 곧장 쪽을 나가던 것). 기록의 상태값은 그대로 둔다(공통 코어의 창 칸 표시)
+          if (push && next !== cur) history.pushState({ plView: state.view }, "", next);
+          else history.replaceState(history.state, "", next);
         } catch (e) {}
       }
+      // 뒤로 가기, 앞으로 가기: 주소의 view 와 who 로 보기를 되돌린다. 창을 닫는 뒤로 가기(주소 같음)는 공통 코어가 맡고 여기서는 아무 일도 없다
+      window.addEventListener("popstate", function () {
+        var sp = new URLSearchParams(location.search), v = sp.get("view");
+        if (VIEWS.indexOf(v) < 0) v = "list";
+        var who = sp.get("who") ? sp.get("who").slice(0, 40) : null;
+        if (v === state.view && (v !== "stamp" || !who || who === (state.who || savedNick() || ALL))) return;
+        if (v === "stamp") state.who = who;
+        setView(v, false, "none");
+      });
       /* 탭 줄이 위 메뉴 뒤로 올라가 있으면 보이게 내린다 */
       function toTabs() {
         var t = document.querySelector(".pl-tabs"); if (!t) return;
@@ -1779,7 +1794,7 @@
       }
       /* 순위, 도장판, 월드컵에서 식당을 누르면 목록으로 가서 그 식당을 펼친다 */
       function showPlace(id) {
-        setView("list");
+        setView("list", false, "push");
         if (!viewOf(id)) return;
         // 걸어 둔 조건에 가려 있으면 조건을 풀고 보여 준다
         if (!visible().some(function (v) { return v.id === id; })) ["q", "area", "cat", "price", "by"].forEach(clearCondition);
@@ -1789,7 +1804,7 @@
           el.scrollIntoView({ block: "start", behavior: "smooth" });
           var b = el.querySelector(".pr-acts [data-open]"); if (b) b.focus({ preventScroll: true });
         }
-        try { history.replaceState(null, "", location.pathname + location.search + "#place-" + id); } catch (e) {}
+        try { history.replaceState(history.state, "", location.pathname + location.search + "#place-" + id); } catch (e) {}
       }
       function catTileSm(v) { return '<span class="rk-ic" style="--cat:' + esc(v.catColor) + '" aria-hidden="true">' + icon(v.catIcon) + "</span>"; }
       /* 등수 표. 메달 색은 1~3등이 셋 이하로 묶였을 때만 */
@@ -2062,6 +2077,34 @@
         });
       }
 
+      /* ── 임시 저장(이 기기): 한줄평 창과 등록 창에 적던 것은 창이 닫혀도 남겨 두었다가 다음에 열 때 채운다
+         (뒤로 가기나 끌어 내리기로 창이 닫혀도 잃지 않게). 저장하면 지우고, 7일 지나면 버린다. 닉네임과 비밀번호는 따로 기억하므로 넣지 않는다 ── */
+      var DRAFT = { note: "excer_places_draft_note", place: "excer_places_draft_place" };
+      var DRAFT_FIELDS = {
+        note: ["nBody", "nMenu", "nTip", "nDate", "nPer", "nAgain"],
+        place: ["pName", "pArea", "pCat", "pPrice", "pDetail", "pMap", "pPriceNote", "pBody", "pNoteNick", "pMenu", "pTip", "pDate", "pPer", "pAgain"]
+      };
+      function draftRead(kind) {
+        try { var d = JSON.parse(localStorage.getItem(DRAFT[kind]) || "null"); return d && d.v && d.t && Date.now() - d.t < 7 * 86400000 ? d : null; } catch (e) { return null; }
+      }
+      function draftSave(kind, extra) {
+        var v = {}, any = false;
+        DRAFT_FIELDS[kind].forEach(function (id) {
+          var el = $(id); if (!el) return;
+          var val = el.type === "checkbox" ? el.checked : el.value;
+          v[id] = val;
+          if (el.type === "checkbox" ? val : (el.tagName !== "SELECT" && String(val).trim())) any = true;   // 고르기 칸은 늘 값이 있어 세지 않는다
+        });
+        try { if (any) localStorage.setItem(DRAFT[kind], JSON.stringify(Object.assign({ t: Date.now(), v: v }, extra || {}))); else localStorage.removeItem(DRAFT[kind]); } catch (e) {}
+      }
+      function draftClear(kind) { try { localStorage.removeItem(DRAFT[kind]); } catch (e) {} }
+      function draftFill(kind, d) {
+        d = d || draftRead(kind); if (!d) return false;
+        DRAFT_FIELDS[kind].forEach(function (id) { var el = $(id); if (!el || !(id in d.v)) return; if (el.type === "checkbox") el.checked = !!d.v[id]; else el.value = d.v[id]; });
+        return true;
+      }
+      function draftHasMore(kind) { return DRAFT_FIELDS[kind].slice(kind === "note" ? 1 : 4).some(function (id) { var el = $(id); return el && !/^(pBody|pAgain)$/.test(id) && (el.type === "checkbox" ? false : String(el.value).trim()); }); }
+
       /* ── 한줄평 항목 — 등록 폼의 '첫 한줄평'과 한줄평 폼이 같은 읽기·검사·저장 규칙을 쓴다 ── */
       var NOTE_IDS = {
         n: { body: "nBody", menu: "nMenu", tip: "nTip", date: "nDate", per: "nPer", again: "nAgain" },
@@ -2160,6 +2203,8 @@
         // '더 적기'는 접어 두고, 고칠 때 거기에 값이 있으면 펼쳐 둔다
         $("pMoreNote").textContent = "주소, 지도 링크, 가격 메모" + (p ? "" : ", 한줄평 작성자" + (state.caps >= 2 ? ", 추천 메뉴, 방문 팁" : "") + ", 방문일, 1인 금액");
         $("pMore").open = !!(p && (p.area_detail || p.map_url || p.price_note));
+        // 새로 등록할 때 적다 만 것이 있으면 채운다
+        if (!p && draftFill("place")) { toast("쓰던 등록 내용을 불러왔습니다."); if (draftHasMore("place")) $("pMore").open = true; }
         $("pNick").value = savedNick();
         $("pPass").value = savedPass();
         $("pNickWrap").hidden = !!p;      // 수정할 땐 닉네임을 다시 묻지 않는다
@@ -2216,7 +2261,7 @@
         var noteBy = f.noteNick || nick;
         call.then(function (newId) {
           var id = editing ? state.editId : Number(newId);
-          if (!editing) remember(nick, pass);
+          if (!editing) { remember(nick, pass); clearTimeout(pvTimer); draftClear("place"); }   // 마지막 입력의 저장 예약도 지운다
           if (!editing && id > 0) state.openId = id;
           // 장소 검색으로 고른 좌표는 식당이 만들어진 뒤 위치 저장 함수로 넣는다
           var locStep = picked && id > 0
@@ -2294,6 +2339,8 @@
         $("nTipWrap").hidden = state.caps < 2;
         $("nMoreNote").textContent = (state.caps >= 2 ? "추천 메뉴, 방문 팁, " : "") + "방문일, 1인 금액";
         $("nMore").open = !!(n && (n.menu || n.tip || n.date || n.per_person));   // 고칠 때 값이 있으면 펼쳐 둔다
+        // 새 한줄평: 이 식당에 적다 만 것이 있으면 채운다
+        if (!n) { var d = draftRead("note"); if (d && d.id === placeId && draftFill("note", d)) { toast("쓰던 한줄평을 불러왔습니다."); if (draftHasMore("note")) $("nMore").open = true; } }
         renderNotePreview();
         $("noteBackdrop").hidden = false;
         setTimeout(function () { $("nBody").focus(); }, 60);
@@ -2324,7 +2371,7 @@
           call = api("/rest/v1/rpc/place_note_create", { method: "POST", body: noteCreateBody(state.noteFor, f.nick, f.pass, f) });
         }
         call.then(function () {
-          if (!editing) remember(f.nick, f.pass);
+          if (!editing) { remember(f.nick, f.pass); clearTimeout(nvTimer); draftClear("note"); }   // 마지막 입력의 저장 예약도 지운다
           toast(editing ? "한줄평을 저장했습니다." : "한줄평을 등록했습니다.");
           closeNoteModal();
           state.openId = state.noteFor;
@@ -2533,7 +2580,7 @@
         if (state.openId !== id) { state.openId = id; render(); }
         var el = document.getElementById("place-" + id);
         if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
-        try { history.replaceState(null, "", "#place-" + id); } catch (e) {}
+        try { history.replaceState(history.state, "", "#place-" + id); } catch (e) {}
       }
       function locateOnMap(id) {
         var v = viewOf(id);
@@ -2663,7 +2710,7 @@
         render();
         var again = $("placeList").querySelector('.pr-acts [data-open="' + id + '"]');
         if (again) again.focus({ preventScroll: true });
-        try { history.replaceState(null, "", state.openId ? "#place-" + id : location.pathname + location.search); } catch (e) {}
+        try { history.replaceState(history.state, "", state.openId ? "#place-" + id : location.pathname + location.search); } catch (e) {}
       }
       $("placeList").addEventListener("click", function (e) {
         var t;
@@ -2767,17 +2814,19 @@
       $("nCancel").addEventListener("click", closeNoteModal);
       $("nSubmit").addEventListener("click", submitNote);
       var pvTimer = null;
+      function placeTick() { renderPlacePreview(); if (!state.editId && !$("placeBackdrop").hidden) draftSave("place"); }
       $("placeForm").addEventListener("input", function (e) {
         var w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
-        clearTimeout(pvTimer); pvTimer = setTimeout(renderPlacePreview, 120);
+        clearTimeout(pvTimer); pvTimer = setTimeout(placeTick, 120);
       });
-      $("placeForm").addEventListener("change", function () { clearTimeout(pvTimer); pvTimer = setTimeout(renderPlacePreview, 60); });
+      $("placeForm").addEventListener("change", function () { clearTimeout(pvTimer); pvTimer = setTimeout(placeTick, 60); });
       var nvTimer = null;
+      function noteTick() { renderNotePreview(); if (!state.noteEdit && !$("noteBackdrop").hidden) draftSave("note", { id: state.noteFor }); }
       $("noteForm").addEventListener("input", function (e) {
         var w = e.target.closest("[data-field]"); if (w && w.classList.contains("is-invalid")) setError(w.getAttribute("data-field"), "");
-        clearTimeout(nvTimer); nvTimer = setTimeout(renderNotePreview, 120);
+        clearTimeout(nvTimer); nvTimer = setTimeout(noteTick, 120);
       });
-      $("noteForm").addEventListener("change", function () { clearTimeout(nvTimer); nvTimer = setTimeout(renderNotePreview, 60); });
+      $("noteForm").addEventListener("change", function () { clearTimeout(nvTimer); nvTimer = setTimeout(noteTick, 60); });
       $("placeBackdrop").addEventListener("click", function (e) { if (e.target === e.currentTarget) closePlaceModal(); });
       $("passOk").addEventListener("click", function () { closePassModal($("passInput").value); });
       $("passCancel").addEventListener("click", function () { closePassModal(null); });
@@ -2790,7 +2839,7 @@
       tabsEl.addEventListener("click", function (e) {
         var t = e.target.closest('[role="tab"]'); if (!t) return;
         var v = t.id.replace("tab-", "");
-        if (v !== state.view) setView(v);
+        if (v !== state.view) setView(v, false, "push");
       });
       tabsEl.addEventListener("keydown", function (e) {
         var i = VIEWS.indexOf(state.view), n = VIEWS.length, j = -1;
@@ -2800,7 +2849,7 @@
         else if (e.key === "End") j = n - 1;
         if (j < 0) return;
         e.preventDefault();
-        setView(VIEWS[j], true);
+        setView(VIEWS[j], true, "push");
       });
       $("panel-rank").addEventListener("click", function (e) {
         var t;
@@ -2813,10 +2862,10 @@
         if ((t = e.target.closest("[data-goto]"))) { showPlace(Number(t.getAttribute("data-goto"))); return; }
         if (e.target.closest("[data-poplist]")) {   // 묶인 나머지: 목록을 인기순으로
           if (state.sort === "near") state.sortPrev = "pop"; else state.sort = "pop";
-          $("fSort").value = state.sort; setView("list"); render(); toTabs(); return;
+          $("fSort").value = state.sort; setView("list", false, "push"); render(); toTabs(); return;
         }
         if ((t = e.target.closest("[data-who]"))) {
-          state.who = t.getAttribute("data-who"); setView("stamp");
+          state.who = t.getAttribute("data-who"); setView("stamp", false, "push");
           var s = $("stWho"); if (s) s.focus({ preventScroll: true });
           toTabs();
         }
@@ -2833,7 +2882,7 @@
         if (panelCommon(e)) return;
         if ((t = e.target.closest("[data-goto]"))) { showPlace(Number(t.getAttribute("data-goto"))); return; }
         if (e.target.closest("[data-st-share]")) { shareStamp(); return; }
-        if ((t = e.target.closest("[data-tab]"))) setView(t.getAttribute("data-tab"), true);
+        if ((t = e.target.closest("[data-tab]"))) setView(t.getAttribute("data-tab"), true, "push");
       });
       $("panel-cup").addEventListener("change", function (e) {
         if (e.target.id !== "cupCat" || !state.cup) return;
@@ -2878,7 +2927,7 @@
         if (location.hash === "#pick") {
           if (state.loaded && state.views.length) {
             if (state.view !== "list") setView("list");
-            try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+            try { history.replaceState(history.state, "", location.pathname + location.search); } catch (e) {}
             pickPlace();
           } else if (state.loaded) toast("등록된 식당이 없어 고를 수 없습니다.");
           // 불러오기에 실패했으면 해시를 남겨 두고, 다시 시도 뒤 다시 들어온다

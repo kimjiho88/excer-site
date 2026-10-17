@@ -8,6 +8,10 @@
      ① 서버 접속 정보 (window.SUPA)
      ② 방문자 카운터
      ③ 모달 포커스 가두기
+     ④ 누름 모양과 입력 중 탭바
+     ⑤ 창과 뒤로 가기(뒤로 가기는 창만 닫는다), 폰 시트 끌어 닫기
+     ⑥ 맨 위로 단추
+     ⑦ 뒤로 와도 보던 자리로 (window.EXCER_SCROLL)
 
    이 파일은 <head> 에서 defer 없이 불러야 한다.
    페이지 안의 인라인 스크립트가 window.SUPA 를 바로 쓰기 때문이다.
@@ -298,6 +302,7 @@
         var box = list[i].target;
         if (!box.classList || !box.classList.contains("modal-backdrop")) continue;
         if (!box.hidden) {
+          onSheetOpen(box);
           if (!box.contains(document.activeElement)) {
             beforeModal = document.activeElement;
             var items = itemsIn(box);
@@ -306,12 +311,16 @@
               return function () { if (!b.contains(document.activeElement)) f.focus(); };
             }(items[0], box), 80);
           }
-        } else if (beforeModal && document.body.contains(beforeModal)) {
-          // 닫으면 열기 전 자리로 돌려준다. 안 그러면 포커스가 문서 맨 앞으로 튄다.
-          // 창 안 입력칸이 focusout 없이 숨으면 is-typing 이 남아 떠 있는 글쓰기 버튼이 숨은 채라 포커스를 못 받는다
-          if (!isTyping(beforeModal)) setTyping(false);
-          beforeModal.focus();
-          beforeModal = null;
+        } else {
+          onSheetClose(box);
+          if (beforeModal && document.body.contains(beforeModal)) {
+            // 닫으면 열기 전 자리로 돌려준다. 안 그러면 포커스가 문서 맨 앞으로 튄다.
+            // 창 안 입력칸이 focusout 없이 숨으면 is-typing 이 남아 떠 있는 글쓰기 버튼이 숨은 채라 포커스를 못 받는다
+            if (!isTyping(beforeModal)) setTyping(false);
+            beforeModal.focus();
+            beforeModal = null;
+          }
+          if (unwinding > 0) pendingFocus = document.activeElement !== document.body ? document.activeElement : null;
         }
       }
     });
@@ -343,9 +352,143 @@
     else if (kbUp && h >= fullH - 80) { kbUp = false; setTyping(false); }   // 키보드만 내려갔다
   }, { passive: true });
 
+  /* ──────────────────────────────────────────────────────────
+     ⑤ 창과 뒤로 가기 (95차)
+     창(.modal-backdrop)이 열리면 기록(history)에 칸 하나를 넣는다. 그래서 안드로이드 뒤로 가기 단추나 아이폰의
+     쓸어 넘기기는 창만 닫고, 쪽을 나가지 않는다(카카오톡 안에서 뒤로 가기가 곧장 화면을 닫던 것).
+     X 나 취소로 닫으면 그 칸을 되돌려(history.back) 다음 뒤로 가기가 전처럼 동작하게 한다. 겹친 창은 위부터 닫는다.
+     여닫는 것은 ③ 과 같은 hidden 변화로 알고, 닫을 때는 그 창의 닫기 단추(.modal-close)를 눌러 쪽의 정리 코드를 그대로 탄다.
+     새로고침 뒤 남은 칸은 다음에 여는 창이 다시 쓴다.
+     ────────────────────────────────────────────────────────── */
+  var SHEET_KEY = "excerSheet";
+  var sheets = [];                 // 열려 있는 창(아래부터 위)
+  var unwinding = 0;               // 우리가 부른 back 으로 생길 popstate 수
+  var reuseEntry = false;
+  try { reuseEntry = !!(history.state && history.state[SHEET_KEY]); } catch (e) {}
+  function sheetDepth() { try { return (history.state && history.state[SHEET_KEY]) || 0; } catch (e) { return 0; } }
+  function sheetMark(d) { var s = {}; s[SHEET_KEY] = d; return s; }
+  var pendingFocus = null;         // 되돌린 뒤 초점이 날아가면 되돌려 줄 곳
+  function onSheetOpen(box) {
+    if (sheets.indexOf(box) >= 0) return;
+    sheets.push(box);
+    try {
+      // 칸 사이를 오갈 때 브라우저가 스크롤 자리를 되돌리지 않게(창을 닫을 때 쪽이 튀고, 스크롤에 반응하는 목록이 다시 그려지던 것). 다 닫히면 auto 로
+      if (sheets.length === 1 && "scrollRestoration" in history) history.scrollRestoration = "manual";
+      if (reuseEntry) { reuseEntry = false; history.replaceState(sheetMark(sheets.length), "", location.href); }
+      else history.pushState(sheetMark(sheets.length), "", location.href);
+    } catch (e) {}
+  }
+  function sheetsDone() { try { if (!sheets.length && "scrollRestoration" in history) history.scrollRestoration = "auto"; } catch (e) {} }
+  function onSheetClose(box) {
+    var i = sheets.indexOf(box); if (i < 0) return;   // 뒤로 가기로 닫은 창은 popstate 에서 이미 목록에서 뺐다
+    sheets.splice(i, 1);
+    // 손으로 닫았다: 우리가 넣은 칸이 아직 위에 있으면 되돌린다
+    if (sheetDepth() > sheets.length) { unwinding++; try { history.back(); } catch (e) { unwinding--; sheetsDone(); } }
+    else sheetsDone();
+  }
+  function closeSheet(box) {
+    var btn = null, all = box.querySelectorAll(".modal-close, [data-close]");
+    for (var i = 0; i < all.length; i++) if (all[i].offsetWidth || all[i].offsetHeight) { btn = all[i]; break; }
+    if (btn) btn.click();
+    if (!box.hidden) box.hidden = true;   // 닫기 단추가 없거나 안 닫혔으면 바로
+  }
+  window.addEventListener("popstate", function () {
+    if (unwinding > 0) {
+      unwinding--;
+      sheetsDone();
+      // 되돌린 뒤 초점이 문서 맨 앞으로 튀었으면 닫기 직후 자리로
+      var el = pendingFocus; pendingFocus = null;
+      setTimeout(function () { if (el && document.activeElement === document.body && document.body.contains(el)) { try { el.focus({ preventScroll: true }); } catch (e) {} } }, 0);
+      return;
+    }
+    var d = sheetDepth();
+    while (sheets.length > d) {
+      var box = sheets.pop();   // 목록에서 먼저 빼야 닫힘을 본 관찰자(onSheetClose)가 되돌리기를 또 부르지 않는다
+      closeSheet(box);
+    }
+    sheetsDone();
+  });
+
+  /* 폰 시트: 머리 부분을 아래로 끌면 닫는다(스크롤이 맨 위일 때). 손잡이 모양은 site.css */
+  (function bindSheetSwipe() {
+    var y0 = null, x0 = 0, dy = 0, modal = null, box = null;
+    document.addEventListener("touchstart", function (e) {
+      var head = e.target.closest && e.target.closest(".modal-backdrop.is-sheet .modal-head");
+      if (!head || e.target.closest("button, a, input, select, textarea")) { y0 = null; return; }
+      modal = head.closest(".modal"); box = head.closest(".modal-backdrop");
+      if (!modal || modal.scrollTop > 0) { y0 = null; return; }
+      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0;
+    }, { passive: true });
+    document.addEventListener("touchmove", function (e) {
+      if (y0 === null) return;
+      var t = e.touches[0]; dy = t.clientY - y0;
+      if (dy > 0 && dy > Math.abs(t.clientX - x0)) modal.style.transform = "translateY(" + dy + "px)";
+    }, { passive: true });
+    function end() {
+      if (y0 === null) return;
+      var b = box; y0 = null;
+      if (dy > 70) { modal.style.transition = "transform .15s ease"; modal.style.transform = "translateY(100%)";
+        setTimeout(function () { closeSheet(b); modal.style.transform = ""; modal.style.transition = ""; }, 140); }
+      else { modal.style.transition = "transform .15s ease"; modal.style.transform = ""; setTimeout(function () { modal.style.transition = ""; }, 160); }
+    }
+    document.addEventListener("touchend", end, { passive: true });
+    document.addEventListener("touchcancel", end, { passive: true });
+  })();
+
+  /* ──────────────────────────────────────────────────────────
+     ⑥ 맨 위로: 아래 탭바가 있는 쪽에서 한 화면 반 넘게 내려가면 오른쪽 아래에 단추
+     ────────────────────────────────────────────────────────── */
+  function mountToTop() {
+    if (!document.querySelector(".bottom-tabbar") || document.querySelector(".to-top")) return;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "to-top"; b.setAttribute("aria-label", "맨 위로"); b.tabIndex = -1;
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+    document.body.appendChild(b);
+    b.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: reduceMotion() ? "auto" : "smooth" });
+      b.blur();
+    });
+    var shown = false, waiting = false;
+    function check() {
+      waiting = false;
+      var on = window.scrollY > window.innerHeight * 1.5;
+      if (on === shown) return;
+      shown = on; b.classList.toggle("is-on", on); b.tabIndex = on ? 0 : -1;
+    }
+    window.addEventListener("scroll", function () { if (!waiting) { waiting = true; requestAnimationFrame(check); } }, { passive: true });
+    check();
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     ⑦ 뒤로 와도 보던 자리로: 목록을 서버에서 읽은 뒤에 그리는 쪽은 브라우저가 스크롤 자리를 못 돌려준다.
+     나갈 때 자리를 적어 두고, 뒤로(또는 앞으로) 와서 처음 그린 뒤에 쪽이 restore() 를 부르면 그 자리로 간다.
+     ────────────────────────────────────────────────────────── */
+  var SCROLL_KEY = "excer_scroll:" + location.pathname + location.search;
+  window.addEventListener("pagehide", function () { try { sessionStorage.setItem(SCROLL_KEY, String(Math.round(window.scrollY))); } catch (e) {} });
+  function isBackForward() {
+    try {
+      if (window.navigation && navigation.activation && navigation.activation.navigationType) return navigation.activation.navigationType === "traverse";
+      var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      if (nav) return nav.type === "back_forward";
+      return !!(performance.navigation && performance.navigation.type === 2);
+    } catch (e) { return false; }
+  }
+  function restoreScroll() {
+    try {
+      if (!isBackForward() || location.hash) return false;
+      var y = Number(sessionStorage.getItem(SCROLL_KEY));
+      if (!(y > 0)) return false;
+      var root = document.documentElement, prev = root.style.scrollBehavior;
+      root.style.scrollBehavior = "auto"; window.scrollTo(0, y); root.style.scrollBehavior = prev;
+      return true;
+    } catch (e) { return false; }
+  }
+  window.EXCER_SCROLL = { restore: restoreScroll, isBack: isBackForward };
+
   function start() {
     startVisitCounter();
     watchModals();
+    mountToTop();
   }
 
   if (document.readyState === "loading") {
