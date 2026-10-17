@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="only light" />
+  <meta name="theme-color" content="#F7F5EF" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <title>카카오 로그인 설정 확인 | 동네친구들</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=22" />
+  <style>
+    /* 운영진 전용 확인 화면: 카카오 디벨로퍼스와 Supabase 설정이 맞는지 실제 로그인으로 확인. 사이트 자료는 건드리지 않고, 로그인 저장도 다른 화면과 따로(storageKey) */
+    .kc { max-width: 560px; margin: 0 auto; padding: 28px 16px 48px; }
+    .kc h1 { margin: 0 0 6px; font-size: var(--fs-h2); }
+    .kc-lead { margin: 0 0 18px; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; }
+    .kc-box { margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+    .kc-box h2 { margin: 0 0 8px; font-size: var(--fs-body); }
+    .kc-box ol, .kc-box ul { margin: 0; padding-left: 1.3em; font-size: var(--fs-sm); line-height: 1.7; }
+    .kc-box code { overflow-wrap: anywhere; }
+    .kc-status { font-size: var(--fs-sm); line-height: 1.7; }
+    .kc-status .kc-title { margin: 0 0 6px; font-size: var(--fs-body); font-weight: 700; }
+    .kc-status.is-ok { border-color: #2f9e6b; background: #eefaf3; }
+    .kc-status.is-warn { border-color: #c98a12; background: #fff7e6; }
+    .kc-status.is-err { border-color: #c2412d; background: #fdf0ee; }
+    .kc-status dl { display: grid; grid-template-columns: 7em minmax(0, 1fr); gap: 4px 10px; margin: 6px 0 0; }
+    .kc-status dt { color: var(--ink-2); font-weight: 600; }
+    .kc-status dd { margin: 0; overflow-wrap: anywhere; }
+    .kc-status p { margin: 0; }
+    .kc-status p + p { margin-top: 6px; }
+    .kc-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+    .kc-kakao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border: 0; border-radius: 12px; background: #FEE500; color: rgba(0, 0, 0, .85); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .kc-kakao svg { width: 18px; height: 18px; }
+    .kc-out { min-height: 48px; }
+    .kc-kakao:disabled, .kc-out:disabled { opacity: .5; cursor: default; }
+  </style>
+  <script src="assets/site-core.js?v=13"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <main class="kc" id="main">
+    <h1>카카오 로그인 설정 확인</h1>
+    <p class="kc-lead">카카오 디벨로퍼스와 Supabase 설정이 맞는지 운영진이 직접 로그인해 확인하는 화면입니다. 사이트의 글, 참석, 운영 자료는 바꾸지 않습니다.</p>
+
+    <section class="kc-box" aria-labelledby="kcSteps">
+      <h2 id="kcSteps">확인 순서</h2>
+      <ol>
+        <li>아래 '카카오 로그인'을 누릅니다.</li>
+        <li>카카오 동의 화면에 닉네임만 보이는지 봅니다.</li>
+        <li>이 화면으로 돌아와 '설정이 맞습니다'가 나오면 끝입니다.</li>
+        <li>확인이 끝나면 '로그아웃'을 누릅니다.</li>
+      </ol>
+    </section>
+
+    <div class="kc-actions">
+      <button class="kc-kakao" id="kcLogin" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.48 3 2 6.48 2 10.77c0 2.76 1.84 5.18 4.6 6.55l-.94 3.44c-.08.3.26.54.52.37l4.1-2.71c.56.08 1.13.12 1.72.12 5.52 0 10-3.48 10-7.77S17.52 3 12 3z"/></svg>카카오 로그인</button>
+      <button class="btn btn-secondary kc-out" id="kcLogout" type="button" disabled>로그아웃</button>
+    </div>
+
+    <section class="kc-box kc-status" id="kcStatus" role="status" aria-live="polite">
+      <p class="kc-title">확인 중입니다.</p>
+    </section>
+
+    <section class="kc-box" aria-labelledby="kcHelp">
+      <h2 id="kcHelp">막히면</h2>
+      <ul>
+        <li>카카오 화면에 KOE006: 카카오의 리다이렉트 URI가 <code>https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback</code> 와 글자 하나까지 같은지 봅니다.</li>
+        <li>카카오 화면에 KOE205: 요청한 동의항목이 카카오 설정에 없습니다. 화면에 적힌 항목 이름을 개발 세션에 알려 주세요.</li>
+        <li>로그인 뒤 이 화면이 아니라 홈으로 가면: Supabase의 Redirect URLs에 <code>https://excer-site.vercel.app/**</code> 가 없습니다.</li>
+        <li>이 확인으로 Supabase에 운영진 본인의 로그인 정보가 하나 생깁니다. 필요 없으면 Supabase의 Authentication &gt; Users에서 지울 수 있습니다.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+      var box = $("kcStatus"), bIn = $("kcLogin"), bOut = $("kcLogout");
+      var HERE = location.origin + location.pathname;
+      // 오류 문장에 맞는 고칠 곳(Supabase 가 돌려주는 영어 문장 기준)
+      var HINTS = [
+        [/email/i, "Supabase의 Kakao 설정에서 Allow users without an email 을 켭니다."],
+        [/provider.*(not.*enabled|disabled)|unsupported provider/i, "Supabase에서 Kakao를 Enable 하고 REST API 키와 클라이언트 시크릿을 넣습니다."],
+        [/sign ?ups? (are )?not allowed|signups? (is )?disabled/i, "Supabase Authentication 설정에서 Allow new users to sign up 을 켭니다."],
+        [/invalid_client|client secret|unauthorized_client/i, "Supabase에 넣은 REST API 키와 클라이언트 시크릿이 카카오의 값과 같은지 봅니다."],
+        [/redirect/i, "Supabase의 Redirect URLs에 https://excer-site.vercel.app/** 를 더합니다."]
+      ];
+      function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+      function show(kind, html) { box.className = "kc-box kc-status" + (kind ? " is-" + kind : ""); box.innerHTML = html; }
+      function showError(desc) {
+        var hint = "";
+        for (var i = 0; i < HINTS.length; i++) if (HINTS[i][0].test(desc)) { hint = HINTS[i][1]; break; }
+        show("err", '<p class="kc-title">로그인하지 못했습니다.</p><p>오류: ' + esc(desc) + "</p>" + (hint ? "<p>고칠 곳: " + esc(hint) + "</p>" : "<p>이 화면을 캡처해 개발 세션에 보내 주세요.</p>"));
+      }
+      function showOut() {
+        show("", '<p class="kc-title">아직 로그인하지 않았습니다.</p><p>카카오 로그인을 눌러 확인을 시작합니다.</p>');
+        bIn.disabled = false; bOut.disabled = true;
+      }
+      function showUser(u) {
+        var kid = (u.identities || []).filter(function (x) { return x.provider === "kakao"; })[0];
+        if (!kid) { show("warn", '<p class="kc-title">로그인은 되었지만 카카오 계정이 아닙니다.</p><p>로그아웃한 뒤 카카오 로그인으로 다시 확인합니다.</p>'); bIn.disabled = true; bOut.disabled = false; return; }
+        var d = kid.identity_data || {};
+        var id = String(d.provider_id || d.sub || kid.id || "");
+        var nick = d.nickname || d.name || d.full_name || d.preferred_username || d.user_name || "";
+        var email = d.email || "", pic = d.avatar_url || d.picture || "";
+        var extra = [];
+        if (email) extra.push("이메일");
+        if (pic) extra.push("프로필 사진");
+        var rows = "<dl><dt>카카오 회원번호</dt><dd>" + (id ? "받음(끝 네 자리 " + esc(id.slice(-4)) + ")" : "받지 못함") + "</dd>" +
+          "<dt>닉네임</dt><dd>" + (nick ? "받음" : "받지 않음") + "</dd>" +
+          "<dt>이메일</dt><dd>" + (email ? "받음" : "받지 않음") + "</dd>" +
+          "<dt>프로필 사진</dt><dd>" + (pic ? "받음" : "받지 않음") + "</dd></dl>";
+        if (!id) show("warn", '<p class="kc-title">로그인은 되었지만 카카오 회원번호를 받지 못했습니다.</p>' + rows + "<p>이 화면을 캡처해 개발 세션에 보내 주세요.</p>");
+        else if (extra.length) show("warn", '<p class="kc-title">로그인 성공. 다만 쓰지 않을 항목(' + extra.join(", ") + ")도 받고 있습니다.</p>" + rows + "<p>카카오 동의항목에서 " + extra.join(", ") + "을 사용 안 함으로 바꾼 뒤 로그아웃하고 다시 확인합니다. 바꿀 수 없으면 그대로 알려 주세요.</p>");
+        else show("ok", '<p class="kc-title">로그인 성공. 설정이 맞습니다.</p>' + rows);
+        bIn.disabled = true; bOut.disabled = false;
+      }
+      // 복귀 주소의 오류(?error=, #error=)를 먼저 읽고 주소를 정리
+      var raw = (location.search || "").replace(/^\?/, "") + "&" + (location.hash || "").replace(/^#/, "");
+      var q = new URLSearchParams(raw);
+      var urlErr = q.get("error_description") || q.get("error");
+      var hadCode = !!q.get("code");
+      if (urlErr) { try { urlErr = decodeURIComponent(urlErr.replace(/\+/g, " ")); } catch (e) {} }
+      if (!window.supabase || !window.supabase.createClient || !window.SUPA) {
+        bIn.disabled = true;
+        show("err", '<p class="kc-title">로그인 도구를 불러오지 못했습니다.</p><p>인터넷 연결을 확인하고 새로 고칩니다.</p>');
+        return;
+      }
+      var sb = window.supabase.createClient(window.SUPA.url, window.SUPA.anon, {
+        auth: { storageKey: "dn-kakao-check", flowType: "pkce", detectSessionInUrl: true, persistSession: true, autoRefreshToken: false }
+      });
+      bIn.disabled = true;
+      sb.auth.getSession().then(function (r) {
+        try { if (location.search || location.hash) history.replaceState(null, "", location.pathname); } catch (e) {}
+        var s = r && r.data && r.data.session;
+        if (urlErr) { showError(urlErr); bIn.disabled = false; bOut.disabled = !s; return; }
+        if (s && s.user) { showUser(s.user); return; }
+        if (hadCode) { show("err", '<p class="kc-title">로그인 정보를 받지 못했습니다.</p><p>로그인을 시작한 같은 브라우저에서 다시 시도합니다.</p>'); bIn.disabled = false; return; }
+        showOut();
+      }, function (e) { showError((e && e.message) || "알 수 없는 오류"); bIn.disabled = false; });
+      bIn.addEventListener("click", function () {
+        bIn.disabled = true;
+        show("", '<p class="kc-title">카카오로 이동합니다.</p>');
+        sb.auth.signInWithOAuth({ provider: "kakao", options: { redirectTo: HERE, scopes: "profile_nickname" } }).then(function (r) {
+          if (r && r.error) { showError(r.error.message || String(r.error)); bIn.disabled = false; }
+        }, function (e) { showError((e && e.message) || "알 수 없는 오류"); bIn.disabled = false; });
+      });
+      bOut.addEventListener("click", function () {
+        bOut.disabled = true;
+        sb.auth.signOut({ scope: "local" }).then(showOut, showOut);
+      });
+    })();
+  </script>
+</body>
+</html>
