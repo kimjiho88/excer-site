@@ -1549,10 +1549,17 @@
           (v.hasCoords ? "&lat=" + v.lat + "&lng=" + v.lng : "");
       }
 
-      /* ── 점수 ── 인기 = 한줄평 + 다시 가고 싶음 + 모임 횟수(기간 안의 것만) */
+      /* ── 점수 ── 인기 = 한줄평 쓴 사람 수 + 다시 가고 싶음 + 모임 횟수(기간 안의 것만) */
       function placeStats(v, period) {
-        var s = { notes: 0, again: 0, meets: 0, last: "" };
-        v.notes.forEach(function (n) { var d = recDay(n); if (!inPeriod(d, period)) return; s.notes++; if (n.again) s.again++; if (d > s.last) s.last = d; });
+        var s = { notes: 0, again: 0, meets: 0, last: "" }, seen = {};
+        // 같은 사람이 한 식당에 여러 번 남긴 한줄평은 한 번만 센다(다시 가고 싶음도 한 번)
+        v.notes.forEach(function (n) {
+          var d = recDay(n); if (!inPeriod(d, period)) return;
+          if (d > s.last) s.last = d;
+          var k = n.by ? "b:" + n.by : "n:" + n.id, w = seen[k];
+          if (!w) { w = seen[k] = { again: false }; s.notes++; }
+          if (n.again && !w.again) { w.again = true; s.again++; }
+        });
         (v.meetups || []).forEach(function (m) { if (!inPeriod(m.date, period)) return; s.meets++; if (m.date > s.last) s.last = m.date; });
         s.score = s.notes + s.again + s.meets;
         return s;
@@ -1719,7 +1726,7 @@
             '<span class="rk-score"><small>' + esc(when) + "</small></span></button></li>";
         }).join("");
         box.innerHTML = seg + '<div class="rk-grid">' +
-          '<section class="rk-card" aria-labelledby="rkH1"><h3 id="rkH1">' + icon("trophy") + "인기 맛집</h3><p>한줄평, 다시 가고 싶음, 모임을 하나에 1점씩 더한 점수입니다.</p>" + placeRows + "</section>" +
+          '<section class="rk-card" aria-labelledby="rkH1"><h3 id="rkH1">' + icon("trophy") + "인기 맛집</h3><p>한줄평(한 사람에 한 번), 다시 가고 싶음, 모임을 1점씩 더한 점수입니다.</p>" + placeRows + "</section>" +
           '<section class="rk-card" aria-labelledby="rkH2"><h3 id="rkH2">' + icon("medal") + "맛집 탐험가</h3><p>등록했거나 한줄평을 남긴 식당 수입니다. 누르면 도장판이 열립니다.</p>" + peopleRows + "</section></div>" +
           (feedRows ? '<section class="rk-card" aria-labelledby="rkH3"><h3 id="rkH3">' + icon("chat") + '최근 한줄평</h3><ul class="rk-list">' + feedRows + "</ul></section>" : "");
       }
