@@ -2,14 +2,13 @@
 
 카카오 로그인 코드를 넣기 전에 운영자가 두 화면에서 설정합니다. 메뉴 이름은 화면 개편에 따라 조금 다를 수 있습니다.
 
-비밀 값(Client Secret)은 Supabase 설정 칸에만 붙여 넣습니다. 채팅, 저장소, 소식 글에는 올리지 않습니다.
+비밀 값(클라이언트 시크릿)은 Supabase 설정 칸에만 붙여 넣습니다. 채팅, 저장소, 소식 글에는 올리지 않습니다.
 
 ## 넣을 값
 
 | 칸 | 값 |
 |---|---|
-| 사이트 도메인(카카오) | `https://excer-site.vercel.app` |
-| Redirect URI(카카오) | `https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback` |
+| 리다이렉트 URI(카카오) | `https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback` |
 | Redirect URLs(Supabase) | `https://excer-site.vercel.app/**` |
 | 개인정보 처리방침(카카오에 칸이 있으면) | `https://excer-site.vercel.app/privacy.html` |
 
@@ -18,36 +17,42 @@
 지도와 공유에 쓰는 앱(excer)에 카카오 로그인을 켭니다. 새 앱은 만들지 않습니다.
 
 1. 내 애플리케이션에서 **excer** 를 엽니다.
-2. 앱의 플랫폼 **Web**: 사이트 도메인에 `https://excer-site.vercel.app` 이 있는지 봅니다(지도를 켤 때 넣어 둠).
-3. **카카오 로그인**: 사용 설정을 **ON**.
-4. 카카오 로그인의 **Redirect URI**: 위의 값 하나만 등록합니다.
-5. 카카오 로그인의 **동의항목**:
+2. **카카오 로그인**: 사용 설정을 **ON**.
+3. 카카오 로그인의 **동의항목**:
    - 닉네임(`profile_nickname`): **선택 동의**. 동의 목적은 '모임 참석 본인 확인'. 필수 동의는 카카오 검수가 필요할 수 있어 선택으로 둡니다.
-   - 프로필 사진, 카카오계정(이메일): 설정하지 않습니다(받지 않음).
-6. **보안**: Client Secret 코드를 만들고 활성화 상태를 **사용함**으로. 이 코드는 2단계의 Supabase 칸에만 넣습니다.
-7. **앱 키**: REST API 키를 확인합니다(2단계의 Client ID 칸).
-8. 개인정보 처리방침 URL 칸이 있으면 위의 값을 넣습니다.
+   - 프로필 사진, 카카오계정(이메일): **사용 안 함**(받지 않음).
+4. **앱 > 플랫폼 키**(화면에 따라 앱 키)에서 **REST API 키**를 엽니다. 개편 전 화면이면 아래 두 칸이 카카오 로그인 메뉴 안에 있습니다.
+   - **리다이렉트 URI**: 위의 값 하나만 등록합니다. 글자가 하나라도 다르면 로그인할 때 KOE006 오류가 납니다.
+   - **클라이언트 시크릿**: 코드를 확인하고(없으면 만들기) 사용 상태로 둡니다.
+5. REST API 키 값과 클라이언트 시크릿 코드는 2단계의 Supabase 칸에 붙여 넣기만 합니다.
+6. 개인정보 처리방침 URL 칸이 있으면 위의 값을 넣습니다.
 
 ## 2. Supabase 대시보드
 
-1. **Authentication > Sign In / Providers > Kakao** 를 엽니다. 이미 켜져 있으면 값만 확인합니다.
-2. **Enable** 을 켭니다.
-3. **REST API Key(Client ID)**: 1단계 7의 REST API 키. **Client Secret Code**: 1단계 6의 코드.
+1. **Authentication > Sign In / Providers > Kakao** 를 엽니다.
+2. 이미 켜져 있으면 **REST API Key** 가 1단계 excer 앱의 REST API 키와 같은지 봅니다. 다르면 바꾸지 말고 개발 세션에 알립니다(바꾸면 이미 카카오로 로그인한 계정이 이어지지 않습니다).
+3. 꺼져 있으면 **Enable** 을 켜고 **REST API Key** 에 REST API 키, **Client Secret Code** 에 클라이언트 시크릿을 넣습니다.
 4. **Allow users without an email** 을 켭니다(이메일을 받지 않으므로).
 5. **Save**.
-6. **Authentication > URL Configuration**: Redirect URLs 에 `https://excer-site.vercel.app/**` 가 있는지 보고 없으면 더합니다. Site URL 은 이미 있으면 그대로 둡니다.
+6. **Authentication > URL Configuration**: Redirect URLs 에 `https://excer-site.vercel.app/**` 가 있는지 보고 없으면 더합니다. Site URL 은 그대로 둡니다.
 
-## 3. 끝나면
+## 3. 같이 확인할 것
 
-- '설정 끝' 이라고만 알려 주세요. 키나 비밀 값은 보내지 않습니다.
-- 그다음 작업(코드)
+- **Supabase 프로젝트 지역**: 대시보드 위쪽 **Connect** 를 누르면 나오는 연결 주소에 `ap-northeast-2` 같은 지역 글자가 있습니다(ap-northeast-2 서울, ap-northeast-1 도쿄, ap-southeast-1 싱가포르, us-east-1 미국 동부). 개인정보 처리방침의 '이전 국가'를 이 값에 맞춥니다.
+- **옛 방문 기록 정리**: `sql/2026-10-16-privacy-cleanup.sql` 을 아직 안 돌렸으면 `sql/backup.sql` 다음에 돌립니다(sql/README.md).
+
+## 4. 끝나면
+
+- '설정 끝' 이라고만 알려 주세요. 키나 비밀 값은 보내지 않습니다. 2단계 2에서 키가 달랐으면 그것도 알려 주세요.
+- 그다음 순서
   1. 서버: 카카오 계정과 채팅방 닉네임을 하나씩 묶는 표와 함수. 참석, 취소, 모임 올리기를 로그인한 계정으로만.
   2. 소식 화면: '카카오로 확인' 단추와 닉네임 고르기. 그 뒤 참석은 한 번 누르기.
   3. 운영 화면: 묶기 목록, 풀기와 바꾸기, 같은 닉네임을 둘이 고른 경우.
-  4. 개인정보 처리방침에 카카오 로그인 항목(카카오 회원번호, 카카오 닉네임, 보관 기간)을 더하고 시행 7일 전에 소식 공지로 알림.
+  4. 개인정보 처리방침에 카카오 로그인 항목(카카오 회원번호, 카카오 닉네임, 보유 기간)을 더하고, 운영진이 소식 공지로 알립니다. 로그인은 공지 7일 뒤부터 켭니다(처리방침의 변경 고지).
+  5. 켜진 뒤 폰(카카오톡 안 브라우저)에서 한 번 참석해 봅니다.
 
 ## 지킬 것
 
-- Client Secret 과 운영진 비밀번호는 채팅, 저장소, 소식 글에 올리지 않습니다.
-- Redirect URI 는 위의 값 하나만 둡니다.
+- 클라이언트 시크릿과 운영진 비밀번호는 채팅, 저장소, 소식 글에 올리지 않습니다.
+- 리다이렉트 URI 는 위의 값 하나만 둡니다.
 - 동의항목은 닉네임 하나로 시작합니다. 쓰지 않는 항목은 받지 않습니다.
