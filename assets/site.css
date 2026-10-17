@@ -627,7 +627,7 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 }
 .modal-backdrop[hidden] { display: none; }
 .modal {
-  width: min(560px, 100%); max-height: min(88vh, 760px); max-height: min(88dvh, 760px); overflow: auto;
+  width: min(560px, 100%); max-height: min(88vh, 760px); max-height: min(88dvh, 760px); overflow: auto; overscroll-behavior: contain;   /* 창 안을 끝까지 내려도 뒤 쪽이 따라 움직이거나 당겨서 새로고침되지 않게 */
   border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-float);
   padding: 24px;
 }
@@ -639,10 +639,21 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:
 /* 모바일: 아래에서 올라오는 시트 */
 @media (max-width: 640px) {
   .modal-backdrop.is-sheet { padding: 0; place-items: end stretch; }
-  .modal-backdrop.is-sheet .modal { width: 100%; max-width: none; max-height: 92vh; max-height: 92dvh; border-radius: 12px 12px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .modal-backdrop.is-sheet .modal { position: relative; width: 100%; max-width: none; max-height: 92vh; max-height: 92dvh; border-radius: 12px 12px 0 0; padding-top: 28px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  /* 손잡이: 머리를 아래로 끌면 닫힌다는 표시(site-core.js ⑤) */
+  .modal-backdrop.is-sheet .modal::before { content: ""; position: absolute; left: 50%; top: 10px; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--line-strong); }
   .modal-backdrop.is-sheet .modal-foot { flex-direction: column-reverse; }
   .modal-backdrop.is-sheet .modal-foot .btn { width: 100%; }
 }
+/* 맨 위로(site-core.js ⑥): 한 화면 반 넘게 내려가면 보인다. 폰은 탭바 위, 떠 있는 단추(.fab)가 있으면 그 위 */
+.to-top { position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: calc(var(--z-tabbar) - 1); display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-card); cursor: pointer; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+.to-top svg { width: 20px; height: 20px; }
+.to-top.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+@media (max-width: 860px) { body:has(.fab:not(.is-hidden)) .to-top { bottom: calc(144px + env(safe-area-inset-bottom)); } html.is-typing .to-top { display: none; } }
+@media (min-width: 861px) { .to-top { right: 24px; bottom: 24px; } }
+@media (forced-colors: active) { .to-top { border: 1px solid CanvasText; } }
+@media print { .to-top { display: none !important; } }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; z-index: var(--z-toast);

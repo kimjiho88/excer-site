@@ -29,7 +29,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=22" />
+  <link rel="stylesheet" href="assets/site.css?v=23" />
 
   <style>
     /* ============================================================
@@ -589,7 +589,7 @@
     /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=13"></script>
+  <script src="assets/site-core.js?v=14"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=13"></script>
   <script src="assets/bung-photo.js?v=4"></script>
@@ -635,7 +635,7 @@
           <div class="tools-row">
             <label class="search-box">
               <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
-              <input id="searchInput" class="input" type="search" placeholder="제목, 내용 검색" aria-label="소식 검색" autocomplete="off" />
+              <input id="searchInput" class="input" type="search" placeholder="제목, 내용 검색" aria-label="소식 검색" enterkeyhint="search" autocomplete="off" />
             </label>
             <button class="btn btn-primary" id="boardWriteBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg><span id="boardWriteLabel">글쓰기</span></button>
           </div>
@@ -914,7 +914,7 @@
       </div>
       <div class="map-search">
         <label class="sr-only" for="mapQ">장소 검색</label>
-        <input id="mapQ" class="input" type="search" maxlength="60" placeholder="가게, 역, 건물 이름" autocomplete="off" />
+        <input id="mapQ" class="input" type="search" maxlength="60" placeholder="가게, 역, 건물 이름" autocomplete="off" enterkeyhint="search" />
         <button id="mapGo" class="btn btn-primary is-sm" type="button">검색</button>
       </div>
       <ul id="mapResults" class="map-results" aria-live="polite"></ul>
@@ -1011,7 +1011,7 @@
       try {
         const key = Object.keys(CAT_KEYS).find((k) => CAT_KEYS[k] === state.category), u = new URL(location.href);
         if (key) u.searchParams.set("cat", key); else u.searchParams.delete("cat");
-        history.replaceState(null, "", u.pathname + u.search + u.hash);
+        history.replaceState(history.state, "", u.pathname + u.search + u.hash);
       } catch (e) {}
     }
     /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
@@ -1125,7 +1125,7 @@
     function openPromptFromHash() {
       if (location.hash !== "#write-prompt") return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }   // 해시는 남겨 두어 다시 시도 뒤에 열리게
-      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      try { history.replaceState(history.state, "", location.pathname + location.search); } catch (e) {}
       const p = currentPrompt();
       openWriteModal(null, { category: p.cat, title: p.title });
     }
@@ -1295,6 +1295,8 @@
         if (dm && reset) { state.past.offset = past.length; state.past.more = past.length === PAGE_SIZE; }
         state.loading = false;
         renderList();
+        // 뒤로 와서 처음 그렸으면 보던 자리로(목록은 읽은 뒤에 그려서 브라우저가 못 돌려준다)
+        if (reset && !state.restored) { state.restored = true; if (window.EXCER_SCROLL) EXCER_SCROLL.restore(); }
         loadMyReactions(rows.map((r) => r.id));
         loadAttend(bungIds(rows));
         return;
@@ -2920,7 +2922,7 @@
     /* 모임 모집 글은 /bung?id= 주소로 공유한다(카카오톡이 # 뒤를 버려도 그 벙이 열리게. bung.html 이 #post- 로 넘긴다) */
     function bungUrl(id) { return location.origin + "/bung?id=" + id; }
     function shareUrl(id) { const p = findPost(id); return p && p.category === "벙 소식" ? bungUrl(id) : postUrl(id); }
-    function syncHash(id) { try { history.replaceState(null, "", Number(id) > 0 ? "#post-" + id : location.pathname + location.search); } catch (e) {} }
+    function syncHash(id) { try { history.replaceState(history.state, "", Number(id) > 0 ? "#post-" + id : location.pathname + location.search); } catch (e) {} }   // 상태값은 그대로(공통 코어의 창 칸 표시)
     async function copyText(text) {
       try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch (e) {}
       try {
@@ -3237,7 +3239,7 @@
           if (la && ln && isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) { pm.lat = lat; pm.lng = lng; }
         }
         ["write", "place", "addr", "lat", "lng"].forEach((k) => u.searchParams.delete(k));
-        history.replaceState(null, "", u.pathname + u.search + u.hash);
+        history.replaceState(history.state, "", u.pathname + u.search + u.hash);
         // 푸터의 '건의하기'(write=suggest): 자유 글에 [건의] 제목으로 연다. 운영진이 소식에서 건의와 신고를 모아 본다
         if (w === "suggest") capsReady.then(() => openWriteModal(null, { category: "자유", title: "[건의] " }));
         else if (pm) capsReady.then(() => openWriteModal(null, { category: "벙 소식", meta: pm }));
