@@ -476,8 +476,9 @@
     .me-opt { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 15px; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
     .me-opt:hover, .me-opt:focus-visible { border-color: var(--brand); background: var(--brand-soft); }
     .me-opt.is-now { border-color: var(--brand); color: var(--brand); font-weight: 700; }
-    #meBackdrop { z-index: 250; }
-    @media (max-width: 640px) { #meBackdrop { place-items: start center; padding-top: max(16px, 6vh); } }
+    #meBackdrop, #meLinkBackdrop { z-index: 250; }
+    @media (max-width: 640px) { #meBackdrop, #meLinkBackdrop { place-items: start center; padding-top: max(16px, 6vh); } }
+    .me-link-name { margin: 0; padding: 12px 14px; border: 1px solid rgba(75, 42, 130, 0.18); border-radius: 12px; background: var(--brand-soft); color: var(--brand); font-size: 18px; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
     /* 모집 글 상세의 모임 카드: 언제, 어디서, 몇 명이 먼저 보이고 참석 단추가 그 바로 아래 */
     .bung-card { margin: 0 0 16px; padding: 16px; border: 1px solid rgba(75, 42, 130, 0.14); border-radius: 14px; background: linear-gradient(180deg, #F7F4FB, var(--surface) 70%); }
     .bc-when { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -883,6 +884,23 @@
       <div class="modal-foot">
         <button id="meFreeBtn" class="btn btn-secondary" type="button">목록에 없음</button>
         <button id="meOk" class="btn btn-primary" type="button" hidden>이 이름으로</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 닉네임 링크(?me=이름): 운영 화면에서 만든 링크로 들어오면 이 기기의 내 닉네임으로 정할지 묻는다 -->
+  <div id="meLinkBackdrop" class="modal-backdrop" hidden>
+    <div class="modal pass-modal" role="dialog" aria-modal="true" aria-labelledby="meLinkTitle" aria-describedby="meLinkDesc">
+      <div class="modal-head">
+        <h3 id="meLinkTitle">내 닉네임 정하기</h3>
+        <button id="meLinkClose" class="modal-close" type="button" aria-label="닫기"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <p id="meLinkDesc" class="field-hint" style="margin:0 0 10px">이 기기의 내 닉네임을 아래 이름으로 정합니다.</p>
+      <p id="meLinkName" class="me-link-name"></p>
+      <p id="meLinkNow" class="field-hint" style="margin:8px 0 0" hidden></p>
+      <div class="modal-foot">
+        <button id="meLinkNo" class="btn btn-secondary" type="button">취소</button>
+        <button id="meLinkOk" class="btn btn-primary" type="button">이 이름으로 정하기</button>
       </div>
     </div>
   </div>
@@ -2560,6 +2578,34 @@
       }, 250);
     }
     function wNickPicked(nick) { $("wNick").value = nick; syncWNick(); syncAuthor(); renderPreview(); setError("wNick", ""); }
+    /* 닉네임 링크(?me=이름): 운영진이 운영 화면에서 만들어 보낸 링크. 정하면 출처 admin(목록에서 고른 것과 같이 다시 묻지 않는다) */
+    const LINK = { nick: "", back: null };
+    function openMeLink(nick) {
+      LINK.nick = nick; LINK.back = document.activeElement;
+      const now = savedNick();
+      $("meLinkName").textContent = nick;
+      $("meLinkNow").hidden = !now;
+      $("meLinkNow").textContent = now ? "지금: " + now : "";
+      $("meLinkBackdrop").hidden = false;
+      setTimeout(() => $("meLinkOk").focus(), 30);
+    }
+    function closeMeLink() {
+      if ($("meLinkBackdrop").hidden) return;
+      $("meLinkBackdrop").hidden = true; LINK.nick = "";
+      const back = LINK.back; LINK.back = null;
+      if (back && back.isConnected) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+    }
+    function okMeLink() {
+      const nick = LINK.nick; if (!nick) return;
+      saveNick(nick, "admin"); closeMeLink(); syncMe(); renderList();
+      showToast("내 닉네임: " + nick);
+    }
+    function meFromLink(raw) {
+      const nick = nfc(raw).slice(0, 24);
+      if (!nick || /[\u0000-\u001F\u007F-\u009F‪-‮⁦-⁩]/.test(nick)) return;
+      if (nickKey(nick) === nickKey(savedNick())) { saveNick(nick, "admin"); syncMe(); showToast("내 닉네임: " + nick); return; }   // 이미 같은 이름이면 묻지 않는다
+      openMeLink(nick);
+    }
     /* ── 지도에서 장소 찾기(카카오 장소 검색): 모집 글의 장소 칸. 서버 bung_place 와 KAKAO.jsKey 가 있을 때만 단추가 보인다. SDK 는 처음 찾을 때 읽는다 ── */
     const MAP = { loading: null, failed: false, map: null, marker: null, results: [], picked: null };
     const SEOUL_GANGNAM = { lat: 37.4979, lng: 127.0276 };
@@ -2977,6 +3023,10 @@
       $("meFree").addEventListener("input", () => { $("meFreeErr").hidden = true; });
       $("meClose").addEventListener("click", closeMe);
       $("meBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeMe(); });
+      $("meLinkOk").addEventListener("click", okMeLink);
+      $("meLinkNo").addEventListener("click", closeMeLink);
+      $("meLinkClose").addEventListener("click", closeMeLink);
+      $("meLinkBackdrop").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeMeLink(); });
       $("attNick").addEventListener("input", onHostNickInput);
       $("attSugg").addEventListener("click", (e) => { const b = e.target.closest(".me-opt"); if (!b) return; $("attNick").value = b.dataset.name; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; $("attPass").focus(); });
       let pvTimer = null, slotTimer = null;
@@ -3129,6 +3179,7 @@
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         if (!$("shareBackdrop").hidden) { closeShare(); return; }
+        if (!$("meLinkBackdrop").hidden) { closeMeLink(); return; }
         if (!$("meBackdrop").hidden) { closeMe(); return; }
         if (!$("mapBackdrop").hidden) { closeMapPicker(); return; }
         if (!$("passBackdrop").hidden) { closePassModal(null); return; }
@@ -3163,6 +3214,14 @@
     loadPosts(true).then(openPromptFromHash).then(popularThen).then(openFromHash);
     setTimeout(() => { if (window.KSHARE && KSHARE.available()) KSHARE.load().catch(() => {}); }, 2000);   // 카카오톡 공유 SDK 를 미리 읽어 둔다(모임 카드의 공유를 누르면 바로 보내게)
     window.addEventListener("hashchange", openFromHash);
+    // 운영진이 보낸 닉네임 링크(news.html?me=이름): 주소에서 지우고 이 기기의 내 닉네임으로 정할지 묻는다
+    try {
+      const u = new URL(location.href), me = u.searchParams.get("me");
+      if (me != null) {
+        u.searchParams.delete("me"); history.replaceState(null, "", u.pathname + u.search + u.hash);
+        meFromLink(me);
+      }
+    } catch (e) {}
     // 홈의 '모임 올리기'(news.html?cat=bung&write=1): 서버 형식을 안 뒤 모임 모집 창을 연다. 주소에서 write 는 지운다
     try {
       const u = new URL(location.href);
