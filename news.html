@@ -3168,9 +3168,20 @@
       const u = new URL(location.href);
       const w = u.searchParams.get("write");
       if (w === "1" || w === "suggest") {
-        u.searchParams.delete("write"); history.replaceState(null, "", u.pathname + u.search + u.hash);
+        // 맛집의 '여기서 모임 열기'(place, addr, lat, lng): 장소 칸과 지도 위치를 채워 연다
+        const place = (u.searchParams.get("place") || "").trim().slice(0, 60);
+        const pm = place ? { place } : null;
+        if (pm) {
+          const addr = (u.searchParams.get("addr") || "").trim().slice(0, 100);
+          const la = u.searchParams.get("lat"), ln = u.searchParams.get("lng"), lat = Number(la), lng = Number(ln);
+          if (addr) pm.addr = addr;
+          if (la && ln && isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) { pm.lat = lat; pm.lng = lng; }
+        }
+        ["write", "place", "addr", "lat", "lng"].forEach((k) => u.searchParams.delete(k));
+        history.replaceState(null, "", u.pathname + u.search + u.hash);
         // 푸터의 '건의하기'(write=suggest): 자유 글에 [건의] 제목으로 연다. 운영진이 소식에서 건의와 신고를 모아 본다
         if (w === "suggest") capsReady.then(() => openWriteModal(null, { category: "자유", title: "[건의] " }));
+        else if (pm) capsReady.then(() => openWriteModal(null, { category: "벙 소식", meta: pm }));
         else capsReady.then(() => openWriteModal(null, loadDraft() && loadDraft().category === "벙 소식" ? null : { category: "벙 소식" }));
       }
     } catch (e) {}
