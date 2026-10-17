@@ -293,6 +293,12 @@
     .bg-ask { display: inline-flex; flex-wrap: wrap; align-items: end; gap: 6px; padding: 8px; border: 1px dashed var(--brand); border-radius: var(--r-sm); background: var(--brand-soft); max-width: 100%; }
     .bg-ask label { display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); font-weight: 600; }
     .bg-ask .input { min-height: 36px; width: 220px; max-width: 70vw; }
+    /* 닉네임 정해 주기: 링크 만들기와 이름 한 번에 고치기 */
+    .bg-tf { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+    .bg-tf label { display: grid; gap: 2px; flex: 1 1 220px; min-width: 0; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+    .bg-tf .input { min-height: 40px; width: 100%; }
+    .bg-th { margin: 6px 0 0; font-size: 14px; }
+    .bg-tools { scroll-margin-top: calc(var(--top-h, 0px) + 60px); }
     details.bg-log > summary, details.bg-logp > summary { cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; color: var(--ink-2); }
     details.bg-log > summary::-webkit-details-marker, details.bg-logp > summary::-webkit-details-marker { display: none; }
     details.bg-log > summary::before, details.bg-logp > summary::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 2px 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
@@ -2268,6 +2274,101 @@
       const dis = BG.missing ? " disabled" : "";
       return `<li id="bung-${p.id}" data-bid="${p.id}"><span class="tag in">${esc(p.category)}</span><span class="pn">${esc(p.title)}</span>${p.pinned ? `<span class="tag good">고정</span>` : ""}<span class="bg-when">${esc(p.author)} ${esc(md(kstDate(p.created_at)))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="pin" data-id="${p.id}" data-to="${p.pinned ? "0" : "1"}"${dis}>${p.pinned ? "고정 해제" : "고정"}</button><button type="button" class="text-btn" data-bg="pass" data-id="${p.id}"${dis}>글 비밀번호 재설정</button><button type="button" class="text-btn is-danger" data-bg="delete" data-id="${p.id}"${dis}>삭제</button><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></span></li>`;
     }
+    /* ── 닉네임 정해 주기 ──
+       링크: news.html?me=이름. 받은 사람이 열고 '이 이름으로 정하기'를 누르면 그 기기의 내 닉네임이 된다(서버는 바꾸지 않는다).
+       이름 한 번에 고치기: 모임장(모든 글)과 참석 명단(모임 글)에서 같은 이름을 모두 바른 이름으로. 서버의 author, rename 조치를 글마다 부른다 */
+    const BGT = { nick: "", link: "", warn: "", from: "", to: "", busy: false };
+    const nkey = (s) => String(s || "").normalize("NFC").replace(/[­​-‏⁠-⁯﻿︀-️]/g, "").replace(/[\s 　]+/g, " ").trim().toLowerCase();
+    function meLink(nick) { const u = new URL("news.html", location.href); u.search = ""; u.hash = ""; u.searchParams.set("me", nick); return u.href; }
+    // 소식에 쓰인 이름(모임장, 참석 명단)과 그 수. 같은 사람 판단은 서버와 같은 열쇠(보이지 않는 글자, 공백 묶음, 대소문자)
+    function bgUsedNames() {
+      const m = new Map();
+      const add = (n, kind) => { const k = nkey(n); if (!k) return; const x = m.get(k) || { name: n, author: 0, attend: 0 }; x[kind]++; m.set(k, x); };
+      BG.posts.forEach((p) => { add(p.author, "author"); (BG.att[p.id] || []).forEach((a) => add(a.nick, "attend")); });
+      BG.others.forEach((p) => add(p.author, "author"));
+      return m;
+    }
+    function bgtCountText() {
+      if (!BG.loaded || !norm(BGT.from)) return "";
+      const f = bgUsedNames().get(nkey(BGT.from));
+      return f ? "모임장 " + f.author + "건, 참석 명단 " + f.attend + "건" : "그 이름은 모임장과 참석 명단에 없습니다.";
+    }
+    function bgToolsHTML() {
+      const used = bgUsedNames(), W = SH.parsed && SH.parsed.boardWho;
+      const unknown = W ? [...used.values()].filter((x) => W(x.name).k === "unknown").sort((a, b) => (b.author + b.attend) - (a.author + a.attend) || a.name.localeCompare(b.name, "ko")) : [];
+      const off = BGT.busy || BG.busy || BG.missing ? " disabled" : "";
+      return `<div class="panel bg-tools" id="bg-tools">
+          <h2>닉네임 정해 주기</h2>
+          <p class="sub">본인에게 보낼 링크를 만듭니다. 받은 사람이 링크를 열고 '이 이름으로 정하기'를 누르면 그 기기의 내 닉네임이 됩니다.</p>
+          <form class="bg-tf" data-bgt="link">
+            <label><span>멤버 닉네임</span><input class="input" id="bgtNick" list="bgNames" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" value="${esc(BGT.nick)}" /></label>
+            <button type="submit" class="btn btn-primary is-sm">링크 만들기</button>
+          </form>
+          ${BGT.link ? `<div class="token-box"><input class="input" id="bgtLink" readonly value="${esc(BGT.link)}" aria-label="닉네임 링크" /><button type="button" class="btn btn-primary is-sm" data-copy="bgtLink">복사</button></div>${BGT.warn ? `<p class="notice">${esc(BGT.warn)}</p>` : ""}` : ""}
+          <h3 class="bg-th">이름 한 번에 고치기</h3>
+          <p class="sub">모임장과 모임 글의 참석 명단에서 그 이름을 모두 바른 이름으로 바꿉니다. 글마다 기록에 남습니다. 댓글의 이름은 그대로입니다.</p>
+          ${unknown.length ? `<p class="sub">멤버 탭에 없는 이름</p><div class="chips">${unknown.slice(0, 24).map((x) => `<button type="button" data-bgtfrom="${esc(x.name)}" aria-label="${esc(x.name)}, ${x.author + x.attend}건, 지금 이름 칸에 넣기">${esc(x.name)}<b>${x.author + x.attend}</b></button>`).join("")}</div>` : ""}
+          <form class="bg-tf" data-bgt="rename">
+            <label><span>지금 이름</span><input class="input" id="bgtFrom" list="bgUsed" maxlength="24" placeholder="소식에 쓰인 이름" autocomplete="off" value="${esc(BGT.from)}" /></label>
+            <label><span>바른 이름</span><input class="input" id="bgtTo" list="bgNames" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" value="${esc(BGT.to)}" /></label>
+            <button type="submit" class="btn btn-primary is-sm"${off}>${BGT.busy ? "고치는 중" : "모두 고치기"}</button>
+          </form>
+          <p class="sub" id="bgtCount" aria-live="polite">${esc(bgtCountText())}</p>
+          <datalist id="bgUsed">${[...used.values()].map((x) => `<option value="${esc(x.name)}"></option>`).join("")}</datalist>
+        </div>`;
+    }
+    function bgtMakeLink() {
+      const n = norm(String(BGT.nick || "").normalize("NFC"));
+      if (!n) { toast("멤버 닉네임을 적어 주세요."); const el = $("bgtNick"); if (el) el.focus(); return; }
+      if (/[\u0000-\u001F\u007F-\u009F‪-‮⁦-⁩]/.test(n)) { toast("쓸 수 없는 글자가 있습니다."); return; }
+      const members = people().filter((p) => p.status === "in" && !p.dflt).map((p) => nkey(p.name));
+      BGT.nick = n; BGT.link = meLink(n);
+      BGT.warn = members.length && members.indexOf(nkey(n)) < 0 ? "대화 기록의 지금 멤버에 없는 이름입니다. 철자를 확인해 주세요." : "";
+      renderBung();
+      const l = $("bgtLink"); if (l) { l.focus(); try { l.select(); } catch (e) {} }
+    }
+    async function bgtRenameAll() {
+      if (localOnly || !PASS || BG.busy || BGT.busy) return;
+      if (BG.missing) { toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); return; }
+      const from = norm(String(BGT.from || "").normalize("NFC")), to = norm(String(BGT.to || "").normalize("NFC")), kf = nkey(from), kt = nkey(to);
+      if (!kf || !kt) { toast("지금 이름과 바른 이름을 적어 주세요."); const el = $(kf ? "bgtTo" : "bgtFrom"); if (el) el.focus(); return; }
+      if (kf === kt) { toast("두 이름이 같습니다."); return; }
+      // 모임장: 읽어 둔 글(모임 글 전부, 다른 글 40건)과, 그 이름으로 서버에서 찾은 글. 참석 명단: 모임 글
+      const authors = new Set(), variants = new Set([from]);
+      BG.posts.concat(BG.others).forEach((p) => { if (nkey(p.author) === kf) { authors.add(p.id); variants.add(p.author); } });
+      for (const v of variants) { try { const rows = await rest("site_posts_v?select=id,author&author=eq." + encodeURIComponent(v) + "&limit=1000"); (Array.isArray(rows) ? rows : []).forEach((p) => { if (nkey(p.author) === kf) authors.add(p.id); }); } catch (e) {} }
+      const att = [];
+      BG.posts.forEach((p) => (BG.att[p.id] || []).forEach((a) => { if (nkey(a.nick) === kf) att.push({ id: p.id, nick: a.nick }); }));
+      if (!authors.size && !att.length) { toast("그 이름은 모임장과 참석 명단에 없습니다."); return; }
+      if (!window.confirm("'" + from + "' 을(를) '" + to + "' (으)로 바꿉니다. 모임장 " + authors.size + "건, 참석 명단 " + att.length + "건. 바꿀까요?")) return;
+      BGT.busy = true; BG.busy = true; renderBung();
+      let nA = 0, nR = 0, taken = 0, failed = 0, stop = "";
+      const call = (action, id, args) => rpc("bung_admin", { p_pass: PASS, p_action: action, p_post_id: id, p_args: args })
+        .catch((e) => ({ ok: false, error: missingFn(e) ? "MISSING" : "NET" }));
+      try {
+        for (const id of authors) {
+          const r = await call("author", id, { author: to });
+          if (r && r.ok) { nA++; bgApply(id, r); continue; }
+          const code = r && r.error;
+          if (code === "BAD_PASS" || code === "LOCKED" || code === "MISSING") { stop = code; break; }
+          if (code !== "NOT_FOUND") failed++;
+        }
+        if (!stop) for (const x of att) {
+          const r = await call("rename", x.id, { nick: x.nick, to });
+          if (r && r.ok) { nR++; bgApply(x.id, r); continue; }
+          const code = r && r.error;
+          if (code === "NICK_TAKEN") { taken++; continue; }   // 바른 이름이 이미 그 명단에 있다(두 이름으로 참석). 그 글에서 직접 뺀다
+          if (code === "BAD_PASS" || code === "LOCKED" || code === "MISSING") { stop = code; break; }
+          if (code !== "NOT_FOUND" && code !== "NOT_ATTENDING") failed++;
+        }
+      } finally { BGT.busy = false; BG.busy = false; }
+      if (stop === "BAD_PASS" || stop === "LOCKED") { sessionLost(stop); return; }
+      if (stop === "MISSING") { BG.missing = true; toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); boardChanged(); return; }
+      await bungLogLoad(null);
+      BGT.from = ""; BGT.nick = to; BGT.link = meLink(to); BGT.warn = "";
+      toast("'" + to + "' (으)로 고쳤습니다. 모임장 " + nA + "건, 참석 명단 " + nR + "건" + (taken ? ", 이미 명단에 있어 건너뜀 " + taken + "건" : "") + (failed ? ", 못 고침 " + failed + "건" : "") + ".");
+      boardChanged();
+    }
     function renderBung() {
       const host = document.querySelector('[data-panel="bung"]'); if (!host) return;
       if (localOnly) { host.innerHTML = `<div class="panel"><h2>소식 관리</h2><p class="sub">서버에 연결해 열었을 때만 볼 수 있습니다.</p></div>`; return; }
@@ -2277,15 +2378,17 @@
       const past = all.filter((x) => x.st.past).sort((a, b) => (b.st.start || "").localeCompare(a.st.start || ""));
       const shown = BG.more ? past : past.slice(0, 8);
       const was = document.activeElement && host.contains(document.activeElement) ? document.activeElement.dataset : null;   // 다시 그려도 포커스를 같은 단추에
+      const wasId = was && document.activeElement.id && /^bgt/.test(document.activeElement.id) ? document.activeElement.id : "";   // 닉네임 칸은 id 로
       host.innerHTML = `<div class="panel"><h2>소식 관리 <small>${BG.busy && !BG.loaded ? "읽는 중" : BG.loaded ? "모임 글 " + BG.posts.length + "건, 다른 글 " + BG.others.length + "건" : ""}</small></h2>
           <p class="sub">운영진의 소식 관리는 모두 이 탭에서 합니다(소식 화면에는 운영진 단추가 없습니다). 모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 고정, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 공지와 다른 글은 아래 '다른 글' 에서 고정, 글 비밀번호, 삭제. 참석과 취소, 모든 조치는 맨 아래 기록에 남고 180일 뒤 지워집니다.</p>
           ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL}을 차례로 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
           ${BG.failed ? `<p class="notice">모임 글을 읽지 못했습니다. 연결을 확인하고 다시 읽기를 눌러 주세요.</p>` : ""}
-          <div class="chips"><button type="button" class="btn btn-secondary" data-bg="reload"${BG.busy ? " disabled" : ""}>다시 읽기</button><a class="btn btn-secondary" href="news.html?cat=bung" target="_blank" rel="noopener">소식의 모임 모집</a></div>
+          <div class="chips"><button type="button" class="btn btn-secondary" data-bg="reload"${BG.busy ? " disabled" : ""}>다시 읽기</button><a class="btn btn-secondary" href="news.html?cat=bung" target="_blank" rel="noopener">소식의 모임 모집</a><button type="button" class="btn btn-secondary" data-bgtjump="tools">닉네임 정해 주기</button></div>
           <datalist id="bgNames">${names.map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist></div>
         <div class="panel"><h2>다가오는 모임 <small>${up.length}건</small></h2>${up.length ? up.map((x) => bgCard(x.p)).join("") : `<p class="sub">${BG.loaded ? "모집 중이거나 진행 중인 모임이 없습니다." : ""}</p>`}</div>
         <div class="panel"><h2>지난 모임 <small>${past.length}건</small></h2>${shown.map((x) => bgCard(x.p)).join("")}${past.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-bg="more">${past.length - shown.length}건 더 보기</button></div>` : ""}</div>
         <div class="panel"><h2>다른 글 <small>공지, 후기, 정보, 자유. 고정한 글과 최근 글 40건</small></h2>${BG.others.length ? `<ul class="nlist bg-list bg-others" aria-label="다른 글">${BG.others.map(bgOther).join("")}</ul>` : `<p class="sub">${BG.loaded ? "다른 글이 없습니다." : ""}</p>`}</div>
+        ${bgToolsHTML()}
         <details class="panel bg-logp" data-bgopen="log"${BG.logOpen ? " open" : ""}><summary><h2>최근 기록 <small>참석, 취소, 운영진 조치. 최근 100줄</small></h2></summary><div class="bg-logc">${bgLogHTML(BG.log, false)}</div></details>`;
       host.querySelectorAll("details[data-bgopen]").forEach((d) => d.addEventListener("toggle", () => {
         const k = d.dataset.bgopen, box = d.querySelector(".bg-logc");
@@ -2298,6 +2401,7 @@
         bungLogLoad(id).then(() => { if (d.isConnected && d.open) box.innerHTML = bgLogHTML(BG.logs[id], true); });
       }));
       if (was && was.bg) { const el = host.querySelector(`[data-bg="${was.bg}"]${was.id ? `[data-id="${was.id}"]` : ""}${was.nick ? `[data-nick="${CSS.escape(was.nick)}"]` : ""}`); if (el) el.focus({ preventScroll: true }); }
+      else if (wasId) { const el = $(wasId); if (el) { el.focus({ preventScroll: true }); try { if (!el.readOnly) el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
       if (BG.focus != null) {   // 조치한 글이나 소식 화면에서 온 글로
         const el = host.querySelector(`#bung-${BG.focus}`);
         if (el) {
@@ -2325,6 +2429,13 @@
         btn.replaceWith(f); inp.focus(); try { inp.select(); } catch (e) {}
       });
     }
+    /* 조치 결과(고친 글과 명단)를 읽어 둔 것에 반영 */
+    function bgApply(id, r) {
+      const i = BG.posts.findIndex((p) => p.id === id); if (i >= 0 && r.post) BG.posts[i] = r.post;
+      if (i >= 0 && r.attend) BG.att[id] = (r.attend.attendees || []).map((x) => ({ nick: x.nick, at: x.at, host: !!x.host }));
+      const k = BG.others.findIndex((p) => p.id === id);
+      if (k >= 0 && r.post) { BG.others[k] = r.post; BG.others.sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || String(b.created_at).localeCompare(String(a.created_at))); }
+    }
     async function bungAct(id, action, args, okMsg) {
       if (localOnly || !PASS || BG.busy) return false;
       BG.busy = true; BG.focus = id;
@@ -2333,10 +2444,7 @@
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
         if (action === "delete") { BG.posts = BG.posts.filter((p) => p.id !== id); BG.others = BG.others.filter((p) => p.id !== id); delete BG.att[id]; delete BG.logs[id]; BG.open.delete(id); BG.focus = null; }
         else {
-          const i = BG.posts.findIndex((p) => p.id === id); if (i >= 0 && r.post) BG.posts[i] = r.post;
-          if (i >= 0 && r.attend) BG.att[id] = (r.attend.attendees || []).map((x) => ({ nick: x.nick, at: x.at, host: !!x.host }));
-          const k = BG.others.findIndex((p) => p.id === id);
-          if (k >= 0 && r.post) { BG.others[k] = r.post; BG.others.sort((a, b) => (Number(!!b.pinned) - Number(!!a.pinned)) || String(b.created_at).localeCompare(String(a.created_at))); }
+          bgApply(id, r);
           if (BG.open.has(id)) await bungLogLoad(id);
         }
         await bungLogLoad(null);
@@ -2369,6 +2477,27 @@
       if (k === "reset") { if (!window.confirm(nick + " 의 참석 비밀번호를 초기화할까요? 본인이 참석하기를 눌러 새 비밀번호로 넘겨받습니다.")) return; bungAct(id, "reset", { nick }, "참석 비밀번호를 초기화했습니다: " + nick); return; }
       if (k === "kick") { if (!window.confirm(nick + " 을(를) 명단에서 뺄까요?")) return; bungAct(id, "kick", { nick }, "명단에서 뺐습니다: " + nick); return; }
     });
+    /* 닉네임 정해 주기: 칸 값은 BGT 에 두어 다시 그려도 남는다 */
+    (() => {
+      const host = document.querySelector('[data-panel="bung"]');
+      host.addEventListener("input", (e) => {
+        const id = e.target && e.target.id;
+        if (id === "bgtNick") BGT.nick = e.target.value;
+        else if (id === "bgtTo") BGT.to = e.target.value;
+        else if (id === "bgtFrom") { BGT.from = e.target.value; const c = $("bgtCount"); if (c) c.textContent = bgtCountText(); }
+      });
+      host.addEventListener("submit", (e) => {
+        const f = e.target.closest("[data-bgt]"); if (!f) return;
+        e.preventDefault();
+        if (f.dataset.bgt === "link") bgtMakeLink(); else bgtRenameAll();
+      });
+      host.addEventListener("click", (e) => {
+        if (e.target.closest("[data-bgtjump]")) { const el = $("bg-tools"), f = $("bgtNick"); if (f) f.focus({ preventScroll: true }); if (el) el.scrollIntoView({ block: "start" }); return; }   // 초점을 먼저(부드러운 스크롤 중에 초점을 주면 스크롤이 멈춘다)
+        const c = e.target.closest("[data-bgtfrom]"); if (!c) return;
+        BGT.from = c.dataset.bgtfrom; renderBung();
+        const t = $("bgtTo"); if (t) t.focus();
+      });
+    })();
     function renderFilesExtra() {
       const rn = (S.roster && S.roster.names) || [];
       $("rosterInfo").textContent = rn.length ? md(S.roster.at) + ", " + rn.length + "명" : "없음";
