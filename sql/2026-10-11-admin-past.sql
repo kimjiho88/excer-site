@@ -5,6 +5,9 @@
 -- 먼저 있어야 하는 것: 같은 시간대 검사와 멤버 자동 갱신(2026-10-09-memberbot.sql).
 do $g$ begin
   if to_regclass('public.site_member_bot') is null then raise exception '같은 시간대 검사와 멤버 자동 갱신(2026-10-09-memberbot.sql)을 먼저 실행하세요'; end if;
+  if exists (select 1 from pg_proc where proname = 'bung_check' and prosrc like '%정원을 새로 적거나 바꿀 때만%') then
+    raise exception '이 서버에는 더 새로운 판(2026-10-18-bung-cap.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 정원 검사가 옛 판으로 돌아갑니다)';
+  end if;
 end $g$;
 
 -- ── 1. 글 검사: p_admin(운영진 비밀번호로 고침)이면 지난 시각으로 옮겨도 된다. 나머지는 2026-10-09-memberbot.sql 과 같다 ──

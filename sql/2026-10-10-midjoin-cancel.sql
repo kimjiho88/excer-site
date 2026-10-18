@@ -8,6 +8,9 @@ do $g$ begin
      or to_regprocedure('public.bung_nick_key(text)') is null then
     raise exception '진행 중 참석(2026-10-09-midjoin-botctl.sql)을 먼저 실행하세요';
   end if;
+  if to_regprocedure('public.bung_log(bigint,text,text,text,jsonb)') is not null then
+    raise exception '이 서버에는 더 새로운 판(2026-10-15-admin-bung-1.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 참석 취소가 기록에 남지 않게 됩니다)';
+  end if;
 end $g$;
 
 -- 스스로 취소할 수 있는가: 끝나기 전이면 누구나(시작한 뒤에도). 끝나는 시간이 없는 옛 글은 bung_end 가 시작 시각이라 시작 전까지.

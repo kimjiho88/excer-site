@@ -320,8 +320,8 @@
     if (nowKey < s) return "before";
     return nowKey < bungEndKey(m) ? "ongoing" : "ended";
   }
-  /* "19:00~21:00". 끝나는 시간이 없으면 "19:00", 시간이 없으면 "" */
-  function timeRange(m) { return m && HM_RE.test(m.time || "") ? m.time + (HM_RE.test(m.end || "") ? "~" + m.end : "") : ""; }
+  /* "19:00~21:00". 자정을 넘기면 "22:00~다음 날 01:00". 끝나는 시간이 없으면 "19:00", 시간이 없으면 "" */
+  function timeRange(m) { return m && HM_RE.test(m.time || "") ? m.time + (HM_RE.test(m.end || "") ? "~" + (m.end <= m.time ? "다음 날 " : "") + m.end : "") : ""; }
   /* 상세에 표 형태로 놓는 사실 항목. 있는 것만 담긴다 */
   function postFacts(post, today) {
     var m = postMeta(post);
