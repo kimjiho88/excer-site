@@ -242,7 +242,7 @@
     "kimbap": "김밥",
     "chicken": "치킨",
     "yasik": "야식",
-    "dinner": "저녁",
+    "dinner": "식사",
     "pocha": "포차",
     "soju": "소주",
     "hof": "호프",

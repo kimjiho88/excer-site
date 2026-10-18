@@ -29,7 +29,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=23" />
+  <link rel="stylesheet" href="assets/site.css?v=24" />
 
   <style>
     /* ============================================================
@@ -589,10 +589,10 @@
     /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=14"></script>
+  <script src="assets/site-core.js?v=15"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=13"></script>
-  <script src="assets/bung-photo.js?v=4"></script>
+  <script src="assets/content.js?v=14"></script>
+  <script src="assets/bung-photo.js?v=5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -1026,7 +1026,7 @@
       HAS_ATTENDEES: "참석자가 있는 모집 글은 글 종류를 바꿀 수 없습니다. 먼저 명단을 비워 주세요.",
       NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
       NOT_ATTENDING: "그 닉네임으로 참석한 기록이 없습니다.",
-      STARTED: "모임이 시작해 취소할 수 없습니다. 모임장에게 연락해 주세요.",
+      STARTED: "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요.",
       PAST_BUNG: "끝난 모임 글은 운영 기록으로 남습니다. 운영진 비밀번호로만 지울 수 있습니다.",
       DEADLINE: "신청 마감 시각이 지났습니다.",
       FULL: "정원이 찼습니다.",
@@ -1083,7 +1083,7 @@
         { key: "cap", label: "모집 인원", type: "number", min: 1, max: 200, self: true, hint: "참석이 이 인원에 차면 신청을 더 받지 않습니다.", hintOff: "표시만 합니다. 인원으로 자동 마감하지 않습니다." },
         // 여기부터는 '더 적기' 안(more: true). 새 글에서는 모집 상태를 묻지 않는다(올린 뒤 카드의 모집 마감으로)
         { key: "cost", label: "예상 비용", type: "text", max: 40, group: "선택", more: true, ph: "예: 1인 3만원 안팎", v2: true },
-        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, more: true, chips: "deadline", hint: "비우면 모임 시작 시각까지 받습니다." },
+        { key: "deadline", label: "신청 마감", type: "datetime-local", att: true, more: true, chips: "deadline", hint: "비우면 끝나는 시각까지(진행 중에도) 받습니다. 시작 전에 닫으려면 '시작까지'." },
         { key: "apply", label: "신청 방법", type: "text", max: 80, more: true, ph: "비우면 '오픈채팅 공지의 참석 버튼'", v2: true, noAtt: true },
         { key: "bring", label: "준비물과 유의사항", type: "text", max: 120, wide: true, more: true, ph: "예: 편한 신발, 늦으면 미리 연락", v2: true },
         { key: "status", label: "모집 상태", type: "select", more: true, editOnly: true, options: [["", "모집 중"], ["closed", "마감"]], hint: "마감하면 참석을 더 받지 않습니다.", hintOff: "모임장이 직접 바꿉니다.", v2: true }
@@ -1417,7 +1417,7 @@
         ${card ? attendHTML(post) : ""}
         ${infoH}${factsHTML(facts)}
         ${bodyH}${body}
-        ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>` : ""}
+        ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? (state.capsFailed ? `<p class="att-empty" aria-busy="true">서버 설정을 다시 읽는 중입니다. 잠시 뒤 참석 단추가 보입니다.</p>` : `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>`) : ""}
         ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
         ${reactBarHTML(post)}
@@ -1664,7 +1664,7 @@
         + (share ? `<button type="button" class="btn btn-secondary is-share" data-dock="share" aria-label="공유">${icon("send")}</button>` : "");
       let actsIn = true, rowIn = true;
       const apply = () => { const show = rowIn && !actsIn; el.hidden = !show; document.body.classList.toggle("has-dock", show); };
-      DOCK.io = new IntersectionObserver((entries) => { entries.forEach((e) => { if (e.target === acts) actsIn = e.isIntersecting; else if (e.target === row) rowIn = e.isIntersecting; }); apply(); }, { rootMargin: "0px 0px -80px 0px", threshold: 0 });   // 아래 80px 은 탭바와 이 띠가 가린다
+      DOCK.io = new IntersectionObserver((entries) => { entries.forEach((e) => { if (e.target === acts) actsIn = e.isIntersecting; else if (e.target === row) rowIn = e.isIntersecting; }); apply(); }, { rootMargin: "0px 0px -134px 0px", threshold: 0 });   // 아래 134px 은 탭바(74)와 이 띠(52+8)가 가린다: 단추 윗부분만 빼꼼 보일 때도 띠를 둔다
       DOCK.io.observe(acts); DOCK.io.observe(row);
     }
     function dayLabel(ymd, today) {
@@ -1739,7 +1739,7 @@
       let input;
       if (f.type === "select") input = `<select id="${id}" class="input" data-key="${f.key}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`;
       else if (f.type === "number") input = `<input id="${id}" class="input" type="number" inputmode="numeric" step="1" data-key="${f.key}" min="${f.min}" max="${f.max}" placeholder="${esc(f.ph || "")}"${req} />`;
-      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}"${req} />`;
+      else input = `<input id="${id}" class="input" type="${f.type}" data-key="${f.key}"${f.max && !/^(date|time|datetime-local)$/.test(f.type) ? ` maxlength="${f.max}"` : ""}${f.list ? ` list="${f.list}"` : ""}${f.type === "text" ? ' enterkeyhint="next"' : ""} placeholder="${esc(f.key === "apply" && state.attendOn ? "비우면 '이 글의 참석 버튼'" : f.ph || "")}"${req} />`;
       const withMap = !!(f.map && mapOK());   // 장소 칸: 지도에서 찾기 단추(서버 bung_place 와 카카오 키가 있을 때), 고른 장소의 주소 줄
       if (withMap) input = `<div class="place-row">${input}<button type="button" class="btn btn-secondary is-sm" data-act="place-map">${icon("pin", "is-sm")} 지도에서 찾기</button></div>`;
       const picked = f.map ? `<p class="place-picked" id="wf_placePicked" hidden>${icon("pin")}<span id="wf_placeAddr"></span><button type="button" class="text-btn is-quiet" data-act="place-clear">지우기</button></p>` : "";
@@ -1791,12 +1791,14 @@
         return (cur && !TIME_CHIPS.includes(cur) ? TIME_CHIPS.concat(cur).sort() : TIME_CHIPS).map((v) => ({ v, label: v }));
       }
       if (kind === "end") return END_AFTER.map((n) => ({ v: String(n), label: n / 60 + "시간 뒤" }));   // 글자와 값은 syncChips 가 시작 시간에 맞춰 바꾼다
-      if (kind === "deadline") return [{ v: "-60", label: "시작 1시간 전" }, { v: "day12", label: "당일 12:00" }, { v: "prev21", label: "전날 21:00" }, { v: "", label: "시작까지" }];
+      // '시작까지' 는 시작 시각을 신청 마감으로 넣는다(비우면 서버는 끝나는 시각까지 받는다). '끝까지' 는 비움
+      if (kind === "deadline") return [{ v: "-60", label: "시작 1시간 전" }, { v: "day12", label: "당일 12:00" }, { v: "prev21", label: "전날 21:00" }, { v: "start", label: "시작까지" }, { v: "", label: "끝까지" }];
       return [];
     }
     function deadlineFrom(code, date, time) {
       if (!date || !time) return null;
       if (code === "") return "";
+      if (code === "start") return date + "T" + time;
       if (code === "-60") { const t = new Date(date + "T" + time + ":00Z"); if (isNaN(t)) return null; t.setUTCMinutes(t.getUTCMinutes() - 60); return t.toISOString().slice(0, 16); }
       if (code === "day12") return date + "T12:00";
       if (code === "prev21") return addDays(date, -1) + "T21:00";
@@ -2020,8 +2022,8 @@
           }
         }
         if (en && t && en.value && t.value && en.value === t.value) { setError("wf_end", "끝나는 시간이 시작 시간과 같습니다."); ok = false; }   // 시작보다 이른 값은 다음 날로 본다(19:00 시작 01:00 끝)
-        const capEl = $("wf_cap");   // 고치는 글: 이미 참석한 사람보다 적은 정원은 안 된다(서버는 막지 않으니 화면에서 먼저)
-        if (state.editingId && capEl && capEl.value) {
+        const capEl = $("wf_cap");   // 고치는 글: 정원을 바꿀 때만, 이미 참석한 사람보다 적은 정원은 안 된다(모임장이나 운영진이 정원 밖으로 적은 사람이 있어도 다른 칸은 고칠 수 있게. 서버 2026-10-18 SQL 과 같은 기준)
+        if (state.editingId && capEl && capEl.value && String((C.postMeta(findPost(state.editingId) || {}) || {}).cap || "") !== String(capEl.value)) {
           const have = ((state.attend[state.editingId] || {}).list || []).length || Number((findPost(state.editingId) || {}).attend_count) || 0;
           if (Number(capEl.value) < have) { setError("wf_cap", `이미 참석한 ${have}명보다 적게 정할 수 없습니다. 먼저 명단에서 빼 주세요.`); ok = false; }
         }
@@ -2092,7 +2094,7 @@
     function bungIds(posts) { return (posts || []).filter((p) => p.category === "벙 소식").map((p) => p.id); }
     /* 내 참석 판정: 이 기기에서 참석한 글은 그때 닉네임을 글마다 기억해 두고(ATT_KEY), 없으면 저장 닉네임. 비교는 서버 키처럼 공백을 하나로, 소문자 */
     const ATT_KEY = "excer_news_attended";
-    const nickKey = (s) => String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+    const nickKey = (s) => String(s || "").normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();   // 서버 키처럼 iOS 분해형 한글도 같은 사람
     function attendedMap() { try { const m = JSON.parse(localStorage.getItem(ATT_KEY) || "{}"); return m && typeof m === "object" ? m : {}; } catch (e) { return {}; } }
     function rememberAttend(postId, nick) {
       try { const m = attendedMap(); if (nick) m[postId] = nick; else delete m[postId]; localStorage.setItem(ATT_KEY, JSON.stringify(m)); } catch (e) {}
@@ -2121,7 +2123,8 @@
       const m = C.postMeta(post) || {};
       // 신청 마감 글자: 시작 시각과 같으면 '시작 전까지', 모임 당일이면 날짜를 되풀이하지 않는다
       const dlText = st.deadline && st.deadline !== st.start ? "신청 " + (st.deadline.slice(0, 10) === m.date ? "당일 " : C.dateText(st.deadline.slice(0, 10), { withDow: true }) + " ") + st.deadline.slice(11, 16) + "까지" : "";
-      const stateText = st.open ? (dlText || (m.end ? "끝나기 전까지 신청" : "시작 전까지 신청")) : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
+      // 신청 마감이 없으면 서버는 끝나는 시각까지 받는다(진행 중 참석). 시작 시각과 같은 마감은 '시작 전까지'
+      const stateText = st.open ? (dlText || (m.end && st.deadline !== st.start ? "끝나기 전까지 신청" : "시작 전까지 신청")) : st.why === "started" ? "" : (WHY_LABEL[st.why] || "");
       const when = m.date ? C.dateText(m.date, { withDow: true }) + (C.timeRange(m) ? " " + C.timeRange(m) : "") : "";
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
       const past = st.why === "started";
@@ -2301,11 +2304,14 @@
       if (pass === null) return;
       const meta = Object.assign({}, C.postMeta(post) || {});
       if (close) meta.status = "closed"; else delete meta.status;
+      // 다시 모집인데 신청 마감이 이미 지났으면 마감을 지운다(안 지우면 '다시 모집' 뒤에도 신청 마감 그대로)
+      const dlGone = !close && !!meta.deadline && meta.deadline <= nowKey();
+      if (dlGone) delete meta.deadline;
       state.busy = true;
       try {
         await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_title: post.title, p_body: post.body || "", p_category: post.category, p_meta: meta }) });
         post.meta = meta; renderList();
-        showToast(close ? "모집을 마감했습니다." : "다시 모집합니다.");
+        showToast(close ? "모집을 마감했습니다." : dlGone ? "다시 모집합니다. 지난 신청 마감은 지워 끝나기 전까지 받습니다." : "다시 모집합니다.");
       } catch (err) { showToast(rpcErrorMessage(err)); }
       finally { state.busy = false; }
     }
@@ -2395,6 +2401,12 @@
         showToast(mode === "attend" ? "참석했습니다." : mode === "host" ? "참석자를 추가했습니다." : mode === "kick" ? "명단에서 뺐습니다." : "참석을 취소했습니다.");
       } catch (err) {
         const code = String((err && err.message) || "");
+        if (mode === "attend" && /FULL|CLOSED|DEADLINE/.test(code)) {   // 그사이 찼거나 마감된 모임: 창을 닫고 알린 뒤 카드를 새로 그린다(창에 빨간 글만 남아 다시 누르게 하지 않게)
+          if (attCtx === ctx) closeAttend();
+          showToast(attError(mode, err));
+          attendFollowUp(id, code, null);
+          return;
+        }
         const st = /STARTED/.test(code) && mode === "unattend" && findPost(id) ? bungStatus(findPost(id)) : null;   // 진행 중에 누른 참석도 끝나면 STARTED
         fail(st && st.started && !st.ongoing ? "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요." : attError(mode, err));
         if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
@@ -2523,6 +2535,7 @@
       ME.cb = cb || null; ME.back = document.activeElement; ME.seq++;
       $("meQ").value = q || ""; $("meList").innerHTML = ""; $("meFree").value = savedNick();
       showMeFree(false); meNow();
+      if (cb && !savedNick()) $("meNote").textContent = "참석하려면 채팅방 닉네임을 먼저 고릅니다. 한 번 고르면 이 기기가 기억합니다.";   // 참석하기에서 처음 열린 창: 왜 이 창인지 한 줄
       $("meBackdrop").hidden = false;
       setTimeout(() => $("meQ").focus(), 30);
       const info = await memberInfo();
@@ -2765,7 +2778,10 @@
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
       if (!validateWrite()) return;
       const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
-      const title = $("wTitle").value.trim(), meta = readMeta();
+      const title = $("wTitle").value.trim();
+      let meta = readMeta();
+      // 서버 형식을 못 읽은 채(칸이 일부 숨은 채) 고치는 글: 화면에 없던 항목(신청 마감, 주소와 좌표, 비용, 모집 상태)은 원래 값을 지킨다
+      if (state.editingId && state.capsFailed && meta) meta = Object.assign({}, C.postMeta(findPost(state.editingId) || {}) || {}, meta);
       if (!state.editingId && (cat === "자유" || cat === "정보") && /(벙|번개|모집|정모|[0-9]+\s*명)/.test(title)) {
         if (!window.confirm("모임을 모집하는 글이면 모임 모집으로 올려야 참석 버튼이 생깁니다. 이대로 올릴까요?")) { syncCatNudge(); $("catNudge").hidden = false; $("catNudge").scrollIntoView({ block: "center" }); return; }
       }
@@ -2888,7 +2904,7 @@
         if (wantAtt) {   // 댓글과 같은 닉네임과 비밀번호로 참석. 참석이 거절되어도 댓글은 남는다
           try {
             const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: postId, p_nick: nick, p_pass: pass }) });
-            applyAttendList(postId, res);
+            applyAttendList(postId, res); rememberAttend(postId, nick);   // 댓글 닉네임으로 참석한 것을 이 글의 내 이름으로(카드가 '참석 취소' 를 보이게)
             msg = "댓글을 등록하고 참석했습니다.";
           } catch (err) { msg = "댓글은 올렸지만 참석은 안 됐습니다. " + attError("attend", err); loadAttend([postId]); }
         }
@@ -3202,11 +3218,15 @@
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
     }
-    /* 서버 형식을 못 읽어(망이 잠깐 끊김) 옛 서버로 본 화면: 3초 뒤와 다시 시도 때 한 번 더 읽고, 읽히면 다시 그린다 */
-    function capsAgain() {
+    /* 서버 형식을 못 읽어(망이 잠깐 끊김) 옛 서버로 본 화면: 3초, 10초, 30초 뒤와 다시 시도 때 한 번 더 읽고, 읽히면 다시 그린다.
+       그동안 펼친 모임 글은 옛 방식(오픈채팅 단추) 대신 '다시 읽는 중' 한 줄 */
+    function capsAgain(n) {
       if (!state.capsFailed || state.capsBusy) return;
       state.capsBusy = true;
-      C.caps().then((c) => { if (!c.failed) { applyCaps(c); renderList(); } }).catch(() => {}).then(() => { state.capsBusy = false; });
+      C.caps().then((c) => {
+        if (!c.failed) { applyCaps(c); renderList(); }
+        else if ((n || 0) < 2) setTimeout(() => capsAgain((n || 0) + 1), n ? 30000 : 10000);
+      }).catch(() => {}).then(() => { state.capsBusy = false; });
     }
     const capsReady = C.caps().then((c) => {
       applyCaps(c);

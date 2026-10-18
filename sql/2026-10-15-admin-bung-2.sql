@@ -2,6 +2,9 @@
 -- 1쪽 뒤에 실행. 다시 실행해도 안전하다. 서버 형식의 bung_admin 1 은 3쪽(운영진 조치 함수)을 돌리면 보인다.
 do $g$ begin
   if to_regprocedure('public.bung_log(bigint,text,text,text,jsonb)') is null then raise exception '1쪽을 먼저 실행하세요'; end if;
+  if to_regprocedure('public.bung_admin_log(text,bigint,integer,bigint)') is not null then
+    raise exception '이 서버에는 더 새로운 판(2026-10-18-ops-tune.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 기록 보기 함수가 둘이 되어 운영 화면이 기록을 못 읽습니다)';
+  end if;
 end $g$;
 
 create or replace function bung_host_attend(p_post_id bigint, p_nick text, p_pass text)

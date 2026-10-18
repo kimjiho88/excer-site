@@ -485,10 +485,31 @@
   }
   window.EXCER_SCROLL = { restore: restoreScroll, isBack: isBackForward };
 
+  /* ──────────────────────────────────────────────────────────
+     ⑧ 떠 있는 단추(.fab)는 아래로 내리는 동안 숨고 위로 올리면 다시 보인다(2026-10-18).
+     목록 줄 오른쪽의 참석 단추와 카드의 공유 단추를 덮지 않게. 맨 위 가까이에서는 늘 보인다
+     ────────────────────────────────────────────────────────── */
+  function mountFabHide() {
+    var fab = document.querySelector(".fab");
+    if (!fab) return;
+    var last = window.scrollY, acc = 0, waiting = false;
+    function check() {
+      waiting = false;
+      var y = window.scrollY, dy = y - last;
+      last = y;
+      if (y < 120) { fab.classList.remove("is-away"); acc = 0; return; }
+      acc = (dy > 0) === (acc > 0) ? acc + dy : dy;             // 같은 방향으로 쌓이고 방향이 바뀌면 처음부터
+      if (acc > 24) fab.classList.add("is-away");
+      else if (acc < -24) fab.classList.remove("is-away");
+    }
+    window.addEventListener("scroll", function () { if (!waiting) { waiting = true; requestAnimationFrame(check); } }, { passive: true });
+  }
+
   function start() {
     startVisitCounter();
     watchModals();
     mountToTop();
+    mountFabHide();
   }
 
   if (document.readyState === "loading") {

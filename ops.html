@@ -11,11 +11,11 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=23" />
+  <link rel="stylesheet" href="assets/site.css?v=24" />
   <script src="assets/chat-parser.js?v=10"></script>
   <script src="assets/ops-analyzer.js?v=5"></script>
   <script src="assets/ops-sheet.js?v=6"></script>
-  <script src="assets/bung-photo.js?v=4"></script>
+  <script src="assets/bung-photo.js?v=5"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
     :root {
@@ -207,6 +207,7 @@
     .prow .pr b { display: block; color: var(--ink); font-size: 14px; }
     .tag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 8px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--surface-2); color: var(--ink); }
     .tag.rule { background: var(--danger-soft); color: var(--danger); }
+    .is-stale { color: var(--danger); font-weight: 700; }   /* 오래됨, 소식 없음(멤버 목록, 봇 마지막 확인) */
     .tag.watch { background: #FFF1D6; color: #7A4A00; }
     .tag.good { background: #E4F4EA; color: #1F6B3A; }
     .tag.out { background: #EEE; color: #555; }
@@ -562,7 +563,7 @@
 
   <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/site-core.js?v=14"></script>
+  <script src="assets/site-core.js?v=15"></script>
   <script>
   (function () {
     "use strict";
@@ -1659,17 +1660,18 @@
         const tabs = SH.pasteKeep; if (!tabs) return;
         if (localOnly || SH.missing) { const id = -1; SH.snaps.set(id, { id, at: new Date().toISOString(), source: "manual", tabs }); SH.latestId = id; SH.paste = false; SH.pasteKeep = null; sheetProcess(); renderAll(); toast("이 화면에 넣었습니다. 저장되지 않습니다."); return; }
         try { const r = await shCall("ops_sheet_put", { p_tabs: tabs, p_meta: { source: "paste", at: new Date().toISOString() } }); SH.paste = false; SH.pasteKeep = null; toast(r.changed ? "넣었습니다. 판 " + r.id : "최신 판과 같습니다."); sheetLoad(); }
-        catch (e) { toast(e.code === "TOO_BIG" ? "너무 커서 넣지 못했습니다." : e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "넣지 못했습니다. 연결을 확인해 주세요."); }
+        catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } toast(e.code === "TOO_BIG" ? "너무 커서 넣지 못했습니다." : "넣지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "")); }
       });
       on("shTokNew", async () => {
         const st = SH.status || {};
         if (st.has_token && !window.confirm("새 토큰을 만들면 지금 스크립트의 토큰은 바로 못 씁니다. 만들까요?")) return;
         try { const r = await shCall("ops_sheet_token", { p_action: "new" }); SH.token = r.token; await sheetLoad(); }
-        catch (e) { toast("토큰을 만들지 못했습니다."); }
+        catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } toast("토큰을 만들지 못했습니다." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "")); }
       });
       on("shTokOff", async () => {
         if (!window.confirm("연동을 끄면 스크립트가 보내도 받지 않습니다. 끌까요?")) return;
-        try { await shCall("ops_sheet_token", { p_action: "off" }); SH.token = ""; await sheetLoad(); toast("연동을 껐습니다."); } catch (e) { toast("끄지 못했습니다."); }
+        try { await shCall("ops_sheet_token", { p_action: "off" }); SH.token = ""; await sheetLoad(); toast("연동을 껐습니다."); }
+        catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } toast("끄지 못했습니다." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "")); }
       });
       on("shAccept", () => { const rec = sheetRec(); rec.acceptedId = SH.latestId; rec.pinned = false; delete rec.skipped[SH.latestId]; saveRecords(); sheetProcess(); renderAll(); toast("최신 판을 반영했습니다."); });
       on("shSkip", () => { const rec = sheetRec(); rec.skipped[SH.latestId] = true; saveRecords(); sheetProcess(); renderAll(); toast("이 판을 건너뛰었습니다."); });
@@ -1991,7 +1993,8 @@
         renderAll();
         memPush(true);
       } catch (e) {
-        $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요.";
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }   // 비밀번호가 바뀐 뒤 거듭 누르면 잠기므로 바로 멈춘다
+        $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "");
       } finally { saving = false; btn.disabled = !S.unsaved; btn.textContent = "서버에 저장"; }
     });
 
@@ -2003,7 +2006,7 @@
       renderAll();
       if (localOnly) { toast("명단을 이 화면에만 넣었습니다."); return; }
       try { await opsPut("roster", S.roster); toast("명단을 저장했습니다. " + rosterNames().length + "명"); memPush(true); }
-      catch (e) { toast(e.code === "LOCKED" ? "잠시 막혔습니다. 15분 뒤 다시 시도해 주세요." : "명단을 저장하지 못했습니다. 연결을 확인해 주세요."); }
+      catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } toast("명단을 저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "")); }
     });
     /* 사이트 닉네임 목록(소식 화면의 내 닉네임 고르기, 2026-10-09 SQL). 명단이 대화 기록보다 새로우면 명단, 아니면 대화 기록의 지금 멤버.
        저장할 때 함께 올리는 것은 사흘 안의 자료일 때만(옛 대화 파일로 지금 목록을 덮지 않게). 절반 아래로 줄면 묻는다 */
@@ -2018,7 +2021,9 @@
       const el = $("memInfo"); if (!el) return;
       // 봇이 마지막으로 올린 때가 목록 시각과 1분 안이면 봇이 올린 목록(2026-10-09-memberbot.sql 전 서버는 bot 칸이 없다)
       const b = memState && memState.bot, byBot = !!(b && b.last_at && memState.at && Math.abs(Date.parse(b.last_at) - Date.parse(memState.at)) <= 60000);
-      el.textContent = !memState ? "" : memState.missing ? "서버에 아직 없음(2026-10-09-members.sql)" : memState.n ? nf(memState.n) + "명, " + md(kstDate(memState.at)) + " " + kstHM(memState.at) + (byBot ? " 봇이 올림" : " 운영 화면에서 올림") : "아직 안 올림";
+      const stale = !!(memState && memState.n && memState.at && Date.now() - Date.parse(memState.at) > 3 * 86400000);   // 사흘 넘게 안 바뀜: 봇 자동 갱신이 안 도는 것
+      el.textContent = !memState ? "" : memState.missing ? "서버에 아직 없음(2026-10-09-members.sql)" : memState.n ? nf(memState.n) + "명, " + md(kstDate(memState.at)) + " " + kstHM(memState.at) + (byBot ? " 봇이 올림" : " 운영 화면에서 올림") + (stale ? " (사흘 넘게 안 바뀜)" : "") : "아직 안 올림";
+      el.classList.toggle("is-stale", stale);
       memBotShow();
     }
     async function memLoad() {
@@ -2051,7 +2056,7 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
         if (missingFn(e)) { memState = { missing: true }; memShow(); }
-        toast(missingFn(e) ? "서버에 2026-10-09-members.sql 을 먼저 실행해 주세요." : "사이트 닉네임 목록을 올리지 못했습니다. 연결을 확인해 주세요.");
+        toast(missingFn(e) ? "서버에 2026-10-09-members.sql 을 먼저 실행해 주세요." : "사이트 닉네임 목록을 올리지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : ""));
       } finally { memBusy = false; $("memPush").disabled = false; }
     }
     $("memPush").addEventListener("click", () => memPush(false));
@@ -2127,7 +2132,15 @@
       if (botCtl.missing) { el.textContent = "서버에 아직 없음(2026-10-09-midjoin-botctl.sql)"; return; }
       const until = (t) => md(kstDate(t)) + " " + kstHM(t) + "까지";
       const parts = [botCtl.pause_until ? "전체 멈춤 " + until(botCtl.pause_until) : "", botCtl.notice_until ? "공지 멈춤 " + until(botCtl.notice_until) : ""].filter(Boolean);
-      el.textContent = parts.length ? parts.join(", ") : "평소대로";
+      // 봇 살아 있음(2026-10-18 SQL 과 봇 판 2026-10-18.1): 봇이 5분마다 남긴 마지막 확인 때. 20분 넘게 없으면 태블릿을 본다
+      let seen = "";
+      if ("seen_at" in botCtl) {
+        const ago = botCtl.seen_at ? Math.round((Date.now() - Date.parse(botCtl.seen_at)) / 60000) : null;
+        seen = ago == null ? "봇 살아 있음 표시 아직 없음(봇 판 2026-10-18.1 과 봇 열쇠가 있어야 남김)"
+          : "봇 마지막 확인 " + (ago < 1 ? "방금" : ago < 60 ? ago + "분 전" : md(kstDate(botCtl.seen_at)) + " " + kstHM(botCtl.seen_at)) + (botCtl.seen_note ? ", " + botCtl.seen_note : "") + (ago >= 20 ? ". 20분 넘게 소식이 없어요. 태블릿에서 python excer_bot.py status" : "");
+      }
+      el.textContent = (parts.length ? parts.join(", ") : "평소대로") + (seen ? ". " + seen : "");
+      el.classList.toggle("is-stale", /소식이 없어요/.test(seen));
     }
     async function botCtlLoad() {
       if (localOnly) return;
@@ -2146,7 +2159,7 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
         if (missingFn(e)) { botCtl = { missing: true }; botCtlShow(); }
-        toast(missingFn(e) ? "서버에 2026-10-09-midjoin-botctl.sql 을 먼저 실행해 주세요." : "봇 조종을 바꾸지 못했습니다. 연결을 확인해 주세요.");
+        toast(missingFn(e) ? "서버에 2026-10-09-midjoin-botctl.sql 을 먼저 실행해 주세요." : "봇 조종을 바꾸지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : ""));
       } finally { botCtlBusy = false; }
     }
     $("botCtlPanel").addEventListener("click", (e) => { const b = e.target.closest("[data-botctl]"); if (!b) return; const [w, m] = b.dataset.botctl.split(":"); botCtlSet(w, Number(m)); });
@@ -2228,6 +2241,21 @@
         if (missingFn(e)) BG.missing = true; else if (postId) BG.logs[postId] = null; else BG.log = null;
       }
     }
+    /* 기록 더 보기(2026-10-18 SQL 의 p_before): 지금 읽은 마지막 줄보다 앞의 100줄을 이어 붙인다. 그 SQL 이 없는 서버는 안내만 */
+    async function bungLogMore() {
+      if (!PASS || BG.logBusy || !Array.isArray(BG.log) || !BG.log.length) return;
+      const last = BG.log[BG.log.length - 1];
+      BG.logBusy = true; renderBung();
+      try {
+        const r = await rpc("bung_admin_log", { p_pass: PASS, p_post_id: null, p_limit: 100, p_before: last.id });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        const rows = r.rows || [];
+        BG.log = BG.log.concat(rows); BG.logEnd = rows.length < 100;
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        toast(missingFn(e) ? "더 보기는 서버에 2026-10-18-ops-tune.sql 을 실행하면 됩니다." : "기록을 더 읽지 못했습니다. 연결을 확인해 주세요.");
+      } finally { BG.logBusy = false; renderBung(); }
+    }
     function bgDetail(r) {
       const d = r.detail || {};
       if (r.action === "admin_author" || r.action === "admin_rename") return d.from ? "전: " + d.from : "";
@@ -2253,9 +2281,10 @@
     function bgCard(p) {
       const m = p.meta || {}, st = bgStatus(p), list = BG.att[p.id] || [], n = list.length, dis = BG.missing ? " disabled" : "";
       const when = m.date ? md(m.date) + (m.time ? " " + m.time : "") + (m.end ? " ~ " + m.end : "") : "날짜 없음";
+      const dday = m.date === todayKST() ? "오늘" : m.date === nextDay(todayKST()) ? "내일" : "";   // 소식 화면처럼 오늘과 내일 표시
       const row = (a) => `<li><span class="pn">${esc(a.nick)}</span>${bgWho(a.nick)}${a.host ? `<span class="tag out">모임장이 적음</span>` : ""}<span class="bg-when">${esc(md(kstDate(a.at)))} ${esc(kstHM(a.at))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="rename" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>이름 고치기</button><button type="button" class="text-btn" data-bg="reset" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>비밀번호 초기화</button><button type="button" class="text-btn is-danger" data-bg="kick" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>빼기</button></span></li>`;
       return `<article class="bg-post${st.past ? " is-past" : ""}${BG.hi === p.id ? " is-hi" : ""}" id="bung-${p.id}" data-bid="${p.id}">
-        <div><div class="bg-title"><b>${esc(p.title)}</b><span class="tag ${st.cls}">${st.text}</span>${p.pinned ? `<span class="tag in">고정</span>` : ""}</div>
+        <div><div class="bg-title"><b>${esc(p.title)}</b>${dday && !st.past ? `<span class="tag good">${dday}</span>` : ""}<span class="tag ${st.cls}">${st.text}</span>${p.pinned ? `<span class="tag in">고정</span>` : ""}</div>
           <div class="bg-meta"><span>${esc(when)}</span>${m.place ? `<span>${esc(m.place)}</span>` : ""}<span>모임장 <b>${esc(p.author)}</b>${bgWho(p.author)}</span><span>참석 <b>${n}</b>${m.cap ? " / " + esc(m.cap) : ""}명</span><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></div></div>
         <div class="chips bg-acts">
           <button type="button" class="btn btn-secondary" data-bg="author" data-id="${p.id}"${dis}>모임장 바꾸기</button>
@@ -2389,14 +2418,14 @@
         <div class="panel"><h2>지난 모임 <small>${past.length}건</small></h2>${shown.map((x) => bgCard(x.p)).join("")}${past.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-bg="more">${past.length - shown.length}건 더 보기</button></div>` : ""}</div>
         <div class="panel"><h2>다른 글 <small>공지, 후기, 정보, 자유. 고정한 글과 최근 글 40건</small></h2>${BG.others.length ? `<ul class="nlist bg-list bg-others" aria-label="다른 글">${BG.others.map(bgOther).join("")}</ul>` : `<p class="sub">${BG.loaded ? "다른 글이 없습니다." : ""}</p>`}</div>
         ${bgToolsHTML()}
-        <details class="panel bg-logp" data-bgopen="log"${BG.logOpen ? " open" : ""}><summary><h2>최근 기록 <small>참석, 취소, 운영진 조치. 최근 100줄</small></h2></summary><div class="bg-logc">${bgLogHTML(BG.log, false)}</div></details>`;
+        <details class="panel bg-logp" data-bgopen="log"${BG.logOpen ? " open" : ""}><summary><h2>최근 기록 <small>참석, 취소, 운영진 조치. 최근 것부터 100줄씩</small></h2></summary><div class="bg-logc">${bgLogHTML(BG.log, false)}${Array.isArray(BG.log) && BG.log.length >= 100 && !BG.logEnd ? `<div class="chips"><button type="button" class="btn btn-secondary" data-bg="logmore"${BG.logBusy ? " disabled" : ""}>${BG.logBusy ? "읽는 중" : "더 보기(그 전 100줄)"}</button></div>` : ""}</div></details>`;
       host.querySelectorAll("details[data-bgopen]").forEach((d) => d.addEventListener("toggle", () => {
         const k = d.dataset.bgopen, box = d.querySelector(".bg-logc");
         if (k === "log") { BG.logOpen = d.open; return; }
         const id = Number(k);
         if (!d.open) { BG.open.delete(id); return; }
         BG.open.add(id);
-        if (BG.logs[id] !== undefined) { box.innerHTML = bgLogHTML(BG.logs[id], true); return; }
+        if (BG.logs[id] != null) { box.innerHTML = bgLogHTML(BG.logs[id], true); return; }   // 읽지 못한 것(null)은 다시 펼칠 때 다시 읽는다
         box.innerHTML = bgLogHTML(undefined, true);
         bungLogLoad(id).then(() => { if (d.isConnected && d.open) box.innerHTML = bgLogHTML(BG.logs[id], true); });
       }));
@@ -2461,17 +2490,30 @@
     document.querySelector('[data-panel="bung"]').addEventListener("click", async (e) => {
       const b = e.target.closest("[data-bg]"); if (!b || b.disabled || BG.busy) return;
       const k = b.dataset.bg;
-      if (k === "reload") { bungLoad(); return; }
+      if (k === "reload") { BG.logEnd = false; bungLoad(); return; }
       if (k === "more") { BG.more = true; renderBung(); return; }
+      if (k === "logmore") { bungLogMore(); return; }
       const id = Number(b.dataset.id), p = BG.posts.find((x) => x.id === id) || BG.others.find((x) => x.id === id); if (!p) return;
       if (BG.missing) { toast("서버에 " + BG_SQL + "을 먼저 실행해 주세요."); return; }
       const m = p.meta || {}, nick = b.dataset.nick || "", t = (s) => String(s || "").normalize("NFC").trim();
-      if (k === "author") { const v = t(await bgAsk(b, { label: "새 모임장 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "바꾸기" })); if (v) bungAct(id, "author", { author: v }, "모임장을 바꿨습니다: " + v); return; }
+      if (k === "author") {   // 모임장을 바꾸면 글 비밀번호는 그대로라 새 모임장이 글을 못 고친다: 바꾼 뒤 비밀번호도 새로 정할지 묻는다
+        const v = t(await bgAsk(b, { label: "새 모임장 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "바꾸기" })); if (!v) return;
+        const ok = await bungAct(id, "author", { author: v }, "모임장을 바꿨습니다: " + v);
+        if (ok && window.confirm("글 비밀번호는 그대로라 새 모임장이 글을 고치려면 새 비밀번호가 필요합니다. 지금 다시 정해서 알려 줄까요?")) {
+          const pb = document.querySelector(`[data-panel="bung"] [data-bg="pass"][data-id="${id}"]`); if (pb) pb.click();
+        }
+        return;
+      }
       if (k === "pass") { const v = await bgAsk(b, { label: "새 글 비밀번호 (4자 이상)", ph: "모임장에게 알려 줄 비밀번호", ok: "재설정", max: 64 }); if (v == null) return; if (t(v).length < 4) { toast(BG_ERR.PASS_TOO_SHORT); return; } bungAct(id, "pass", { pass: v }, "글 비밀번호를 다시 정했습니다. 모임장에게 알려 주세요."); return; }
       if (k === "status") { const to = b.dataset.to; bungAct(id, "status", { status: to }, to === "closed" ? "모집을 마감했습니다." : "다시 모집합니다."); return; }
       if (k === "cap") { const v = await bgAsk(b, { label: "정원 (비우면 없음)", ph: "숫자", value: m.cap || "", type: "number", min: 1, max: 200, ok: "바꾸기" }); if (v == null) return; bungAct(id, "cap", { cap: t(v) }, t(v) ? "정원을 " + t(v) + "명으로 바꿨습니다." : "정원을 없앴습니다."); return; }
       if (k === "pin") { const on = b.dataset.to === "1"; bungAct(id, "pin", { pinned: on }, on ? "글을 고정했습니다." : "고정을 해제했습니다."); return; }
-      if (k === "delete") { const n = (BG.att[id] || []).length; if (!window.confirm("'" + p.title + "' 글을 지울까요?" + (n ? " 참석자 " + n + "명의 명단도 함께 지워집니다." : "") + " 되돌릴 수 없습니다.")) return; bungAct(id, "delete", {}, "글을 지웠습니다."); return; }
+      if (k === "delete") {
+        const n = (BG.att[id] || []).length, live = BG.posts.some((x) => x.id === id) && !bgStatus(p).past;   // 끝나지 않은 모임 글: 봇이 채팅방에 '벙 취소' 를 알린다
+        if (!window.confirm("'" + p.title + "' 글을 지울까요?" + (n ? " 참석자 " + n + "명의 명단도 함께 지워집니다." : "") + " 되돌릴 수 없습니다."
+          + (live ? "\n\n봇이 채팅방에 '벙 취소' 를 알립니다. 조용히 지우려면 먼저 데이터 탭의 봇 전체 멈춤을 켜 주세요." : ""))) return;
+        bungAct(id, "delete", {}, "글을 지웠습니다."); return;
+      }
       if (k === "add") { const v = t(await bgAsk(b, { label: "참석자 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "추가" })); if (v) bungAct(id, "add", { nick: v }, "참석자를 추가했습니다: " + v); return; }
       if (k === "rename") { const v = t(await bgAsk(b, { label: "바른 이름", ph: "채팅방 닉네임 그대로", value: nick, list: "bgNames", ok: "고치기" })); if (v && v !== nick) bungAct(id, "rename", { nick, to: v }, "이름을 고쳤습니다: " + v); return; }
       if (k === "reset") { if (!window.confirm(nick + " 의 참석 비밀번호를 초기화할까요? 본인이 참석하기를 눌러 새 비밀번호로 넘겨받습니다.")) return; bungAct(id, "reset", { nick }, "참석 비밀번호를 초기화했습니다: " + nick); return; }

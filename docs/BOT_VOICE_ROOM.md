@@ -102,15 +102,16 @@
 `excer_bot.json` 에 `voice` 묶음을 더한다.
 
 ```json
-"voice": {"on": false, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫", "check_sec": 60, "renew_hours": 47.5, "mute": true,
-          "max_retry_min": 15, "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": false}
+"voice": {"on": false, "room": "", "title": "신입(날짜)분들 2주 내 벙 필참 🙏 자삭금지 🚫", "check_sec": 60, "notif_word": "보이스룸",
+          "on_text": "보이스룸에 참여 중", "end_text": "보이스룸 종료", "renew_hours": 47.5, "mute": true, "volume0": true, "recover": true,
+          "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": false}
 ```
 
 `room` 이 비어 있으면 공지 방(`room`)과 같은 방이다.
 
 | 명령 | 하는 일 |
 |---|---|
-| `python excer_bot.py voice study` | 시험 방에서 한 번 해 본다: 만들기, 보이스룸 화면, 최소화, 방의 띠, 알림과 서비스와 소리 신호, 다시 열기, 나가기와 종료 확인 창. 단계마다 화면 글자를 `excer_bot_study.txt` 에 적고 클립보드에 담는다. 이 결과로 단추 이름을 확정한다 |
+| `python excer_bot.py voice study` | 시험 방에서 한 번 해 본다: 만들기, 보이스룸 화면, 최소화, 방의 띠, 알림과 서비스와 소리 신호, 다시 열기, 나가기와 종료 확인 창. 단계마다 화면 글자를 `excer_bot_voice_study.txt` 에 적고 클립보드에 담는다. 이 결과로 단추 이름을 확정한다 |
 | `python excer_bot.py voice status` | 지금 켜져 있는지(세 신호), 만든 지 몇 시간째인지, 최근 끊김 기록 |
 | `python excer_bot.py voice now` | 지금 바로 복구 절차를 한 번 돌린다(시험용) |
 | `python excer_bot.py voice look` | 켜 둔 보이스룸(알릴 방)의 방 위쪽, '보이스룸' 이 든 요소, 띠를 누른 뒤의 보이스룸 화면 단추 이름을 `excer_bot_voice_look.txt` 에 적고 클립보드에 담는다. 나가기는 누르지 않고 작게 접는다. 대화 글과 남의 알림 글은 적지 않는다 |

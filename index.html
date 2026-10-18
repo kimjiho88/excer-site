@@ -28,7 +28,7 @@
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=23" />
+  <link rel="stylesheet" href="assets/site.css?v=24" />
 
   <style>
     /* ============================================================
@@ -185,10 +185,10 @@
       .place-card:hover .pc-name { color: var(--brand); }
     }
   </style>
-  <script src="assets/site-core.js?v=14"></script>
+  <script src="assets/site-core.js?v=15"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=13"></script>
-  <script src="assets/bung-photo.js?v=4"></script>
+  <script src="assets/content.js?v=14"></script>
+  <script src="assets/bung-photo.js?v=5"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -241,8 +241,8 @@
         <p class="cover-lead">밥 한 끼부터 주말 나들이까지, 동네친구들과 함께합니다.</p>
         <div class="cover-actions">
           <a class="btn btn-primary is-lg" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
-          <!-- 그림이 첫 화면을 채워서 작은 폰(360x680)에서는 아래 '다가오는 모임' 의 모임 올리기가 첫 화면 밖이다. 첫 화면에서 바로 열 수 있게 -->
-          <a class="btn btn-secondary is-lg" href="news.html?cat=bung&amp;write=1"><svg class="ic is-sm" aria-hidden="true"><use href="#i-pencil"/></svg> 모임 올리기</a>
+          <!-- 링크를 받고 처음 온 멤버가 먼저 할 일은 참석이다(96차): 첫 화면에서 모임 모집 탭으로. 모임 올리기는 아래 '다가오는 모임' 머리에 -->
+          <a class="btn btn-secondary is-lg" href="news.html?cat=bung"><svg class="ic is-sm" aria-hidden="true"><use href="#i-calendar"/></svg> 모임 보고 참석</a>
           <a class="link-arrow" href="guide.html">이용 안내 <svg class="ic is-sm" aria-hidden="true"><use href="#i-arrowRight"/></svg></a>
         </div>
       </div>
@@ -424,7 +424,7 @@
         var state = st ? '<span class="row-state' + (past ? " is-past" : "") + '">' + esc(st) + "</span>" : "";
         // 모임 모집 줄: 벙 사진(제목이나 장소의 낱말로, 없으면 날짜 표)을 왼쪽에
         var thumb = v.kind === "bung" && m.date && window.BUNGPHOTO ? BUNGPHOTO.thumb(v.raw, m) : "";
-        return '<a class="row news-row' + (thumb ? " is-event" : "") + '" href="news.html#post-' + v.id + '">' +
+        return '<a class="row news-row' + (thumb ? " is-event" : "") + '" href="news.html' + (v.kind === "bung" ? "?cat=bung" : "") + '#post-' + v.id + '">' +
           (thumb ? '<span class="ev-thumb"><img src="' + esc(thumb) + '" alt="" width="56" height="56" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility=\'hidden\'" /></span>' : "") +
           '<span class="nr-line">' + tag + '<span class="row-title">' + esc(v.title || "제목 없음") + "</span></span>" +
           state +

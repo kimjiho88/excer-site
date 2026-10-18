@@ -30,11 +30,11 @@ admin as (
 inner_fn (sig) as (values
   ('public.site_is_admin(text)'), ('public.site_hash(text)'), ('public.site_kst_now()'),
   ('public.bung_is_open(bigint,jsonb)'), ('public.bung_attend_list(bigint)'), ('public.bung_check(jsonb,bigint,jsonb)'), ('public.bung_check(jsonb,bigint,jsonb,boolean)'),
-  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)')
+  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)'), ('public.ops_sheet_store(jsonb,jsonb,text)'), ('public.bung_migrate(jsonb)')
 ),
 locks as (
   select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
-         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean') as 빠짐
+         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean|ops_sheet_store|bung_migrate') as 빠짐
     from inner_fn
 ),
 schema_v as (
@@ -45,6 +45,7 @@ rate as (select (select count(*) from pg_trigger where tgname = 'site_rate_trg')
 -- 진행 중 참석(참석 함수가 끝나는 시각까지 받는가)과 봇 원격 조종(지금 멈춤이 있는가)
 botctl as (
   select (select count(*) from pg_proc where proname = 'bung_attend' and prosrc like '%bung_end(rec.meta)%') as mid, (select count(*) from pg_proc where proname = 'bung_unattend' and prosrc like '%bung_cancel_open(rec.meta)%') as cn, (select count(*) from pg_proc where proname = 'post_delete' and prosrc like '%PAST_BUNG%') as kp, (select count(*) from pg_proc where proname = 'post_update' and prosrc like '%site_is_admin(p_pass));%') as ap, (select count(*) from pg_proc where proname = 'bung_admin') as adm,
+         (select count(*) from pg_proc where proname in ('bung_attend', 'bung_unattend', 'bung_host_attend') and prosrc like '%bung_log(%') as lg, (select count(*) from pg_proc where proname = 'bung_check' and prosrc like '%정원을 새로 적거나 바꿀 때만%') as cp, (select count(*) from pg_proc where proname = 'bot_seen') as ot,
          case when to_regclass('public.site_bot_control') is null then null
               else coalesce((xpath('/row/c/text()', query_to_xml($q$select concat_ws(', ',
                      case when pause_until > now() then '전체 멈춤 ' || to_char(pause_until at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || '까지' end,
@@ -81,7 +82,7 @@ select 15, '속도 제한 트리거', n::text || '개',
   from rate
 union all
 select 17, '진행 중 참석, 봇 원격 조종', case when ctl is null then '표가 없어요' when ctl = '' then '평소대로' else ctl end,
-       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' when kp = 0 then '끝난 모임 지키기는 2026-10-10-keep-past.sql 을 돌리면 생겨요' when ap = 0 then '운영진의 지난 날짜 고치기는 2026-10-11-admin-past.sql 을 돌리면 생겨요' when adm = 0 then '운영진 모임 관리와 명단 기록은 2026-10-15-admin-bung-1.sql 부터 세 쪽을 차례로 돌리면 생겨요' else '' end
+       case when ctl is null or mid = 0 then '2026-10-09-midjoin-botctl.sql 을 돌리면 생겨요' when cn = 0 then '끝나기 전까지 참석 취소는 2026-10-10-midjoin-cancel.sql 을 돌리면 생겨요' when kp = 0 then '끝난 모임 지키기는 2026-10-10-keep-past.sql 을 돌리면 생겨요' when ap = 0 then '운영진의 지난 날짜 고치기는 2026-10-11-admin-past.sql 을 돌리면 생겨요' when adm = 0 then '운영진 모임 관리와 명단 기록은 2026-10-15-admin-bung-1.sql 부터 세 쪽을 차례로 돌리면 생겨요' when lg < 3 then '명단 기록이 빠진 함수가 있어요(옛 파일을 다시 돌린 것). 2026-10-15-admin-bung-1.sql 과 2.sql 을 다시 돌리세요' when cp = 0 then '정원 검사 손질은 2026-10-18-bung-cap.sql 을 돌리면 생겨요' when ot = 0 then '봇 살아 있음 표시와 기록 더 보기는 2026-10-18-ops-tune.sql 을 돌리면 생겨요' else '' end
   from botctl
 union all
 select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v is null then '2026-10-09-memberbot.sql 을 돌리면 생겨요'

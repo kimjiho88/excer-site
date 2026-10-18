@@ -139,7 +139,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-11.9"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-18.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -442,6 +442,16 @@ def cut_of(t, want):
     return len(t) >= 60 and (want.startswith(t) or want.startswith(t[:-2]))
 
 
+def ymd_ok(d):
+    """달력에 있는 날짜인가('2026-02-30' 은 아니다). 모양만 맞는 날짜가 공지를 만들다 터뜨리지 않게(2026-10-18)"""
+    try:
+        y, m, dd = (int(x) for x in d.split("-"))
+        date(y, m, dd)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def norm(p):
     if not isinstance(p, dict) or p.get("id") is None:
         return None
@@ -459,7 +469,7 @@ def norm(p):
     except (TypeError, ValueError):
         att = None
     return {"id": str(p["id"]), "title": clean(p.get("title"), 40) or "제목 없음", "author": clean(p.get("author"), 20),
-            "date": d if DATE_RE.match(d) else "", "time": t if TIME_RE.match(t) else "", "end": e if TIME_RE.match(e) else "",
+            "date": d if DATE_RE.match(d) and ymd_ok(d) else "", "time": t if TIME_RE.match(t) else "", "end": e if TIME_RE.match(e) else "",
             "place": clean(m.get("place"), 40), "addr": clean(m.get("addr"), 60), "cap": cap, "closed": m.get("status") == "closed",
             "deadline": dl if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", dl) else "",
             "attend": att, "full": bool(cap and att is not None and att >= cap),
@@ -542,6 +552,22 @@ class Site:
         if not isinstance(d, dict):
             raise RuntimeError("멤버 목록을 올린 답의 모양이 다름")
         return d
+
+    def seen(self, key, note=""):
+        """살아 있음 표시(bot_seen, 2026-10-18 SQL): 봇 열쇠와 한 줄(판)을 보낸다. 서버의 답(ok 또는 error). 그 SQL 이 없는 서버는 None"""
+        url = self.cfg["supa"] + "/rest/v1/rpc/bot_seen"
+        data = json.dumps({"p_key": key, "p_note": note}, ensure_ascii=False).encode("utf-8")
+        for fresh in (False, True):
+            k = self.anon_key(fresh)
+            code, body = self.post(url, data, {"apikey": k, "Authorization": "Bearer " + k})
+            if code != 401:
+                break
+        if code == 404:
+            return None
+        if not 200 <= code < 300:
+            raise RuntimeError("HTTP %s" % code)
+        d = json.loads(body)
+        return d if isinstance(d, dict) else {"ok": False, "error": "모양이 다름"}
 
     def posts(self):
         """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
@@ -751,9 +777,12 @@ def beat_text(bot, now):
     """시험 방에 매일 올리는 한 줄: 판, 사이트를 본 때와 실패, 공지 상태"""
     st = bot.st
     lc = float(getattr(bot, "last_check", 0) or 0)
-    out = ["\u2705 봇 정상 %s %s (판 %s)" % (md(now.ymd), now.hm, VERSION),
+    err = str(getattr(bot, "loop_err", "") or "")        # 차례마다 터지는 오류가 이어지면 '봇 정상' 이 아니라 '봇 이상' 으로(2026-10-18)
+    out = ["%s %s %s (판 %s)" % ("\u26A0\uFE0F 봇 이상" if err else "\u2705 봇 정상", md(now.ymd), now.hm, VERSION),
            "사이트: %s 확인, %s" % (datetime.fromtimestamp(lc, KST).strftime("%H:%M") if lc else "아직 안 봄",
                                  "읽기 실패 %d번 이어짐" % bot.read_fails if getattr(bot, "read_fails", 0) else "실패 없음")]
+    if err:
+        out.append("이어지는 오류 %d번: %s. 태블릿에서 python excer_bot.py status" % (int(getattr(bot, "loop_err_n", 0) or 0), clean(err, 80)))
     if st.get("notice_gaveup"):
         out.append("공지: 걸기를 쉬는 중. 방에 올린 마지막 공지 글을 직접 공지로 걸어 주세요")
     elif st.get("notice_fail"):
@@ -930,6 +959,8 @@ def notice_today(posts, now, cfg):
     t0 = day_turn(cfg)
     day0 = Now(datetime(y, m, d, int(t0[:2]), int(t0[3:]), tzinfo=KST))   # 이후 벙은 오늘이 시작한 때 기준으로 모집 중(그날 신청 마감이 지나도 글이 그대로)
     mine = [v for v in posts if v["date"] == today and not (t0 != "00:00" and key_add(start_key(v), NOTICE_NOW_MIN) <= now_key(day0))]
+    yday = (date(y, m, d) - timedelta(days=1)).isoformat()
+    mine += [v for v in posts if v["date"] == yday and v.get("end") and end_key(v) > now_key(now)]   # 자정을 넘겨 아직 진행 중인 어제 벙(22:00~01:00)은 오늘 카드에도 남긴다(2026-10-18)
     return (today, day0, [v for v in mine if not v["closed"] and not v.get("full")], [v for v in mine if v["closed"] or v.get("full")],
             sorted([v for v in posts if v["date"] > today and recruiting(v, day0)], key=skey))
 
@@ -1236,6 +1267,8 @@ class Bot:
         self.look_fails = 0                             # 방 공지 보기(look)가 이어서 실패한 횟수
         self.fail_keys = []                             # 최근 실패의 종류와 글 앞부분(새 실패는 바로 적는다)
         self.fail_new_at = None                         # 새 실패로 따로 적은 때(10분에 한 번까지)
+        self.loop_err, self.loop_err_n = "", 0          # run_loop 에서 이어지는 오류(아침 '봇 정상' 줄이 말한다)
+        self.seen_at, self.seen_off, self.seen_warned = 0.0, False, False   # 서버에 살아 있음 표시(bot_seen)를 남긴 때, 그 SQL 이 없음, 한 번 적음
 
     def ts(self):
         """지금 시각(초). 한 차례가 1분 넘게 걸리기도 해서 다시 시도 시각은 끝난 때부터 잰다"""
@@ -1261,6 +1294,26 @@ class Bot:
         d = d or {}
         self.ctl = {"notice": float(d.get("notice_until_ts") or 0), "pause": float(d.get("pause_until_ts") or 0)}
         return self.ctl
+
+    def seen_ping(self, now):
+        """서버에 살아 있음을 남긴다(bot_seen, 2026-10-18 SQL): 5분에 한 번, 봇 열쇠가 있을 때. 운영 화면과 health.sql 의 '봇 마지막 확인'.
+        못 남겨도 그냥 간다(처음 한 번만 적는다). 그 SQL 이 없는 서버(404)면 다시 켤 때까지 부르지 않는다"""
+        key, fn = self.cfg.get("members_key") or "", getattr(self.site, "seen", None)
+        if not key or not fn or self.seen_off or now.ts - self.seen_at < 300:
+            return
+        self.seen_at = now.ts
+        try:
+            r = fn(key, "판 " + VERSION)
+        except Exception as e:
+            if not self.seen_warned:
+                self.seen_warned = True
+                self.log("살아 있음 표시를 남기지 못함(그냥 감): %s" % e)
+            return
+        if r is None:
+            self.seen_off = True
+        elif not r.get("ok") and not self.seen_warned:
+            self.seen_warned = True
+            self.log("살아 있음 표시를 서버가 받지 않음(%s): 운영 화면 데이터 탭의 봇 열쇠를 확인" % r.get("error"))
 
     def heartbeat(self):
         """매일 heartbeat_at 에 시험 방에 '봇 정상' 한 줄. 못 보내면 30분 뒤 다시(그날 안). 무엇을 했는지 한 낱말로"""
@@ -1302,6 +1355,8 @@ class Bot:
         if self.control(now)["pause"] > now.ts:
             return ""                                       # 운영 화면의 전체 멈춤 중에는 화면을 건드리지 않는다
         names, step = [], "read"
+        last = st.get("members_last") or {}
+        self.sender.mem_last_n = int(last.get("n") or 0) if not last.get("error") else 0   # 지난번 성공한 수: 대화상대 수를 못 읽은 날의 하한(2026-10-18)
         try:
             names = self.sender.read_members(self.room, cfg.get("members") or {})
             step = "push"
@@ -1367,6 +1422,7 @@ class Bot:
                     st[flag] = 1
                     self.save()
             self.prev_sig = None                        # 끝난 뒤 처음 읽은 글은 막 바뀐 것으로 보지 않는다(밤사이 바뀐 것도 끝나는 시각에 바로)
+            self.seen_ping(now)                         # 조용한 시간에도 살아 있음은 남긴다
             return "quiet"
         try:
             posts = self.site.posts()
@@ -1391,14 +1447,19 @@ class Bot:
         if self.read_fails:
             self.log("사이트 다시 읽힘(%d번 실패 뒤)" % self.read_fails)
             self.read_fails = self.net_fails = 0
-        live_known = any(sig_live(o, now) for o in st.get("known", {}).values())
-        if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다. 세 번 연속이어야 믿는다
-            self.empty_streak += 1
-            if self.empty_streak < 3:
-                self.log("사이트가 빈 목록을 줌(%d번째). 다음 차례에 다시 봄" % self.empty_streak)
+        self.seen_ping(now)                             # 살아 있음 표시(5분마다, 봇 열쇠가 있을 때)
+        live_known = [o for o in st.get("known", {}).values() if sig_live(o, now)]
+        if not posts and live_known:                     # 빈 목록: 사이트가 흔들린 것일 수 있다(권한이 잠깐 빠지면 오류가 아니라 빈 목록이 온다).
+            self.empty_streak += 1                       # 살아 있는 벙이 하나면 세 번 연속(3분), 둘 이상이면 열다섯 번 연속(15분)이어야 믿는다(한꺼번에 취소로 알리지 않게)
+            need = 3 if len(live_known) <= 1 else 15
+            if self.empty_streak < need:
+                if self.empty_streak in (1, 3) or self.empty_streak % 10 == 0:
+                    self.log("사이트가 빈 목록을 줌(%d번째, %d번 이어지면 믿음). 다음 차례에 다시 봄" % (self.empty_streak, need))
                 self.hold_until = now.ts + 60
                 return "read-empty"
         else:
+            if self.empty_streak:
+                self.log("사이트 목록이 다시 옴(빈 목록 %d번 뒤)" % self.empty_streak)
             self.empty_streak = 0
         sig = hashlib.sha1(json.dumps(sorted([dict(v, attend=None) for v in posts], key=lambda v: v["id"]), ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
         self.site_moved = self.prev_sig is not None and sig != self.prev_sig   # 벙 글이 바뀜(켠 뒤 처음 읽은 것, 시각만 지난 것, 참석 수만 바뀐 것은 아님)
@@ -4893,6 +4954,8 @@ class AdbSender:
             why = "멤버보다 많이 읽음(대화상대 %d명인데 이름 %d개)" % (n, len(names))
         elif not n and len(names) < least:
             why = "멤버를 다 읽지 못함(%d명, 대화상대 수를 못 읽어 %d명은 넘어야 함)" % (len(names), least)
+        elif not n and getattr(self, "mem_last_n", 0) and len(names) < getattr(self, "mem_last_n", 0) * ratio:
+            why = "멤버를 다 읽지 못함(%d명, 대화상대 수를 못 읽어 지난번 %d명의 %d%% 는 넘어야 함)" % (len(names), getattr(self, "mem_last_n", 0), int(ratio * 100))
         if why:
             self.save_diag()
             raise KakaoError(why + ". python excer_bot.py members study 로 화면을 적어 보내 주세요" + self.diag_note())
@@ -5610,11 +5673,33 @@ class AdbSender:
             pass
         return out
 
-    @staticmethod
-    def rows(nodes):
-        return ["%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], n["text"][:60].replace("\n", " / "), n["desc"][:80].replace("\n", " / "), n["rid"],
-                "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"], n.get("pkg", "")) for n in nodes
-                if n["text"] or n["desc"] or n["rid"] or n["click"] or n["cls"].endswith("EditText")]
+    MASK_KEEP_RE = re.compile(r"^[\d\s:/.,~()%+\-명건개월일시분초오전후읽음안읽음방장나]*$")   # 수, 시각, 읽음 표시 같은 짧은 글은 그대로
+
+    def mask_text(self, s):
+        """목록 안의 글 하나를 가린다(2026-10-18): 방 이름, 봇 글(공지와 알림 기호, 카드 번호로 시작), 메뉴와 머리 같은 표시, 수와 시각만 그대로.
+        대화 글과 닉네임은 글자 수만 남긴다(진단 파일을 개발 대화에 붙여도 대화 원문과 이름이 새지 않게)"""
+        t = ws(s)
+        if not t or len(t) <= 1 or self.MASK_KEEP_RE.match(t) or member_label(t) or member_headish(t):
+            return s
+        if any(same_room(t, r) for r in self.known_rooms) or t.startswith(tuple(EMO.values())) or t.startswith(tuple(CARD_NO)):
+            return s
+        return "(글 %d자)" % len(t)
+
+    def rows(self, nodes):
+        """화면 요소를 한 줄씩. 목록(대화 칸, 채팅 목록, 멤버 칸) 안의 글은 mask_text 로 가린다"""
+        try:
+            lists = self.in_lists(nodes)
+        except Exception:
+            lists = set()
+        out = []
+        for n in nodes:
+            if not (n["text"] or n["desc"] or n["rid"] or n["click"] or n["cls"].endswith("EditText")):
+                continue
+            t, d = n["text"][:60].replace("\n", " / "), n["desc"][:80].replace("\n", " / ")
+            if n.get("i") in lists:
+                t, d = self.mask_text(t), self.mask_text(d)
+            out.append("%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], t, d, n["rid"], "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"], n.get("pkg", "")))
+        return out
 
     def dump_file(self, path, nodes=None, head=False, fail=None):
         """지금 화면을 파일에. head: 맨 위에 판과 창 목록(ui), 안 됐으면 그 까닭과 지나온 화면도 아래에(한 파일로 보내게)"""
@@ -6439,12 +6524,14 @@ def run_loop(bot, log, voice=None, alive_path=None):
             if ran and last_err:
                 log("오류가 멎음(%d번 이어졌음)" % err_n)
                 last_err, err_n = "", 0
+                bot.loop_err, bot.loop_err_n = "", 0
         except KeyboardInterrupt:
             raise
         except Exception as e:
             msg = "%s" % e
             err_n = err_n + 1 if msg == last_err else 1
             last_err = msg
+            bot.loop_err, bot.loop_err_n = msg, err_n        # 아침 '봇 정상' 줄이 이어지는 오류를 말하게(2026-10-18)
             if err_n == 1 or err_n % 30 == 0:           # 같은 오류가 2초마다 이어지면 처음과 30번째마다만 적는다(설정 오타 등)
                 log("오류%s: %s" % ("(%d번째, 같은 오류가 이어짐)" % err_n if err_n > 1 else "", msg))
         if alive_path and time.time() - beat >= 30:    # 살아 있다는 표시: status 명령이 읽는다

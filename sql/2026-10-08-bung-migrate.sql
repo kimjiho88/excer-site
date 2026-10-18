@@ -1,9 +1,16 @@
 -- 카카오톡 일정 옮기기 1쪽(2026-10-08): 열린 벙을 모임 모집 글로 옮기는 함수, 시험으로 올린 모임 모집 글 지우기
--- Run 한 뒤 따로 받은 자료 쪽(구성원 이름이 있어 저장소에 두지 않는다)을 차례로 Run. 다시 실행해도 안전하다.
+-- Run 한 뒤 따로 받은 자료 쪽(구성원 이름이 있어 저장소에 두지 않는다)을 차례로 Run. 자료 쪽은 다시 돌려도 안전하다(같은 글은 건너뛴다).
+-- 이 1쪽은 한 번만 돌린다(2026-10-18): 함수가 이미 있으면 첫 줄에서 멈춘다. 아래 시험 글 지우기는 2026-10-08 21:40 전 글 가운데 비밀번호가
+-- MIGRATED 가 아닌 것을 지우는데, 그 뒤 모임장에게 비밀번호를 넘긴 옮긴 글도 거기에 들기 때문이다.
 -- 옮긴 글은 글 비밀번호가 없다(pass_hash 'MIGRATED'): 고치기, 지우기, 참석자 빼기는 운영진 비밀번호로.
 -- 참석자는 모임장이 적은 사람(HOST)으로 넣는다. 같은 닉네임과 자기 비밀번호로 참석을 누르면 자기 것이 된다.
 -- 봇은 run 을 Ctrl+C 로 멈춘 뒤 돌리고, reset 다음에 run(새 벙, 취소 알림이 한꺼번에 나가지 않게).
-do $g$ begin if to_regprocedure('public.bung_end(jsonb)') is null then raise exception '끝나는 시간 두 쪽(2026-10-05)을 먼저 실행하세요'; end if; end $g$;
+do $g$ begin
+  if to_regprocedure('public.bung_end(jsonb)') is null then raise exception '끝나는 시간 두 쪽(2026-10-05)을 먼저 실행하세요'; end if;
+  if to_regprocedure('public.bung_migrate(jsonb)') is not null then
+    raise exception '이미 적용된 파일입니다. 다시 돌리지 않습니다(돌리면 모임장에게 비밀번호를 넘긴 옮긴 글이 지워집니다). 자료 쪽만 다시 돌릴 수 있습니다';
+  end if;
+end $g$;
 
 -- 자료 한 건: {"n":제목, "w":모임장, "d":날짜, "t":시작, "e":끝, "p":장소, "a":주소, "c":정원, "b":본문, "at":올린 시각, "m":[참석자]}
 create or replace function bung_migrate(p jsonb)
