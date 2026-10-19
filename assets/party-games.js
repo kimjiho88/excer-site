@@ -42,13 +42,14 @@
     arr.forEach(function (x) { x.pos = 1 + arr.filter(function (y) { return y.p > x.p; }).length; });
     return arr;
   }
-  function boardHTML(rk, limit) {
+  function boardHTML(rk, top3) {
     var max = Math.max(1, rk[0] ? rk[0].p : 1);
-    return '<ol class="board">' + rk.slice(0, limit || rk.length).map(function (x) {
+    var list = top3 ? rk.filter(function (x) { return x.pos <= 3; }).slice(0, 5) : rk, rest = rk.length - list.length;
+    return '<ol class="board">' + list.map(function (x) {
       return '<li' + (x.pos === 1 && x.p > 0 ? ' class="is-top"' : "") + '><span class="fill" data-w="' + Math.round(x.p / max * 100) + '"></span>'
         + '<span class="pos">' + x.pos + '<span class="pa-sr">등</span></span>' + tok(x.n, "sm") + '<span class="nm">' + esc(disp(x.n)) + "</span>"
         + '<span class="pts">' + x.p + '<span class="pa-sr">점</span></span></li>';
-    }).join("") + "</ol>";
+    }).join("") + "</ol>" + (rest > 0 ? '<p class="board-more">외 ' + rest + "명</p>" : "");
   }
 
   /* ============================================================
@@ -96,8 +97,8 @@
     if (s.cardFor && !inRoster(s.cardFor)) s.cardFor = null;
   }
   function segHTML(s) {
-    return '<div class="seg" role="tablist" aria-label="뽑기 종류" style="--n:4">' + MODES.map(function (m) {
-      return '<button type="button" role="tab" aria-selected="' + (s.mode === m[0]) + '" data-act="mode" data-mode="' + m[0] + '">' + ic(m[2]) + m[1] + "</button>";
+    return '<div class="seg" role="group" aria-label="뽑기 종류" style="--n:4">' + MODES.map(function (m) {
+      return '<button type="button" aria-pressed="' + (s.mode === m[0]) + '" data-act="mode" data-mode="' + m[0] + '">' + ic(m[2]) + m[1] + "</button>";
     }).join("") + "</div>";
   }
   function pickRender(s, fx) {
@@ -143,11 +144,12 @@
   function wheelHTML(list, rot) {
     var n = list.length, a = 360 / n, sl = "", lb = "", pg = "", bl = "";
     var rT = n <= 3 ? 50 : n <= 6 ? 60 : 66, fs0 = n <= 4 ? 18 : n <= 6 ? 16 : n <= 8 ? 14 : n <= 10 ? 12.5 : 11.5;
-    var room = Math.min(120, 2 * Math.PI * rT / n * 0.84);
+    var room = Math.min(120, 2 * Math.PI * rT / n * 0.84), used = {};
+    var cols = list.map(function (nm) { var c = H.color(nm); if (used[c]) { c = H.PALETTE.filter(function (x) { return !used[x]; })[0] || c; } used[c] = 1; return c; });
     for (var i = 0; i < n; i++) {
       var name = list[i], ch = Array.from(disp(name)), fs = Math.min(fs0, room / (ch.length * 0.98));
       if (fs < 9) { fs = 9; ch = ch.slice(0, Math.max(2, Math.floor(room / (9 * 0.98)))); }
-      sl += '<path class="slice" data-i="' + i + '" d="' + H.slicePath(92, i * a - a / 2, i * a + a / 2) + '" fill="' + H.color(name) + '"/>';
+      sl += '<path class="slice" data-i="' + i + '" d="' + H.slicePath(92, i * a - a / 2, i * a + a / 2) + '" fill="' + cols[i] + '"/>';
       lb += '<text class="lab" data-i="' + i + '" transform="' + labT(i, a, rT, rot) + '" font-size="' + fs.toFixed(1) + '">' + esc(ch.join("")) + "</text>";
       var p = H.pt(86, i * a + a / 2); pg += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.7"/>';
     }
@@ -226,7 +228,7 @@
     if (!stage) return;
     P.busy = true; stopSpin();
     var n = list.length, a = 360 / n, win = Math.floor(Math.random() * n), dir = o.v < 0 ? -1 : 1, v0 = Math.abs(o.v || 0), K = 3;
-    var turns = v0 ? H.clamp(v0 / 330, 3, 8) : 5 + Math.random() * 1.5;
+    var turns = H.reduced() ? 1 : v0 ? H.clamp(v0 / 330, 3, 8) : 5 + Math.random() * 1.5;
     var target = -(win * a) - (Math.random() - 0.5) * a * 0.72;
     var cur = s.rot, base = cur + dir * turns * 360, delta = (((target - base) % 360) + 360) % 360;
     var F = dir > 0 ? base + delta : base - ((360 - delta) % 360);
@@ -263,8 +265,9 @@
   function slotSpin(s, list) {
     var reel = $("reel"), slot = $("slot"); if (!reel) return;
     P.busy = true; stopSpin();
-    var win = Math.floor(Math.random() * list.length), name = list[win], seq = [];
-    for (var c = 0; c < (H.reduced() ? 1 : 3); c++) seq = seq.concat(H.shuffle(list));
+    var win = Math.floor(Math.random() * list.length), name = list[win], seq = [], want = H.reduced() ? 8 : 30;
+    while (seq.length < want) seq = seq.concat(H.shuffle(list));
+    seq = seq.slice(0, Math.max(want, Math.min(seq.length, 45)));
     var cur = s.last && list.indexOf(s.last) >= 0 ? s.last : list[0];
     var rows = [H.rnd(list), cur].concat(seq, [name, H.rnd(list)]), K = rows.length - 2;
     reel.innerHTML = rows.map(slotRow).join(""); reel.style.transform = "translateY(0px)";
@@ -296,7 +299,8 @@
   }
   function pickResult(s, name) {
     var left = poolOf(s).length;
-    P.pop('<p class="k">뽑혔어요</p>' + tok(name, "xl") + '<p class="big">' + esc(disp(name)) + "</p>" + (disp(name) !== name ? '<p class="full">' + esc(name) + "</p>" : "")
+    var w0 = name.split(/\s+/)[0], twin = P.roster.some(function (o) { return o !== name && o.split(/\s+/)[0] === w0; });
+    P.pop('<p class="k">뽑혔어요</p>' + tok(name, "xl") + '<p class="big">' + esc(disp(name)) + "</p>" + (twin && disp(name) !== name ? '<p class="full">' + esc(name) + "</p>" : "")
       + '<div id="popMission"></div><div class="acts">'
       + btn("mission", ic("bolt") + "미션 카드 주기", "is-primary")
       + '<div class="pg-row">' + btn("again", ic("refresh", "is-sm") + "다시 돌리기", "is-ghost is-sm") + btn("exclude", ic("userx", "is-sm") + "빼고 돌리기", "is-ghost is-sm", left <= 2 ? " disabled" : "") + "</div>"
@@ -323,7 +327,8 @@
     var lis = Array.prototype.slice.call(ol.children), map = {}, top = [];
     lis.forEach(function (li) { map[li.getAttribute("data-k")] = li; top.push(li.getBoundingClientRect().top); });
     order.forEach(function (n, i) { var li = map[H.nickKey(n)]; if (!li) return; ol.appendChild(li); li.querySelector(".n").textContent = i + 1; });
-    lis.forEach(function (li, i) { var dy = top[i] - li.getBoundingClientRect().top; li.style.transition = "none"; li.style.transform = dy ? "translateY(" + dy + "px)" : ""; });
+    var now = lis.map(function (li) { return li.getBoundingClientRect().top; });
+    lis.forEach(function (li, i) { var dy = top[i] - now[i]; li.style.transition = "none"; li.style.transform = dy ? "translateY(" + dy + "px)" : ""; });
     void ol.offsetHeight;
     lis.forEach(function (li) { li.style.transition = "transform " + ms + "ms cubic-bezier(.2,.8,.2,1)"; li.style.transform = ""; });
     return H.wait(ms);
@@ -342,7 +347,7 @@
       var ns = ol.querySelectorAll(".n"), gap = H.reduced() ? 0 : Math.max(55, Math.min(110, 1200 / ns.length));
       each(ns, function (n, i) { later(s, i * gap, function () { n.classList.add("is-on"); P.sfx(i === 0 ? "coin" : "tick"); }); });
       later(s, ns.length * gap + 120, function () {
-        s.order = fin; P.busy = false; P.setFoot(orderFoot(s)); H.buzz(30); P.save();
+        s.order = fin; P.busy = false; P.setFoot(orderFoot(s)); H.buzz(30); P.save(); P.confetti({ n: 60, from: "top" });
         H.say("순서. " + fin.slice(0, 5).map(function (n, i) { return (i + 1) + "번 " + disp(n); }).join(", "));
       });
     });
@@ -356,7 +361,7 @@
       if (!m.length) for (var k = 0; k < per; k++) ph += '<li class="ph" aria-hidden="true"></li>';
       return '<div class="team" style="border-color:' + c + "66;background:linear-gradient(180deg," + c + "30," + c + '0A)"><h4><i style="background:' + c + ";color:" + c + '"></i>' + TEAMS[t][0] + "팀"
         + (m.length ? '<span class="n">' + m.length + "명</span>" : "") + "</h4><ul>"
-        + m.map(function (x, j) { return "<li" + (delays ? ' style="animation-delay:' + delays[t][j] + 'ms"' : "") + ">" + tok(x, "xs") + "<span>" + esc(disp(x)) + "</span></li>"; }).join("") + ph + "</ul></div>";
+        + m.map(function (x, j) { return "<li" + (delays ? ' style="animation-delay:' + delays[t][j] + 'ms"' : "") + '><span class="tok is-xs" style="--c:' + c + '" aria-hidden="true">' + esc(H.initial(x)) + "</span><span>" + esc(disp(x)) + "</span></li>"; }).join("") + ph + "</ul></div>";
     }).join("");
   }
   function pickTeams(s) {
@@ -391,7 +396,7 @@
     P.sfx("shuffle");
     sh.forEach(function (m, k) { later(s, k * gap + 40, function () { P.sfx("deal"); }); });
     later(s, sh.length * gap + 260, function () {
-      s.teams = teams; P.busy = false; P.sfx("coin"); H.buzz(30); P.setFoot(teamFoot(s)); P.save();
+      s.teams = teams; P.busy = false; P.sfx("coin"); H.buzz(30); P.setFoot(teamFoot(s)); P.save(); P.confetti({ n: 60, from: "top", colors: TEAMS.slice(0, T).map(function (x) { return x[1]; }).concat(["#FFFFFF"]) });
       H.say(teams.map(function (m, i) { return TEAMS[i][0] + "팀 " + m.map(disp).join(", "); }).join(". "));
     });
   }
@@ -437,9 +442,9 @@
     P.busy = true;
     var list = P.roster, win = Math.floor(Math.random() * list.length);
     box.hidden = false; box.innerHTML = list.map(function (n) { return tok(n, "md"); }).join("");
-    var toks = box.children, total = H.reduced() ? win : list.length * 2 + win, t = 0, prev = null;
+    var toks = box.children, len = list.length, total = H.reduced() ? win : win + len * Math.max(1, Math.ceil(16 / len)), t = 0, prev = null;
     for (var j = 0; j <= total; j++) {
-      t += 45 + 210 * Math.pow(j / Math.max(1, total), 2.2);
+      t += (2200 / Math.max(1, total)) * (0.4 + 1.8 * Math.pow(j / Math.max(1, total), 2));
       (function (j, at) {
         later(s, at, function () {
           if (prev) prev.classList.remove("is-hit");
@@ -505,7 +510,7 @@
       P.screen({
         body: handHTML(who, "혼자 보고 하나만 골라요", s.players.length, s.i),
         foot: btn("got", "받았어요", "is-primary is-lg") + (s.i > 0 ? btn("undo", ic("undo", "is-sm") + "앞사람 다시 고르기", "is-text") : ""),
-        prog: prog, say: disp(who) + " 님 차례. 폰을 받으면 받았어요를 누르세요."
+        prog: prog, say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요를 눌러 주세요."
       });
       P.sfx("wood");
       return;
@@ -517,7 +522,7 @@
           + '<div class="bq is-choose"><button type="button" class="bq-opt is-a" data-act="pick" data-v="0"><small>A</small>' + esc(s.q[0]) + '</button><div class="vs" aria-hidden="true">VS</div>'
           + '<button type="button" class="bq-opt is-b" data-act="pick" data-v="1"><small>B</small>' + esc(s.q[1]) + "</button></div>"
           + '<p class="pg-hint">고르면 바로 다음 사람에게 넘어가요</p>',
-        foot: "", prog: prog, say: disp(me) + " 님, A와 B 가운데 하나를 고르세요."
+        foot: "", prog: prog, say: disp(me) + " 님, A와 B 가운데 하나를 골라 주세요."
       });
       return;
     }
@@ -526,7 +531,7 @@
       P.screen({
         body: '<div class="hand"><span class="pass">' + ic("check", "is-sm") + '모두 골랐어요</span><div class="pg-intro-art">' + H.art("balance") + '</div><p class="hand-who">결과 공개</p><p class="msg">폰을 가운데 두고 같이 봐요</p>' + dots(n, n) + "</div>",
         foot: btn("reveal", ic("eye") + "결과 공개", "is-primary is-lg is-glow") + btn("undo", ic("undo", "is-sm") + "앞사람 다시 고르기", "is-text"),
-        prog: prog, say: "모두 골랐어요. 결과 공개를 누르세요."
+        prog: prog, say: "모두 골랐어요. 결과 공개를 눌러 주세요."
       });
       P.sfx("coin");
       return;
@@ -539,11 +544,11 @@
     var pk = P.pack().balance, cats = Object.keys(pk), sel = selCats(s);
     P.screen({
       body: intro("balance", "밸런스 게임", "둘 가운데 하나를 몰래 고르고 다 같이 공개해요.")
-        + steps(["문제를 같이 읽어요", "폰을 돌려 가며 혼자 몰래 골라요", "다 고르면 한꺼번에 공개, 다수 쪽이 1점"])
         + sect("문제 종류", '<div class="pchips">' + cats.map(function (c) { return '<button type="button" class="pchip" data-act="cat" data-cat="' + esc(c) + '" aria-pressed="' + (sel.indexOf(c) >= 0) + '">' + esc(c) + ' <span class="n">' + pk[c].length + "</span></button>"; }).join("") + "</div>")
-        + sect("문제 수", '<div class="seg" style="--n:3" role="radiogroup" aria-label="문제 수">' + [5, 10, 15].map(function (k) { return '<button type="button" role="radio" aria-checked="' + (s.rounds === k) + '" data-act="rounds" data-n="' + k + '">' + k + "문제</button>"; }).join("") + "</div>"),
+        + sect("문제 수", '<div class="seg" style="--n:3" role="group" aria-label="문제 수">' + [5, 10, 15].map(function (k) { return '<button type="button" aria-pressed="' + (s.rounds === k) + '" data-act="rounds" data-n="' + k + '">' + k + "문제</button>"; }).join("") + "</div>")
+        + sect("하는 법", steps(["문제를 같이 읽어요", "폰을 돌려 가며 혼자 몰래 골라요", "다 고르면 한꺼번에 공개, 다수 쪽이 1점"])),
       foot: btn("start", ic("play") + "시작하기", "is-primary is-lg is-glow"),
-      say: "밸런스 게임. 문제 종류와 수를 고르고 시작하세요."
+      say: "밸런스 게임. 문제 종류와 수를 고르고 시작해요."
     });
   }
   function balAct(a, el, s) {
@@ -553,7 +558,7 @@
       s.cats = sel.length === Object.keys(pk).length ? null : sel;
       el.setAttribute("aria-pressed", String(i < 0)); P.sfx("select"); P.save(); return;
     }
-    if (a === "rounds") { s.rounds = Number(el.getAttribute("data-n")); each(el.parentNode.children, function (b) { b.setAttribute("aria-checked", String(b === el)); }); P.sfx("select"); P.save(); return; }
+    if (a === "rounds") { s.rounds = Number(el.getAttribute("data-n")); each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); }); P.sfx("select"); P.save(); return; }
     if (a === "start" || a === "again") { balStart(s); return; }
     if (a === "swap") { balPickQ(s); balShow(s); P.sfx("flip"); return; }
     if (a === "begin") { s.i = 0; s.phase = "hand"; balShow(s); return; }
@@ -583,7 +588,7 @@
   function balNextQ(s) {
     s.round++; balPickQ(s); s.phase = "q";
     P.busy = true; P.save();
-    P.splash({ k: "라운드", big: String(s.round), sub: "모두 " + s.rounds + "문제" }).then(function () { if (P.st !== s) return; P.busy = false; balShow(s); });
+    P.splash({ k: "문제", big: String(s.round), sub: s.rounds + "문제 가운데" }).then(function () { if (P.st !== s) return; P.busy = false; balShow(s); });
   }
   function balPick(s, el) {
     var v = Number(el.getAttribute("data-v")), who = s.players[s.i];
@@ -623,7 +628,7 @@
         + '<div class="sides2">' + side(A, 0) + side(B, 1) + "</div>" + award + sect("지금 순위", boardHTML(ranking(s.players, s.scores), 3)),
       foot: last ? btn("final", ic("trophy") + "최종 결과", "is-primary is-lg is-glow") : btn("next", "다음 문제" + ic("next"), "is-primary is-lg"),
       prog: { n: s.rounds, i: s.round },
-      say: "A " + A.length + "명, B " + B.length + "명. " + (h.maj === -1 ? "동률입니다." : (h.maj ? "B" : "A") + " 쪽이 다수입니다.")
+      say: "A " + A.length + "명, B " + B.length + "명. " + (h.maj === -1 ? "동률이에요." : (h.maj ? "B" : "A") + " 쪽이 다수예요.")
     });
     fillBars();
     if (fx) {
@@ -634,26 +639,28 @@
     }
   }
   function podiumHTML(rk) {
-    var slots = [rk[1], rk[0], rk[2]], cls = ["p2", "p1", "p3"], dl = [0.75, 1.0, 0.5], gd = [0.15, 0.3, 0];
+    var slots = [rk[1], rk[0], rk[2]], dl = [0.75, 1.0, 0.5], gd = [0.15, 0.3, 0];
     return '<div class="podium">' + slots.map(function (x, i) {
-      if (!x) return '<div class="pod ' + cls[i] + '" aria-hidden="true"></div>';
-      return '<div class="pod ' + cls[i] + '" style="--dl:' + dl[i] + "s;--gd:" + gd[i] + 's">' + (i === 1 && x.p > 0 ? '<span class="crown">' + CROWN + "</span>" : "")
+      if (!x) return '<div class="pod" aria-hidden="true"></div>';
+      var c = x.pos === 1 ? "p1" : x.pos === 2 ? "p2" : "p3";
+      return '<div class="pod ' + c + '" style="--dl:' + dl[i] + "s;--gd:" + gd[i] + 's">' + (x.pos === 1 && x.p > 0 ? '<span class="crown">' + CROWN + "</span>" : "")
         + tok(x.n, i === 1 ? "lg" : "md") + '<span class="nm">' + esc(disp(x.n)) + '</span><span class="pts">' + x.p + '점</span><div class="blk">' + x.pos + "</div></div>";
     }).join("") + "</div>";
   }
   function balFinal(s, fx) {
-    var rk = ranking(s.players, s.scores), champs = rk.filter(function (x) { return x.pos === 1 && x.p > 0; });
-    var head = champs.length
-      ? '<div class="champ"><span class="k">공감왕</span><p class="big">' + esc(champs.map(function (x) { return disp(x.n); }).join(", ")) + '</p><p class="pg-p">' + (champs.length > 1 ? "공동 1등이에요. " : "") + "다수와 가장 많이 같은 쪽을 골랐어요</p></div>"
-      : '<div class="champ"><span class="k">이번 판은</span><p class="big">모두 동점</p></div>';
+    var rk = ranking(s.players, s.scores), champs = rk.filter(function (x) { return x.pos === 1 && x.p > 0; }), allSame = champs.length === rk.length || !champs.length;
+    var names = champs.length > 2 ? disp(champs[0].n) + " 외 " + (champs.length - 1) + "명" : champs.map(function (x) { return disp(x.n); }).join(", ");
+    var head = allSame
+      ? '<div class="champ"><span class="k">이번 판은</span><p class="big">모두 같은 점수예요</p></div>'
+      : '<div class="champ"><span class="k">공감왕</span><p class="big">' + esc(names) + '</p><p class="pg-p">' + (champs.length > 1 ? "공동 1등이에요. " : "") + "다수와 같은 쪽을 가장 많이 골랐어요</p></div>";
     P.screen({
-      body: head + podiumHTML(rk) + sect("전체 순위", boardHTML(rk))
+      body: head + (allSame ? "" : podiumHTML(rk)) + sect("전체 순위", boardHTML(rk))
         + '<div class="pg-share">' + btn("share", ic("share", "is-sm") + "카카오톡 공유", "is-ghost is-sm") + btn("copy", ic("copy", "is-sm") + "결과 복사", "is-ghost is-sm") + "</div>",
       foot: '<div class="pg-row">' + btn("leave", ic("home", "is-sm") + "처음으로", "is-ghost") + btn("again", ic("refresh") + "한 판 더", "is-primary is-wide") + "</div>",
-      say: champs.length ? "공감왕은 " + champs.map(function (x) { return disp(x.n); }).join(", ") + " 님." : "모두 동점입니다."
+      say: allSame ? "모두 같은 점수예요." : "공감왕은 " + champs.map(function (x) { return disp(x.n); }).join(", ") + " 님이에요."
     });
     fillBars();
-    if (fx) { P.sfx("win"); H.buzz([60, 40, 120]); P.confetti({ n: 190 }); later(s, 950, function () { P.confetti({ from: "top", n: 110 }); }); }
+    if (fx) { P.sfx("win"); H.buzz([60, 40, 120]); P.confetti({ n: allSame ? 90 : 190 }); if (!allSame) later(s, 950, function () { P.confetti({ from: "top", n: 110 }); }); }
   }
 
   /* ============================================================
@@ -679,6 +686,10 @@
       if (s.phase !== "setup" && !ok) return Object.assign(liar.fresh(pf), { cat: s.cat, timer: s.timer, tally: s.tally, round: s.round, used: s.used });
       if (s.phase === "card") { s.phase = "hand"; s.seen = false; }
       if (/^(verdict|guess|result)$/.test(s.phase) && s.players.indexOf(s.chosen) < 0) s.phase = "vote";
+      if (s.phase === "guess" && s.guess && s.win) {   // 답을 고른 뒤 새로고침했으면 다시 고르지 않게
+        s.phase = "result";
+        if (!s.counted) { s.counted = true; if (s.win === "liar") s.tally.l++; else s.tally.c++; }
+      }
       if (s.phase === "result" && !s.win) s.phase = "vote";
       s.i = H.clamp(s.i | 0, 0, s.players.length - 1);
       if (s.running) { if (s.endAt > Date.now()) s.left = (s.endAt - Date.now()) / 1000; else { s.left = 0; s.running = false; s.endAt = 0; } }
@@ -694,7 +705,7 @@
     if (s.phase === "setup") return liarSetup(s);
     if (s.phase === "hand") {
       var who = s.players[s.i];
-      P.screen({ body: handHTML(who, "혼자 카드를 확인해요", s.players.length, s.i), foot: btn("got", "받았어요", "is-primary is-lg"), say: disp(who) + " 님 차례. 폰을 받으면 받았어요를 누르세요." });
+      P.screen({ body: handHTML(who, "혼자 카드를 확인해요", s.players.length, s.i), foot: btn("got", "받았어요", "is-primary is-lg"), say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요를 눌러 주세요." });
       P.sfx("wood");
       return;
     }
@@ -714,21 +725,21 @@
     if (s.cat && !pk[s.cat]) s.cat = "";
     var chips = '<button type="button" class="pchip" data-act="cat" data-cat="" aria-pressed="' + (!s.cat) + '">아무거나</button>'
       + cats.map(function (c) { return '<button type="button" class="pchip" data-act="cat" data-cat="' + esc(c) + '" aria-pressed="' + (s.cat === c) + '">' + esc(c) + "</button>"; }).join("");
-    var seg = '<div class="seg" style="--n:4" role="radiogroup" aria-label="토론 시간">' + [[0, "없음"], [120, "2분"], [180, "3분"], [300, "5분"]].map(function (t) {
-      return '<button type="button" role="radio" aria-checked="' + (s.timer === t[0]) + '" data-act="timer" data-t="' + t[0] + '">' + t[1] + "</button>";
+    var seg = '<div class="seg" style="--n:4" role="group" aria-label="토론 시간">' + [[0, "없음"], [120, "2분"], [180, "3분"], [300, "5분"]].map(function (t) {
+      return '<button type="button" aria-pressed="' + (s.timer === t[0]) + '" data-act="timer" data-t="' + t[0] + '">' + t[1] + "</button>";
     }).join("") + "</div>";
     P.screen({
       body: intro("liar", "라이어 게임", "한 사람만 제시어를 몰라요. 대화로 라이어를 찾아내세요.")
-        + steps(["폰을 돌려 가며 몰래 카드를 확인해요", "한 사람씩 제시어를 한마디로 설명해요", "다 같이 라이어를 지목해요"])
+        + (s.tally.c + s.tally.l ? sect("이 자리의 전적", tallyHTML(s, "")) : "")
         + sect("주제", '<div class="pchips">' + chips + "</div>") + sect("토론 시간", seg)
-        + (s.tally.c + s.tally.l ? sect("이 자리의 전적", tallyHTML(s, "")) : ""),
+        + sect("하는 법", steps(["폰을 돌려 가며 몰래 카드를 확인해요", "한 사람씩 제시어를 한마디로 설명해요", "다 같이 라이어를 지목해요"])),
       foot: btn("start", ic("play") + "시작하기", "is-primary is-lg is-glow"),
-      say: "라이어 게임. 주제와 토론 시간을 고르고 시작하세요."
+      say: "라이어 게임. 주제와 토론 시간을 고르고 시작해요."
     });
   }
   function liarAct(a, el, s) {
     if (a === "cat") { s.cat = el.getAttribute("data-cat"); each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); }); P.sfx("select"); P.save(); return; }
-    if (a === "timer") { s.timer = Number(el.getAttribute("data-t")); each(el.parentNode.children, function (b) { b.setAttribute("aria-checked", String(b === el)); }); P.sfx("select"); P.save(); return; }
+    if (a === "timer") { s.timer = Number(el.getAttribute("data-t")); each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); }); P.sfx("select"); P.save(); return; }
     if (a === "start" || a === "again") { liarStart(s); return; }
     if (a === "got") { s.phase = "card"; s.seen = false; liarShow(s); return; }
     if (a === "card-next") {
@@ -758,6 +769,7 @@
       timerTick(s, true); P.sfx("coin"); H.toast("1분 늘렸어요."); P.save(); return;
     }
     if (a === "to-vote") { if (s.running) { s.left = Math.max(0, (s.endAt - Date.now()) / 1000); s.running = false; s.endAt = 0; } s.phase = "vote"; liarShow(s); P.sfx("whoosh"); return; }
+    if (a === "to-talk") { s.phase = "talk"; liarShow(s); return; }
     if (a === "vote") {
       s.chosen = s.players[Number(el.getAttribute("data-i"))] || "";
       each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); });
@@ -781,9 +793,10 @@
     P.busy = true; P.save();
     P.splash({ k: "라운드 " + s.round, big: "라이어", word: true, sub: "주제는 " + topic }).then(function () { if (P.st !== s) return; P.busy = false; liarShow(s); });
   }
+  // 라이어 카드와 시민 카드는 모양과 색이 같다(멀리서 보고 라이어를 알아채지 못하게). 글자만 다르다
   function frontHTML(s, who) {
-    if (who === s.liar) return '<span class="mask">' + mask("#E11D48", "#FFF1F2") + '</span><p class="wd">당신이 라이어</p><span class="tp">주제: ' + esc(s.topic) + '</span><p class="tip">들키지 말고 제시어를 알아내세요</p>';
-    return '<span class="tp">주제: ' + esc(s.topic) + '</span><p class="wd">' + esc(s.word) + '</p><p class="tip">라이어에게 들키지 않게 설명해요</p>';
+    var L = who === s.liar;
+    return '<span class="tp">주제: ' + esc(s.topic) + '</span><p class="wd">' + (L ? "라이어" : esc(s.word)) + '</p><p class="tip">' + (L ? "당신이 라이어예요. 들키지 말고 제시어를 알아내세요" : "라이어에게 들키지 않게 설명해요") + "</p>";
   }
   function liarCard(s) {
     var who = s.players[s.i], last = s.i === s.players.length - 1;
@@ -805,7 +818,7 @@
       if (on) return; on = true; b.classList.add("is-holding");
       clearTimeout(t3);
       t1 = setTimeout(function () {
-        front.className = "face front" + (who === s.liar ? " is-liar" : ""); front.innerHTML = frontHTML(s, who);
+        front.innerHTML = frontHTML(s, who);
         lc.classList.add("is-open"); P.sfx("flip"); H.buzz(12);
         t2 = setTimeout(function () {
           if (s.seen) return;
@@ -819,7 +832,7 @@
       if (!on) return; on = false; b.classList.remove("is-holding");
       clearTimeout(t1); clearTimeout(t2);
       if (lc.classList.contains("is-open")) { lc.classList.remove("is-open"); P.sfx("flip"); }
-      t3 = setTimeout(function () { if (!on) { front.innerHTML = ""; front.className = "face front"; } }, 470);
+      t3 = setTimeout(function () { if (!on) front.innerHTML = ""; }, 470);
     }
     b.addEventListener("pointerdown", function (e) { if (e.pointerType === "mouse" && e.button !== 0) return; e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (er) {} open(); });
     b.addEventListener("pointerup", close);
@@ -855,10 +868,8 @@
       s.left = Math.max(0, (s.endAt - Date.now()) / 1000);
       if (s.left <= 0) {
         s.running = false; s.endAt = 0; P.save();
-        if (!quiet) {
-          P.sfx("alarm"); H.buzz([200, 100, 200, 100, 400]); H.say("시간이 끝났어요. 투표해요.");
-          var v = P.foot.querySelector('[data-act="to-vote"]'); if (v) v.classList.add("is-glow");
-        }
+        if (!quiet) { P.sfx("alarm"); H.buzz([200, 100, 200, 100, 400]); H.say("시간이 끝났어요. 투표해요."); }
+        var v = P.foot.querySelector('[data-act="to-vote"]'); if (v) v.classList.add("is-glow");
       }
     }
     var num = $("rtNum"); if (!num) return;
@@ -872,57 +883,68 @@
     if (s.running && sec <= 10 && sec > 0 && TM.sec !== -1 && sec !== TM.sec && !quiet) P.sfx("hurry");
     TM.sec = sec;
     var tg = $("tmToggle");
-    if (tg) tg.innerHTML = s.running ? ic("pause", "is-sm") + "멈춤" : s.left <= 0 ? ic("refresh", "is-sm") + "다시 재기" : ic("play", "is-sm") + (s.left < s.total ? "계속" : "시작");
+    if (tg) tg.innerHTML = s.running ? ic("pause", "is-sm") + "잠깐 멈추기" : s.left <= 0 ? ic("refresh", "is-sm") + "다시 재기" : ic("play", "is-sm") + (s.left < s.total ? "계속" : "시작");
   }
   function decideBtn(s) {
-    return '<button type="button" class="pa-btn is-danger is-lg" data-act="decide"' + (s.chosen ? "" : " disabled") + ">" + (s.chosen ? esc(disp(s.chosen)) + " 님으로 결정" : "한 사람을 골라 주세요") + "</button>";
+    return '<button type="button" class="pa-btn is-danger is-lg" data-act="decide"' + (s.chosen ? "" : " disabled") + ">" + (s.chosen ? '<span class="cut">' + esc(disp(s.chosen)) + "</span> 님으로 결정" : "한 사람을 골라 주세요") + "</button>";
   }
   function liarVote(s) {
     P.screen({
-      body: '<h3 class="pg-h">누가 라이어일까요?</h3><p class="pg-p">하나, 둘, 셋 하면 다 같이 손가락으로 가리켜요. 가장 많이 지목된 사람을 골라 주세요.</p>'
+      body: '<h3 class="pg-h pg-center">누가 라이어일까요?</h3><p class="pg-p pg-center">하나, 둘, 셋 하면 다 같이 손가락으로 가리켜요. 가장 많이 지목된 사람을 골라 주세요. 같으면 한 번 더 가리켜요.</p>'
         + '<div class="vote" role="group" aria-label="지목할 사람">' + s.players.map(function (n, k) {
           return '<button type="button" data-act="vote" data-i="' + k + '" aria-pressed="' + (s.chosen === n) + '">' + tok(n, "md") + "<span>" + esc(disp(n)) + "</span></button>";
-        }).join("") + "</div>",
+        }).join("") + "</div>" + '<div class="pg-share">' + btn("to-talk", ic("timer", "is-sm") + "토론으로 돌아가기", "is-text") + "</div>",
       foot: decideBtn(s),
-      say: "누가 라이어일까요? 가장 많이 지목된 사람을 고르세요."
+      say: "누가 라이어일까요? 가장 많이 지목된 사람을 골라 주세요."
     });
   }
   function liarVerdict(s, fx) {
-    var c = s.caught, d0 = fx ? 1.5 : 0.05;
+    var c = s.caught;
     var foot = c ? btn("to-guess", "제시어 맞히기" + ic("next"), "is-primary is-lg") : btn("to-result", "결과 보기" + ic("next"), "is-primary is-lg");
+    var stamp = '<span class="bigstamp ' + (c ? "is-liar" : "is-citizen") + '" style="--sd:0s">' + (c ? "라이어!" : "시민") + "</span>";
+    var box = c ? '<div class="reveal-box" style="--rd:.6s"><span class="k">라이어의 마지막 기회</span><b>제시어를 맞히면 라이어가 이겨요</b></div>'
+      : '<div class="reveal-box" style="--rd:.6s"><span class="k">진짜 라이어는</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span></div>";
     P.screen({
-      body: '<div class="verdict"><span class="k">지목된 사람은</span><span class="shake" style="--kd:' + (d0 + 0.05) + 's">' + tok(s.chosen, "xl") + "</span>"
-        + '<p class="nm">' + esc(disp(s.chosen)) + ' 님</p><span class="bigstamp ' + (c ? "is-liar" : "is-citizen") + '" style="--sd:' + d0 + 's">' + (c ? "라이어!" : "시민") + "</span></div>"
-        + (c ? '<div class="reveal-box" style="--rd:' + (d0 + 0.6) + 's"><span class="k">라이어의 마지막 기회</span><b>제시어를 맞히면 라이어가 이겨요</b></div>'
-          : '<div class="reveal-box" style="--rd:' + (d0 + 0.6) + 's"><span class="k">진짜 라이어는</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span></div>"),
+      body: '<div class="verdict' + (fx ? " is-drum" : "") + '" id="verdict"><span class="k">지목된 사람은</span><span class="shake" style="--kd:0s">' + tok(s.chosen, "xl") + "</span>"
+        + '<p class="nm">' + esc(disp(s.chosen)) + " 님</p>" + (fx ? '<span class="drum">두구두구</span>' : stamp) + "</div>" + (fx ? "" : box),
       foot: fx ? "" : foot,
       say: fx ? "" : disp(s.chosen) + " 님은 " + (c ? "라이어였어요." : "시민이었어요.")
     });
     if (fx) {
       P.busy = true; P.sfx("drum", 1.4);
-      later(s, 1500, function () { P.sfx("stamp"); P.sfx(c ? "crash" : "wrong"); H.buzz(c ? [60, 40, 120] : 200); H.say(disp(s.chosen) + " 님은 " + (c ? "라이어였어요." : "시민이었어요.")); });
+      later(s, 1500, function () {
+        var v = $("verdict"); if (!v) return;
+        v.classList.remove("is-drum");
+        var d = v.querySelector(".drum"); if (d) d.outerHTML = stamp;
+        v.insertAdjacentHTML("afterend", box);
+        P.sfx("stamp"); P.sfx(c ? "crash" : "wrong"); H.buzz(c ? [60, 40, 120] : 200); H.say(disp(s.chosen) + " 님은 " + (c ? "라이어였어요." : "시민이었어요."));
+      });
       later(s, 2300, function () { P.busy = false; P.setFoot(foot); var b = P.foot.querySelector(".pa-btn"); if (b) { try { b.focus({ preventScroll: true }); } catch (e) {} } P.save(); });
     }
   }
   function liarGuess(s) {
     if (!(Array.isArray(s.opts) && s.opts.length && s.opts.indexOf(s.word) >= 0)) {
-      var list = P.pack().liar[s.topic] || [s.word];
-      s.opts = H.shuffle(H.shuffle(list.filter(function (w) { return w !== s.word; })).slice(0, 3).concat([s.word]));
+      var pk = P.pack().liar, same = (pk[s.topic] || []).filter(function (w) { return w !== s.word; });
+      if (same.length < 3) Object.keys(pk).forEach(function (t) { pk[t].forEach(function (w) { if (w !== s.word && same.indexOf(w) < 0) same.push(w); }); });
+      s.opts = H.shuffle(H.shuffle(same).slice(0, 3).concat([s.word]));
     }
     P.screen({
       body: '<p class="chooser">' + tok(s.liar, "sm") + "<span><b>" + esc(disp(s.liar)) + "</b> 님의 마지막 기회</span></p>"
-        + '<h3 class="pg-h">제시어는 무엇일까요?</h3><p class="pg-p">주제는 ' + esc(s.topic) + ". 넷 가운데 하나를 골라요.</p>"
+        + '<h3 class="pg-h pg-center">제시어는 무엇일까요?</h3><p class="pg-p pg-center">주제는 ' + esc(s.topic) + ". 넷 가운데 하나를 골라요.</p>"
         + '<div class="opts">' + s.opts.map(function (w, k) { return '<button type="button" data-act="guess" data-k="' + k + '">' + esc(w) + "</button>"; }).join("") + "</div>",
-      say: disp(s.liar) + " 님, 제시어를 고르세요. 주제는 " + s.topic + "."
+      say: disp(s.liar) + " 님, 제시어를 골라 주세요. 주제는 " + s.topic + "이에요."
     });
   }
   function liarGuessPick(s, el) {
     var w = s.opts[Number(el.getAttribute("data-k"))]; if (!w) return;
     P.busy = true; s.guess = w;
     var right = w === s.word;
+    s.win = right ? "liar" : "citizen"; P.save();
     each(P.body.querySelectorAll(".opts button"), function (b, k) { if (s.opts[k] === s.word) b.classList.add("is-right"); else if (b === el) b.classList.add("is-wrong"); b.disabled = true; });
+    el.insertAdjacentHTML("beforeend", '<span class="guess-stamp' + (right ? "" : " is-wrong") + '">' + (right ? "정답!" : "땡") + "</span>");
+    if (!right) el.classList.add("shake");
     P.sfx(right ? "right" : "wrong"); H.buzz(right ? 30 : 160);
-    later(s, H.reduced() ? 300 : 1300, function () { P.busy = false; s.win = right ? "liar" : "citizen"; liarResultEnter(s); });
+    later(s, H.reduced() ? 300 : 1300, function () { P.busy = false; liarResultEnter(s); });
   }
   function liarResultEnter(s) {
     if (!s.counted) { s.counted = true; if (s.win === "liar") s.tally.l++; else s.tally.c++; }

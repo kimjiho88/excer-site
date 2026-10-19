@@ -230,7 +230,8 @@
   function sfx(name, arg) {
     if (!soundOn || !SFX[name]) return;
     var ctx = audio();
-    if (!ctx || ctx.state !== "running") { if (ctx && ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} } if (!ctx || ctx.state === "closed") return; }
+    if (!ctx) return;
+    if (ctx.state !== "running") { if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} } return; }
     if (name === "tick") { var now = ctx.currentTime; if (now - AU.lastTick < 0.028) return; AU.lastTick = now; }
     try { SFX[name](arg); } catch (e) {}
   }
@@ -256,10 +257,11 @@
     o = o || {};
     if (reduced()) return;
     var cv = $("pgConfetti"); if (!cv || !cv.getContext || play.hidden) return;
-    var dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || window.innerWidth, h = cv.clientHeight || window.innerHeight;
+    var dpr = Math.min(1.5, window.devicePixelRatio || 1), w = cv.clientWidth || window.innerWidth, h = cv.clientHeight || window.innerHeight;
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     var cols = o.colors || ["#FDE047", "#F472B6", "#A78BFA", "#34D399", "#60A5FA", "#FB923C", "#FFFFFF"];
-    var n = o.n || 150, sp = Math.max(13, h / 52);
+    var slow = (navigator.deviceMemory && navigator.deviceMemory <= 3) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+    var n = Math.round((o.n || 150) * (slow ? 0.6 : 1)), sp = Math.max(13, h / 52);
     for (var i = 0; i < n; i++) {
       var p = { c: rnd(cols), s: Math.random() < 0.18 ? 2 : Math.random() < 0.5 ? 1 : 0, w: 7 + Math.random() * 6, h: 10 + Math.random() * 8, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3, f: Math.random() * 6.28, vf: 0.08 + Math.random() * 0.14, life: 0, max: 150 + Math.random() * 60 };
       if (o.from === "top") { p.x = Math.random() * w; p.y = -20 - Math.random() * h * 0.4; p.vx = (Math.random() - 0.5) * 3; p.vy = 2 + Math.random() * 3; }
@@ -313,12 +315,22 @@
     colors[k] = best;
   }
   function color(n) { var c = colors[nickKey(n)]; return PALETTE[typeof c === "number" && PALETTE[c] ? c : hashIdx(nickKey(n))]; }
+  // 짧은 이름 후보: 첫 낱말, 첫 낱말과 끝 낱말('가온 95'), 앞 두 낱말, 전체. 명단 안에서 겹치지 않는 첫 후보를 쓴다
+  var WAYS = [
+    function (w) { return w[0]; },
+    function (w) { return w.length > 1 ? w[0] + " " + w[w.length - 1] : w[0]; },
+    function (w) { return w.slice(0, 2).join(" "); },
+    function (w) { return w.join(" "); }
+  ];
   function rebuildDisp() {
     DISP = {};
-    var cut = function (n, k) { return String(n).trim().split(/\s+/).slice(0, k).join(" "); };
-    var count = function (k) { var m = {}; P.roster.forEach(function (n) { var x = cut(n, k); m[x] = (m[x] || 0) + 1; }); return m; };
-    var c1 = count(1), c2 = count(2);
-    P.roster.forEach(function (n) { DISP[n] = c1[cut(n, 1)] === 1 ? cut(n, 1) : c2[cut(n, 2)] === 1 ? cut(n, 2) : String(n).trim(); });
+    var words = function (n) { return String(n).trim().split(/\s+/); };
+    var counts = WAYS.map(function (f) { var m = {}; P.roster.forEach(function (n) { var x = f(words(n)); m[x] = (m[x] || 0) + 1; }); return m; });
+    P.roster.forEach(function (n) {
+      var w = words(n), pick = w.join(" ");
+      for (var i = 0; i < WAYS.length; i++) { var x = WAYS[i](w); if (counts[i][x] === 1) { pick = x; break; } }
+      DISP[n] = pick;
+    });
   }
   function disp(n) { return DISP[n] || String(n || "").trim().split(/\s+/)[0] || String(n || ""); }
   function initial(n) { return Array.from(disp(n))[0] || "?"; }
@@ -335,11 +347,13 @@
     colors = keep;
     try { localStorage.setItem(ROSTER_KEY, JSON.stringify(P.roster)); localStorage.setItem(COLOR_KEY, JSON.stringify(colors)); } catch (e) {}
   }
+  var addFail = "";   // 넣지 못한 까닭: dup(이미 있음), cap(40명)
   function addName(raw, quiet) {
     var n = String(raw || "").normalize("NFC").trim().replace(/\s+/g, " ").slice(0, 24);
+    addFail = "";
     if (!n) return false;
-    if (P.roster.length >= MAX) { if (!quiet) toast("플레이어는 " + MAX + "명까지예요."); return false; }
-    if (P.roster.some(function (x) { return nickKey(x) === nickKey(n); })) { if (!quiet) toast("이미 있는 이름이에요."); return false; }
+    if (P.roster.some(function (x) { return nickKey(x) === nickKey(n); })) { addFail = "dup"; if (!quiet) toast("이미 있는 이름이에요."); return false; }
+    if (P.roster.length >= MAX) { addFail = "cap"; if (!quiet) toast("플레이어는 " + MAX + "명까지예요."); return false; }
     P.roster.push(n); ensureColor(n); return true;
   }
   function savedNick() { try { return (localStorage.getItem(NICK_KEY) || "").trim(); } catch (e) { return ""; } }
@@ -363,7 +377,9 @@
       ul.parentNode.insertBefore(empty, ul.nextSibling);
     }
     empty.hidden = !!n; ul.hidden = !n; $("editBtn").hidden = !n;
-    var LIM = 15, list = n > LIM ? P.roster.slice(0, LIM - 1) : P.roster;
+    // 두 줄까지만 보이고 나머지는 '더 보기'(게임 카드가 첫 화면에 들어오게)
+    var cols = Math.max(4, Math.floor(((ul.clientWidth || 326) + 4) / 62)), tiles = cols * 2;
+    var LIM = n + 1 <= tiles ? n : tiles - 2, list = P.roster.slice(0, LIM), more = n - LIM;
     var first = shown === null, prev = shown || {}, k = 0;
     shown = {};
     ul.innerHTML = list.map(function (name) {
@@ -371,7 +387,7 @@
       shown[key] = 1;
       return "<li" + (isNew ? ' class="is-new" style="--i:' + (k++) + '"' : "") + '><button type="button" class="pa-tok-btn" data-act="edit" aria-haspopup="dialog" aria-label="' + esc(name) + '">' + tok(name, "md") + '<span class="nm">' + esc(disp(name)) + "</span></button></li>";
     }).join("")
-      + (n > LIM ? '<li><button type="button" class="pa-tok-btn is-more" data-act="edit" aria-haspopup="dialog" aria-label="나머지 ' + (n - LIM + 1) + '명 보기"><span class="tok is-md">+' + (n - LIM + 1) + '</span><span class="nm">더 보기</span></button></li>' : "")
+      + (more > 0 ? '<li><button type="button" class="pa-tok-btn is-more" data-act="edit" aria-haspopup="dialog" aria-label="나머지 ' + more + '명 보기"><span class="tok is-md">+' + more + '</span><span class="nm">더 보기</span></button></li>' : "")
       + '<li><button type="button" class="pa-tok-btn is-add" data-act="open-sheet" aria-haspopup="dialog" aria-label="플레이어 추가"><span class="tok is-md">' + ic("plus") + '</span><span class="nm">추가</span></button></li>';
     var b = $("bungLine");
     if (P.bung) {
@@ -390,14 +406,21 @@
   }
 
   /* ── 플레이어 창(아래에서 올라오는 창. 뒤로 가기와 끌어 닫기, 초점은 site-core) ── */
-  var sheet = $("addSheet"), sheetShown = null;
+  var sheet = $("addSheet"), sheetShown = null, sheetOpener = null;
   function openSheet(focusInput) {
     if (!sheet.hidden) return;
+    sheetOpener = doc.activeElement;
     sheetShown = null; renderSheet(); $("addSuggest").innerHTML = suggestHTML([]);
-    sheet.hidden = false;
-    if (focusInput) setTimeout(function () { try { $("addInput").focus(); } catch (e) {} }, 120);
+    sheet.hidden = false; root.classList.add("pa-sheet-open");
+    // 아이폰은 누른 그 순간에 초점을 줘야 자판이 올라온다
+    if (focusInput) { try { $("addInput").focus(); } catch (e) {} }
   }
-  function closeSheet() { if (!sheet.hidden) sheet.hidden = true; }
+  function closeSheet() {
+    if (sheet.hidden) return;
+    sheet.hidden = true; root.classList.remove("pa-sheet-open");
+    var o = sheetOpener; sheetOpener = null;
+    if (o && doc.body.contains(o) && !play.contains(o)) { try { o.focus({ preventScroll: true }); } catch (e) {} }
+  }
   function renderSheet() {
     var n = P.roster.length;
     $("sheetCount").textContent = n;
@@ -478,11 +501,16 @@
       var post = res[0], list = res[1] || [];
       if (!post) { P.bung = null; saveSession(); renderLobby(); toast("그 모임 글을 찾지 못했어요."); return; }
       P.bung = { id: id, title: post.title || "모임 글", n: list.length };
-      var added = 0;
-      list.forEach(function (x) { if (x && addName(x.nick, true)) added++; });
+      var added = 0, dup = 0, cap = 0;
+      list.forEach(function (x) { if (!x) return; if (addName(x.nick, true)) added++; else if (addFail === "dup") dup++; else if (addFail === "cap") cap++; });
       changed();
       if (!list.length) toast("아직 참석한 사람이 없어요. 이름을 직접 적어 주세요.");
-      else if (added) { toast("참석 명단 " + list.length + "명을 넣었어요." + (added < list.length ? " 이미 있던 " + (list.length - added) + "명은 그대로예요." : "")); sfx("coin"); }
+      else if (added) {
+        toast((added === list.length ? "참석 명단 " + list.length + "명을 넣었어요." : "참석 명단 " + list.length + "명 가운데 " + added + "명을 넣었어요.")
+          + (dup ? " 이미 있던 " + dup + "명은 그대로예요." : "") + (cap ? " " + MAX + "명이 넘어 " + cap + "명은 못 넣었어요." : ""));
+        sfx("coin");
+      }
+      else if (cap) toast("플레이어가 " + MAX + "명이라 더 넣지 못했어요.");
       else if (again) toast("참석 명단이 이미 다 들어 있어요.");
     }).catch(function () {
       toast(again ? "명단을 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요." : "명단을 불러오지 못했어요. 이름을 직접 적을 수 있어요.");
@@ -501,6 +529,8 @@
     else if (a === "open-game") openGame(b.getAttribute("data-game"), { opener: b });
   });
   $("editBtn").addEventListener("click", function () { openSheet(false); });
+  var rzW = window.innerWidth, rzT = 0;
+  window.addEventListener("resize", function () { if (window.innerWidth === rzW) return; rzW = window.innerWidth; clearTimeout(rzT); rzT = setTimeout(renderLobby, 150); }, { passive: true });
   $("soundBtn").addEventListener("click", toggleSound);
   $("pgSound").addEventListener("click", toggleSound);
 
@@ -567,8 +597,17 @@
   var play = $("play"), gBody = $("pgBody"), gFoot = $("pgFoot"), gProg = $("pgProgress"), gPop = $("pgPop"), gSplash = $("pgSplash");
   /* 기록(history) 칸 둘: 1 은 받침, 2 는 게임. 뒤로 가기 한 번은 게임에서 받침으로(진행 중이면 묻기),
      묻는 중에 한 번 더 뒤로 가면 받침에서 쪽으로 내려와 나간다. 쪽(로비)은 그대로 남는다 */
-  var opener = null, ignorePop = 0;
+  var opener = null, ignorePop = 0, paintAt = 0, hideT = 0, popOpen = false, popT = 0;
   function G() { return P.cur ? P.games[P.cur] : null; }
+  // 게임 화면이 떠 있는 동안 뒤쪽(로비, 메뉴)은 화면 읽기와 초점에서 빼고, 알림 칸은 게임 화면 안으로 옮긴다(aria-modal 밖은 읽지 않는 브라우저)
+  function behind(on) {
+    [$("main"), $("topnav"), doc.querySelector(".site-footer"), doc.querySelector(".bottom-tabbar"), doc.querySelector(".skip-link")].forEach(function (el) {
+      if (!el) return;
+      if (on) el.setAttribute("inert", ""); else el.removeAttribute("inert");
+    });
+    var host = on ? play : doc.body;
+    [$("live"), $("toast")].forEach(function (el) { if (el && el.parentNode !== host) host.appendChild(el); });
+  }
   function histDepth() { try { return (history.state && history.state.excerParty) || 0; } catch (e) { return 0; } }
   function pushTo(n) { try { for (var d = histDepth() + 1; d <= n; d++) history.pushState({ excerParty: d }, "", location.href); } catch (e) {} }
   function unwind() { var d = histDepth(); if (d > 0) { ignorePop++; try { history.go(-d); } catch (e) { ignorePop--; } } }
@@ -577,10 +616,11 @@
     var g = P.games[id]; if (!g) return;
     var need = g.min - P.roster.length;
     if (need > 0) {
-      toast(g.title + josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 넣어 주세요.");
-      sfx("wrong"); openSheet(true); return;
+      toast(josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 넣어 주세요.");
+      sfx("pop"); openSheet(true); return;
     }
     closeSheet();
+    clearTimeout(hideT); play.classList.remove("is-out");
     P.cur = id; P.busy = false;
     play.setAttribute("data-theme", id);
     $("pgTitle").textContent = g.title;
@@ -589,9 +629,11 @@
     opener = o.opener || doc.activeElement;
     play.hidden = false; root.classList.add("is-playing");
     play.classList.remove("is-in"); void play.offsetWidth; play.classList.add("is-in");
+    behind(true);
     pushTo(2);
     P.st = o.state || g.fresh(P.prefs[id] || {});
-    g.show(P.st, !!o.restored);
+    try { g.show(P.st, !!o.restored); }
+    catch (e) { P.st = g.fresh(P.prefs[id] || {}); g.show(P.st, false); }   // 이어 하기 저장이 깨져 있으면 처음 화면으로
     wake(true);
     if (!o.restored) sfx("whoosh");
   }
@@ -601,9 +643,11 @@
     if (g.stop) { try { g.stop(P.st); } catch (e) {} }
     if (g.prefs) { try { P.prefs[P.cur] = g.prefs(P.st); } catch (e) {} }
     P.cur = null; P.st = null; P.busy = false;
-    popClose(); splashKill(); confettiStop();
-    play.hidden = true; root.classList.remove("is-playing");
-    gBody.innerHTML = ""; gFoot.innerHTML = ""; gProg.hidden = true;
+    popClose(true); splashKill(); confettiStop();
+    root.classList.remove("is-playing"); behind(false);
+    // 게임 화면은 잠깐 흐려지며 사라진다
+    play.classList.add("is-out");
+    hideT = setTimeout(function () { play.hidden = true; play.classList.remove("is-out"); gBody.innerHTML = ""; gFoot.innerHTML = ""; gProg.hidden = true; }, reduced() ? 0 : 160);
     wake(false); saveSession();
     unwind();
     renderLobby();
@@ -619,7 +663,7 @@
   }
   function requestClose() {
     if (!P.cur) return;
-    if (!gPop.hidden) { popClose(); return; }
+    if (popOpen) { popClose(); return; }
     if (dirty()) askExit(); else leaveGame({ id: P.cur });
   }
   window.addEventListener("popstate", function () {
@@ -627,7 +671,7 @@
     if (!P.cur) { if (dlg.res) dlg.res(false); return; }
     if (histDepth() >= 2) return;
     if (dlg.res) { dlg.res(dlg.back); return; }       // 묻는 중에 한 번 더 뒤로 가면 그만하기
-    if (!gPop.hidden) { popClose(); pushTo(2); return; }
+    if (popOpen) { popClose(); pushTo(2); return; }
     if (dirty()) askExit(); else leaveGame({ id: P.cur });
   });
   $("pgClose").addEventListener("click", requestClose);
@@ -646,6 +690,7 @@
     var kids = gBody.firstChild.children;
     for (var i = 0; i < kids.length; i++) kids[i].style.setProperty("--i", Math.min(i, 8));
     gFoot.innerHTML = o.foot ? '<div class="pg-foot-in">' + o.foot + "</div>" : "";
+    paintAt = performance.now();
     progress(o.prog);
     gBody.scrollTop = 0;
     if (o.title) $("pgTitle").textContent = o.title;
@@ -700,17 +745,26 @@
 
   /* 결과 팝업 */
   function pop(html, label) {
+    clearTimeout(popT); gPop.classList.remove("is-out");
     gPop.innerHTML = '<div class="pg-pop-card" role="group" aria-label="' + esc(label || "결과") + '">' + html + "</div>";
-    gPop.hidden = false;
+    gPop.hidden = false; popOpen = true; paintAt = performance.now();
     setTimeout(function () { var b = gPop.querySelector(".pa-btn"); if (b) { try { b.focus({ preventScroll: true }); } catch (e) {} } }, 60);
   }
-  function popClose() { if (gPop.hidden) return; gPop.hidden = true; gPop.innerHTML = ""; var g = G(); if (g && g.popClosed) g.popClosed(P.st); }
+  function popClose(now) {
+    if (!popOpen) return;
+    popOpen = false;
+    var fin = function () { gPop.hidden = true; gPop.classList.remove("is-out"); gPop.innerHTML = ""; };
+    if (now || reduced()) fin(); else { gPop.classList.add("is-out"); popT = setTimeout(fin, 150); }
+    var g = G(); if (g && g.popClosed) g.popClosed(P.st);
+  }
   gPop.addEventListener("click", function (e) { if (e.target === gPop) popClose(); });
 
   // 게임 안의 단추는 모두 data-act 로 받아 그 게임에 넘긴다
   play.addEventListener("click", function (e) {
     var b = e.target.closest("[data-act]");
     if (!b || !play.contains(b) || b.disabled) return;
+    // 화면이 바뀐 직후의 누름은 버린다(두 번 누르면 다음 화면의 같은 자리 단추까지 눌리던 것)
+    if (performance.now() - paintAt < 400) return;
     var g = G(); if (!g) return;
     var a = b.getAttribute("data-act");
     if (a === "pop-close") { popClose(); return; }
@@ -729,7 +783,7 @@
       return;
     }
     if (e.key !== "Tab") return;
-    var box = !gPop.hidden ? gPop : play;
+    var box = popOpen ? gPop : play;
     var items = Array.prototype.filter.call(box.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'), function (el) { return el.offsetWidth || el.offsetHeight || el.getClientRects().length; });
     if (!items.length) return;
     var first = items[0], last = items[items.length - 1], here = doc.activeElement, inside = box.contains(here);
@@ -775,7 +829,7 @@
     window.KSHARE.share({
       title: o.title, description: o.desc,
       url: base + "/party.html", imageUrl: base + "/assets/og-party.jpg?v=1", buttonTitle: "우리도 해 보기"
-    }).then(function (r) { var m = window.KSHARE.message(r); if (m) toast(m); });
+    }).then(function (r) { if (r === "copy") { toast("링크를 복사했어요. 채팅방에 붙여 넣어 주세요."); return; } var m = window.KSHARE.message(r); if (m) toast(m); });
   }
   function copy(text) {
     var done = function () { toast("복사했어요. 채팅방에 붙여 넣어 주세요."); sfx("coin"); };
