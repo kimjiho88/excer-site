@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="only light" />
-  <meta name="theme-color" content="#F7F5EF" />
+  <meta name="theme-color" content="#120B26" />
   <title>모임 자리 게임 | 동네친구들</title>
   <meta name="description" content="모임 자리에서 폰 하나로 돌려 가며 하는 게임입니다. 한 명 뽑기와 순서 정하기, 팀 나누기, 밸런스 게임, 라이어 게임. 설치와 로그인 없이 바로 시작합니다." />
   <meta property="og:url" content="https://excer-site.vercel.app/party.html" />
@@ -13,7 +13,7 @@
   <meta property="og:site_name" content="동네친구들" />
   <meta property="og:title" content="모임 자리 게임 | 동네친구들" />
   <meta property="og:description" content="폰 하나로 같이 하는 뽑기, 밸런스 게임, 라이어 게임. 설치와 로그인 없이 바로 시작합니다." />
-  <meta property="og:image" content="https://excer-site.vercel.app/assets/og.jpg?v=3" />
+  <meta property="og:image" content="https://excer-site.vercel.app/assets/og-party.jpg?v=1" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -26,208 +26,11 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=24" />
-  <style>
-    /* ============================================================
-       모임 자리 게임: 폰 하나를 돌려 가며 하는 세 게임.
-       무대(.stage)는 흰 카드 하나. 머리띠는 보라, 중요한 단추는 아래에 붙어 한 손으로 누른다.
-       결과는 저장하지 않고, 명단만 이 기기에 남는다.
-       ============================================================ */
-    .party .page-head .container, .party .page-main .container { max-width: 640px; }
-    .party .page-head { padding-bottom: 8px; }
-    .pcard { padding: 16px 16px 14px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
-    .roster-sum { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--ink); font-size: var(--fs-sm); }
-    .roster-sum .list { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-    .roster-sum .text-btn { flex: none; min-height: 40px; }
-    #rosterBody[hidden] { display: none; }
-    .roster-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .roster-top h2 { margin: 0; font-size: var(--fs-h3); font-weight: 800; }
-    .roster-top h2 b { margin-left: 6px; color: var(--brand); font-weight: 800; }
-    .roster-top .text-btn { min-height: 40px; }
-    .bung-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin: 8px 0 0; color: var(--ink-2); font-size: var(--fs-sm); }
-    .bung-line .ic { width: 16px; height: 16px; color: var(--brand); }
-    .bung-line a { color: var(--brand); font-weight: 700; text-decoration: none; }
-    .bung-line .text-btn { min-height: 40px; margin-left: auto; }
-    .names { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .names .muted { margin: 2px 0 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; }
-    .name { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 2px 2px 2px 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: var(--fs-sm); font-weight: 600; }
-    .name .nm { max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .name button { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--ink-2); }
-    .name button:hover { background: var(--surface-2); color: var(--danger); }
-    .name button .ic { width: 14px; height: 14px; }
-    .av { display: inline-grid; flex: none; place-items: center; width: 30px; height: 30px; border-radius: 50%; background-color: var(--av, #CFC1E6); background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.14)); color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
-    .av.is-xl { width: 76px; height: 76px; font-size: 30px; box-shadow: 0 10px 24px -12px rgba(36, 30, 44, 0.5); }
-    .av.is-sm { width: 24px; height: 24px; font-size: 10px; }
-    .roster-form { display: flex; gap: 8px; margin-top: 12px; }
-    .roster-form .input { flex: 1 1 auto; min-width: 0; }
-    .roster-foot { display: flex; flex-wrap: wrap; gap: 0 14px; margin-top: 4px; }
-    .roster-foot .text-btn { min-height: 40px; }
-
-    /* 게임 고르기 */
-    .gtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 14px 0; padding: 6px; border-radius: 16px; background: var(--surface-2); }
-    .gtab { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 12px; color: var(--ink-2); font-size: 15px; font-weight: 700; transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease); }
-    .gtab .ic { width: 18px; height: 18px; }
-    .gtab[aria-selected="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 2px rgba(31, 22, 44, 0.08); }
-
-    /* 무대 */
-    .stage { position: relative; display: flex; flex-direction: column; min-height: 440px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
-    .stage-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-radius: 19px 19px 0 0; background: linear-gradient(135deg, #4B2A82, #6D4AAE); color: #fff; }
-    .stage-head h2 { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
-    .stage-head h2:focus { outline: none; }
-    .stage-head h2 .ic { width: 20px; height: 20px; }
-    .stage-head .meta { flex: none; font-size: 13px; font-weight: 600; opacity: 0.92; font-variant-numeric: tabular-nums; }
-    .stage-body { display: grid; flex: 1 1 auto; align-content: start; gap: 14px; padding: 18px; }
-    .stage-foot { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 10px 18px 16px; border-radius: 0 0 19px 19px; background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 26%); }
-    @media (max-width: 860px) { .stage-foot { bottom: calc(62px + env(safe-area-inset-bottom)); } }
-    .stage-foot .btn { min-height: 56px; border-radius: var(--r-lg); font-size: 17px; font-weight: 800; }
-    .stage-foot .row { display: flex; gap: 8px; }
-    .stage-foot .row .btn { flex: 1 1 0; min-width: 0; font-size: 15px; }
-    .stage-foot .row.is-text { justify-content: center; gap: 20px; }
-
-    .seg { display: flex; flex-wrap: wrap; gap: 6px; }
-    .seg .chip { min-height: 40px; }
-    .seg.is-tight .chip { min-height: 44px; padding: 0 12px; font-size: 13px; }
-    @media (max-width: 480px) { .seg.is-modes { display: grid; grid-template-columns: repeat(2, 1fr); } .seg.is-modes .chip { justify-content: center; } }
-    .setup { display: grid; gap: 14px; }
-    .setup h3 { margin: 0 0 8px; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; color: var(--ink-2); text-transform: uppercase; }
-    .setup p { margin: 6px 0 0; color: var(--ink-2); font-size: var(--fs-sm); }
-    .pstep { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); }
-    .pstep button { width: 44px; height: 44px; border-radius: 50%; font-size: 20px; font-weight: 700; color: var(--brand); }
-    .pstep button:disabled { color: var(--line-strong); }
-    .pstep b { min-width: 3.2em; text-align: center; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .empty { padding: 26px 12px; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.6; text-align: center; }
-    .empty .text-btn { display: inline-flex; }
-
-    /* 질문과 넘기기 */
-    .q { margin: 0; color: var(--ink); font-size: 24px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-    .q small { display: block; margin-bottom: 6px; color: var(--ink-2); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
-    .handoff { display: grid; justify-items: center; gap: 10px; padding: 18px 0 6px; text-align: center; }
-    .handoff .hand-who { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-    .handoff .hint { color: var(--ink-2); font-size: var(--fs-sm); }
-    .dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-    .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
-    .dots i.on { background: var(--brand); }
-    .dots i.now { background: var(--rust); transform: scale(1.3); }
-
-    /* 밸런스 */
-    .tiles { display: grid; gap: 12px; }
-    .tile { display: grid; place-items: center; min-height: 124px; padding: 18px 16px; border: 0; border-radius: 16px; color: #fff; font-size: 22px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; text-align: center; overflow-wrap: anywhere; transition: transform 0.15s var(--ease), filter 0.15s var(--ease); }
-    .tile small { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; opacity: 0.85; }
-    .tile.is-a { background: linear-gradient(145deg, #5B37A3, #4B2A82); }
-    .tile.is-b { background: linear-gradient(145deg, #BC5E36, #A9502D); }
-    .tile:active { transform: scale(0.98); filter: brightness(1.06); }
-    .tile.is-picked { outline: 4px solid #fff; outline-offset: -8px; }
-    .vs { justify-self: center; display: grid; place-items: center; width: 40px; height: 40px; margin: -22px 0; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; position: relative; z-index: 1; }
-    .split { display: grid; grid-template-columns: minmax(0, var(--a, 1fr)) minmax(0, var(--b, 1fr)); gap: 3px; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
-    .split i { display: block; height: 100%; }
-    .split i:first-child { background: var(--brand); border-radius: 999px 0 0 999px; }
-    .split i:last-child { background: var(--rust); border-radius: 0 999px 999px 0; }
-    .sides { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
-    .side { padding: 12px; border-radius: 16px; background: var(--brand-soft); }
-    .side.is-b { background: var(--rust-soft); }
-    .side h3 { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
-    .side .n { display: flex; align-items: baseline; gap: 6px; margin-top: 6px; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    .side .n small { font-size: 12px; font-weight: 700; color: var(--ink-2); }
-    .side .tag { margin-left: auto; }
-    .faces { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .faces .fc { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font-size: 13px; font-weight: 600; }
-    .faces .fc span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .award { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--gold-soft); color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
-    .rank { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-    .rank li { display: grid; grid-template-columns: 30px 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
-    .rank li.is-top { border: 1px solid #E6D3A6; background: linear-gradient(135deg, #F3EAD5, #FBF6EA); }
-    .rank .pos { font-weight: 800; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-    .rank .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-    .rank .pts { font-weight: 800; font-variant-numeric: tabular-nums; }
-    .crown { display: grid; justify-items: center; gap: 6px; padding: 6px 0 2px; text-align: center; }
-    .crown .ttl { color: var(--gold); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; }
-    .crown .big { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-
-    /* 회전판과 슬롯 */
-    .wheel-wrap { position: relative; width: min(100%, 300px); aspect-ratio: 1; margin: 4px auto 0; }
-    .wheel-wrap .pin { position: absolute; top: -4px; left: 50%; z-index: 2; width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-top: 26px solid var(--ink); transform: translateX(-50%); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25)); }
-    .wheel { display: block; width: 100%; height: 100%; transition: transform 3.4s cubic-bezier(0.12, 0.72, 0.08, 1); will-change: transform; filter: drop-shadow(0 12px 22px rgba(36, 30, 44, 0.18)); }
-    .wheel.no-anim { transition: none; }
-    .wheel text { fill: #fff; font-weight: 700; pointer-events: none; }
-    .wheel g.dim { opacity: 0.55; }
-    .wheel g.win path { stroke: #241E2C; stroke-width: 4; }
-    .stage-body { animation: fade 0.25s var(--ease) both; }
-    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-    .confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-    .confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; background: var(--c, #4B2A82); opacity: 0.95; animation: fall var(--d, 2.2s) var(--delay, 0s) cubic-bezier(0.3, 0.6, 0.6, 1) forwards; }
-    @keyframes fall { 0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate3d(var(--x, 0px), 420px, 0) rotate(var(--r, 540deg)); opacity: 0; } }
-    .slot { display: grid; place-items: center; min-height: 120px; padding: 16px; border-radius: 20px; background: var(--brand-soft); color: var(--brand); font-size: 30px; font-weight: 800; letter-spacing: -0.02em; text-align: center; overflow-wrap: anywhere; }
-    .result { display: grid; justify-items: center; gap: 8px; padding: 6px 0; text-align: center; animation: pop 0.35s var(--ease) both; }
-    .result .card3d { width: 100%; justify-self: stretch; margin-top: 6px; }
-    .result .big { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-    .result .sub { color: var(--ink-2); font-size: var(--fs-sm); }
-
-    /* 순서, 팀 */
-    .order { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-    .order li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); font-weight: 700; animation: pop 0.35s var(--ease) both; }
-    .order li .pos { display: grid; flex: none; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 13px; }
-    .order li span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-    .team { padding: 12px; border-radius: 16px; background: var(--surface-2); animation: pop 0.35s var(--ease) both; }
-    .team h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 15px; font-weight: 800; }
-    .team h3 i { width: 10px; height: 10px; border-radius: 50%; background: var(--tc, var(--brand)); }
-    .team ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-    .team li { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; }
-    .team li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* 카드(뒤집기) */
-    .card3d { perspective: 1000px; }
-    .card3d .inner { position: relative; min-height: 210px; transform-style: preserve-3d; transition: transform 0.55s var(--ease); }
-    .card3d.is-open .inner { transform: rotateY(180deg); }
-    .face { position: absolute; inset: 0; display: grid; place-items: center; padding: 22px; border-radius: 16px; text-align: center; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
-    .face.front { background: linear-gradient(135deg, #4B2A82, #6D4AAE); color: #fff; font-size: 17px; font-weight: 800; }
-    .face.front .ic { width: 36px; height: 36px; margin-bottom: 8px; opacity: 0.9; }
-    .face.back { border: 2px solid var(--brand); background: var(--surface); transform: rotateY(180deg); }
-    .face.back .topic { margin-bottom: 8px; color: var(--ink-2); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; }
-    .face.back .word { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; overflow-wrap: anywhere; }
-    .face.back .tip { margin-top: 10px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
-    .face.back.is-liar { border-color: var(--rust); background: var(--rust-soft); }
-    .face.back.is-liar .word { color: var(--rust); }
-    .face.back .text { font-size: 20px; font-weight: 700; line-height: 1.45; letter-spacing: -0.01em; }
-    .hold { min-height: 64px !important; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
-    .hold.is-holding { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
-
-    /* 라이어 */
-    .timer { font-size: 60px; font-weight: 800; letter-spacing: -0.03em; text-align: center; font-variant-numeric: tabular-nums; line-height: 1; }
-    .timer.is-done { color: var(--danger); }
-    .timer-row { display: flex; justify-content: center; gap: 8px; }
-    .speaker { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: var(--brand-soft); font-weight: 700; }
-    .speaker small { display: block; color: var(--ink-2); font-size: 12px; font-weight: 700; }
-    .vote-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-    .vote-list button { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); font-size: 15px; font-weight: 700; text-align: left; }
-    .vote-list button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .vote-list button:active, .vote-list button[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
-    .verdict { display: grid; justify-items: center; gap: 6px; padding: 8px 0; text-align: center; animation: pop 0.35s var(--ease) both; }
-    .verdict .ttl { font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: var(--ink-2); }
-    .verdict .big { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; overflow-wrap: anywhere; }
-    .verdict.is-liar .big { color: var(--rust); }
-    .verdict.is-citizen .big { color: var(--brand); }
-    .tally { display: flex; justify-content: center; gap: 24px; font-size: var(--fs-sm); font-weight: 700; color: var(--ink-2); }
-    .tally b { font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; }
-    .opts { display: grid; gap: 8px; }
-    .opts button { min-height: 54px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface); font-size: 17px; font-weight: 700; }
-    .opts button:active { border-color: var(--brand); background: var(--brand-soft); }
-
-    body.party .toast { top: calc(var(--nav-h) + 10px + env(safe-area-inset-top)); bottom: auto; transform: translate(-50%, -12px); }
-    body.party .toast.is-visible { transform: translate(-50%, 0); }
-    .help { padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.55; }
-    .help summary { cursor: pointer; font-weight: 700; color: var(--brand); }
-    .help ul { margin: 6px 0 0; padding-left: 18px; }
-    .note { margin: 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.55; }
-    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) {
-      .wheel, .card3d .inner, .tile { transition: none; }
-      .order li, .team, .result, .verdict, .stage-body { animation: none; }
-      .confetti { display: none; }
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" />
+  <link rel="stylesheet" href="assets/party.css?v=1" />
   <script src="assets/site-core.js?v=15"></script>
-  <script src="assets/icons.js?v=3"></script>
 </head>
 <body class="party">
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -250,47 +53,34 @@
       <a class="btn btn-primary is-sm topnav-cta" href="https://open.kakao.com/o/geS7Tzy" target="_blank" rel="noopener noreferrer">오픈채팅 참여</a>
     </div>
   </header>
-  <header class="page-head">
-    <div class="container">
-      <h1 id="pageTitle">모임 자리 게임</h1>
-      <p class="page-lead">폰 하나를 돌려 가며 하는 게임입니다. 명단만 이 기기에 남고 결과는 저장하지 않습니다.</p>
+
+  <main id="main" class="pa">
+    <div class="pa-sky" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="pa-wrap">
+      <header class="pa-hero">
+        <div class="pa-brand">
+          <span class="pa-logo" id="paLogo" aria-hidden="true"></span>
+          <div>
+            <h1 class="pa-title">모임 자리 게임</h1>
+            <p class="pa-sub">폰 하나를 돌려 가며 같이 해요</p>
+          </div>
+        </div>
+        <button type="button" class="pa-icon" id="soundBtn" aria-pressed="true" aria-label="소리"></button>
+      </header>
+
+      <section class="pa-panel" id="players" aria-labelledby="playersTitle">
+        <div class="pa-panel-head">
+          <h2 id="playersTitle">플레이어 <b class="pa-count" id="playerCount">0</b></h2>
+          <button type="button" class="pa-link" id="editBtn">편집</button>
+        </div>
+        <div class="pa-bung" id="bungLine" hidden></div>
+        <ul class="pa-tokens" id="tokens" aria-label="플레이어"></ul>
+      </section>
+
+      <h2 class="pa-label">게임 고르기</h2>
+      <div class="pa-games" id="games"></div>
+      <p class="pa-note">사람을 지목하거나 개인을 묻는 질문은 넣지 않았어요. 미션은 하기 싫으면 넘겨도 돼요. 결과는 저장하지 않고, 플레이어 명단만 이 기기에 남아요.</p>
     </div>
-  </header>
-
-  <main id="main" class="page-main">
-    <section class="section" aria-label="모임 자리 게임">
-      <div class="container">
-        <section class="pcard" id="roster" aria-label="명단">
-          <div class="roster-top">
-            <h2>명단<b id="rosterCount"></b></h2>
-            <button type="button" class="text-btn is-quiet" id="rosterClear" hidden>비우기</button>
-          </div>
-          <div class="roster-sum" id="rosterSum" hidden><span class="list" id="rosterList"></span><button type="button" class="text-btn" id="rosterToggle" aria-expanded="false" aria-controls="rosterBody">고치기</button></div>
-          <div id="rosterBody">
-            <p class="bung-line" id="bungLine" hidden></p>
-            <div class="names" id="names"></div>
-            <form class="roster-form" id="rosterForm" autocomplete="off">
-              <input class="input" id="rosterInput" type="text" maxlength="24" placeholder="이름" aria-label="이름" enterkeyhint="done" autocapitalize="off" list="memberList" />
-              <datalist id="memberList"></datalist>
-              <button type="submit" class="btn btn-secondary">추가</button>
-            </form>
-            <div class="roster-foot">
-              <button type="button" class="text-btn" id="rosterMe" hidden>내 닉네임 넣기</button>
-              <button type="button" class="text-btn is-quiet" id="rosterFold" hidden>접기</button>
-            </div>
-          </div>
-        </section>
-
-        <nav class="gtabs" role="tablist" aria-label="게임 고르기">
-          <button type="button" class="gtab" role="tab" data-game="pick" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg>뽑기</button>
-          <button type="button" class="gtab" role="tab" data-game="balance" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg>밸런스</button>
-          <button type="button" class="gtab" role="tab" data-game="liar" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>라이어</button>
-        </nav>
-
-        <section class="stage" id="stage" aria-label="게임"></section>
-        <p class="note" style="margin-top: 12px;">사람을 지목하거나 개인을 묻는 질문은 넣지 않았습니다. 미션은 하기 싫으면 넘겨도 됩니다.</p>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -331,633 +121,54 @@
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="live" class="sr" aria-live="polite"></div>
+  <div id="live" class="pa-sr" aria-live="polite"></div>
 
-  <script>
-    (function () {
-      "use strict";
-      /* ── 공통 ── */
-      var NICK_KEY = "excer_news_nick", ROSTER_KEY = "excer_party_roster", STATE_KEY = "excer_party_state", PACK_URL = "data/party-packs.json?v=1";
-      var $ = function (id) { return document.getElementById(id); };
-      var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
-      var icon = function (name, cls) { return '<svg class="ic' + (cls ? " " + cls : "") + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>'; };
-      var AV_COLORS = ["#7C5CBF", "#C2652F", "#2F7D6B", "#B8862B", "#3B6FB6", "#A3466E", "#5D7A2E"];   // 소식 참석 명단과 같은 색
-      function avColor(nick) { var h = 0; Array.from(String(nick || "")).forEach(function (ch) { h = (h * 31 + ch.codePointAt(0)) % 9973; }); return AV_COLORS[h % AV_COLORS.length]; }
-      function initial(n) { return Array.from(String(n || "").trim())[0] || "?"; }
-      // 화면에 보이는 짧은 이름: 채팅방 닉네임은 '이름 동네 ...' 처럼 길어서 첫 낱말만. 첫 낱말이 겹치면 두 낱말, 그래도 겹치면 전체
-      var DISP = {};
-      function rebuildDisp() {
-        DISP = {};
-        var tok = function (n, k) { return String(n).trim().split(/\s+/).slice(0, k).join(" "); };
-        var count = function (f) { var m = {}; S.roster.forEach(function (n) { var k = f(n); m[k] = (m[k] || 0) + 1; }); return m; };
-        var c1 = count(function (n) { return tok(n, 1); }), c2 = count(function (n) { return tok(n, 2); });
-        S.roster.forEach(function (n) { DISP[n] = c1[tok(n, 1)] === 1 ? tok(n, 1) : c2[tok(n, 2)] === 1 ? tok(n, 2) : String(n).trim(); });
-      }
-      function disp(n) { return DISP[n] || String(n || "").trim().split(/\s+/)[0] || n; }
-      function av(name, cls) { return '<span class="av' + (cls ? " " + cls : "") + '" style="--av:' + avColor(name) + '" aria-hidden="true">' + esc(initial(name)) + "</span>"; }
-      var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-      function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
-      function shuffle(a) { var r = a.slice(); for (var i = r.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = r[i]; r[i] = r[j]; r[j] = t; } return r; }
-      function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
-      function nickKey(s) { return String(s || "").normalize("NFC").trim().replace(/\s+/g, "").toLowerCase(); }
-      function fmtTime(s) { s = Math.max(0, s | 0); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+  <!-- 플레이어 추가와 고치기(아래에서 올라오는 창. 뒤로 가기와 끌어 닫기는 site-core) -->
+  <div class="modal-backdrop is-sheet pa-sheet" id="addSheet" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+      <div class="modal-head">
+        <h3 id="addTitle">플레이어 <b class="pa-count" id="sheetCount">0</b></h3>
+        <button type="button" class="modal-close" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <form class="pa-add" id="addForm" autocomplete="off">
+        <input class="pa-input" id="addInput" type="text" maxlength="24" placeholder="이름 또는 닉네임" aria-label="이름" enterkeyhint="done" autocapitalize="off" />
+        <button type="submit" class="pa-btn is-primary is-sm">추가</button>
+      </form>
+      <div class="pa-suggest" id="addSuggest" aria-label="추천"></div>
+      <ul class="pa-roster" id="addList" aria-label="지금 명단"></ul>
+      <div class="pa-sheet-foot">
+        <button type="button" class="pa-btn is-ghost is-sm" id="clearAll">모두 비우기</button>
+        <button type="button" class="pa-btn is-primary" data-close>완료</button>
+      </div>
+    </div>
+  </div>
 
-      var toastEl = $("toast"), toastT = null;
-      function toast(msg) { if (!toastEl) return; toastEl.textContent = msg; toastEl.classList.add("is-visible"); clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2400); }
-      function say(t) { var l = $("live"); if (!l) return; l.textContent = ""; setTimeout(function () { l.textContent = t; }, 40); }
-      var topnav = $("topnav");
-      function syncNav() { if (topnav) topnav.classList.toggle("is-scrolled", window.scrollY > 8); }
-      window.addEventListener("scroll", syncNav, { passive: true }); syncNav();
+  <!-- 게임 화면(전체 화면) -->
+  <div class="pg" id="play" hidden role="dialog" aria-modal="true" aria-labelledby="pgTitle">
+    <div class="pg-sky" aria-hidden="true"><i></i><i></i></div>
+    <header class="pg-top">
+      <button type="button" class="pg-icon" id="pgClose" aria-label="나가기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="pg-head"><span class="pg-art" id="pgArt" aria-hidden="true"></span><h2 id="pgTitle" tabindex="-1"></h2></div>
+      <button type="button" class="pg-icon" id="pgSound" aria-pressed="true" aria-label="소리"></button>
+    </header>
+    <div class="pg-progress" id="pgProgress" hidden></div>
+    <div class="pg-body" id="pgBody"></div>
+    <div class="pg-foot" id="pgFoot"></div>
+    <div class="pg-pop" id="pgPop" hidden></div>
+    <div class="pg-splash" id="pgSplash" hidden aria-hidden="true"></div>
+    <canvas class="pg-confetti" id="pgConfetti" aria-hidden="true"></canvas>
+  </div>
 
-      function supaFetch(path, init) {
-        var C = window.SUPA;
-        if (!C || !C.url || !C.anon) return Promise.reject(new Error("no server"));
-        return fetch(C.url + path, Object.assign({ headers: { apikey: C.anon, Authorization: "Bearer " + C.anon, "Content-Type": "application/json" } }, init || {}))
-          .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-          .then(function (t) { return t ? JSON.parse(t) : null; });
-      }
+  <!-- 확인 창(로비와 게임 모두) -->
+  <div class="pa-dialog" id="paDialog" hidden>
+    <div class="pa-dialog-box" role="alertdialog" aria-modal="true" aria-labelledby="paDialogTitle" aria-describedby="paDialogText">
+      <h3 id="paDialogTitle"></h3>
+      <p id="paDialogText"></p>
+      <div class="pa-dialog-acts"><button type="button" class="pa-btn is-ghost" id="paDialogNo"></button><button type="button" class="pa-btn is-primary" id="paDialogYes"></button></div>
+    </div>
+  </div>
 
-      /* ── 질문 묶음: 파일을 읽고, 못 읽으면 안에 든 작은 묶음으로 ── */
-      var FALLBACK = {
-        balance: {
-          "음식": [["탕수육은 부먹", "탕수육은 찍먹"], ["냉면은 물냉", "냉면은 비냉"], ["평생 삼겹살만", "평생 치킨만"], ["떡볶이는 밀떡", "떡볶이는 쌀떡"], ["김치찌개", "된장찌개"], ["짜장", "짬뽕"]],
-          "일상": [["아침형 인간", "저녁형 인간"], ["여름", "겨울"], ["바다", "산"], ["계획 짜는 여행", "즉흥 여행"], ["집에서 영화", "극장에서 영화"], ["전화", "문자"]]
-        },
-        liar: { "음식": ["삼겹살", "치킨", "떡볶이", "김치찌개", "냉면", "초밥", "피자", "라면"], "장소": ["노래방", "볼링장", "한강공원", "영화관", "편의점", "카페", "찜질방", "헬스장"] },
-        missions: ["다음 건배사 맡기", "2차 장소 고르기", "옆 사람 칭찬 한 가지 하기", "최근 가 본 맛집 하나 추천하기", "다음 메뉴 주문 맡기", "오늘 가장 웃긴 순간 다시 말하기"],
-        talk: ["요즘 제일 빠져 있는 것은?", "이 동네에서 제일 좋아하는 길은?", "최근에 산 것 중 제일 잘 산 것은?", "올해 가장 잘한 일 하나는?", "요즘 자주 듣는 노래는?", "다음에 가 보고 싶은 동네 가게는?"]
-      };
-      var S = { roster: [], bung: null, game: "pick", packs: null, open: true, pick: freshPick(), bal: freshBal(), liar: freshLiar() };
-      // 조사: 받침이 있으면 은, 없으면 는
-      function eun(w) { var c = w.charCodeAt(w.length - 1); var jong = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0; return w + (jong ? "은" : "는"); }
-      function P() { return S.packs || FALLBACK; }
-      function freshPick() { return { mode: "one", out: [], rot: 0, result: null, spinning: false, order: null, teams: null, teamN: 2, deck: "missions", card: null, cardOpen: false, cardFor: null, used: [] }; }
-      function freshBal() { return { phase: "setup", cats: null, rounds: 10, round: 0, q: null, i: 0, picks: {}, scores: {}, used: [], players: [], history: [], maj: -1, sideA: [], sideB: [] }; }
-      function freshLiar() { return { phase: "setup", cat: "", timer: 180, players: [], liar: "", word: "", topic: "", i: 0, seen: false, first: "", left: 0, running: false, chosen: "", options: [], guess: "", caught: null, tally: { c: 0, l: 0 }, round: 0, used: [] }; }
-      fetch(PACK_URL).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-        .then(function (j) { if (j && j.balance && j.liar) { S.packs = j; if (!S.pick.spinning && !document.querySelector("#liarCard.is-open")) renderStage(); } })   // 돌아가는 중이나 카드를 보는 중에는 다음 그리기 때 반영
-        .catch(function () { S.packs = null; });
-
-      /* ── 저장: 명단은 이 기기에, 진행 중인 판은 이 탭에(새로고침 해도 이어지게) ── */
-      function save() {
-        try { localStorage.setItem(ROSTER_KEY, JSON.stringify(S.roster)); } catch (e) {}
-        try {
-          sessionStorage.setItem(STATE_KEY, JSON.stringify({ bung: S.bung, game: S.game, open: S.open, pick: { mode: S.pick.mode, out: S.pick.out, teamN: S.pick.teamN, deck: S.pick.deck }, bal: S.bal, liar: S.liar }));
-        } catch (e) {}
-      }
-      function restore() {
-        try { var r = JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); if (Array.isArray(r)) S.roster = r.filter(function (x) { return typeof x === "string" && x.trim(); }).slice(0, 40); } catch (e) {}
-        try {
-          var st = JSON.parse(sessionStorage.getItem(STATE_KEY) || "null");
-          if (st && typeof st === "object") {
-            if (st.bung && st.bung.id) S.bung = st.bung;
-            if (typeof st.open === "boolean") S.open = st.open;
-            if (/^(pick|balance|liar)$/.test(st.game)) S.game = st.game;
-            if (st.pick) Object.assign(S.pick, { mode: st.pick.mode || "one", out: st.pick.out || [], teamN: st.pick.teamN || 2, deck: st.pick.deck || "missions" });
-            if (st.bal && st.bal.phase) S.bal = Object.assign(freshBal(), st.bal);
-            if (st.liar && st.liar.phase) S.liar = Object.assign(freshLiar(), st.liar);
-            // 반쯤 깨진 저장(문제나 제시어가 없는 진행 중 판)은 처음 화면으로
-            if (S.bal.phase !== "setup" && !(S.bal.q && S.bal.players && S.bal.players.length)) S.bal = Object.assign(freshBal(), { cats: S.bal.cats, rounds: S.bal.rounds });
-            if (S.liar.phase !== "setup" && !(S.liar.word && S.liar.players && S.liar.players.length)) S.liar = Object.assign(freshLiar(), { cat: S.liar.cat, timer: S.liar.timer, tally: S.liar.tally, round: S.liar.round });
-            if (S.liar.running) { if (S.liar.endAt && S.liar.endAt > Date.now()) S.liar.left = Math.round((S.liar.endAt - Date.now()) / 1000); else { S.liar.left = 0; S.liar.running = false; S.liar.endAt = 0; } }
-            return !!((st.bal && !/setup|end/.test(st.bal.phase)) || (st.liar && !/setup|result/.test(st.liar.phase)));
-          }
-        } catch (e) {}
-        return false;
-      }
-
-      /* ── 명단 ── */
-      function savedNick() { try { return (localStorage.getItem(NICK_KEY) || "").trim(); } catch (e) { return ""; } }
-      function renderRoster() {
-        var n = S.roster.length;
-        rebuildDisp();
-        if (!n) S.open = true;
-        $("rosterCount").textContent = n ? n + "명" : "";
-        $("rosterClear").hidden = !n;
-        $("rosterBody").hidden = !S.open;
-        $("rosterSum").hidden = S.open;
-        $("rosterFold").hidden = !n;
-        $("rosterToggle").setAttribute("aria-expanded", String(S.open));
-        $("rosterList").textContent = n ? S.roster.slice(0, 8).map(disp).join(", ") + (n > 8 ? " 외 " + (n - 8) + "명" : "") : "";
-        var me = savedNick();
-        $("rosterMe").hidden = !me || S.roster.some(function (x) { return nickKey(x) === nickKey(me); });
-        $("names").innerHTML = n
-          ? S.roster.map(function (x) { return '<span class="name">' + av(x) + '<span class="nm">' + esc(x) + '</span><button type="button" data-rm="' + esc(x) + '" aria-label="' + esc(x) + ' 빼기">' + icon("close") + "</button></span>"; }).join("")
-          : '<p class="muted">아직 이름이 없어요. 오늘 모임 글에서 열면 참석 명단이 그대로 들어오고, 아래 칸에 직접 적어도 됩니다.</p>';
-        var b = $("bungLine");
-        if (S.bung) { b.hidden = false; b.innerHTML = icon("calendar") + '<a href="news.html?cat=bung#post-' + Number(S.bung.id) + '">' + esc(S.bung.title || "모임 글") + "</a> 참석 명단" + (S.bung.n != null ? " " + S.bung.n + "명" : "") + '<button type="button" class="text-btn" data-act="reload-bung">다시 불러오기</button>'; }
-        else b.hidden = true;
-        renderStage();
-      }
-      function addName(raw, quiet) {
-        var n = String(raw || "").normalize("NFC").trim().replace(/\s+/g, " ").slice(0, 24);
-        if (!n) return false;
-        if (S.roster.length >= 40) { toast("명단은 40명까지예요."); return false; }
-        if (S.roster.some(function (x) { return nickKey(x) === nickKey(n); })) { if (!quiet) toast("이미 있는 이름이에요."); return false; }
-        S.roster.push(n); return true;
-      }
-      function removeName(n) {
-        S.roster = S.roster.filter(function (x) { return x !== n; });
-        S.pick.out = S.pick.out.filter(function (x) { return x !== n; });
-        save(); renderRoster();
-      }
-      $("rosterForm").addEventListener("submit", function (e) {
-        e.preventDefault();
-        var inp = $("rosterInput");
-        if (addName(inp.value)) { inp.value = ""; save(); renderRoster(); }
-        inp.focus();
-      });
-      $("rosterMe").addEventListener("click", function () { if (addName(savedNick())) { save(); renderRoster(); } });
-      $("rosterToggle").addEventListener("click", function () { S.open = true; save(); renderRoster(); try { $("rosterInput").focus({ preventScroll: true }); } catch (e) {} });
-      $("rosterFold").addEventListener("click", function () { S.open = false; save(); renderRoster(); });
-      $("rosterClear").addEventListener("click", function () {
-        if (!S.roster.length) return;
-        if (!window.confirm("명단 " + S.roster.length + "명을 모두 비울까요?")) return;
-        S.roster = []; S.pick = Object.assign(freshPick(), { mode: S.pick.mode }); save(); renderRoster();
-      });
-      $("names").addEventListener("click", function (e) { var b = e.target.closest("[data-rm]"); if (b) removeName(b.getAttribute("data-rm")); });
-      $("bungLine").addEventListener("click", function (e) { if (e.target.closest('[data-act="reload-bung"]') && S.bung) loadBung(S.bung.id, true); });
-
-      // 멤버 자동완성: 운영 화면이 올린 멤버 목록에서 찾는다(서버가 없거나 막히면 조용히 없음)
-      var memT = null, memCache = {};
-      $("rosterInput").addEventListener("input", function () {
-        var q = this.value.trim(); clearTimeout(memT);
-        if (!q) return;
-        memT = setTimeout(function () {
-          if (memCache[q]) { fillMembers(memCache[q]); return; }
-          supaFetch("/rest/v1/rpc/member_find", { method: "POST", body: JSON.stringify({ p_q: q }) })
-            .then(function (rows) { var names = (rows || []).map(function (r) { return r && r.name; }).filter(Boolean).slice(0, 8); memCache[q] = names; fillMembers(names); })
-            .catch(function () {});
-        }, 220);
-      });
-      function fillMembers(names) { $("memberList").innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join(""); }
-
-      // 모임 글의 참석 명단 불러오기(?bung=글번호). 명단은 사이트에 이미 공개된 것과 같다
-      function loadBung(id, again) {
-        id = Number(id); if (!(id > 0)) return;
-        var hadBung = S.bung && S.bung.id === id;
-        if (!hadBung) { S.bung = { id: id, title: "", n: null }; renderRoster(); }
-        Promise.all([
-          supaFetch("/rest/v1/site_posts_v?id=eq." + id + "&select=id,title,category").then(function (r) { return r && r[0]; }),
-          supaFetch("/rest/v1/site_bung_attend_v?post_id=eq." + id + "&select=nick,created_at&order=created_at.asc")
-        ]).then(function (res) {
-          var post = res[0], list = res[1] || [];
-          if (!post) { S.bung = null; save(); renderRoster(); toast("그 모임 글을 찾지 못했어요."); return; }
-          S.bung = { id: id, title: post.title || "모임 글", n: list.length };
-          var added = 0;
-          list.forEach(function (x) { if (addName(x.nick, true)) added++; });
-          if (S.roster.length && added) S.open = false;   // 명단이 들어왔으면 접어서 게임이 바로 보이게
-          save(); renderRoster();
-          if (!again && added && window.scrollY < 40) requestAnimationFrame(revealGame);
-          if (!list.length) toast("아직 참석한 사람이 없어요. 이름을 직접 적어 주세요.");
-          else if (added) toast("참석 명단 " + list.length + "명을 넣었어요." + (added < list.length ? " (이미 있는 " + (list.length - added) + "명은 그대로)" : ""));   // 다 들어 있으면(새로고침) 조용히
-        }).catch(function () { toast(again ? "명단을 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요." : "명단을 불러오지 못했어요. 이름을 직접 적을 수 있어요."); renderRoster(); });
-      }
-
-      /* ── 게임 고르기 ── */
-      Array.prototype.forEach.call(document.querySelectorAll(".gtab"), function (b) {
-        b.addEventListener("click", function () { setGame(b.getAttribute("data-game")); });
-      });
-      function setGame(g, silent) {
-        if (!/^(pick|balance|liar)$/.test(g)) g = "pick";
-        S.game = g;
-        Array.prototype.forEach.call(document.querySelectorAll(".gtab"), function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-game") === g)); });
-        if (!silent) { try { var u = new URL(location.href); u.searchParams.set("g", g); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } catch (e) {} }
-        save(); renderStage();
-      }
-
-      /* ── 무대 ── */
-      var stage = $("stage");
-      function wrap(o) {
-        return '<div class="stage-head"><h2 tabindex="-1">' + (o.icon ? icon(o.icon) : "") + esc(o.title) + "</h2>" + (o.meta ? '<span class="meta">' + o.meta + "</span>" : "") + "</div>"
-          + '<div class="stage-body">' + o.body + (o.help ? '<details class="help"><summary>어떻게 하나요</summary><ul>' + o.help.map(function (h) { return "<li>" + h + "</li>"; }).join("") + "</ul></details>" : "") + "</div>"
-          + (o.foot ? '<div class="stage-foot">' + o.foot + "</div>" : "");
-      }
-      function needNames(min, what) {
-        return '<div class="empty">' + eun(what) + " " + min + "명부터 할 수 있어요. 위의 명단에 이름을 " + Math.max(0, min - S.roster.length) + "명 더 적어 주세요.</div>";
-      }
-      function dots(total, i) { var s = ""; for (var k = 0; k < total; k++) s += "<i" + (k < i ? ' class="on"' : k === i ? ' class="now"' : "") + "></i>"; return '<div class="dots" aria-hidden="true">' + s + "</div>"; }
-      function renderStage() {
-        var html = S.game === "pick" ? pickHTML() : S.game === "balance" ? balHTML() : liarHTML();
-        stage.innerHTML = html;
-        afterRender();
-        wake();
-      }
-      // 단추를 눌러 화면이 바뀐 뒤: 무대 머리가 보이게 올리고(다음 사람이 받았을 때 '차례' 가 보이게), 초점은 무대 머리로(키보드와 화면 읽기)
-      function go(scroll) {
-        save(); renderStage();
-        var h = stage.querySelector(".stage-head h2");
-        if (scroll) { var top = stage.getBoundingClientRect().top; if (top < 56 || top > window.innerHeight * 0.45) window.scrollTo({ top: top + window.scrollY - 64, behavior: reduce ? "auto" : "smooth" }); }
-        if (h && (document.activeElement === document.body || !stage.contains(document.activeElement))) { try { h.focus({ preventScroll: true }); } catch (e) {} }
-      }
-      // 요소가 화면 안에 보이게: 위는 머리 띠, 아래는 탭바(폰)와 붙어 있는 단추 줄을 빼고 계산
-      function ensureVisible(el) {
-        if (!el) return;
-        var r = el.getBoundingClientRect(), foot = stage.querySelector(".stage-foot");
-        var tab = window.innerWidth <= 860 ? 62 : 0, fh = foot ? foot.offsetHeight : 0;
-        var bottom = window.innerHeight - tab - fh - 8, top = 72, dy = 0;
-        if (r.bottom > bottom) dy = r.bottom - bottom;
-        if (r.top - dy < top) dy = r.top - top;
-        if (Math.abs(dy) > 4) window.scrollTo({ top: window.scrollY + dy, behavior: reduce ? "auto" : "smooth" });
-      }
-      // 모임 글에서 열었을 때: 게임 고르기와 무대가 첫 화면에 들어오게
-      function revealGame() {
-        var t = document.querySelector(".gtabs"); if (!t) return;
-        var top = t.getBoundingClientRect().top + window.scrollY - 68;
-        if (top > window.scrollY + 40) window.scrollTo({ top: top, behavior: reduce ? "auto" : "smooth" });
-      }
-      // 결과 화면의 색종이: 24조각, 2초 뒤 스스로 사라진다. 움직임 줄이기를 켠 기기에서는 CSS 가 숨긴다
-      function confetti() {
-        if (reduce) return;
-        var box = document.createElement("div"); box.className = "confetti"; box.setAttribute("aria-hidden", "true");
-        var cols = ["#4B2A82", "#A9502D", "#D9B98C", "#2F7D6B", "#3B6FB6", "#E8AD8F"], s = "";
-        for (var i = 0; i < 24; i++) s += '<i style="left:' + (4 + Math.random() * 92).toFixed(1) + "%;--c:" + cols[i % cols.length] + ";--x:" + ((Math.random() - 0.5) * 120).toFixed(0) + "px;--r:" + (360 + Math.random() * 540).toFixed(0) + "deg;--d:" + (1.6 + Math.random() * 1.2).toFixed(2) + "s;--delay:" + (Math.random() * 0.5).toFixed(2) + 's"></i>';
-        box.innerHTML = s; stage.appendChild(box);
-        setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 3200);
-      }
-
-      /* ── 1. 뽑기 ── */
-      var WHEEL_COLS = ["#4B2A82", "#A9502D", "#7E5F25", "#2F7D6B", "#3B6FB6", "#A3466E", "#5D7A2E", "#6D4AAE"];
-      function pool() { return S.roster.filter(function (n) { return S.pick.out.indexOf(n) < 0; }); }
-      var WHEEL_MAX = 12;   // 이보다 많으면 글자가 작아져 슬롯으로
-      function wheelHTML(names, win) {
-        var n = names.length, R = 150, cx = 160, cy = 160, step = 360 / n;
-        var parts = names.map(function (nm, i) {
-          var a0 = (i * step - 90) * Math.PI / 180, a1 = ((i + 1) * step - 90) * Math.PI / 180;
-          var x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0), x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
-          var mid = (i + 0.5) * step - 90, rad = mid * Math.PI / 180;
-          var tx = cx + R * 0.63 * Math.cos(rad), ty = cy + R * 0.63 * Math.sin(rad);
-          // 글자가 거꾸로 보이지 않게: 지금 멈춰 있는 회전각까지 더해서 아래쪽을 향하는 글자는 뒤집는다
-          var norm = (((mid + S.pick.rot) % 360) + 360) % 360, flip = norm > 90 && norm < 270;
-          var label = Array.from(disp(nm)).slice(0, n > 8 ? 4 : 6).join("");
-          var fs = n > 10 ? 12 : n > 6 ? 13 : 15;
-          var c = WHEEL_COLS[i % WHEEL_COLS.length];
-          if (i === n - 1 && n % WHEEL_COLS.length === 1) c = WHEEL_COLS[2];   // 처음과 마지막 조각이 같은 색으로 붙지 않게
-          var big = step > 180 ? 1 : 0;
-          var cls = win ? (nm === win ? ' class="win"' : ' class="dim"') : "";
-          return "<g" + cls + '><path d="M' + cx + " " + cy + " L" + x0.toFixed(2) + " " + y0.toFixed(2) + " A" + R + " " + R + " 0 " + big + " 1 " + x1.toFixed(2) + " " + y1.toFixed(2) + ' Z" fill="' + c + '" stroke="#fff" stroke-width="2"/>'
-            + '<text x="' + tx.toFixed(2) + '" y="' + ty.toFixed(2) + '" font-size="' + fs + '" text-anchor="middle" dominant-baseline="middle" transform="rotate(' + (flip ? mid + 180 : mid).toFixed(2) + " " + tx.toFixed(2) + " " + ty.toFixed(2) + ')">' + esc(label) + "</text></g>";
-        }).join("");
-        return '<div class="wheel-wrap"><span class="pin"></span><svg class="wheel' + (reduce ? " no-anim" : "") + '" id="wheel" viewBox="0 0 320 320" role="img" aria-label="' + n + '명 회전판" style="transform: rotate(' + S.pick.rot + 'deg)">' + parts + '<circle cx="' + cx + '" cy="' + cy + '" r="22" fill="#fff" stroke="#E3DFE4" stroke-width="2"/></svg></div>';
-      }
-      function cardHTML(card, open, forName) {
-        var isTalk = S.pick.deck === "talk";
-        return '<div class="card3d' + (open ? " is-open" : "") + '" id="pickCard"><div class="inner">'
-          + '<div class="face front">' + icon(isTalk ? "chat" : "sparkle") + (isTalk ? "이야기 카드" : "미션 카드") + "</div>"
-          + '<div class="face back"><div><div class="topic">' + (isTalk ? "이야기 카드" : "미션 카드") + (forName ? " " + esc(disp(forName)) : "") + '</div><div class="text">' + esc(card) + "</div></div></div>"
-          + "</div></div>";
-      }
-      function pickHTML() {
-        var p = S.pick, few = S.roster.length < 2;
-        var modes = [["one", "한 명 뽑기"], ["order", "순서 정하기"], ["team", "팀 나누기"], ["card", "카드 뽑기"]];
-        var body = '<div class="seg is-modes" role="tablist" aria-label="뽑기 방식">' + modes.map(function (m) { return '<button type="button" class="chip' + (p.mode === m[0] ? " is-active" : "") + '" role="tab" aria-selected="' + (p.mode === m[0]) + '" data-act="mode" data-v="' + m[0] + '">' + m[1] + "</button>"; }).join("") + "</div>";
-        var foot = "", meta = S.roster.length ? S.roster.length + "명" : "";
-        if (p.mode === "one") {
-          var names = pool();
-          if (few) body += needNames(2, "뽑기");
-          else if (names.length < 2) body += '<div class="empty">남은 사람이 ' + names.length + '명이에요.<br><button type="button" class="text-btn" data-act="pool-reset">모두 다시 넣기</button></div>';
-          else {
-            body += names.length <= WHEEL_MAX ? wheelHTML(names, p.spinning ? null : p.result) : '<div class="slot" id="slot" aria-live="off">' + esc(disp(p.result || names[0])) + "</div>";
-            if (p.result && !p.spinning) body += '<div class="result" id="pickResult">' + av(p.result, "is-xl") + '<div class="big">' + esc(disp(p.result)) + '</div><div class="sub">' + (disp(p.result) !== p.result ? esc(p.result) + ". " : "") + (p.out.length ? "이번 판에서 뺀 사람 " + p.out.length + "명" : names.length + "명 가운데") + "</div>" + (p.card && p.cardFor === p.result ? cardHTML(p.card, true, p.result) : "") + "</div>";
-            foot = p.spinning ? '<button type="button" class="btn btn-primary" disabled>돌아가는 중</button>'
-              : p.result ? '<button type="button" class="btn btn-primary" data-act="spin">다시 돌리기</button><div class="row"><button type="button" class="btn btn-secondary" data-act="mission">' + (p.card && p.cardFor === p.result ? "다른 미션" : "미션 카드") + '</button><button type="button" class="btn btn-secondary" data-act="out">이 사람 빼고 돌리기</button></div>'
-              : '<button type="button" class="btn btn-primary" data-act="spin">돌리기</button>';
-            if (p.out.length && !p.spinning) foot += '<button type="button" class="text-btn" data-act="pool-reset" style="justify-self:center">뺀 사람 모두 다시 넣기</button>';
-            meta = names.length + "명";
-          }
-        } else if (p.mode === "order") {
-          if (few) body += needNames(2, "순서 정하기");
-          else {
-            body += p.order ? '<ol class="order">' + p.order.map(function (n, i) { return '<li style="animation-delay:' + (i * 60) + 'ms"><span class="pos">' + (i + 1) + "</span>" + av(n) + "<span>" + esc(disp(n)) + "</span></li>"; }).join("") + "</ol>"
-              : '<div class="empty">섞기를 누르면 ' + S.roster.length + "명의 순서가 정해져요.<br>이야기 순서, 노래 순서, 주문 순서에 쓰세요.</div>";
-            foot = '<button type="button" class="btn btn-primary" data-act="shuffle">' + (p.order ? "다시 섞기" : "섞기") + "</button>" + (p.order ? '<button type="button" class="btn btn-secondary" data-act="copy-order">순서 복사</button>' : "");
-          }
-        } else if (p.mode === "team") {
-          var maxT = Math.max(2, Math.min(6, Math.floor(S.roster.length / 2)));
-          if (S.roster.length < 4) body += needNames(4, "팀 나누기");
-          else {
-            if (p.teamN > maxT) p.teamN = maxT;
-            body += '<div class="setup"><div><h3>팀 수</h3><div class="pstep"><button type="button" data-act="team-n" data-v="-1" aria-label="팀 수 줄이기"' + (p.teamN <= 2 ? " disabled" : "") + '>-</button><b>' + p.teamN + '팀</b><button type="button" data-act="team-n" data-v="1" aria-label="팀 수 늘리기"' + (p.teamN >= maxT ? " disabled" : "") + '>+</button></div><p>' + S.roster.length + "명을 " + p.teamN + "팀으로. 한 팀 " + Math.floor(S.roster.length / p.teamN) + (S.roster.length % p.teamN ? "~" + Math.ceil(S.roster.length / p.teamN) : "") + "명</p></div></div>";
-            if (p.teams) body += '<div class="teams">' + p.teams.map(function (t, i) { return '<div class="team" style="--tc:' + WHEEL_COLS[i % WHEEL_COLS.length] + ";animation-delay:" + (i * 80) + 'ms"><h3><i></i>' + String.fromCharCode(65 + i) + "팀</h3><ul>" + t.map(function (n) { return "<li>" + av(n, "is-sm") + "<span>" + esc(disp(n)) + "</span></li>"; }).join("") + "</ul></div>"; }).join("") + "</div>";
-            foot = '<button type="button" class="btn btn-primary" data-act="teams">' + (p.teams ? "다시 나누기" : "나누기") + "</button>" + (p.teams ? '<button type="button" class="btn btn-secondary" data-act="copy-teams">팀 복사</button>' : "");
-          }
-        } else {
-          body += '<div class="seg is-tight" role="tablist" aria-label="카드 종류"><button type="button" class="chip' + (p.deck === "missions" ? " is-active" : "") + '" role="tab" aria-selected="' + (p.deck === "missions") + '" data-act="deck" data-v="missions">미션 카드</button><button type="button" class="chip' + (p.deck === "talk" ? " is-active" : "") + '" role="tab" aria-selected="' + (p.deck === "talk") + '" data-act="deck" data-v="talk">이야기 카드</button></div>';
-          body += cardHTML(p.card || "", !!(p.card && p.cardOpen), p.cardFor);
-          body += '<p class="note">' + (p.deck === "talk" ? "한 장 뽑아 돌아가며 30초씩 이야기해요." : "짧고 가벼운 미션이에요. 하기 싫으면 다음 카드로.") + "</p>";
-          foot = '<button type="button" class="btn btn-primary" data-act="draw">' + (p.card ? "다음 카드" : "카드 뽑기") + "</button>" + (p.card && S.roster.length >= 2 ? '<button type="button" class="btn btn-secondary" data-act="card-who">이 카드 받을 사람 뽑기</button>' : "");
-          meta = (P()[p.deck] || []).length + "장";
-        }
-        return wrap({ icon: "dice", title: "뽑기", meta: meta, body: body, foot: foot, help: ["한 명 뽑기는 회전판이 멈춘 사람. 뽑힌 사람을 빼고 다시 돌리면 겹치지 않아요.", "순서 정하기와 팀 나누기는 명단 전체를 섞어요. 복사해서 채팅방에 올릴 수 있어요.", "카드 뽑기는 미션과 이야기 주제. 받을 사람도 뽑을 수 있어요."] });
-      }
-      var spinT = null;
-      function spin() {
-        var names = pool(), p = S.pick;
-        if (p.spinning || names.length < 2) return;
-        var i = Math.floor(Math.random() * names.length), name = names[i];
-        p.spinning = true; p.result = null; p.card = null; p.cardFor = null;
-        renderStage();
-        ensureVisible($("wheel") || $("slot"));   // 돌리기를 눌렀는데 회전판이 화면 밖이면 보이게
-        var done = function () { p.spinning = false; p.result = name; buzz([30, 40, 60]); say(disp(name) + " 뽑힘"); save(); renderStage(); ensureVisible($("pickResult")); };
-        if (names.length <= WHEEL_MAX) {
-          var step = 360 / names.length, base = ((p.rot % 360) + 360) % 360, target = ((360 - (i + 0.5) * step) % 360 + 360) % 360;
-          var delta = (target - base + 360) % 360; if (delta < 30) delta += 360;
-          var next = p.rot + (reduce ? 0 : 360 * 4) + delta;
-          var w = $("wheel");
-          if (!w || reduce) { p.rot = next; done(); return; }
-          var finished = false, fin = function () { if (finished) return; finished = true; clearTimeout(spinT); w.removeEventListener("transitionend", fin); done(); };
-          w.addEventListener("transitionend", fin);
-          spinT = setTimeout(fin, 3900);
-          requestAnimationFrame(function () { requestAnimationFrame(function () { p.rot = next; w.style.transform = "rotate(" + next + "deg)"; }); });
-        } else {
-          var box = $("slot"); if (!box || reduce) { done(); return; }
-          var t = 0, delay = 60, order = shuffle(names);
-          var tick = function () { box.textContent = order[t % order.length]; t++; delay = Math.min(260, delay * 1.08); if (delay < 255) { spinT = setTimeout(tick, delay); } else { box.textContent = name; setTimeout(done, 300); } };
-          tick();
-        }
-      }
-      function drawCard() {
-        var p = S.pick, deck = P()[p.deck] || FALLBACK[p.deck] || [];
-        if (!deck.length) { toast("카드가 없어요."); return; }
-        var left = deck.filter(function (c) { return p.used.indexOf(p.deck + "|" + c) < 0; });
-        if (!left.length) { p.used = p.used.filter(function (u) { return u.indexOf(p.deck + "|") !== 0; }); left = deck.slice(); }
-        var card = rnd(left); p.used.push(p.deck + "|" + card);
-        p.card = card; p.cardFor = null; p.cardOpen = false;
-        renderStage();
-        var el = $("pickCard");
-        if (el) { requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add("is-open"); p.cardOpen = true; }); }); }
-        else p.cardOpen = true;
-        buzz(20); say(card); save();
-      }
-      function copyText(t, ok) {
-        var done = function () { toast(ok || "복사했어요. 채팅방에 붙여 넣으세요."); };
-        var fail = function () {
-          try {
-            var ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
-            document.body.appendChild(ta); ta.select(); var r = document.execCommand("copy"); document.body.removeChild(ta);
-            if (r) done(); else toast("복사하지 못했어요.");
-          } catch (e) { toast("복사하지 못했어요."); }
-        };
-        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, fail); else fail();
-      }
-      function shareOut(title, text) {
-        if (window.KSHARE && window.KSHARE.share) {
-          window.KSHARE.share({ title: title, description: text.slice(0, 90), url: location.origin + location.pathname, buttonTitle: "우리도 해 보기" })
-            .then(function (r) { var m = window.KSHARE.message ? window.KSHARE.message(r) : ""; if (m) toast(m); });
-        } else copyText(text);
-      }
-
-      /* ── 2. 밸런스 게임 ── */
-      function balCats() { var all = Object.keys(P().balance || {}); var c = (S.bal.cats || all).filter(function (x) { return all.indexOf(x) >= 0; }); return c.length ? c : all; }
-      function balQuestions() { var out = []; balCats().forEach(function (cat) { (P().balance[cat] || []).forEach(function (pair) { if (pair && pair.length >= 2) out.push({ cat: cat, a: String(pair[0]), b: String(pair[1]) }); }); }); return out; }
-      function balNext() {
-        var b = S.bal, all = balQuestions();
-        if (!all.length) { toast("질문이 없어요."); return false; }
-        var left = all.filter(function (q) { return b.used.indexOf(q.cat + "|" + q.a) < 0; });
-        if (!left.length) { b.used = []; left = all; }
-        b.q = rnd(left); b.used.push(b.q.cat + "|" + b.q.a);
-        b.i = 0; b.picks = {}; b.phase = "handoff";
-        return true;
-      }
-      function balHTML() {
-        var b = S.bal, help = ["문제를 함께 읽고, 폰을 돌려 가며 한 사람씩 몰래 고릅니다.", "다 고르면 결과가 열려요. 다수와 같은 쪽을 고른 사람이 1점.", "정한 문제 수가 끝나면 공감왕이 정해집니다. 동률이면 둘 다."];
-        if (b.phase === "setup") {
-          var all = Object.keys(P().balance || {}), sel = balCats();
-          var body = S.roster.length < 2 ? needNames(2, "밸런스 게임") : "";
-          body += '<div class="setup"><div><h3>문제 종류</h3><div class="seg is-tight">' + all.map(function (c) { var on = sel.indexOf(c) >= 0; return '<button type="button" class="chip' + (on ? " is-active" : "") + '" aria-pressed="' + on + '" data-act="bal-cat" data-v="' + esc(c) + '">' + esc(c) + " " + ((P().balance[c] || []).length) + "</button>"; }).join("") + "</div></div>"
-            + '<div><h3>문제 수</h3><div class="seg is-tight">' + [5, 10, 15].map(function (n) { return '<button type="button" class="chip' + (b.rounds === n ? " is-active" : "") + '" aria-pressed="' + (b.rounds === n) + '" data-act="bal-rounds" data-v="' + n + '">' + n + "문제</button>"; }).join("") + "</div><p>" + S.roster.length + "명이 " + b.rounds + "문제. 한 문제에 1분쯤 걸려요.</p></div></div>";
-          return wrap({ icon: "sparkle", title: "밸런스 게임", meta: S.roster.length ? S.roster.length + "명" : "", body: body, foot: S.roster.length >= 2 ? '<button type="button" class="btn btn-primary" data-act="bal-start">시작</button>' : "", help: help });
-        }
-        var meta = b.round + " / " + b.rounds + "문제", qh = '<p class="q"><small>' + esc(b.q.cat) + " " + b.round + "번째 문제</small>" + esc(b.q.a) + " <span style=\"color:var(--ink-2);font-weight:600\">vs</span> " + esc(b.q.b) + "</p>";
-        if (b.phase === "handoff") {
-          var who = b.players[b.i];
-          return wrap({ icon: "sparkle", title: "밸런스 게임", meta: meta, body: qh + '<div class="handoff">' + av(who, "is-xl") + '<div class="hand-who">' + esc(disp(who)) + ' 차례</div><div class="hint">' + b.players.length + "명 가운데 " + (b.i + 1) + "번째. 폰을 받았으면 아래를 누르세요." + (b.i ? " 앞사람이 고른 것은 가려져 있어요." : "") + "</div>" + dots(b.players.length, b.i) + "</div>",
-            foot: '<button type="button" class="btn btn-primary" data-act="bal-take">' + esc(disp(who)) + ' 받았어요</button><div class="row is-text">' + (b.i === 0 ? '<button type="button" class="text-btn" data-act="bal-skip">다른 문제로</button>' : "") + '<button type="button" class="text-btn is-quiet" data-act="bal-quit">그만하기</button></div>' });
-        }
-        if (b.phase === "choose") {
-          var me = b.players[b.i];
-          return wrap({ icon: "sparkle", title: "밸런스 게임", meta: meta, body: '<p class="q"><small>' + esc(b.q.cat) + " " + b.round + "번 문제</small>" + esc(disp(me)) + ' 님, 혼자 보고 하나만 고르세요</p><div class="tiles"><button type="button" class="tile is-a" data-act="bal-pick" data-v="0"><span><small>A</small>' + esc(b.q.a) + '</span></button><span class="vs" aria-hidden="true">VS</span><button type="button" class="tile is-b" data-act="bal-pick" data-v="1"><span><small>B</small>' + esc(b.q.b) + '</span></button></div><p class="note" style="text-align:center">누르면 바로 다음 사람 화면으로 넘어가요. 고른 것은 다 모인 뒤에 열려요.</p>' });
-        }
-        if (b.phase === "reveal") {
-          var na = b.sideA.length, nb = b.sideB.length, tot = na + nb || 1;
-          var pa = Math.round(na / tot * 100), pb = 100 - pa;
-          var faces = function (arr) { return arr.length ? '<div class="faces">' + arr.map(function (n) { return '<span class="fc">' + av(n, "is-sm") + "<span>" + esc(disp(n)) + "</span></span>"; }).join("") + "</div>" : '<div class="faces"><span class="fc" style="color:var(--ink-2)">아무도 없음</span></div>'; };
-          var award = b.maj < 0 ? '<p class="award">동률이에요. 이번 문제는 점수 없음.</p>' : '<p class="award">' + (b.maj === 0 ? "A" : "B") + " 쪽 " + (b.maj === 0 ? na : nb) + "명에게 1점씩. " + esc((b.maj === 0 ? b.sideA : b.sideB).map(disp).join(", ")) + "</p>";
-          var last = b.round >= b.rounds;
-          return wrap({ icon: "sparkle", title: "밸런스 게임", meta: meta, body: qh + '<div class="split" style="--a:' + Math.max(na, 0.0001) + 'fr;--b:' + Math.max(nb, 0.0001) + 'fr" aria-hidden="true"><i></i><i></i></div><div class="sides"><div class="side"><h3>A ' + esc(b.q.a) + '</h3><div class="n">' + na + "<small>명 " + pa + "%</small>" + (b.maj === 0 ? '<span class="tag good">다수</span>' : "") + "</div>" + faces(b.sideA) + '</div><div class="side is-b"><h3>B ' + esc(b.q.b) + '</h3><div class="n">' + nb + "<small>명 " + pb + "%</small>" + (b.maj === 1 ? '<span class="tag good">다수</span>' : "") + "</div>" + faces(b.sideB) + "</div></div>" + award + rankHTML(b, 3),
-            foot: '<button type="button" class="btn btn-primary" data-act="' + (last ? "bal-end" : "bal-next") + '">' + (last ? "결과 보기" : "다음 문제") + "</button>" + (last ? "" : '<button type="button" class="text-btn is-quiet" data-act="bal-end" style="justify-self:center">여기까지 하고 결과 보기</button>') });
-        }
-        var ranked = rankList(b), top = ranked.filter(function (r) { return r.pts === ranked[0].pts; });
-        var crownName = top.length > 3 ? "공동 " + top.length + "명" : top.map(function (r) { return disp(r.name); }).join(", ");
-        return wrap({ icon: "trophy", title: "밸런스 게임 결과", meta: b.round + "문제", body: '<div class="crown"><div class="ttl">' + (top.length > 1 ? "공동 공감왕" : "공감왕") + "</div>" + (top.length === 1 ? av(top[0].name, "is-xl") : "") + '<div class="big">' + esc(crownName) + '</div><div class="note">' + ranked[0].pts + "점. 다수와 같은 쪽을 가장 많이 고른 사람</div></div>" + rankHTML(b, 99),
-          foot: '<button type="button" class="btn btn-primary" data-act="bal-again">같은 명단으로 한 판 더</button><div class="row"><button type="button" class="btn btn-secondary" data-act="bal-copy">결과 복사</button><button type="button" class="btn btn-secondary" data-act="bal-share">' + icon("send", "is-sm") + ' 공유</button></div><button type="button" class="text-btn is-quiet" data-act="bal-reset" style="justify-self:center">처음 화면으로</button>' });
-      }
-      function rankList(b) { return b.players.map(function (n) { return { name: n, pts: b.scores[n] || 0 }; }).sort(function (x, y) { return y.pts - x.pts || b.players.indexOf(x.name) - b.players.indexOf(y.name); }); }
-      function rankHTML(b, max) {
-        var r = rankList(b), pos = 0, prev = null;
-        return '<ol class="rank" aria-label="점수">' + r.slice(0, max).map(function (x, i) { if (x.pts !== prev) { pos = i + 1; prev = x.pts; } return '<li' + (pos === 1 && x.pts > 0 ? ' class="is-top"' : "") + '><span class="pos">' + pos + "</span>" + av(x.name) + '<span class="nm" title="' + esc(x.name) + '">' + esc(disp(x.name)) + '</span><span class="pts">' + x.pts + "점</span></li>"; }).join("") + "</ol>" + (r.length > max ? '<p class="note">외 ' + (r.length - max) + "명</p>" : "");
-      }
-      function balResultText() { var b = S.bal, r = rankList(b), pos = 0, prev = null; return "밸런스 게임 " + b.round + "문제, " + b.players.length + "명\n" + r.map(function (x, i) { if (x.pts !== prev) { pos = i + 1; prev = x.pts; } return pos + "위 " + disp(x.name) + " " + x.pts + "점"; }).join("\n") + "\n" + location.origin + "/party.html"; }
-
-      /* ── 3. 라이어 게임 ── */
-      var timerT = null;
-      function liarCats() { return Object.keys(P().liar || {}); }
-      function liarStart() {
-        var l = S.liar, cats = liarCats();
-        if (S.roster.length < 3 || !cats.length) return;
-        var cat = l.cat && cats.indexOf(l.cat) >= 0 ? l.cat : rnd(cats);
-        var words = (P().liar[cat] || []).slice();
-        var left = words.filter(function (w) { return l.used.indexOf(cat + "|" + w) < 0; });
-        if (!left.length) { l.used = l.used.filter(function (u) { return u.indexOf(cat + "|") !== 0; }); left = words; }
-        var word = rnd(left); l.used.push(cat + "|" + word);
-        l.players = S.roster.slice(); l.liar = rnd(l.players); l.word = word; l.topic = cat;
-        l.i = 0; l.seen = false; l.first = ""; l.left = l.timer; l.running = false; l.chosen = ""; l.guess = ""; l.caught = null; l.options = [];
-        l.round += 1; l.phase = "handoff";
-      }
-      function liarHTML() {
-        var l = S.liar, help = ["한 사람만 제시어를 모르는 라이어. 폰을 돌려 가며 자기 카드를 길게 눌러 확인합니다.", "주제에 대해 돌아가며 한마디씩. 라이어는 아는 척, 나머지는 라이어에게 들키지 않을 만큼만.", "토론이 끝나면 라이어로 의심되는 사람을 지목. 잡혀도 제시어를 맞히면 라이어가 이겨요."];
-        var meta = l.round ? l.round + "판째" : (S.roster.length ? S.roster.length + "명" : "");
-        if (l.phase === "setup") {
-          var cats = liarCats();
-          var body = S.roster.length < 3 ? needNames(3, "라이어 게임") : "";
-          body += '<div class="setup"><div><h3>주제</h3><div class="seg is-tight"><button type="button" class="chip' + (!l.cat ? " is-active" : "") + '" aria-pressed="' + !l.cat + '" data-act="liar-cat" data-v="">아무거나</button>' + cats.map(function (c) { return '<button type="button" class="chip' + (l.cat === c ? " is-active" : "") + '" aria-pressed="' + (l.cat === c) + '" data-act="liar-cat" data-v="' + esc(c) + '">' + esc(c) + "</button>"; }).join("") + "</div></div>"
-            + '<div><h3>토론 시간</h3><div class="seg is-tight">' + [[0, "없음"], [120, "2분"], [180, "3분"], [300, "5분"]].map(function (t) { return '<button type="button" class="chip' + (l.timer === t[0] ? " is-active" : "") + '" aria-pressed="' + (l.timer === t[0]) + '" data-act="liar-timer" data-v="' + t[0] + '">' + t[1] + "</button>"; }).join("") + "</div><p>" + S.roster.length + "명 가운데 라이어 1명. 끝나면 다음 판은 새 제시어와 새 라이어.</p></div></div>";
-          if (l.round) body += '<div class="tally"><span>시민 <b>' + l.tally.c + '</b>승</span><span>라이어 <b>' + l.tally.l + "</b>승</span></div>";
-          return wrap({ icon: "eye", title: "라이어 게임", meta: meta, body: body, foot: S.roster.length >= 3 ? '<button type="button" class="btn btn-primary" data-act="liar-start">' + (l.round ? "다음 판 시작" : "시작") + "</button>" + (l.round ? '<button type="button" class="text-btn is-quiet" data-act="liar-reset" style="justify-self:center">전적 지우기</button>' : "") : "", help: help });
-        }
-        if (l.phase === "handoff") {
-          var who = l.players[l.i];
-          return wrap({ icon: "eye", title: "라이어 게임", meta: meta, body: '<div class="handoff">' + av(who, "is-xl") + '<div class="hand-who">' + esc(disp(who)) + ' 차례</div><div class="hint">' + l.players.length + "명 가운데 " + (l.i + 1) + "번째. 폰을 받았으면 아래를 누르세요. 주제는 " + esc(l.topic) + ".</div>" + dots(l.players.length, l.i) + "</div>",
-            foot: '<button type="button" class="btn btn-primary" data-act="liar-take">' + esc(disp(who)) + ' 받았어요</button><button type="button" class="text-btn is-quiet" data-act="liar-quit" style="justify-self:center">그만하기</button>' });
-        }
-        if (l.phase === "card") {
-          var me = l.players[l.i], isLiar = me === l.liar;
-          return wrap({ icon: "eye", title: "라이어 게임", meta: meta, body: '<p class="q"><small>' + esc(disp(me)) + " 님만 보세요</small>주제 " + esc(l.topic) + '</p><div class="card3d" id="liarCard"><div class="inner"><div class="face front">' + icon("lock") + '아래 단추를 누르고 있는 동안만 보여요</div><div class="face back' + (isLiar ? " is-liar" : "") + '" aria-hidden="true"><div><div class="topic">주제 ' + esc(l.topic) + '</div><div class="word"></div><div class="tip"></div></div></div></div></div>',
-            foot: '<button type="button" class="btn btn-secondary hold" id="holdBtn" aria-pressed="false">길게 눌러 카드 보기</button><button type="button" class="btn btn-primary" data-act="liar-next"' + (l.seen ? "" : " disabled") + ">" + (l.i + 1 < l.players.length ? "확인했어요, 다음 사람" : "확인했어요, 토론 시작") + "</button>" });
-        }
-        if (l.phase === "talk") {
-          var idx = l.players.indexOf(l.first), order = l.players.slice(idx).concat(l.players.slice(0, idx));
-          return wrap({ icon: "mic", title: "토론", meta: "주제 " + esc(l.topic), body: '<div class="speaker">' + av(l.first) + "<div><small>첫 번째로 말하기</small>" + esc(disp(l.first)) + "</div></div>" + (l.timer ? '<div class="timer' + (l.left <= 0 ? " is-done" : "") + '" id="timer" aria-live="off">' + fmtTime(l.left) + '</div><div class="timer-row"><button type="button" class="btn btn-secondary" data-act="timer-toggle" id="timerBtn">' + (l.running ? "잠깐 멈춤" : l.left <= 0 ? "시간 끝" : l.left === l.timer ? "시간 재기" : "계속") + '</button><button type="button" class="btn btn-secondary" data-act="timer-add">+1분</button></div>' : "") + '<ol class="order">' + order.map(function (n, i) { return '<li><span class="pos">' + (i + 1) + "</span>" + av(n) + "<span>" + esc(disp(n)) + "</span></li>"; }).join("") + '</ol><p class="note">한 바퀴 돌며 한마디씩. 그다음은 자유롭게 묻고 답하세요.</p>',
-            foot: '<button type="button" class="btn btn-primary" data-act="liar-vote">투표하러 가기</button>' });
-        }
-        if (l.phase === "vote") {
-          return wrap({ icon: "users", title: "투표", meta: meta, body: '<p class="q"><small>셋을 세고 동시에 손가락으로 지목</small>가장 많이 지목된 사람을 고르세요</p><div class="vote-list">' + l.players.map(function (n) { return '<button type="button" data-act="liar-choose" data-v="' + esc(n) + '" aria-pressed="' + (l.chosen === n) + '" title="' + esc(n) + '">' + av(n) + "<span>" + esc(disp(n)) + "</span></button>"; }).join("") + "</div>",
-            foot: '<button type="button" class="btn btn-primary" data-act="liar-decide"' + (l.chosen ? "" : " disabled") + ">" + (l.chosen ? esc(disp(l.chosen)) + " 님으로 결정" : "지목된 사람을 고르세요") + '</button><button type="button" class="text-btn is-quiet" data-act="liar-talk" style="justify-self:center">토론 더 하기</button>' });
-        }
-        if (l.phase === "guess") {
-          return wrap({ icon: "eye", title: "라이어의 마지막 기회", meta: meta, body: '<div class="verdict is-citizen"><div class="ttl">라이어 적중</div><div class="big">' + esc(disp(l.liar)) + ' 님이 라이어</div></div><p class="q"><small>' + esc(disp(l.liar)) + " 님이 고르세요</small>제시어는 무엇이었을까요?</p><div class=\"opts\">" + l.options.map(function (o) { return '<button type="button" data-act="liar-guess" data-v="' + esc(o) + '">' + esc(o) + "</button>"; }).join("") + '</div><p class="note">맞히면 라이어의 역전승, 틀리면 시민 승.</p>' });
-        }
-        var citizenWin = l.caught === true && l.guess !== l.word;
-        var ttl = l.caught === false ? "라이어 승" : citizenWin ? "시민 승" : "라이어 역전승";
-        var detail = l.caught === false ? esc(disp(l.chosen)) + " 님을 지목했지만 라이어는 " + esc(disp(l.liar)) + " 님이었어요. 제시어는 " + esc(l.word) : citizenWin ? esc(disp(l.liar)) + " 님의 답은 " + esc(l.guess) + ". 제시어는 " + esc(l.word) + "였어요" : esc(disp(l.liar)) + " 님이 맞혔어요. 제시어는 " + esc(l.word);
-        return wrap({ icon: "trophy", title: "라이어 게임 결과", meta: meta, body: '<div class="verdict ' + (citizenWin ? "is-citizen" : "is-liar") + '"><div class="ttl">' + l.round + "판째</div><div class=\"big\">" + ttl + '</div><div class="note">' + detail + '</div></div><div class="tally"><span>시민 <b>' + l.tally.c + '</b>승</span><span>라이어 <b>' + l.tally.l + "</b>승</span></div>",
-          foot: '<button type="button" class="btn btn-primary" data-act="liar-start">다음 판</button><div class="row"><button type="button" class="btn btn-secondary" data-act="liar-copy">결과 복사</button><button type="button" class="btn btn-secondary" data-act="liar-share">' + icon("send", "is-sm") + ' 공유</button></div><button type="button" class="text-btn is-quiet" data-act="liar-setup" style="justify-self:center">주제와 시간 바꾸기</button>' });
-      }
-      function liarResultText() { var l = S.liar; return "라이어 게임 " + l.round + "판, " + l.players.length + "명\n시민 " + l.tally.c + "승, 라이어 " + l.tally.l + "승\n" + location.origin + "/party.html"; }
-      // 타이머는 끝나는 시각(endAt)으로 센다: 탭을 잠깐 나갔다 와도, 새로고침 해도 그대로 이어진다
-      function timerStop() { clearTimeout(timerT); timerT = null; var l = S.liar; if (l.running && l.endAt) l.left = Math.max(0, Math.round((l.endAt - Date.now()) / 1000)); l.running = false; l.endAt = 0; save(); }
-      function timerStart() { var l = S.liar; if (l.left <= 0) return; l.running = true; l.endAt = Date.now() + l.left * 1000; save(); clearTimeout(timerT); timerT = setTimeout(timerTick, 250); }
-      function timerTick() {
-        var l = S.liar; if (!l.running) return;
-        l.left = Math.max(0, Math.round((l.endAt - Date.now()) / 1000)); var el = $("timer");
-        if (el) el.textContent = fmtTime(l.left);
-        if (l.left <= 0) { l.running = false; l.endAt = 0; buzz([200, 100, 200, 100, 400]); say("시간이 끝났어요"); if (el) el.classList.add("is-done"); var b = $("timerBtn"); if (b) b.textContent = "시간 끝"; save(); return; }
-        var ms = (l.endAt - Date.now()) % 1000; timerT = setTimeout(timerTick, ms > 50 ? ms : ms + 1000);
-      }
-
-      /* ── 단추 처리 ── */
-      stage.addEventListener("click", function (e) {
-        var b = e.target.closest("[data-act]"); if (!b || b.disabled) return;
-        var act = b.getAttribute("data-act"), v = b.getAttribute("data-v"), p = S.pick, bl = S.bal, l = S.liar;
-        switch (act) {
-          // 뽑기
-          case "mode": p.mode = v; p.spinning = false; save(); renderStage(); break;
-          case "spin": spin(); break;
-          case "out": if (p.result) { p.out.push(p.result); p.result = null; p.card = null; save(); if (pool().length >= 2) spin(); else renderStage(); } break;
-          case "pool-reset": p.out = []; p.result = null; save(); renderStage(); break;
-          case "mission": {
-            var deck = P().missions || FALLBACK.missions, left = deck.filter(function (c) { return p.used.indexOf("missions|" + c) < 0; });
-            if (!left.length) { p.used = p.used.filter(function (u) { return u.indexOf("missions|") !== 0; }); left = deck.slice(); }
-            p.deck = "missions"; p.card = rnd(left); p.used.push("missions|" + p.card); p.cardFor = p.result; buzz(20); save(); renderStage(); break;
-          }
-          case "shuffle": p.order = shuffle(S.roster); buzz(20); save(); renderStage(); break;
-          case "copy-order": copyText("순서\n" + p.order.map(function (n, i) { return (i + 1) + ". " + disp(n); }).join("\n")); break;
-          case "team-n": p.teamN = Math.max(2, Math.min(6, p.teamN + Number(v))); p.teams = null; save(); renderStage(); break;
-          case "teams": { var sh = shuffle(S.roster), teams = []; for (var k = 0; k < p.teamN; k++) teams.push([]); sh.forEach(function (n, i) { teams[i % p.teamN].push(n); }); p.teams = teams; buzz(20); save(); renderStage(); break; }
-          case "copy-teams": copyText(p.teams.map(function (t, i) { return String.fromCharCode(65 + i) + "팀: " + t.map(disp).join(", "); }).join("\n")); break;
-          case "deck": p.deck = v; p.card = null; p.cardFor = null; save(); renderStage(); break;
-          case "draw": drawCard(); break;
-          case "card-who": p.cardFor = rnd(S.roster); buzz(20); say(disp(p.cardFor)); save(); renderStage(); break;
-          // 밸런스
-          case "bal-cat": { var cur = balCats().slice(), ix = cur.indexOf(v); if (ix >= 0) { if (cur.length > 1) cur.splice(ix, 1); } else cur.push(v); bl.cats = cur; save(); renderStage(); break; }
-          case "bal-rounds": bl.rounds = Number(v); save(); renderStage(); break;
-          case "bal-start": if (S.roster.length < 2) return; bl.players = S.roster.slice(); bl.scores = {}; bl.history = []; bl.round = 1; if (balNext()) go(true); break;
-          case "bal-take": bl.phase = "choose"; go(true); break;
-          case "bal-skip": if (balNext()) go(true); break;
-          case "bal-pick": {
-            var tile = b; tile.classList.add("is-picked");
-            bl.picks[bl.players[bl.i]] = Number(v); bl.i += 1; buzz(15);
-            var finish = function () {
-              if (bl.i < bl.players.length) bl.phase = "handoff";
-              else {
-                var a = bl.players.filter(function (n) { return bl.picks[n] === 0; }), c = bl.players.filter(function (n) { return bl.picks[n] === 1; });
-                bl.maj = a.length === c.length ? -1 : a.length > c.length ? 0 : 1; bl.sideA = a; bl.sideB = c;
-                if (bl.maj >= 0) (bl.maj === 0 ? a : c).forEach(function (n) { bl.scores[n] = (bl.scores[n] || 0) + 1; });
-                bl.history.push({ q: bl.q, a: a.length, b: c.length, maj: bl.maj }); bl.phase = "reveal"; buzz([30, 40, 60]);
-                say("결과. A " + a.length + "명, B " + c.length + "명");
-              }
-              go(true);
-            };
-            setTimeout(finish, reduce ? 0 : 220); break;
-          }
-          case "bal-next": bl.round += 1; if (balNext()) go(true); break;
-          case "bal-end": bl.phase = "end"; buzz([30, 40, 30, 40, 80]); go(true); confetti(); break;
-          case "bal-again": bl.players = S.roster.slice(); bl.scores = {}; bl.history = []; bl.round = 1; if (balNext()) go(true); break;
-          case "bal-reset": S.bal = Object.assign(freshBal(), { cats: bl.cats, rounds: bl.rounds }); save(); renderStage(); break;
-          case "bal-quit": if (window.confirm("이 판을 그만둘까요? 점수는 사라져요.")) { S.bal = Object.assign(freshBal(), { cats: bl.cats, rounds: bl.rounds }); save(); renderStage(); } break;
-          case "bal-copy": copyText(balResultText()); break;
-          case "bal-share": shareOut("밸런스 게임 결과", balResultText()); break;
-          // 라이어
-          case "liar-cat": l.cat = v || ""; save(); renderStage(); break;
-          case "liar-timer": l.timer = Number(v); save(); renderStage(); break;
-          case "liar-start": timerStop(); liarStart(); go(true); break;
-          case "liar-reset": l.tally = { c: 0, l: 0 }; l.round = 0; save(); renderStage(); break;
-          case "liar-take": l.phase = "card"; l.seen = false; go(true); break;
-          case "liar-next":
-            if (!l.seen) return;
-            l.i += 1;
-            if (l.i < l.players.length) l.phase = "handoff";
-            else { l.phase = "talk"; l.first = rnd(l.players); l.left = l.timer; l.running = false; l.endAt = 0; }
-            l.seen = false; go(true); break;
-          case "timer-toggle":
-            if (l.left <= 0) return;
-            if (l.running) timerStop(); else timerStart();
-            renderStage(); break;
-          case "timer-add": l.left += 60; if (l.running) l.endAt += 60000; var tEl = $("timer"); if (tEl) { tEl.textContent = fmtTime(l.left); tEl.classList.remove("is-done"); } var tb = $("timerBtn"); if (tb && !l.running) tb.textContent = "계속"; save(); break;
-          case "liar-vote": timerStop(); l.phase = "vote"; l.chosen = ""; go(true); break;
-          case "liar-talk": l.phase = "talk"; l.chosen = ""; go(true); break;
-          case "liar-choose": l.chosen = l.chosen === v ? "" : v; save(); renderStage(); break;
-          case "liar-decide":
-            if (!l.chosen) return;
-            l.caught = l.chosen === l.liar;
-            if (l.caught) {
-              var others = (P().liar[l.topic] || []).filter(function (w) { return w !== l.word; });
-              l.options = shuffle([l.word].concat(shuffle(others).slice(0, 3))); l.phase = "guess"; buzz([30, 40, 60]);
-            } else { l.tally.l += 1; l.phase = "result"; buzz([200, 80, 200]); }
-            go(true); if (l.phase === "result") confetti(); break;
-          case "liar-guess":
-            l.guess = v; if (v === l.word) l.tally.l += 1; else l.tally.c += 1;
-            l.phase = "result"; buzz(v === l.word ? [200, 80, 200] : [30, 40, 30, 40, 80]); go(true); confetti(); break;
-          case "liar-setup": timerStop(); l.phase = "setup"; go(true); break;
-          case "liar-quit": if (window.confirm("이 판을 그만둘까요?")) { timerStop(); l.phase = "setup"; l.round = Math.max(0, l.round - 1); go(true); } break;
-          case "liar-copy": copyText(liarResultText()); break;
-          case "liar-share": shareOut("라이어 게임 결과", liarResultText()); break;
-        }
-      });
-
-      // 길게 눌러 보기: 누르고 있는 동안만 카드가 뒤집힌다. 키보드는 Enter 나 Space 로 켜고 끈다
-      function afterRender() {
-        var hb = $("holdBtn"), card = $("liarCard");
-        if (hb && card) {
-          var back = card.querySelector(".face.back"), wordEl = back.querySelector(".word"), tipEl = back.querySelector(".tip");
-          var me = S.liar.players[S.liar.i], isLiar = me === S.liar.liar;
-          var open = function (on) {
-            // 제시어는 누르고 있는 동안만 글자로 존재한다(화면 읽기나 찾기로 미리 드러나지 않게)
-            wordEl.textContent = on ? (isLiar ? "당신이 라이어" : S.liar.word) : "";
-            tipEl.textContent = on ? (isLiar ? "제시어를 몰라요. 남들 말에 맞춰 아는 척하세요." : "라이어가 눈치채지 못하게 조금만 설명하세요.") : "";
-            back.setAttribute("aria-hidden", String(!on));
-            card.classList.toggle("is-open", on); hb.classList.toggle("is-holding", on); hb.setAttribute("aria-pressed", String(on));
-            hb.textContent = on ? "놓으면 가려져요" : "길게 눌러 카드 보기";
-            if (on && !S.liar.seen) { S.liar.seen = true; var nx = stage.querySelector('[data-act="liar-next"]'); if (nx) nx.disabled = false; save(); }
-          };
-          hb.addEventListener("pointerdown", function (e) { if (e.button != null && e.button !== 0) return; e.preventDefault(); try { hb.setPointerCapture(e.pointerId); } catch (x) {} open(true); });
-          ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (ev) { hb.addEventListener(ev, function () { open(false); }); });
-          hb.addEventListener("contextmenu", function (e) { e.preventDefault(); });
-          hb.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(hb.getAttribute("aria-pressed") !== "true"); } });
-          hb.addEventListener("blur", function () { open(false); });
-        }
-      }
-
-      /* ── 화면 꺼짐 막기: 판이 도는 동안만 ── */
-      var wl = null;
-      function inPlay() { return (S.game === "balance" && !/setup|end/.test(S.bal.phase)) || (S.game === "liar" && !/setup|result/.test(S.liar.phase)); }
-      function wake() {
-        try {
-          if (!("wakeLock" in navigator)) return;
-          if (inPlay() && !wl && document.visibilityState === "visible") navigator.wakeLock.request("screen").then(function (s) { wl = s; s.addEventListener("release", function () { wl = null; }); }).catch(function () { wl = null; });
-          else if (!inPlay() && wl) { wl.release().catch(function () {}); wl = null; }
-        } catch (e) { wl = null; }
-      }
-      document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { wake(); if (S.liar.running) timerTick(); } });
-
-      /* ── 시작 ── */
-      var resumed = restore();
-      var q = new URLSearchParams(location.search);
-      if (q.get("g")) setGame(q.get("g"), true); else setGame(S.game, true);
-      renderRoster();
-      if (q.get("bung")) loadBung(q.get("bung"));
-      if (resumed) { toast("하던 판을 이어서 해요."); if (S.liar.running) { clearTimeout(timerT); timerT = setTimeout(timerTick, 250); } }
-    })();
-  </script>
+  <script src="assets/party-core.js?v=1"></script>
+  <script src="assets/party-games.js?v=1"></script>
 </body>
 </html>
