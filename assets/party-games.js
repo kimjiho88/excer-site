@@ -20,6 +20,9 @@
     return '<div class="hand"><span class="pass">' + ic("pass", "is-sm") + "폰을 넘겨 주세요</span>" + tok(who, "xl")
       + '<p class="hand-who">' + esc(disp(who)) + ' 님</p><p class="msg">' + msg + "</p>" + (n ? dots(n, i) : "") + "</div>";
   }
+  // 참여 인원 +/-: 뽑기는 갈래 단추 아래 한 줄, 밸런스와 라이어는 설정 화면의 한 칸(얼굴 줄과 함께). 누르면 party-core 가 명단을 고치고 다시 그린다
+  function pplBar(min) { return '<div class="ppl-bar"><span class="ppl-lb" aria-hidden="true">참여 인원</span>' + H.stepper(min) + "</div>"; }
+  function pplSect(min) { return '<div class="pg-sect pg-ppl"><div class="ppl-bar"><h3>참여 인원</h3>' + H.stepper(min) + '</div><div class="ppl-faces" aria-hidden="true">' + H.faces() + "</div></div>"; }
   function inRoster(n) { return P.roster.indexOf(n) >= 0; }
   function sameSet(a, b) { if (!Array.isArray(a) || a.length !== b.length) return false; var m = {}; b.forEach(function (x) { m[x] = 1; }); return a.every(function (x) { return m[x] === 1 && (m[x] = 2); }); }
   function fillBars() { requestAnimationFrame(function () { requestAnimationFrame(function () { each(P.body.querySelectorAll("[data-w]"), function (el) { el.style.width = el.getAttribute("data-w") + "%"; }); }); }); }
@@ -99,7 +102,7 @@
   function segHTML(s) {
     return '<div class="seg" role="group" aria-label="뽑기 종류" style="--n:4">' + MODES.map(function (m) {
       return '<button type="button" aria-pressed="' + (s.mode === m[0]) + '" data-act="mode" data-mode="' + m[0] + '">' + ic(m[2]) + m[1] + "</button>";
-    }).join("") + "</div>";
+    }).join("") + "</div>" + pplBar(pick.min);
   }
   function pickRender(s, fx) {
     if (s.mode === "order") return pickOrder(s);
@@ -178,7 +181,7 @@
     var list = poolOf(s), wheel = list.length <= 12;
     P.screen({
       body: segHTML(s) + '<div class="pg-mid">' + (wheel ? wheelHTML(list, s.rot) : slotHTML(list, s.last))
-        + '<p class="pg-hint" id="spinHint">' + (wheel ? (coarse() ? "돌림판을 손가락으로 세게 밀거나 단추를 눌러요" : "돌림판을 끌어서 던지거나 단추를 눌러요") : "단추를 누르면 이름이 돌아가다 멈춰요") + "</p></div>"
+        + '<p class="pg-hint" id="spinHint">' + (wheel ? (coarse() ? "돌림판을 손가락으로 세게 밀거나 아래 버튼을 눌러요" : "돌림판을 끌어서 돌리거나 아래 버튼을 눌러요") : "버튼을 누르면 이름이 돌다가 멈춰요") + "</p></div>"
         + (s.out.length ? '<div class="pick-out"><button type="button" class="pchip" data-act="reset-out">' + ic("undo", "is-sm") + '뺀 사람 다시 넣기 <span class="n">' + s.out.length + "</span></button></div>" : ""),
       foot: '<button type="button" class="pa-btn is-primary is-lg is-glow" data-act="spin">' + ic("refresh") + "돌리기</button>",
       say: "한 명 뽑기. 후보 " + list.length + "명."
@@ -314,7 +317,7 @@
     P.screen({
       body: segHTML(s) + '<ol class="ord" id="ordList">' + list.map(function (n, i) {
         return '<li data-k="' + esc(H.nickKey(n)) + '"><span class="n' + (lit ? " is-on" : "") + '">' + (i + 1) + "</span>" + tok(n, "sm") + '<span class="nm">' + esc(disp(n)) + "</span></li>";
-      }).join("") + "</ol>" + (lit ? "" : '<p class="pg-hint">섞기를 누르면 순서가 정해져요</p>'),
+      }).join("") + "</ol>" + (lit ? "" : '<p class="pg-hint">아래 버튼을 누르면 순서가 정해져요</p>'),
       foot: orderFoot(s),
       say: "순서 정하기. " + P.roster.length + "명."
     });
@@ -367,7 +370,7 @@
   function pickTeams(s) {
     var n = P.roster.length;
     if (n < 4) {
-      P.screen({ body: segHTML(s) + '<div class="pg-card"><p class="pg-p">팀 나누기는 4명부터 할 수 있어요. 지금은 ' + n + "명이에요.</p></div>", foot: "", say: "팀 나누기는 4명부터예요." });
+      P.screen({ body: segHTML(s) + '<div class="pg-card"><p class="pg-p">팀 나누기는 4명부터 할 수 있어요. 참여 인원을 ' + (4 - n) + "명 더 늘려 주세요.</p></div>", foot: "", say: "팀 나누기는 4명부터예요." });
       return;
     }
     var maxT = Math.min(6, Math.floor(n / 2)), chips = "";
@@ -375,7 +378,7 @@
     for (var k = 2; k <= maxT; k++) chips += '<button type="button" class="pchip" data-act="team-n" data-n="' + k + '" aria-pressed="' + (k === s.teamN) + '">' + k + "팀</button>";
     var empty = []; for (var t = 0; t < s.teamN; t++) empty.push([]);
     P.screen({
-      body: segHTML(s) + sect("몇 팀으로 나눌까요", '<div class="pchips">' + chips + "</div>") + '<div class="teams" id="teamsBox">' + teamsHTML(s.teams || empty, null, n) + "</div>",
+      body: segHTML(s) + sect("팀 수", '<div class="pchips">' + chips + "</div>") + '<div class="teams" id="teamsBox">' + teamsHTML(s.teams || empty, null, n) + "</div>",
       foot: teamFoot(s),
       say: "팀 나누기. " + n + "명을 " + s.teamN + "팀으로."
     });
@@ -410,7 +413,7 @@
           var D = DECKS[d];
           return '<button type="button" class="deck ' + D.cls + '" data-act="deck" data-deck="' + d + '"><span class="stack" aria-hidden="true"><i></i><i></i><i>' + ic(D.icon) + "</i></span>"
             + "<b>" + D.name + "</b><span>" + D.sub + " " + pk[d].length + "장</span></button>";
-        }).join("") + '</div><p class="pg-hint">더미를 누르면 한 장 뽑아요. 하기 싫은 카드는 넘겨도 돼요.</p></div>',
+        }).join("") + '</div><p class="pg-hint">카드 더미를 누르면 한 장 뽑아요. 하기 싫으면 다음 카드를 눌러요.</p></div>',
         foot: "", say: "카드 뽑기. 미션 카드와 이야기 카드."
       });
       return;
@@ -486,6 +489,7 @@
       return s;
     },
     show: function (s) { balShow(s, false); },
+    people: function () { H.syncPpl(); },
     act: balAct
   };
   function selCats(s) {
@@ -500,7 +504,7 @@
       P.screen({
         body: balMeta(s) + '<div class="pg-mid"><div class="bq"><div class="bq-opt is-a"><small>A</small>' + esc(s.q[0]) + '</div><div class="vs" aria-hidden="true">VS</div><div class="bq-opt is-b"><small>B</small>' + esc(s.q[1]) + "</div></div>"
           + '<p class="pg-hint">다 같이 읽고, 폰을 ' + esc(disp(s.players[0])) + " 님에게 넘겨요</p></div>",
-        foot: btn("begin", "선택 시작" + ic("next"), "is-primary is-lg is-glow") + (s.i === 0 ? btn("swap", ic("swap", "is-sm") + "다른 문제로", "is-text") : ""),
+        foot: btn("begin", "고르기 시작" + ic("next"), "is-primary is-lg is-glow") + (s.i === 0 ? btn("swap", ic("swap", "is-sm") + "다른 문제로", "is-text") : ""),
         prog: prog, say: "문제 " + s.round + ". A " + s.q[0] + ", B " + s.q[1]
       });
       return;
@@ -509,8 +513,8 @@
       var who = s.players[s.i];
       P.screen({
         body: handHTML(who, "혼자 보고 하나만 골라요", s.players.length, s.i),
-        foot: btn("got", "받았어요", "is-primary is-lg") + (s.i > 0 ? btn("undo", ic("undo", "is-sm") + "앞사람 다시 고르기", "is-text") : ""),
-        prog: prog, say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요를 눌러 주세요."
+        foot: btn("got", "받았어요", "is-primary is-lg") + (s.i > 0 ? btn("undo", ic("undo", "is-sm") + "앞사람이 다시 고르기", "is-text") : ""),
+        prog: prog, say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요 버튼을 눌러 주세요."
       });
       P.sfx("wood");
       return;
@@ -522,7 +526,7 @@
           + '<div class="bq is-choose"><button type="button" class="bq-opt is-a" data-act="pick" data-v="0"><small>A</small>' + esc(s.q[0]) + '</button><div class="vs" aria-hidden="true">VS</div>'
           + '<button type="button" class="bq-opt is-b" data-act="pick" data-v="1"><small>B</small>' + esc(s.q[1]) + "</button></div>"
           + '<p class="pg-hint">고르면 바로 다음 사람에게 넘어가요</p>',
-        foot: "", prog: prog, say: disp(me) + " 님, A와 B 가운데 하나를 골라 주세요."
+        foot: "", prog: prog, say: disp(me) + " 님, A와 B 중 하나를 골라 주세요."
       });
       return;
     }
@@ -530,7 +534,7 @@
       var n = s.players.length;
       P.screen({
         body: '<div class="hand"><span class="pass">' + ic("check", "is-sm") + '모두 골랐어요</span><div class="pg-intro-art">' + H.art("balance") + '</div><p class="hand-who">결과 공개</p><p class="msg">폰을 가운데 두고 같이 봐요</p>' + dots(n, n) + "</div>",
-        foot: btn("reveal", ic("eye") + "결과 공개", "is-primary is-lg is-glow") + btn("undo", ic("undo", "is-sm") + "앞사람 다시 고르기", "is-text"),
+        foot: btn("reveal", ic("eye") + "결과 공개", "is-primary is-lg is-glow") + btn("undo", ic("undo", "is-sm") + "앞사람이 다시 고르기", "is-text"),
         prog: prog, say: "모두 골랐어요. 결과 공개를 눌러 주세요."
       });
       P.sfx("coin");
@@ -543,10 +547,11 @@
   function balSetup(s) {
     var pk = P.pack().balance, cats = Object.keys(pk), sel = selCats(s);
     P.screen({
-      body: intro("balance", "밸런스 게임", "둘 가운데 하나를 몰래 고르고 다 같이 공개해요.")
+      body: intro("balance", "밸런스 게임", "둘 중 하나를 몰래 고르고 다 같이 공개해요.")
+        + pplSect(bal.min)
         + sect("문제 종류", '<div class="pchips">' + cats.map(function (c) { return '<button type="button" class="pchip" data-act="cat" data-cat="' + esc(c) + '" aria-pressed="' + (sel.indexOf(c) >= 0) + '">' + esc(c) + ' <span class="n">' + pk[c].length + "</span></button>"; }).join("") + "</div>")
         + sect("문제 수", '<div class="seg" style="--n:3" role="group" aria-label="문제 수">' + [5, 10, 15].map(function (k) { return '<button type="button" aria-pressed="' + (s.rounds === k) + '" data-act="rounds" data-n="' + k + '">' + k + "문제</button>"; }).join("") + "</div>")
-        + sect("하는 법", steps(["문제를 같이 읽어요", "폰을 돌려 가며 혼자 몰래 골라요", "다 고르면 한꺼번에 공개, 다수 쪽이 1점"])),
+        + sect("하는 법", steps(["문제를 같이 읽어요", "폰을 돌려 가며 혼자 몰래 골라요", "다 고르면 한꺼번에 공개하고, 다수 쪽이 1점을 받아요"])),
       foot: btn("start", ic("play") + "시작하기", "is-primary is-lg is-glow"),
       say: "밸런스 게임. 문제 종류와 수를 고르고 시작해요."
     });
@@ -568,10 +573,11 @@
     if (a === "reveal") { balReveal(s); return; }
     if (a === "next") { balNextQ(s); return; }
     if (a === "final") { s.phase = "final"; balShow(s, true); return; }
-    if (a === "share") { P.share({ title: "밸런스 게임 한 판 끝", desc: s.players.length + "명이 " + s.hist.length + "문제를 같이 풀었어요. 모임 자리에서 폰 하나로 하는 게임" }); return; }
+    if (a === "share") { P.share({ title: "밸런스 게임 한 판 끝", desc: s.players.length + "명이 " + s.hist.length + "문제로 밸런스 게임을 했어요. 모임 자리에서 폰 하나로 하는 게임" }); return; }
     if (a === "copy") {
       var rk = ranking(s.players, s.scores);
-      P.copy(["밸런스 게임 결과 (" + s.hist.length + "문제)"].concat(rk.map(function (x) { return x.pos + "등 " + disp(x.n) + " " + x.p + "점"; }), ["", "동네친구들 모임 자리 게임 " + siteUrl()]).join("\n"));
+      var lines = duoOf(s) ? [s.players.map(disp).join(", ") + " 둘이 통한 문제 " + agreeOf(s) + "개"] : rk.map(function (x) { return x.pos + "등 " + disp(x.n) + " " + x.p + "점"; });
+      P.copy(["밸런스 게임 결과 (" + s.hist.length + "문제)"].concat(lines, ["", "동네친구들 모임 자리 게임 " + siteUrl()]).join("\n"));
     }
   }
   function balStart(s) {
@@ -588,7 +594,7 @@
   function balNextQ(s) {
     s.round++; balPickQ(s); s.phase = "q";
     P.busy = true; P.save();
-    P.splash({ k: "문제", big: String(s.round), sub: s.rounds + "문제 가운데" }).then(function () { if (P.st !== s) return; P.busy = false; balShow(s); });
+    P.splash({ k: "문제", big: String(s.round), sub: "총 " + s.rounds + "문제" }).then(function () { if (P.st !== s) return; P.busy = false; balShow(s); });
   }
   function balPick(s, el) {
     var v = Number(el.getAttribute("data-v")), who = s.players[s.i];
@@ -612,23 +618,40 @@
       balShow(s, true);
     });
   }
+  // 둘이 할 때: 다수 쪽 1점은 늘 같은 점수가 되므로, 같은 쪽을 고른 문제(통한 문제)를 센다
+  function duoOf(s) { return s.players.length === 2; }
+  var HEART = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.6s-7.6-4.6-7.6-10.1A4.3 4.3 0 0 1 12 7.7a4.3 4.3 0 0 1 7.6 2.8c0 5.5-7.6 10.1-7.6 10.1z" fill="#F472B6" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  // 둘이 한 판의 끝: 두 사람 동그라미와 하트, 문제마다 통했는지(같으면 고른 쪽, 갈리면 누가 무엇을)
+  function duoHTML(s) {
+    return '<div class="duo-pair">' + tok(s.players[0], "lg") + '<span class="duo-heart">' + HEART + "</span>" + tok(s.players[1], "lg") + "</div>";
+  }
+  function duoList(s) {
+    return '<ol class="duo-list">' + s.hist.map(function (h, i) {
+      var same = h.maj >= 0;
+      var t = same ? "둘 다 " + h.q[h.maj] : disp(h.a[0]) + " " + h.q[0] + ", " + disp(h.b[0]) + " " + h.q[1];
+      return '<li class="' + (same ? "is-same" : "is-diff") + '"><span class="n">' + (i + 1) + '</span><span class="q">' + esc(t) + '</span><span class="r">' + (same ? ic("check", "is-sm") + "통함" : "갈림") + "</span></li>";
+    }).join("") + "</ol>";
+  }
+  function agreeOf(s) { return s.hist.filter(function (h) { return h.maj >= 0; }).length; }
   function balRevealScreen(s, fx) {
-    var h = s.hist[s.hist.length - 1], A = h.a, B = h.b, tot = A.length + B.length;
+    var h = s.hist[s.hist.length - 1], A = h.a, B = h.b, tot = A.length + B.length, duo = duoOf(s);
     var pa = tot ? Math.round(A.length / tot * 100) : 0, pb = tot ? 100 - pa : 0, last = s.round >= s.rounds;
     function side(list, k) {
       var maj = h.maj === k, pct = k ? pb : pa;
-      return '<div class="side2 is-' + (k ? "b" : "a") + '">' + (h.maj === -1 ? '<span class="stamp is-tie">동률</span>' : maj ? '<span class="stamp">다수</span>' : "")
+      return '<div class="side2 is-' + (k ? "b" : "a") + '">' + (duo ? "" : h.maj === -1 ? '<span class="stamp is-tie">동률</span>' : maj ? '<span class="stamp">다수</span>' : "")
         + '<span class="lb">' + (k ? "B " : "A ") + esc(h.q[k]) + '</span><span class="pct" data-to="' + pct + '">' + (fx ? 0 : pct) + '%</span><span class="cnt">' + list.length + "명</span>"
-        + (list.length ? "<ul>" + list.map(function (n, i) { return '<li style="--i:' + i + '">' + tok(n, "xs") + "<span>" + esc(disp(n)) + "</span>" + (maj ? '<b class="plus1" aria-hidden="true">+1</b>' : "") + "</li>"; }).join("") + "</ul>" : '<p class="none">아무도 없어요</p>') + "</div>";
+        + (list.length ? "<ul>" + list.map(function (n, i) { return '<li style="--i:' + i + '">' + tok(n, "xs") + "<span>" + esc(disp(n)) + "</span>" + (maj && !duo ? '<b class="plus1" aria-hidden="true">+1</b>' : "") + "</li>"; }).join("") + "</ul>" : '<p class="none">아무도 없어요</p>') + "</div>";
     }
-    var award = h.maj === -1 ? '<p class="award is-tie">반반으로 나뉘었어요. 이번 문제는 점수가 없어요.</p>'
+    var award = duo ? (h.maj === -1 ? '<p class="award is-tie">서로 다른 쪽을 골랐어요.</p>' : '<p class="award">둘이 같은 쪽을 골랐어요. 통했어요!</p>')
+      : h.maj === -1 ? '<p class="award is-tie">반반으로 나뉘었어요. 이번 문제는 점수가 없어요.</p>'
       : '<p class="award">다수 쪽 ' + (h.maj ? B : A).length + "명이 1점씩 받아요</p>";
     P.screen({
       body: balMeta(s) + '<div class="bar2" role="img" aria-label="A ' + pa + "퍼센트, B " + pb + '퍼센트"><i class="a" data-w="' + pa + '"></i><i class="b" data-w="' + pb + '"></i></div>'
-        + '<div class="sides2">' + side(A, 0) + side(B, 1) + "</div>" + award + sect("지금 순위", boardHTML(ranking(s.players, s.scores), 3)),
+        + '<div class="sides2">' + side(A, 0) + side(B, 1) + "</div>" + award
+        + (duo ? sect("통한 문제", '<p class="duo-n"><b>' + agreeOf(s) + "</b> / " + s.hist.length + "</p>") : sect("지금 순위", boardHTML(ranking(s.players, s.scores), 3))),
       foot: last ? btn("final", ic("trophy") + "최종 결과", "is-primary is-lg is-glow") : btn("next", "다음 문제" + ic("next"), "is-primary is-lg"),
       prog: { n: s.rounds, i: s.round },
-      say: "A " + A.length + "명, B " + B.length + "명. " + (h.maj === -1 ? "동률이에요." : (h.maj ? "B" : "A") + " 쪽이 다수예요.")
+      say: "A " + A.length + "명, B " + B.length + "명. " + (duo ? (h.maj === -1 ? "서로 다른 쪽을 골랐어요." : "둘이 같은 쪽을 골랐어요.") : h.maj === -1 ? "동률이에요." : (h.maj ? "B" : "A") + " 쪽이 다수예요.")
     });
     fillBars();
     if (fx) {
@@ -650,17 +673,21 @@
   function balFinal(s, fx) {
     var rk = ranking(s.players, s.scores), champs = rk.filter(function (x) { return x.pos === 1 && x.p > 0; }), allSame = champs.length === rk.length || !champs.length;
     var names = champs.length > 2 ? disp(champs[0].n) + " 외 " + (champs.length - 1) + "명" : champs.map(function (x) { return disp(x.n); }).join(", ");
-    var head = allSame
+    var duo = duoOf(s), agree = agreeOf(s), all = s.hist.length;
+    var head = duo
+      ? '<div class="champ"><span class="k">둘이 통한 문제</span>' + duoHTML(s) + '<p class="big">' + agree + " / " + all + '</p><p class="pg-p">' + (agree === all ? "모든 문제에서 같은 쪽을 골랐어요." : !agree ? "한 번도 같은 쪽을 고르지 않았어요." : "같은 쪽을 고른 문제예요.") + "</p></div>"
+      : allSame
       ? '<div class="champ"><span class="k">이번 판은</span><p class="big">모두 같은 점수예요</p></div>'
-      : '<div class="champ"><span class="k">공감왕</span><p class="big">' + esc(names) + '</p><p class="pg-p">' + (champs.length > 1 ? "공동 1등이에요. " : "") + "다수와 같은 쪽을 가장 많이 골랐어요</p></div>";
+      : '<div class="champ"><span class="k">공감왕</span><p class="big">' + esc(names) + '</p><p class="pg-p">' + (champs.length > 1 ? "공동 1등이에요. " : "") + "다수 쪽을 가장 많이 골랐어요.</p></div>";
     P.screen({
-      body: head + (allSame ? "" : podiumHTML(rk)) + sect("전체 순위", boardHTML(rk))
+      body: head + (duo || allSame ? "" : podiumHTML(rk)) + (duo ? sect("문제별로", duoList(s)) : sect("전체 순위", boardHTML(rk)))
         + '<div class="pg-share">' + btn("share", ic("share", "is-sm") + "카카오톡 공유", "is-ghost is-sm") + btn("copy", ic("copy", "is-sm") + "결과 복사", "is-ghost is-sm") + "</div>",
       foot: '<div class="pg-row">' + btn("leave", ic("home", "is-sm") + "처음으로", "is-ghost") + btn("again", ic("refresh") + "한 판 더", "is-primary is-wide") + "</div>",
-      say: allSame ? "모두 같은 점수예요." : "공감왕은 " + champs.map(function (x) { return disp(x.n); }).join(", ") + " 님이에요."
+      say: duo ? all + "문제 중 " + agree + "문제가 통했어요." : allSame ? "모두 같은 점수예요." : "공감왕은 " + champs.map(function (x) { return disp(x.n); }).join(", ") + " 님이에요."
     });
     fillBars();
-    if (fx) { P.sfx("win"); H.buzz([60, 40, 120]); P.confetti({ n: allSame ? 90 : 190 }); if (!allSame) later(s, 950, function () { P.confetti({ from: "top", n: 110 }); }); }
+    var big = duo ? agree * 2 > all : !allSame;
+    if (fx) { P.sfx("win"); H.buzz([60, 40, 120]); P.confetti({ n: big ? 190 : 90 }); if (big) later(s, 950, function () { P.confetti({ from: "top", n: 110 }); }); }
   }
 
   /* ============================================================
@@ -671,19 +698,21 @@
   var liar = P.games.liar = {
     title: "라이어 게임", min: 3,
     fresh: function (pf) {
-      return { phase: "setup", cat: typeof pf.cat === "string" ? pf.cat : "", timer: [0, 120, 180, 300].indexOf(pf.timer) >= 0 ? pf.timer : 180,
+      return { phase: "setup", cat: typeof pf.cat === "string" ? pf.cat : "", timer: [0, 120, 180, 300].indexOf(pf.timer) >= 0 ? pf.timer : 180, mode: pf.mode === "fool" ? "fool" : "normal", fake: "",
         tally: pf.tally && typeof pf.tally === "object" ? { c: pf.tally.c | 0, l: pf.tally.l | 0 } : { c: 0, l: 0 }, round: pf.round | 0, used: Array.isArray(pf.used) ? pf.used : [],
         players: [], liar: "", word: "", topic: "", i: 0, seen: false, order: [], total: 0, endAt: 0, left: 0, running: false, chosen: "", caught: false, opts: [], guess: "", win: "", counted: false };
     },
-    prefs: function (s) { return { cat: s.cat, timer: s.timer, tally: s.tally, round: s.round, used: s.used }; },
+    prefs: function (s) { return { cat: s.cat, timer: s.timer, mode: s.mode, tally: s.tally, round: s.round, used: s.used }; },
     dirty: function (s) { return !/^(setup|result)$/.test(s.phase); },
     restore: function (v, pf) {
       if (!v || typeof v !== "object") return null;
       var s = liar.fresh(pf);
       Object.keys(s).forEach(function (k) { if (v[k] !== undefined && v[k] !== null) s[k] = v[k]; });
       if (!/^(setup|hand|card|talk|vote|verdict|guess|result)$/.test(s.phase)) s.phase = "setup";
-      var ok = Array.isArray(s.players) && s.players.length >= 3 && s.players.every(inRoster) && s.players.indexOf(s.liar) >= 0 && s.word && s.topic && sameSet(s.order, s.players);
-      if (s.phase !== "setup" && !ok) return Object.assign(liar.fresh(pf), { cat: s.cat, timer: s.timer, tally: s.tally, round: s.round, used: s.used });
+      if (s.mode !== "fool") s.mode = "normal";
+      var ok = Array.isArray(s.players) && s.players.length >= 3 && s.players.every(inRoster) && s.players.indexOf(s.liar) >= 0 && s.word && s.topic && sameSet(s.order, s.players)
+        && (!s.fake || (typeof s.fake === "string" && s.fake !== s.word));
+      if (s.phase !== "setup" && !ok) return Object.assign(liar.fresh(pf), { cat: s.cat, timer: s.timer, mode: s.mode, tally: s.tally, round: s.round, used: s.used });
       if (s.phase === "card") { s.phase = "hand"; s.seen = false; }
       if (/^(verdict|guess|result)$/.test(s.phase) && s.players.indexOf(s.chosen) < 0) s.phase = "vote";
       if (s.phase === "guess" && s.guess && s.win) {   // 답을 고른 뒤 새로고침했으면 다시 고르지 않게
@@ -696,6 +725,7 @@
       return s;
     },
     show: function (s) { liarShow(s, false); },
+    people: function () { H.syncPpl(); },
     stop: timerStop,
     wake: function (s) { if (s.phase === "talk") timerTick(s, true); },
     act: liarAct
@@ -705,7 +735,7 @@
     if (s.phase === "setup") return liarSetup(s);
     if (s.phase === "hand") {
       var who = s.players[s.i];
-      P.screen({ body: handHTML(who, "혼자 카드를 확인해요", s.players.length, s.i), foot: btn("got", "받았어요", "is-primary is-lg"), say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요를 눌러 주세요." });
+      P.screen({ body: handHTML(who, "혼자 카드를 확인해요", s.players.length, s.i), foot: btn("got", "받았어요", "is-primary is-lg"), say: disp(who) + " 님 차례예요. 폰을 받으면 받았어요 버튼을 눌러 주세요." });
       P.sfx("wood");
       return;
     }
@@ -720,6 +750,8 @@
     return '<div class="tally"><div class="sd is-citizen' + (up === "citizen" ? " is-up" : "") + '"><small>시민</small><b>' + s.tally.c + '</b></div><span class="colon" aria-hidden="true">:</span>'
       + '<div class="sd is-liar' + (up === "liar" ? " is-up" : "") + '"><small>라이어</small><b>' + s.tally.l + "</b></div></div>";
   }
+  // 바보 모드(라이어 게임 앱에서 흔한 규칙): 라이어도 같은 주제의 다른 제시어를 받아 자기가 라이어인 줄 모른다
+  var MODE_DESC = { normal: "라이어는 제시어 대신 라이어 카드를 받아요.", fool: "라이어도 같은 주제의 다른 제시어를 받아요. 자기가 라이어인 줄 몰라요." };
   function liarSetup(s) {
     var pk = P.pack().liar, cats = Object.keys(pk);
     if (s.cat && !pk[s.cat]) s.cat = "";
@@ -728,10 +760,14 @@
     var seg = '<div class="seg" style="--n:4" role="group" aria-label="토론 시간">' + [[0, "없음"], [120, "2분"], [180, "3분"], [300, "5분"]].map(function (t) {
       return '<button type="button" aria-pressed="' + (s.timer === t[0]) + '" data-act="timer" data-t="' + t[0] + '">' + t[1] + "</button>";
     }).join("") + "</div>";
+    var modes = '<div class="seg" style="--n:2" role="group" aria-label="모드">' + [["normal", "일반"], ["fool", "바보"]].map(function (m) {
+      return '<button type="button" aria-pressed="' + (s.mode === m[0]) + '" data-act="lmode" data-m="' + m[0] + '">' + m[1] + "</button>";
+    }).join("") + '</div><p class="mode-desc" id="modeDesc">' + MODE_DESC[s.mode] + "</p>";
     P.screen({
-      body: intro("liar", "라이어 게임", "한 사람만 제시어를 몰라요. 대화로 라이어를 찾아내세요.")
-        + (s.tally.c + s.tally.l ? sect("이 자리의 전적", tallyHTML(s, "")) : "")
-        + sect("주제", '<div class="pchips">' + chips + "</div>") + sect("토론 시간", seg)
+      body: intro("liar", "라이어 게임", "한 사람만 다른 카드를 받아요. 대화로 라이어를 찾아요.")
+        + pplSect(liar.min)
+        + (s.tally.c + s.tally.l ? sect("지금까지 전적", tallyHTML(s, "")) : "")
+        + sect("모드", modes) + sect("주제", '<div class="pchips">' + chips + "</div>") + sect("토론 시간", seg)
         + sect("하는 법", steps(["폰을 돌려 가며 몰래 카드를 확인해요", "한 사람씩 제시어를 한마디로 설명해요", "다 같이 라이어를 지목해요"])),
       foot: btn("start", ic("play") + "시작하기", "is-primary is-lg is-glow"),
       say: "라이어 게임. 주제와 토론 시간을 고르고 시작해요."
@@ -740,6 +776,12 @@
   function liarAct(a, el, s) {
     if (a === "cat") { s.cat = el.getAttribute("data-cat"); each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); }); P.sfx("select"); P.save(); return; }
     if (a === "timer") { s.timer = Number(el.getAttribute("data-t")); each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); }); P.sfx("select"); P.save(); return; }
+    if (a === "lmode") {
+      s.mode = el.getAttribute("data-m") === "fool" ? "fool" : "normal";
+      each(el.parentNode.children, function (b) { b.setAttribute("aria-pressed", String(b === el)); });
+      var md = $("modeDesc"); if (md) md.textContent = MODE_DESC[s.mode];
+      P.sfx("select"); P.save(); return;
+    }
     if (a === "start" || a === "again") { liarStart(s); return; }
     if (a === "got") { s.phase = "card"; s.seen = false; liarShow(s); return; }
     if (a === "card-next") {
@@ -781,22 +823,32 @@
     if (a === "to-result") { s.win = "liar"; liarResultEnter(s); return; }
     if (a === "share") { P.share({ title: "라이어 게임 한 판 끝", desc: "시민 " + s.tally.c + " 대 라이어 " + s.tally.l + ". 모임 자리에서 폰 하나로 하는 게임" }); return; }
   }
+  // 너무 비슷해 한마디 설명으로 갈리지 않는 낱말 묶음(질문 묶음의 liarClose). 바보 모드의 라이어 제시어와 마지막 기회 보기에서 뺀다
+  function closeTo(topic, w) {
+    var out = [];
+    ((P.pack().liarClose || {})[topic] || []).forEach(function (g) { if (Array.isArray(g) && g.indexOf(w) >= 0) out = out.concat(g); });
+    return out;
+  }
   function liarStart(s) {
     var pk = P.pack().liar, topics = Object.keys(pk), topic = s.cat && pk[s.cat] ? s.cat : H.rnd(topics);
     s.topic = topic;
     s.word = H.draw(pk[topic], s.used, function (w) { return topic + "|" + w; });
+    var near = closeTo(topic, s.word), others = pk[topic].filter(function (w) { return w !== s.word && near.indexOf(w) < 0; });
+    if (!others.length) others = pk[topic].filter(function (w) { return w !== s.word; });
+    s.fake = s.mode === "fool" && others.length ? H.rnd(others) : "";
     s.players = P.roster.slice(); s.liar = H.rnd(s.players); s.i = 0; s.seen = false;
     var f = Math.floor(Math.random() * s.players.length);
     s.order = s.players.slice(f).concat(s.players.slice(0, f));
     s.chosen = ""; s.caught = false; s.opts = []; s.guess = ""; s.win = ""; s.counted = false; s.running = false; s.endAt = 0; s.total = s.left = s.timer;
     s.round++; s.phase = "hand";
     P.busy = true; P.save();
-    P.splash({ k: "라운드 " + s.round, big: "라이어", word: true, sub: "주제는 " + topic }).then(function () { if (P.st !== s) return; P.busy = false; liarShow(s); });
+    P.splash({ k: "라운드 " + s.round, big: "라이어", word: true, sub: "주제는 " + topic, note: s.fake ? "바보 모드" : "" }).then(function () { if (P.st !== s) return; P.busy = false; liarShow(s); });
   }
-  // 라이어 카드와 시민 카드는 모양과 색이 같다(멀리서 보고 라이어를 알아채지 못하게). 글자만 다르다
+  // 라이어 카드와 시민 카드는 모양과 색이 같다(멀리서 보고 라이어를 알아채지 못하게). 글자만 다르다.
+  // 바보 모드의 라이어는 다른 제시어가 적힌, 시민 카드와 똑같은 카드를 받는다
   function frontHTML(s, who) {
-    var L = who === s.liar;
-    return '<span class="tp">주제: ' + esc(s.topic) + '</span><p class="wd">' + (L ? "라이어" : esc(s.word)) + '</p><p class="tip">' + (L ? "당신이 라이어예요. 들키지 말고 제시어를 알아내세요" : "라이어에게 들키지 않게 설명해요") + "</p>";
+    var L = who === s.liar && !s.fake, w = who === s.liar && s.fake ? s.fake : s.word;
+    return '<span class="tp">주제: ' + esc(s.topic) + '</span><p class="wd">' + (L ? "라이어" : esc(w)) + '</p><p class="tip">' + (L ? "들키지 않게 묻어가며 제시어를 알아내요" : "라이어가 눈치채지 못하게 설명해요") + "</p>";
   }
   function liarCard(s) {
     var who = s.players[s.i], last = s.i === s.players.length - 1;
@@ -806,7 +858,7 @@
         + '<div class="holdz"><button type="button" class="hold" id="holdBtn" data-quiet aria-label="누르고 있는 동안 카드 보기"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false"><circle cx="60" cy="60" r="54"/></svg>' + H.FP + "</button>"
         + '<span class="lb" id="holdLb">' + (s.seen ? "확인했어요. 다시 볼 수 있어요" : "길게 눌러 카드 보기") + "</span></div>",
       foot: '<button type="button" class="pa-btn is-primary is-lg" data-act="card-next" id="cardNext"' + (s.seen ? "" : " disabled") + ">" + (last ? "모두 확인했어요" : "다음 사람에게") + ic("next") + "</button>",
-      say: disp(who) + " 님 카드. 가운데 단추를 누르고 있는 동안만 보여요."
+      say: disp(who) + " 님 카드. 가운데 버튼을 누르고 있는 동안만 보여요."
     });
     bindHold(s, who);
   }
@@ -854,7 +906,7 @@
     P.screen({
       body: '<div class="spot">' + tok(first, "md") + "<div><small>첫 번째로 말할 사람</small><b>" + esc(disp(first)) + " 님</b></div></div>"
         + '<div class="orderline">' + s.order.map(function (n, k) { return "<span>" + tok(n, "sm") + "<em>" + esc(disp(n)) + "</em><i>" + (k + 1) + "번</i></span>"; }).join("") + "</div>"
-        + timer + '<p class="pg-p pg-center">한 사람씩 제시어를 한마디로 설명해요. 라이어는 들키지 않게 묻어가요. 한 바퀴 돌면 투표해요.</p>',
+        + timer + '<p class="pg-p pg-center">한 사람씩 제시어를 한마디로 설명해요. ' + (s.fake ? "이번 판은 바보 모드라 라이어도 자기가 라이어인 줄 몰라요." : "라이어는 들키지 않게 묻어가요.") + " 한 바퀴 돌면 투표해요.</p>",
       foot: btn("to-vote", ic("hand") + "투표하기", "is-primary is-lg" + (s.timer && s.left <= 0 ? " is-glow" : "")),
       say: "토론 시작. " + disp(first) + " 님부터 말해요."
     });
@@ -890,7 +942,7 @@
   }
   function liarVote(s) {
     P.screen({
-      body: '<h3 class="pg-h pg-center">누가 라이어일까요?</h3><p class="pg-p pg-center">하나, 둘, 셋 하면 다 같이 손가락으로 가리켜요. 가장 많이 지목된 사람을 골라 주세요. 같으면 한 번 더 가리켜요.</p>'
+      body: '<h3 class="pg-h pg-center">누가 라이어일까요?</h3><p class="pg-p pg-center">하나, 둘, 셋 하면 다 같이 손가락으로 가리켜요. 가장 많이 지목된 사람을 골라 주세요. 동점이면 한 번 더 가리키고, 그래도 같으면 ' + esc(disp(s.order[0])) + " 님이 정해요.</p>"
         + '<div class="vote" role="group" aria-label="지목할 사람">' + s.players.map(function (n, k) {
           return '<button type="button" data-act="vote" data-i="' + k + '" aria-pressed="' + (s.chosen === n) + '">' + tok(n, "md") + "<span>" + esc(disp(n)) + "</span></button>";
         }).join("") + "</div>" + '<div class="pg-share">' + btn("to-talk", ic("timer", "is-sm") + "토론으로 돌아가기", "is-text") + "</div>",
@@ -903,7 +955,7 @@
     var foot = c ? btn("to-guess", "제시어 맞히기" + ic("next"), "is-primary is-lg") : btn("to-result", "결과 보기" + ic("next"), "is-primary is-lg");
     var stamp = '<span class="bigstamp ' + (c ? "is-liar" : "is-citizen") + '" style="--sd:0s">' + (c ? "라이어!" : "시민") + "</span>";
     var box = c ? '<div class="reveal-box" style="--rd:.6s"><span class="k">라이어의 마지막 기회</span><b>제시어를 맞히면 라이어가 이겨요</b></div>'
-      : '<div class="reveal-box" style="--rd:.6s"><span class="k">진짜 라이어는</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span></div>";
+      : '<div class="reveal-box" style="--rd:.6s"><span class="k">진짜 라이어는</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span>" + fakeLine(s) + "</div>";
     P.screen({
       body: '<div class="verdict' + (fx ? " is-drum" : "") + '" id="verdict"><span class="k">지목된 사람은</span><span class="shake" style="--kd:0s">' + tok(s.chosen, "xl") + "</span>"
         + '<p class="nm">' + esc(disp(s.chosen)) + " 님</p>" + (fx ? '<span class="drum">두구두구</span>' : stamp) + "</div>" + (fx ? "" : box),
@@ -922,17 +974,19 @@
       later(s, 2300, function () { P.busy = false; P.setFoot(foot); var b = P.foot.querySelector(".pa-btn"); if (b) { try { b.focus({ preventScroll: true }); } catch (e) {} } P.save(); });
     }
   }
+  function fakeLine(s) { return s.fake ? '<span class="fake">라이어가 받은 제시어 <b>' + esc(s.fake) + "</b></span>" : ""; }
   function liarGuess(s) {
     if (!(Array.isArray(s.opts) && s.opts.length && s.opts.indexOf(s.word) >= 0)) {
-      var pk = P.pack().liar, same = (pk[s.topic] || []).filter(function (w) { return w !== s.word; });
-      if (same.length < 3) Object.keys(pk).forEach(function (t) { pk[t].forEach(function (w) { if (w !== s.word && same.indexOf(w) < 0) same.push(w); }); });
+      var pk = P.pack().liar, near = closeTo(s.topic, s.word), ok = function (w) { return w !== s.word && w !== s.fake && near.indexOf(w) < 0; };
+      var same = (pk[s.topic] || []).filter(ok);
+      if (same.length < 3) Object.keys(pk).forEach(function (t) { pk[t].forEach(function (w) { if (ok(w) && same.indexOf(w) < 0) same.push(w); }); });
       s.opts = H.shuffle(H.shuffle(same).slice(0, 3).concat([s.word]));
     }
     P.screen({
       body: '<p class="chooser">' + tok(s.liar, "sm") + "<span><b>" + esc(disp(s.liar)) + "</b> 님의 마지막 기회</span></p>"
-        + '<h3 class="pg-h pg-center">제시어는 무엇일까요?</h3><p class="pg-p pg-center">주제는 ' + esc(s.topic) + ". 넷 가운데 하나를 골라요.</p>"
+        + '<h3 class="pg-h pg-center">제시어는 무엇일까요?</h3><p class="pg-p pg-center">주제는 ' + esc(H.josa(s.topic, "이에요", "예요")) + ". 보기 4개 중 하나를 골라요.</p>"
         + '<div class="opts">' + s.opts.map(function (w, k) { return '<button type="button" data-act="guess" data-k="' + k + '">' + esc(w) + "</button>"; }).join("") + "</div>",
-      say: disp(s.liar) + " 님, 제시어를 골라 주세요. 주제는 " + s.topic + "이에요."
+      say: disp(s.liar) + " 님, 제시어를 골라 주세요. 주제는 " + H.josa(s.topic, "이에요", "예요") + "."
     });
   }
   function liarGuessPick(s, el) {
@@ -955,7 +1009,7 @@
     var why = !s.caught ? "지목된 " + disp(s.chosen) + " 님은 시민이었어요." : L ? "라이어가 제시어를 맞혀 역전했어요." : "라이어를 찾아냈고 제시어도 지켰어요.";
     P.screen({
       body: '<p class="banner ' + (L ? "is-liar" : "is-citizen") + '" data-t="' + (L ? "라이어 승리" : "시민 승리") + '"><span>' + (L ? "라이어 승리" : "시민 승리") + '</span></p><p class="pg-p pg-center">' + esc(why) + "</p>"
-        + '<div class="reveal-box" style="--rd:.35s"><span class="k">이번 판의 라이어</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span></div>"
+        + '<div class="reveal-box" style="--rd:.35s"><span class="k">이번 판의 라이어</span>' + tok(s.liar, "lg") + "<b>" + esc(disp(s.liar)) + ' 님</b><span class="kw">' + esc(s.word) + "</span>" + fakeLine(s) + "</div>"
         + tallyHTML(s, fx ? s.win : "") + '<div class="pg-share">' + btn("share", ic("share", "is-sm") + "카카오톡 공유", "is-ghost is-sm") + "</div>",
       foot: '<div class="pg-row">' + btn("leave", ic("home", "is-sm") + "처음으로", "is-ghost") + btn("again", ic("refresh") + "다음 판", "is-primary is-wide") + "</div>",
       say: (L ? "라이어 승리. " : "시민 승리. ") + why + " 제시어는 " + s.word + "."

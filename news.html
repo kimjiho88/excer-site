@@ -227,8 +227,31 @@
     .bc-attend .att-list li.is-me { border-color: var(--brand); background: var(--brand-soft); box-shadow: none; }
     .bc-attend .att-list li small { margin-left: 2px; }
     .bc-attend .att-empty { padding: 2px 0; }
-    .bc-attend .att-party { margin: 2px 0 0; }
-    .bc-attend .att-party .text-btn { text-decoration: none; }
+    /* 모임 자리 게임으로 가는 주황 띠(99차). 작은 글자 칸 바탕은 흰 글자 4.5:1 이상인 진한 주황, 밝은 주황은 그림 뒤에만 */
+    .bc-game { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr) 44px; align-items: center; gap: 12px; margin-top: 10px; min-height: 84px; padding: 12px 14px 12px 10px; border-radius: 18px; overflow: hidden; isolation: isolate; color: #fff; text-decoration: none;
+      background: radial-gradient(56px 56px at 40px 50%, rgba(255, 196, 110, 0.6), transparent 72%), linear-gradient(115deg, #D4490F 0%, #C9420F 28%, #B5380B 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -2px 0 rgba(124, 45, 18, 0.35), 0 14px 26px -16px rgba(194, 65, 12, 0.95);
+      -webkit-tap-highlight-color: transparent; transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease); }
+    .bc-game::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.6px) 0 0 / 14px 14px; -webkit-mask-image: linear-gradient(100deg, transparent 35%, #000 100%); mask-image: linear-gradient(100deg, transparent 35%, #000 100%); }
+    .bc-game.is-hot::after { content: ""; position: absolute; top: 0; bottom: 0; left: -45%; z-index: -1; width: 38%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.26), transparent); transform: skewX(-18deg); animation: gmShine 3.6s 0.6s ease-in-out infinite; }
+    @keyframes gmShine { 0% { left: -45%; } 45%, 100% { left: 120%; } }
+    .gm-art { width: 60px; height: 60px; }
+    .gm-art svg { display: block; width: 100%; height: 100%; }
+    .gm-txt { display: grid; gap: 3px; min-width: 0; }
+    .gm-txt b { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.25; }
+    .gm-txt small { color: #FFFFFF; font-size: 13px; font-weight: 600; line-height: 1.4; text-wrap: balance; }
+    .gm-kick { justify-self: start; display: inline-flex; align-items: center; gap: 5px; min-height: 22px; margin-bottom: 1px; padding: 0 9px 0 7px; border-radius: 999px; background: #FEF3C7; color: #9A3412; font-size: 11px; font-weight: 800; line-height: 1; }
+    .gm-kick::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #EA580C; animation: gmPulse 1.8s ease-out infinite; }
+    @keyframes gmPulse { 0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.55); } 70%, 100% { box-shadow: 0 0 0 7px rgba(234, 88, 12, 0); } }
+    .gm-go { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #FFFFFF; color: #EA580C; box-shadow: 0 6px 14px -6px rgba(124, 45, 18, 0.9), inset 0 -2px 0 rgba(234, 88, 12, 0.18); }
+    .gm-go svg { width: 22px; height: 22px; fill: currentColor; }
+    .bc-game.is-hot .gm-go { animation: gmBeat 1.8s ease-in-out infinite; }
+    @keyframes gmBeat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.1); } 24% { transform: scale(1); } }
+    @media (hover: hover) and (pointer: fine) { .bc-game:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -2px 0 rgba(124, 45, 18, 0.35), 0 18px 30px -14px rgba(194, 65, 12, 0.95); } }
+    .bc-game:active { transform: scale(0.985); }
+    .bc-game:focus-visible { outline: 3px solid #FB923C; outline-offset: 3px; }
+    @media (max-width: 360px) { .bc-game { grid-template-columns: 52px minmax(0, 1fr) 40px; gap: 10px; padding-right: 12px; } .gm-art { width: 52px; height: 52px; } .gm-go { width: 40px; height: 40px; } .gm-txt b { font-size: 18px; } }
+    @media (prefers-reduced-motion: reduce) { .bc-game, .bc-game.is-hot::after, .gm-kick::before, .bc-game.is-hot .gm-go { animation: none; transition: none; } .bc-game.is-hot::after { display: none; } }
     .post-row.is-event .host-menu { margin-top: 10px; padding-top: 0; border-top: 0; }
     .post-row.is-event .host-menu > summary { gap: 8px; min-height: 40px; padding: 0 14px 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 700; }
     .post-row.is-event .host-menu > summary::before { content: ""; width: 16px; height: 16px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234B2A82' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 17.5h16'/%3E%3Cpath d='M4 17.5 2.8 7.6l4.5 3L12 4l4.7 6.6 4.5-3-1.2 9.9'/%3E%3C/svg%3E") center / 16px no-repeat; }
@@ -2112,6 +2135,15 @@
       return a === nickKey(mine || savedNick());
     }
     const ATT_FOLD = 12;   // 참석자가 이보다 많으면 접고 '외 N명 보기'
+    // 게임 띠의 그림: 물음표 카드와 주사위, 반짝이
+    const GAME_ART = '<svg viewBox="0 0 72 72" focusable="false">'
+      + '<g transform="rotate(-14 24 36)"><rect x="9" y="15" width="30" height="42" rx="7" fill="#7C2D12" opacity=".3" transform="translate(1.5 3)"/><rect x="9" y="15" width="30" height="42" rx="7" fill="#FFF7ED"/>'
+      + '<rect x="13" y="19" width="22" height="34" rx="4.5" fill="none" stroke="#FDBA74" stroke-width="1.6"/>'
+      + '<path d="M20.4 31.6a3.6 3.6 0 1 1 5.7 2.9c-1.5 1-2.1 1.7-2.1 3.3" fill="none" stroke="#EA580C" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="42.6" r="1.8" fill="#EA580C"/></g>'
+      + '<g transform="rotate(12 46 44)"><rect x="30" y="28" width="32" height="32" rx="9" fill="#7C2D12" opacity=".32" transform="translate(1.5 3)"/><rect x="30" y="28" width="32" height="32" rx="9" fill="#FFFFFF"/>'
+      + '<path d="M30 49a9 9 0 0 0 9 9h14a9 9 0 0 0 9-9v2a9 9 0 0 1-9 9H39a9 9 0 0 1-9-9z" fill="#FED7AA"/>'
+      + '<g fill="#EA580C"><circle cx="38.5" cy="36.5" r="3.1"/><circle cx="53.5" cy="36.5" r="3.1"/><circle cx="46" cy="44" r="3.1"/><circle cx="38.5" cy="51.5" r="3.1"/><circle cx="53.5" cy="51.5" r="3.1"/></g></g>'
+      + '<path d="M61 6Q61 14 69 14Q61 14 61 22Q61 14 53 14Q61 14 61 6z" fill="#FEF08A"/><path d="M9 58Q9 62 13 62Q9 62 9 66Q9 62 5 62Q9 62 9 58z" fill="#FFFFFF" opacity=".85"/></svg>';
     function attendHTML(post) {
       const st = bungStatus(post);
       const a = state.attend[post.id];
@@ -2131,7 +2163,9 @@
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
       const past = st.why === "started";
       const dday = st.ongoing ? "진행 중" : past ? "지난 모임" : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
-      const liveNow = !past && !!st.start && (st.ongoing || st.start.slice(0, 10) === nowKey().slice(0, 10));   // 오늘이거나 진행 중인 모임: 자리에서 꺼내는 게임으로 가는 길
+      // 모임 자리 게임으로 가는 주황 띠: 지난 모임이 아니면 모두(끝난 모임도 그날까지는). 오늘이거나 진행 중이면 꼬리표와 반짝임
+      const isToday = !!st.start && st.start.slice(0, 10) === nowKey().slice(0, 10);
+      const hot = !past && (st.ongoing || isToday) ? (st.ongoing ? "진행 중" : "오늘 모임") : "";
       const left = m.time && !past ? startLeft(st.start) : "";
       const n = list ? list.length : st.n;
       const pct = st.cap ? Math.min(100, Math.round(n / st.cap * 100)) : 0;
@@ -2179,8 +2213,8 @@
             <div class="bc-cap${seats ? " has-seats" : ""}${st.why === "full" ? " is-full" : ""}"><div class="bc-n"><b>참석 <em>${n}</em>${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}${seats}${leftN ? `<span class="bc-remain" data-left="${leftN}" aria-hidden="true"></span>` : ""}</div>
             ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
             ${names}
-            ${liveNow ? `<p class="att-party"><a class="text-btn" href="party.html?bung=${post.id}">${icon("dice", "is-sm")} 이 명단으로 모임 자리 게임</a></p>` : ""}
           </div>
+          ${!past || isToday ? `<a class="bc-game${hot ? " is-hot" : ""}" href="party.html?bung=${post.id}"><span class="gm-art" aria-hidden="true">${GAME_ART}</span><span class="gm-txt">${hot ? `<span class="gm-kick">${hot}</span>` : ""}<b>모임 자리 게임</b><small>${n >= 2 ? "참석자 " + n + "명으로 바로 시작" : "뽑기, 밸런스 게임, 라이어 게임"}</small></span><span class="gm-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6.6v10.8a1.1 1.1 0 0 0 1.7.9l8.2-5.4a1.1 1.1 0 0 0 0-1.8l-8.2-5.4A1.1 1.1 0 0 0 9 6.6z"/></svg></span></a>` : ""}
           <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }

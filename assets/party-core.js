@@ -42,6 +42,7 @@
   /* ── 선 아이콘(24 칸) ── */
   var ICONS = {
     plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>',
     x: '<path d="M6 6l12 12M18 6 6 18"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
     sound: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
@@ -333,7 +334,7 @@
     });
   }
   function disp(n) { return DISP[n] || String(n || "").trim().split(/\s+/)[0] || String(n || ""); }
-  function initial(n) { return Array.from(disp(n))[0] || "?"; }
+  function initial(n) { var m = SLOT_RE.exec(disp(n)); return m ? m[1] : Array.from(disp(n))[0] || "?"; }   // 'N번'은 수 전체(10번이 1번처럼 보이지 않게)
   function tok(n, size, cls) { return '<span class="tok' + (size ? " is-" + size : "") + (cls ? " " + cls : "") + '" style="--c:' + color(n) + '" aria-hidden="true">' + esc(initial(n)) + "</span>"; }
   function loadRoster() {
     try { var r = JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); if (Array.isArray(r)) P.roster = r.filter(function (x) { return typeof x === "string" && x.trim(); }).slice(0, MAX); } catch (e) {}
@@ -359,21 +360,71 @@
   function savedNick() { try { return (localStorage.getItem(NICK_KEY) || "").trim(); } catch (e) { return ""; } }
   function changed() { saveRoster(); rebuildDisp(); renderLobby(); if (!sheet.hidden) renderSheet(); saveSession(); }
 
+  /* ── 참여 인원 +/- (게임 앱의 인원 정하기). + 는 'N번'을 넣고(N 은 지금 인원 다음 수, 있으면 그다음),
+     - 는 번호 이름부터 뒤에서 하나(없으면 맨 뒤 사람)를 뺀다. min 아래로는 빼지 않는다(게임 안에서는 그 게임의 최소 인원) ── */
+  var SLOT_RE = /^(\d{1,2})번$/;
+  function isSlot(n) { return SLOT_RE.test(String(n || "")); }
+  function slotName() {
+    var k = P.roster.length + 1;
+    while (P.roster.some(function (x) { return nickKey(x) === nickKey(k + "번"); })) k++;
+    return k + "번";
+  }
+  function people(d, min) {
+    var n = P.roster.length;
+    if (d > 0) {
+      if (n >= MAX) { toast("플레이어는 " + MAX + "명까지예요."); return false; }
+      var nm = slotName(); P.roster.push(nm); ensureColor(nm);
+      sfx("pop"); changed(); say(nm + " 들어옴, " + P.roster.length + "명");
+      return true;
+    }
+    if (n <= (min || 0)) return false;
+    var i = n - 1;
+    for (var k = n - 1; k >= 0; k--) if (isSlot(P.roster[k])) { i = k; break; }
+    var gone = P.roster[i], label = disp(gone);
+    P.roster.splice(i, 1); sfx("tap"); changed();
+    if (!isSlot(gone)) toast(label + " 님을 뺐어요.");
+    say(label + " 빠짐, " + P.roster.length + "명");
+    return true;
+  }
+  function stepper(min) {
+    var n = P.roster.length;
+    return '<div class="pstep" role="group" aria-label="참여 인원" data-min="' + (min || 0) + '">'
+      + '<button type="button" class="pstep-b" data-act="ppl" data-d="-1" aria-label="한 명 빼기"' + (n <= (min || 0) ? " disabled" : "") + ">" + ic("minus") + "</button>"
+      + '<span class="pstep-n"><b>' + n + "</b>명</span>"
+      + '<button type="button" class="pstep-b is-plus" data-act="ppl" data-d="1" aria-label="한 명 더하기"' + (n >= MAX ? " disabled" : "") + ">" + ic("plus") + "</button></div>";
+  }
+  function facesHTML() {
+    var n = P.roster.length, cap = 9, list = P.roster.slice(0, n > cap ? cap - 1 : cap);
+    return list.map(function (x) { return tok(x, "sm"); }).join("") + (n > list.length ? '<span class="tok is-sm is-more">+' + (n - list.length) + "</span>" : "");
+  }
+  function bump(el) { el.classList.remove("is-bump"); void el.offsetWidth; el.classList.add("is-bump"); }
+  // 쪽 안의 모든 인원 단추(로비, 게임 설정)를 지금 인원에 맞춘다. 누르던 단추가 막히면 초점은 반대쪽 단추로
+  function syncPpl() {
+    var n = P.roster.length, ae = doc.activeElement;
+    Array.prototype.forEach.call(doc.querySelectorAll(".pstep"), function (el) {
+      var min = Number(el.getAttribute("data-min")) || 0, m = el.querySelector('[data-d="-1"]'), p = el.querySelector('[data-d="1"]'), c = el.querySelector(".pstep-n b");
+      if (!m || !p || !c) return;
+      m.disabled = n <= min; p.disabled = n >= MAX;
+      if (c.textContent !== String(n)) { c.textContent = n; bump(c); }
+      if ((ae === m && m.disabled) || (ae === p && p.disabled)) { try { (ae === m ? p : m).focus({ preventScroll: true }); } catch (e) {} }
+    });
+    Array.prototype.forEach.call(doc.querySelectorAll(".ppl-faces"), function (el) { el.innerHTML = facesHTML(); });
+  }
+
   /* ── 로비 ── */
   var CARDS = [
-    { id: "pick", title: "뽑기", tag: "돌림판으로 한 명, 순서, 팀, 미션 카드", meta: ["2명부터", "바로 결과"] },
-    { id: "balance", title: "밸런스 게임", tag: "둘 중 하나를 몰래 고르고 다 같이 공개", meta: ["2명부터", "5분에서 15분"] },
+    { id: "pick", title: "뽑기", tag: "누가 할지, 순서, 팀을 정하고 카드도 뽑아요", meta: ["2명부터", "몇 초면 끝"] },
+    { id: "balance", title: "밸런스 게임", tag: "둘 중 하나를 몰래 고르고 다 같이 공개해요", meta: ["2명부터", "한 판 5~15분"] },
     { id: "liar", title: "라이어 게임", tag: "제시어를 모르는 한 사람을 찾아요", meta: ["3명부터", "한 판 5분"] }
   ];
   var shown = null;
   function renderLobby() {
     var n = P.roster.length, ul = $("tokens");
-    $("playerCount").textContent = n;
     var empty = $("paEmpty");
     if (!empty) {
       empty = doc.createElement("div"); empty.className = "pa-empty"; empty.id = "paEmpty";
-      empty.innerHTML = ic("users", "is-lg") + "<b>함께할 사람을 넣어 주세요</b><p>오늘 모임 글에서 열면 참석 명단이 그대로 들어와요.<br>여기서 이름을 직접 적어도 돼요.</p>"
-        + '<button type="button" class="pa-btn is-primary is-sm" data-act="open-sheet">' + ic("plus", "is-sm") + "플레이어 추가</button>";
+      empty.innerHTML = ic("users", "is-lg") + "<b>함께할 사람을 추가해 주세요</b><p>모임 글에서 열면 참석 명단이 그대로 들어와요.<br>이름 없이 아래 + 버튼으로 인원만 정해도 돼요.</p>"
+        + '<button type="button" class="pa-btn is-primary is-sm" data-act="open-sheet">' + ic("plus", "is-sm") + "이름 추가</button>";
       ul.parentNode.insertBefore(empty, ul.nextSibling);
     }
     empty.hidden = !!n; ul.hidden = !n; $("editBtn").hidden = !n;
@@ -403,6 +454,7 @@
         + '<span class="pa-game-meta">' + (need > 0 ? '<i class="is-lock">' + ic("lock") + need + "명 더 필요</i>" + "<i>" + c.meta[1] + "</i>" : c.meta.map(function (m) { return "<i>" + m + "</i>"; }).join("")) + "</span></span>"
         + '<span class="pa-game-art">' + art(c.id) + "</span></button>";
     }).join("");
+    syncPpl();
   }
 
   /* ── 플레이어 창(아래에서 올라오는 창. 뒤로 가기와 끌어 닫기, 초점은 site-core) ── */
@@ -491,6 +543,9 @@
   });
 
   /* 모임 글의 참석 명단 불러오기(?bung=글번호). 명단은 사이트에 이미 공개된 것과 같다 */
+  // 명단을 마지막으로 불러온 모임 글. 다른 모임 글에서 열면 명단을 그 모임 참석자로 바꾼다(지난 모임 사람이 섞이지 않게)
+  var FROM_KEY = "excer_party_from";
+  function fromBung() { try { return Number(localStorage.getItem(FROM_KEY)) || 0; } catch (e) { return 0; } }
   function loadBung(id, again) {
     id = Number(id); if (!(id > 0)) return;
     if (!(P.bung && P.bung.id === id)) { P.bung = { id: id, title: "", n: null }; renderLobby(); }
@@ -501,12 +556,16 @@
       var post = res[0], list = res[1] || [];
       if (!post) { P.bung = null; saveSession(); renderLobby(); toast("그 모임 글을 찾지 못했어요."); return; }
       P.bung = { id: id, title: post.title || "모임 글", n: list.length };
+      var swap = list.length > 0 && P.roster.length > 0 && fromBung() !== id;
+      if (swap) P.roster = [];
       var added = 0, dup = 0, cap = 0;
       list.forEach(function (x) { if (!x) return; if (addName(x.nick, true)) added++; else if (addFail === "dup") dup++; else if (addFail === "cap") cap++; });
+      if (list.length) { try { localStorage.setItem(FROM_KEY, String(id)); } catch (e) {} }
       changed();
-      if (!list.length) toast("아직 참석한 사람이 없어요. 이름을 직접 적어 주세요.");
+      if (!list.length) toast("아직 참석한 사람이 없어요. 이름을 적거나 인원만 정해 주세요.");
+      else if (swap) { toast("이 모임 참석자 " + added + "명으로 명단을 바꿨어요." + (cap ? " " + MAX + "명이 넘어 " + cap + "명은 못 넣었어요." : "")); sfx("coin"); }
       else if (added) {
-        toast((added === list.length ? "참석 명단 " + list.length + "명을 넣었어요." : "참석 명단 " + list.length + "명 가운데 " + added + "명을 넣었어요.")
+        toast((added === list.length ? "참석 명단 " + list.length + "명을 넣었어요." : "참석 명단 " + list.length + "명 중 " + added + "명을 넣었어요.")
           + (dup ? " 이미 있던 " + dup + "명은 그대로예요." : "") + (cap ? " " + MAX + "명이 넘어 " + cap + "명은 못 넣었어요." : ""));
         sfx("coin");
       }
@@ -527,6 +586,7 @@
     else if (a === "edit") openSheet(false);
     else if (a === "reload-bung" && P.bung) loadBung(P.bung.id, true);
     else if (a === "open-game") openGame(b.getAttribute("data-game"), { opener: b });
+    else if (a === "ppl") people(Number(b.getAttribute("data-d")), 0);
   });
   $("editBtn").addEventListener("click", function () { openSheet(false); });
   var rzW = window.innerWidth, rzT = 0;
@@ -537,15 +597,15 @@
   /* ── 질문 묶음: 파일을 읽고, 못 읽으면 안에 든 작은 묶음으로 ── */
   var FALLBACK = {
     balance: {
-      "음식": [["탕수육은 부먹", "탕수육은 찍먹"], ["냉면은 물냉", "냉면은 비냉"], ["평생 삼겹살만", "평생 치킨만"], ["떡볶이는 밀떡", "떡볶이는 쌀떡"], ["김치찌개", "된장찌개"], ["짜장", "짬뽕"]],
-      "일상": [["아침형 인간", "저녁형 인간"], ["여름", "겨울"], ["바다", "산"], ["계획 짜는 여행", "즉흥 여행"], ["집에서 영화", "극장에서 영화"], ["전화", "문자"]]
+      "음식": [["탕수육 부먹", "탕수육 찍먹"], ["물냉면", "비빔냉면"], ["평생 삼겹살만", "평생 치킨만"], ["밀떡볶이", "쌀떡볶이"], ["김치찌개", "된장찌개"], ["짜장면", "짬뽕"]],
+      "일상": [["아침형 인간", "올빼미형 인간"], ["평생 여름만", "평생 겨울만"], ["산", "바다"], ["계획형 여행", "즉흥형 여행"], ["영화관에서 영화", "집에서 영화"], ["메시지로 연락", "전화로 연락"]]
     },
     liar: { "음식": ["삼겹살", "치킨", "떡볶이", "김치찌개", "냉면", "초밥", "피자", "라면"], "장소": ["노래방", "볼링장", "한강공원", "영화관", "편의점", "카페", "찜질방", "헬스장"] },
-    missions: ["다음 건배사 맡기", "2차 장소 고르기", "옆 사람 칭찬 한 가지 하기", "최근 가 본 맛집 하나 추천하기", "다음 메뉴 주문 맡기", "오늘 가장 웃긴 순간 다시 말하기"],
-    talk: ["요즘 제일 빠져 있는 것은?", "이 동네에서 제일 좋아하는 길은?", "최근에 산 것 중 제일 잘 산 것은?", "올해 가장 잘한 일 하나는?", "요즘 자주 듣는 노래는?", "다음에 가 보고 싶은 동네 가게는?"]
+    missions: ["다음 건배사 맡기", "2차 장소 고르기", "옆 사람 칭찬 한 가지 하기(외모 말고)", "최근 가 본 맛집 하나 추천하기", "다음 메뉴 주문 맡기", "오늘 가장 웃겼던 순간 꼽기"],
+    talk: ["요즘 제일 빠져 있는 것은?", "이 동네에서 제일 좋아하는 길은?", "최근에 제일 잘 산 물건은?", "올해 가장 잘한 일 하나는?", "요즘 자주 듣는 노래는?", "다음에 가 보고 싶은 동네 가게는?"]
   };
   var packs = null;
-  fetch("data/party-packs.json?v=1").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  fetch("data/party-packs.json?v=2").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(function (j) { if (j && j.balance && j.liar && j.missions && j.talk) packs = j; }).catch(function () {});
   function pack() { return packs || FALLBACK; }
   // 한 바퀴 돌기 전에는 같은 것이 다시 나오지 않게 뽑는다
@@ -597,7 +657,7 @@
   var play = $("play"), gBody = $("pgBody"), gFoot = $("pgFoot"), gProg = $("pgProgress"), gPop = $("pgPop"), gSplash = $("pgSplash");
   /* 기록(history) 칸 둘: 1 은 받침, 2 는 게임. 뒤로 가기 한 번은 게임에서 받침으로(진행 중이면 묻기),
      묻는 중에 한 번 더 뒤로 가면 받침에서 쪽으로 내려와 나간다. 쪽(로비)은 그대로 남는다 */
-  var opener = null, ignorePop = 0, paintAt = 0, hideT = 0, popOpen = false, popT = 0;
+  var opener = null, ignorePop = 0, paintAt = 0, hideT = 0, popOpen = false, popT = 0, keep = false;
   function G() { return P.cur ? P.games[P.cur] : null; }
   // 게임 화면이 떠 있는 동안 뒤쪽(로비, 메뉴)은 화면 읽기와 초점에서 빼고, 알림 칸은 게임 화면 안으로 옮긴다(aria-modal 밖은 읽지 않는 브라우저)
   function behind(on) {
@@ -616,7 +676,7 @@
     var g = P.games[id]; if (!g) return;
     var need = g.min - P.roster.length;
     if (need > 0) {
-      toast(josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 넣어 주세요.");
+      toast(josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 추가해 주세요.");
       sfx("pop"); openSheet(true); return;
     }
     closeSheet();
@@ -656,7 +716,7 @@
   }
   function dirty() { var g = G(); return !!(g && g.dirty && g.dirty(P.st)); }
   function askExit() {
-    return confirm({ title: "게임을 그만할까요?", text: "지금 판의 진행과 점수는 사라져요.", yes: "그만하기", no: "계속하기", danger: true, backMeansYes: true }).then(function (yes) {
+    return confirm({ title: "게임을 그만할까요?", text: "지금 하던 판은 사라져요.", yes: "그만하기", no: "계속하기", danger: true, backMeansYes: true }).then(function (yes) {
       if (!P.cur) return;
       if (yes) leaveGame({ id: P.cur }); else pushTo(2);
     });
@@ -684,20 +744,36 @@
   }
   function focusTitle() { try { $("pgTitle").focus({ preventScroll: true }); } catch (e) {} }
   // 한 화면을 그린다: 몸통(차례로 떠오름), 아래 단추 줄, 위 진행 막대
+  // keep(인원을 바꿔 그 자리에서 다시 그릴 때): 떠오르는 움직임, 스크롤 맨 위로, 읽어 주기, 제목 초점, 두 번 누름 막기를 하지 않는다
   function screen(o) {
     if (!P.cur) return;
-    gBody.innerHTML = '<div class="pg-in' + (o.cls ? " " + o.cls : "") + '">' + (o.body || "") + "</div>";
+    gBody.innerHTML = '<div class="pg-in' + (keep ? " is-still" : "") + (o.cls ? " " + o.cls : "") + '">' + (o.body || "") + "</div>";
     var kids = gBody.firstChild.children;
     for (var i = 0; i < kids.length; i++) kids[i].style.setProperty("--i", Math.min(i, 8));
     gFoot.innerHTML = o.foot ? '<div class="pg-foot-in">' + o.foot + "</div>" : "";
-    paintAt = performance.now();
     progress(o.prog);
-    gBody.scrollTop = 0;
     if (o.title) $("pgTitle").textContent = o.title;
-    if (o.say) say(o.say);
-    var ae = doc.activeElement;
-    if (!ae || ae === doc.body || !play.contains(ae)) focusTitle();
+    if (!keep) {
+      paintAt = performance.now();
+      gBody.scrollTop = 0;
+      if (o.say) say(o.say);
+      var ae = doc.activeElement;
+      if (!ae || ae === doc.body || !play.contains(ae)) focusTitle();
+    }
     saveSession();
+  }
+  // 인원을 바꾼 뒤: 설정 화면은 단추와 얼굴 줄만 고치고(g.people), 뽑기처럼 화면이 이름으로 그려지면 그 자리에서 다시 그린다
+  function refresh(b, had) {
+    var g = G(); if (!g) return;
+    if (g.people) { g.people(P.st); return; }
+    var y = gBody.scrollTop, d = b.getAttribute("data-d");
+    keep = true;
+    try { g.show(P.st); } finally { keep = false; }
+    gBody.scrollTop = y;
+    var nb = gBody.querySelector('.pstep [data-d="' + d + '"]');
+    if (nb && nb.disabled) nb = gBody.querySelector('.pstep [data-d="' + (-Number(d)) + '"]');
+    if (had && nb) { try { nb.focus({ preventScroll: true }); } catch (e) {} }
+    var c = gBody.querySelector(".pstep-n b"); if (c) bump(c);
   }
   // 몸통은 그대로 두고 아래 단추 줄만 바꾼다
   function setFoot(html) { gFoot.innerHTML = html ? '<div class="pg-foot-in">' + html + "</div>" : ""; }
@@ -770,6 +846,11 @@
     if (a === "pop-close") { popClose(); return; }
     if (a === "leave") { leaveGame({ id: P.cur }); return; }
     if (P.busy) return;
+    if (a === "ppl") {
+      var had = !!(doc.activeElement && doc.activeElement.closest && doc.activeElement.closest("#pgBody .pstep"));   // 고치기 전에 잰다(빼기가 꺼지면 초점이 옮겨 가므로)
+      if (people(Number(b.getAttribute("data-d")), g.min)) refresh(b, had);
+      return;
+    }
     g.act(a, b, P.st, e);
   });
   // 게임 화면 안에서의 Tab(빠져나가지 않게)과 Esc(팝업 닫기, 그다음 나가기)
@@ -844,7 +925,8 @@
   }
 
   /* ── 게임 쪽에 넘기는 것 ── */
-  P.h = { esc: esc, shuffle: shuffle, rnd: rnd, clamp: clamp, josa: josa, buzz: buzz, wait: wait, fmtTime: fmtTime, ic: ic, FP: FP, art: art, tok: tok, disp: disp, color: color, initial: initial, nickKey: nickKey, reduced: reduced, toast: toast, say: say, draw: draw, pt: pt, slicePath: slicePath, PALETTE: PALETTE };
+  P.h = { esc: esc, shuffle: shuffle, rnd: rnd, clamp: clamp, josa: josa, buzz: buzz, wait: wait, fmtTime: fmtTime, ic: ic, FP: FP, art: art, tok: tok, disp: disp, color: color, initial: initial, nickKey: nickKey, reduced: reduced, toast: toast, say: say, draw: draw, pt: pt, slicePath: slicePath, PALETTE: PALETTE,
+    stepper: stepper, faces: facesHTML, syncPpl: syncPpl };
   P.sfx = sfx; P.confetti = confetti; P.confettiStop = confettiStop; P.splash = splash; P.screen = screen; P.setFoot = setFoot; P.pop = pop; P.popClose = popClose;
   P.confirm = confirm; P.save = saveSession; P.leave = function () { leaveGame({ id: P.cur }); }; P.share = share; P.copy = copy; P.pack = pack;
   P.focusTitle = focusTitle; P.body = gBody; P.foot = gFoot;
@@ -867,7 +949,9 @@
       // 한 번 넣은 뒤에는 주소에서 뺀다. 새로고침 때 손으로 뺀 사람이 다시 들어오지 않게(다시 넣기는 모임 줄의 단추)
       try { qs.delete("bung"); history.replaceState(history.state, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); } catch (e) {}
     }
-    var g = saved && saved.game && P.games[saved.game], st = null;
+    // 다른 모임 글에서 들어왔으면 이 탭에 남은 지난 판은 이어 하지 않는다(명단이 바뀐다)
+    var other = bung > 0 && !(saved && saved.bung && Number(saved.bung.id) === bung);
+    var g = !other && saved && saved.game && P.games[saved.game], st = null;
     if (g && P.roster.length >= g.min && g.restore) { try { st = g.restore(saved.st, P.prefs[saved.game] || {}); } catch (e) { st = null; } }
     if (st) openGame(saved.game, { state: st, restored: true });
     else unwind();   // 게임 없이 남은 기록 칸에서 다시 열렸으면 쪽 칸으로
