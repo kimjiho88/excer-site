@@ -85,7 +85,17 @@
   function pt(r, deg) { var a = deg * Math.PI / 180; return [+(r * Math.sin(a)).toFixed(2), +(-r * Math.cos(a)).toFixed(2)]; }
   function slicePath(r, a0, a1) { var p0 = pt(r, a0), p1 = pt(r, a1); return "M0 0L" + p0[0] + " " + p0[1] + "A" + r + " " + r + " 0 " + (a1 - a0 > 180 ? 1 : 0) + " 1 " + p1[0] + " " + p1[1] + "Z"; }
   function spark(x, y, s, fill) { return '<path transform="translate(' + x + " " + y + ") scale(" + s + ')" d="M0-10 2.4-2.4 10 0 2.4 2.4 0 10-2.4 2.4-10 0-2.4-2.4z" fill="' + fill + '"/>'; }
-  function art(kind) {
+  // 세 게임 그림(바퀴, 가로로 긴 카드 둘, 세로 카드)은 모양이 달라 그대로 두면 크기와 가운데가 그림마다 다르다.
+  // 반짝이를 뺀 내용 상자(테두리 굵기 포함)를 재서 c(가운데)와 s(배율: 넓이를 한 변 100 칸 정사각형과 같게, 가로세로 120 칸 이하)를 정하고,
+  // 내용 가운데를 칸 가운데(60, 60)에 놓는다. tilt 는 로비 카드처럼 칸을 -7도 기울였을 때 기울어진 내용 상자의 가운데가 (60, 60)에 오는 자리
+  // (모양이 좌우로 고르지 않아 기울이면 상자 가운데가 움직인다). 값은 브라우저에서 잰 것
+  var FIT = {
+    pick: { c: [60, 57.8], s: 0.9024, tilt: [59.22, 60.33] },
+    balance: { c: [60, 59.6], s: 0.9274, tilt: [63.68, 58.35] },
+    liar: { c: [62.32, 61.94], s: 0.9514, tilt: [64, 60.58] }
+  };
+  function fitOpen(kind, tilt) { var f = FIT[kind], t = tilt ? f.tilt : [60, 60]; return '<g transform="translate(' + t[0] + " " + t[1] + ") scale(" + f.s + ") translate(" + (-f.c[0]) + " " + (-f.c[1]) + ')">'; }
+  function art(kind, tilt) {
     var u = "pa" + (++artSeq), d = '<svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">';
     if (kind === "logo") {
       return '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs>'
@@ -101,34 +111,34 @@
       for (var i = 0; i < 6; i++) s += '<path d="' + slicePath(41, i * 60 - 30, i * 60 + 30) + '" fill="' + cols[i] + '"/>';
       for (var j = 0; j < 12; j++) { var q = pt(46, j * 30); b += '<circle cx="' + (60 + q[0]) + '" cy="' + (62 + q[1]) + '" r="2.5" fill="#FFFBEB"/>'; }
       return d + '<defs><linearGradient id="' + u + 'r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#C2410C"/></linearGradient>'
-        + '<radialGradient id="' + u + 'h" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FDBA74"/></radialGradient></defs>'
+        + '<radialGradient id="' + u + 'h" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FDBA74"/></radialGradient></defs>' + fitOpen("pick", tilt)
         + '<circle cx="60" cy="67" r="51" fill="#431407" opacity=".5"/><circle cx="60" cy="62" r="51" fill="url(#' + u + 'r)"/>'
         + '<g transform="translate(60 62) rotate(-14)">' + s + '<g stroke="#fff" stroke-width="1.6" opacity=".9">' + [0, 60, 120, 180, 240, 300].map(function (a) { var e = pt(41, a + 30); return '<line x1="0" y1="0" x2="' + e[0] + '" y2="' + e[1] + '"/>'; }).join("") + "</g></g>"
         + b + '<circle cx="60" cy="62" r="9.5" fill="url(#' + u + 'h)" stroke="#9A3412" stroke-width="2.2"/>'
         + '<path d="M60 27 51.8 13.2A9.5 9.5 0 1 1 68.2 13.2z" fill="#EF4444" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/><circle cx="60" cy="9" r="3" fill="#fff"/>'
-        + spark(106, 18, 0.7, "#FDE047") + spark(14, 104, 0.5, "#fff") + "</svg>";
+        + spark(106, 18, 0.7, "#FDE047") + spark(14, 104, 0.5, "#fff") + "</g></svg>";
     }
     if (kind === "balance") {
       return d + '<defs><linearGradient id="' + u + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#6D28D9"/></linearGradient>'
-        + '<linearGradient id="' + u + 'b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDA4AF"/><stop offset="1" stop-color="#E11D48"/></linearGradient></defs>'
+        + '<linearGradient id="' + u + 'b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDA4AF"/><stop offset="1" stop-color="#E11D48"/></linearGradient></defs>' + fitOpen("balance", tilt)
         + '<g transform="rotate(-12 30 60)"><rect x="4" y="29" width="52" height="68" rx="14" fill="#1E0B4B" opacity=".5"/><rect x="4" y="24" width="52" height="68" rx="14" fill="url(#' + u + 'a)" stroke="#fff" stroke-width="3"/>'
         + '<text x="27" y="70" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="32" fill="#fff">A</text></g>'
         + '<g transform="rotate(12 90 60)"><rect x="64" y="29" width="52" height="68" rx="14" fill="#4C0519" opacity=".5"/><rect x="64" y="24" width="52" height="68" rx="14" fill="url(#' + u + 'b)" stroke="#fff" stroke-width="3"/>'
         + '<text x="93" y="70" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="32" fill="#fff">B</text></g>'
         + '<circle cx="60" cy="82" r="17" fill="#120B2C" stroke="#FDE047" stroke-width="3.5"/>'
         + '<text x="60" y="88.5" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="16" fill="#FDE047">VS</text>'
-        + spark(16, 16, 0.7, "#FDE047") + spark(106, 108, 0.55, "#fff") + "</svg>";
+        + spark(16, 16, 0.7, "#FDE047") + spark(106, 108, 0.55, "#fff") + "</g></svg>";
     }
     if (kind === "liar") {
       return d + '<defs><linearGradient id="' + u + 'a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7DD3FC"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient>'
-        + '<linearGradient id="' + u + 'b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDA4AF"/><stop offset="1" stop-color="#BE123C"/></linearGradient></defs>'
+        + '<linearGradient id="' + u + 'b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDA4AF"/><stop offset="1" stop-color="#BE123C"/></linearGradient></defs>' + fitOpen("liar", tilt)
         + '<g transform="rotate(14 78 56)"><rect x="52" y="18" width="52" height="72" rx="13" fill="url(#' + u + 'b)" stroke="#fff" stroke-width="3"/>'
         + '<text x="78" y="66" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="32" fill="#fff">?</text></g>'
         + '<g transform="rotate(-9 48 66)"><rect x="18" y="31" width="60" height="80" rx="14" fill="#0B1A4A" opacity=".5"/><rect x="18" y="26" width="60" height="80" rx="14" fill="url(#' + u + 'a)" stroke="#fff" stroke-width="3"/>'
         + '<path d="M28 63c0-6 6-9 13-9 4 0 6 2 7 2s3-2 7-2c7 0 13 3 13 9 0 7-5 12-12 12-5 0-6-4-8-4s-3 4-8 4c-7 0-12-5-12-12z" fill="#fff"/>'
         + '<ellipse cx="38.5" cy="64" rx="4.4" ry="3" fill="#1D4ED8"/><ellipse cx="57.5" cy="64" rx="4.4" ry="3" fill="#1D4ED8"/></g>'
         + '<circle cx="100" cy="22" r="12" fill="#FDE047" stroke="#120B2C" stroke-width="2.5"/><text x="100" y="29" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="18" fill="#120B2C">?</text>'
-        + spark(12, 22, 0.6, "#fff") + spark(110, 100, 0.5, "#7DD3FC") + "</svg>";
+        + spark(12, 22, 0.6, "#fff") + spark(110, 100, 0.5, "#7DD3FC") + "</g></svg>";
     }
     return "";
   }
@@ -418,6 +428,12 @@
     { id: "liar", title: "라이어 게임", meta: ["3명부터", "한 판 5분"] }
   ];
   var shown = null;
+  // 게임 선택 카드(셋이 같은 틀): 제목 칸, 배지 칸, 그림 칸. 자리와 크기는 party.css 의 .pa-game 칸 값이 정한다
+  function gameCard(c, need) {
+    var chips = need > 0 ? '<i class="is-lock">' + ic("lock") + need + "명 더 필요</i>" : c.meta.map(function (m) { return "<i>" + m + "</i>"; }).join("");
+    return '<button type="button" class="pa-game' + (need > 0 ? " is-locked" : "") + '" data-game="' + c.id + '" data-act="open-game">'
+      + '<span class="pa-game-title">' + c.title + '</span><span class="pa-game-meta">' + chips + '</span><span class="pa-game-art">' + art(c.id, true) + "</span></button>";   // 그림 칸은 party.css 에서 -7도 기울인다
+  }
   function renderLobby() {
     var n = P.roster.length, ul = $("tokens");
     var empty = $("paEmpty");
@@ -447,13 +463,7 @@
         + "<span>" + (P.bung.n != null ? "참석 " + P.bung.n + "명" : "불러오는 중") + "</span>"
         + '<button type="button" class="pa-link is-icon" data-act="reload-bung" aria-label="참석 명단 다시 불러오기" title="다시 불러오기">' + ic("refresh", "is-sm") + "</button>";
     } else b.hidden = true;
-    $("games").innerHTML = CARDS.map(function (c) {
-      var g = P.games[c.id], need = g ? g.min - n : 0;
-      return '<button type="button" class="pa-game' + (need > 0 ? " is-locked" : "") + '" data-game="' + c.id + '" data-act="open-game">'
-        + '<span class="pa-game-text"><span class="pa-game-title">' + c.title + "</span>"
-        + '<span class="pa-game-meta">' + (need > 0 ? '<i class="is-lock">' + ic("lock") + need + "명 더 필요</i>" + "<i>" + c.meta[1] + "</i>" : c.meta.map(function (m) { return "<i>" + m + "</i>"; }).join("")) + "</span></span>"
-        + '<span class="pa-game-art">' + art(c.id) + "</span></button>";
-    }).join("");
+    $("games").innerHTML = CARDS.map(function (c) { var g = P.games[c.id]; return gameCard(c, g ? g.min - n : 0); }).join("");
     syncPpl();
   }
 
