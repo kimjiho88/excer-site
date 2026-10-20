@@ -1,5 +1,5 @@
 /* ============================================================
-   모임 자리 게임 v2 (98차): 세 게임
+   미니게임 v2 (98차): 세 게임
    뽑기(돌림판, 슬롯, 순서, 팀, 카드), 밸런스 게임, 라이어 게임.
    틀과 도구(명단, 소리, 화면 그리기)는 party-core.js 의 window.PARTY
    ============================================================ */
@@ -573,11 +573,11 @@
     if (a === "reveal") { balReveal(s); return; }
     if (a === "next") { balNextQ(s); return; }
     if (a === "final") { s.phase = "final"; balShow(s, true); return; }
-    if (a === "share") { P.share({ title: "밸런스 게임 한 판 끝", desc: s.players.length + "명이 " + s.hist.length + "문제로 밸런스 게임을 했어요. 모임 자리에서 폰 하나로 하는 게임" }); return; }
+    if (a === "share") { P.share({ title: "밸런스 게임 한 판 끝", desc: s.players.length + "명이 " + s.hist.length + "문제로 밸런스 게임을 했어요. 모임에서 폰 하나로 하는 미니게임" }); return; }
     if (a === "copy") {
       var rk = ranking(s.players, s.scores);
       var lines = duoOf(s) ? [s.players.map(disp).join(", ") + " 둘이 통한 문제 " + agreeOf(s) + "개"] : rk.map(function (x) { return x.pos + "등 " + disp(x.n) + " " + x.p + "점"; });
-      P.copy(["밸런스 게임 결과 (" + s.hist.length + "문제)"].concat(lines, ["", "동네친구들 모임 자리 게임 " + siteUrl()]).join("\n"));
+      P.copy(["밸런스 게임 결과 (" + s.hist.length + "문제)"].concat(lines, ["", "동네친구들 미니게임 " + siteUrl()]).join("\n"));
     }
   }
   function balStart(s) {
@@ -821,7 +821,7 @@
     if (a === "to-guess") { s.phase = "guess"; liarShow(s); return; }
     if (a === "guess") { liarGuessPick(s, el); return; }
     if (a === "to-result") { s.win = "liar"; liarResultEnter(s); return; }
-    if (a === "share") { P.share({ title: "라이어 게임 한 판 끝", desc: "시민 " + s.tally.c + " 대 라이어 " + s.tally.l + ". 모임 자리에서 폰 하나로 하는 게임" }); return; }
+    if (a === "share") { P.share({ title: "라이어 게임 한 판 끝", desc: "시민 " + s.tally.c + " 대 라이어 " + s.tally.l + ". 모임에서 폰 하나로 하는 미니게임" }); return; }
   }
   // 너무 비슷해 한마디 설명으로 갈리지 않는 낱말 묶음(질문 묶음의 liarClose). 바보 모드의 라이어 제시어와 마지막 기회 보기에서 뺀다
   function closeTo(topic, w) {
