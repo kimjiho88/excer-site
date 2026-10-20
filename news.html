@@ -227,7 +227,7 @@
     .bc-attend .att-list li.is-me { border-color: var(--brand); background: var(--brand-soft); box-shadow: none; }
     .bc-attend .att-list li small { margin-left: 2px; }
     .bc-attend .att-empty { padding: 2px 0; }
-    /* 모임 자리 게임으로 가는 주황 띠(99차). 작은 글자 칸 바탕은 흰 글자 4.5:1 이상인 진한 주황, 밝은 주황은 그림 뒤에만 */
+    /* 미니게임으로 가는 주황 띠(99차). 작은 글자 칸 바탕은 흰 글자 4.5:1 이상인 진한 주황, 밝은 주황은 그림 뒤에만 */
     .bc-game { position: relative; display: grid; grid-template-columns: 60px minmax(0, 1fr) 44px; align-items: center; gap: 12px; margin-top: 10px; min-height: 84px; padding: 12px 14px 12px 10px; border-radius: 18px; overflow: hidden; isolation: isolate; color: #fff; text-decoration: none;
       background: radial-gradient(56px 56px at 40px 50%, rgba(255, 196, 110, 0.6), transparent 72%), linear-gradient(115deg, #D4490F 0%, #C9420F 28%, #B5380B 100%);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -2px 0 rgba(124, 45, 18, 0.35), 0 14px 26px -16px rgba(194, 65, 12, 0.95);
@@ -2163,7 +2163,7 @@
       const days = m.date ? C.daysFromToday(m.date, C.kstToday()) : null;
       const past = st.why === "started";
       const dday = st.ongoing ? "진행 중" : past ? "지난 모임" : days === 0 ? "오늘" : days === 1 ? "내일" : days > 1 ? "D-" + days : "";
-      // 모임 자리 게임으로 가는 주황 띠: 지난 모임이 아니면 모두(끝난 모임도 그날까지는). 오늘이거나 진행 중이면 꼬리표와 반짝임
+      // 미니게임으로 가는 주황 띠: 지난 모임이 아니면 모두(끝난 모임도 그날까지는). 오늘이거나 진행 중이면 꼬리표와 반짝임
       const isToday = !!st.start && st.start.slice(0, 10) === nowKey().slice(0, 10);
       const hot = !past && (st.ongoing || isToday) ? (st.ongoing ? "진행 중" : "오늘 모임") : "";
       const left = m.time && !past ? startLeft(st.start) : "";
@@ -2214,7 +2214,7 @@
             ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
             ${names}
           </div>
-          ${!past || isToday ? `<a class="bc-game${hot ? " is-hot" : ""}" href="party.html?bung=${post.id}"><span class="gm-art" aria-hidden="true">${GAME_ART}</span><span class="gm-txt">${hot ? `<span class="gm-kick">${hot}</span>` : ""}<b>모임 자리 게임</b><small>${n >= 2 ? "참석자 " + n + "명으로 바로 시작" : "뽑기, 밸런스 게임, 라이어 게임"}</small></span><span class="gm-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6.6v10.8a1.1 1.1 0 0 0 1.7.9l8.2-5.4a1.1 1.1 0 0 0 0-1.8l-8.2-5.4A1.1 1.1 0 0 0 9 6.6z"/></svg></span></a>` : ""}
+          ${!past || isToday ? `<a class="bc-game${hot ? " is-hot" : ""}" href="party.html?bung=${post.id}"><span class="gm-art" aria-hidden="true">${GAME_ART}</span><span class="gm-txt">${hot ? `<span class="gm-kick">${hot}</span>` : ""}<b>미니게임</b><small>${n >= 2 ? "참석자 " + n + "명으로 바로 시작" : "뽑기, 밸런스 게임, 라이어 게임"}</small></span><span class="gm-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6.6v10.8a1.1 1.1 0 0 0 1.7.9l8.2-5.4a1.1 1.1 0 0 0 0-1.8l-8.2-5.4A1.1 1.1 0 0 0 9 6.6z"/></svg></span></a>` : ""}
           <details class="host-menu" data-post="${post.id}"${menuOpen ? " open" : ""}><summary>모임장 메뉴</summary><div class="att-sub">${sub.join("")}</div></details>
         </div>`;
     }

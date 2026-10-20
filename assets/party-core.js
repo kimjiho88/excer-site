@@ -1,5 +1,5 @@
 /* ============================================================
-   모임 자리 게임 v2 (98차): 공통 부분
+   미니게임 v2 (98차, 99차에 이름을 모임 자리 게임에서 미니게임으로): 공통 부분
    명단과 사람마다 색, 효과음(WebAudio 로 그 자리에서 합성), 진동, 색종이, 게임 화면 틀
    (전체 화면, 뒤로 가기, 확인 창, 스플래시, 결과 팝업), 저장(명단은 이 기기, 진행 중인 판은 이 탭).
    세 게임은 party-games.js 가 P.games 에 얹는다. 화면 모양은 party.css
@@ -909,7 +909,7 @@
     if (!window.KSHARE) { copy(base + "/party.html"); return; }
     window.KSHARE.share({
       title: o.title, description: o.desc,
-      url: base + "/party.html", imageUrl: base + "/assets/og-party.jpg?v=1", buttonTitle: "우리도 해 보기"
+      url: base + "/party.html", imageUrl: base + "/assets/og-party.jpg?v=2", buttonTitle: "우리도 해 보기"
     }).then(function (r) { if (r === "copy") { toast("링크를 복사했어요. 채팅방에 붙여 넣어 주세요."); return; } var m = window.KSHARE.message(r); if (m) toast(m); });
   }
   function copy(text) {
