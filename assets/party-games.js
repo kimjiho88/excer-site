@@ -13,7 +13,7 @@
   function later(s, ms, fn) { return setTimeout(function () { if (P.st === s) fn(); }, ms); }
   function btn(act, label, cls, extra) { return '<button type="button" class="pa-btn ' + (cls || "is-primary") + '" data-act="' + act + '"' + (extra || "") + ">" + label + "</button>"; }
   function dots(n, i) { var s = ""; for (var k = 0; k < n; k++) s += "<i" + (k < i ? ' class="on"' : k === i ? ' class="now"' : "") + "></i>"; return '<div class="dots" aria-hidden="true">' + s + "</div>"; }
-  function intro(kind, title, text) { return '<div class="pg-intro"><div class="pg-intro-art">' + H.art(kind) + '</div><h3 class="pg-h">' + title + '</h3><p class="pg-p">' + text + "</p></div>"; }
+  function intro(kind, title) { return '<div class="pg-intro"><div class="pg-intro-art">' + H.art(kind) + '</div><h3 class="pg-h">' + title + "</h3></div>"; }
   function steps(list) { return '<ol class="pg-steps">' + list.map(function (t) { return "<li>" + t + "</li>"; }).join("") + "</ol>"; }
   function sect(title, inner) { return '<div class="pg-sect"><h3>' + title + "</h3>" + inner + "</div>"; }
   function handHTML(who, msg, n, i) {
@@ -547,7 +547,7 @@
   function balSetup(s) {
     var pk = P.pack().balance, cats = Object.keys(pk), sel = selCats(s);
     P.screen({
-      body: intro("balance", "밸런스 게임", "둘 중 하나를 몰래 고르고 다 같이 공개해요.")
+      body: intro("balance", "밸런스 게임")
         + pplSect(bal.min)
         + sect("문제 종류", '<div class="pchips">' + cats.map(function (c) { return '<button type="button" class="pchip" data-act="cat" data-cat="' + esc(c) + '" aria-pressed="' + (sel.indexOf(c) >= 0) + '">' + esc(c) + ' <span class="n">' + pk[c].length + "</span></button>"; }).join("") + "</div>")
         + sect("문제 수", '<div class="seg" style="--n:3" role="group" aria-label="문제 수">' + [5, 10, 15].map(function (k) { return '<button type="button" aria-pressed="' + (s.rounds === k) + '" data-act="rounds" data-n="' + k + '">' + k + "문제</button>"; }).join("") + "</div>")
@@ -764,7 +764,7 @@
       return '<button type="button" aria-pressed="' + (s.mode === m[0]) + '" data-act="lmode" data-m="' + m[0] + '">' + m[1] + "</button>";
     }).join("") + '</div><p class="mode-desc" id="modeDesc">' + MODE_DESC[s.mode] + "</p>";
     P.screen({
-      body: intro("liar", "라이어 게임", "한 사람만 다른 카드를 받아요. 대화로 라이어를 찾아요.")
+      body: intro("liar", "라이어 게임")
         + pplSect(liar.min)
         + (s.tally.c + s.tally.l ? sect("지금까지 전적", tallyHTML(s, "")) : "")
         + sect("모드", modes) + sect("주제", '<div class="pchips">' + chips + "</div>") + sect("토론 시간", seg)
