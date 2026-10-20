@@ -413,9 +413,9 @@
 
   /* ── 로비 ── */
   var CARDS = [
-    { id: "pick", title: "뽑기", tag: "누가 할지, 순서, 팀을 정하고 카드도 뽑아요", meta: ["2명부터", "몇 초면 끝"] },
-    { id: "balance", title: "밸런스 게임", tag: "둘 중 하나를 몰래 고르고 다 같이 공개해요", meta: ["2명부터", "한 판 5~15분"] },
-    { id: "liar", title: "라이어 게임", tag: "제시어를 모르는 한 사람을 찾아요", meta: ["3명부터", "한 판 5분"] }
+    { id: "pick", title: "뽑기", meta: ["2명부터", "몇 초면 끝"] },
+    { id: "balance", title: "밸런스 게임", meta: ["2명부터", "한 판 5~15분"] },
+    { id: "liar", title: "라이어 게임", meta: ["3명부터", "한 판 5분"] }
   ];
   var shown = null;
   function renderLobby() {
@@ -450,7 +450,7 @@
     $("games").innerHTML = CARDS.map(function (c) {
       var g = P.games[c.id], need = g ? g.min - n : 0;
       return '<button type="button" class="pa-game' + (need > 0 ? " is-locked" : "") + '" data-game="' + c.id + '" data-act="open-game">'
-        + '<span class="pa-game-text"><span class="pa-game-title">' + c.title + '</span><span class="pa-game-tag">' + c.tag + "</span>"
+        + '<span class="pa-game-text"><span class="pa-game-title">' + c.title + "</span>"
         + '<span class="pa-game-meta">' + (need > 0 ? '<i class="is-lock">' + ic("lock") + need + "명 더 필요</i>" + "<i>" + c.meta[1] + "</i>" : c.meta.map(function (m) { return "<i>" + m + "</i>"; }).join("")) + "</span></span>"
         + '<span class="pa-game-art">' + art(c.id) + "</span></button>";
     }).join("");
@@ -909,7 +909,7 @@
     if (!window.KSHARE) { copy(base + "/party.html"); return; }
     window.KSHARE.share({
       title: o.title, description: o.desc,
-      url: base + "/party.html", imageUrl: base + "/assets/og-party.jpg?v=2", buttonTitle: "우리도 해 보기"
+      url: base + "/party.html", imageUrl: base + "/assets/og-party.jpg?v=3", buttonTitle: "우리도 해 보기"
     }).then(function (r) { if (r === "copy") { toast("링크를 복사했어요. 채팅방에 붙여 넣어 주세요."); return; } var m = window.KSHARE.message(r); if (m) toast(m); });
   }
   function copy(text) {
