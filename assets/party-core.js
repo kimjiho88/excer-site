@@ -413,8 +413,8 @@
 
   /* ── 로비 ── */
   var CARDS = [
-    { id: "pick", title: "뽑기", tag: "돌림판으로 한 명, 순서, 팀, 미션 카드", meta: ["2명부터", "몇 초면 끝"] },
-    { id: "balance", title: "밸런스 게임", tag: "둘 중 하나를 몰래 고르고 다 같이 공개", meta: ["2명부터", "5~15분"] },
+    { id: "pick", title: "뽑기", tag: "누가 할지, 순서, 팀을 정하고 카드도 뽑아요", meta: ["2명부터", "몇 초면 끝"] },
+    { id: "balance", title: "밸런스 게임", tag: "둘 중 하나를 몰래 고르고 다 같이 공개해요", meta: ["2명부터", "한 판 5~15분"] },
     { id: "liar", title: "라이어 게임", tag: "제시어를 모르는 한 사람을 찾아요", meta: ["3명부터", "한 판 5분"] }
   ];
   var shown = null;
@@ -423,8 +423,8 @@
     var empty = $("paEmpty");
     if (!empty) {
       empty = doc.createElement("div"); empty.className = "pa-empty"; empty.id = "paEmpty";
-      empty.innerHTML = ic("users", "is-lg") + "<b>함께할 사람을 넣어 주세요</b><p>모임 글에서 열면 참석 명단이 그대로 들어와요.<br>이름 없이 아래 + 버튼으로 인원만 정해도 돼요.</p>"
-        + '<button type="button" class="pa-btn is-primary is-sm" data-act="open-sheet">' + ic("plus", "is-sm") + "이름 넣기</button>";
+      empty.innerHTML = ic("users", "is-lg") + "<b>함께할 사람을 추가해 주세요</b><p>모임 글에서 열면 참석 명단이 그대로 들어와요.<br>이름 없이 아래 + 버튼으로 인원만 정해도 돼요.</p>"
+        + '<button type="button" class="pa-btn is-primary is-sm" data-act="open-sheet">' + ic("plus", "is-sm") + "이름 추가</button>";
       ul.parentNode.insertBefore(empty, ul.nextSibling);
     }
     empty.hidden = !!n; ul.hidden = !n; $("editBtn").hidden = !n;
@@ -565,7 +565,7 @@
       if (!list.length) toast("아직 참석한 사람이 없어요. 이름을 적거나 인원만 정해 주세요.");
       else if (swap) { toast("이 모임 참석자 " + added + "명으로 명단을 바꿨어요." + (cap ? " " + MAX + "명이 넘어 " + cap + "명은 못 넣었어요." : "")); sfx("coin"); }
       else if (added) {
-        toast((added === list.length ? "참석 명단 " + list.length + "명을 넣었어요." : "참석 명단 " + list.length + "명 가운데 " + added + "명을 넣었어요.")
+        toast((added === list.length ? "참석 명단 " + list.length + "명을 넣었어요." : "참석 명단 " + list.length + "명 중 " + added + "명을 넣었어요.")
           + (dup ? " 이미 있던 " + dup + "명은 그대로예요." : "") + (cap ? " " + MAX + "명이 넘어 " + cap + "명은 못 넣었어요." : ""));
         sfx("coin");
       }
@@ -597,15 +597,15 @@
   /* ── 질문 묶음: 파일을 읽고, 못 읽으면 안에 든 작은 묶음으로 ── */
   var FALLBACK = {
     balance: {
-      "음식": [["탕수육은 부먹", "탕수육은 찍먹"], ["냉면은 물냉", "냉면은 비냉"], ["평생 삼겹살만", "평생 치킨만"], ["떡볶이는 밀떡", "떡볶이는 쌀떡"], ["김치찌개", "된장찌개"], ["짜장", "짬뽕"]],
-      "일상": [["아침형 인간", "저녁형 인간"], ["여름", "겨울"], ["바다", "산"], ["계획 짜는 여행", "즉흥 여행"], ["집에서 영화", "극장에서 영화"], ["전화", "문자"]]
+      "음식": [["탕수육 부먹", "탕수육 찍먹"], ["물냉면", "비빔냉면"], ["평생 삼겹살만", "평생 치킨만"], ["밀떡볶이", "쌀떡볶이"], ["김치찌개", "된장찌개"], ["짜장면", "짬뽕"]],
+      "일상": [["아침형 인간", "올빼미형 인간"], ["평생 여름만", "평생 겨울만"], ["산", "바다"], ["계획형 여행", "즉흥형 여행"], ["영화관에서 영화", "집에서 영화"], ["메시지로 연락", "전화로 연락"]]
     },
     liar: { "음식": ["삼겹살", "치킨", "떡볶이", "김치찌개", "냉면", "초밥", "피자", "라면"], "장소": ["노래방", "볼링장", "한강공원", "영화관", "편의점", "카페", "찜질방", "헬스장"] },
-    missions: ["다음 건배사 맡기", "2차 장소 고르기", "옆 사람 칭찬 한 가지 하기", "최근 가 본 맛집 하나 추천하기", "다음 메뉴 주문 맡기", "오늘 가장 웃긴 순간 다시 말하기"],
-    talk: ["요즘 제일 빠져 있는 것은?", "이 동네에서 제일 좋아하는 길은?", "최근에 산 것 중 제일 잘 산 것은?", "올해 가장 잘한 일 하나는?", "요즘 자주 듣는 노래는?", "다음에 가 보고 싶은 동네 가게는?"]
+    missions: ["다음 건배사 맡기", "2차 장소 고르기", "옆 사람 칭찬 한 가지 하기(외모 말고)", "최근 가 본 맛집 하나 추천하기", "다음 메뉴 주문 맡기", "오늘 가장 웃겼던 순간 꼽기"],
+    talk: ["요즘 제일 빠져 있는 것은?", "이 동네에서 제일 좋아하는 길은?", "최근에 제일 잘 산 물건은?", "올해 가장 잘한 일 하나는?", "요즘 자주 듣는 노래는?", "다음에 가 보고 싶은 동네 가게는?"]
   };
   var packs = null;
-  fetch("data/party-packs.json?v=1").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  fetch("data/party-packs.json?v=2").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(function (j) { if (j && j.balance && j.liar && j.missions && j.talk) packs = j; }).catch(function () {});
   function pack() { return packs || FALLBACK; }
   // 한 바퀴 돌기 전에는 같은 것이 다시 나오지 않게 뽑는다
@@ -676,7 +676,7 @@
     var g = P.games[id]; if (!g) return;
     var need = g.min - P.roster.length;
     if (need > 0) {
-      toast(josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 넣어 주세요.");
+      toast(josa(g.title, "은", "는") + " " + g.min + "명부터 할 수 있어요. " + need + "명 더 추가해 주세요.");
       sfx("pop"); openSheet(true); return;
     }
     closeSheet();
@@ -716,7 +716,7 @@
   }
   function dirty() { var g = G(); return !!(g && g.dirty && g.dirty(P.st)); }
   function askExit() {
-    return confirm({ title: "게임을 그만할까요?", text: "지금 판의 진행과 점수는 사라져요.", yes: "그만하기", no: "계속하기", danger: true, backMeansYes: true }).then(function (yes) {
+    return confirm({ title: "게임을 그만할까요?", text: "지금 하던 판은 사라져요.", yes: "그만하기", no: "계속하기", danger: true, backMeansYes: true }).then(function (yes) {
       if (!P.cur) return;
       if (yes) leaveGame({ id: P.cur }); else pushTo(2);
     });
