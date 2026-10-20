@@ -683,3 +683,28 @@ body.party .pa-sheet:not([hidden]) .modal { animation: pa-sheet-in 0.3s cubic-be
 @media (prefers-reduced-motion: reduce) {
   .verdict .drum, .guess-stamp, body.party .pa-sheet:not([hidden]) .modal, .pg.is-out, .pg-pop.is-out, .pg-pop.is-out .pg-pop-card { animation: none !important; }
 }
+
+/* ── 참여 인원 +/- (99차): 로비 패널 아래 줄과 게임 설정 화면. 빼기는 유리, 더하기는 게임 색 ── */
+.pa-ppl { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--pa-line); }
+.pa-ppl-lb, .ppl-lb { color: var(--pa-ink-2); font-size: 14px; font-weight: 800; }
+.pstep { display: inline-flex; flex: none; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); }
+.pstep-b { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.10); color: #fff; transition: transform 0.12s, background 0.2s, opacity 0.2s; -webkit-tap-highlight-color: transparent; }
+.pstep-b.is-plus { background: linear-gradient(180deg, var(--f1), var(--f2)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 8px 16px -8px var(--b-glow); }
+.pstep-b:active { transform: scale(0.9); }
+.pstep-b[disabled] { opacity: 0.35; pointer-events: none; box-shadow: none; }
+@media (hover: hover) and (pointer: fine) { .pstep-b:not(.is-plus):hover { background: rgba(255, 255, 255, 0.16); } }
+.pstep-n { display: inline-flex; align-items: baseline; justify-content: center; gap: 2px; min-width: 64px; color: var(--pa-ink-3); font-size: 13px; font-weight: 700; }
+.pstep-n b { display: inline-block; color: #fff; font-family: var(--pa-display); font-weight: 900; font-synthesis: none; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.pstep-n b.is-bump { animation: pstep-bump 0.32s cubic-bezier(0.2, 1.4, 0.3, 1); }
+@keyframes pstep-bump { 0% { transform: scale(1.35); color: var(--pa-gold); } 100% { transform: none; } }
+.ppl-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pg-sect.pg-ppl { padding-bottom: 6px; }
+.pg-sect.pg-ppl h3 { margin: 0; }
+.ppl-faces { display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px; margin-top: 10px; padding-left: 8px; }
+.ppl-faces .tok { margin-left: -8px; }
+.ppl-faces .tok.is-more { background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 12px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.pg-in.is-still > * { animation: none; }
+.mode-desc { margin: 8px 2px 0; color: var(--pa-ink-3); font-size: 13px; line-height: 1.5; }
+.reveal-box .fake { color: var(--pa-ink-3); font-size: 13px; font-weight: 700; }
+.reveal-box .fake b { margin-left: 4px; color: #fff; font-size: 15px; }
+@media (prefers-reduced-motion: reduce) { .pstep-n b.is-bump { animation: none; } }
