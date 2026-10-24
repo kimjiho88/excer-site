@@ -131,6 +131,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py greet text "인사 글"   태그 뒤에 붙는 인사 글을 바꾼다(글을 안 적으면 클립보드에서)
   python excer_bot.py greet study     (tablet) 시험 방 입력 칸에 '@' 를 치고 뜨는 태그 목록 화면을 excer_bot_greet_study.txt 에 적고
                                       클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
+  python excer_bot.py greet now "닉네임"   (tablet) 알릴 방에 그 사람을 태그해 인사 글을 한 번 보낸다(태그 목록에 그 이름이 없으면
+                                      보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 Ctrl+C
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
                                       바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -155,7 +157,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-25.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-25.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -5426,18 +5428,19 @@ class AdbSender:
             last = t
         raise KakaoError("입력 칸을 비우지 못함(글 %d자 남음). 보내지 않음" % len(t))
 
-    def send_greet(self, room, names, text, before_tap=None):
+    def send_greet(self, room, names, text, before_tap=None, tag_only=False):
         """신입 인사: 입력 칸을 비운 것을 확인한 뒤, 사람마다 '@' 와 닉네임 첫 칸을 넣어 뜬 태그 목록에서 닉네임이 글자 그대로 같은 줄을 눌러
         태그한다(들어간 글이 '@닉네임' 그대로일 때만). 못 한 사람은 '@닉네임' 글로 적는다. 끝에 인사 글을 붙이고, 입력 칸 글이 만든 글과
-        똑같을 때만 보낸다(다르면 비우고 글로만 다시). 아무도 태그하지 못하면 글로만(send). before_tap: 전송을 누르기 바로 전에 부른다.
-        보내기 전에 실패하면 입력 칸을 비우고 KakaoError. 누르는 것은 입력 칸, 태그 목록의 그 사람 줄, 전송뿐. 돌려주는 것: 태그한 수"""
+        똑같을 때만 보낸다(다르면 비우고 글로만 다시). 아무도 태그하지 못하면 글로만(send). tag_only 면 글로만은 보내지 않고 KakaoError(greet now).
+        before_tap: 전송을 누르기 바로 전에 부른다. 보내기 전에 실패하면 입력 칸을 비우고 KakaoError.
+        누르는 것은 입력 칸, 태그 목록의 그 사람 줄, 전송뿐. 돌려주는 것: 태그한 수"""
         plain_msg = " ".join("@" + x for x in names) + " " + text
         nodes = self.open_room(room)
         self.tap(self.box(nodes))
         self.sleep(0.6)
         try:
             hint = self.empty_box()
-            tagged, plain, cur = [], [], ""
+            tagged, plain, cur, lost = [], [], "", False
             for nm in names:
                 r, t = self.mention_one(nm, cur, hint)
                 if r == "tag":
@@ -5446,10 +5449,12 @@ class AdbSender:
                 elif r == "plain":
                     plain.append(nm)
                 else:                                        # 입력 칸이 생각과 달라졌다: 모두 글로
-                    tagged = []
+                    tagged, lost = [], True
                     break
             if not tagged:
                 self.empty_box()
+                if tag_only:
+                    raise KakaoError("입력 칸이 생각과 달라져 보내지 않음" if lost else "태그 목록에서 그 닉네임을 찾지 못해 보내지 않음(방에 보이는 그대로인지)")
                 self.send(room, plain_msg, before_tap=before_tap, diag=False)
                 return 0
             tail = " ".join(["@" + x for x in plain] + [text])
@@ -5464,6 +5469,8 @@ class AdbSender:
             box = self.box(nodes)
             if ws(box["text"]) != ws(want):                  # 만든 글과 다르다(붙여넣기 실패, 남은 글): 비우고 글로만
                 self.empty_box()
+                if tag_only:
+                    raise KakaoError("입력 칸 글이 만든 글과 달라 보내지 않음")
                 self.send(room, plain_msg, before_tap=before_tap, diag=False)
                 return 0
             btn = find(nodes, desc="전송") or find(nodes, text="전송") or find(nodes, rid=":id/send")
@@ -6661,8 +6668,8 @@ def cmd_feed(path, op):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
     ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "greet", "rotate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, greet: on, test, off, text, study, rotate: 가로, 세로, off")
-    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, greet text: 인사 글(없으면 클립보드)")
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, greet: on, test, off, text, study, now, rotate: 가로, 세로, off")
+    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, greet text: 인사 글(없으면 클립보드), greet now: 태그할 닉네임")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
     ap.add_argument("--feed", default="", help="사이트 대신 이 파일의 글을 읽는다(시험용, sample-feed 로 만든다)")
@@ -7118,10 +7125,10 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
 
 def cmd_greet(cfg, a, base, log, sender=None, clip=None):
     """greet: 신입 인사 설정을 보인다. on(알릴 방에 태그해서), test(시험 방에 태그 없이), off, text [글](인사 글. 없으면 클립보드),
-    study(시험 방에서 태그 목록 화면 살피기, 보내지 않음)"""
+    study(시험 방에서 태그 목록 화면 살피기, 보내지 않음), now 닉네임(알릴 방에 그 사람을 태그해 인사 글을 한 번 보냄)"""
     sub, val = (a.arg or "").strip(), (getattr(a, "arg2", "") or "").strip()
     g = greet_cfg(cfg)
-    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study'
+    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study | greet now "닉네임"'
     if sub == "":
         print("신입 인사: %s. 인사 글: %s" % ({"on": "켬(알릴 방에 태그해서)", "test": "시험(시험 방에 태그 없이)", "off": "꺼짐"}[g["on"]], g["text"]))
         print("  %d초마다 알릴 방 머리의 인원 수를 보고 늘었으면(또는 %d분마다) 멤버를 읽어, 처음 보는 이름 가운데 끝의 입장일이 오늘부터 %d일 전까지인 사람을 태그합니다"
@@ -7156,6 +7163,37 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
         cfg["greet"] = dict(cfg.get("greet") or {}, text=val)
         save_cfg(a.config, cfg)
         print("인사 글을 바꿨습니다(%s): %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (src, val))
+        return
+    if sub == "now":                                    # 한 사람에게 지금 바로(알릴 방에 태그해서). 알릴 방에서 태그가 되는지 볼 때
+        if run_alive(base):
+            raise SystemExit('run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py greet now "닉네임"')
+        name = member_name(val)
+        if not name:
+            raise SystemExit('태그할 닉네임을 방에 보이는 그대로 적어 주세요. 예: python excer_bot.py greet now "엑서 논현 남 88"')
+        room = cfg.get("room") or ""
+        if not room:
+            raise SystemExit("알릴 방(room)이 없습니다. setup 으로 먼저 넣으세요")
+        sender = sender or make_sender(cfg, log)
+        if not isinstance(sender, AdbSender):
+            raise SystemExit("greet now 는 tablet 방식에서 씁니다.")
+        sp = base + "_state.json"
+
+        def commit():                                   # 전송을 누르기 바로 전에 인사한 기록(지문)에 넣는다(run 의 신입 인사가 같은 사람에게 다시 하지 않게)
+            stt = load_state(sp) if os.path.exists(sp) else {}
+            done = dict(stt.get("greet_done") or {})
+            done[greet_tag(member_key(name))] = datetime.now(KST).date().toordinal()
+            stt["greet_done"] = done
+            save_json(sp, stt)
+        print("알릴 방(%s)에 그 닉네임을 태그해 인사 글을 한 번 보냅니다(태그 목록에서 그 이름을 찾지 못하면 보내지 않음). 1분쯤 걸립니다. 태블릿을 만지지 마세요." % room)
+        try:
+            tagged = sender.send_greet(room, [name], g["text"], commit, tag_only=True)
+        except KakaoError as e:
+            raise SystemExit("보내지 않았습니다: %s" % e)
+        finally:
+            sender.done()
+        if log:
+            log("신입 인사(greet now) 1명, 태그 %d명" % tagged)
+        print("보냈습니다(태그 %s): %s" % ("됨" if tagged else "안 됨", g["text"]))
         return
     if sub != "study":
         raise SystemExit(usage)
