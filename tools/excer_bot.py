@@ -51,16 +51,17 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의 더보기 단추,
     뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(하루 세 번까지). 서버는 지금 목록의 7할 아래로
     줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다.
-  - 신입 인사(greet on 일 때, 기본은 끔): 10분마다 알릴 방 머리의 인원 수('91명')를 보고, 늘었으면(또는 3시간마다) 멤버를 읽어
-    처음 보는 이름 가운데 끝의 입장일(월일 네 자리)이 오늘부터 이틀 전까지인 사람을 한 메시지에 태그하고 인사 글을 붙여 보낸다.
+  - 신입 인사(greet on 일 때, 기본은 끔): 기본(greet watch off)은 독려만 한다. 지난 독려부터 이틀이 지난 날 17:00 의 30분 전에 멤버를
+    한 번 읽어 끝에 입장일(월일 네 자리)이 붙은 사람 모두(오늘부터 30일 전까지)를 모아 두고 17:00 에 한 메시지(여덟 명까지, 넘치면 1분 뒤
+    다음 메시지)에 태그하고 인사 글을 붙여 보낸다. 그 사이에는 방을 열지 않는다. greet watch on 이면 10분마다 알릴 방 머리의 인원 수('91명')를
+    보고, 늘었으면(또는 3시간마다) 멤버를 읽어 처음 보는 이름 가운데 입장일이 오늘부터 이틀 전까지인 사람에게 바로 인사한다(한 사람에게 한 번.
+    켜면 지금 멤버를 기준으로만 잡고, 이름만 고친 사람과 여섯 명 이상 한꺼번에 새로 보이는데 인원 수가 그만큼 늘지 않은 때는 인사하지 않는다).
     태그는 입력 칸에 '@' 와 닉네임 첫 칸을 넣어 뜬 목록에서 닉네임이 글자 그대로 같은 줄만 누른다. 못 하면 '@닉네임' 글로.
-    켜면(다시 켜도) 지금 멤버를 기준으로만 잡는다. 한 사람에게 한 번. 이름만 고친 사람(같은 입장일이나 첫 칸과 출생연도가 같은 이름이
-    사라짐)은 인사하지 않는다(날짜 없이 들어와 날짜를 단 신입은 인사). 여섯 명 이상 새로 보이는데 인원 수가 그만큼 늘지 않았으면 인사하지 않는다.
     입력 칸을 비운 것을 확인하고, 입력 칸 글이 만든 글과 똑같을 때만 보낸다. 전송을 누르기 바로 전에 보낸 것으로 적어 같은 인사를 두 번 올리지 않는다.
     조용한 시간과 운영 화면의 전체 멈춤 중에는 쉬고, 실패하면 5분에서 1시간까지 늘려 다시. 기록에는 이름 대신 지문만 남긴다.
     알릴 방 입력 칸에 남은 글(태그)을 지우지 못하면 신입 인사를 멈추고 status 와 아침 '봇 정상' 줄에 알린다(손으로 비운 뒤 greet on).
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 신입 인사를 켰으면 방 머리의 인원 수를 볼 때뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 신입 인사를 켰으면 독려 날 읽고 보낼 때(watch on 이면 방 머리의 인원 수를 볼 때도)뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
     보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
 가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
@@ -133,8 +134,10 @@ tablet 준비(태블릿 하나로)
                                       클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
   python excer_bot.py greet now "닉네임"   (tablet) 알릴 방에 그 사람을 태그해 인사 글을 한 번 보낸다(태그 목록에 그 이름이 없으면
                                       보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 Ctrl+C
-  python excer_bot.py greet remind 2 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 이틀마다(17:00 뒤 첫 확인 때) 같은 인사 글을
-                                      태그해 보낸다(greet on 일 때, 기본 이틀마다 17:00). greet remind off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py greet remind 2 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 이틀마다 17:00 에 같은 인사 글을 태그해 보낸다
+                                      (30분 전에 멤버를 한 번 읽음. greet on 일 때, 기본 이틀마다 17:00). greet remind off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py greet watch on  입장 즉시 인사: 10분마다 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게 인사한다.
+                                      greet watch off(기본) 면 독려만(그 사이에는 방을 열지 않는다). run 을 다시 켜야 적용
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
                                       바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -159,7 +162,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-25.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-25.5"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -191,6 +194,7 @@ DEFAULTS = {
     "members": {"min_ratio": 0.9, "min": 20, "rid": ""},   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
     # 신입 인사(docs/BOT_AUTOMATION_PLAN.md 1절): 닉네임 끝에 입장일이 붙은 새 멤버를 태그하고 인사 글을 보낸다. greet on, off, test 로 바꾼다
     "greet": {"on": "off",                     # off 끔, on 알릴 방에 태그해서, test 알릴 방 대신 시험 방에 태그 없이(무엇을 보낼지 보기)
+              "watch": "off",                  # on 이면 입장 즉시 인사: check_sec 마다 알릴 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게. off 면 독려만(greet watch)
               "text": "님 반갑습니다 🙌 공지 및 웹사이트 '오늘의 벙' 보시고 벙에 참여해 주세요.\n2주 안에 첫 벙참 부탁드리겠습니다. 🙏",   # 태그 뒤에 붙는 인사 글(운영자가 정함, greet text 로 바꾼다. 줄바꿈 그대로)
               "check_sec": 600,                # 알릴 방 머리의 인원 수를 볼 간격(초). 늘었으면 멤버를 읽는다
               "full_min": 180,                 # 인원 수가 그대로여도(한 명 나가고 한 명 들어옴) 이만큼(분)마다 멤버를 다시 읽는다
@@ -198,7 +202,8 @@ DEFAULTS = {
               "max_names": 8,                  # 한 메시지에 태그할 사람 수(넘치면 다음 메시지로)
               "bulk": 6,                       # 한 번에 이만큼 이상 새로 보이면 인사하지 않는다(기준이 어긋난 것으로 보고 다시 잡음)
               "remind_every": 2,               # 신입 독려: 끝에 입장일이 붙은 사람 모두에게 이만큼(일)마다 다시 태그해 인사 글을 보낸다. 0 이면 안 한다(greet remind)
-              "remind_at": "17:00",            # 그 시각 뒤 첫 확인 때(조용한 시간이면 끝난 뒤)
+              "remind_at": "17:00",            # 그 시각에 보낸다(watch on 이면 그 뒤 첫 확인 때. 조용한 시간이면 끝난 뒤)
+              "remind_read_min": 30,           # (watch off) remind_at 의 이만큼(분) 전에 멤버를 한 번 읽어 보낼 사람을 모은다
               "remind_days": 30},              # 입장일이 오늘부터 이만큼 전까지인 사람만(더 오래된 네 자리 수는 입장일로 보지 않는다)
     "site": "https://excer-site.vercel.app",
     "supa": "https://drggzlnzwvkhtalvkqyo.supabase.co",
@@ -1430,10 +1435,10 @@ class Bot:
 
     def greet_tick(self):
         """신입 인사(docs/BOT_AUTOMATION_PLAN.md 1절, 설정 greet). on 이면 알릴 방에 태그해서, test 면 시험 방에 태그 없이 보낸다.
-        check_sec 마다 알릴 방 머리의 인원 수를 보고, 늘었거나 full_min 분이 지났으면 멤버를 읽어 신입(greet_new)을 고른다.
-        켜거나 on 과 test 사이를 바꾸면 기준부터 새로 잡는다(그 뒤로 들어오는 신입부터). 한꺼번에 bulk 명 이상이면 인원 수가 그만큼
-        늘었을 때만 인사한다. 조용한 시간, 운영 화면의 전체 멈춤, 보내기나 읽기가 막 실패해 쉬는 중에는 하지 않는다.
-        실패하면 5분, 10분, 20분, 40분, 60분 뒤 다시. 같은 사람에게 세 번 못 보내면 그만. 기록에는 이름을 적지 않는다"""
+        watch 가 off(기본)면 독려만(greet_routine). on 이면 입장 즉시 인사: check_sec 마다 알릴 방 머리의 인원 수를 보고, 늘었거나
+        full_min 분이 지났으면 멤버를 읽어 신입(greet_new)을 고른다. 켜거나 on 과 test 사이를 바꾸면 기준부터 새로 잡는다(그 뒤로 들어오는
+        신입부터). 한꺼번에 bulk 명 이상이면 인원 수가 그만큼 늘었을 때만 인사한다. 조용한 시간, 운영 화면의 전체 멈춤, 보내기나 읽기가
+        막 실패해 쉬는 중에는 하지 않는다. 실패하면 5분, 10분, 20분, 40분, 60분 뒤 다시. 같은 사람에게 세 번 못 보내면 그만. 기록에는 이름을 적지 않는다"""
         g = greet_cfg(self.cfg)
         if not greet_able(self):
             return ""
@@ -1454,6 +1459,8 @@ class Bot:
         if st.get("greet_mode") != g["on"]:
             st.update(greet_mode=g["on"], greet_seen={}, greet_prev=[], greet_pending=[], greet_full_at=0, greet_n=None,
                       greet_fail=0, greet_pend_fail=0, greet_err="")
+        if g["watch"] != "on":
+            return self.greet_routine(now, g, today)
         st["greet_next"] = now.ts + max(60, int(g.get("check_sec") or 600))
         pend_days = int(g.get("remind_days") or 30) if st.get("greet_pending_kind") == "remind" else days
         pend = [x for x in (st.get("greet_pending") or []) if greet_fresh(x, today, pend_days)]   # 입장일이 지난 사람은 빼고
@@ -1498,24 +1505,80 @@ class Bot:
                 st.update(greet_pending=pend, greet_pending_at=now.ts, greet_pend_fail=0, greet_pending_kind="remind" if remind else "new")
             return self.greet_send(now, g, pend)
         except Exception as e:
-            if "입력 칸을 비우지 못함" in str(e):        # 태그나 쓰다 만 글이 알릴 방 입력 칸에 남았다: 더 하지 않는다(공지 보내기까지 막히지 않게 알림)
-                st["greet_block"] = "알릴 방 입력 칸을 비우지 못함"
-                self.log("신입 인사를 멈춤: 알릴 방 입력 칸에 글(태그)이 남아 지우지 못함. 태블릿에서 그 글을 손으로 지운 뒤 python excer_bot.py greet on 하고 run 을 다시 켜세요")
-            k = int(st.get("greet_fail") or 0) + 1
-            st.update(greet_fail=k, greet_err=clean(str(e), 60), greet_next=self.ts() + min(3600, 300 * 2 ** min(k - 1, 4)))
-            if k == 1 or k % 12 == 0:                       # 처음과 열두 번째마다만 적는다(방이 오래 안 열려도 기록이 쌓이지 않게)
-                self.log("신입 인사 실패(%d번째, %d분 뒤 다시): %s" % (k, min(60, 5 * 2 ** min(k - 1, 4)), e))
-            if st.get("greet_pending"):
-                pf = int(st.get("greet_pend_fail") or 0) + 1
-                st["greet_pend_fail"] = pf
-                if pf >= 3:
-                    self.log("신입 인사: 세 번 못 보내 %d명에게는 그만 보냄" % len(st["greet_pending"]))
-                    st.update(greet_pending=[], greet_pend_fail=0)
-            return "greet-fail"
+            return self.greet_failed(e)
         finally:
             if hasattr(self.sender, "done"):
                 self.sender.done()
             self.save()
+
+    def greet_routine(self, now, g, today):
+        """독려만(greet watch off): 지난 독려 날부터 remind_every 일이 지난 날, remind_at 의 remind_read_min 분 전에 멤버를 한 번 읽어
+        끝에 입장일이 붙은 사람(remind_days 안, 오늘 인사한 사람은 빼고)을 보낼 목록에 두고, remind_at 에 보낸다(여덟 명 넘으면 1분 뒤 다음 메시지).
+        읽기가 늦어지면 읽은 뒤 바로 보낸다. remind_at 에서 세 시간이 지나도록 못 읽었으면 그날은 그만두고 다음 날 다시.
+        다음 할 일 시각(greet_next)까지는 방을 열지 않는다. 읽기가 안 되면 greet_failed(5분, 10분, ... 뒤 다시)"""
+        st, every, t = self.st, int(g.get("remind_every") or 0), today.toordinal()
+        if every <= 0:
+            st["greet_next"] = now.ts + 3600
+            return ""
+        send_hm = g["remind_at"]
+        read_hm, stop_hm = hm_add(send_hm, -int(g.get("remind_read_min") or 0)), hm_add(send_hm, 180)
+        pend = [x for x in (st.get("greet_pending") or []) if greet_fresh(x, today, int(g.get("remind_days") or 30))]
+        if pend and now.ts - float(st.get("greet_pending_at") or 0) > 6 * 3600:
+            pend = []                                   # 여섯 시간 넘게 못 보낸 것은 그만
+        if not pend and st.get("greet_pending"):
+            st.update(greet_pending=[], greet_pend_fail=0)
+        try:
+            if pend:
+                if now.hm < send_hm:
+                    st["greet_next"] = ts_at(today, send_hm)   # 읽어 두었다: 보낼 시각까지 기다린다
+                    return "greet-wait"
+                return self.greet_send(now, g, pend)
+            last = int(st.get("greet_remind_day") or 0)
+            if t - last < every:
+                st["greet_next"] = ts_at(date.fromordinal(last + every), read_hm)
+                return ""
+            if now.hm < read_hm:
+                st["greet_next"] = ts_at(today, read_hm)
+                return ""
+            if now.hm >= stop_hm:
+                st["greet_next"] = ts_at(date.fromordinal(t + 1), read_hm)   # 오늘은 늦었다: 내일 다시
+                return ""
+            names = self.sender.read_members(self.room, self.cfg.get("members") or {})
+            batch = greet_remind(names, st, today, g)
+            st.update(greet_remind_day=t, greet_fail=0, greet_err="", greet_pending=batch, greet_pending_at=now.ts, greet_pend_fail=0, greet_pending_kind="remind")
+            self.log("신입 독려: 멤버 %d명을 읽음. 입장일이 붙은 사람 %d명%s" % (len(names), len(batch), ("에게 %s에 보냄" % send_hm if now.hm < send_hm else "에게 바로 보냄") if batch else "(보낼 사람 없음)"))
+            if not batch:
+                st["greet_next"] = ts_at(date.fromordinal(t + every), read_hm)
+                return "greet-read"
+            if now.hm < send_hm:
+                st["greet_next"] = ts_at(today, send_hm)
+                return "greet-wait"
+            return self.greet_send(now, g, batch)
+        except Exception as e:
+            return self.greet_failed(e)
+        finally:
+            if hasattr(self.sender, "done"):
+                self.sender.done()
+            self.save()
+
+    def greet_failed(self, e):
+        """신입 인사(독려)가 안 됐다: 입력 칸을 못 비웠으면 멈춤 표시. 실패 수를 올리고 5분, 10분, 20분, 40분, 60분 뒤 다시.
+        보낼 사람이 있는데 세 번 못 보내면 그만. 기록은 처음과 열두 번째마다만(방이 오래 안 열려도 기록이 쌓이지 않게)"""
+        st = self.st
+        if "입력 칸을 비우지 못함" in str(e):            # 태그나 쓰다 만 글이 알릴 방 입력 칸에 남았다: 더 하지 않는다(공지 보내기까지 막히지 않게 알림)
+            st["greet_block"] = "알릴 방 입력 칸을 비우지 못함"
+            self.log("신입 인사를 멈춤: 알릴 방 입력 칸에 글(태그)이 남아 지우지 못함. 태블릿에서 그 글을 손으로 지운 뒤 python excer_bot.py greet on 하고 run 을 다시 켜세요")
+        k = int(st.get("greet_fail") or 0) + 1
+        st.update(greet_fail=k, greet_err=clean(str(e), 60), greet_next=self.ts() + min(3600, 300 * 2 ** min(k - 1, 4)))
+        if k == 1 or k % 12 == 0:
+            self.log("신입 인사 실패(%d번째, %d분 뒤 다시): %s" % (k, min(60, 5 * 2 ** min(k - 1, 4)), e))
+        if st.get("greet_pending"):
+            pf = int(st.get("greet_pend_fail") or 0) + 1
+            st["greet_pend_fail"] = pf
+            if pf >= 3:
+                self.log("신입 인사: 세 번 못 보내 %d명에게는 그만 보냄" % len(st["greet_pending"]))
+                st.update(greet_pending=[], greet_pend_fail=0)
+        return "greet-fail"
 
     def greet_send(self, now, g, pend):
         """보낼 신입(pend)의 앞 max_names 명을 한 메시지로 인사한다. 전송을 누르기 바로 전에 그 사람들을 인사한 기록(지문)에 넣고
@@ -2960,11 +3023,13 @@ def greet_cfg(cfg):
     if g["on"] not in ("on", "off", "test"):
         g["on"] = "off"
     g["text"] = greet_text_norm(g.get("text"))[:300] or DEFAULTS["greet"]["text"]
+    g["watch"] = "on" if str(g.get("watch") or "").strip().lower() in ("on", "true", "1") else "off"
     try:
         g["remind_every"] = max(0, int(g.get("remind_every") or 0))
         g["remind_days"] = max(1, int(g.get("remind_days") or 30))
+        g["remind_read_min"] = max(0, min(180, int(g.get("remind_read_min") or 0)))
     except (TypeError, ValueError):
-        g["remind_every"], g["remind_days"] = 0, 30
+        g["remind_every"], g["remind_days"], g["remind_read_min"] = 0, 30, 30
     m = re.match(r"^(\d{1,2}):(\d{2})$", str(g.get("remind_at") or ""))
     g["remind_at"] = "%02d:%02d" % (int(m.group(1)), int(m.group(2))) if m and int(m.group(1)) <= 23 and int(m.group(2)) <= 59 else DEFAULTS["greet"]["remind_at"]
     return g
@@ -3013,6 +3078,18 @@ def greet_new(names, st, today, g):
     return out
 
 
+def hm_add(hm, minutes):
+    """'17:00' 에 분을 더한(뺀) 시각. 자정을 넘지 않게 00:00 과 23:59 안에서"""
+    m = max(0, min(23 * 60 + 59, mins(hm) + int(minutes)))
+    return "%02d:%02d" % divmod(m, 60)
+
+
+def ts_at(day, hm):
+    """그 날(date)의 그 시각(KST) timestamp"""
+    h, m = (int(x) for x in hm.split(":"))
+    return datetime(day.year, day.month, day.day, h, m, tzinfo=KST).timestamp()
+
+
 def greet_remind_due(st, g, now, today):
     """신입 독려를 할 때인가: remind_every 가 0 보다 크고, 오늘 remind_at 이 지났고, 지난 독려 날부터 remind_every 일이 지났다"""
     every = int(g.get("remind_every") or 0)
@@ -3030,7 +3107,10 @@ def greet_remind(names, st, today, g):
 def greet_remind_text(g):
     """신입 독려 설정 글(greet, status)"""
     every = int(g.get("remind_every") or 0)
-    return "%d일마다 %s 뒤, 끝에 입장일이 붙은 사람 모두(오늘부터 %d일 전까지)" % (every, g["remind_at"], int(g.get("remind_days") or 30)) if every > 0 else "안 함"
+    if every <= 0:
+        return "안 함"
+    when = "%s 뒤 첫 확인 때" % g["remind_at"] if g.get("watch") == "on" else "%d분 전에 멤버를 읽어 %s에 보냄" % (int(g.get("remind_read_min") or 0), g["remind_at"])
+    return "%d일마다 %s, 끝에 입장일이 붙은 사람 모두(오늘부터 %d일 전까지)" % (every, when, int(g.get("remind_days") or 30))
 
 
 def greet_able(bot):
@@ -3049,11 +3129,17 @@ def greet_alive(bot):
     last = st.get("greet_last") or {}
     if st.get("greet_block"):
         return "멈춤(%s. 입력 칸을 손으로 비운 뒤 python excer_bot.py greet on)" % st["greet_block"]
-    out = ["켬(알릴 방에 태그)" if g["on"] == "on" else "시험(시험 방에 태그 없이)",
-           "기준 %d명" % len(st.get("greet_prev") or []) if st.get("greet_seen") else "기준 아직 없음"]
+    out = ["켬(알릴 방에 태그)" if g["on"] == "on" else "시험(시험 방에 태그 없이)"]
+    if g["watch"] == "on":
+        out.append("기준 %d명" % len(st.get("greet_prev") or []) if st.get("greet_seen") else "기준 아직 없음")
+    else:
+        out.append("입장 즉시 인사 안 함")
     if int(g.get("remind_every") or 0) > 0:
         rd = int(st.get("greet_remind_day") or 0)
-        out.append("독려 %d일마다 %s 뒤%s" % (g["remind_every"], g["remind_at"], "(마지막 %s)" % date.fromordinal(rd).strftime("%m/%d") if rd else ""))
+        out.append("독려 %d일마다 %s(%s%s)" % (g["remind_every"], g["remind_at"], "그 뒤 첫 확인 때" if g["watch"] == "on" else "%d분 전에 읽음" % g["remind_read_min"],
+                                          ", 마지막 %s" % date.fromordinal(rd).strftime("%m/%d") if rd else ""))
+    else:
+        out.append("독려 안 함")
     if last:
         tg = int(last.get("tagged") or 0)
         out.append("마지막 %s %s %d명%s" % (last.get("kind") or "인사", last.get("at", "?"), int(last.get("n") or 0), "" if last.get("test") else "(태그 %s)" % (tg if tg >= 0 else "확인 못함")))
@@ -7179,13 +7265,23 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
     remind 일수 [시각](신입 독려: 입장일이 붙은 사람 모두에게 며칠마다 다시, remind off 로 끔)"""
     sub, val = (a.arg or "").strip(), (getattr(a, "arg2", "") or "").strip()
     g = greet_cfg(cfg)
-    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study | greet now "닉네임" | greet remind 2 17:00 | greet remind off'
+    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study | greet now "닉네임" | greet remind 2 17:00 | greet remind off | greet watch on | greet watch off'
     if sub == "":
         print("신입 인사: %s. 인사 글: %s" % ({"on": "켬(알릴 방에 태그해서)", "test": "시험(시험 방에 태그 없이)", "off": "꺼짐"}[g["on"]], g["text"]))
-        print("  %d초마다 알릴 방 머리의 인원 수를 보고 늘었으면(또는 %d분마다) 멤버를 읽어, 처음 보는 이름 가운데 끝의 입장일이 오늘부터 %d일 전까지인 사람을 태그합니다"
-              % (int(g["check_sec"]), int(g["full_min"]), int(g["days"])))
+        if g["watch"] == "on":
+            print("  입장 즉시 인사: %d초마다 알릴 방 머리의 인원 수를 보고 늘었으면(또는 %d분마다) 멤버를 읽어, 처음 보는 이름 가운데 끝의 입장일이 오늘부터 %d일 전까지인 사람을 태그합니다"
+                  % (int(g["check_sec"]), int(g["full_min"]), int(g["days"])))
+        else:
+            print("  입장 즉시 인사: 안 함(greet watch on 으로 켬)")
         print("  신입 독려: %s" % greet_remind_text(g))
         print("  바꾸려면: " + usage)
+        return
+    if sub == "watch":                                  # 입장 즉시 인사(인원 수가 늘면 바로 읽어 처음 보는 신입에게) 켜고 끄기
+        if val not in ("on", "off"):
+            raise SystemExit("python excer_bot.py greet watch on (입장 즉시 인사 켬) 또는 greet watch off (독려만)")
+        cfg["greet"] = dict(cfg.get("greet") or {}, watch=val)
+        save_cfg(a.config, cfg)
+        print("입장 즉시 인사: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % ("켬(인원 수가 늘면 바로 읽어 처음 보는 신입에게)" if val == "on" else "안 함(독려만)"))
         return
     if sub == "remind":                                 # 신입 독려: 입장일이 붙은 사람 모두에게 며칠마다 다시(같은 인사 글)
         how = "예: python excer_bot.py greet remind 2 17:00 (이틀마다 17:00 뒤, 시각은 안 적으면 그대로), 끄려면 greet remind off"
@@ -7206,7 +7302,10 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
             raise SystemExit("모양이 다릅니다. " + how)
         cfg["greet"] = dict(cfg.get("greet") or {}, **upd)
         save_cfg(a.config, cfg)
-        print("신입 독려: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % greet_remind_text(greet_cfg(cfg)))
+        g2, q, warn = greet_cfg(cfg), cfg.get("quiet") or [], ""
+        if g2["remind_every"] > 0 and len(q) == 2 and (in_quiet(g2["remind_at"], q) or in_quiet(hm_add(g2["remind_at"], -g2["remind_read_min"]), q)):
+            warn = " 조용한 시간(%s~%s) 안이라 그 시간에는 하지 않습니다. 시각을 바꾸세요." % (q[0], q[1])
+        print("신입 독려: %s.%s run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (greet_remind_text(g2), warn))
         return
     if sub in ("on", "off", "test"):
         if sub == "test" and (not cfg.get("test_room") or cfg.get("test_room") == cfg.get("room")):
