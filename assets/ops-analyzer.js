@@ -39,7 +39,7 @@
      입장일 칸이 없는 것은 따로 표시만 하고, 적용 시작일 뒤에 들어온 사람만 규칙으로 본다(대시보드 설정) */
   var HEART_RE = /\s*((?:\u2764\uFE0F?|\u2665\uFE0F?|\uD83E\uDDE1|\uD83D\uDC9B|\uD83D\uDC9A|\uD83D\uDC99|\uD83D\uDC9C|\uD83E\uDD0E|\uD83D\uDDA4|\uD83E\uDD0D|\uD83E\uDE77|\uD83E\uDE75|\uD83E\uDE76|\uD83D\uDC97|\uD83D\uDC96|\uD83D\uDC95|\uD83D\uDC98|\uD83D\uDC9D|\uD83D\uDC93|\uD83D\uDC9E)+)\s*$/;
   var WHITE_HEART = "\uD83E\uDD0D";
-  function isBot(name) { var n = norm(name); return /(^|[\s_])bot$/i.test(n) || /봇$/.test(n); }
+  function isBot(name) { var n = norm(name); return /(^|[\s_-])bot$/i.test(n) || /봇$/.test(n); }   // 통계 화면과 같은 규칙(excer-bot 도 봇)
   function nickParts(name) {
     var raw = norm(name), heart = "";
     var hm = raw.match(HEART_RE);
