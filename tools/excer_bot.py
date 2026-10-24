@@ -142,7 +142,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-24.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-24.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -4566,6 +4566,22 @@ class AdbSender:
                 return n
         return self.mem_list(nodes, area)
 
+    @staticmethod
+    def mem_has(nodes, n):
+        """n 이 이 화면에 그대로(자리, 글, 이름) 있는지"""
+        k = (n["b"], n["text"], n["desc"])
+        return any((x["b"], x["text"], x["desc"]) == k for x in nodes)
+
+    def mem_inplace(self, cur, scr, box):
+        """더보기(전체보기)를 누른 뒤에도 읽던 목록 칸이 같은 자리(종류, id, 자리)에 있고, 그 안에 있던 글의 반 넘게가 그대로면 그 칸.
+        새 카카오톡은 새 화면을 열지 않고 같은 목록을 그 자리에서 아래로 펼친다(2026-10-24 태블릿). 새 화면이 열렸으면 None"""
+        nb = next((n for n in scr if n["b"] == box["b"] and n["cls"] == box["cls"] and n["rid"] == box["rid"] and n["kids"]), None)
+        if nb is None:
+            return None
+        old = {(n["b"], n["text"], n["desc"]) for n in self.mem_under(cur, box["i"]) if n["text"] or n["desc"]}
+        now_ = {(n["b"], n["text"], n["desc"]) for n in self.mem_under(scr, nb["i"]) if n["text"] or n["desc"]}
+        return nb if len(old) >= 3 and len(old & now_) * 2 >= len(old) else None
+
     def mem_rows(self, nodes, box):
         """목록 칸의 줄들 [(줄, 그 아래 요소들)], 위에서 아래로. 목록의 자식 하나가 한 줄.
         목록 안의 목록이나 목록 높이의 1/3 넘는 묶음(감싼 칸)은 풀어서 그 자식을 줄로 본다"""
@@ -4808,7 +4824,8 @@ class AdbSender:
         return nodes, box
 
     def mem_walk(self, room, mcfg=None, rec=None, limit=120, more_limit=120):
-        """방을 열고 오른쪽 위 메뉴(서랍)를 열어 대화상대 칸을 끝까지 읽는다. 대화상대 칸에 더보기 단추가 있으면 한 번 눌러 열린 화면에서 읽는다.
+        """방을 열고 오른쪽 위 메뉴(서랍)를 열어 대화상대 칸을 끝까지 읽는다. 대화상대 칸에 더보기(전체보기) 단추가 있으면 눌러, 같은 목록이
+        그 자리에서 펼쳐졌으면(새 카카오톡) 그 칸을 이어 읽고(펼친 끝에 또 있으면 다시, 스무 번까지), 새 화면이 열렸으면 그 화면에서 읽는다.
         끝나면(안 되어도) 연 화면을 뒤로 키로 닫는다(Termux 로 돌아가는 done 은 부르는 쪽이). 지나온 화면은 이름을 가려 trace 에 둔다.
         rec(이름표, 줄들): members_study 가 화면마다 받는다. 돌려주는 것: {names, n(대화상대 수), head, rid, swipes, more, pages}"""
         fixed = str((mcfg or {}).get("rid") or "").strip()
@@ -4841,12 +4858,17 @@ class AdbSender:
             self.mem_tap(btn)
             depth = 1                                        # 누른 순간부터 열렸다고 본다(바로 뒤 화면 읽기가 실패해도 닫게)
 
+            side = [k for k in pre if (k[0][0] + k[0][2]) // 2 < l0 - 60]   # 태블릿 왼쪽 채팅 목록의 글
+
+            def fresh(scr, old):
+                """scr 에 새로 나온 것(old 에 없던 것). 왼쪽 채팅 목록이 그대로 보이면(두 칸 태블릿) 방 칸 쪽 것만(새 글로 바뀐 왼쪽 줄은 빼고)"""
+                now_ = {(n["b"], n["text"], n["desc"]) for n in scr}
+                full = sum(1 for k in side if k in now_) * 2 < len(side)   # 왼쪽 목록이 가려졌다: 화면 전체로 열렸다(새 카카오톡)
+                return [n for n in scr if (n["b"], n["text"], n["desc"]) not in old and (full or self.center(n)[0] >= l0 - 60)]
+
             def opened():
                 drawer = self.mem_settle(self.wait_change(nodes, tries=3))   # 밀려 들어오는 중인 화면으로 자리를 정하지 않게 멈출 때까지
-                now_ = {(n["b"], n["text"], n["desc"]) for n in drawer}
-                side = [k for k in pre if (k[0][0] + k[0][2]) // 2 < l0 - 60]   # 태블릿 왼쪽 채팅 목록의 글
-                full = sum(1 for k in side if k in now_) * 2 < len(side)   # 왼쪽 목록이 가려졌다: 방 정보가 화면 전체로 열렸다(새 카카오톡)
-                return drawer, [n for n in drawer if (n["b"], n["text"], n["desc"]) not in seen and (full or self.center(n)[0] >= l0 - 60)]
+                return drawer, fresh(drawer, seen)
             drawer, new = opened()
             if not new:
                 drawer, new = opened()                       # 늦게 뜨는 기기: 한 번 더 기다린다
@@ -4863,32 +4885,47 @@ class AdbSender:
                 raise KakaoError("방 메뉴에서 목록 칸을 찾지 못함" + self.diag_note())
             self.mem_keep(drawer, box)
             cur, box = self.mem_read(drawer, box, area, st, res, limit, note, "방 메뉴", nodes)
-            if st["more"] is not None:
-                st["more_done"] = True
-                self.mem_tap(st["more"])
-                depth = 2                                    # 누른 순간부터(바로 뒤 화면 읽기가 실패해도 두 번 닫게)
+            for _ in range(20):                              # 더보기(전체보기)는 스무 번까지: 펼친 끝에 또 있으면 다시 누른다(나눠 펼치는 판)
+                if st["more"] is None:
+                    break
+                more, st["more_done"] = st["more"], True
+                self.mem_tap(more)
+                depth = max(depth, 2)                        # 누른 순간부터(바로 뒤 화면 읽기가 실패해도 두 번 닫게)
                 scr = self.mem_settle(self.wait_change(cur, tries=3))
-                if [(n["b"], n["text"]) for n in scr] == [(n["b"], n["text"]) for n in cur]:
-                    st["more"], depth = None, 1              # 눌러도 그대로: 방 메뉴를 이어 읽는다
-                    self.mem_read(cur, box, area, st, res, limit, note, "방 메뉴 이어서", nodes)
+                if self.mem_has(scr, more):
+                    scr = self.mem_settle(self.wait_change(scr, tries=3))   # 단추가 아직 그대로: 늦게 바뀌는 기기는 한 번 더 기다린다
+                stuck = self.mem_has(scr, more)
+                nbox = None if stuck else self.mem_inplace(cur, scr, box)
+                if stuck or nbox is not None:                # 눌러도 그대로이거나, 같은 목록 칸이 그 자리에서 펼쳐졌다(새 카카오톡, 2026-10-24): 방 메뉴를 이어 읽는다
+                    st["more"], depth = None, 1
+                    if nbox is not None:
+                        res["more"], st["more_done"] = True, False
+                        self.mem_keep(scr, nbox)
+                    cur, box = self.mem_read(scr, nbox or self.mem_box(scr, box, area), area, st, res, limit, note,
+                                             "방 메뉴 펼친 뒤" if nbox is not None else "방 메뉴 이어서", nodes)
+                    continue
+                res["more"] = True                           # 새 화면(전체 멤버 화면)이 열렸다
+                old2 = {(n["b"], n["text"], n["desc"]) for n in cur}
+                new2 = fresh(scr, old2)
+                marks |= mark(new2, old2)                    # 새 화면 쪽 글만(왼쪽 채팅 목록의 새 글은 닫혔는지 보는 표시에 넣지 않는다)
+                self.mem_left["marks"] |= marks
+                st.update(inmore=True, rid=fixed, more=None)
+                nb2 = bbox(new2) if new2 else area           # 방 메뉴 자리와 새로 나온 것을 합친 곳에서만 목록 칸을 고른다(두 칸 태블릿의 왼쪽 채팅 목록을 밀지 않게.
+                area2 = (min(area[0], nb2[0]), min(area[1], nb2[1]), max(area[2], nb2[2]), max(area[3], nb2[3]))   # 새 화면의 목록 칸은 앞 칸과 자리가 같아 새로 나온 것에 안 들 수 있다)
+                inside = lambda n: area2[0] <= self.center(n)[0] <= area2[2] and area2[1] <= self.center(n)[1] <= area2[3]
+                h = self.mem_head([n for n in scr if inside(n)])   # 전체 멤버 화면 위쪽 띠의 '대화상대 37'
+                if h and h[1]:
+                    st["n"] = max(st["n"] or 0, h[1])
+                box2 = self.mem_list(scr, area2)
+                if box2 is None:
+                    note("더보기를 누른 뒤(목록 칸 못 찾음)", scr, before=cur)
                 else:
-                    res["more"] = True
-                    marks |= mark(scr, {(n["b"], n["text"], n["desc"]) for n in cur})
-                    self.mem_left["marks"] |= marks
-                    st.update(inmore=True, rid=fixed, more=None)
-                    h = self.mem_head(scr)                   # 전체 멤버 화면 위쪽 띠의 '대화상대 37'
-                    if h and h[1]:
-                        st["n"] = max(st["n"] or 0, h[1])
-                    area2 = bbox(scr)
-                    box2 = self.mem_list(scr, area2)
-                    if box2 is None:
-                        note("더보기를 누른 뒤(목록 칸 못 찾음)", scr, before=cur)
-                    else:
-                        self.mem_keep(scr, box2)
-                        self.mem_read(scr, box2, area2, st, res, min(120, res["swipes"] + more_limit), note, "전체", cur)
-                    self.key(4)                              # 방 메뉴로
-                    self.sleep(0.6)
-                    depth = 1
+                    self.mem_keep(scr, box2)
+                    self.mem_read(scr, box2, area2, st, res, min(120, res["swipes"] + more_limit), note, "전체", cur)
+                self.key(4)                                  # 방 메뉴로
+                self.sleep(0.6)
+                depth = 1
+                break
             res.update(n=st["n"] or room_n, head=st["head"] or "", rid=st["rid"], raw=st.get("raw") or {})
             return res
         finally:
