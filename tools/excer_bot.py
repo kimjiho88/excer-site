@@ -155,7 +155,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-25.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-25.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -7133,10 +7133,10 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
             raise SystemExit("시험 방(test_room)이 없어 시험으로 켤 수 없습니다. setup 으로 시험 방을 먼저 넣거나 greet on")
         cfg["greet"] = dict(cfg.get("greet") or {}, on=sub)
         save_cfg(a.config, cfg)
-        sp = base + "_state.json"                       # 입력 칸을 못 비워 멈춘 것을 푼다(run 을 다시 켜면 적용)
+        sp = base + "_state.json"                       # 입력 칸을 못 비워 멈춘 것과 실패 뒤 쉬는 것을 푼다(run 을 다시 켜면 바로 한다)
         if os.path.exists(sp):
             stt = load_state(sp)
-            if stt.pop("greet_block", None) is not None:
+            if [stt.pop(k, None) for k in ("greet_block", "greet_next", "greet_fail", "greet_err")] != [None] * 4:
                 save_json(sp, stt)
         print({"on": "신입 인사를 켰습니다(알릴 방에 태그해서).", "test": "신입 인사를 시험으로 켰습니다(알릴 방 대신 시험 방에 태그 없이).",
                "off": "신입 인사를 껐습니다."}[sub] + (" 처음에는 지금 멤버를 기준으로만 잡고, 그 뒤로 들어오는 신입부터 인사합니다." if sub != "off" else "")
