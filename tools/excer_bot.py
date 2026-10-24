@@ -110,6 +110,9 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py members         (tablet) 알릴 방 메뉴(세 줄 단추)에서 멤버를 지금 읽어 수와 가린 보기 다섯을 보이고
                                       excer_bot_members.txt 에 적는다(사이트에 올리지 않음). run 을 먼저 Ctrl+C
   python excer_bot.py members push    지금 읽어 사이트 닉네임 목록에 올린다. run 을 먼저 Ctrl+C
+  python excer_bot.py members check   (tablet) 알릴 방 메뉴에서 멤버를 지금 읽어 닉네임 양식이 틀린 사람과 틀린 곳을 보이고
+                                      excer_bot_members_check.txt 와 클립보드에 담는다(사이트에 올리지 않음). 양식: 닉네임 지역
+                                      성별(남, 여) 출생연도(두 자리), 사이 한 칸씩. 끝의 입장일(네 자리)과 하트는 있어도 된다. run 을 먼저 Ctrl+C
   python excer_bot.py members key     운영 화면 데이터 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
                                       끝 네 글자만 보인다. members key off 로 지운다)
   python excer_bot.py members study   대화상대 칸 화면을 단계마다 excer_bot_members_study.txt 에 적고 클립보드에 담는다
@@ -121,7 +124,7 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
       excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot_alive.json(run 이 30초마다 남기는 살아 있음 표시),
-      excer_bot_members.txt(members 로 읽은 멤버 이름), excer_bot.log(한 일). 이 파일 옆에 생긴다.
+      excer_bot_members.txt(members 로 읽은 멤버 이름), excer_bot_members_check.txt(members check 결과), excer_bot.log(한 일). 이 파일 옆에 생긴다.
 """
 import argparse
 import hashlib
@@ -139,7 +142,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-18.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-24.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -2694,6 +2697,61 @@ def member_mask(s):
     return s[:1] + "".join(c if c == " " else "*" for c in s[1:])
 
 
+NICK_HEART_RE = re.compile(r"\s*([%s]+)\s*$" % "".join(chr(c) for c in (
+    0x2764, 0x2665, 0x1F9E1, 0x1F49B, 0x1F49A, 0x1F499, 0x1F49C, 0x1F90E, 0x1F5A4, 0x1F90D,
+    0x1FA77, 0x1FA75, 0x1FA76, 0x1F497, 0x1F496, 0x1F495, 0x1F498, 0x1F49D, 0x1F493, 0x1F49E)))   # 닉네임 끝의 하트(양식 밖, 운영 화면과 같은 하트)
+
+
+def nick_check(raw):
+    """닉네임 양식에서 틀린 곳 목록(맞으면 빈 목록). 양식: 닉네임 지역 성별(남, 여) 출생연도(두 자리), 사이 한 칸씩.
+    끝의 입장일(월일 네 자리)과 하트는 있어도 된다. 칸 판정은 운영 화면(OpsAnalyzer.nickParts)과 같고, 띄어쓰기 한 칸은 여기서 더 본다"""
+    s = INVIS_RE.sub("", unicodedata.normalize("NFC", raw or "")).strip()
+    m = NICK_HEART_RE.search(s)
+    core = s[:m.start()] if m and m.start() > 0 else s
+    out = []
+    for g in re.finditer(r"\s{2,}|[^\S ]", core):              # 두 칸 넘는 띄어쓰기, 띄어쓰기가 아닌 빈칸(전각 공백 같은)
+        prev = core[:g.start()].split()
+        out.append("%s(%s)" % ("띄어쓰기 두 칸 이상" if len(g.group()) > 1 else "띄어쓰기가 아닌 빈칸", prev[-1] + " 뒤" if prev else "맨 앞"))
+    t = core.split()
+    first = lambda ok: next((i for i, x in enumerate(t) if ok(x)), -1)
+    sex, birth, day = first(lambda x: x in ("남", "여")), first(lambda x: re.match(r"^[0-9]{2}$", x)), first(lambda x: re.match(r"^[0-9]{4}$", x))
+    if not re.search(r"[가-힣A-Za-z0-9]", core):
+        out.append("글자 없이 기호나 이모지만")
+    if len(t) == 1:
+        out.append("이름만")
+    elif len(t) != (5 if day >= 0 else 4):
+        out.append("칸 %d개" % len(t))
+    if sex < 0:
+        out.append("성별 칸 없음")
+    if birth < 0:
+        out.append("출생연도 두 자리 없음")
+    if day >= 0 and not (1 <= int(t[day][:2]) <= 12 and 1 <= int(t[day][2:]) <= 31):
+        out.append("입장일 날짜가 아님")
+    if sex >= 0 and birth >= 0 and len(t) >= 4 and not (sex == 2 and birth == 3 and day in (-1, 4)):
+        out.append("순서가 다름")
+    return out
+
+
+def members_check_text(names, raw=None, n=None):
+    """members check 의 결과 글: 읽은 수, 기준, 양식이 틀린 사람과 틀린 곳(한 사람 두 줄, 읽은 차례). raw: 띄어쓰기를 그대로 둔 이름(member_key 로 찾음).
+    돌려주는 것: (글, 틀린 사람 수)"""
+    raw, bad = raw or {}, []
+    for x in names:
+        nm = raw.get(member_key(x)) or x
+        r = nick_check(nm)
+        if r:
+            bad.append((nm, r))
+    out = ["멤버 %d명을 읽었습니다%s." % (len(names), "(방의 대화상대 %d명에서 봇을 빼면 %d명)" % (n, n - 1) if n else ""),
+           "기준: 닉네임 지역 성별(남, 여) 출생연도(두 자리), 사이 한 칸씩. 끝의 입장일(네 자리)과 하트는 있어도 됩니다."]
+    if not bad:
+        out.append("양식이 틀린 사람이 없습니다.")
+    else:
+        out.append("양식이 틀린 사람 %d명:" % len(bad))
+        for i, (nm, r) in enumerate(bad, 1):
+            out += ["%d. %s" % (i, nm), "   " + ", ".join(r)]
+    return "\n".join(out), len(bad)
+
+
 def member_merge(names, page, back=False):
     """한 쪽의 이름을 목록에 넣는다(처음 본 차례, 겹침 없이). 넣은 수를 돌려준다.
     앞으로 민 쪽은 새 이름을 끝에 붙이고, 되돌려 읽은 쪽(back)은 아는 이름 사이 제자리에 끼운다"""
@@ -4582,13 +4640,15 @@ class AdbSender:
         picks = [[n for n in c if rid in n["rid"]] for c in cands] if rid else cands
         if rid and not st["rid_fixed"] and not any(picks) and len(cands) >= 3:
             st["rid"], picks = "", cands                     # 정한 id 가 이 화면에 없다(다른 모양): 줄의 첫 글로
-        out = []
+        out, raw = [], st.setdefault("raw", {})
         for p in picks:
-            nm = re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", member_name(p[0]["text"] or p[0]["desc"])) if p else ""   # 묶인 글 끝의 표시는 뗀다
+            src = (p[0]["text"] or p[0]["desc"]) if p else ""
+            nm = re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", member_name(src)) if p else ""   # 묶인 글 끝의 표시는 뗀다
             if p and self.mem_never(p[0]) and not re.search(r"\d", nm):
                 continue                                     # 목록 아래의 '오픈채팅방 나가기', '채팅방 신고하기' 같은 줄(닉네임에는 보통 출생 연도가 있다)
             if nm and len(nm) <= 30 and not member_isbot(nm):
                 out.append(nm)
+                raw.setdefault(member_key(nm), re.sub(r"(,\s*(방장|부방장|운영자|관리자))+$", "", unicodedata.normalize("NFC", src).strip()).strip())   # 띄어쓰기를 그대로 둔 이름(members check)
         return out
 
     def mem_page(self, nodes, box, st):
@@ -4753,7 +4813,7 @@ class AdbSender:
         rec(이름표, 줄들): members_study 가 화면마다 받는다. 돌려주는 것: {names, n(대화상대 수), head, rid, swipes, more, pages}"""
         fixed = str((mcfg or {}).get("rid") or "").strip()
         st = {"head": None, "n": None, "rid": fixed, "rid_fixed": bool(fixed), "more": None, "more_done": False, "inmore": False, "room": room}
-        res = {"names": [], "n": None, "head": "", "rid": "", "swipes": 0, "more": False, "pages": []}
+        res = {"names": [], "n": None, "head": "", "rid": "", "swipes": 0, "more": False, "pages": [], "raw": {}}
 
         def note(label, nodes, box=None, sec=None, before=None, only=None):
             rows = self.mem_mask(nodes, box, sec, before, (room,), only)
@@ -4829,7 +4889,7 @@ class AdbSender:
                     self.key(4)                              # 방 메뉴로
                     self.sleep(0.6)
                     depth = 1
-            res.update(n=st["n"] or room_n, head=st["head"] or "", rid=st["rid"])
+            res.update(n=st["n"] or room_n, head=st["head"] or "", rid=st["rid"], raw=st.get("raw") or {})
             return res
         finally:
             self.mem_close(depth)
@@ -4943,6 +5003,7 @@ class AdbSender:
         m = dict(DEFAULTS["members"], **(cfg_members or {}))
         res = self.mem_walk(room, m)
         self.mem_info = {k: res[k] for k in ("n", "head", "rid", "swipes", "more")}
+        self.mem_raw = res.get("raw") or {}                      # 띄어쓰기를 그대로 둔 이름(members check 가 본다)
         names, n = res["names"], res["n"]
         ratio, least = float(m.get("min_ratio") or 0.9), int(m.get("min") or 20)
         why = ""
@@ -6022,7 +6083,7 @@ def cmd_feed(path, op):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
     ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "rotate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, study, key, at, rotate: 가로, 세로, off")
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, rotate: 가로, 세로, off")
     ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -6395,8 +6456,8 @@ def members_at_cmd(cfg, path, val):
 
 
 def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
-    """members: 알릴 방 메뉴(서랍)의 멤버를 지금 읽는다(올리지 않음). push 는 읽어 올리고, study 는 화면을 적고,
-    key 는 봇 열쇠를, at 은 매일 시각을 정한다. 화면을 쓰는 것(members, push, study)은 run 이 돌면 하지 않는다"""
+    """members: 알릴 방 메뉴(서랍)의 멤버를 지금 읽는다(올리지 않음). push 는 읽어 올리고, check 는 읽어 닉네임 양식이 틀린 사람을 보이고,
+    study 는 화면을 적고, key 는 봇 열쇠를, at 은 매일 시각을 정한다. 화면을 쓰는 것(members, push, check, study)은 run 이 돌면 하지 않는다"""
     sub, val = (a.arg or "").strip(), (getattr(a, "arg2", "") or "").strip()
     if sub == "key":
         print(members_key_cmd(cfg, a.config, val, clip))
@@ -6404,8 +6465,8 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     if sub == "at":
         print(members_at_cmd(cfg, a.config, val))
         return
-    if sub not in ("", "push", "study"):
-        raise SystemExit("python excer_bot.py members | members push | members study | members key [열쇠] | members at 05:10 (또는 off)")
+    if sub not in ("", "push", "check", "study"):
+        raise SystemExit("python excer_bot.py members | members push | members check | members study | members key [열쇠] | members at 05:10 (또는 off)")
     if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
         raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py members" + (" " + sub if sub else ""))
     room, key = cfg.get("room") or "", cfg.get("members_key") or ""
@@ -6436,6 +6497,18 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
         names = sender.read_members(room, cfg.get("members") or {})
     finally:
         sender.done()
+    if sub == "check":                                  # 이름이 보이는 결과는 화면, 이 파일, 클립보드에만(기록 파일에는 적지 않는다)
+        txt, _ = members_check_text(names, getattr(sender, "mem_raw", None), (getattr(sender, "mem_info", None) or {}).get("n"))
+        path = base + "_members_check.txt"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt + "\n")
+        print(txt)
+        try:
+            sender.set_clip(txt)
+            print("결과를 %s 에 적고 클립보드에도 담았습니다(사이트에는 올리지 않음)." % os.path.basename(path))
+        except KakaoError:
+            print("결과를 %s 에 적었습니다(사이트에는 올리지 않음)." % os.path.basename(path))
+        return
     path = base + "_members.txt"
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(names) + "\n")
