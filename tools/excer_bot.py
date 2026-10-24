@@ -133,8 +133,8 @@ tablet 준비(태블릿 하나로)
                                       클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
   python excer_bot.py greet now "닉네임"   (tablet) 알릴 방에 그 사람을 태그해 인사 글을 한 번 보낸다(태그 목록에 그 이름이 없으면
                                       보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 Ctrl+C
-  python excer_bot.py greet remind 2 12:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 이틀마다(12:00 뒤 첫 확인 때) 같은 인사 글을
-                                      태그해 보낸다(greet on 일 때, 기본 이틀마다 12:00). greet remind off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py greet remind 2 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 이틀마다(17:00 뒤 첫 확인 때) 같은 인사 글을
+                                      태그해 보낸다(greet on 일 때, 기본 이틀마다 17:00). greet remind off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
                                       바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
