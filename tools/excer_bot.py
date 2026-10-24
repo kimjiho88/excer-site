@@ -58,6 +58,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     사라짐)은 인사하지 않는다(날짜 없이 들어와 날짜를 단 신입은 인사). 여섯 명 이상 새로 보이는데 인원 수가 그만큼 늘지 않았으면 인사하지 않는다.
     입력 칸을 비운 것을 확인하고, 입력 칸 글이 만든 글과 똑같을 때만 보낸다. 전송을 누르기 바로 전에 보낸 것으로 적어 같은 인사를 두 번 올리지 않는다.
     조용한 시간과 운영 화면의 전체 멈춤 중에는 쉬고, 실패하면 5분에서 1시간까지 늘려 다시. 기록에는 이름 대신 지문만 남긴다.
+    알릴 방 입력 칸에 남은 글(태그)을 지우지 못하면 신입 인사를 멈추고 status 와 아침 '봇 정상' 줄에 알린다(손으로 비운 뒤 greet on).
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 신입 인사를 켰으면 방 머리의 인원 수를 볼 때뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
     보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
@@ -154,7 +155,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-24.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-24.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -818,6 +819,8 @@ def beat_text(bot, now):
         out.append("운영 화면: " + ctl_text(bot, now.ts))
     if members_beat(bot):
         out.append(members_beat(bot))
+    if greet_able(bot) and st.get("greet_block") and greet_cfg(bot.cfg)["on"] != "off":
+        out.append("신입 인사: 멈춤(%s). 알릴 방 입력 칸을 손으로 비운 뒤 python excer_bot.py greet on 하고 run 을 다시 켜세요" % st["greet_block"])
     return "\n".join(out)
 
 
@@ -1432,6 +1435,8 @@ class Bot:
             if st.get("greet_mode") not in (None, "off"):
                 st["greet_mode"] = "off"                # 다시 켜면 기준부터 새로
             return ""
+        if st.get("greet_block"):
+            return ""                                   # 알릴 방 입력 칸을 못 비워 멈춤(greet on 으로 다시)
         dt = self.clock()
         now = Now(dt)
         if in_quiet(now.hm, self.cfg.get("quiet")) or now.ts < self.hold_until or now.ts < float(st.get("greet_next") or 0):
@@ -1479,6 +1484,9 @@ class Bot:
                 st.update(greet_pending=pend, greet_pending_at=now.ts, greet_pend_fail=0)
             return self.greet_send(now, g, pend)
         except Exception as e:
+            if "입력 칸을 비우지 못함" in str(e):        # 태그나 쓰다 만 글이 알릴 방 입력 칸에 남았다: 더 하지 않는다(공지 보내기까지 막히지 않게 알림)
+                st["greet_block"] = "알릴 방 입력 칸을 비우지 못함"
+                self.log("신입 인사를 멈춤: 알릴 방 입력 칸에 글(태그)이 남아 지우지 못함. 태블릿에서 그 글을 손으로 지운 뒤 python excer_bot.py greet on 하고 run 을 다시 켜세요")
             k = int(st.get("greet_fail") or 0) + 1
             st.update(greet_fail=k, greet_err=clean(str(e), 60), greet_next=self.ts() + min(3600, 300 * 2 ** min(k - 1, 4)))
             if k == 1 or k % 12 == 0:                       # 처음과 열두 번째마다만 적는다(방이 오래 안 열려도 기록이 쌓이지 않게)
@@ -2780,7 +2788,8 @@ MEMBER_LABELS = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공�
     보이스룸 라이브톡 채팅방설정 설정 채팅방관리 멤버관리 오픈채팅 오픈채팅정보 대화상대 참여자 멤버 대화상대초대 초대하기 초대 친구초대
     대화상대검색 검색 대화내용검색 알림 알림끄기 알림켜기 즐겨찾기 나가기 채팅방나가기 메뉴 닫기 뒤로 뒤로가기 이전 프로필 내프로필
     11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인
-    퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보 운영진 일반멤버""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
+    퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보 운영진 일반멤버
+    접기 대화상대접기 참여자접기 멤버접기 목록접기 전체접기""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
 MEMBER_RID_RE = re.compile(r"name|nick", re.I)        # 이름 칸 id 로 볼 것(name, nickname, profile_name)
 MEMBER_RID_NOT = re.compile(r"room|title|menu|header|section|count|badge|status|message", re.I)
 MEMBER_LIST_RE = re.compile(r"RecyclerView|ListView|ScrollView|GridView")
@@ -2988,6 +2997,8 @@ def greet_alive(bot):
     if g["on"] == "off":
         return ""
     last = st.get("greet_last") or {}
+    if st.get("greet_block"):
+        return "멈춤(%s. 입력 칸을 손으로 비운 뒤 python excer_bot.py greet on)" % st["greet_block"]
     out = ["켬(알릴 방에 태그)" if g["on"] == "on" else "시험(시험 방에 태그 없이)",
            "기준 %d명" % len(st.get("greet_prev") or []) if st.get("greet_seen") else "기준 아직 없음"]
     if last:
@@ -5353,17 +5364,33 @@ class AdbSender:
         """알릴 방 머리의 인원 수(봇 포함). 방을 연다. 못 읽으면 None"""
         return room_head_count(self.open_room(room))
 
+    def select_all_del(self):
+        """입력 칸 글을 모두 골라(Ctrl+A) 지운다. 이 기기에서 안 되는 명령이면 그냥 넘어간다"""
+        try:
+            self.sh("input keycombination 113 29")
+            self.sleep(0.3)
+            self.sh("input keyevent 67")
+        except KakaoError:
+            pass
+
     def empty_box(self):
-        """입력 칸을 비우고(앞뒤 글자 지우기) 빈 것을 확인한다. 돌려주는 것: 빈 칸에 보이는 안내 글(지워도 그대로인 글, 없으면 None).
-        세 번 해도 못 비우면 KakaoError(보내지 않음)"""
-        last = None
-        for _ in range(3):
+        """입력 칸을 비우고(앞뒤 글자 지우기, 그래도 남으면 모두 골라 지우기) 빈 것을 확인한다.
+        돌려주는 것: 빈 칸에 보이는 안내 글(지워도 그대로인 '@' 없는 글, 없으면 None). 못 비우면 KakaoError(보내지 않음)"""
+        last, tried, t = None, False, ""
+        for _ in range(4):
             box = self.box(self.dump())
             t = box["text"]
             if not t:
                 return None
             if t == last:
-                return t
+                if tried:
+                    if "@" in t:
+                        break                                # 태그가 남았다: 안내 글이 아니다
+                    return t
+                self.tap(box)
+                self.select_all_del()                        # 태그처럼 한 글자씩 안 지워지는 것
+                tried = True
+                continue
             self.clear_box(box)
             last = t
         raise KakaoError("입력 칸을 비우지 못함(글 %d자 남음). 보내지 않음" % len(t))
@@ -5414,8 +5441,8 @@ class AdbSender:
         except Exception:
             try:
                 self.empty_box()                             # 쓰다 만 글을 입력 칸에 남기지 않는다(다음 보내기에 섞이지 않게)
-            except Exception:
-                pass
+            except KakaoError as e2:
+                raise KakaoError("입력 칸을 비우지 못함: %s" % e2)
             raise
         if before_tap:
             before_tap()
@@ -7075,6 +7102,11 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
             raise SystemExit("시험 방(test_room)이 없어 시험으로 켤 수 없습니다. setup 으로 시험 방을 먼저 넣거나 greet on")
         cfg["greet"] = dict(cfg.get("greet") or {}, on=sub)
         save_cfg(a.config, cfg)
+        sp = base + "_state.json"                       # 입력 칸을 못 비워 멈춘 것을 푼다(run 을 다시 켜면 적용)
+        if os.path.exists(sp):
+            stt = load_state(sp)
+            if stt.pop("greet_block", None) is not None:
+                save_json(sp, stt)
         print({"on": "신입 인사를 켰습니다(알릴 방에 태그해서).", "test": "신입 인사를 시험으로 켰습니다(알릴 방 대신 시험 방에 태그 없이).",
                "off": "신입 인사를 껐습니다."}[sub] + (" 처음에는 지금 멤버를 기준으로만 잡고, 그 뒤로 들어오는 신입부터 인사합니다." if sub != "off" else "")
               + " run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다")
