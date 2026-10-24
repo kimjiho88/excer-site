@@ -54,8 +54,10 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 신입 인사(greet on 일 때, 기본은 끔): 10분마다 알릴 방 머리의 인원 수('91명')를 보고, 늘었으면(또는 3시간마다) 멤버를 읽어
     처음 보는 이름 가운데 끝의 입장일(월일 네 자리)이 오늘부터 이틀 전까지인 사람을 한 메시지에 태그하고 인사 글을 붙여 보낸다.
     태그는 입력 칸에 '@' 와 닉네임 첫 칸을 넣어 뜬 목록에서 닉네임이 글자 그대로 같은 줄만 누른다. 못 하면 '@닉네임' 글로.
-    처음 켜면 지금 멤버를 기준으로만 잡는다. 한 사람에게 한 번, 이름만 바꾼 사람과 한꺼번에 여섯 명 이상 새로 보이는 때는 인사하지 않는다.
-    조용한 시간과 운영 화면의 전체 멈춤 중에는 쉰다. 기록에는 이름 대신 지문만 남긴다.
+    켜면(다시 켜도) 지금 멤버를 기준으로만 잡는다. 한 사람에게 한 번. 이름만 고친 사람(같은 입장일이나 첫 칸과 출생연도가 같은 이름이
+    사라짐)은 인사하지 않는다(날짜 없이 들어와 날짜를 단 신입은 인사). 여섯 명 이상 새로 보이는데 인원 수가 그만큼 늘지 않았으면 인사하지 않는다.
+    입력 칸을 비운 것을 확인하고, 입력 칸 글이 만든 글과 똑같을 때만 보낸다. 전송을 누르기 바로 전에 보낸 것으로 적어 같은 인사를 두 번 올리지 않는다.
+    조용한 시간과 운영 화면의 전체 멈춤 중에는 쉬고, 실패하면 5분에서 1시간까지 늘려 다시. 기록에는 이름 대신 지문만 남긴다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 신입 인사를 켰으면 방 머리의 인원 수를 볼 때뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
     보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
@@ -1419,19 +1421,33 @@ class Bot:
     def greet_tick(self):
         """신입 인사(docs/BOT_AUTOMATION_PLAN.md 1절, 설정 greet). on 이면 알릴 방에 태그해서, test 면 시험 방에 태그 없이 보낸다.
         check_sec 마다 알릴 방 머리의 인원 수를 보고, 늘었거나 full_min 분이 지났으면 멤버를 읽어 신입(greet_new)을 고른다.
-        처음 읽은 멤버는 기준으로만 잡는다(그 뒤로 들어오는 신입부터). 한꺼번에 bulk 명 이상이면 인사하지 않는다.
-        조용한 시간, 운영 화면의 전체 멈춤, 보내기나 읽기가 막 실패해 쉬는 중에는 하지 않는다. 기록에는 이름을 적지 않는다"""
+        켜거나 on 과 test 사이를 바꾸면 기준부터 새로 잡는다(그 뒤로 들어오는 신입부터). 한꺼번에 bulk 명 이상이면 인원 수가 그만큼
+        늘었을 때만 인사한다. 조용한 시간, 운영 화면의 전체 멈춤, 보내기나 읽기가 막 실패해 쉬는 중에는 하지 않는다.
+        실패하면 5분, 10분, 20분, 40분, 60분 뒤 다시. 같은 사람에게 세 번 못 보내면 그만. 기록에는 이름을 적지 않는다"""
         g = greet_cfg(self.cfg)
-        if g["on"] == "off" or not greet_able(self):
+        if not greet_able(self):
+            return ""
+        st = self.st
+        if g["on"] == "off":
+            if st.get("greet_mode") not in (None, "off"):
+                st["greet_mode"] = "off"                # 다시 켜면 기준부터 새로
             return ""
         dt = self.clock()
-        now, st = Now(dt), self.st
+        now = Now(dt)
         if in_quiet(now.hm, self.cfg.get("quiet")) or now.ts < self.hold_until or now.ts < float(st.get("greet_next") or 0):
             return ""
         if self.control(now)["pause"] > now.ts:
             return ""                                   # 운영 화면의 전체 멈춤 중에는 화면을 건드리지 않는다
+        today, days = dt.astimezone(KST).date(), int(g.get("days", 2))
+        if st.get("greet_mode") != g["on"]:
+            st.update(greet_mode=g["on"], greet_seen={}, greet_prev=[], greet_pending=[], greet_full_at=0, greet_n=None,
+                      greet_fail=0, greet_pend_fail=0, greet_err="")
         st["greet_next"] = now.ts + max(60, int(g.get("check_sec") or 600))
-        pend = list(st.get("greet_pending") or [])
+        pend = [x for x in (st.get("greet_pending") or []) if greet_fresh(x, today, days)]   # 입장일이 지난 사람은 빼고
+        if pend and now.ts - float(st.get("greet_pending_at") or 0) > 6 * 3600:
+            pend = []                                   # 여섯 시간 넘게 못 보낸 인사는 그만(늦은 인사가 나가지 않게)
+        if not pend and st.get("greet_pending"):
+            st.update(greet_pending=[], greet_pend_fail=0)
         try:
             if not pend:
                 n = self.sender.room_count(self.room)
@@ -1441,32 +1457,38 @@ class Bot:
                 if not due:
                     if n is not None:
                         st["greet_n"] = n                       # 줄었으면 줄어든 수로(다음에 늘면 읽는다)
+                    st.update(greet_fail=0, greet_err="")
                     return "greet-look"
                 base = not st.get("greet_seen")
                 names = self.sender.read_members(self.room, self.cfg.get("members") or {})
-                st["greet_full_at"] = now.ts
+                grow = n - int(last_n) if n is not None and last_n is not None else None
+                st.update(greet_full_at=now.ts, greet_fail=0, greet_err="")
                 if n is not None:
                     st["greet_n"] = n                           # 읽기에 성공한 뒤에만(실패하면 늘어난 수를 다음에 다시 본다)
-                new = greet_new(names, st, dt.astimezone(KST).date(), g)
+                new = greet_new(names, st, today, g)
                 if base:
                     self.log("신입 인사: 지금 멤버 %d명을 기준으로 잡음(이 뒤로 들어오는 신입부터 인사)" % len(names))
                     return "greet-base"
-                if len(new) >= max(2, int(g.get("bulk") or 6)):
-                    self.log("신입 인사: 한꺼번에 %d명이 새로 보여 인사하지 않음(기준이 어긋났을 수 있어 지금 멤버로 다시 잡음)" % len(new))
+                if len(new) >= max(2, int(g.get("bulk") or 6)) and not (grow is not None and len(new) <= grow):
+                    self.log("신입 인사: 한꺼번에 %d명이 새로 보였는데 인원 수는 %s 늘어 인사하지 않음(기준이 어긋났을 수 있어 지금 멤버로 다시 잡음)"
+                             % (len(new), "%d명" % grow if grow is not None else "얼마나"))
                     return "greet-bulk"
                 if not new:
                     return "greet-read"
                 pend = new
-                st["greet_pending"] = pend
+                st.update(greet_pending=pend, greet_pending_at=now.ts, greet_pend_fail=0)
             return self.greet_send(now, g, pend)
         except Exception as e:
             k = int(st.get("greet_fail") or 0) + 1
-            st.update(greet_fail=k, greet_err=clean(str(e), 60), greet_next=self.ts() + 300)
-            if k == 1 or k % 12 == 0:                       # 처음과 한 시간마다만 적는다(방이 오래 안 열려도 기록이 쌓이지 않게)
-                self.log("신입 인사 실패(%d번째, 5분 뒤 다시): %s" % (k, e))
-            if k >= 3 and st.get("greet_pending"):
-                self.log("신입 인사: 세 번 실패해 보낼 %d명은 그만 보냄" % len(st["greet_pending"]))
-                st.update(greet_pending=[], greet_fail=0)
+            st.update(greet_fail=k, greet_err=clean(str(e), 60), greet_next=self.ts() + min(3600, 300 * 2 ** min(k - 1, 4)))
+            if k == 1 or k % 12 == 0:                       # 처음과 열두 번째마다만 적는다(방이 오래 안 열려도 기록이 쌓이지 않게)
+                self.log("신입 인사 실패(%d번째, %d분 뒤 다시): %s" % (k, min(60, 5 * 2 ** min(k - 1, 4)), e))
+            if st.get("greet_pending"):
+                pf = int(st.get("greet_pend_fail") or 0) + 1
+                st["greet_pend_fail"] = pf
+                if pf >= 3:
+                    self.log("신입 인사: 세 번 못 보내 %d명에게는 그만 보냄" % len(st["greet_pending"]))
+                    st.update(greet_pending=[], greet_pend_fail=0)
             return "greet-fail"
         finally:
             if hasattr(self.sender, "done"):
@@ -1474,23 +1496,36 @@ class Bot:
             self.save()
 
     def greet_send(self, now, g, pend):
-        """보낼 신입(pend)의 앞 max_names 명을 한 메시지로 인사한다. 보냈으면 인사한 기록(지문)에 넣고 보낼 목록에서 뺀다"""
+        """보낼 신입(pend)의 앞 max_names 명을 한 메시지로 인사한다. 전송을 누르기 바로 전에 그 사람들을 인사한 기록(지문)에 넣고
+        보낼 목록에서 뺀다(그 뒤로 화면 읽기 같은 것이 실패해도 같은 인사를 다시 올리지 않게. 그때는 보낸 것으로 보고 기록만)"""
         batch = pend[:max(1, int(g.get("max_names") or 8))]
-        if g["on"] == "test":
-            room = self.cfg.get("test_room") or ""
-            if not room or room == self.room:
-                raise KakaoError("시험 방(test_room)이 없어 신입 인사 시험을 보낼 곳이 없음")
-            self.sender.send(room, "[신입 인사 시험] %s %s" % (" ".join("@" + x for x in batch), g["text"]))
-            tagged = 0
-        else:
-            tagged = self.sender.send_greet(self.room, batch, g["text"])
-        st = self.st
-        st["greet_done"] = sorted(set(st.get("greet_done") or []) | {greet_tag(member_key(x)) for x in batch})
-        st["greet_pending"] = pend[len(batch):]
+        st, t, sent = self.st, self.clock().astimezone(KST).date().toordinal(), []
+
+        def commit():
+            done = dict(st.get("greet_done") or {})
+            done.update({greet_tag(member_key(x)): t for x in batch})
+            st.update(greet_done=done, greet_pending=pend[len(batch):], greet_pend_fail=0)
+            self.save()
+            sent.append(1)
+        note = ""
+        try:
+            if g["on"] == "test":
+                room = self.cfg.get("test_room") or ""
+                if not room or room == self.room:
+                    raise KakaoError("시험 방(test_room)이 없어 신입 인사 시험을 보낼 곳이 없음")
+                self.sender.send(room, "[신입 인사 시험] %s %s" % (" ".join("@" + x for x in batch), g["text"]), before_tap=commit, diag=False)
+                tagged = 0
+            else:
+                tagged = self.sender.send_greet(self.room, batch, g["text"], commit)
+        except Exception as e:
+            if not sent:
+                raise
+            tagged, note = -1, clean(str(e), 60)            # 전송은 눌렀다: 다시 보내지 않는다
         st.update(greet_fail=0, greet_err="", greet_last={"at": "%s %s" % (now.ymd, now.hm), "n": len(batch), "tagged": tagged, "test": g["on"] == "test"})
-        if st["greet_pending"]:
+        if st.get("greet_pending"):
             st["greet_next"] = self.ts() + 60           # 남은 사람은 1분 뒤 다음 메시지로
-        self.log("신입 인사 %d명%s" % (len(batch), "(시험 방, 태그 없이)" if g["on"] == "test" else ", 태그 %d명" % tagged))
+        self.log("신입 인사 %d명%s%s" % (len(batch), "(시험 방, 태그 없이)" if g["on"] == "test" else ", 태그 %s" % ("%d명" % tagged if tagged >= 0 else "확인 못함"),
+                                         ". 전송은 눌렀고 그 뒤 확인 실패(다시 보내지 않음): " + note if note else ""))
         return "greet"
 
     def net_up(self):
@@ -2896,24 +2931,46 @@ def greet_cfg(cfg):
     return g
 
 
+def greet_fresh(name, today, days):
+    """닉네임 끝의 입장일이 오늘부터 days 일 전까지인가"""
+    md_ = nick_day(name)
+    age = day_age(md_, today) if md_ else None
+    return age is not None and age <= days
+
+
 def greet_new(names, st, today, g):
-    """이번에 읽은 멤버(names)에서 인사할 신입을 고르고 기록(st)을 고친다(본 이름 지문 greet_seen, 지난 목록 greet_prev).
-    신입: 처음 보는 이름, 끝의 입장일이 오늘부터 g['days'] 일 전까지, 전에 인사한 이름이 아님, 이름만 바꾼 사람이 아님
-    (이번에 사라진 이름과 첫 칸, 출생연도가 같음). 기준이 없으면(처음) 기준만 잡고 아무도 고르지 않는다"""
-    seen, done = set(st.get("greet_seen") or []), set(st.get("greet_done") or [])
-    cur = [(x, greet_tag(member_key(x)), greet_tag(nick_core(x))) for x in names]
-    keys = {k for _, k, _ in cur}
-    gone = {c for k, c in (st.get("greet_prev") or []) if k not in keys}
+    """이번에 읽은 멤버(names)에서 인사할 신입을 고르고 기록(st)을 고친다. 기록은 이름 대신 지문:
+    greet_seen {이름 지문: [처음 본 날, 마지막 본 날, 기준 때 본 것 1]}, greet_prev [[이름 지문, 첫 칸 지문, 입장일]](지난 읽기), greet_done {인사한 이름 지문: 날}.
+    신입: 처음 보는 이름, 끝의 입장일이 오늘부터 g['days'] 일 전까지, 전에 인사한 이름이 아님, 그리고
+    (1) 같은 입장일을 단 이름이 이번에 사라지지 않음(사라졌으면 그 사람이 이름을 고친 것: 이미 인사했거나 기존 멤버),
+    (2) 첫 칸과 출생연도가 같은 이름이 이번에 사라졌으면, 그 이름이 날짜 없이 며칠 안에 처음 보인(기준 뒤) 아직 인사 안 한 이름일 때만
+        (날짜 없이 들어와 날짜를 단 신입. 아니면 기존 멤버가 이름을 바꾼 것).
+    기준이 없으면(처음) 기준만 잡고 아무도 고르지 않는다. 180일 넘게 안 보인 이름, 1년 지난 인사 기록은 지운다"""
+    t, days = today.toordinal(), int(g.get("days", 2))
+    seen, done = dict(st.get("greet_seen") or {}), dict(st.get("greet_done") or {})
+    base = not seen
+    cur = []
+    for x in names:
+        md_ = nick_day(x)
+        cur.append((x, greet_tag(member_key(x)), greet_tag(nick_core(x)), "%02d%02d" % md_ if md_ else "", md_))
+    keys = {k for _, k, _, _, _ in cur}
+    gone = [(k, c, d) for k, c, d in (st.get("greet_prev") or []) if k not in keys]
     out = []
-    if seen:
-        for x, k, c in cur:
-            md_ = nick_day(x)
-            age = day_age(md_, today) if md_ else None
-            if k in seen or k in done or c in gone or age is None or age > int(g.get("days", 2)):
+    if not base:
+        for x, k, c, d, md_ in cur:
+            if k in seen or k in done or not greet_fresh(x, today, days) or any(gd == d for _, _, gd in gone):
+                continue
+            twins = [(gk, gd) for gk, gc, gd in gone if gc == c]
+            if twins and not any(gd == "" and gk not in done and (seen.get(gk) or [0, 0, 1])[2] == 0 and t - (seen.get(gk) or [0])[0] <= days
+                                 for gk, gd in twins):
                 continue
             out.append(x)
-    st["greet_seen"] = sorted(seen | keys)
-    st["greet_prev"] = [[k, c] for _, k, c in cur]
+    for _, k, _, _, _ in cur:
+        e = seen.get(k)
+        seen[k] = [e[0], t, e[2]] if e else [t, t, 1 if base else 0]
+    st["greet_seen"] = {k: v for k, v in seen.items() if t - v[1] <= 180}
+    st["greet_done"] = {k: v for k, v in done.items() if t - v <= 365}
+    st["greet_prev"] = [[k, c, d] for _, k, c, d, _ in cur]
     return out
 
 
@@ -2934,7 +2991,8 @@ def greet_alive(bot):
     out = ["켬(알릴 방에 태그)" if g["on"] == "on" else "시험(시험 방에 태그 없이)",
            "기준 %d명" % len(st.get("greet_prev") or []) if st.get("greet_seen") else "기준 아직 없음"]
     if last:
-        out.append("마지막 인사 %s %d명%s" % (last.get("at", "?"), int(last.get("n") or 0), "" if last.get("test") else "(태그 %d)" % int(last.get("tagged") or 0)))
+        tg = int(last.get("tagged") or 0)
+        out.append("마지막 인사 %s %d명%s" % (last.get("at", "?"), int(last.get("n") or 0), "" if last.get("test") else "(태그 %s)" % (tg if tg >= 0 else "확인 못함")))
     if st.get("greet_pending"):
         out.append("보낼 사람 %d명" % len(st["greet_pending"]))
     if st.get("greet_err"):
@@ -4037,14 +4095,17 @@ class AdbSender:
 
     def clear_box(self, n):
         self.tap(n)
-        self.key(123)                                            # 끝으로
+        self.key(123)                                            # 끝으로(여러 줄이면 그 줄의 끝)
         left = len(n["text"]) + 5
         while left > 0:
             k = min(left, 300)
-            self.sh("input keyevent " + " ".join(["67"] * k))       # 지우기
+            self.sh("input keyevent " + " ".join(["67"] * k))       # 앞 글자 지우기
+            self.sh("input keyevent " + " ".join(["112"] * k))      # 뒤 글자 지우기(커서가 가운데 줄 끝에 있어 남은 아래 줄)
             left -= k
 
-    def send(self, room, text):
+    def send(self, room, text, before_tap=None, diag=True):
+        """방에 글을 보낸다. before_tap: 전송을 누르기 바로 전에 부른다(그 뒤로 실패해도 다시 보내지 않게 기록할 때).
+        diag=False 면 안 될 때 화면을 진단 파일에 적지 않는다(입력 칸 글에 멤버 이름이 든 신입 인사)"""
         nodes = self.open_room(room)
         box = self.box(nodes)
         self.tap(box)
@@ -4084,12 +4145,15 @@ class AdbSender:
             got = box["text"].strip()
             if got:
                 self.clear_box(box)
-            self.save_diag(nodes)
+            if diag:
+                self.save_diag(nodes)
             raise KakaoError("입력 칸에 목록을 넣지 못함(클립보드 붙여넣기 실패, 붙여넣은 뒤 입력 칸 %s). 보내지 않음%s"
-                             % ("다른 글 %d자" % len(got) if got else "빔", self.diag_note()))
+                             % ("다른 글 %d자" % len(got) if got else "빔", self.diag_note() if diag else ""))
         btn = find(nodes, desc="전송") or find(nodes, text="전송") or find(nodes, rid=":id/send")
         if not btn:
             raise KakaoError("전송 단추를 찾지 못함")
+        if before_tap:
+            before_tap()
         self.tap(btn[0])
         self.sleep(0.7)
         if self.t.get("freeze", True):
@@ -5289,71 +5353,89 @@ class AdbSender:
         """알릴 방 머리의 인원 수(봇 포함). 방을 연다. 못 읽으면 None"""
         return room_head_count(self.open_room(room))
 
-    def send_greet(self, room, names, text):
-        """신입 인사: 사람마다 입력 칸 끝에 '@' 와 닉네임 첫 칸을 넣어 뜬 태그 목록에서 닉네임이 글자 그대로 같은 줄을 눌러 태그한다.
-        못 한 사람은 '@닉네임' 글로 적는다. 끝에 인사 글을 붙이고 입력 칸 글을 확인한 뒤에만 보낸다(다르면 비우고 글로만 다시 보냄).
-        누르는 것은 입력 칸, 태그 목록의 그 사람 줄, 전송뿐. 돌려주는 것: 태그한 수"""
+    def empty_box(self):
+        """입력 칸을 비우고(앞뒤 글자 지우기) 빈 것을 확인한다. 돌려주는 것: 빈 칸에 보이는 안내 글(지워도 그대로인 글, 없으면 None).
+        세 번 해도 못 비우면 KakaoError(보내지 않음)"""
+        last = None
+        for _ in range(3):
+            box = self.box(self.dump())
+            t = box["text"]
+            if not t:
+                return None
+            if t == last:
+                return t
+            self.clear_box(box)
+            last = t
+        raise KakaoError("입력 칸을 비우지 못함(글 %d자 남음). 보내지 않음" % len(t))
+
+    def send_greet(self, room, names, text, before_tap=None):
+        """신입 인사: 입력 칸을 비운 것을 확인한 뒤, 사람마다 '@' 와 닉네임 첫 칸을 넣어 뜬 태그 목록에서 닉네임이 글자 그대로 같은 줄을 눌러
+        태그한다(들어간 글이 '@닉네임' 그대로일 때만). 못 한 사람은 '@닉네임' 글로 적는다. 끝에 인사 글을 붙이고, 입력 칸 글이 만든 글과
+        똑같을 때만 보낸다(다르면 비우고 글로만 다시). 아무도 태그하지 못하면 글로만(send). before_tap: 전송을 누르기 바로 전에 부른다.
+        보내기 전에 실패하면 입력 칸을 비우고 KakaoError. 누르는 것은 입력 칸, 태그 목록의 그 사람 줄, 전송뿐. 돌려주는 것: 태그한 수"""
         plain_msg = " ".join("@" + x for x in names) + " " + text
         nodes = self.open_room(room)
-        box = self.box(nodes)
-        self.tap(box)
-        if box["text"].strip():
-            self.clear_box(box)
-        tagged, plain = [], []
-        for nm in names:
-            r = self.mention_one(nm)
-            if r == "tag":
-                tagged.append(nm)
-            elif r == "plain":
-                plain.append(nm)
-            else:                                            # 입력 칸이 생각과 달라졌다: 비우고 모두 글로
-                box = self.box(self.dump())
-                if box["text"].strip():
-                    self.clear_box(box)
-                tagged, plain = [], list(names)
-                break
-        if not tagged:
-            box = self.box(self.dump())
-            if box["text"].strip():
-                self.clear_box(box)
-            self.send(room, plain_msg)                       # 아무도 태그하지 못했으면 글로만(붙여넣기와 보내기 확인은 send 가)
-            return 0
-        box = self.box(self.dump())
-        cur = box["text"]
-        tail = " ".join(["@" + x for x in plain] + [text])
-        if cur.strip() and not cur[-1:].isspace():
-            tail = " " + tail
-        self.set_clip(tail)
-        self.key(123)                                        # 끝으로
-        self.key(279)                                        # 붙여넣기
+        self.tap(self.box(nodes))
         self.sleep(0.6)
-        nodes = self.dump()
-        box = self.box(nodes)
-        got = member_name(box["text"])
-        if not (got.endswith(member_name(text)) and all(member_name(x) in got for x in names)):
-            if box["text"].strip():
-                self.clear_box(box)
-            self.send(room, plain_msg)                       # 입력 칸 글이 생각과 다르다: 비우고 글로만
-            return 0
-        btn = find(nodes, desc="전송") or find(nodes, text="전송") or find(nodes, rid=":id/send")
-        if not btn:
-            self.clear_box(box)
-            raise KakaoError("전송 단추를 찾지 못함")
+        try:
+            hint = self.empty_box()
+            tagged, plain, cur = [], [], ""
+            for nm in names:
+                r, t = self.mention_one(nm, cur, hint)
+                if r == "tag":
+                    tagged.append(nm)
+                    cur = t
+                elif r == "plain":
+                    plain.append(nm)
+                else:                                        # 입력 칸이 생각과 달라졌다: 모두 글로
+                    tagged = []
+                    break
+            if not tagged:
+                self.empty_box()
+                self.send(room, plain_msg, before_tap=before_tap, diag=False)
+                return 0
+            tail = " ".join(["@" + x for x in plain] + [text])
+            if not cur[-1:].isspace():
+                tail = " " + tail
+            want = cur + tail
+            self.set_clip(tail)
+            self.key(123)                                    # 끝으로
+            self.key(279)                                    # 붙여넣기
+            self.sleep(0.6)
+            nodes = self.dump()
+            box = self.box(nodes)
+            if ws(box["text"]) != ws(want):                  # 만든 글과 다르다(붙여넣기 실패, 남은 글): 비우고 글로만
+                self.empty_box()
+                self.send(room, plain_msg, before_tap=before_tap, diag=False)
+                return 0
+            btn = find(nodes, desc="전송") or find(nodes, text="전송") or find(nodes, rid=":id/send")
+            if not btn:
+                raise KakaoError("전송 단추를 찾지 못함")
+        except Exception:
+            try:
+                self.empty_box()                             # 쓰다 만 글을 입력 칸에 남기지 않는다(다음 보내기에 섞이지 않게)
+            except Exception:
+                pass
+            raise
+        if before_tap:
+            before_tap()
         self.tap(btn[0])
         self.sleep(0.7)
         for _ in range(4):                                   # 입력 칸이 비워질 때까지 잠깐씩 더 본다
             self.sleep(0.5)
-            if ws(self.box(self.dump())["text"]) != ws(box["text"]):
+            if ws(self.box(self.dump())["text"]) != ws(want):
                 return len(tagged)
         raise KakaoError("전송을 눌렀는데 입력 칸에 글이 남아 있음")
 
-    def mention_one(self, name):
-        """입력 칸 끝에 name 을 태그로 넣는다. '@' 를 치고 닉네임 첫 칸을 붙여넣은 뒤, 새로 뜬 것 가운데 입력 칸 위에 있고
-        닉네임이 글자 그대로 같은(member_key) 줄을 누른다. 돌려주는 것: tag(됨), plain(안 됨, 이번에 붙은 글자는 지움),
-        lost(입력 칸이 전과 달라 되돌리지 못함)"""
-        nodes = self.dump()
+    def mention_one(self, name, cur="", hint=None):
+        """입력 칸 끝(지금 글 cur)에 name 을 태그로 넣는다. 자판이 다 올라온 화면을 본 뒤 '@' 를 치고 닉네임 첫 칸을 붙여넣어,
+        새로 뜬 태그 목록(tag_hits)에서 그 사람 줄을 누른다. 들어간 글이 '@닉네임'(또는 닉네임) 그대로일 때만 된 것으로 본다.
+        돌려주는 것: (tag 됨 | plain 안 됨, 이번에 붙은 글자는 지움 | lost 입력 칸이 생각과 달라 되돌리지 못함, 입력 칸 글)"""
+        nodes = self.mem_settle(self.dump(), tries=2)
         box = self.box(nodes)
-        before_text = box["text"]
+        shown = box["text"]
+        if shown != cur and not (cur == "" and hint is not None and shown == hint):
+            return "lost", shown
         before = {(n["b"], n["text"], n["desc"]) for n in nodes}
         lists = self.old_lists(nodes)
         head = member_name(name).split(" ")[0]
@@ -5370,41 +5452,42 @@ class AdbSender:
         if hit:
             self.tap(([n for n in hit if n["click"]] or hit)[0])
             self.sleep(0.7)
-            nodes = self.dump()
-            box = self.box(nodes)
+            box = self.box(self.dump())
             t = box["text"]
-            if t.startswith(before_text) and member_name(name) in member_name(t[len(before_text):]):
-                return "tag"
+            if t.startswith(cur) and member_name(t[len(cur):]) in (member_name(name), "@" + member_name(name)):
+                return "tag", t
         t = box["text"]
-        if not t.startswith(before_text):
-            return "lost"
-        extra = len(t) - len(before_text)
+        if not t.startswith(cur):
+            return "lost", t
+        extra = len(t) - len(cur)
         if extra > 0:
             self.key(123)
             self.sh("input keyevent " + " ".join(["67"] * extra))   # 이번에 붙은 글자만 지운다
             self.sleep(0.4)
-        return "plain" if self.box(self.dump())["text"] == before_text else "lost"
+        t = self.box(self.dump())["text"]
+        return ("plain" if t == cur or (cur == "" and hint is not None and t == hint) else "lost"), t
 
     @staticmethod
     def old_lists(nodes):
-        """지금 화면의 목록 칸들(종류, id, 자리). '@' 를 친 뒤 새로 뜬 태그 목록과 원래 있던 대화 목록을 가르는 데 쓴다"""
-        return {(n["b"], n["cls"], n["rid"]) for n in nodes if n.get("scroll") or MEMBER_LIST_RE.search(n["cls"])}
+        """지금 화면의 목록 칸들(종류, id, 왼쪽, 위, 오른쪽). 아래 끝은 보지 않는다(자판이나 태그 목록이 뜨면 대화 목록이 아래에서 줄어든다)"""
+        return {(n["cls"], n["rid"], n["b"][0], n["b"][1], n["b"][2]) for n in nodes if n.get("scroll") or MEMBER_LIST_RE.search(n["cls"])}
 
     def tag_area(self, nodes, box, before, lists):
-        """'@' 를 친 뒤 새로 뜬 것(before 에 없던 것) 가운데 입력 칸 위에 있고 누르면 안 되는 말이 없는 것.
-        원래 있던 목록 칸(lists, 대화 목록) 안의 것은 뺀다(방금 올라온 대화의 보낸 사람 이름을 누르지 않게)"""
-        top = box["b"][1]
+        """'@' 를 친 뒤 새로 뜬 것(before 에 없던 것) 가운데 입력 칸 위, 방 칸 쪽(입력 칸 왼쪽 끝에서 120 안쪽)에 있고 누르면 안 되는 말이
+        없는 것. 원래 있던 목록 칸(lists, 대화 목록. 감싼 목록 어느 것이든) 안의 것은 뺀다(대화의 보낸 사람 이름을 누르지 않게)"""
+        top, left = box["b"][1], box["b"][0]
         par = {k: x["i"] for x in nodes for k in x["kids"]}
 
         def in_old(n):
             i = par.get(n["i"])
             while i is not None:
                 x = nodes[i]
-                if x.get("scroll") or MEMBER_LIST_RE.search(x["cls"]):
-                    return (x["b"], x["cls"], x["rid"]) in lists   # 가장 가까운 목록 칸이 원래 있던 것인가
+                if (x.get("scroll") or MEMBER_LIST_RE.search(x["cls"])) and (x["cls"], x["rid"], x["b"][0], x["b"][1], x["b"][2]) in lists:
+                    return True
                 i = par.get(i)
             return False
-        return [n for n in nodes if (n["b"], n["text"], n["desc"]) not in before and n["b"][3] <= top + 4 and not self.mem_never(n) and not in_old(n)]
+        return [n for n in nodes if (n["b"], n["text"], n["desc"]) not in before and n["b"][3] <= top + 4 and self.center(n)[0] >= left - 120
+                and not self.mem_never(n) and not in_old(n)]
 
     def tag_hits(self, nodes, box, name, before, lists):
         """태그 목록에서 누를 그 사람 줄: tag_area 가운데 닉네임이 글자 그대로 같은 것(member_key)"""
@@ -5435,11 +5518,10 @@ class AdbSender:
             return re.sub(r"[^\s@\x01\x02]", "*", s).replace("\x01", "<이름>").replace("\x02", "<첫 칸>")
 
         nodes = self.open_room(room)
-        box = self.box(nodes)
-        self.tap(box)
-        if box["text"].strip():
-            self.clear_box(box)
-        base = self.dump()
+        self.tap(self.box(nodes))
+        self.sleep(0.6)
+        self.empty_box()
+        base = self.mem_settle(self.dump(), tries=2)
         before, lists = {(n["b"], n["text"], n["desc"]) for n in base}, self.old_lists(base)
         self.key(123)
         self.sh("input text @")
@@ -5469,10 +5551,12 @@ class AdbSender:
                 rec("3 그 줄을 누른 뒤(새로 뜬 것)", nodes, before)
                 tagged = member_name(name) in member_name(box["text"])
                 out.append("입력 칸: '%s', 이름이 들어감: %s" % (shape(box["text"], name, head), "예" if tagged else "아니요"))
-        box = self.box(self.dump())
-        if box["text"].strip():
-            self.clear_box(box)
+        try:
+            hint = self.empty_box()
+        except KakaoError:
+            hint = None
         left = self.box(self.dump())["text"]
+        left = "" if hint is not None and left == hint else left
         out += ["", "== 정리", "태그 목록: %s" % ("뜸(이름 후보 %d개)" % len(cands) if cands else "안 뜸"),
                 "첫 칸 붙여넣기 뒤 같은 이름 줄: %s" % (("%d개" % len(hit)) if head else "해 보지 못함(이름 후보 없음)"),
                 "누른 뒤 입력 칸에 이름: %s" % ("들어감" if tagged else "안 들어감"),
