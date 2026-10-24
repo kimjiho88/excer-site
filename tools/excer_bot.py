@@ -155,7 +155,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-24.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-25.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -2790,6 +2790,8 @@ MEMBER_LABELS = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공�
     11채팅 채팅하기 방장 부방장 나 본인 me 운영자 관리자 온라인 오프라인
     퀴즈 챗봇 챗봇beta beta 커버보기 오픈채팅관리 공유 공유하기 채팅방정보 운영진 일반멤버
     접기 대화상대접기 참여자접기 멤버접기 목록접기 전체접기""".split()) | set(MEMBER_MORE)   # 이름이 아닌 글(서랍과 방 정보 화면의 메뉴와 칸 이름, 표시)
+MEMBER_TOP = set("""채팅방서랍 서랍 톡게시판 게시판 공지 공지사항 사진동영상 사진 동영상 파일 링크 일정 톡캘린더 캘린더 투표 앨범 음성메시지
+    퀴즈 챗봇 커버보기 오픈채팅관리""".split())          # 방 메뉴 위쪽(대화상대 칸 위)의 메뉴 이름. 둘 이상 보이면 목록의 위쪽이다
 MEMBER_RID_RE = re.compile(r"name|nick", re.I)        # 이름 칸 id 로 볼 것(name, nickname, profile_name)
 MEMBER_RID_NOT = re.compile(r"room|title|menu|header|section|count|badge|status|message", re.I)
 MEMBER_LIST_RE = re.compile(r"RecyclerView|ListView|ScrollView|GridView")
@@ -5016,6 +5018,33 @@ class AdbSender:
         self.sh("input swipe %d %d %d %d 900" % (x, y1, x, y2))   # 천천히(던지듯 밀면 줄을 건너뛴다)
         self.sleep(0.8)
 
+    def mem_top(self, nodes, box, area, res, note, only, tries=40):
+        """카카오톡은 방 메뉴를 다시 열 때 지난번에 내려 둔 자리(펼친 목록의 아래쪽)를 기억한다(2026-10-25 태블릿: 대화상대 머리를 못 보고 끝남).
+        목록 칸에 대화상대 머리도, 위쪽 메뉴 이름(사진/동영상, 파일 같은) 둘도 안 보이면 보일 때까지 목록을 아래로 민다(화면이 그대로면 위 끝).
+        누르는 것은 없다. 돌려주는 것: (화면, 목록 칸)"""
+        def top(ns, bx):
+            under = self.mem_under(ns, bx["i"])
+            labs = {member_mk(p) for x in under for t in (x["text"], x["desc"]) for p in re.split(r",\s+", t) if p.strip()}
+            return self.mem_head(under) is not None or len(labs & MEMBER_TOP) >= 2
+        k = 0
+        while k < tries and not top(nodes, box):
+            was = self.mem_sig(nodes, box)
+            self.mem_swipe(box, max(1, area[3] - area[1]), 0.8, self.mem_danger(nodes, box, area), back=True)
+            res["swipes"] += 1
+            k += 1
+            nodes = self.dump()
+            nb = self.mem_box(nodes, box, area)
+            if nb is None:
+                raise KakaoError("멤버 목록 칸이 사라짐")
+            box = nb
+            same = set(was) & set(self.mem_sig(nodes, box))
+            if len(same) * 10 >= len(set(was)) * 9:
+                break                                        # 거의 그대로다(위 끝. 글 한둘이 바뀌어도)
+        if k:
+            self.mem_keep(nodes, box)
+            note("방 메뉴 위로 올림(%d번 밂)" % k, nodes, box, None, None, only)
+        return nodes, box
+
     def mem_mask(self, nodes, box=None, sec=None, before=None, keep=(), only=None):
         """멤버 화면 한 장을 적는다(멤버 이름은 가림). 메뉴와 칸 이름, 대화상대 머리(모르는 머리도 '참여 중인 멤버 8' 같은 모양이면), 수,
         표시(방장, 나), 더보기는 그대로. 목록 칸 안(목록 칸을 못 찾았으면 서랍에 새로 나온 것 모두)의 다른 글은 글자 수만,
@@ -5103,7 +5132,7 @@ class AdbSender:
         return nodes, box
 
     def mem_walk(self, room, mcfg=None, rec=None, limit=120, more_limit=120):
-        """방을 열고 오른쪽 위 메뉴(서랍)를 열어 대화상대 칸을 끝까지 읽는다. 대화상대 칸에 더보기(전체보기) 단추가 있으면 눌러, 같은 목록이
+        """방을 열고 오른쪽 위 메뉴(서랍)를 열어 대화상대 칸을 끝까지 읽는다(지난번에 내려 둔 자리로 열리면 먼저 위로 올린다). 대화상대 칸에 더보기(전체보기) 단추가 있으면 눌러, 같은 목록이
         그 자리에서 펼쳐졌으면(새 카카오톡) 그 칸을 이어 읽고(펼친 끝에 또 있으면 다시, 스무 번까지), 새 화면이 열렸으면 그 화면에서 읽는다.
         끝나면(안 되어도) 연 화면을 뒤로 키로 닫는다(Termux 로 돌아가는 done 은 부르는 쪽이). 지나온 화면은 이름을 가려 trace 에 둔다.
         rec(이름표, 줄들): members_study 가 화면마다 받는다. 돌려주는 것: {names, n(대화상대 수), head, rid, swipes, more, pages}"""
@@ -5163,6 +5192,8 @@ class AdbSender:
                 self.save_diag()
                 raise KakaoError("방 메뉴에서 목록 칸을 찾지 못함" + self.diag_note())
             self.mem_keep(drawer, box)
+            drawer, box = self.mem_top(drawer, box, area, res, note, lambda n: area[0] <= self.center(n)[0] <= area[2] and
+                                       area[1] <= self.center(n)[1] <= area[3] and (n["b"], n["text"], n["desc"]) not in seen)
             cur, box = self.mem_read(drawer, box, area, st, res, limit, note, "방 메뉴", nodes)
             for _ in range(20):                              # 더보기(전체보기)는 스무 번까지: 펼친 끝에 또 있으면 다시 누른다(나눠 펼치는 판)
                 if st["more"] is None:
