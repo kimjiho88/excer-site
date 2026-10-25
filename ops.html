@@ -2188,7 +2188,7 @@
     }
     async function linkSet(value) {
       if (localOnly || !PASS || linkBusy) return;
-      if (value === "all" && !window.confirm("모든 멤버의 소식 화면에 카카오 로그인 단추가 보입니다. 처리방침 개정 공지 뒤에 켜 주세요. 켤까요?")) return;
+      if (value === "all" && !window.confirm("모든 멤버의 소식 화면에 카카오 로그인 단추가 보이고, 그때부터 참석과 모임 올리기는 로그인으로만 됩니다(비밀번호 참석과 글 올리기는 막힘. 공지와 이미 올린 글의 고치기와 취소는 비밀번호 그대로). 처리방침 개정 공지 뒤에 켜 주세요. 켤까요?")) return;
       linkBusy = true;
       try { await linkCall("admin_setting_set", { p_key: "kakao_login", p_value: value }); toast("보이기: " + LINK_SET[value]); await linkLoad(); }
       catch (e) { linkFail(e, "바꾸지 못했습니다."); }
