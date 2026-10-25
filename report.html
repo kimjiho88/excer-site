@@ -34,7 +34,7 @@
 
   <style>
     /* 활동 통계(32차). 매달 링크를 누른 멤버가 폰으로 1분 안에 이번 달 우리 방이 얼마나 붐볐는지, 누가 무엇으로 이름이 올랐는지, 나는 어땠는지를 본다.
-       발행본 하나에 기간 하나. 섹션은 칭호, 순위, 흐름, 평소. 칸 맞춤은 구조로(숫자 칸 줄 고정, 메달과 작은 칭호는 subgrid, 홀수 칸 늘리기와 줄바꿈 칩 없음).
+       발행본 하나에 기간 하나. 섹션은 한눈에 보기(119차), 칭호, 순위, 흐름, 평소. 칸 맞춤은 구조로(숫자 칸 줄 고정, 메달과 작은 칭호는 subgrid, 홀수 칸 늘리기와 줄바꿈 칩 없음).
        차트 색은 역할별 토큰으로만 쓴다. 글자는 잉크색만 */
     :root {
       --viz-accent: #4B2A82;
@@ -187,8 +187,79 @@
     .combo-list .combo-empty:hover { background: none; }
     .nw { white-space: nowrap; }
 
+    /* ── 한눈에 보기: 카드 셋(가장 붐빈 주, 가장 붐비는 요일, 가장 많이 나온 이야기). 이름표, 큰 값, 작은 그림(장식, 뜻은 글이 진다), 근거 한 줄, 자세히.
+       폰(375 이상)은 그림을 오른쪽에, 768 이상은 값 아래에 두고 카드끼리 줄을 맞춘다(subgrid) ── */
+    .gl-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--rp-gap); margin: 0; padding: 0; list-style: none; }
+    .gl-grid > li { display: grid; min-width: 0; }
+    .gl-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "lb" "val" "viz" "sb" "mo"; row-gap: 4px; align-content: start; min-width: 0;
+      padding: var(--rp-pad); border: 1px solid var(--line); border-radius: var(--rp-r); background: var(--surface); color: var(--ink); text-decoration: none; }
+    .gl-lb { grid-area: lb; display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--brand); font-size: 13px; line-height: 18px; font-weight: 700; word-break: keep-all; }
+    .gl-ic { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--brand-soft); }
+    .gl-ic .ic { width: 14px; height: 14px; }
+    .gl-val { grid-area: val; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; margin-top: 4px; font-size: 22px; line-height: 30px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; word-break: keep-all; }
+    .gl-val small { margin-left: 2px; font-size: 13px; line-height: 1; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
+    .gl-viz { grid-area: viz; position: relative; min-width: 0; height: 64px; margin: 8px 0 4px; }
+    .gl-sb { grid-area: sb; min-width: 0; color: var(--ink-2); font-size: 13px; line-height: 18px; font-weight: 500; word-break: keep-all; overflow-wrap: anywhere; }
+    .gl-mo { grid-area: mo; display: inline-flex; align-items: center; gap: 2px; margin-top: 8px; color: var(--brand); font-size: 13px; line-height: 18px; font-weight: 700; }
+    .gl-mo .ic { width: 14px; height: 14px; flex: none; }
+    .gl-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    @media (hover: hover) and (pointer: fine) { .gl-card:hover { border-color: var(--brand); } .gl-card:hover .gl-mo { text-decoration: underline; text-underline-offset: 3px; } }
+    /* 작은 그림: 주마다 하루 평균 막대(가장 붐빈 주 강조), 요일 막대(월~일), 주제 막대 */
+    .gl-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); column-gap: 4px; height: 100%; }
+    .gl-week > span { display: grid; grid-template-rows: minmax(0, 1fr) 16px; row-gap: 2px; min-width: 0; }
+    .gl-week i { align-self: end; min-height: 2px; border-radius: 3px 3px 0 0; background: var(--viz-context); }
+    .gl-week b { color: var(--ink-2); font-size: 12px; line-height: 16px; font-weight: 500; text-align: center; }
+    .gl-week .is-peak i { background: var(--viz-accent); }
+    .gl-week .is-peak b { color: var(--ink); font-weight: 700; }
+    .gl-topics { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-content: center; column-gap: 8px; row-gap: 2px; height: 100%; font-size: 12px; line-height: 14px; }
+    .gl-topics .tn { color: var(--ink-2); font-weight: 500; white-space: nowrap; }
+    .gl-topics .tb { align-self: center; height: 6px; border-radius: 3px; background: var(--viz-zero); overflow: hidden; }
+    .gl-topics .tb > span { display: block; height: 100%; min-width: 2px; border-radius: 3px; }
+    .gl-topics .tp { color: var(--ink); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .gl-bars { display: flex; align-items: flex-end; justify-content: center; gap: 1px; height: 100%; box-shadow: inset 0 -1px 0 var(--line); }
+    .gl-bars i { flex: 1 1 0; min-height: 2px; border-radius: 2px 2px 0 0; background: var(--viz-context); }
+    .gl-bars i.is-peak { background: var(--viz-accent); }
+    .gl-bars.is-wide { gap: 4px; }
+    .gl-bars.is-wide i { max-width: 28px; border-radius: 3px 3px 0 0; }
+    @media (min-width: 375px) and (max-width: 767px) {
+      .gl-card { grid-template-columns: minmax(0, 1fr) 116px; grid-template-areas: "lb viz" "val viz" "sb viz" "mo viz"; column-gap: 16px; }
+      .gl-viz { align-self: center; height: 72px; margin: 0; }
+    }
+    @media (min-width: 768px) {
+      .gl-grid { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); }
+      .gl-grid > li { grid-row: span 5; grid-template-rows: subgrid; }
+      .gl-card { grid-row: 1 / -1; grid-template-rows: subgrid; align-content: stretch; }
+      .gl-viz { height: 72px; }
+      .gl-mo { align-self: end; }
+    }
+    @supports not (grid-template-rows: subgrid) { @media (min-width: 768px) { .gl-grid > li { grid-row: auto; } .gl-card { grid-row: auto; grid-template-rows: auto auto 88px auto 1fr; } } }
+
+    /* ── 요일과 시간: 7줄 24칸(줄이 달력 요일이라 0시부터), 요일마다 그 시간의 평균. 한 색의 진하기(없음과 다섯 단계).
+       '가장 붐비는' 칸은 따로 말하지 않는다(31차: 가장 붐비는 시간과 칸의 최댓값이 어긋나 보였다). 테두리는 읽기 줄이 말하는 칸 ── */
+    .hq0 { background: var(--viz-zero); }
+    .hq1 { background: var(--viz-track); }
+    .hq2 { background: var(--viz-seq-1); }
+    .hq3 { background: var(--viz-seq-2); }
+    .hq4 { background: var(--viz-seq-3); }
+    .hq5 { background: var(--viz-seq-4); }
+    .hm { display: grid; grid-template-columns: 20px repeat(24, minmax(0, 1fr)); gap: 2px 1px; }
+    .hm-y { grid-column: 1; align-self: center; color: var(--ink-2); font-size: 12px; line-height: 16px; font-weight: 500; }
+    .hm-c { position: relative; height: 20px; border-radius: 2px; }
+    .hm-c.is-cur { z-index: 1; outline: 2px solid var(--ink); outline-offset: 1px; }
+    .hm-x { position: relative; grid-column: 2 / -1; height: 16px; margin-top: 2px; }
+    .hm-x span { position: absolute; top: 0; transform: translateX(-50%); color: var(--ink-2); font-size: 12px; line-height: 16px; white-space: nowrap; }
+    .hm-x span:first-child { transform: none; }
+    .hm-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 8px 0 0; color: var(--ink-2); font-size: 12px; line-height: 16px; font-weight: 500; }
+    .hm-legend i { position: relative; width: 12px; height: 12px; border-radius: 3px; }
+    @media (min-width: 768px) { .hm { gap: 2px; } .hm-c { height: 24px; } }
+    @media (min-width: 900px) { .hm-c { height: 28px; } }
+    #heatCard { margin-top: var(--rp-gap); }
+
     /* ── 바로가기: 폰은 같은 폭 4칸, 고정하지 않음. 1080 이상만 고정 ── */
     .jump-bar { margin-top: 12px; background: var(--bg); }
+    #secGlance { margin-top: 24px; }
+    #secGlance:not([hidden]) + .titles-band { margin-top: var(--rp-sec-gap); }
+    @media (min-width: 768px) { #secGlance { margin-top: 32px; } }
     .jump-bar ul { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 8px; height: var(--rp-jump-h); margin: 0; padding: 4px 0; list-style: none; overflow: visible; }
     .jump-bar a { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; margin: 0; padding: 0 8px;
       border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; }
@@ -535,8 +606,8 @@
       .bar-in, .fade-up, dialog.sheet[open], .tdetail-head img, .mcard-title img { animation: none !important; }
     }
     @media (forced-colors: active) {
-      .rp-card, .rp-strip, .medal-card, .tt-card, .rank-row, .rec-list li { border: 1px solid CanvasText; }
-      .cal .cd, .stack100 span, .rank-bar > span { forced-color-adjust: none; }
+      .rp-card, .rp-strip, .medal-card, .tt-card, .rank-row, .rec-list li, .gl-card { border: 1px solid CanvasText; }
+      .cal .cd, .stack100 span, .rank-bar > span, .hm-c, .hm-legend i, .gl-week i, .gl-topics .tb, .gl-bars i { forced-color-adjust: none; }
       dialog.sheet { border: 1px solid CanvasText; }
       .seg-chip[aria-pressed="true"], .seg-chip[aria-checked="true"], .jump-bar a[aria-current="true"], .combo-list li[aria-selected="true"] { forced-color-adjust: none; background: Highlight; border-color: Highlight; color: HighlightText; }
       .seg-chip[aria-checked="true"] .ic, .jump-bar a[aria-current="true"] .ic { color: HighlightText; }
@@ -553,6 +624,7 @@
       .name-grid { grid-template-columns: minmax(0, 1fr); }
     }
     :where(.rp-sec, .titles-band, .rp-top, dialog.sheet) :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    #heatViz:focus-visible { outline-offset: 6px; }
     [hidden] { display: none !important; }
   </style>
   <script src="assets/site-core.js?v=15"></script>
@@ -644,6 +716,15 @@
         <div class="container"><ul id="jumpList"></ul></div>
       </nav>
 
+      <!-- 한눈에 보기: 가장 붐빈 주, 가장 붐비는 요일, 가장 많이 나온 이야기(카드를 누르면 자세한 자리로). 폰 첫 화면의 바로가기를 밀어내지 않게 바로가기 아래 -->
+      <section class="container rp-sec" id="secGlance" aria-labelledby="glanceL glanceH" hidden>
+        <div class="rp-head">
+          <p class="rp-label" id="glanceL"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg>한눈에</p>
+          <h2 id="glanceH">한눈에 보기</h2>
+        </div>
+        <ul class="gl-grid" id="glanceGrid"></ul>
+      </section>
+
       <!-- 칭호: 메달 6, 작은 칭호(시간대, 이야기) -->
       <section class="titles-band" id="secTitles" aria-labelledby="titlesL titlesH">
         <div class="container">
@@ -721,6 +802,15 @@
                 <div id="topicStack"></div>
                 <ul class="topic-legend" id="topicLegend"></ul>
               </div>
+            </div>
+          </div>
+          <div class="rp-card" id="heatCard" hidden>
+            <h3>요일과 시간별 평균</h3>
+            <div class="viz" id="heatViz" tabindex="0" role="slider" aria-label="요일과 시간별 평균 메시지" aria-describedby="vizHint"></div>
+            <div class="hm-legend" id="heatLegend" aria-hidden="true"></div>
+            <div class="card-foot">
+              <p class="viz-read" id="heatRead"></p>
+              <details class="table-twin"><summary>표로 보기<span class="sr-only">, 요일과 시간별 평균</span></summary><div class="tw-scroll" id="heatTable"></div></details>
             </div>
           </div>
         </div>
@@ -2339,6 +2429,7 @@
           ws.hidden = false;
         } else { ws.hidden = true; ws.innerHTML = ""; }
         renderTopic();
+        renderHeat();
         const side = $("rhythmSide");
         side.hidden = ws.hidden && $("topicCard").hidden;
         sec.hidden = (!total && side.hidden) || (!state.legacy && !state.full.len);
@@ -2441,6 +2532,168 @@
         stack.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2000 : 100, owner));
       }
 
+      /* ═══════════ 요일과 시간: 요일마다 그 시간의 평균(온전한 날을 그 요일 수로 나눔) ═══════════
+         줄은 달력 요일이라 열은 0시부터(6시부터 그리면 새벽이 다음 줄 끝에 붙어 다른 요일로 읽힌다).
+         온전한 날이 21일 이상(요일마다 3일 이상)일 때만. 처음 읽기 줄과 테두리는 가장 붐비는 요일(한눈에 보기와 같은 요일) 줄에서 값이 가장 큰 칸이고,
+         '가장'이라고 따로 말하지 않는다 */
+      const heatNum = (v) => (v > 0 && v < 0.1 ? "0.1 미만" : v > 0 && v < 10 ? x1(v).replace(/\.0$/, "") : nf(v));
+      const heatQ = (v, mx) => (v > 0 && mx > 0 ? Math.min(5, Math.max(1, Math.ceil((v / mx) * 5))) : 0);
+      /* 요일별 하루 평균과 가장 붐비는 요일(온전한 날 21일 이상, 요일마다 3일 이상). 한눈에 보기와 요일과 시간이 같이 쓴다 */
+      function weekdayBest() {
+        if (state.full.len < 21) return null;
+        const wa = RM.weekdayAvg(state.data, state.full);
+        if (wa.n.some((x) => x < 3)) return null;
+        let bw = 0;
+        wa.avg.forEach((v, w) => { if (v > wa.avg[bw]) bw = w; });
+        return wa.avg[bw] > 0 ? { avg: wa.avg, n: wa.n, bw } : null;
+      }
+      function heatData() {
+        const st = state.data, wb = weekdayBest();
+        if (state.legacy || !wb || !st.days.some((d) => Array.isArray(d.byHour))) return null;
+        const grid = RM.heatmapOf(st, state.full).map((row, w) => row.map((v) => v / wb.n[w]));
+        let mx = 0;
+        grid.forEach((row) => row.forEach((v) => { if (v > mx) mx = v; }));
+        if (!(mx > 0)) return null;
+        let bc = 0;
+        grid[wb.bw].forEach((v, c) => { if (v > grid[wb.bw][bc]) bc = c; });
+        return { grid, mx, bw: wb.bw, bc };
+      }
+      function heatText(w, c) {
+        const s = heatNum(state.heat.grid[w][c]);
+        return { date: `${WEEK_KO[w]}요일 ${c}시`, val: s === "0.1 미만" ? "평균 0.1건 미만" : `평균 ${s}건` };
+      }
+      function setHeatRead(w, c) {
+        const t = heatText(w, c), fig = $("heatViz");
+        $("heatRead").innerHTML = `<span class="nw">${esc(t.date)}</span> <b>${esc(t.val)}</b>`;
+        fig.setAttribute("aria-valuenow", String(w * 24 + c + 1));
+        fig.setAttribute("aria-valuetext", `${t.date} ${t.val}`);
+      }
+      function renderHeat() {
+        const card = $("heatCard"), hd = heatData(), fig = $("heatViz");
+        state.heat = hd;
+        card.hidden = !hd;
+        if (!hd) { fig.innerHTML = ""; fig.onkeydown = null; return; }
+        if (!(state.heatCur && hd.grid[state.heatCur[0]] && hd.grid[state.heatCur[0]][state.heatCur[1]] != null)) state.heatCur = null;
+        const cur = state.heatCur || [hd.bw, hd.bc];
+        let cells = "";
+        hd.grid.forEach((row, w) => {
+          cells += `<span class="hm-y">${WEEK_KO[w]}</span>`;
+          row.forEach((v, c) => { cells += `<i class="hm-c hq${heatQ(v, hd.mx)}${w === cur[0] && c === cur[1] ? " is-cur" : ""}" data-w="${w}" data-c="${c}"></i>`; });
+        });
+        cells += `<span class="hm-x">${[0, 6, 12, 18].map((h) => `<span style="left:${((h / 24) * 100).toFixed(2)}%">${h}시</span>`).join("")}</span>`;
+        fig.innerHTML = `<div class="hm" aria-hidden="true">${cells}</div>`;
+        fig.setAttribute("aria-valuemin", "1");
+        fig.setAttribute("aria-valuemax", "168");
+        $("heatLegend").innerHTML = `<span>적음</span>${[0, 1, 2, 3, 4, 5].map((q) => `<i class="hq${q}"></i>`).join("")}<span>많음</span>`;
+        setHeatRead(cur[0], cur[1]);
+        $("heatTable").innerHTML = twinTable("요일과 시간별 평균 메시지", ["시간"].concat(WEEK_KO), Array.from({ length: 24 }, (_, h) => [h + "시"].concat(hd.grid.map((row) => heatNum(row[h])))), [1, 2, 3, 4, 5, 6, 7]);
+        const grid = fig.querySelector(".hm");
+        // 고른 칸은 테두리와 읽기 줄(벗어나도 남는다), 툴팁은 잠깐
+        const pick = (w, c) => {
+          grid.querySelectorAll(".is-cur").forEach((el) => el.classList.remove("is-cur"));
+          const el = grid.querySelector(`.hm-c[data-w="${w}"][data-c="${c}"]`), t = heatText(w, c);
+          if (el) { el.classList.add("is-cur"); const r = el.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top, t.val, t.date, "heat"); }
+          setHeatRead(w, c);
+          state.heatCur = [w, c];
+        };
+        const onPtr = (e) => { const t = e.target.closest(".hm-c"); if (t) pick(+t.dataset.w, +t.dataset.c); };
+        grid.addEventListener("pointermove", onPtr);
+        grid.addEventListener("pointerdown", onPtr);
+        grid.addEventListener("pointerleave", (e) => hideTip(e.pointerType === "touch" ? 2500 : 120, "heat"));
+        // 슬라이더 값은 월요일 0시부터 일요일 23시까지 한 줄(다른 차트처럼 오른쪽과 위는 다음, PageUp 과 PageDown 은 하루, Home 과 End 는 처음과 끝)
+        fig.onkeydown = (e) => {
+          const c0 = state.heatCur || [hd.bw, hd.bc];
+          let i = c0[0] * 24 + c0[1];
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") i += 1;
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") i -= 1;
+          else if (e.key === "PageUp") i += 24;
+          else if (e.key === "PageDown") i -= 24;
+          else if (e.key === "Home") i = 0;
+          else if (e.key === "End") i = 167;
+          else return;
+          e.preventDefault();
+          i = Math.max(0, Math.min(167, i));
+          pick(Math.floor(i / 24), i % 24);
+        };
+        fig.onblur = () => hideTip(0, "heat");
+      }
+
+      /* ═══════════ 한눈에 보기: 가장 붐빈 주, 가장 붐비는 요일, 가장 많이 나온 이야기 ═══════════
+         발행 기간 전체로 센 것만, 좋은 쪽만(REPORT_PLAN K3, K5: 최근 며칠과의 비교, 줄어듦, 집중도, 입장 수는 싣지 않는다).
+         카드마다 이름표, 값, 작은 그림(장식이라 읽기 프로그램에는 숨기고 뜻은 글이 진다), 근거 한 줄, 자세한 자리로 가는 길 */
+      /* 작은 막대: 높이는 가장 큰 값 대비, 강조 하나(hi) */
+      function barsHTML(vals, hi, cls) {
+        const mx = Math.max(...vals, 1);
+        return `<div class="gl-bars${cls ? " " + cls : ""}">${vals.map((v, k) => `<i${k === hi ? ' class="is-peak"' : ""} style="height:${Math.max(3, (v / mx) * 100).toFixed(1)}%"></i>`).join("")}</div>`;
+      }
+      /* 가장 붐빈 주: 온전한 날을 월요일부터 주로 묶어, 7일이 다 찬 주(둘 이상일 때) 가운데 메시지가 가장 많은 주.
+         그림은 7일이 다 찬 주마다 하루 평균(강조 막대가 늘 가장 높게. 26주까지, 가장 붐빈 주가 들어가게) */
+      function glanceFlow() {
+        const days = state.data.days, F = state.legacy ? days.length : state.full.len, weeks = [];
+        for (let k = 0; k < F; k++) {
+          let w = weeks[weeks.length - 1];
+          if (!w || RM.weekdayOf(days[k].d) === 0) weeks.push((w = { i0: k, i1: k, t: 0, n: 0 }));
+          w.i1 = k; w.t += Number(days[k].c) || 0; w.n += 1;
+        }
+        const full = weeks.filter((w) => w.n === 7);
+        if (full.length < 2) return null;
+        let best = full[0];
+        full.forEach((w) => { if (w.t > best.t) best = w; });
+        if (!(best.t > 0)) return null;
+        let shown = full, hi = shown.indexOf(best);
+        if (shown.length > 26) { const s = Math.max(0, Math.min(hi - 13, shown.length - 26)); shown = shown.slice(s, s + 26); hi -= s; }
+        return { icon: "chart", go: "flowCard", more: "흐름 보기", lb: "가장 붐빈 주", val: esc(`${fmtK(days[best.i0].d)}~${fmtK(days[best.i1].d)}`),
+          sb: `그 주 하루 평균 ${nf(best.t / 7)}건`, viz: barsHTML(shown.map((w) => w.t / 7), hi, shown.length <= 12 ? "is-wide" : "") };
+      }
+      /* 가장 붐비는 요일: 온전한 날이 21일 이상(요일마다 3일 이상)일 때 요일별 하루 평균이 가장 큰 요일. 그림은 월~일 막대.
+         요일과 시간 카드도 이 요일 줄에서 처음 칸을 고른다 */
+      function glanceWhen() {
+        const wb = weekdayBest();
+        if (!wb) return null;
+        const mx = Math.max(...wb.avg, 1);
+        return { icon: "calendar", go: state.heat ? "heatCard" : "secRhythm", more: state.heat ? "요일과 시간 보기" : "평소 보기", lb: "가장 붐비는 요일", val: `${WEEK_KO[wb.bw]}요일`,
+          sb: `하루 평균 ${nf(wb.avg[wb.bw])}건`,
+          viz: `<div class="gl-week">${wb.avg.map((v, w) => `<span${w === wb.bw ? ' class="is-peak"' : ""}><i style="height:${Math.max(3, (v / mx) * 100).toFixed(1)}%"></i><b>${WEEK_KO[w]}</b></span>`).join("")}</div>` };
+      }
+      /* 이야기: 주제 비중이 가장 큰 주제. 근거는 많이 나온 말 셋(호칭, 말버릇, 닉네임을 뺀 것) */
+      function glanceWords() {
+        const heads = RM.nickHeads(state.vis.map(nameOf));
+        const isName = (w) => heads.some((t) => w === t || (w.indexOf(t) === 0 && w.length <= t.length + 1));
+        return RM.cleanKeywords(state.data.keywords).map((k) => String(k.w)).filter((w) => !isName(w)).slice(0, 3);
+      }
+      function glanceTopic() {
+        if (state.legacy) return null;
+        const tt = RM.topicTotals(state.data, state.vis);
+        const ttot = RM.TOPICS.reduce((a, t) => a + (tt[t.key] || 0), 0);
+        if (ttot < 20) return null;
+        const list = RM.TOPICS.map((t) => ({ t, v: tt[t.key] || 0 })).sort((a, b) => b.v - a.v);
+        const mx = list[0].v || 1, words = glanceWords();
+        return { icon: "chat", go: "topicCard", more: "주제 비중 보기", lb: "가장 많이 나온 이야기", val: `${esc(list[0].t.label)}<small>${pctMin1(list[0].v, ttot)}</small>`,
+          sb: words.length >= 2 ? `많이 나온 말 ${words.join(", ")}` : "",
+          viz: `<div class="gl-topics">${list.map((x) => `<span class="tn">${esc(x.t.label)}</span><span class="tb"><span style="width:${Math.max(2, (x.v / mx) * 100).toFixed(1)}%;background:var(${TOPIC_VAR[x.t.key]})"></span></span><span class="tp">${pctMin1(x.v, ttot)}</span>`).join("")}</div>` };
+      }
+      function glanceCardHTML(c, k) {
+        return `<li><a class="gl-card fade-up" href="#${c.go}" data-glance="${c.go}" style="animation-delay:${reduceMotion ? 0 : k * 40}ms">`
+          + `<span class="gl-lb"><span class="gl-ic">${ic(c.icon)}</span>${esc(c.lb)}</span>`
+          + `<span class="gl-val"><span>${c.val}</span>${c.delta || ""}</span>`
+          + `<span class="gl-viz" aria-hidden="true">${c.viz || ""}</span>`
+          + `<span class="gl-sb">${esc(c.sb || "")}</span>`
+          + `<span class="gl-mo">${esc(c.more)}${ic("chevRight")}</span></a></li>`;
+      }
+      /* 평소 섹션을 그린 뒤에 부른다(시간과 요일 자료를 함께 쓴다) */
+      function renderGlance() {
+        const sec = $("secGlance"), ul = $("glanceGrid"), cards = [];
+        [glanceFlow, glanceWhen, glanceTopic].forEach((fn) => {
+          try { const c = fn(); if (c) cards.push(c); } catch (e) { if (window.console) console.error("glance", e); }
+        });
+        const shown = cards.filter((c) => { const t = $(c.go); return t && !t.hidden && !t.closest("[hidden]"); });
+        if (shown.length < 2) { sec.hidden = true; ul.innerHTML = ""; return; }
+        sec.hidden = false;
+        $("glanceH").textContent = RM.pubShort(state.data) + " 한눈에 보기";
+        ul.style.setProperty("--n", String(shown.length));
+        ul.innerHTML = shown.map(glanceCardHTML).join("");
+      }
+
       /* ═══════════ 바로가기와 집계 기준 ═══════════ */
       const JUMPS = [["secTitles", "칭호", "medal"], ["secRank", "순위", "trophy"], ["secFlow", "흐름", "chart"], ["secRhythm", "평소", "clock"]];
       function setJumpCur(id) { $("jumpList").querySelectorAll("a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.jump === id))); }
@@ -2475,7 +2728,7 @@
       window.addEventListener("scroll", () => { if (!stuckRaf) stuckRaf = requestAnimationFrame(syncStuck); }, { passive: true });
       ["wheel", "touchstart", "keydown"].forEach((ev) => window.addEventListener(ev, () => { state.jumpPick = null; }, { passive: true }));
       function focusSection(sec) {
-        const h = sec.querySelector("h2");
+        const h = sec.querySelector("h2, h3");
         if (!h) return;
         h.setAttribute("tabindex", "-1");
         try { h.focus({ preventScroll: true }); } catch (e) {}
@@ -2483,7 +2736,7 @@
       function renderDataNote() {
         const T = state.titles, st = state.data;
         const lines = [];
-        if (!state.legacy) lines.push("하루 평균과 매일 이야기한 멤버는 하루가 다 찬 날로만 셉니다.");
+        if (!state.legacy) lines.push(state.heat ? "하루 평균, 요일과 시간별 평균, 매일 이야기한 멤버는 하루가 다 찬 날로만 셉니다." : "하루 평균과 매일 이야기한 멤버는 하루가 다 찬 날로만 셉니다.");
         lines.push("날짜는 0시에 바뀌고, 시간 막대만 6시부터 그립니다.");
         if (T && T.awards.length) {
           lines.push("칭호는 한 사람에 하나입니다." + (T.awards.some((a) => a.id === "growth") ? " 성장왕만 최근 7일을 그 앞 7일과 비교합니다." : ""));
@@ -3031,6 +3284,7 @@
         safe("rank", renderRank);
         safe("flow", renderFlow);
         safe("rhythm", renderRhythm);
+        safe("glance", renderGlance);
         safe("jump", renderJump);
         safe("note", renderDataNote);
       }
@@ -3083,6 +3337,19 @@
             state.jumpPick = "secRank";
             scrollToSec($("secRank"));
             const nb = $("lensChips").querySelector('[aria-checked="true"]'); if (nb) nb.focus({ preventScroll: true });
+            return;
+          }
+          const gl = e.target.closest("[data-glance]");
+          if (gl) {
+            const tgt = $(gl.dataset.glance);
+            if (tgt && !tgt.hidden) {
+              e.preventDefault();
+              const sec = tgt.closest("section");
+              state.jumpPick = sec ? sec.id : null;
+              if (WIDE.matches && sec) setJumpCur(sec.id);
+              scrollToSec(tgt);
+              focusSection(tgt);
+            }
             return;
           }
           const j = e.target.closest("[data-jump]");
@@ -3174,7 +3441,7 @@
       function bootWith(stats, source, row) {
         state.source = source;
         state.row = row || null;
-        state.focusIdx = -1; state.findIdx = -1; state.cardIdx = -1; state.flowK = null; state.hourK = null;
+        state.focusIdx = -1; state.findIdx = -1; state.cardIdx = -1; state.flowK = null; state.hourK = null; state.heatCur = null; state.heat = null;
         state.jumpPick = null; state.comboScrolled = false;
         comboItems = []; comboSel = -1;
         $("searchList").hidden = true; $("searchList").innerHTML = ""; $("memberSearch").setAttribute("aria-expanded", "false"); $("memberSearch").removeAttribute("aria-activedescendant");
@@ -3215,12 +3482,11 @@
           return;
         }
         bootWith(stats, source, row);
-        // 주소에 섹션이 있으면(#secRank 같은) 그린 뒤에 그 자리로
-        const hash = decodeURIComponent(location.hash.slice(1));
-        if (hash && JUMPS.some((x) => x[0] === hash) || hash === "dataNote") {
-          const t = $(hash);
-          if (t && !t.hidden) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
-        }
+        // 주소에 본문 안의 자리가 있으면(#secRank, 한눈에 보기 카드가 가리키는 #heatCard 같은) 그린 뒤에 그 자리로
+        let hash = "";
+        try { hash = decodeURIComponent(location.hash.slice(1)); } catch (e) {}
+        const hashEl = /^[A-Za-z][\w-]*$/.test(hash) ? $(hash) : null;
+        if (hashEl && $("dashBody").contains(hashEl) && !hashEl.closest("[hidden]")) requestAnimationFrame(() => hashEl.scrollIntoView({ block: "start" }));
         if (previewMissing && source === "live") EXCER.toast("미리보기 초안이 없어 발행된 통계를 표시합니다.");
         if (previewMissing && source === "sample") EXCER.toast("미리보기 초안이 없어 예시 데이터를 표시합니다.");
       }
