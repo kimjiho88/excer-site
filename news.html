@@ -920,7 +920,9 @@
       </div>
       <!-- 카카오 묶기: 명단 전체 드롭다운에서 한 번만 고른다(서버 member_names). 바꾸기와 풀기는 운영 화면에서만 -->
       <div id="meSelWrap" hidden>
-        <label class="att-label" for="meSel">채팅방 닉네임 고르기</label>
+        <label class="att-label" for="meSelQ">명단 좁히기</label>
+        <input id="meSelQ" class="input" type="search" maxlength="24" placeholder="앞 글자나 초성 (예: 엑서, ㅇㅅ)" autocomplete="off" enterkeyhint="done" aria-controls="meSel" />
+        <label class="att-label" for="meSel" style="margin-top:10px">채팅방 닉네임 고르기</label>
         <select id="meSel" class="input" aria-describedby="meSelNote"><option value="">명단에서 고르세요</option></select>
         <p id="meSelNote" class="field-hint" aria-live="polite" style="margin:8px 0 0"></p>
       </div>
@@ -2842,6 +2844,7 @@
     }
     async function openMeSel() {
       const seq = ME.seq, sel = $("meSel"), note = $("meSelNote");
+      ME.names = null; $("meSelQ").value = "";
       $("meFind").hidden = true; $("meSelWrap").hidden = false; $("meSelOk").hidden = false; $("meSelOk").disabled = true;
       sel.innerHTML = '<option value="">명단을 읽는 중</option>'; note.textContent = "";
       let rows;
@@ -2857,12 +2860,32 @@
       }
       if (seq !== ME.seq) return;
       if (!rows.length) { sel.innerHTML = '<option value="">명단이 아직 없습니다</option>'; note.textContent = "봇이 멤버 명단을 올린 뒤 다시 해 주세요."; return; }
+      ME.names = rows;
+      renderMeSel(rows, "");
+      setTimeout(() => $("meSelQ").focus(), 30);
+    }
+    /* 좁히기(드롭다운 위의 칸): 앞 글자나 포함된 글자, 초성(ㅇㅅ), 끝에 붙은 낱자음(엑ㅅ)으로 목록을 줄인다. 고르기는 드롭다운에서만 */
+    function narrowNames(all, q) {
+      q = nfc(q); if (!q) return all;
+      if (C.isChosungQuery(q)) { const cq = q.replace(/\s+/g, ""); return all.filter((r) => C.chosung(r.name).includes(cq)); }
+      const tail = /[ㄱ-ㅎ]$/.test(q) ? q.slice(-1) : "", base = nickKey(tail ? q.slice(0, -1) : q);
+      return all.filter((r) => {
+        const n = nickKey(r.name), i = base ? n.indexOf(base) : 0;
+        if (i < 0) return false;
+        if (!tail) return true;
+        const ch = n.charAt(i + base.length); return !!ch && C.chosung(ch) === tail;
+      });
+    }
+    function renderMeSel(all, q) {
+      const sel = $("meSel"), note = $("meSelNote"), rows = narrowNames(all, q), keep = sel.value;
+      if (!rows.length) { sel.innerHTML = '<option value="">맞는 이름이 없습니다</option>'; note.textContent = "맞는 이름이 없습니다. 글자를 줄여 보세요."; $("meSelOk").disabled = true; return; }
       const groups = new Map();
       rows.forEach((r) => { const g = /^[ㄱ-ㅎ]$/.test(r.cho) ? r.cho : "기타"; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(r.name); });
       const order = [...groups.keys()].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b, "ko"));
       sel.innerHTML = '<option value="">명단에서 고르세요</option>' + order.map((g) => `<optgroup label="${esc(g)}">` + groups.get(g).map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("") + "</optgroup>").join("");
-      note.textContent = "봇이 올린 채팅방 멤버 명단 " + rows.length + "명입니다. 한 번 고르면 바꾸거나 풀 수 없습니다. 잘못 골랐으면 운영진에게 알려 주세요.";
-      setTimeout(() => sel.focus(), 30);
+      if (keep && rows.some((r) => r.name === keep)) sel.value = keep;
+      $("meSelOk").disabled = !sel.value;
+      note.textContent = (nfc(q) ? all.length + "명 가운데 " + rows.length + "명입니다. " : "봇이 올린 채팅방 멤버 명단 " + all.length + "명입니다. ") + "한 번 고르면 바꾸거나 풀 수 없습니다. 잘못 골랐으면 운영진에게 알려 주세요.";
     }
     function closeMe() {
       if ($("meBackdrop").hidden) return;
@@ -3394,6 +3417,12 @@
       $("meOk").addEventListener("click", submitMeFree);
       $("meSel").addEventListener("change", () => { $("meSelOk").disabled = !$("meSel").value; });
       $("meSelOk").addEventListener("click", () => { const v = $("meSel").value; if (v && ME.link) linkMe(v); });
+      $("meSelQ").addEventListener("input", () => { if (ME.names) renderMeSel(ME.names, $("meSelQ").value); });
+      $("meSelQ").addEventListener("keydown", (e) => {   // 하나만 남았으면 Enter 로 그 이름을 고른다(묶는 것은 단추로)
+        if (e.key !== "Enter") return; e.preventDefault();
+        const opts = $("meSel").querySelectorAll("option:not([value=''])");
+        if (opts.length === 1) { $("meSel").value = opts[0].value; $("meSelOk").disabled = false; $("meSelOk").focus(); }
+      });
       $("meFree").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitMeFree(); } });
       $("meFree").addEventListener("input", () => { $("meFreeErr").hidden = true; });
       $("meClose").addEventListener("click", closeMe);
