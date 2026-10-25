@@ -3,13 +3,13 @@
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 안(붙여넣다 잘리지 않게).
 -- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지, 끝난 모임 지키기. 2026-10-11: 운영진의 지난 날짜 고치기.
--- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin).
+-- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin). 2026-10-25: 카카오 묶기 줄, 안쪽 함수 다섯, 서버 형식 kakao_login.
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
   (7, 'site_places', '맛집'), (8, 'site_place_notes', '한줄평'), (9, 'site_visit_counts', '방문 횟수(날짜 수)'),
   (11, 'ops_store', '운영 원장'), (12, 'site_rate_hit', '속도 제한 기록(하루치)'), (13, 'site_config', '설정'),
-  (16, 'site_members', '멤버 닉네임 목록')
+  (16, 'site_members', '멤버 닉네임 목록'), (19, 'site_kakao_links', '카카오 묶기')
 ),
 cnt as (
   select ord, t, 부름, to_regclass('public.' || t) as reg,
@@ -30,11 +30,11 @@ admin as (
 inner_fn (sig) as (values
   ('public.site_is_admin(text)'), ('public.site_hash(text)'), ('public.site_kst_now()'),
   ('public.bung_is_open(bigint,jsonb)'), ('public.bung_attend_list(bigint)'), ('public.bung_check(jsonb,bigint,jsonb)'), ('public.bung_check(jsonb,bigint,jsonb,boolean)'),
-  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)'), ('public.ops_sheet_store(jsonb,jsonb,text)'), ('public.bung_migrate(jsonb)')
+  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)'), ('public.ops_sheet_store(jsonb,jsonb,text)'), ('public.bung_migrate(jsonb)'), ('public.kakao_log(uuid,text,text,text,jsonb)'), ('public.kakao_identity(uuid)'), ('public.kakao_link_check(uuid)'), ('public.kakao_me()'), ('public.kakao_post_mine(site_posts,site_kakao_links)')
 ),
 locks as (
   select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
-         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean|ops_sheet_store|bung_migrate') as 빠짐
+         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean|ops_sheet_store|bung_migrate|kakao_') as 빠짐
     from inner_fn
 ),
 schema_v as (
@@ -63,7 +63,7 @@ mbot as (
 
 select 항목, 값, 판정 from (
 select ord, 부름 as 항목, case when reg is null then '표가 없어요' else n::text || '줄' end as 값,
-       case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' when t = 'site_members' then '2026-10-09-members.sql 을 돌리면 생겨요' else '설치가 덜 됐어요' end
+       case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' when t = 'site_members' then '2026-10-09-members.sql 을 돌리면 생겨요' when t = 'site_kakao_links' then '카카오 로그인은 2026-10-25-kakao-login-1.sql 부터 네 쪽을 돌리면 생겨요' else '설치가 덜 됐어요' end
             when t = 'site_members' and n = 0 then '운영 화면 데이터 탭에서 사이트에 올리기' else '' end as 판정
   from cnt
 union all
@@ -73,7 +73,7 @@ select 10, '벙 날짜, 장소 칸', case when ok then '있음' else '없음' en
 union all
 select 14, '서버 형식(site_schema_v)', coalesce(keys, '보기가 없어요'),
        case when keys is null then '설치가 덜 됐어요'
-            when string_to_array(keys, ', ') @> array['bung_admin', 'bung_attend', 'bung_cancel', 'bung_end', 'bung_place', 'content_format', 'places_location'] then '정상(최신)'
+            when string_to_array(keys, ', ') @> array['bung_admin', 'bung_attend', 'bung_cancel', 'bung_end', 'bung_place', 'content_format', 'kakao_login', 'places_location'] then '정상(최신)'
             else '빠진 줄이 있어요. sql/README.md 에서 아직 안 돌린 쪽을 차례대로' end
   from schema_v
 union all

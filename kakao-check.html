@@ -67,7 +67,7 @@
       <h2 id="kcHelp">막히면</h2>
       <ul>
         <li>카카오 화면에 KOE006: 카카오의 리다이렉트 URI가 <code>https://drggzlnzwvkhtalvkqyo.supabase.co/auth/v1/callback</code> 와 글자 하나까지 같은지 봅니다.</li>
-        <li>카카오 화면에 KOE205: 요청한 동의항목이 카카오 설정에 없습니다. 화면에 적힌 항목 이름을 개발 세션에 알려 주세요.</li>
+        <li>카카오 화면에 KOE205: 요청한 동의항목이 카카오 설정에 없습니다. Supabase 는 닉네임, 프로필 사진, 카카오계정(이메일)을 늘 함께 요청하므로 앱을 개인 개발자 비즈 앱으로 바꾸고 세 항목을 모두 켜 둡니다(닉네임 말고는 선택 동의). docs/KAKAO_LOGIN_SETUP.md.</li>
         <li>로그인 뒤 이 화면이 아니라 홈으로 가면: Supabase의 Redirect URLs에 <code>https://excer-site.vercel.app/**</code> 가 없습니다.</li>
         <li>이 확인으로 Supabase에 운영진 본인의 로그인 정보가 하나 생깁니다. 필요 없으면 Supabase의 Authentication &gt; Users에서 지울 수 있습니다.</li>
       </ul>
@@ -114,7 +114,7 @@
           "<dt>이메일</dt><dd>" + (email ? "받음" : "받지 않음") + "</dd>" +
           "<dt>프로필 사진</dt><dd>" + (pic ? "받음" : "받지 않음") + "</dd></dl>";
         if (!id) show("warn", '<p class="kc-title">로그인은 되었지만 카카오 회원번호를 받지 못했습니다.</p>' + rows + "<p>이 화면을 캡처해 개발 세션에 보내 주세요.</p>");
-        else if (extra.length) show("warn", '<p class="kc-title">로그인 성공. 다만 쓰지 않을 항목(' + extra.join(", ") + ")도 받고 있습니다.</p>" + rows + "<p>카카오 동의항목에서 " + extra.join(", ") + "을 사용 안 함으로 바꾼 뒤 로그아웃하고 다시 확인합니다. 바꿀 수 없으면 그대로 알려 주세요.</p>");
+        else if (extra.length) show("ok", '<p class="kc-title">로그인 성공. 설정이 맞습니다.</p>' + rows + "<p>선택 동의한 항목(" + extra.join(", ") + ")도 받았습니다. 사이트는 이 항목을 쓰지 않으며, 동의 화면에서 체크를 풀어도 로그인됩니다.</p>");   // Supabase 가 늘 함께 요청하는 선택 항목(비즈 앱 전환 뒤)
         else show("ok", '<p class="kc-title">로그인 성공. 설정이 맞습니다.</p>' + rows);
         bIn.disabled = true; bOut.disabled = false;
       }

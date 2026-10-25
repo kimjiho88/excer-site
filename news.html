@@ -490,6 +490,20 @@
     .me-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .me-chip small { flex: none; color: var(--ink-2); font-size: var(--fs-caption); }
     .me-chip.is-empty { border-color: var(--brand); color: var(--brand); font-weight: 700; }
+    /* 카카오 로그인(112차): 노란 단추(카카오 디자인 가이드 색 #FEE500), 로그인 뒤에는 묶은 닉네임 칩과 작은 메뉴 */
+    .kakao-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+    .kakao-row[hidden] { display: none; }
+    .kakao-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: #FEE500; color: rgba(0, 0, 0, .85); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+    .kakao-btn svg { width: 18px; height: 18px; flex: none; }
+    .kakao-btn:disabled { opacity: .5; cursor: default; }
+    .kakao-note { color: var(--ink-2); font-size: var(--fs-caption); }
+    .kakao-note a { color: inherit; text-decoration: underline; }
+    .kakao-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; max-width: 100%; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: var(--fs-sm); }
+    .kakao-chip i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #FEE500; box-shadow: 0 0 0 2px rgba(0, 0, 0, .12) inset; }
+    .kakao-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kakao-chip small { flex: none; color: var(--ink-2); font-size: var(--fs-caption); }
+    .kakao-menu { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
+    .kakao-menu .text-btn { min-height: 32px; }
     .att-me { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 10px; padding: 4px 4px 4px 12px; border-radius: 10px; background: var(--brand-soft); }
     .att-me b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--brand); font-size: 15px; }
     .att-me .text-btn { flex: none; }
@@ -615,7 +629,7 @@
   </style>
   <script src="assets/site-core.js?v=15"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=14"></script>
+  <script src="assets/content.js?v=15"></script>
   <script src="assets/bung-photo.js?v=5"></script>
 </head>
 <body>
@@ -673,6 +687,8 @@
           </div>
         </div>
         <div class="me-row"><button type="button" class="me-chip is-empty" id="meChip"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><b>내 닉네임 정하기</b></button></div>
+        <!-- 카카오 로그인(서버에 kakao_login 이 있고 설정이 켜진 기기에서만): 로그인 단추, 로그인 뒤 닉네임 고르기, 묶은 뒤에는 닉네임 칩과 바꾸기, 풀기, 로그아웃 -->
+        <div class="kakao-row" id="kakaoRow" hidden aria-live="polite"></div>
         <div class="prompt-card" id="promptCard" hidden>
           <!-- 글감 종류 그림(2세대 posts-*, 후기는 flow-record) 96px. 못 읽으면 전구 아이콘으로 -->
           <img class="spot-img pc-art" id="promptArt" src="assets/img/posts-free-320.webp" width="320" height="320" alt="" decoding="async" onerror="this.closest('.prompt-card').classList.add('no-image')" />
@@ -795,6 +811,7 @@
         </div>
         <div class="form-sec is-wide">작성 정보</div>
         <!-- 이 브라우저에 닉네임과 비밀번호가 저장돼 있으면 칸 대신 한 줄로. 바꾸기를 누르면 칸이 열린다 -->
+        <p class="author-sum is-wide" id="wLogin" hidden><span><b id="wLoginName"></b> 이름으로 올립니다(카카오 로그인, 비밀번호 없음).</span></p>
         <p class="author-sum is-wide" id="authorSum" hidden><span id="authorSumText"></span><button type="button" class="text-btn" id="authorSumEdit">바꾸기</button></p>
         <div class="field is-req" data-field="wNick" id="wNickWrap">
           <label id="wNickLabel">닉네임 <small class="req-tag">필수</small></label>
@@ -851,7 +868,7 @@
       <div class="att-me" id="attMe" hidden><b id="attMeName"></b><button type="button" class="text-btn" id="attMeChange">바꾸기</button></div>
       <input id="attNick" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" enterkeyhint="next" />
       <ul id="attSugg" class="me-list is-sugg" hidden aria-label="찾은 닉네임"></ul>
-      <label class="att-label" for="attPass">비밀번호 <small id="attPassWhy">취소할 때 필요, 4자 이상</small></label>
+      <label class="att-label" for="attPass" id="attPassLabel">비밀번호 <small id="attPassWhy">취소할 때 필요, 4자 이상</small></label>
       <input id="attPass" class="input" type="password" placeholder="비밀번호" autocomplete="off" enterkeyhint="done" />
       <p id="attPassHint" class="field-hint" hidden style="margin:6px 0 0">이 브라우저에 저장된 비밀번호를 채웠습니다.</p>
       <p id="attErr" class="field-error" role="alert" hidden style="margin:8px 0 0"></p>
@@ -1000,9 +1017,10 @@
     const C = window.EXCER_CONTENT;
     const esc = C.esc;
     async function supaFetch(path, opts = {}) {
+      const tok = await KAUTH.token();   // 카카오 로그인 중이면 그 사람의 토큰(서버가 auth.uid 로 누구인지 안다), 아니면 공개 키
       const res = await fetch(SUPA.url + path, {
         ...opts,
-        headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon, "Content-Type": "application/json", ...(opts.headers || {}) }
+        headers: { apikey: SUPA.anon, Authorization: "Bearer " + (tok || SUPA.anon), "Content-Type": "application/json", ...(opts.headers || {}) }
       });
       if (!res.ok) {
         let msg = ""; try { msg = (await res.json()).message || ""; } catch (e) {}
@@ -1062,7 +1080,15 @@
       PASS_TOO_SHORT: "비밀번호는 4자 이상 입력해 주세요.",
       NOT_FOUND: "이미 삭제된 글입니다.",
       BAD_KEY: "이 글을 수정할 권한이 없습니다.",
-      RATE_LIMIT: "짧은 시간에 너무 많이 보냈습니다. 잠시 뒤 다시 해 주세요."
+      RATE_LIMIT: "짧은 시간에 너무 많이 보냈습니다. 잠시 뒤 다시 해 주세요.",
+      // 카카오 로그인(2026-10-25 SQL)
+      LOGIN_REQUIRED: "카카오 로그인이 풀렸습니다. 다시 로그인해 주세요.",
+      NOT_LINKED: "먼저 채팅방 닉네임을 골라 주세요.",
+      NOT_KAKAO: "카카오 계정으로 로그인해 주세요.",
+      NOT_MEMBER: "채팅방 멤버 명단에 없는 이름입니다. 명단은 봇이 매일 아침 올립니다. 방금 들어왔으면 내일 다시 해 주세요.",
+      NICK_LINKED: "이 닉네임은 카카오 로그인으로 묶인 이름입니다. 카카오 로그인 뒤 참석해 주세요.",
+      NOT_OWNER: "내 글이 아닙니다.",
+      NOT_HOST: "모임장만 할 수 있습니다."
     };
     const OFFLINE_MSG = "지금은 소식을 불러올 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
@@ -1228,6 +1254,117 @@
       _deviceKey = key;
       return key;
     }
+    /* ── 카카오 로그인(112차): Supabase Auth 의 카카오 제공자. 로그인 저장은 이 화면 전용(dn-news-auth, 미니게임과 확인 화면과 따로).
+       서버 형식 kakao_login 이 있고 설정(site_setting)이 all 이거나, staff 이면 운영진 기기(ops 에서 연 기기, 또는 news.html?kakao=1 로 연 기기)에서만 보인다.
+       로그인한 사람은 봇이 올린 멤버 명단의 닉네임 하나를 묶고(me_link), 그 뒤 참석, 취소, 모임 올리기와 고치기는 비밀번호 없이 로그인 판 함수(*_me)로 한다.
+       SDK 는 처음 필요할 때(저장된 로그인, 복귀 코드, 단추 누름)만 읽는다 ── */
+    const KAUTH = {
+      KEY: "dn-news-auth", TRY_KEY: "excer_kakao_try", SDK: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+      on: false, setting: "", sb: null, sbP: null, session: null, me: null, busy: false,
+      stored() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
+      hasCode() { return /[?&]code=/.test(location.search) && !/[?&]error=/.test(location.search); },
+      tryDevice() { try { return localStorage.getItem(this.TRY_KEY) === "1"; } catch (e) { return false; } },
+      loggedIn() { return !!(this.on && this.session && this.session.user); },
+      linked() { return !!(this.loggedIn() && this.me && this.me.login && this.me.nick); },
+      nick() { return this.linked() ? String(this.me.nick) : ""; },
+      mine(post) { return !!(post && this.linked() && nickKey(post.author) === nickKey(this.nick())); },   // 내 글: 묶은 닉네임이 글쓴이(서버도 같은 기준, 로그인으로 올린 글은 계정으로)
+      load() {
+        if (this.sb) return Promise.resolve(this.sb);
+        if (!this.sbP) this.sbP = new Promise((ok, no) => {
+          if (window.supabase && window.supabase.createClient) { ok(); return; }
+          const s = document.createElement("script"); s.src = this.SDK; s.async = true;
+          s.onload = () => ok(); s.onerror = () => no(new Error("SDK"));
+          document.head.appendChild(s);
+        }).then(() => {
+          this.sb = window.supabase.createClient(SUPA.url, SUPA.anon, { auth: { storageKey: this.KEY, flowType: "pkce", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
+          this.sb.auth.onAuthStateChange((ev, ses) => { this.session = ses || null; });
+          return this.sb;
+        }).catch((e) => { this.sbP = null; throw e; });
+        return this.sbP;
+      },
+      async token() {
+        if (!this.sb || !this.on) return null;
+        try { const r = await this.sb.auth.getSession(); this.session = (r && r.data && r.data.session) || null; return this.session ? this.session.access_token : null; }
+        catch (e) { return null; }
+      },
+      /* 서버 형식을 안 뒤 한 번: 설정을 읽고, 저장된 로그인이나 복귀 코드가 있으면 SDK 를 읽어 내 정보를 가져온다 */
+      async boot(caps) {
+        this.on = false; this.setting = "";
+        if (!caps || !caps.kakao) { this.render(); return; }
+        try { const u = new URL(location.href); if (u.searchParams.get("kakao") === "1") { try { localStorage.setItem(this.TRY_KEY, "1"); } catch (e) {} u.searchParams.delete("kakao"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } } catch (e) {}
+        try { this.setting = String((await supaFetch("/rest/v1/rpc/site_setting", { method: "POST", body: JSON.stringify({ p_key: "kakao_login" }) })) || ""); } catch (e) { this.setting = ""; }
+        this.on = this.setting === "all" || (this.setting === "staff" && (isAdminDevice() || this.tryDevice()));
+        if (this.on && (this.stored() || this.hasCode())) {
+          const back = this.hasCode();
+          try {
+            await this.load(); await this.token();
+            if (back) { try { const u = new URL(location.href); u.searchParams.delete("code"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } catch (e) {} }
+            await this.refreshMe();
+            if (back && this.loggedIn()) {
+              if (this.linked()) showToast("카카오 로그인됨: " + this.nick());
+              else { showToast("카카오 로그인됨. 채팅방 닉네임을 골라 주세요."); setTimeout(() => this.pick(), 400); }
+            }
+          } catch (e) { if (back) showToast("카카오 로그인을 마치지 못했습니다. 다시 눌러 주세요."); }
+        }
+        this.render(); renderList();
+      },
+      async refreshMe() {
+        if (!this.loggedIn()) { this.me = null; return null; }
+        this.me = await supaFetch("/rest/v1/rpc/me_info", { method: "POST", body: "{}" });
+        if (this.linked()) saveNick(this.nick(), "list");   // 묶은 닉네임이 곧 이 기기의 내 닉네임(참석 표시, 모임장 메뉴가 그대로 맞는다)
+        return this.me;
+      },
+      async login() {
+        if (this.busy) return;
+        this.busy = true; this.render();
+        try {
+          await this.load();
+          const r = await this.sb.auth.signInWithOAuth({ provider: "kakao", options: { redirectTo: location.origin + location.pathname, scopes: "profile_nickname" } });
+          if (r && r.error) throw r.error;
+        } catch (e) { this.busy = false; this.render(); showToast("카카오 로그인을 열지 못했습니다. 잠시 뒤 다시 해 주세요."); }
+      },
+      async logout() {
+        if (this.busy) return;
+        this.busy = true;
+        try { if (this.sb) await this.sb.auth.signOut({ scope: "local" }); } catch (e) {}
+        this.session = null; this.me = null; this.busy = false;
+        this.render(); renderList(); showToast("로그아웃했습니다.");
+      },
+      pick() { if (this.loggedIn()) openMe(null, "", true); },
+      async link(nick) {
+        this.me = await supaFetch("/rest/v1/rpc/me_link", { method: "POST", body: JSON.stringify({ p_nick: nick }) });
+        if (this.linked()) saveNick(this.nick(), "list");
+        this.render(); syncMe(); renderList();
+        return this.me;
+      },
+      async unlink() {
+        if (this.busy) return;
+        if (!window.confirm("닉네임 묶기를 풉니다. 참석하거나 글을 올리려면 다시 골라야 합니다. 풀까요?")) return;
+        this.busy = true;
+        try { this.me = await supaFetch("/rest/v1/rpc/me_unlink", { method: "POST", body: "{}" }); showToast("닉네임 묶기를 풀었습니다."); }
+        catch (e) { showToast(rpcErrorMessage(e)); }
+        this.busy = false; this.render(); renderList();
+      },
+      render() {
+        const row = $("kakaoRow"); if (!row) return;
+        row.hidden = !this.on;
+        if (!this.on) { row.innerHTML = ""; return; }
+        const logo = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.48 3 2 6.48 2 10.77c0 2.76 1.84 5.18 4.6 6.55l-.94 3.44c-.08.3.26.54.52.37l4.1-2.71c.56.08 1.13.12 1.72.12 5.52 0 10-3.48 10-7.77S17.52 3 12 3z"/></svg>';
+        if (!this.loggedIn()) {
+          row.innerHTML = `<button type="button" class="kakao-btn" data-kakao="login"${this.busy ? " disabled" : ""}>${logo}카카오 로그인</button>`
+            + `<span class="kakao-note">닉네임만 받습니다. <a href="privacy.html#i-kakao">처리방침</a></span>`;
+        } else if (!this.linked()) {
+          row.innerHTML = `<span class="kakao-chip"><i aria-hidden="true"></i><b>카카오 로그인됨</b></span>`
+            + `<button type="button" class="btn btn-primary is-sm" data-kakao="pick">채팅방 닉네임 고르기</button>`
+            + `<span class="kakao-menu"><button type="button" class="text-btn is-quiet" data-kakao="logout">로그아웃</button></span>`;
+        } else {
+          const gone = this.me.missing_at ? `<span class="kakao-note">명단에 없는 이름입니다(이름을 바꿨거나 명단이 아직 안 올라옴). 30일 안에 돌아오지 않으면 풀립니다.</span>` : "";
+          row.innerHTML = `<span class="kakao-chip" title="카카오 로그인으로 묶은 닉네임"><i aria-hidden="true"></i><b>${esc(this.nick())}</b><small>카카오</small></span>`
+            + `<span class="kakao-menu"><button type="button" class="text-btn is-quiet" data-kakao="pick">닉네임 바꾸기</button><button type="button" class="text-btn is-quiet" data-kakao="unlink">묶기 풀기</button><button type="button" class="text-btn is-quiet" data-kakao="logout">로그아웃</button></span>${gone}`;
+        }
+        $("meChip").hidden = this.linked();   // 묶은 뒤에는 옛 '내 닉네임' 칩 대신 카카오 칩
+      }
+    };
     function searchOrParam(term) {
       const safe = String(term).replace(/[\\"]/g, "").trim();
       if (!safe) return "";
@@ -1895,10 +2032,20 @@
     }
     /* 저장된 닉네임과 비밀번호가 있으면 칸 대신 한 줄. 공지(운영진 비밀번호)와 바꾸기를 누른 뒤에는 칸을 보인다 */
     let authorOpen = false;
+    /* 카카오 로그인으로 쓰는 글인가: 묶은 닉네임이 있고, 공지가 아니고, 새 글이거나 내 글을 고친다(서버 post_create_me, post_update_me) */
+    function loginWrite() {
+      const cat = $("wCat").value, editing = !!state.editingId;
+      return KAUTH.linked() && cat !== "공지" && (!editing || KAUTH.mine(findPost(state.editingId)));
+    }
     function syncAuthor() {
       const cat = $("wCat").value, editing = !!state.editingId;
+      const lw = loginWrite();
+      if (lw) { $("wNick").value = KAUTH.nick(); $("wLoginName").textContent = KAUTH.nick(); syncWNick(); }
+      $("wLogin").hidden = !lw;
+      $("wNickWrap").hidden = lw || editing;
+      $("wPassWrap").hidden = lw;
       const nick = $("wNick").value.trim(), pass = $("wPass").value;
-      const fold = !authorOpen && cat !== "공지" && pass.trim().length >= 4 && (editing ? !!ownPass(findPost(state.editingId)) : !!nick) && pass === savedPass();
+      const fold = !lw && !authorOpen && cat !== "공지" && pass.trim().length >= 4 && (editing ? !!ownPass(findPost(state.editingId)) : !!nick) && pass === savedPass();
       $("authorSum").hidden = !fold;
       $("wNickWrap").classList.toggle("is-folded", fold);
       $("wPassWrap").classList.toggle("is-folded", fold);
@@ -2016,9 +2163,9 @@
     function validateWrite() {
       clearErrors();
       let ok = true;
-      const cat = $("wCat").value;
-      if (!state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 골라 주세요."); ok = false; }
-      if ($("wPass").value.trim().length < 4) { setError("wPass", "비밀번호는 4자 이상 입력해 주세요."); ok = false; }
+      const cat = $("wCat").value, lw = loginWrite();
+      if (!lw && !state.editingId && !$("wNick").value.trim()) { setError("wNick", "닉네임을 골라 주세요."); ok = false; }
+      if (!lw && $("wPass").value.trim().length < 4) { setError("wPass", "비밀번호는 4자 이상 입력해 주세요."); ok = false; }
       if (!$("wTitle").value.trim()) { setError("wTitle", cat === "벙 소식" ? "모임명을 입력해 주세요." : "제목을 입력해 주세요."); ok = false; }
       else if ($("wTitle").value.trim().length > 100) { setError("wTitle", "제목은 100자까지입니다."); ok = false; }
       if ($("wBody").value.length > 4000) { setError("wBody", "내용은 4000자까지입니다."); ok = false; }
@@ -2335,8 +2482,9 @@
     async function setRecruit(id, close) {
       if (state.busy) return;
       const post = findPost(id); if (!post) return;
+      const lw = KAUTH.mine(post);   // 카카오 로그인한 모임장의 내 글: 비밀번호 없이(post_update_me)
       const pre = ownPass(post);
-      const pass = await askPassword(close ? "모집 마감 (모임장)" : "다시 모집 (모임장)",
+      const pass = lw ? "" : await askPassword(close ? "모집 마감 (모임장)" : "다시 모집 (모임장)",
         (pre ? "저장된 비밀번호를 넣어 두었습니다. " : "이 글의 비밀번호나 운영진 비밀번호를 입력해 주세요. ") + (close ? "마감하면 참석을 더 받지 않습니다." : "정원이 남은 만큼 다시 참석을 받습니다."), pre);
       if (pass === null) return;
       const meta = Object.assign({}, C.postMeta(post) || {});
@@ -2346,7 +2494,8 @@
       if (dlGone) delete meta.deadline;
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_title: post.title, p_body: post.body || "", p_category: post.category, p_meta: meta }) });
+        if (lw) await supaFetch("/rest/v1/rpc/post_update_me", { method: "POST", body: JSON.stringify({ p_id: id, p_title: post.title, p_body: post.body || "", p_category: post.category, p_meta: meta }) });
+        else await supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass, p_title: post.title, p_body: post.body || "", p_category: post.category, p_meta: meta }) });
         post.meta = meta; renderList();
         showToast(close ? "모집을 마감했습니다." : dlGone ? "다시 모집합니다. 지난 신청 마감은 지워 끝나기 전까지 받습니다." : "다시 모집합니다.");
       } catch (err) { showToast(rpcErrorMessage(err)); }
@@ -2364,16 +2513,18 @@
     /* mode: attend(본인 참석), unattend(취소), host(모임장이 참석자를 적음, 글 비밀번호나 운영진 비밀번호) */
     function openAttend(id, mode) {
       const post = findPost(id); if (!post) return;
-      attCtx = { id, mode };
+      const host = mode === "host", kick = mode === "kick";   // kick: 모임장 메뉴의 명단에서 빼기(글 비밀번호나 운영진 비밀번호)
+      const login = (host || kick) && KAUTH.mine(post);        // 카카오 로그인한 모임장의 내 글: 비밀번호 없이(서버 bung_host_attend_me, bung_unattend_me)
+      attCtx = { id, mode, login };
       const list = (state.attend[id] || {}).list || [];
       const me = list.find((x) => isMe(x.nick, id));
-      const host = mode === "host", kick = mode === "kick";   // kick: 모임장 메뉴의 명단에서 빼기(글 비밀번호나 운영진 비밀번호)
       const meMode = mode === "attend" && !!savedNick();   // 내 닉네임이 있으면 칸 대신 그 이름 한 줄(바꾸기)
       $("attTitle").textContent = mode === "attend" ? "참석" : host ? "참석자 추가" : kick ? "명단에서 빼기" : "참석 취소";
       $("attDesc").textContent = mode === "attend" ? (meMode ? "비밀번호는 참석을 취소할 때 씁니다." : "채팅방 닉네임 그대로 적습니다. 비밀번호는 참석을 취소할 때 씁니다.")
-        : host ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다."
-        : kick ? "뺄 사람의 닉네임과 이 글의 비밀번호나 운영진 비밀번호를 입력합니다."
+        : host ? (login ? "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다." : "댓글이나 채팅으로 참석을 밝힌 사람을 적습니다. 비밀번호는 이 글의 비밀번호나 운영진 비밀번호입니다.")
+        : kick ? (login ? "뺄 사람의 닉네임을 고릅니다." : "뺄 사람의 닉네임과 이 글의 비밀번호나 운영진 비밀번호를 입력합니다.")
         : "참석할 때 넣은 닉네임과 비밀번호를 입력합니다. 잊었으면 모임장(글 비밀번호)이나 운영진이 명단에서 뺄 수 있습니다.";
+      $("attPassLabel").hidden = $("attPass").hidden = login;
       $("attNick").value = mode === "attend" ? savedNick() : host || kick ? "" : (me ? me.nick : "");
       $("attNick").placeholder = host ? "참석자 닉네임 앞 글자" : kick ? "뺄 닉네임" : "채팅방 닉네임 그대로";
       $("attNick").hidden = meMode; $("attMe").hidden = !meMode; $("attMeName").textContent = meMode ? savedNick() : "";
@@ -2381,14 +2532,14 @@
       $("attSugg").hidden = true; $("attSugg").innerHTML = "";
       if (host) memberInfo().then((i) => { if (attCtx && attCtx.mode === "host") { if (i.n) $("attNick").removeAttribute("list"); else $("attNick").setAttribute("list", "wNick-list"); } });
       else $("attNick").removeAttribute("list");
-      $("attPass").value = savedPass();
+      $("attPass").value = login ? "" : savedPass();
       $("attPassWhy").textContent = mode === "attend" ? "취소할 때 필요, 4자 이상" : host || kick ? "글 비밀번호나 운영진 비밀번호" : "참석할 때 넣은 것";
       $("attPassHint").hidden = !$("attPass").value;
       $("attOk").textContent = mode === "attend" ? "참석하기" : host ? "추가" : kick ? "빼기" : "참석 취소";
       $("attErr").hidden = true; $("attDone").hidden = true; $("attClaim").hidden = true;
       $("attBackdrop").hidden = false;
       if (kick) renderMeList($("attSugg"), list.map((x) => x.nick).slice(0, ATT_FOLD));   // 명단의 이름을 눌러 고른다
-      setTimeout(() => $($("attNick").value ? "attPass" : "attNick").focus(), 30);
+      setTimeout(() => $($("attNick").value && !login ? "attPass" : "attNick").focus(), 30);
     }
     function closeAttend() { $("attBackdrop").hidden = true; attCtx = null; clearTimeout(ME.sTimer); ME.sSeq++; $("attSugg").hidden = true; $("attSugg").innerHTML = ""; }
     /* 참석 창에서만 쓰는 오류 문구(같은 코드라도 글 수정 때와 뜻이 다르다) */
@@ -2410,19 +2561,19 @@
       const fail = (m) => { if (attCtx !== ctx) return; $("attErr").textContent = m; $("attErr").hidden = false; $("attDone").hidden = true; };
       $("attClaim").hidden = true;
       if (!nick) { fail("닉네임을 입력해 주세요."); $("attNick").focus(); return; }
-      if (pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
+      if (!ctx.login && pass.trim().length < 4) { fail("비밀번호는 4자 이상 입력해 주세요."); $("attPass").focus(); return; }
       if (state.degraded) { fail(OFFLINE_MSG); return; }
       const { id, mode } = ctx;
-      const fn = mode === "attend" ? "bung_attend" : mode === "host" ? "bung_host_attend" : "bung_unattend";
+      const fn = ctx.login ? (mode === "host" ? "bung_host_attend_me" : "bung_unattend_me") : mode === "attend" ? "bung_attend" : mode === "host" ? "bung_host_attend" : "bung_unattend";
       const row = ((state.attend[id] || {}).list || []).find((x) => nickKey(x.nick) === nickKey(nick));
-      const claim = mode === "unattend" && !!(row && row.host) && nickKey(nick) === nickKey(savedNick());   // 모임장이 적은 내 이름: 내 비밀번호로 넘겨받은 뒤 취소
+      const claim = !ctx.login && mode === "unattend" && !!(row && row.host) && nickKey(nick) === nickKey(savedNick());   // 모임장이 적은 내 이름: 내 비밀번호로 넘겨받은 뒤 취소
       state.busy = true; $("attOk").setAttribute("aria-busy", "true");
       try {
-        const body = JSON.stringify({ p_post_id: id, p_nick: nick, p_pass: pass });
+        const body = JSON.stringify(ctx.login ? { p_post_id: id, p_nick: nick } : { p_post_id: id, p_nick: nick, p_pass: pass });
         if (claim) await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body });
         const res = await supaFetch("/rest/v1/rpc/" + fn, { method: "POST", body });
         applyAttendList(id, res);
-        if (mode === "attend") { saveNick(nick); rememberAttend(id, nick); if (!savedPass()) savePass(pass, "벙 소식"); }   // 글 열쇠로 저장된 비밀번호는 덮어쓰지 않는다
+        if (mode === "attend") { saveNick(nick); rememberAttend(id, nick); if (!savedPass() && !ctx.login) savePass(pass, "벙 소식"); }   // 글 열쇠로 저장된 비밀번호는 덮어쓰지 않는다
         if ((mode === "unattend" || mode === "kick") && nickKey(attendedMap()[id]) === nickKey(nick)) rememberAttend(id, "");
         if (attCtx === ctx) {
           if (mode === "host") {   // 여러 명을 이어서 적을 수 있게 창은 열어 둔다
@@ -2448,7 +2599,7 @@
         fail(st && st.started && !st.ongoing ? "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요." : attError(mode, err));
         if (attCtx === ctx && mode === "attend" && /NICK_TAKEN/.test(code)) $("attClaim").hidden = false;   // 모임장이 적어 준 이름이면 이 기기에 내 이름으로만 기억
         attendFollowUp(id, code, ctx);
-        if (attCtx === ctx) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
+        if (attCtx === ctx && !ctx.login) { $("attPass").focus(); try { $("attPass").select(); } catch (e) {} }
       } finally {
         state.busy = false; $("attOk").removeAttribute("aria-busy");
       }
@@ -2473,6 +2624,7 @@
     /* 참석하기: 내 닉네임이 없으면 먼저 고르고, 이 기기에 비밀번호도 있으면 창 없이 바로 참석한다 */
     async function startAttend(id) {
       if (!findPost(id)) return;
+      if (KAUTH.loggedIn()) { if (KAUTH.linked()) attendMe(id); else KAUTH.pick(); return; }   // 카카오 로그인: 묶은 닉네임으로 바로(묶지 않았으면 먼저 고른다)
       if (!savedNick()) { openMe(() => startAttend(id)); return; }
       if (!nickSrc() && (await memberInfo()).n) {   // 목록이 생기기 전에 적은 닉네임: 목록에 같은 이름이 있으면 그대로 쓰고, 없으면(이름만 적은 것) 그 글자로 찾아 한 번 고르게
         const old = savedNick(), same = (await memberFind(old).catch(() => [])).find((n) => nickKey(n) === nickKey(old));
@@ -2506,6 +2658,46 @@
         state.busy = false;
         if (btn && btn.isConnected) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
       }
+    }
+    /* 카카오 로그인 판 참석과 취소: 묶은 닉네임으로 창 없이 바로(서버 bung_attend_me, bung_unattend_me) */
+    async function attendMe(id) {
+      if (state.busy) return;
+      const nick = KAUTH.nick();
+      const btn = document.querySelector(`.bung-card[data-post="${id}"] [data-act="attend"]`);
+      state.busy = true;
+      if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+      try {
+        const res = await supaFetch("/rest/v1/rpc/bung_attend_me", { method: "POST", body: JSON.stringify({ p_post_id: id }) });
+        applyAttendList(id, res); rememberAttend(id, nick);
+        renderList();
+        const nb = document.querySelector(`.bung-card[data-post="${id}"] .att-acts button`); if (nb) nb.focus({ preventScroll: true });
+        showToast("참석했습니다. " + nick);
+      } catch (err) {
+        const code = String((err && err.message) || "");
+        showToast(rpcErrorMessage(err));
+        if (/NOT_LINKED|LOGIN_REQUIRED/.test(code)) KAUTH.refreshMe().catch(() => {}).then(() => KAUTH.render());   // 그사이 묶기가 풀렸거나 로그인이 끝남
+        attendFollowUp(id, code, null);
+      } finally {
+        state.busy = false;
+        if (btn && btn.isConnected) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
+      }
+    }
+    async function unattendMe(id) {
+      if (state.busy) return;
+      state.busy = true;
+      try {
+        const res = await supaFetch("/rest/v1/rpc/bung_unattend_me", { method: "POST", body: JSON.stringify({ p_post_id: id }) });
+        applyAttendList(id, res); rememberAttend(id, "");
+        renderList();
+        const nb = document.querySelector(`#post-${id} .att-acts button:not([disabled])`) || document.querySelector(`#post-${id} .host-menu summary`);
+        if (nb) nb.focus({ preventScroll: true });
+        showToast("참석을 취소했습니다.");
+      } catch (err) {
+        const code = String((err && err.message) || "");
+        const st = /STARTED/.test(code) && findPost(id) ? bungStatus(findPost(id)) : null;
+        showToast(st && st.started && !st.ongoing ? "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요." : rpcErrorMessage(err));
+        attendFollowUp(id, code, null);
+      } finally { state.busy = false; }
     }
     /* 참석이 안 된 뒤: 그사이 지워진 글은 목록에서 빼고, 마감이나 고친 글은 글을, 정원과 이름 문제는 명단을 다시 읽는다 */
     function attendFollowUp(id, code, ctx) {
@@ -2568,11 +2760,14 @@
       if (on) { if (nfc($("meQ").value)) $("meFree").value = nfc($("meQ").value); setTimeout(() => $("meFree").focus(), 30); }
     }
     /* cb: 고른 뒤 할 일(참석 이어 하기, 글쓰기 칸 채우기). 닫으면 하지 않는다. q: 처음 찾을 글자(옛 닉네임) */
-    async function openMe(cb, q) {
-      ME.cb = cb || null; ME.back = document.activeElement; ME.seq++;
+    async function openMe(cb, q, link) {
+      ME.cb = cb || null; ME.link = !!link; ME.back = document.activeElement; ME.seq++;
       $("meQ").value = q || ""; $("meList").innerHTML = ""; $("meFree").value = savedNick();
+      $("meTitle").textContent = ME.link ? "채팅방 닉네임 묶기" : "내 닉네임";
       showMeFree(false); meNow();
-      if (cb && !savedNick()) $("meNote").textContent = "참석하려면 채팅방 닉네임을 먼저 고릅니다. 한 번 고르면 이 기기가 기억합니다.";   // 참석하기에서 처음 열린 창: 왜 이 창인지 한 줄
+      if (ME.link) $("meNote").textContent = "카카오 계정에 묶을 채팅방 닉네임을 명단에서 고릅니다. 한 사람에 하나, 바꾸면 기록에 남습니다.";
+      else if (cb && !savedNick()) $("meNote").textContent = "참석하려면 채팅방 닉네임을 먼저 고릅니다. 한 번 고르면 이 기기가 기억합니다.";   // 참석하기에서 처음 열린 창: 왜 이 창인지 한 줄
+      $("meFreeBtn").hidden = ME.link;   // 묶기는 명단의 이름만(명단이 아직 없는 서버면 아래에서 직접 적기로 바뀐다)
       $("meBackdrop").hidden = false;
       setTimeout(() => $("meQ").focus(), 30);
       const info = await memberInfo();
@@ -2582,12 +2777,26 @@
     }
     function closeMe() {
       if ($("meBackdrop").hidden) return;
-      $("meBackdrop").hidden = true; clearTimeout(ME.timer); ME.seq++; ME.cb = null;
+      $("meBackdrop").hidden = true; clearTimeout(ME.timer); ME.seq++; ME.cb = null; ME.link = false;
       const back = ME.back; ME.back = null;
       if (back && back.isConnected) { try { back.focus({ preventScroll: true }); } catch (e) {} }
     }
+    /* 카카오 로그인한 사람의 닉네임 묶기(me_link): 명단에 없거나 다른 계정이 묶은 이름이면 창 안에 알린다 */
+    async function linkMe(nick) {
+      if (ME.busy) return;
+      ME.busy = true; $("meNote").textContent = "묶는 중";
+      try {
+        await KAUTH.link(nick);
+        closeMe(); showToast("닉네임을 묶었습니다: " + nick);
+      } catch (err) {
+        const code = String((err && err.message) || "");
+        $("meNote").textContent = /NICK_TAKEN/.test(code) ? "이미 다른 카카오 계정이 묶은 닉네임입니다. 본인 이름이면 운영진에게 알려 주세요." : rpcErrorMessage(err);
+        if (/LOGIN_REQUIRED|NOT_KAKAO/.test(code)) { closeMe(); KAUTH.session = null; KAUTH.me = null; KAUTH.render(); }
+      } finally { ME.busy = false; }
+    }
     function chooseMe(name, src) {
       const nick = nfc(name).slice(0, 24); if (!nick) return;
+      if (ME.link) { linkMe(nick); return; }
       const cb = ME.cb; ME.cb = null;
       saveNick(nick, src || "list"); closeMe(); syncMe(); renderList();
       if (cb) cb(nick); else showToast("내 닉네임: " + nick);
@@ -2814,7 +3023,8 @@
       if (state.busy) return;
       if (state.degraded) { showToast(OFFLINE_MSG); return; }
       if (!validateWrite()) return;
-      const nick = $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
+      const lw = loginWrite();   // 카카오 로그인 판: 닉네임과 비밀번호 없이 로그인 판 함수로
+      const nick = lw ? KAUTH.nick() : $("wNick").value.trim(), pass = $("wPass").value, cat = $("wCat").value;
       const title = $("wTitle").value.trim();
       let meta = readMeta();
       // 서버 형식을 못 읽은 채(칸이 일부 숨은 채) 고치는 글: 화면에 없던 항목(신청 마감, 주소와 좌표, 비용, 모집 상태)은 원래 값을 지킨다
@@ -2845,9 +3055,13 @@
       const btn = $("writeSubmitBtn");
       const editing = !!state.editingId;
       btn.disabled = true; btn.textContent = editing ? "저장 중" : "등록 중";
-      const send = () => editing
-        ? supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) })
-        : supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
+      const send = () => lw
+        ? (editing
+          ? supaFetch("/rest/v1/rpc/post_update_me", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_title: title, p_body: body, p_category: cat, p_meta: meta }) })
+          : supaFetch("/rest/v1/rpc/post_create_me", { method: "POST", body: JSON.stringify({ p_category: cat, p_title: title, p_body: body, p_meta: meta }) }))
+        : editing
+          ? supaFetch("/rest/v1/rpc/post_update", { method: "POST", body: JSON.stringify({ p_id: state.editingId, p_pass: pass, p_title: title, p_body: body, p_category: cat, p_meta: meta }) })
+          : supaFetch("/rest/v1/rpc/post_create", { method: "POST", body: JSON.stringify({ p_author: nick, p_pass: pass, p_category: cat, p_title: title, p_body: body, p_meta: meta }) });
       let newId = null;
       try {
         try { newId = await send(); }
@@ -2866,7 +3080,9 @@
         let selfOk = false;
         if (selfAttend && newId) {
           try {
-            const res = await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: newId, p_nick: nick, p_pass: pass }) });
+            const res = lw
+              ? await supaFetch("/rest/v1/rpc/bung_attend_me", { method: "POST", body: JSON.stringify({ p_post_id: newId }) })
+              : await supaFetch("/rest/v1/rpc/bung_attend", { method: "POST", body: JSON.stringify({ p_post_id: newId, p_nick: nick, p_pass: pass }) });
             applyAttendList(newId, res); rememberAttend(newId, nick); selfOk = true;
           } catch (e) {}
         }
@@ -2875,7 +3091,7 @@
           const moved = oldMeta && meta && ["date", "time", "end", "place"].some((k) => String(oldMeta[k] || "") !== String(meta[k] || ""));
           showToast(moved && others ? `저장했습니다. 참석자 ${others}명에게 바뀐 내용을 알려 주세요.` : "글을 저장했습니다.");
         }
-        else { saveNick(nick); savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : selfAttend ? "모임은 올렸지만 참석자로 넣지 못했습니다. 카드의 참석하기를 눌러 주세요." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
+        else { saveNick(nick); if (!lw) savePass(pass, cat); showToast(cat === "벙 소식" ? (selfOk ? "모임을 올리고 참석자로 넣었습니다." : selfAttend ? "모임은 올렸지만 참석자로 넣지 못했습니다. 카드의 참석하기를 눌러 주세요." : "모임을 올렸습니다.") : "글을 등록했습니다."); }
         closeWriteModal();
         if (!editing && !state.draftHold) clearDraft();   // 미리 채운 글을 올린 것이면 따로 남겨 둔 임시 저장은 그대로
         $("wTitle").value = ""; $("wBody").value = ""; $("wCount").textContent = "0 / 4000";
@@ -2887,7 +3103,7 @@
         if (goId) gotoPost(goId);
       } catch (err) {
         const msg = rpcErrorMessage(err);
-        if (/BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { openAuthor(); setError("wPass", msg); firstInvalid(); }
+        if (!lw && /BAD_PASS|ADMIN_ONLY|PASS_TOO_SHORT/.test(String(err && err.message))) { openAuthor(); setError("wPass", msg); firstInvalid(); }
         else if (editing && /BUNG_PAST/.test(String(err && err.message))) { openAuthor(); setError("wf_time", "지난 시각입니다. 지난 시각으로는 운영진 비밀번호로만 고칠 수 있습니다."); firstInvalid(); }
         else showToast(msg);
       } finally {
@@ -2902,13 +3118,16 @@
       // 참석자가 있는 모임 글은 명단도 함께 지워진다는 것을 먼저 말한다
       const n = post ? (((state.attend[id] || {}).list || []).length || Number(post.attend_count) || 0) : 0;
       const ended = !!(post && isPastBung(post));   // 끝난 모임은 운영 기록(서버도 운영진 비밀번호만 받는다, 2026-10-10 SQL 뒤)
-      const pass = await askPassword("글 삭제", ended
+      const lw = !ended && KAUTH.mine(post) && post.category !== "공지";   // 카카오 로그인한 내 글: 비밀번호 없이(post_delete_me)
+      if (lw && !window.confirm((n ? "참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "이 글을 지울까요? 되돌릴 수 없습니다.")) return;
+      const pass = lw ? "" : await askPassword("글 삭제", ended
         ? "끝난 모임은 운영 기록으로 남습니다. " + (n ? "지우면 참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "지우려면 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다."
         : (n ? "참석자 " + n + "명의 명단도 함께 지워집니다. " : "") + "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호를 입력해 주세요. 삭제한 글은 되돌릴 수 없습니다.", ended ? "" : ownPass(post));
       if (pass === null) return;
       state.busy = true;
       try {
-        await supaFetch("/rest/v1/rpc/post_delete", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass }) });
+        if (lw) await supaFetch("/rest/v1/rpc/post_delete_me", { method: "POST", body: JSON.stringify({ p_id: id }) });
+        else await supaFetch("/rest/v1/rpc/post_delete", { method: "POST", body: JSON.stringify({ p_id: id, p_pass: pass }) });
         state.posts = state.posts.filter((p) => p.id !== id);
         if (dateMode() && post && post.category === "벙 소식") { if (dateOf(post) && dateOf(post) < C.kstToday()) state.past.offset = Math.max(0, state.past.offset - 1); }
         else state.offset = Math.max(0, state.offset - 1);   // 지운 만큼 다음 페이지 시작점도 당긴다(모임 날짜순의 모임 글은 지난 모임 쪽)
@@ -3067,7 +3286,12 @@
       $("authorSumEdit").addEventListener("click", () => { openAuthor(); $(state.editingId ? "wPass" : $("wNick").value ? "wMeChange" : "wNickPick").focus(); });
       $("wNickPick").addEventListener("click", () => openMe(wNickPicked));
       $("wMeChange").addEventListener("click", () => openMe(wNickPicked));
-      $("meChip").addEventListener("click", () => openMe(null, nickSrc() ? "" : savedNick()));   // 목록이 생기기 전에 적은 닉네임이면 그 글자로 찾아 둔다
+      $("meChip").addEventListener("click", () => { if (KAUTH.loggedIn()) KAUTH.pick(); else openMe(null, nickSrc() ? "" : savedNick()); });   // 목록이 생기기 전에 적은 닉네임이면 그 글자로 찾아 둔다. 카카오 로그인 중이면 묶기 창
+      $("kakaoRow").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-kakao]"); if (!b) return;
+        const k = b.dataset.kakao;
+        if (k === "login") KAUTH.login(); else if (k === "logout") KAUTH.logout(); else if (k === "pick") KAUTH.pick(); else if (k === "unlink") KAUTH.unlink();
+      });
       $("attMeChange").addEventListener("click", () => openMe((nick) => { $("attNick").value = nick; $("attMeName").textContent = nick; }));
       $("meQ").addEventListener("input", onMeInput);
       $("meQ").addEventListener("keydown", (e) => { if (e.key !== "Enter") return; e.preventDefault(); const b = $("meList").querySelector(".me-opt"); if (b && $("meList").querySelectorAll(".me-opt").length === 1) chooseMe(b.dataset.name); });
@@ -3185,7 +3409,7 @@
         if (act === "clear-search") { $("searchInput").value = ""; state.search = ""; refetchList(); return; }
         if (state.degraded) { showToast(OFFLINE_MSG); return; }
         if (act === "attend") { startAttend(id); return; }
-        if (act === "unattend") { openAttend(id, "unattend"); return; }
+        if (act === "unattend") { if (KAUTH.linked()) unattendMe(id); else openAttend(id, "unattend"); return; }
         if (act === "host-attend") { openAttend(id, "host"); return; }
         if (act === "kick") { openAttend(id, "kick"); return; }
         if (act === "repost") { repostBung(id); return; }
@@ -3254,6 +3478,7 @@
       state.caps = c.contentFormat; state.attendOn = !!c.attend; state.placeOn = !!c.place; state.endOn = !!c.end; state.cancelLevel = Number(c.cancel) || 0; state.capsFailed = !!c.failed;
       if (!$("writeBackdrop").hidden) renderTypeFields($("wCat").value, readMeta());
       if (state.attendOn) loadAttend(bungIds(state.posts));
+      if (!c.failed && !KAUTH.booted) { KAUTH.booted = true; KAUTH.boot(c).catch(() => {}); }   // 카카오 로그인: 서버 형식을 안 뒤 한 번(설정, 저장된 로그인, 복귀)
     }
     /* 서버 형식을 못 읽어(망이 잠깐 끊김) 옛 서버로 본 화면: 3초, 10초, 30초 뒤와 다시 시도 때 한 번 더 읽고, 읽히면 다시 그린다.
        그동안 펼친 모임 글은 옛 방식(오픈채팅 단추) 대신 '다시 읽는 중' 한 줄 */

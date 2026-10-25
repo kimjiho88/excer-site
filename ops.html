@@ -543,6 +543,13 @@
               <div class="mem-bot-key" id="memBotKey" hidden></div>
             </div>
           </div>
+          <div class="panel" id="linkPanel">
+            <h2>카카오 로그인 묶기 <small id="linkInfo"></small></h2>
+            <p class="sub">소식 화면에서 카카오로 로그인한 사람이 고른 채팅방 닉네임입니다. 사이트 닉네임 목록에 있는 이름만 묶을 수 있고, 목록에서 사라지면 '없음' 으로 보이다가 30일 뒤 풀립니다. 바꾸기와 풀기는 기록에 남습니다.</p>
+            <div class="chips" id="linkSetting" role="group" aria-label="카카오 로그인 보이기"><span class="sub">보이기:</span><button type="button" data-linkset="off" aria-pressed="false">끔</button><button type="button" data-linkset="staff" aria-pressed="false">운영진 기기만</button><button type="button" data-linkset="all" aria-pressed="false">모두</button><button type="button" id="linkReload">새로 고침</button><button type="button" id="linkLogBtn">기록 보기</button></div>
+            <div class="tbl-wrap"><table class="tbl lft" id="linkTbl" aria-label="묶은 닉네임"></table></div>
+            <ul id="linkLogList" class="ev" hidden aria-label="묶기 기록"></ul>
+          </div>
           <div id="dataDyn" style="display:grid;gap:14px;min-width:0"></div>
           <div class="panel" id="unreadPanel" hidden>
             <h2>읽지 못한 줄 <small id="unreadCount"></small></h2>
@@ -693,7 +700,7 @@
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
-        memLoad(); botCtlLoad();
+        memLoad(); botCtlLoad(); linkLoad();
         try {
           localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(소식과 맛집이 글 비밀번호를 저장하지 않는다). 비밀번호는 저장하지 않는다
           if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
@@ -2124,6 +2131,82 @@
     }
     $("memBotNew").addEventListener("click", () => memBotAct("new"));
     $("memBotOff").addEventListener("click", () => memBotAct("off"));
+    /* 카카오 로그인 묶기(2026-10-25 SQL): 목록(admin_links), 보이기 설정(admin_setting_set: off, staff, all), 바꾸기(admin_relink), 풀기(admin_unlink), 기록(admin_link_log).
+       이름은 이 화면에서만 보인다. 서버에 함수가 없으면 안내만 */
+    let links = null, linkBusy = false;
+    const LINK_SET = { off: "끔", staff: "운영진 기기만", all: "모두" };
+    const LINK_ACT = { link: "묶음", relink: "바꿈", unlink: "풂", auto_unlink: "자동으로 풂(명단에 30일 없음)", admin_unlink: "운영진이 풂", admin_relink: "운영진이 바꿈" };
+    const linkWhen = (t) => { if (!t) return ""; const d = new Date(t); return isNaN(d) ? "" : (d.getMonth() + 1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+    function linkShow() {
+      const t = $("linkTbl"), info = $("linkInfo"); if (!t) return;
+      if (!links) { info.textContent = ""; t.innerHTML = ""; return; }
+      if (links.missing) { info.textContent = "서버에 아직 없음(2026-10-25-kakao-login-1~4.sql)"; t.innerHTML = ""; return; }
+      const rows = links.rows || [];
+      info.textContent = nf(rows.length) + "명, 사이트 닉네임 목록 " + (links.members ? nf(links.members) + "명" : "없음") + ", 보이기 " + (LINK_SET[links.setting] || links.setting || "?");
+      document.querySelectorAll("#linkSetting [data-linkset]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.linkset === links.setting)));
+      t.innerHTML = rows.length
+        ? `<thead><tr><th>닉네임</th><th>카카오</th><th>묶은 때</th><th>목록</th><th class="num">참석</th><th class="num">글</th><th></th></tr></thead><tbody>` + rows.map((r) =>
+          `<tr${r.in_members ? "" : ' class="mute"'}><td>${esc(r.nick)}</td><td>${esc(r.kakao_nick || "")}${r.kakao_hint ? ` <small>끝 ${esc(r.kakao_hint)}</small>` : ""}</td><td>${esc(linkWhen(r.linked_at))}</td>`
+          + `<td>${r.in_members ? "있음" : "없음" + (r.missing_at ? "(" + esc(linkWhen(r.missing_at)) + "부터)" : "")}</td><td class="num">${nf(r.attends)}</td><td class="num">${nf(r.posts)}</td>`
+          + `<td><button type="button" class="mini-btn" data-linkact="relink" data-user="${esc(r.user_id)}" data-nick="${esc(r.nick)}">바꾸기</button> <button type="button" class="mini-btn" data-linkact="unlink" data-user="${esc(r.user_id)}" data-nick="${esc(r.nick)}">풀기</button></td></tr>`).join("") + "</tbody>"
+        : '<tbody><tr><td class="sub">아직 묶은 사람이 없습니다.</td></tr></tbody>';
+    }
+    async function linkCall(name, body) {
+      const r = await rpc(name, Object.assign({ p_pass: PASS }, body || {}));
+      if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+      return r;
+    }
+    const linkFail = (e, what) => {
+      if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+      if (missingFn(e)) { links = { missing: true }; linkShow(); toast("서버에 2026-10-25-kakao-login-1~4.sql 을 먼저 실행해 주세요."); return; }
+      toast(({ NOT_MEMBER: "사이트 닉네임 목록에 없는 이름입니다.", NICK_TAKEN: "이미 다른 계정이 묶은 닉네임입니다.", NOT_FOUND: "이미 풀린 묶기입니다.", BAD_NICK: "닉네임을 적어 주세요.", BAD_VALUE: "값이 맞지 않습니다." })[e.code] || (what + " 연결을 확인해 주세요." + (e.code ? " (" + e.code + ")" : "")));
+    };
+    async function linkLoad() {
+      if (localOnly || !PASS) return;
+      try { links = await linkCall("admin_links"); }
+      catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } links = missingFn(e) ? { missing: true } : links; }
+      linkShow();
+    }
+    async function linkAct(action, user, nick) {
+      if (localOnly || !PASS || linkBusy) return;
+      let body = { p_user: user };
+      if (action === "relink") {
+        const to = window.prompt("바꿀 채팅방 닉네임(사이트 닉네임 목록에 있는 이름 그대로)", nick || "");
+        if (to == null || !to.trim()) return;
+        body.p_nick = to.trim();
+      } else if (action === "unlink") {
+        if (!window.confirm(nick + " 의 묶기를 풉니다. 그 사람은 다시 골라야 합니다. 풀까요?")) return;
+      }
+      linkBusy = true;
+      try {
+        const r = await linkCall(action === "relink" ? "admin_relink" : "admin_unlink", body);
+        toast(action === "relink" ? "바꿨습니다: " + (r.nick || body.p_nick) : "풀었습니다: " + nick);
+        await linkLoad();
+        if (!$("linkLogList").hidden) await linkLogLoad();
+      } catch (e) { linkFail(e, action === "relink" ? "바꾸지 못했습니다." : "풀지 못했습니다."); }
+      finally { linkBusy = false; }
+    }
+    async function linkSet(value) {
+      if (localOnly || !PASS || linkBusy) return;
+      if (value === "all" && !window.confirm("모든 멤버의 소식 화면에 카카오 로그인 단추가 보입니다. 처리방침 개정 공지 뒤에 켜 주세요. 켤까요?")) return;
+      linkBusy = true;
+      try { await linkCall("admin_setting_set", { p_key: "kakao_login", p_value: value }); toast("보이기: " + LINK_SET[value]); await linkLoad(); }
+      catch (e) { linkFail(e, "바꾸지 못했습니다."); }
+      finally { linkBusy = false; }
+    }
+    async function linkLogLoad() {
+      const ul = $("linkLogList");
+      try {
+        const r = await linkCall("admin_link_log", { p_limit: 100 });
+        const rows = r.rows || [];
+        ul.innerHTML = rows.length ? rows.map((g) => `<li><time>${esc(linkWhen(g.at))}</time><span>${esc(LINK_ACT[g.action] || g.action)} ${esc(g.nick)}${g.detail && g.detail.from ? " (전: " + esc(g.detail.from) + ")" : ""}${g.user_hint ? ` <small>계정 끝 ${esc(g.user_hint)}</small>` : ""}</span></li>`).join("") : "<li><span>기록이 없습니다.</span></li>";
+        ul.hidden = false;
+      } catch (e) { linkFail(e, "기록을 읽지 못했습니다."); }
+    }
+    $("linkReload").addEventListener("click", () => linkLoad());
+    $("linkLogBtn").addEventListener("click", () => { const ul = $("linkLogList"); if (!ul.hidden) { ul.hidden = true; return; } linkLogLoad(); });
+    $("linkSetting").addEventListener("click", (e) => { const b = e.target.closest("[data-linkset]"); if (b && !(links && links.setting === b.dataset.linkset)) linkSet(b.dataset.linkset); });
+    $("linkTbl").addEventListener("click", (e) => { const b = e.target.closest("[data-linkact]"); if (b) linkAct(b.dataset.linkact, b.dataset.user, b.dataset.nick); });
     /* 봇 원격 조종(2026-10-09 SQL): 공지 멈춤(공지 걸기만 쉼)과 전체 멈춤(알림과 공지). 봇이 1분마다 읽는다 */
     let botCtl = null, botCtlBusy = false;
     function botCtlShow() {

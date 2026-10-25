@@ -418,9 +418,10 @@
       headers: { apikey: S.anon, Authorization: "Bearer " + S.anon }
     }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
       .then(function (rows) {
-        var v = 1, loc = false, att = false, plc = false, en = false, cn = 0, adm = false;
+        var v = 1, loc = false, att = false, plc = false, en = false, cn = 0, adm = false, kak = false;
         (Array.isArray(rows) ? rows : []).forEach(function (x) {
           if (x.key === "content_format") v = Number(x.value) || 1;
+          if (x.key === "kakao_login") kak = Number(x.value) >= 1;   // 카카오 로그인(2026-10-25 SQL): 소식 화면이 설정(site_setting)과 함께 보고 로그인 단추를 연다
           if (x.key === "places_location") loc = Number(x.value) >= 1;
           if (x.key === "bung_attend") att = Number(x.value) >= 1;
           if (x.key === "bung_place") plc = Number(x.value) >= 1;   // 모집 글의 주소와 좌표, 모임장 참석자 추가(2026-10-02 SQL)
@@ -429,11 +430,11 @@
           if (x.key === "bung_admin") adm = Number(x.value) >= 1;   // 운영진 모임 관리(2026-10-15 SQL): 운영진 기기의 소식 화면에 운영진 단추
         });
         attendOn = att;
-        return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en, cancel: att ? cn : 0, admin: adm && att };
+        return { contentFormat: v, location: loc, attend: att, place: plc && att, end: en, cancel: att ? cn : 0, admin: adm && att, kakao: kak && att };
       })
       .catch(function () {
         capsPromise = null;   // 한 번 못 읽었다고 페이지가 살아 있는 동안 옛 서버로 굳지 않게: 다음 호출이 다시 읽는다
-        return { contentFormat: 1, location: false, attend: false, place: false, end: false, cancel: 0, admin: false, failed: true };   // failed: 옛 서버가 아니라 못 읽은 것(화면이 한 번 더 묻는다)
+        return { contentFormat: 1, location: false, attend: false, place: false, end: false, cancel: 0, admin: false, kakao: false, failed: true };   // failed: 옛 서버가 아니라 못 읽은 것(화면이 한 번 더 묻는다)
       });
     return capsPromise;
   }
