@@ -1065,7 +1065,10 @@
       } catch (e) {}
     }
     /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
-    function openWriteDefault() { openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null); }
+    function openWriteDefault() {
+      if (KAUTH.on && !KAUTH.linked()) { requireLogin("글을 올리려면"); return; }   // 카카오 로그인이 켜진 기기: 새 글은 로그인으로만(공지도 로그인한 운영진이 운영진 비밀번호로)
+      openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null);
+    }
     const ERROR_MAP = {
       BUNG_REQUIRED: "날짜, 시작 시간, 끝나는 시간, 장소를 모두 적어 주세요.",
       BUNG_END: "끝나는 시간이 시작 시간과 같습니다.",
@@ -1099,6 +1102,7 @@
       NOT_HOST: "모임장만 할 수 있습니다.",
       PASS_ROW: "로그인 전에 비밀번호로 적은 참석입니다. 그때 넣은 비밀번호로 취소해 주세요.",
       LINKED_ALREADY: "닉네임은 한 번만 고를 수 있습니다. 바꾸려면 운영진에게 알려 주세요.",
+      LOGIN_ONLY: "이제 참석과 모임 올리기는 카카오 로그인으로만 합니다. 위의 카카오 로그인을 눌러 주세요.",
       LINK_LIMIT: "닉네임 묶기와 바꾸기는 하루 다섯 번까지입니다. 내일 다시 해 주세요.",
       KAKAO_OFF: "카카오 로그인이 지금 꺼져 있습니다. 비밀번호 방식으로 해 주세요."
     };
@@ -1365,7 +1369,7 @@
           row.innerHTML = `<span class="kakao-chip" title="카카오 로그인으로 묶은 닉네임"><i aria-hidden="true"></i><b>${esc(this.nick())}</b><small>카카오</small></span>`
             + `<span class="kakao-menu"><button type="button" class="text-btn is-quiet" data-kakao="logout">로그아웃</button></span>${gone}`;
         }
-        $("meChip").hidden = this.linked();   // 묶은 뒤에는 옛 '내 닉네임' 칩 대신 카카오 칩
+        $("meChip").hidden = this.on || this.linked();   // 카카오 로그인이 켜진 기기에서는 옛 '내 닉네임' 칩을 두지 않는다(활동은 로그인으로만)
       }
     };
     function searchOrParam(term) {
@@ -2624,10 +2628,15 @@
       closeAttend(); renderList();
       showToast("이 기기에서 " + nick + " 을(를) 내 이름으로 기억합니다.");
     }
-    /* 참석하기: 내 닉네임이 없으면 먼저 고르고, 이 기기에 비밀번호도 있으면 창 없이 바로 참석한다 */
+    /* 카카오 로그인이 켜진 기기에서 로그인 없이 참석이나 글쓰기를 누르면 로그인으로(돌아와서 다시 누른다). 로그인했지만 아직 안 골랐으면 고르기 창 */
+    function requireLogin(what) {
+      if (!KAUTH.loggedIn()) { showToast(what + " 카카오 로그인이 필요합니다."); KAUTH.login(); return; }
+      KAUTH.pick();
+    }
+    /* 참석하기: 카카오 로그인이 켜진 기기면 묶은 닉네임으로 바로(로그인이나 고르기가 먼저). 아니면 옛 흐름(내 닉네임과 비밀번호) */
     async function startAttend(id) {
       if (!findPost(id)) return;
-      if (KAUTH.loggedIn()) { if (KAUTH.linked()) attendMe(id); else KAUTH.pick(); return; }   // 카카오 로그인: 묶은 닉네임으로 바로(묶지 않았으면 먼저 고른다)
+      if (KAUTH.on) { if (KAUTH.linked()) attendMe(id); else requireLogin("참석하려면"); return; }
       if (!savedNick()) { openMe(() => startAttend(id)); return; }
       if (!nickSrc() && (await memberInfo()).n) {   // 목록이 생기기 전에 적은 닉네임: 목록에 같은 이름이 있으면 그대로 쓰고, 없으면(이름만 적은 것) 그 글자로 찾아 한 번 고르게
         const old = savedNick(), same = (await memberFind(old).catch(() => [])).find((n) => nickKey(n) === nickKey(old));
