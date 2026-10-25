@@ -29,7 +29,7 @@ with want (ord, t) as (values
   (1, 'site_posts'), (2, 'site_comments'), (3, 'site_bung_attend'), (4, 'site_post_reactions'),
   (5, 'site_places'), (6, 'site_place_notes'), (7, 'site_settlements'), (8, 'site_reports'),
   (9, 'site_visit_counts'), (10, 'ops_store'), (11, 'site_members'), (12, 'site_bung_log'),
-  (13, 'site_kakao_links'), (14, 'site_kakao_link_log'), (15, 'site_settings')
+  (13, 'site_kakao_links'), (14, 'site_kakao_link_log'), (15, 'site_settings'), (16, 'site_visit_hours')
 )
 select t as "표", pg_temp.cnt(t) as "줄 수", coalesce(pg_temp.dump(t), '표가 없어요') as "내용(JSON)"
   from want

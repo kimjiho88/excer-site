@@ -242,6 +242,7 @@
     .gate-card h2 .ic { width: 22px; height: 22px; color: var(--brand); }
     .gate-card p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
     .gate-msg { padding: 10px 12px; border-radius: var(--r-sm); background: var(--danger-soft); color: var(--ink) !important; }
+    .gate-note { padding: 10px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink) !important; }
     .gate-msg[hidden] { display: none; }
     .gate-ok { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--brand-soft); color: var(--ink); font-size: 13px; }
     .tool-section[hidden] { display: none; }
@@ -357,6 +358,7 @@
             <input id="gatePass" class="input" type="password" autocomplete="current-password" required />
           </div>
           <p class="gate-msg" id="gateMsg" role="alert" hidden></p>
+          <p class="gate-note" id="handoffNote" hidden>운영 화면에서 넘긴 대화 파일이 있습니다. 비밀번호를 넣으면 바로 읽습니다.</p>
           <button class="btn btn-primary" id="gateBtn" type="submit">들어가기</button>
         </form>
       </div>
@@ -1749,6 +1751,26 @@
          id 는 1부터 매겨지므로 -1 은 절대 없는 번호 — 아무것도 지우지 않고 '맞다'는 답만 받는다. */
       let gateFails = 0, gateWaitUntil = 0;
       function gateMessage(text) { const m = $("gateMsg"); m.hidden = !text; m.textContent = text || ""; }
+      /* 운영 화면에서 넘긴 대화 파일(ops.html 의 '이 파일로 발행 화면 열기'): 이 기기의 브라우저 저장소에 한 시간 둔 것을 들어간 뒤 읽고 지운다.
+         운영 화면에서 오지 않았으면 남은 것만 지운다 */
+      const HANDOFF = /[?&]from=ops(&|$)/.test(location.search);
+      if (HANDOFF) { try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {} $("handoffNote").hidden = false; }
+      function idbOpen() {
+        return new Promise((ok, no) => { const q = indexedDB.open("excer-handoff", 1); q.onupgradeneeded = () => q.result.createObjectStore("files"); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+      }
+      async function takeHandoff() {
+        let rec = null;
+        try {
+          const db = await idbOpen();
+          rec = await new Promise((ok) => { const tx = db.transaction("files", "readwrite"), s = tx.objectStore("files"), g = s.get("chat"); let v = null; g.onsuccess = () => { v = g.result || null; if (v) s.delete("chat"); }; tx.oncomplete = () => ok(v); tx.onerror = () => ok(null); tx.onabort = () => ok(null); });
+          db.close();
+        } catch (e) { rec = null; }
+        if (!HANDOFF) return;
+        if (rec && Date.now() - Number(rec.at || 0) < 3600000 && rec.files && rec.files.length) {
+          await addFiles(rec.files);
+          EXCER.toast("운영 화면에서 넘긴 대화 파일을 읽었습니다.");
+        } else EXCER.toast("운영 화면에서 넘긴 파일을 찾지 못했습니다. 파일을 여기에 올려 주세요.");
+      }
       function unlock(pass) {
         $("passInput").value = pass;
         $("adminGate").hidden = true;
@@ -1756,6 +1778,7 @@
         $("opsLink").hidden = false;
         loadPreset();
         loadReportList();
+        takeHandoff();
         const h = $("pageTitle"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
       }
       $("gateForm").addEventListener("submit", async (e) => {

@@ -343,6 +343,9 @@
     .token-box { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
     .mem-bot { display: grid; gap: 8px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--line); }
     .mem-bot-key { display: grid; gap: 6px; min-width: 0; }
+    .mem-req { padding: 8px 10px; border-radius: var(--r-sm); background: var(--brand-soft, #F1ECFA); color: var(--ink); }
+    .file-added { margin: 2px 0 0; padding: 8px 10px; border-radius: var(--r-sm); background: var(--brand-soft, #F1ECFA); color: var(--ink); font-size: 13px; line-height: 1.55; }
+    .pub-info { display: grid; gap: 8px; min-width: 0; padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--line); }
     .steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13px; line-height: 1.55; }
     .tbl.lft th, .tbl.lft td { text-align: left; white-space: normal; vertical-align: top; }
     .tbl.lft td.num, .tbl.lft th.num { text-align: right; white-space: nowrap; }
@@ -526,6 +529,7 @@
             <div id="progWrap" class="prog-wrap" hidden><div class="prog"><i id="progBar"></i></div><span id="progText" aria-live="polite"></span></div>
             <div id="fileInfo" class="rows"></div>
             <p id="saveState" class="save-state"></p>
+            <div id="pubInfo" class="pub-info" hidden></div>
           </div>
           <div class="panel">
             <h2>현재 명단 <small id="rosterInfo"></small></h2>
@@ -539,7 +543,9 @@
             <div class="chips"><button id="memPush" class="btn btn-secondary" type="button">사이트에 올리기</button></div>
             <div class="mem-bot" id="memBot" hidden>
               <p class="sub"><b>봇 자동 갱신</b>: <span id="memBotInfo"></span></p>
-              <div class="chips"><button id="memBotNew" class="btn btn-secondary is-sm" type="button">봇 열쇠 만들기</button><button id="memBotOff" class="btn btn-secondary is-sm" type="button" hidden>자동 갱신 끄기</button></div>
+              <p class="sub" id="memPlan" hidden></p>
+              <p class="sub mem-req" id="memReq" aria-live="polite" hidden></p>
+              <div class="chips"><button id="memReadNow" class="btn btn-primary is-sm" type="button" hidden>지금 멤버 읽기</button><button id="memBotNew" class="btn btn-secondary is-sm" type="button">봇 열쇠 만들기</button><button id="memBotOff" class="btn btn-secondary is-sm" type="button" hidden>자동 갱신 끄기</button></div>
               <div class="mem-bot-key" id="memBotKey" hidden></div>
             </div>
           </div>
@@ -700,7 +706,7 @@
         if (data.roster) S.roster = data.roster.value;
         if (data.history) S.history = data.history.value;
         $("gatePass").value = "";
-        memLoad(); botCtlLoad(); linkLoad();
+        memLoad(); botCtlLoad(); linkLoad(); pubLoad();
         try {
           localStorage.setItem("excer_admin_device", "1");   // 이 기기를 운영진 기기로 표시(소식과 맛집이 글 비밀번호를 저장하지 않는다). 비밀번호는 저장하지 않는다
           if (localStorage.getItem("excer_news_pass") === pass) localStorage.removeItem("excer_news_pass");   // 글이나 댓글에 쓰여 남은 운영진 비밀번호를 지운다
@@ -1942,9 +1948,17 @@
       busy = false; setProgress(null);
       if (!r) { $("saveBtn").disabled = !S.unsaved || localOnly; toast(r === undefined ? "파일을 읽지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요." : "대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
       resolvePeople(r);
+      const prev = S.ledger && S.ledger.range ? S.ledger : null;   // 앞서 보던 것(서버 저장본이나 앞 분석): 이번 파일로 무엇이 새로 들어왔는지
       S.ledger = r; S.unsaved = true; S.savedAt = S.savedAt || "";
+      const dm = prev ? (r.totals.messages || 0) - ((prev.totals && prev.totals.messages) || 0) : 0;
+      const added = !prev ? "" : r.range.to > prev.range.to
+        ? `새로 더한 대화: ${esc(md(nextDay(prev.range.to)))} ~ ${esc(md(r.range.to))}, 메시지 ${dm >= 0 ? "+" : ""}${nf(dm)}건. 서버에 저장을 눌러야 반영됩니다.`
+        : `새로 더한 날이 없습니다. 앞서 본 대화와 같이 ${esc(md(prev.range.to))} 까지입니다.`;
       $("fileInfo").innerHTML = srcFiles.map((f) => `<div class="prow" style="cursor:default"><span class="pn">${esc(f.name)}</span><span class="pr">${mb(f.size)}</span></div>`).join("") +
-        `<p class="sub">대화 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, 메시지 ${nf(r.totals.messages)}건, 말한 사람 ${nf(r.totals.people)}명, 들어옴 ${nf(r.totals.joins)}, 나감 ${nf(r.totals.leaves)}, 내보냄 ${nf(r.totals.kicks)}</p>`;
+        `<p class="sub">대화 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, 메시지 ${nf(r.totals.messages)}건, 말한 사람 ${nf(r.totals.people)}명, 들어옴 ${nf(r.totals.joins)}, 나감 ${nf(r.totals.leaves)}, 내보냄 ${nf(r.totals.kicks)}</p>` +
+        (added ? `<p class="file-added">${added}</p>` : "");
+      $("saveState").textContent = "";
+      pubShow();
       const sv = S.savedRange, short = sv && (r.range.from > sv.from || r.range.to < sv.to);
       if (sv) $("fileInfo").insertAdjacentHTML("beforeend", `<p class="${short ? "notice" : "sub"}">저장본 ${esc(md(sv.from))} ~ ${esc(md(sv.to))}, ${nf(sv.n)}명. 새 분석 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, ${nf(r.people.length)}명.${short ? " 새 분석이 저장본보다 짧은 기간입니다. 저장하면 저장본을 이것으로 바꿉니다." : ""}</p>`);
       $("saveBtn").disabled = localOnly || saving;
@@ -1995,10 +2009,11 @@
         saveRecords();
         S.savedAt = at || new Date().toISOString(); S.savedRange = { from: L0.range.from, to: L0.range.to, n: L0.people.length };
         if (S.ledger === L0) S.unsaved = false;   // 저장하는 동안 다시 분석했으면 그것은 아직 저장 안 함
-        $("saveState").textContent = "저장했습니다. 다른 기기에서 열면 이 결과가 보입니다.";
+        $("saveState").textContent = "서버에 저장했습니다(대화 " + md(L0.range.to) + " 까지, " + kstHM(S.savedAt) + "). 다른 기기에서 열어도 이 결과가 보입니다.";
         toast("서버에 저장했습니다.");
         renderAll();
         memPush(true);
+        pubShow();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }   // 비밀번호가 바뀐 뒤 거듭 누르면 잠기므로 바로 멈춘다
         $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "");
@@ -2067,7 +2082,7 @@
       } finally { memBusy = false; $("memPush").disabled = false; }
     }
     $("memPush").addEventListener("click", () => memPush(false));
-    /* 봇 멤버 자동 갱신(2026-10-09-memberbot.sql): 태블릿의 봇이 하루 한 번 방 메뉴의 멤버를 읽어 올린다. 봇은 운영진 비밀번호 대신
+    /* 봇 멤버 자동 갱신(2026-10-09-memberbot.sql): 태블릿의 봇이 하루 세 번(2026-10-25 부터) 방 메뉴의 멤버를 읽어 올린다. 봇은 운영진 비밀번호 대신
        봇 열쇠로 목록만 바꾼다. 열쇠는 만든 이 화면에서 한 번만 보이고(메모리에만), 끝 네 글자는 상태(운영진 비밀번호)로만 받는다 */
     let memBot = null, memBotBusy = false, memBotKey = "";
     const memWhen = (t) => (t ? mdS(kstDate(t)) + " " + kstHM(t) : "");
@@ -2097,7 +2112,113 @@
         kb.innerHTML = memBotKey ? `<div class="token-box"><input class="input" id="memBotTok" readonly value="${esc(memBotKey)}" aria-label="봇 열쇠" /><button type="button" class="btn btn-primary is-sm" data-copy="memBotTok">복사</button></div><p class="sub">태블릿에서 이 열쇠를 복사한 뒤 Termux 에서 python excer_bot.py members key 를 치면 봇에 저장됩니다. 이 열쇠는 지금 한 번만 보입니다.</p>` : "";
       }
       kb.hidden = !memBotKey;
+      memPlanShow();
     }
+    /* 멤버 읽기 세 시각과 지금 읽기(2026-10-25-member-times.sql, 봇 판 2026-10-25.6): 시각은 서버가 지난 4주 시간대별 방문으로 정하고
+       (bot_control 의 members_plan), 봇은 1분마다 조종 값을 읽다가 요청이 있으면 바로 읽어 올린 뒤 결과를 남긴다(members_done_*) */
+    const PLAN_SRC = { visits: "지난 4주 시간대별 방문에서 붐비기 시작하기 1시간 전", actions: "사이트에서 참석하거나 글을 쓴 시각 기준. 방문 시간 자료가 일주일 쌓이면 방문 기준으로", default: "기본 시각. 자료가 쌓이면 방문 기준으로" };
+    let memReqTimer = null, memReqBusy = false;
+    const verNum = (s) => { const m = /(\d{4})-(\d{2})-(\d{2})\.(\d+)/.exec(s || ""); return m ? [+m[1], +m[2], +m[3], +m[4]] : null; };
+    const botOld = () => { const v = verNum((botCtl && botCtl.seen_note) || ""), w = [2026, 10, 25, 6]; if (!v) return false; for (let i = 0; i < 4; i++) if (v[i] !== w[i]) return v[i] < w[i]; return false; };
+    const botTimes = () => { const m = /멤버 ((?:\d{2}:\d{2} ?)+)/.exec((botCtl && botCtl.seen_note) || ""); return m ? m[1].trim().split(" ") : null; };
+    const planOn = () => !!(botCtl && !botCtl.missing && botCtl.members_plan && Array.isArray(botCtl.members_plan.times));
+    function memPlanShow() {
+      const el = $("memPlan"), rq = $("memReq"), btn = $("memReadNow"); if (!el) return;
+      const plan = planOn() ? botCtl.members_plan : null, b = memBotCur();
+      btn.hidden = !(b && b.has_key);
+      el.hidden = !plan;
+      if (plan) {
+        const bt = botTimes(), diff = !!(bt && bt.join() !== plan.times.join());
+        el.textContent = "읽는 때: " + plan.times.join(", ") + " (" + (PLAN_SRC[plan.src] || "") + ")" +
+          (diff ? ". 봇은 지금 " + bt.join(", ") + " 에 읽습니다. 태블릿에서 python excer_bot.py members at auto 하면 위 시각으로 읽습니다" : "") +
+          (botOld() ? ". 봇 판이 옛 판입니다. 태블릿에서 python excer_bot.py update 뒤 run 을 다시 켜 주세요" : "");
+      }
+      const req = plan && botCtl.members_req_at, done = plan && botCtl.members_done_at;
+      let t = "";
+      if (req && Date.now() - Date.parse(req) < 6 * 3600000) {
+        if (done && Date.parse(done) >= Date.parse(req)) t = memWhen(done) + (botCtl.members_done_ok ? " 읽어 올림: " + (botCtl.members_done_note || "") : " 읽지 못함: " + (botCtl.members_done_note || "까닭 모름"));
+        else t = memWhen(req) + " 읽기 요청. " + (Date.now() - Date.parse(req) < 6 * 60000 ? "봇이 1분 안에 읽기 시작합니다(1~2분 걸림)." : "아직 결과가 없습니다. 태블릿에서 python excer_bot.py status 로 봐 주세요.");
+      }
+      rq.hidden = !t; rq.textContent = t;
+    }
+    async function memReadNow() {
+      if (localOnly || !PASS || memReqBusy) return;
+      if (!planOn()) { toast("서버에 2026-10-25-member-times.sql 을 먼저 실행해 주세요."); return; }
+      memReqBusy = true; $("memReadNow").disabled = true;
+      try {
+        const r = await rpc("bot_control_set", { p_pass: PASS, p_what: "members", p_minutes: 0 });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        botCtl = r; botCtlShow();
+        const ago = botCtl.seen_at ? (Date.now() - Date.parse(botCtl.seen_at)) / 60000 : null;
+        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 읽지 못할 수 있습니다." : botOld() ? "요청했습니다. 봇 판이 옛 판이라 태블릿에서 update 해야 읽습니다." : "요청했습니다. 봇이 1분 안에 읽기 시작합니다.");
+        memReqWatch();
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        toast("요청하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : ""));
+      } finally { memReqBusy = false; $("memReadNow").disabled = false; }
+    }
+    /* 요청 뒤 10초마다 6분까지 결과를 본다. 끝나면 목록 수와 때를 다시 읽는다 */
+    function memReqWatch() {
+      clearInterval(memReqTimer);
+      const t0 = Date.now();
+      memReqTimer = setInterval(async () => {
+        if (!PASS || Date.now() - t0 > 6 * 60000) { clearInterval(memReqTimer); memReqTimer = null; memPlanShow(); return; }
+        await botCtlLoad();
+        const req = botCtl && botCtl.members_req_at, done = botCtl && botCtl.members_done_at;
+        if (req && done && Date.parse(done) >= Date.parse(req)) {
+          clearInterval(memReqTimer); memReqTimer = null;
+          memLoad();
+          toast(botCtl.members_done_ok ? "봇이 멤버를 읽어 올렸습니다. " + (botCtl.members_done_note || "") : "봇이 멤버를 읽지 못했습니다. " + (botCtl.members_done_note || ""));
+        }
+      }, 10000);
+    }
+    $("memReadNow").addEventListener("click", memReadNow);
+    /* 활동 통계(공개 페이지 report.html)는 이 화면의 저장과 따로 발행 화면(report-admin.html)에서 발행한다. 마지막 발행본의 기간을 보이고,
+       이 화면에 올린 대화 파일을 발행 화면으로 넘긴다(이 기기의 브라우저 저장소에 한 시간, 발행 화면이 읽으면 지운다) */
+    let pubLast = null;
+    async function pubLoad() {
+      if (localOnly) return;
+      handoffClean();
+      try {
+        const rows = await rest("site_reports_v?select=id,period_label,updated_at,range:stats->range");
+        let best = null;
+        (rows || []).forEach((x) => { const t = x && x.range && x.range.to; if (t && (!best || t > best.range.to)) best = x; });
+        pubLast = best || { none: true };
+      } catch (e) { pubLast = null; }
+      pubShow();
+    }
+    function pubShow() {
+      const el = $("pubInfo"); if (!el) return;
+      if (!pubLast) { el.hidden = true; return; }
+      const L = S.ledger, P = pubLast, fresh = !!(P.range && L && P.range.to >= L.range.to);
+      const head = P.none ? "활동 통계(공개 페이지): 아직 발행본이 없습니다."
+        : "활동 통계(공개 페이지): " + md(P.range.from) + " ~ " + md(P.range.to) + " 발행본" + (P.updated_at ? "(" + mdS(kstDate(P.updated_at)) + " 발행)" : "") +
+          (L ? (fresh ? ". 대화 파일과 같은 날까지라 최신입니다." : ". 대화 파일은 " + md(L.range.to) + " 까지라 새로 발행하면 최신이 됩니다.") : ".");
+      el.hidden = false;
+      el.innerHTML = `<p class="sub">${esc(head)} 활동 통계는 서버에 저장과 따로 발행 화면에서 발행합니다.</p>` +
+        `<div class="chips"><button type="button" class="btn ${fresh ? "btn-secondary" : "btn-primary"} is-sm" id="pubOpen">${srcFiles.length ? "이 파일로 발행 화면 열기" : "발행 화면 열기"}</button></div>`;
+    }
+    function idbOpen() {
+      return new Promise((ok, no) => { const q = indexedDB.open("excer-handoff", 1); q.onupgradeneeded = () => q.result.createObjectStore("files"); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+    }
+    async function handoffPut(files) {
+      const db = await idbOpen();
+      try { await new Promise((ok, no) => { const tx = db.transaction("files", "readwrite"); tx.objectStore("files").put({ at: Date.now(), files: Array.from(files) }, "chat"); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); }
+      finally { db.close(); }
+    }
+    async function handoffClean() {   // 한 시간 넘게 남은 넘김(발행 화면을 열지 않았음)은 지운다
+      try {
+        const db = await idbOpen();
+        await new Promise((ok) => { const tx = db.transaction("files", "readwrite"), s = tx.objectStore("files"), g = s.get("chat"); g.onsuccess = () => { const v = g.result; if (v && Date.now() - Number(v.at || 0) > 3600000) s.delete("chat"); }; tx.oncomplete = ok; tx.onerror = ok; tx.onabort = ok; });
+        db.close();
+      } catch (e) {}
+    }
+    $("pubInfo").addEventListener("click", (e) => {
+      if (!e.target.closest("#pubOpen")) return;
+      const files = srcFiles.slice();
+      if (files.length) handoffPut(files).catch(() => toast("파일을 넘기지 못했습니다. 발행 화면에서 같은 파일을 올려 주세요."));
+      window.open("report-admin.html" + (files.length ? "?from=ops" : ""), "_blank");
+    });
     async function memBotCall(action) {
       const r = await rpc("member_bot_key", { p_pass: PASS, p_action: action });
       if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
@@ -2224,6 +2345,7 @@
       }
       el.textContent = (parts.length ? parts.join(", ") : "평소대로") + (seen ? ". " + seen : "");
       el.classList.toggle("is-stale", /소식이 없어요/.test(seen));
+      memPlanShow();
     }
     async function botCtlLoad() {
       if (localOnly) return;
