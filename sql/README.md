@@ -289,7 +289,7 @@ v2 적용 후 `sql/site_features_v3.sql` 도 같은 방법으로 Run 하세요.
 - 권한: `me_*` 는 로그인 없이 부르면 `LOGIN_REQUIRED`, `*_me` 참석과 글 함수는 로그인한 키(`authenticated`)만, 안쪽 함수 여섯(`kakao_log`, `kakao_identity`, `kakao_link_check`, `kakao_members_sync`, `kakao_me`, `kakao_post_mine`)은 공개 키로 못 부릅니다. `me_link` 는 10분에 30번(속도 제한 `kakao_link`)이고, 한 계정이 묶거나 바꾸는 것은 하루 다섯 번(`LINK_LIMIT`).
 - 소식 화면과 확인 화면은 Supabase 의 로그인 SDK 를 사이트 안의 파일(`assets/vendor/supabase-js-2.118.0.js`, MIT)로 읽습니다. 바깥 CDN 의 바뀌는 판을 읽지 않습니다.
 - `backup.sql` 이 새 표 셋도 담습니다(카카오 회원번호가 들어 있으니 받은 파일은 운영진만 봅니다). `status.sql` 에 '카카오 묶기' 줄과 안쪽 함수 여섯이 더해졌으니 저장해 둔 '서버 상태' 쿼리를 새 `status.sql` 로 바꿔 저장합니다.
-- Supabase 쪽 설정(Kakao provider, Redirect URLs)과 카카오 디벨로퍼스 설정은 `docs/KAKAO_LOGIN_SETUP.md` 에 있고 2026-10-25 에 확인했습니다. 공개 순서(운영진 기기 시험, 공지, 11월 1일 뒤 모두)는 그 문서 6절.
+- Supabase 쪽 설정(Kakao provider, Redirect URLs)과 카카오 디벨로퍼스 설정은 `docs/KAKAO_LOGIN_SETUP.md` 에 있고 2026-10-25 에 확인했습니다. 공개 순서(운영진 기기 시험, 공지, 모두)는 그 문서 6절. 처리방침 개정은 2026-10-25 부터 적용.
 
 확인: 4번 끝에 `카카오로그인 1`, `함수 15`. 5번 끝에 `명단함수 1`, `스스로풀기 0`. `status.sql` 의 '서버 형식' 이 정상(최신), '안쪽 함수 잠금' 열림 0, '카카오 묶기' 줄이 보임. 운영 화면 데이터 탭의 묶기 칸에 '0명, 사이트 닉네임 목록 N명, 보이기 운영진 기기만'.
 
