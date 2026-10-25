@@ -1088,7 +1088,10 @@
       NOT_MEMBER: "채팅방 멤버 명단에 없는 이름입니다. 명단은 봇이 매일 아침 올립니다. 방금 들어왔으면 내일 다시 해 주세요.",
       NICK_LINKED: "이 닉네임은 카카오 로그인으로 묶인 이름입니다. 카카오 로그인 뒤 참석해 주세요.",
       NOT_OWNER: "내 글이 아닙니다.",
-      NOT_HOST: "모임장만 할 수 있습니다."
+      NOT_HOST: "모임장만 할 수 있습니다.",
+      PASS_ROW: "로그인 전에 비밀번호로 적은 참석입니다. 그때 넣은 비밀번호로 취소해 주세요.",
+      LINK_LIMIT: "닉네임 묶기와 바꾸기는 하루 다섯 번까지입니다. 내일 다시 해 주세요.",
+      KAKAO_OFF: "카카오 로그인이 지금 꺼져 있습니다. 비밀번호 방식으로 해 주세요."
     };
     const OFFLINE_MSG = "지금은 소식을 불러올 수 없습니다. 잠시 뒤 다시 시도해 주세요.";
 
@@ -1259,7 +1262,7 @@
        로그인한 사람은 봇이 올린 멤버 명단의 닉네임 하나를 묶고(me_link), 그 뒤 참석, 취소, 모임 올리기와 고치기는 비밀번호 없이 로그인 판 함수(*_me)로 한다.
        SDK 는 처음 필요할 때(저장된 로그인, 복귀 코드, 단추 누름)만 읽는다 ── */
     const KAUTH = {
-      KEY: "dn-news-auth", TRY_KEY: "excer_kakao_try", SDK: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+      KEY: "dn-news-auth", TRY_KEY: "excer_kakao_try", SDK: "assets/vendor/supabase-js-2.118.0.js",   // 사이트 안에 둔 파일(assets/vendor, MIT). 바깥 CDN 의 바뀌는 판을 읽지 않는다
       on: false, setting: "", sb: null, sbP: null, session: null, me: null, busy: false,
       stored() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
       hasCode() { return /[?&]code=/.test(location.search) && !/[?&]error=/.test(location.search); },
@@ -1267,7 +1270,7 @@
       loggedIn() { return !!(this.on && this.session && this.session.user); },
       linked() { return !!(this.loggedIn() && this.me && this.me.login && this.me.nick); },
       nick() { return this.linked() ? String(this.me.nick) : ""; },
-      mine(post) { return !!(post && this.linked() && nickKey(post.author) === nickKey(this.nick())); },   // 내 글: 묶은 닉네임이 글쓴이(서버도 같은 기준, 로그인으로 올린 글은 계정으로)
+      mine(post) { return !!(post && this.linked() && Array.isArray(this.me.posts) && this.me.posts.includes(Number(post.id))); },   // 내 글: 로그인으로 올린 글(서버 me_info 의 posts). 비밀번호로 올린 글은 닉네임이 같아도 그 비밀번호로
       load() {
         if (this.sb) return Promise.resolve(this.sb);
         if (!this.sbP) this.sbP = new Promise((ok, no) => {
@@ -2694,6 +2697,7 @@
         showToast("참석을 취소했습니다.");
       } catch (err) {
         const code = String((err && err.message) || "");
+        if (/PASS_ROW/.test(code)) { state.busy = false; openAttend(id, "unattend"); return; }   // 로그인 전에 비밀번호로 적은 참석: 그때 비밀번호로(옛 창)
         const st = /STARTED/.test(code) && findPost(id) ? bungStatus(findPost(id)) : null;
         showToast(st && st.started && !st.ongoing ? "모임이 끝나 취소할 수 없습니다. 모임장에게 연락해 주세요." : rpcErrorMessage(err));
         attendFollowUp(id, code, null);
@@ -3076,6 +3080,7 @@
           newId = await send();
         }
         newId = Number(newId) > 0 ? Number(newId) : null;
+        if (lw && newId && KAUTH.me && Array.isArray(KAUTH.me.posts) && !KAUTH.me.posts.includes(newId)) KAUTH.me.posts.push(newId);   // 로그인으로 올린 내 글(모임장 메뉴, 고치기와 지우기가 비밀번호 없이)
         // 모임장도 참석자로(새 모임 글, 켜 두었을 때). 같은 닉네임과 글 비밀번호로 참석한다. 실패해도 글은 올라가 있다
         let selfOk = false;
         if (selfAttend && newId) {

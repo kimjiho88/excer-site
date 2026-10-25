@@ -65,7 +65,7 @@ declare st text := ops_auth(p_pass);
 begin
   if st <> 'ok' then return jsonb_build_object('ok', false, 'error', case when st = 'locked' then 'LOCKED' else 'BAD_PASS' end); end if;
   return jsonb_build_object('ok', true, 'rows', coalesce((select jsonb_agg(to_jsonb(r)) from (
-    select g.id, g.at, g.nick, g.action, g.by_kind, g.detail, g.ip, right(g.user_id::text, 4) as user_hint
+    select g.id, g.at, g.nick, g.action, g.by_kind, g.detail, right(g.user_id::text, 4) as user_hint
       from site_kakao_link_log g order by g.at desc, g.id desc limit least(greatest(coalesce(p_limit, 100), 1), 500)) r), '[]'::jsonb));
 end $$;
 revoke execute on function admin_link_log(text, int) from public;

@@ -94,19 +94,39 @@ begin
 end $$;
 revoke execute on function kakao_link_check(uuid) from public, anon, authenticated;
 
--- 로그인한 내 묶기(없으면 예외): 로그인 판 참석과 글이 쓴다
+-- 봇이 명단을 올릴 때마다(member_replace 의 insert) 묶기 전체를 명단과 견준다: 본 때, 안 보이기 시작한 때, 30일 넘으면 풀기. 비우는 중(delete)에는 손대지 않는다
+create or replace function kakao_members_sync()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare g record;
+begin
+  if not exists (select 1 from site_members) then return null; end if;
+  update site_kakao_links l set seen_at = now(), missing_at = null
+   where exists (select 1 from site_members m where m.key = l.nick_key) and (l.missing_at is not null or l.seen_at < now() - interval '1 hour');
+  update site_kakao_links l set missing_at = now()
+   where l.missing_at is null and not exists (select 1 from site_members m where m.key = l.nick_key);
+  for g in delete from site_kakao_links l where l.missing_at < now() - interval '30 days' and not exists (select 1 from site_members m where m.key = l.nick_key) returning * loop
+    perform kakao_log(g.user_id, 'auto_unlink', g.nick, 'auto', jsonb_build_object('missing_at', g.missing_at));
+  end loop;
+  return null;
+end $$;
+revoke execute on function kakao_members_sync() from public, anon, authenticated;
+drop trigger if exists site_members_kakao_sync on site_members;
+create trigger site_members_kakao_sync after insert or delete or truncate on site_members for each statement execute function kakao_members_sync();
+
+-- 로그인한 내 묶기(없으면 예외): 로그인 판 참석과 글이 쓴다. 운영진이 설정을 off 로 두면 화면뿐 아니라 서버도 막는다
 create or replace function kakao_me()
 returns site_kakao_links language plpgsql volatile security definer set search_path = public as $$
 declare me uuid := auth.uid(); l site_kakao_links;
 begin
   if me is null then raise exception 'LOGIN_REQUIRED'; end if;
+  if site_setting('kakao_login') = 'off' then raise exception 'KAKAO_OFF'; end if;
   l := kakao_link_check(me);
   if l.user_id is null then raise exception 'NOT_LINKED'; end if;
   return l;
 end $$;
 revoke execute on function kakao_me() from public, anon, authenticated;
 
--- 내 정보(로그인한 사람): 로그인했나, 카카오인가, 묶은 닉네임과 때, 명단에서 안 보이기 시작한 때, 명단 수, 설정
+-- 내 정보(로그인한 사람): 로그인했나, 카카오인가, 묶은 닉네임과 때, 명단에서 안 보이기 시작한 때, 로그인으로 올린 내 글 번호(화면이 내 글을 아는 기준), 명단 수, 설정
 create or replace function me_info()
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
 declare me uuid := auth.uid(); l site_kakao_links; k record;
@@ -115,17 +135,20 @@ begin
   select * into k from kakao_identity(me);
   l := kakao_link_check(me);
   return jsonb_build_object('login', true, 'kakao', coalesce(k.kid, '') <> '', 'nick', l.nick, 'linked_at', l.linked_at, 'missing_at', l.missing_at,
+    'posts', coalesce((select jsonb_agg(p.id order by p.id) from site_posts p where p.user_id = me), '[]'::jsonb),
     'members', (select count(*) from site_members), 'setting', site_setting('kakao_login'));
 end $$;
 revoke execute on function me_info() from public;
 grant execute on function me_info() to anon, authenticated;
 
--- 닉네임 묶기(로그인한 카카오 계정): 명단의 이름만, 다른 계정이 묶은 이름은 안 됨(30일 넘게 명단에 없던 묶기는 풀고 가져온다). 바꾸면 기록에 남는다
+-- 닉네임 묶기(로그인한 카카오 계정): 명단의 이름만, 다른 계정이 묶은 이름은 안 됨(30일 넘게 명단에 없던 묶기는 풀고 가져온다). 바꾸면 기록에 남고,
+-- 묶기와 바꾸기는 하루 다섯 번까지(이름을 옮겨 다니며 사칭하지 못하게). 바꾸면 끝나지 않은 모임의 내 참석 줄도 새 이름으로. 설정이 off 면 막는다
 create or replace function me_link(p_nick text)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
 declare me uuid := auth.uid(); k record; v_nick text := bung_nick_clean(p_nick); v_key text := bung_nick_key(p_nick); cur site_kakao_links; other site_kakao_links;
 begin
   if me is null then raise exception 'LOGIN_REQUIRED'; end if;
+  if site_setting('kakao_login') = 'off' then raise exception 'KAKAO_OFF'; end if;
   select * into k from kakao_identity(me);
   if coalesce(k.kid, '') = '' then raise exception 'NOT_KAKAO'; end if;
   if not bung_nick_ok(v_nick) or v_key = '' then raise exception 'BAD_NICK'; end if;
@@ -134,23 +157,37 @@ begin
     select m.name into v_nick from site_members m where m.key = v_key;           -- 명단에 적힌 모양 그대로
     if not found then raise exception 'NOT_MEMBER'; end if;
   end if;
+  select * into cur from site_kakao_links where user_id = me;
+  if cur.user_id is not null and cur.nick_key = v_key then                       -- 같은 이름 다시: 모양과 카카오 닉네임만 맞춘다
+    update site_kakao_links set nick = v_nick, kakao_nick = coalesce(k.knick, '') where user_id = me;
+    return me_info();
+  end if;
+  if (select count(*) from site_kakao_link_log g where g.user_id = me and g.action in ('link', 'relink') and g.at > now() - interval '1 day') >= 5 then
+    raise exception 'LINK_LIMIT';
+  end if;
   select * into other from site_kakao_links where nick_key = v_key and user_id <> me;
   if found then
-    if other.missing_at is not null and other.missing_at < now() - interval '30 days' then
-      delete from site_kakao_links where user_id = other.user_id;
-      perform kakao_log(other.user_id, 'auto_unlink', other.nick, 'auto', jsonb_build_object('missing_at', other.missing_at));
-    else raise exception 'NICK_TAKEN'; end if;
+    other := kakao_link_check(other.user_id);                                   -- 명단과 먼저 견준다(돌아온 사람의 묶기를 풀지 않게)
+    if other.user_id is not null then
+      if other.missing_at is not null and other.missing_at < now() - interval '30 days' then
+        delete from site_kakao_links where user_id = other.user_id;
+        perform kakao_log(other.user_id, 'auto_unlink', other.nick, 'auto', jsonb_build_object('missing_at', other.missing_at));
+      else raise exception 'NICK_TAKEN'; end if;
+    end if;
   end if;
-  select * into cur from site_kakao_links where user_id = me;
-  if found and cur.nick_key = v_key then
-    update site_kakao_links set nick = v_nick, kakao_nick = coalesce(k.knick, '') where user_id = me;
-  elsif found then
-    update site_kakao_links set nick = v_nick, nick_key = v_key, kakao_id = k.kid, kakao_nick = coalesce(k.knick, ''), linked_at = now(), seen_at = now(), missing_at = null where user_id = me;
-    perform kakao_log(me, 'relink', v_nick, 'self', jsonb_build_object('from', cur.nick));
-  else
-    insert into site_kakao_links (user_id, nick, nick_key, kakao_id, kakao_nick) values (me, v_nick, v_key, k.kid, coalesce(k.knick, ''));
-    perform kakao_log(me, 'link', v_nick, 'self', null);
-  end if;
+  begin
+    if cur.user_id is not null then
+      update site_kakao_links set nick = v_nick, nick_key = v_key, kakao_id = k.kid, kakao_nick = coalesce(k.knick, ''), linked_at = now(), seen_at = now(), missing_at = null where user_id = me;
+      perform kakao_log(me, 'relink', v_nick, 'self', jsonb_build_object('from', cur.nick));
+      update site_bung_attend a set nick = v_nick, nick_key = v_key               -- 끝나지 않은 모임의 내 참석 줄(그 이름의 줄이 이미 있는 글은 그대로)
+         from site_posts p where a.post_id = p.id and a.user_id = me and a.nick_key <> v_key and bung_cancel_open(p.meta)
+          and not exists (select 1 from site_bung_attend b where b.post_id = a.post_id and b.nick_key = v_key);
+    else
+      insert into site_kakao_links (user_id, nick, nick_key, kakao_id, kakao_nick) values (me, v_nick, v_key, k.kid, coalesce(k.knick, ''));
+      perform kakao_log(me, 'link', v_nick, 'self', null);
+    end if;
+  exception when unique_violation then raise exception 'NICK_TAKEN';           -- 둘이 같은 순간 같은 이름을 골랐다
+  end;
   return me_info();
 end $$;
 revoke execute on function me_link(text) from public;

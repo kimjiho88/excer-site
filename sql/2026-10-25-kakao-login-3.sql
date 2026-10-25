@@ -1,6 +1,6 @@
 -- 카카오 로그인 3/4 (2026-10-25): 로그인 판 글 올리기, 고치기, 지우기. 비밀번호 판 글쓰기는 카카오로 묶인 닉네임을 쓰지 못한다
 -- 2쪽 뒤에 실행. 다시 실행해도 안전하다. 로그인으로 올린 글은 pass_hash 가 'KAKAO'(어떤 비밀번호와도 맞지 않음), user_id 가 그 계정.
--- 내 글: 로그인으로 올린 글, 또는 비밀번호로 올린 글의 글쓴이 닉네임이 묶은 닉네임과 같은 글(고치면 그때부터 내 계정의 글). 공지는 운영진 비밀번호로만.
+-- 내 글: 로그인으로 올린 글만. 비밀번호로 올린 글은 글쓴이 닉네임이 같아도 그 글의 비밀번호로 고친다(닉네임만 묶은 다른 사람이 남의 글을 지우지 못하게). 공지는 운영진 비밀번호로만.
 do $g$ begin
   if to_regprocedure('public.kakao_post_mine(site_posts,site_kakao_links)') is null then raise exception '2쪽을 먼저 실행하세요'; end if;
   if to_regprocedure('public.bung_check(jsonb,bigint,jsonb,boolean)') is null then raise exception '운영진의 지난 날짜 고치기(2026-10-11-admin-past.sql)를 먼저 실행하세요'; end if;
@@ -58,8 +58,7 @@ begin
     perform bung_check(v_meta, p_id, case when rec.category = '벙 소식' then rec.meta else null end, false);
   end if;
   update site_posts
-     set title = trim(p_title), body = p_body, category = v_cat, meta = v_meta, updated_at = now(),
-         user_id = coalesce(user_id, l.user_id)                        -- 비밀번호로 올렸던 내 글은 이제부터 내 계정의 글
+     set title = trim(p_title), body = p_body, category = v_cat, meta = v_meta, updated_at = now()
    where id = p_id;
 end $$;
 revoke execute on function post_update_me(bigint, text, text, text, jsonb) from public, anon;
