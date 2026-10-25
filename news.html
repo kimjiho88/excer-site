@@ -396,6 +396,7 @@
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
     .field-grid .is-wide { grid-column: span 2; }     /* 자손 선택자 — display: contents 묶음(.field-group/.type-fields) 안의 항목도 걸린다 */
     select.input { padding-right: 30px; }
+    #meSel { width: 100%; margin-top: 6px; }
     .textarea.is-body { min-height: 150px; }
     .type-fields { display: contents; }
     .type-desc { margin: -4px 0 0; color: var(--ink-2); font-size: var(--fs-caption); line-height: 1.5; }
@@ -917,6 +918,12 @@
         <ul id="meList" class="me-list" aria-label="찾은 닉네임"></ul>
         <p id="meNote" class="field-hint" aria-live="polite" style="margin:8px 0 0"></p>
       </div>
+      <!-- 카카오 묶기: 명단 전체 드롭다운에서 한 번만 고른다(서버 member_names). 바꾸기와 풀기는 운영 화면에서만 -->
+      <div id="meSelWrap" hidden>
+        <label class="att-label" for="meSel">채팅방 닉네임 고르기</label>
+        <select id="meSel" class="input" aria-describedby="meSelNote"><option value="">명단에서 고르세요</option></select>
+        <p id="meSelNote" class="field-hint" aria-live="polite" style="margin:8px 0 0"></p>
+      </div>
       <div id="meFreeWrap" hidden>
         <label class="att-label" for="meFree">닉네임 직접 적기</label>
         <input id="meFree" class="input" type="text" maxlength="24" placeholder="채팅방 닉네임 그대로" autocomplete="off" enterkeyhint="done" />
@@ -925,6 +932,7 @@
       <div class="modal-foot">
         <button id="meFreeBtn" class="btn btn-secondary" type="button">목록에 없음</button>
         <button id="meOk" class="btn btn-primary" type="button" hidden>이 이름으로</button>
+        <button id="meSelOk" class="btn btn-primary" type="button" hidden>이 이름으로 묶기</button>
       </div>
     </div>
   </div>
@@ -1090,6 +1098,7 @@
       NOT_OWNER: "내 글이 아닙니다.",
       NOT_HOST: "모임장만 할 수 있습니다.",
       PASS_ROW: "로그인 전에 비밀번호로 적은 참석입니다. 그때 넣은 비밀번호로 취소해 주세요.",
+      LINKED_ALREADY: "닉네임은 한 번만 고를 수 있습니다. 바꾸려면 운영진에게 알려 주세요.",
       LINK_LIMIT: "닉네임 묶기와 바꾸기는 하루 다섯 번까지입니다. 내일 다시 해 주세요.",
       KAKAO_OFF: "카카오 로그인이 지금 꺼져 있습니다. 비밀번호 방식으로 해 주세요."
     };
@@ -1333,20 +1342,12 @@
         this.session = null; this.me = null; this.busy = false;
         this.render(); renderList(); showToast("로그아웃했습니다.");
       },
-      pick() { if (this.loggedIn()) openMe(null, "", true); },
+      pick() { if (this.loggedIn() && !this.linked()) openMe(null, "", true); },   // 한 번만 고른다. 바꾸기와 풀기는 운영 화면에서
       async link(nick) {
         this.me = await supaFetch("/rest/v1/rpc/me_link", { method: "POST", body: JSON.stringify({ p_nick: nick }) });
         if (this.linked()) saveNick(this.nick(), "list");
         this.render(); syncMe(); renderList();
         return this.me;
-      },
-      async unlink() {
-        if (this.busy) return;
-        if (!window.confirm("닉네임 묶기를 풉니다. 참석하거나 글을 올리려면 다시 골라야 합니다. 풀까요?")) return;
-        this.busy = true;
-        try { this.me = await supaFetch("/rest/v1/rpc/me_unlink", { method: "POST", body: "{}" }); showToast("닉네임 묶기를 풀었습니다."); }
-        catch (e) { showToast(rpcErrorMessage(e)); }
-        this.busy = false; this.render(); renderList();
       },
       render() {
         const row = $("kakaoRow"); if (!row) return;
@@ -1354,8 +1355,7 @@
         if (!this.on) { row.innerHTML = ""; return; }
         const logo = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.48 3 2 6.48 2 10.77c0 2.76 1.84 5.18 4.6 6.55l-.94 3.44c-.08.3.26.54.52.37l4.1-2.71c.56.08 1.13.12 1.72.12 5.52 0 10-3.48 10-7.77S17.52 3 12 3z"/></svg>';
         if (!this.loggedIn()) {
-          row.innerHTML = `<button type="button" class="kakao-btn" data-kakao="login"${this.busy ? " disabled" : ""}>${logo}카카오 로그인</button>`
-            + `<span class="kakao-note">닉네임만 받습니다. <a href="privacy.html#i-kakao">처리방침</a></span>`;
+          row.innerHTML = `<button type="button" class="kakao-btn" data-kakao="login"${this.busy ? " disabled" : ""}>${logo}카카오 로그인</button>`;
         } else if (!this.linked()) {
           row.innerHTML = `<span class="kakao-chip"><i aria-hidden="true"></i><b>카카오 로그인됨</b></span>`
             + `<button type="button" class="btn btn-primary is-sm" data-kakao="pick">채팅방 닉네임 고르기</button>`
@@ -1363,7 +1363,7 @@
         } else {
           const gone = this.me.missing_at ? `<span class="kakao-note">명단에 없는 이름입니다(이름을 바꿨거나 명단이 아직 안 올라옴). 30일 안에 돌아오지 않으면 풀립니다.</span>` : "";
           row.innerHTML = `<span class="kakao-chip" title="카카오 로그인으로 묶은 닉네임"><i aria-hidden="true"></i><b>${esc(this.nick())}</b><small>카카오</small></span>`
-            + `<span class="kakao-menu"><button type="button" class="text-btn is-quiet" data-kakao="pick">닉네임 바꾸기</button><button type="button" class="text-btn is-quiet" data-kakao="unlink">묶기 풀기</button><button type="button" class="text-btn is-quiet" data-kakao="logout">로그아웃</button></span>${gone}`;
+            + `<span class="kakao-menu"><button type="button" class="text-btn is-quiet" data-kakao="logout">로그아웃</button></span>${gone}`;
         }
         $("meChip").hidden = this.linked();   // 묶은 뒤에는 옛 '내 닉네임' 칩 대신 카카오 칩
       }
@@ -2763,21 +2763,53 @@
       $("meFreeErr").hidden = true;
       if (on) { if (nfc($("meQ").value)) $("meFree").value = nfc($("meQ").value); setTimeout(() => $("meFree").focus(), 30); }
     }
-    /* cb: 고른 뒤 할 일(참석 이어 하기, 글쓰기 칸 채우기). 닫으면 하지 않는다. q: 처음 찾을 글자(옛 닉네임) */
+    /* cb: 고른 뒤 할 일(참석 이어 하기, 글쓰기 칸 채우기). 닫으면 하지 않는다. q: 처음 찾을 글자(옛 닉네임). link: 카카오 묶기(명단 드롭다운) */
     async function openMe(cb, q, link) {
       ME.cb = cb || null; ME.link = !!link; ME.back = document.activeElement; ME.seq++;
       $("meQ").value = q || ""; $("meList").innerHTML = ""; $("meFree").value = savedNick();
-      $("meTitle").textContent = ME.link ? "채팅방 닉네임 묶기" : "내 닉네임";
+      $("meTitle").textContent = ME.link ? "채팅방 닉네임 고르기" : "내 닉네임";
       showMeFree(false); meNow();
-      if (ME.link) $("meNote").textContent = "카카오 계정에 묶을 채팅방 닉네임을 명단에서 고릅니다. 한 사람에 하나, 바꾸면 기록에 남습니다.";
+      $("meFind").hidden = false; $("meSelWrap").hidden = true; $("meSelOk").hidden = true;
+      if (ME.link) $("meNote").textContent = "";
       else if (cb && !savedNick()) $("meNote").textContent = "참석하려면 채팅방 닉네임을 먼저 고릅니다. 한 번 고르면 이 기기가 기억합니다.";   // 참석하기에서 처음 열린 창: 왜 이 창인지 한 줄
-      $("meFreeBtn").hidden = ME.link;   // 묶기는 명단의 이름만(명단이 아직 없는 서버면 아래에서 직접 적기로 바뀐다)
+      $("meFreeBtn").hidden = ME.link;   // 묶기는 명단의 이름만
       $("meBackdrop").hidden = false;
+      if (ME.link) { await openMeSel(); return; }
       setTimeout(() => $("meQ").focus(), 30);
       const info = await memberInfo();
       if ($("meBackdrop").hidden) return;
       if (!info.n) showMeFree(true);   // 올라온 목록이 없으면 바로 직접 적기
       else if (q) onMeInput();
+    }
+    /* 카카오 묶기: 명단 전체를 드롭다운으로(서버 member_names, 로그인한 사람만). 첫 초성으로 묶어 보인다. 한 번 고르면 바꾸기와 풀기는 운영 화면에서만.
+       member_names 가 없는 서버(5쪽 전)면 찾아서 고르는 옛 창으로 */
+    async function memberNames() {
+      const rows = await supaFetch("/rest/v1/rpc/member_names", { method: "POST", body: "{}" });
+      return (Array.isArray(rows) ? rows : []).map((r) => ({ name: nfc(r && r.name), cho: String((r && r.cho) || "") })).filter((r) => r.name);
+    }
+    async function openMeSel() {
+      const seq = ME.seq, sel = $("meSel"), note = $("meSelNote");
+      $("meFind").hidden = true; $("meSelWrap").hidden = false; $("meSelOk").hidden = false; $("meSelOk").disabled = true;
+      sel.innerHTML = '<option value="">명단을 읽는 중</option>'; note.textContent = "";
+      let rows;
+      try { rows = await memberNames(); }
+      catch (err) {
+        if (seq !== ME.seq) return;
+        if (err && err.status === 404) {
+          $("meSelWrap").hidden = true; $("meSelOk").hidden = true; $("meFind").hidden = false;
+          $("meNote").textContent = "카카오 계정에 묶을 채팅방 닉네임을 명단에서 찾아 고릅니다. 한 번 고르면 바꾸거나 풀 수 없습니다.";
+          setTimeout(() => $("meQ").focus(), 30); return;
+        }
+        sel.innerHTML = '<option value="">명단을 읽지 못했습니다</option>'; note.textContent = rpcErrorMessage(err); return;
+      }
+      if (seq !== ME.seq) return;
+      if (!rows.length) { sel.innerHTML = '<option value="">명단이 아직 없습니다</option>'; note.textContent = "봇이 멤버 명단을 올린 뒤 다시 해 주세요."; return; }
+      const groups = new Map();
+      rows.forEach((r) => { const g = /^[ㄱ-ㅎ]$/.test(r.cho) ? r.cho : "기타"; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(r.name); });
+      const order = [...groups.keys()].sort((a, b) => (a === "기타") - (b === "기타") || a.localeCompare(b, "ko"));
+      sel.innerHTML = '<option value="">명단에서 고르세요</option>' + order.map((g) => `<optgroup label="${esc(g)}">` + groups.get(g).map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("") + "</optgroup>").join("");
+      note.textContent = "봇이 올린 채팅방 멤버 명단 " + rows.length + "명입니다. 한 번 고르면 바꾸거나 풀 수 없습니다. 잘못 골랐으면 운영진에게 알려 주세요.";
+      setTimeout(() => sel.focus(), 30);
     }
     function closeMe() {
       if ($("meBackdrop").hidden) return;
@@ -2788,14 +2820,17 @@
     /* 카카오 로그인한 사람의 닉네임 묶기(me_link): 명단에 없거나 다른 계정이 묶은 이름이면 창 안에 알린다 */
     async function linkMe(nick) {
       if (ME.busy) return;
-      ME.busy = true; $("meNote").textContent = "묶는 중";
+      const note = $("meSelWrap").hidden ? $("meNote") : $("meSelNote");
+      ME.busy = true; note.textContent = "묶는 중"; $("meSelOk").disabled = true;
       try {
         await KAUTH.link(nick);
         closeMe(); showToast("닉네임을 묶었습니다: " + nick);
       } catch (err) {
         const code = String((err && err.message) || "");
-        $("meNote").textContent = /NICK_TAKEN/.test(code) ? "이미 다른 카카오 계정이 묶은 닉네임입니다. 본인 이름이면 운영진에게 알려 주세요." : rpcErrorMessage(err);
+        note.textContent = /NICK_TAKEN/.test(code) ? "이미 다른 카카오 계정이 묶은 닉네임입니다. 본인 이름이면 운영진에게 알려 주세요." : rpcErrorMessage(err);
+        $("meSelOk").disabled = !$("meSel").value;
         if (/LOGIN_REQUIRED|NOT_KAKAO/.test(code)) { closeMe(); KAUTH.session = null; KAUTH.me = null; KAUTH.render(); }
+        else if (/LINKED_ALREADY/.test(code)) { closeMe(); KAUTH.refreshMe().catch(() => {}).then(() => { KAUTH.render(); renderList(); }); }   // 다른 기기에서 이미 골랐다
       } finally { ME.busy = false; }
     }
     function chooseMe(name, src) {
@@ -3295,7 +3330,7 @@
       $("kakaoRow").addEventListener("click", (e) => {
         const b = e.target.closest("[data-kakao]"); if (!b) return;
         const k = b.dataset.kakao;
-        if (k === "login") KAUTH.login(); else if (k === "logout") KAUTH.logout(); else if (k === "pick") KAUTH.pick(); else if (k === "unlink") KAUTH.unlink();
+        if (k === "login") KAUTH.login(); else if (k === "logout") KAUTH.logout(); else if (k === "pick") KAUTH.pick();
       });
       $("attMeChange").addEventListener("click", () => openMe((nick) => { $("attNick").value = nick; $("attMeName").textContent = nick; }));
       $("meQ").addEventListener("input", onMeInput);
@@ -3303,6 +3338,8 @@
       $("meList").addEventListener("click", (e) => { const b = e.target.closest(".me-opt"); if (b) chooseMe(b.dataset.name); });
       $("meFreeBtn").addEventListener("click", () => showMeFree(true));
       $("meOk").addEventListener("click", submitMeFree);
+      $("meSel").addEventListener("change", () => { $("meSelOk").disabled = !$("meSel").value; });
+      $("meSelOk").addEventListener("click", () => { const v = $("meSel").value; if (v && ME.link) linkMe(v); });
       $("meFree").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitMeFree(); } });
       $("meFree").addEventListener("input", () => { $("meFreeErr").hidden = true; });
       $("meClose").addEventListener("click", closeMe);
