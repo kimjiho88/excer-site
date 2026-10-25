@@ -494,7 +494,7 @@
     /* 카카오 로그인(112차): 노란 단추(카카오 디자인 가이드 색 #FEE500), 로그인 뒤에는 묶은 닉네임 칩과 작은 메뉴 */
     .kakao-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
     .kakao-row[hidden] { display: none; }
-    .kakao-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: #FEE500; color: rgba(0, 0, 0, .85); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+    .kakao-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: #FEE500; color: rgba(0, 0, 0, .85); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
     .kakao-btn svg { width: 18px; height: 18px; flex: none; }
     .kakao-btn:disabled { opacity: .5; cursor: default; }
     .kakao-note { color: var(--ink-2); font-size: var(--fs-caption); }
@@ -504,7 +504,7 @@
     .kakao-chip b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kakao-chip small { flex: none; color: var(--ink-2); font-size: var(--fs-caption); }
     .kakao-menu { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; }
-    .kakao-menu .text-btn { min-height: 32px; }
+    .kakao-menu .text-btn { min-height: 40px; padding: 0 10px; }
     .att-me { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 10px; padding: 4px 4px 4px 12px; border-radius: 10px; background: var(--brand-soft); }
     .att-me b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--brand); font-size: 15px; }
     .att-me .text-btn { flex: none; }
@@ -1066,7 +1066,7 @@
     }
     /* 글쓰기 단추: 분류를 골라 보고 있으면 그 분류로 연다. 작성 중이던 글이 있으면 그 글을 연다 */
     function openWriteDefault() {
-      if (KAUTH.on && !KAUTH.linked()) { requireLogin("글을 올리려면"); return; }   // 카카오 로그인이 켜진 기기: 새 글은 로그인으로만(공지도 로그인한 운영진이 운영진 비밀번호로)
+      if (KAUTH.on && !KAUTH.linked()) { requireLogin("글을 올리려면", { act: "write" }); return; }   // 카카오 로그인이 켜진 기기: 새 글은 로그인으로만(공지도 로그인한 운영진이 운영진 비밀번호로). 돌아오면 창을 연다
       openWriteModal(null, state.category !== "전체" && !loadDraft() ? { category: state.category } : null);
     }
     const ERROR_MAP = {
@@ -1275,10 +1275,45 @@
        로그인한 사람은 봇이 올린 멤버 명단의 닉네임 하나를 묶고(me_link), 그 뒤 참석, 취소, 모임 올리기와 고치기는 비밀번호 없이 로그인 판 함수(*_me)로 한다.
        SDK 는 처음 필요할 때(저장된 로그인, 복귀 코드, 단추 누름)만 읽는다 ── */
     const KAUTH = {
-      KEY: "dn-news-auth", TRY_KEY: "excer_kakao_try", SDK: "assets/vendor/supabase-js-2.118.0.js",   // 사이트 안에 둔 파일(assets/vendor, MIT). 바깥 CDN 의 바뀌는 판을 읽지 않는다
-      on: false, setting: "", sb: null, sbP: null, session: null, me: null, busy: false,
+      KEY: "dn-news-auth", TRY_KEY: "excer_kakao_try", BACK_KEY: "excer_kakao_back", SDK: "assets/vendor/supabase-js-2.118.0.js",   // 사이트 안에 둔 파일(assets/vendor, MIT). 바깥 CDN 의 바뀌는 판을 읽지 않는다
+      on: false, setting: "", sb: null, sbP: null, session: null, me: null, busy: false, pending: null,
       stored() { try { return !!localStorage.getItem(this.KEY); } catch (e) { return false; } },
       hasCode() { return /[?&]code=/.test(location.search) && !/[?&]error=/.test(location.search); },
+      hasError() { return /[?&]error=/.test(location.search); },
+      cleanUrl(keys) { try { const u = new URL(location.href); keys.forEach((k) => u.searchParams.delete(k)); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } catch (e) {} },
+      /* 로그인하러 가기 전의 자리(탭, 펼친 글, 스크롤, 하려던 일)를 기기에 적어 두고 돌아와서 그 자리로(복귀 주소에는 탭과 글이 실리지 않는다). 15분 안에만 */
+      remember(ctx) {
+        const c = ctx || {};
+        try { localStorage.setItem(this.BACK_KEY, JSON.stringify({ at: Date.now(), cat: state.category, post: c.id || state.expandedId || hashPostId() || null, y: Math.round(window.scrollY || 0), act: c.act || "", id: c.id || null })); } catch (e) {}
+      },
+      takeBack() {
+        let b = null;
+        try { b = JSON.parse(localStorage.getItem(this.BACK_KEY) || "null"); localStorage.removeItem(this.BACK_KEY); } catch (e) {}
+        return b && typeof b === "object" && Date.now() - Number(b.at || 0) < 15 * 60000 ? b : null;
+      },
+      async restore(b) {
+        this.pending = null;
+        if (!b) return;
+        if (b.cat && (b.cat === "전체" || CATS.includes(b.cat)) && b.cat !== state.category) {
+          state.category = b.cat; setCatChips(); syncCatUrl(); syncSortSel(); state.expandedId = null; syncHash(null);
+          if (!state.degraded) { renderListLoading(); await loadPosts(true); }
+        }
+        const id = Number(b.post) > 0 ? Number(b.post) : null;
+        if (id) { syncHash(id); await openFromHash(); }
+        else if (Number(b.y) > 0) window.scrollTo(0, Number(b.y));
+        if (b.act) this.pending = { act: b.act, id: b.id || id };
+      },
+      /* 로그인과 고르기가 끝난 뒤 하려던 일로: 글쓰기는 창을 열고, 참석은 그 단추에 초점을 두고 한 번 더 누르게 한다(서버에 보내는 것은 사람이 누를 때만). 안내에 붙일 글을 돌려준다 */
+      resume() {
+        const p = this.pending; this.pending = null;
+        if (!p || !this.linked()) return "";
+        if (p.act === "write") { setTimeout(() => openWriteDefault(), 150); return ""; }
+        if (p.act === "attend" && p.id) {
+          const btn = document.querySelector(`.bung-card[data-post="${p.id}"] [data-act="attend"]`);
+          if (btn) { try { btn.focus({ preventScroll: true }); } catch (e) {} return "참석을 눌러 주세요"; }
+        }
+        return "";
+      },
       tryDevice() { try { return localStorage.getItem(this.TRY_KEY) === "1"; } catch (e) { return false; } },
       loggedIn() { return !!(this.on && this.session && this.session.user); },
       linked() { return !!(this.loggedIn() && this.me && this.me.login && this.me.nick); },
@@ -1310,19 +1345,27 @@
         try { const u = new URL(location.href); if (u.searchParams.get("kakao") === "1") { try { localStorage.setItem(this.TRY_KEY, "1"); } catch (e) {} u.searchParams.delete("kakao"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } } catch (e) {}
         try { this.setting = String((await supaFetch("/rest/v1/rpc/site_setting", { method: "POST", body: JSON.stringify({ p_key: "kakao_login" }) })) || ""); } catch (e) { this.setting = ""; }
         this.on = this.setting === "all" || (this.setting === "staff" && (isAdminDevice() || this.tryDevice()));
-        if (this.on && (this.stored() || this.hasCode())) {
-          const back = this.hasCode();
+        const back = this.hasCode();
+        let done = false;
+        if (this.hasError()) {   // 카카오 동의 화면에서 취소하거나 막힌 채 돌아옴: 주소를 지우고 원래 자리로
+          this.cleanUrl(["error", "error_code", "error_description"]);
+          showToast("카카오 로그인을 마치지 않았습니다. 다시 누르면 됩니다.");
+          try { await this.restore(this.takeBack()); } catch (e) {}
+          this.pending = null;
+        }
+        if (this.on && (this.stored() || back)) {
           try {
             await this.load(); await this.token();
-            if (back) { try { const u = new URL(location.href); u.searchParams.delete("code"); history.replaceState(history.state, "", u.pathname + u.search + u.hash); } catch (e) {} }
+            if (back) this.cleanUrl(["code"]);
             await this.refreshMe();
-            if (back && this.loggedIn()) {
-              if (this.linked()) showToast("카카오 로그인됨: " + this.nick());
-              else { showToast("카카오 로그인됨. 채팅방 닉네임을 골라 주세요."); setTimeout(() => this.pick(), 400); }
-            }
+            if (back && this.loggedIn()) { await this.restore(this.takeBack()); done = true; }
           } catch (e) { if (back) showToast("카카오 로그인을 마치지 못했습니다. 다시 눌러 주세요."); }
         }
         this.render(); renderList();
+        if (done) {
+          if (this.linked()) { const extra = this.resume(); showToast("카카오 로그인됨: " + this.nick() + (extra ? ". " + extra : "")); }
+          else { showToast("카카오 로그인됨. 채팅방 닉네임을 골라 주세요."); setTimeout(() => this.pick(), 400); }
+        }
       },
       async refreshMe() {
         if (!this.loggedIn()) { this.me = null; return null; }
@@ -1330,9 +1373,10 @@
         if (this.linked()) saveNick(this.nick(), "list");   // 묶은 닉네임이 곧 이 기기의 내 닉네임(참석 표시, 모임장 메뉴가 그대로 맞는다)
         return this.me;
       },
-      async login() {
+      async login(ctx) {
         if (this.busy) return;
         this.busy = true; this.render();
+        this.remember(ctx);
         try {
           await this.load();
           const r = await this.sb.auth.signInWithOAuth({ provider: "kakao", options: { redirectTo: location.origin + location.pathname, scopes: "profile_nickname" } });
@@ -1343,7 +1387,7 @@
         if (this.busy) return;
         this.busy = true;
         try { if (this.sb) await this.sb.auth.signOut({ scope: "local" }); } catch (e) {}
-        this.session = null; this.me = null; this.busy = false;
+        this.session = null; this.me = null; this.busy = false; this.pending = null;
         this.render(); renderList(); showToast("로그아웃했습니다.");
       },
       pick() { if (this.loggedIn() && !this.linked()) openMe(null, "", true); },   // 한 번만 고른다. 바꾸기와 풀기는 운영 화면에서
@@ -2629,14 +2673,14 @@
       showToast("이 기기에서 " + nick + " 을(를) 내 이름으로 기억합니다.");
     }
     /* 카카오 로그인이 켜진 기기에서 로그인 없이 참석이나 글쓰기를 누르면 로그인으로(돌아와서 다시 누른다). 로그인했지만 아직 안 골랐으면 고르기 창 */
-    function requireLogin(what) {
-      if (!KAUTH.loggedIn()) { showToast(what + " 카카오 로그인이 필요합니다."); KAUTH.login(); return; }
-      KAUTH.pick();
+    function requireLogin(what, ctx) {
+      if (!KAUTH.loggedIn()) { showToast(what + " 카카오 로그인이 필요합니다."); KAUTH.login(ctx); return; }
+      KAUTH.pending = ctx || null; KAUTH.pick();
     }
-    /* 참석하기: 카카오 로그인이 켜진 기기면 묶은 닉네임으로 바로(로그인이나 고르기가 먼저). 아니면 옛 흐름(내 닉네임과 비밀번호) */
+    /* 참석하기: 카카오 로그인이 켜진 기기면 묶은 닉네임으로 바로(로그인이나 고르기가 먼저. 돌아오면 이 글로). 아니면 옛 흐름(내 닉네임과 비밀번호) */
     async function startAttend(id) {
       if (!findPost(id)) return;
-      if (KAUTH.on) { if (KAUTH.linked()) attendMe(id); else requireLogin("참석하려면"); return; }
+      if (KAUTH.on) { if (KAUTH.linked()) attendMe(id); else requireLogin("참석하려면", { act: "attend", id }); return; }
       if (!savedNick()) { openMe(() => startAttend(id)); return; }
       if (!nickSrc() && (await memberInfo()).n) {   // 목록이 생기기 전에 적은 닉네임: 목록에 같은 이름이 있으면 그대로 쓰고, 없으면(이름만 적은 것) 그 글자로 찾아 한 번 고르게
         const old = savedNick(), same = (await memberFind(old).catch(() => [])).find((n) => nickKey(n) === nickKey(old));
@@ -2833,7 +2877,8 @@
       ME.busy = true; note.textContent = "묶는 중"; $("meSelOk").disabled = true;
       try {
         await KAUTH.link(nick);
-        closeMe(); showToast("닉네임을 묶었습니다: " + nick);
+        const extra = KAUTH.resume();   // 로그인 전에 하려던 일(참석 단추 초점, 글쓰기 창)
+        closeMe(); showToast("닉네임을 묶었습니다: " + nick + (extra ? ". " + extra : ""));
       } catch (err) {
         const code = String((err && err.message) || "");
         note.textContent = /NICK_TAKEN/.test(code) ? "이미 다른 카카오 계정이 묶은 닉네임입니다. 본인 이름이면 운영진에게 알려 주세요." : rpcErrorMessage(err);
