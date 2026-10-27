@@ -52,7 +52,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     멤버의 닉네임을 읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의
     더보기 단추, 뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(한 시각에 세 번까지). 서버는 지금 목록의
     7할 아래로 줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다. 읽은 결과와 읽기 실패는 운영 화면에 보인다.
-  - 신입 인사(greet on 일 때, 기본은 끔): 기본(greet watch off)은 독려만 한다. 지난 독려부터 이틀이 지난 날 17:00 의 30분 전에 멤버를
+  - 신입 인사(greet on 일 때, 기본은 끔): 기본(greet watch off)은 독려만 한다. 매일 17:00 의 30분 전에 멤버를
     한 번 읽어 끝에 입장일(월일 네 자리)이 붙은 사람 모두(오늘부터 30일 전까지)를 모아 두고 17:00 에 한 메시지(여덟 명까지, 넘치면 1분 뒤
     다음 메시지)에 태그하고 인사 글을 붙여 보낸다. 그 사이에는 방을 열지 않는다. greet watch on 이면 10분마다 알릴 방 머리의 인원 수('91명')를
     보고, 늘었으면(또는 3시간마다) 멤버를 읽어 처음 보는 이름 가운데 입장일이 오늘부터 이틀 전까지인 사람에게 바로 인사한다(한 사람에게 한 번.
@@ -137,8 +137,8 @@ tablet 준비(태블릿 하나로)
                                       클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
   python excer_bot.py greet now "닉네임"   (tablet) 알릴 방에 그 사람을 태그해 인사 글을 한 번 보낸다(태그 목록에 그 이름이 없으면
                                       보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 Ctrl+C
-  python excer_bot.py greet remind 2 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 이틀마다 17:00 에 같은 인사 글을 태그해 보낸다
-                                      (30분 전에 멤버를 한 번 읽음. greet on 일 때, 기본 이틀마다 17:00). greet remind off 로 끈다. run 을 다시 켜야 적용
+  python excer_bot.py greet remind 1 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 매일 17:00 에 같은 인사 글을 태그해 보낸다
+                                      (30분 전에 멤버를 한 번 읽음. greet on 일 때, 기본 매일 17:00. 이틀마다면 2). greet remind off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py greet watch on  입장 즉시 인사: 10분마다 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게 인사한다.
                                       greet watch off(기본) 면 독려만(그 사이에는 방을 열지 않는다). run 을 다시 켜야 적용
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
@@ -165,7 +165,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-25.6"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-27.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -205,7 +205,7 @@ DEFAULTS = {
               "days": 2,                       # 입장일이 오늘부터 이만큼 전까지인 새 이름만 신입으로 본다(밤에 들어온 사람은 아침에)
               "max_names": 8,                  # 한 메시지에 태그할 사람 수(넘치면 다음 메시지로)
               "bulk": 6,                       # 한 번에 이만큼 이상 새로 보이면 인사하지 않는다(기준이 어긋난 것으로 보고 다시 잡음)
-              "remind_every": 2,               # 신입 독려: 끝에 입장일이 붙은 사람 모두에게 이만큼(일)마다 다시 태그해 인사 글을 보낸다. 0 이면 안 한다(greet remind)
+              "remind_every": 1,               # 신입 독려: 끝에 입장일이 붙은 사람 모두에게 이만큼(일)마다 다시 태그해 인사 글을 보낸다. 1 이면 매일(2026-10-27 부터, 그 전은 2), 0 이면 안 한다(greet remind)
               "remind_at": "17:00",            # 그 시각에 보낸다(watch on 이면 그 뒤 첫 확인 때. 조용한 시간이면 끝난 뒤)
               "remind_read_min": 30,           # (watch off) remind_at 의 이만큼(분) 전에 멤버를 한 번 읽어 보낼 사람을 모은다
               "remind_days": 30},              # 입장일이 오늘부터 이만큼 전까지인 사람만(더 오래된 네 자리 수는 입장일로 보지 않는다)
@@ -3249,7 +3249,7 @@ def greet_remind_text(g):
     if every <= 0:
         return "안 함"
     when = "%s 뒤 첫 확인 때" % g["remind_at"] if g.get("watch") == "on" else "%d분 전에 멤버를 읽어 %s에 보냄" % (int(g.get("remind_read_min") or 0), g["remind_at"])
-    return "%d일마다 %s, 끝에 입장일이 붙은 사람 모두(오늘부터 %d일 전까지)" % (every, when, int(g.get("remind_days") or 30))
+    return "%s %s, 끝에 입장일이 붙은 사람 모두(오늘부터 %d일 전까지)" % ("매일" if every == 1 else "%d일마다" % every, when, int(g.get("remind_days") or 30))
 
 
 def greet_able(bot):
@@ -3275,7 +3275,7 @@ def greet_alive(bot):
         out.append("입장 즉시 인사 안 함")
     if int(g.get("remind_every") or 0) > 0:
         rd = int(st.get("greet_remind_day") or 0)
-        out.append("독려 %d일마다 %s(%s%s)" % (g["remind_every"], g["remind_at"], "그 뒤 첫 확인 때" if g["watch"] == "on" else "%d분 전에 읽음" % g["remind_read_min"],
+        out.append("독려 %s %s(%s%s)" % ("매일" if g["remind_every"] == 1 else "%d일마다" % g["remind_every"], g["remind_at"], "그 뒤 첫 확인 때" if g["watch"] == "on" else "%d분 전에 읽음" % g["remind_read_min"],
                                           ", 마지막 %s" % date.fromordinal(rd).strftime("%m/%d") if rd else ""))
     else:
         out.append("독려 안 함")
@@ -7410,7 +7410,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
     remind 일수 [시각](신입 독려: 입장일이 붙은 사람 모두에게 며칠마다 다시, remind off 로 끔)"""
     sub, val = (a.arg or "").strip(), (getattr(a, "arg2", "") or "").strip()
     g = greet_cfg(cfg)
-    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study | greet now "닉네임" | greet remind 2 17:00 | greet remind off | greet watch on | greet watch off'
+    usage = 'python excer_bot.py greet | greet on | greet test | greet off | greet text "인사 글" | greet study | greet now "닉네임" | greet remind 1 17:00 | greet remind off | greet watch on | greet watch off'
     if sub == "":
         print("신입 인사: %s. 인사 글: %s" % ({"on": "켬(알릴 방에 태그해서)", "test": "시험(시험 방에 태그 없이)", "off": "꺼짐"}[g["on"]], g["text"]))
         if g["watch"] == "on":
@@ -7429,7 +7429,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
         print("입장 즉시 인사: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % ("켬(인원 수가 늘면 바로 읽어 처음 보는 신입에게)" if val == "on" else "안 함(독려만)"))
         return
     if sub == "remind":                                 # 신입 독려: 입장일이 붙은 사람 모두에게 며칠마다 다시(같은 인사 글)
-        how = "예: python excer_bot.py greet remind 2 17:00 (이틀마다 17:00 뒤, 시각은 안 적으면 그대로), 끄려면 greet remind off"
+        how = "예: python excer_bot.py greet remind 1 17:00 (매일 17:00, 이틀마다면 2. 시각은 안 적으면 그대로), 끄려면 greet remind off"
         if not val:
             print("신입 독려: %s. 바꾸려면 %s" % (greet_remind_text(g), how))
             return
