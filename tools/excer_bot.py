@@ -165,7 +165,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-27.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-28.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
@@ -1588,6 +1588,9 @@ class Bot:
             return ""
         if st.get("greet_block"):
             return ""                                   # 알릴 방 입력 칸을 못 비워 멈춤(greet on 으로 다시)
+        plan = "%s %s %s %s" % (g["remind_every"], g["remind_at"], g["remind_read_min"], g["watch"])
+        if st.get("greet_plan") != plan:                # 주기나 시각, 방식을 바꿨다(명령이나 새 판): 옛 주기로 잡아 둔 다음 할 일 시각은 버리고 새 주기로 다시 잡는다
+            st.update(greet_plan=plan, greet_next=0)
         dt = self.clock()
         now = Now(dt)
         if in_quiet(now.hm, self.cfg.get("quiet")) or now.ts < self.hold_until or now.ts < float(st.get("greet_next") or 0):
@@ -1654,7 +1657,8 @@ class Bot:
         """독려만(greet watch off): 지난 독려 날부터 remind_every 일이 지난 날, remind_at 의 remind_read_min 분 전에 멤버를 한 번 읽어
         끝에 입장일이 붙은 사람(remind_days 안, 오늘 인사한 사람은 빼고)을 보낼 목록에 두고, remind_at 에 보낸다(여덟 명 넘으면 1분 뒤 다음 메시지).
         읽기가 늦어지면 읽은 뒤 바로 보낸다. remind_at 에서 세 시간이 지나도록 못 읽었으면 그날은 그만두고 다음 날 다시.
-        다음 할 일 시각(greet_next)까지는 방을 열지 않는다. 읽기가 안 되면 greet_failed(5분, 10분, ... 뒤 다시)"""
+        다음 할 일 시각(greet_next)까지는 방을 열지 않는다. 주기나 시각을 바꾸면(명령이나 새 판) 그 시각은 버리고 새 주기로 다시 잡는다(greet_tick).
+        읽기가 안 되면 greet_failed(5분, 10분, ... 뒤 다시)"""
         st, every, t = self.st, int(g.get("remind_every") or 0), today.toordinal()
         if every <= 0:
             st["greet_next"] = now.ts + 3600
