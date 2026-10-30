@@ -180,7 +180,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-31.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-31.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -6281,18 +6281,26 @@ class AdbSender:
     EXPORT_OK = ("open directory", "디렉토리 열기", "디렉터리 열기", "저장", "save", "확인", "ok", "허용", "allow")   # 받는 앱(Termux)의 창에서 누를 단추(소문자로 견줌)
     EXPORT_SHEET = ("공유", "공유 대상", "다음으로 공유", "공유하기", "share", "share with", "send to")   # 공유 창의 제목
     EXPORT_KEEP_RE = re.compile(r"(설정|관리|내보내기|저장|백업|알림|이름|보기|검색|공유|초대|메시지|텍스트|저장소|파일|폴더|사진|동영상|링크|일정|공지|투표|멤버|대화상대|채팅방|오픈채팅|서랍|닫기|취소|확인|다음|이전|뒤로|삭제|나가기|신고|차단|open|save|edit|cancel|share|directory|termux|drive|files)", re.I)
-    EXPORT_DEV_DIRS = ("/sdcard/Download", "/sdcard/KakaoTalk/Chats/*", "/sdcard/Android/media/com.kakao.talk/KakaoTalk/Chats/*", "/sdcard/Documents")
+    EXPORT_DEV_ROOTS = ("/sdcard/Download", "/sdcard/Documents", "/sdcard/KakaoTalk", "/sdcard/Android/media/com.kakao.talk")   # 공유 창 없이 바로 저장하는 판이 파일을 두는 곳
 
     def export_never(self, n):
         lab = n["text"] + " " + n["desc"]
         return any(w in lab for w in self.EXPORT_NEVER + self.VOICE_NEVER)
 
-    def export_tap(self, n, what=""):
-        """내보내기 흐름에서 누르는 것은 이것으로만. 위험한 말이 들었으면 누르지 않고 멈춘다. 지나온 곳에 무엇을 눌렀는지 한 마디"""
+    def export_tap(self, n, what="", nodes=None):
+        """내보내기 흐름에서 누르는 것은 이것으로만. 위험한 말이 들었으면 누르지 않고 멈춘다. 글 칸이 보이스룸 작은 창에 가려 있으면 그 글을 품은 줄(누를 수 있는 것)의
+        가리지 않은 자리를 누른다(nodes 가 있을 때. 2026-10-31 살피기: 내보내기 화면 첫 줄의 글이 왼쪽 위 작은 창 밑). 지나온 곳에 무엇을 눌렀는지 한 마디"""
         if self.export_never(n):
             raise KakaoError("누르지 않음(%s)" % (ws(n["text"]) or ws(n["desc"]))[:20])
         self.fact(what or ("누름 " + (ws(n["text"]) or ws(n["desc"]))[:16]))
-        self.tap(n)
+        try:
+            self.tap(n)
+        except Covered:
+            r = self.row_of(nodes, n) if nodes is not None else None
+            if r is None or r is n or self.export_never(r):
+                raise
+            self.fact("가려서 줄을 누름")
+            self.tap(r)
 
     def export_find(self, nodes, pred, before=None, pkg=None):
         """글이나 이름(띄어쓰기 정리)이 pred 에 맞는 것(before 에 없던 것만, 위험한 말이 든 것은 빼고). 누를 수 있는 것을 먼저, 위에 있는 것부터.
@@ -6386,7 +6394,7 @@ class AdbSender:
                 raise KakaoError("방 오른쪽 위 세 줄 단추(방 메뉴)를 찾지 못함" + self.diag_note())
             hgt = max(n["b"][3] for n in nodes)
             note("방 위쪽(메뉴 단추 자리)", [n for n in nodes if n["b"][1] < hgt * 0.08])
-            self.export_tap(btn, "세 줄 단추")
+            self.export_tap(btn, "세 줄 단추", nodes)
             drawer = self.mem_settle(self.wait_change(nodes, tries=3))
             note("방 메뉴(새로 나온 것)", drawer, before=nodes)
             gear = self.export_find(drawer, lambda s: s in self.EXPORT_SETTINGS, before=nodes, pkg="kakao")
@@ -6394,7 +6402,7 @@ class AdbSender:
             if not gear:
                 self.save_diag()
                 raise KakaoError("방 메뉴에서 채팅방 설정 단추를 찾지 못함" + self.diag_note())
-            self.export_tap(gear[0], "설정 단추")
+            self.export_tap(gear[0], "설정 단추", drawer)
             scr = self.mem_settle(self.wait_change(drawer, tries=3))
             note("채팅방 설정", scr, before=drawer)
             item, via_done = None, False
@@ -6405,7 +6413,7 @@ class AdbSender:
                     break
                 via = [] if via_done else self.export_find(scr, lambda s: bool(self.EXPORT_VIA_RE.search(s)), pkg="kakao")
                 if via:
-                    self.export_tap(via[0], "대화 내용 관리")
+                    self.export_tap(via[0], "대화 내용 관리", scr)
                     via_done = True
                     scr = self.mem_settle(self.wait_change(scr, tries=3))
                     note("대화 내용 관리", scr)
@@ -6419,21 +6427,21 @@ class AdbSender:
             if item is None:
                 self.save_diag()
                 raise KakaoError("채팅방 설정에서 대화 내용 내보내기 항목을 찾지 못함" + self.diag_note())
-            self.export_tap(item, "대화 내용 내보내기")
+            self.export_tap(item, "대화 내용 내보내기", scr)
             dlg = self.mem_settle(self.wait_change(scr, tries=4))
-            note("내보내기 창(새로 나온 것)", dlg, before=scr)
+            note("내보내기 화면(새로 나온 것)", dlg, before=scr)
             app, name = self.export_app(dlg, x["share"])
             if app:
-                self.export_tap(app, "공유 앱 " + name)    # 창 없이 바로 공유 창이 뜨는 판
+                self.export_tap(app, "공유 앱 " + name, dlg)   # 화면 없이 바로 공유 창이 뜨는 판
+                self.export_receive(note)
+                path = self.export_wait_file(start, x["wait_min"] * 60)
             else:
-                opt = self.export_find(dlg, lambda s: "텍스트" in s, before=scr, pkg="kakao")
+                opt = self.export_find(dlg, lambda s: "텍스트" in s, before=scr, pkg="kakao")   # 2026-10-31 살피기: '텍스트 메시지만 저장'(다른 줄은 '모든 메시지 내부저장소에 저장')
                 if not opt:
                     self.save_diag()
-                    raise KakaoError("내보내기 창에서 텍스트 항목을 찾지 못함" + self.diag_note())
-                self.export_tap(opt[0], "텍스트 항목")
-                self.export_share(scr, x["share"], x["wait_min"] * 60, note)
-            self.export_receive(note)
-            path = self.export_wait_file(start, x["wait_min"] * 60)
+                    raise KakaoError("내보내기 화면에서 텍스트 항목을 찾지 못함" + self.diag_note())
+                self.export_tap(opt[0], "텍스트 항목", dlg)
+                path = self.export_outcome(scr, x, note, start)
             self.fact("파일 %d바이트" % os.path.getsize(path))
             return path
         except KakaoError as e:
@@ -6442,9 +6450,11 @@ class AdbSender:
         finally:
             self.export_return(room)
 
-    def export_share(self, before, names, wait_s, note):
-        """공유 창이 뜨기를 기다려(긴 대화는 몇 분) 받을 앱을 누른다. 그 사이 카카오톡 창에 확인 단추가 뜨면 한 번 누른다. 공유 창에 앱이 안 보이면
-        아래로 밀어(세 번까지) 찾는다. 돌려주는 것: (누른 앱, 이름). 안 뜨면 KakaoError"""
+    def export_outcome(self, before, x, note, start):
+        """텍스트 항목을 누른 뒤: 공유 창이 뜨면 받을 앱(share 순서)을 눌러 받는 앱의 창을 거쳐 파일을 기다리고, 공유 창 없이 기기 저장소에 바로 저장하는 판이면
+        그 파일을 받는다(Termux 다운로드 폴더나 기기 저장소에 start 뒤에 생긴 .txt, 여섯 초마다 본다). 그 사이 카카오톡 창에 확인 단추가 뜨면 한 번 누르고,
+        공유 창에 앱이 안 보이면 아래로 밀어(세 번까지) 찾는다. 긴 대화는 파일이 생기기까지 몇 분 걸린다(wait_min). 돌려주는 것: 파일 경로. 안 오면 KakaoError"""
+        wait_s, names = x["wait_min"] * 60, x["share"]
         t0, polls, swipes, confirmed, nodes = time.time(), 0, 0, False, None
         while time.time() - t0 < wait_s and polls < max(10, wait_s // 2):
             self.sleep(2.0)
@@ -6453,24 +6463,36 @@ class AdbSender:
             app, name = self.export_app(nodes, names)
             if app:
                 note("공유 창", nodes, before=before)
-                self.export_tap(app, "공유 앱 " + name)
-                return app, name
+                self.export_tap(app, "공유 앱 " + name, nodes)
+                self.export_receive(note)
+                return self.export_wait_file(start, wait_s)
             if not confirmed:
                 ok = self.export_find(nodes, lambda s: s in self.EXPORT_CONFIRM, before=before, pkg="kakao")
                 if ok:
                     note("확인 단추가 뜬 창(새로 나온 것)", nodes, before=before)
-                    self.export_tap(ok[0], "내보내기 창 단추")
+                    self.export_tap(ok[0], "내보내기 화면 단추", nodes)
                     confirmed = True
                     continue
+            if polls % 3 == 1:                                   # 공유 창 없이 바로 저장하는 판: 파일이 생겼는지
+                p = self.export_local(start)
+                if p:
+                    note("파일이 생긴 뒤 화면", nodes, before=before)
+                    self.fact("공유 창 없이 Termux 폴더에 저장됨")
+                    return self.export_settled(p)
+                p = self.export_pull(start)
+                if p:
+                    note("파일이 생긴 뒤 화면", nodes, before=before)
+                    self.fact("공유 창 없이 기기 저장소에 저장됨")
+                    return p
             if self.export_sheet(nodes) and swipes < 3 and polls % 2 == 0:
                 swipes += 1
                 wid, hgt = max(n["b"][2] for n in nodes), max(n["b"][3] for n in nodes)
                 self.sh("input swipe %d %d %d %d 500" % (wid // 2, hgt * 4 // 5, wid // 2, hgt * 2 // 5))
                 self.fact("공유 창 밂")
         if nodes is not None:
-            note("공유 창이 안 뜬 마지막 화면", nodes)
+            note("공유 창도 파일도 없는 마지막 화면", nodes)
         self.save_diag()
-        raise KakaoError("공유 창에서 받을 앱(%s)을 %d분 안에 찾지 못함" % (", ".join(names), max(1, wait_s // 60)) + self.diag_note())
+        raise KakaoError("텍스트 항목을 누른 뒤 %d분 안에 공유 창(받을 앱 %s)도 저장된 파일도 없음" % (max(1, wait_s // 60), ", ".join(names)) + self.diag_note())
 
     def export_receive(self, note):
         """받는 앱의 창(Termux 는 '~/downloads 에 저장' 창): 확인 단추(EXPORT_OK 의 첫 것부터)가 뜨면 누른다(한 번). 30초 안에 안 뜨면 그냥 간다(바로 받는 앱)"""
@@ -6482,7 +6504,7 @@ class AdbSender:
                 note("받는 앱의 창", nodes)
                 lab = lambda n: (ws(n["text"]) or ws(n["desc"])).lower()
                 ok.sort(key=lambda n: self.EXPORT_OK.index(lab(n)) if lab(n) in self.EXPORT_OK else 99)
-                self.export_tap(ok[0], "받는 앱 단추 " + lab(ok[0])[:16])
+                self.export_tap(ok[0], "받는 앱 단추 " + lab(ok[0])[:16], nodes)
                 return True
             if not self.on_kakao(nodes) and k >= 3:
                 note("받는 앱 화면(단추 없음)", nodes)
@@ -6529,8 +6551,9 @@ class AdbSender:
         return p
 
     def export_pull(self, start):
-        """기기 저장소의 새 .txt(start 2분 전 뒤) 하나를 받아 이 파일 옆 export 폴더에 둔다(기기의 것은 지운다). 없으면 ''"""
-        cmd = "for f in %s; do [ -f \"$f\" ] && stat -c '%%Y %%s %%n' \"$f\"; done 2>/dev/null; true" % " ".join(d + "/*.txt" for d in self.EXPORT_DEV_DIRS)
+        """기기 저장소(EXPORT_DEV_ROOTS 아래 네 단계까지)의 새 .txt(start 2분 전 뒤) 하나를 받아 이 파일 옆 export 폴더에 둔다(기기의 것은 지운다). 없으면 ''"""
+        cmd = ("find %s -maxdepth 4 -type f -name '*.txt' 2>/dev/null | head -300 | while IFS= read -r f; do stat -c '%%Y %%s %%n' \"$f\"; done; true"
+               % " ".join(self.EXPORT_DEV_ROOTS))
         try:
             out = self.sh(cmd, timeout=40)
         except KakaoError:
