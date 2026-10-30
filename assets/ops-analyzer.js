@@ -17,6 +17,7 @@
   "use strict";
   var DAY = 86400000;
   var P = global.ChatParser;
+  var LANG = global.OpsLang;   // 채팅 언어 점검(ops-lang.js). 없으면(옛 시험) 언어 결과를 내지 않는다
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
   function ts(m) { return Date.UTC(+m.date.slice(0, 4), +m.date.slice(5, 7) - 1, +m.date.slice(8, 10), m.hour || 0, m.min || 0); }
@@ -97,6 +98,9 @@
   function createAnalyzer(opts) {
     opts = opts || {};
     var links = opts.links || {};   // 운영자가 직접 이은 줄: 줄 열쇠 -> 지금 이름
+    // 채팅 언어: 단어 목록 설정(끈 항목, 켠 항목, 더한 말, 예외 말)으로 글 메시지마다 검사해 걸린 줄과 날짜별 수를 모은다
+    var langCfg = opts.lang || {}, lex = LANG && opts.lang !== false ? LANG.compile(langCfg) : null;
+    var langHits = [], langDays = Object.create(null), langSeq = Object.create(null);
     var people = Object.create(null), names = [], byHead = Object.create(null), namesByLen = null;
     var events = [], evByName = Object.create(null);
     var months = Object.create(null);
@@ -237,6 +241,19 @@
         if (m.kind === "link" || RE_INFO.test(text)) p.info += 1;
         var plain = text.indexOf("http") >= 0 ? text.replace(/https?:\/\/\S+/g, " ") : text;
         for (var code in SIG) { var sg = SIG[code], tx2 = sg.url ? text : plain; if (sg.re.test(tx2) && !(sg.not && sg.not.test(tx2))) flag(p, code, m, text); }
+        if (lex) {
+          var lsc = LANG.scan(text, lex);
+          if (lsc) {
+            // 줄 열쇠: 날짜, 시각, 글 내용(해시), 그 분 안에서 같은 글이 몇 번째인지. 이름(닉네임 바꿈)이나 단어 목록이 바뀌어도,
+            // 다른 기기의 내보내기로 다시 분석해도 같다(해당 없음 표시가 따라오게)
+            var lkey = m.date + "|" + hm(m) + "|" + hash(text), lq = (langSeq[lkey] = (langSeq[lkey] || 0) + 1);
+            var lx = LANG.excerpt(text, lsc.ms);
+            langHits.push({ d: m.date, t: hm(m), n: name, k: lsc.k, w: lsc.ms.map(function (q) { return [q.i, q.w]; }), x: lx.x, h: hash(lkey + "|" + lq) });
+            var ld = langDays[m.date] || (langDays[m.date] = { n: 0, c: Object.create(null), p: Object.create(null) });
+            ld.n += 1; ld.c[lsc.k] = (ld.c[lsc.k] || 0) + 1;
+            var lp = ld.p[name] || (ld.p[name] = Object.create(null)); lp[lsc.k] = (lp[lsc.k] || 0) + 1;
+          }
+        }
         if (RE_QUESTION.test(text.trim())) pendingQ.push({ t: t, name: name, o: { d: m.date, t: hm(m), hour: m.hour, name: name, x: snip(text) } });
         neg = RE_NEG.test(text) || SIG.abuse.re.test(text) ? 1 : 0;
       }
@@ -414,7 +431,31 @@
         sys: sysCount, unread: unread,
         roles: roles.slice(-100), staff: { owner: ledger.some(function (r) { return r.role === "owner"; }) ? owner : "", subs: ledger.filter(function (r) { return r.role === "sub"; }).map(function (r) { return r.name; }) },
         unlinked: unlinked.slice(-2000), defaultNames: dflt,
-        people: ledger
+        people: ledger,
+        lang: langOut(endN)
+      };
+    }
+    /* 채팅 언어 결과: 마지막 날부터 180일 안의 걸린 줄(2만 건과 3MB 까지, 발췌 포함. 넘치면 오래된 날부터 날 단위로 뺀다)과
+       전체 기간의 날짜별 사람별 수. ops.html 은 이것을 ledger 와 따로 저장한다(열쇠 하나 4MB 한도) */
+    function utf8Len(s) { var n = 0; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xD800 && c <= 0xDBFF ? 4 : c >= 0xDC00 && c <= 0xDFFF ? 0 : 3; } return n; }
+    function langOut(endN) {
+      if (!lex) return null;
+      var keepFrom = dateOf(endN - 179), MAXN = 20000, MAXB = 3000000;
+      var start = langHits.length, bytes = 0, cut = false;
+      while (start > 0) {
+        var h = langHits[start - 1];
+        if (h.d < keepFrom) break;
+        var b = utf8Len(JSON.stringify(h)) + 1;
+        if (langHits.length - start + 1 > MAXN || bytes + b > MAXB) { cut = true; break; }
+        bytes += b; start -= 1;
+      }
+      // 잘렸으면 그 날은 통째로 뺀다(하루의 일부만 남아 어디에도 세지 않는 줄이 없게)
+      if (cut && start < langHits.length && start > 0 && langHits[start - 1].d === langHits[start].d) { var dd = langHits[start].d; while (start < langHits.length && langHits[start].d === dd) start += 1; }
+      var hits = langHits.slice(start);
+      return {
+        v: 1, ver: LANG.VERSION, range: { from: first, to: lastDate }, ledgerTo: lastDate,
+        cfg: { off: (langCfg.off || []).slice(), on: (langCfg.on || []).slice(), allow: (langCfg.allow || []).slice(), add: (langCfg.add || []).map(function (a) { return { id: a.id, t: a.t, k: a.k }; }) },
+        days: langDays, hits: hits, hitsFrom: hits.length ? hits[0].d : cut ? dateOf(endN + 1) : keepFrom, all: langHits.length, truncated: cut, bytes: bytes
       };
     }
     return { beginFile: beginFile, add: add, addSys: addSys, finish: finish };
@@ -422,7 +463,7 @@
 
   /* ── 배열로 받은 메시지(시험용): 시간순으로 정렬해 분석기에 넣는다 ── */
   function analyze(input) {
-    var A = createAnalyzer({ links: input && input.links });
+    var A = createAnalyzer({ links: input && input.links, lang: input && input.lang });
     var list = ((input && input.messages) || []).map(function (m, i) { return { m: m, i: i, t: ts(m) }; }).sort(function (a, b) { return a.t - b.t || a.i - b.i; });
     list.forEach(function (x) { A.add(x.m); });
     ((input && input.sys) || []).forEach(A.addSys);
@@ -479,7 +520,7 @@
     opts = opts || {};
     P = P || global.ChatParser;
     var list = Array.prototype.slice.call(files || []);
-    var A = createAnalyzer({ links: opts.links });
+    var A = createAnalyzer({ links: opts.links, lang: opts.lang });
     var total = list.reduce(function (a, f) { return a + f.size; }, 0) || 1, done = 0;
     return Promise.all(list.map(firstTime)).then(function (t0) {
       var order = list.map(function (f, i) { return { f: f, t0: t0[i] }; }).sort(function (a, b) { return a.t0 - b.t0 || b.f.size - a.f.size; });   // 시작이 같으면 큰 파일(나중에 내보낸 파일)부터
