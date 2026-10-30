@@ -61,15 +61,22 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     입력 칸을 비운 것을 확인하고, 입력 칸 글이 만든 글과 똑같을 때만 보낸다. 전송을 누르기 바로 전에 보낸 것으로 적어 같은 인사를 두 번 올리지 않는다.
     조용한 시간과 운영 화면의 전체 멈춤 중에는 쉬고, 실패하면 5분에서 1시간까지 늘려 다시. 기록에는 이름 대신 지문만 남긴다.
     알릴 방 입력 칸에 남은 글(태그)을 지우지 못하면 신입 인사를 멈추고 status 와 아침 '봇 정상' 줄에 알린다(손으로 비운 뒤 greet on).
+  - 대화 내보내기(export on 일 때, 기본은 끔. docs/BOT_AUTOMATION_PLAN.md 7절): 매일 05:40(export at) 알릴 방 메뉴의 설정 단추, 채팅방 설정의
+    '대화 내용 내보내기', 내보내기 창의 텍스트 항목을 눌러 공유 창에서 Termux 로 파일을 받고, 태블릿 안에서 사이트와 같은 분석기(node, 저장소에서
+    받아 둔 파일)로 읽어 사람별 집계와 채팅 언어 점검 결과만 서버에 올린다(봇 열쇠). 대화 원문은 올리지 않고 파일은 분석 뒤 지운다.
+    운영 화면 데이터 탭의 '지금 내보내기'(30분 안의 요청)도 따른다. 누르는 것은 세 줄 단추, 설정 단추, 그 두 항목, 공유 창의 앱, 받는 앱의 확인 단추뿐이고
+    해제, 나가기, 삭제, 신고, 차단이 든 것은 어떤 흐름에서도 누르지 않는다. 실패하면 20분, 40분, 60분 뒤 다시(하루 세 번까지). 조용한 시간에도 하고
+    전체 멈춤 중에는 쉰다. 분석까지 하고 올리기만 실패했으면 다음에는 올리기만 다시 한다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
-  - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 신입 인사를 켰으면 독려 날 읽고 보낼 때(watch on 이면 방 머리의 인원 수를 볼 때도)뿐이다. 채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
+  - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 대화 내보내기를 켰으면 하루 한 번 내보낼 때, 신입 인사를 켰으면 독려 날 읽고 보낼 때(watch on 이면 방 머리의 인원 수를 볼 때도)뿐이다.
+    채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
     보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
-가진 것: 멤버 목록만 바꿀 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
+가진 것: 멤버 목록과 봇 분석 결과만 올릴 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 tablet 준비(태블릿 하나로)
   - Termux 와 Termux:API 를 같은 곳(F-Droid)에서 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤
-    pkg install python android-tools termux-api curl (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다)
+    pkg install python android-tools termux-api curl nodejs (안 올리면 adb, curl 이 CANNOT LINK EXECUTABLE 로 안 켜진다. nodejs 는 대화 내보내기 분석용)
   - 설정 > 개발자 옵션 > 무선 디버깅을 켜고, 페어링 코드로 한 번 adb pair 127.0.0.1:포트 한 뒤
     python excer_bot.py connect (포트는 스스로 찾는다. 못 찾으면 무선 디버깅 화면의 'IP 주소 및 포트' 의 포트를 적는다).
     connect 는 고정 포트(5555)도 열어 두어 무선 디버깅이 저절로 꺼져도 붙는다(처음 한 번 화면의 허용 창). 재부팅하면 무선 디버깅을 켜고 connect 만 다시.
@@ -141,13 +148,21 @@ tablet 준비(태블릿 하나로)
                                       (30분 전에 멤버를 한 번 읽음. greet on 일 때, 기본 매일 17:00. 이틀마다면 2). greet remind off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py greet watch on  입장 즉시 인사: 10분마다 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게 인사한다.
                                       greet watch off(기본) 면 독려만(그 사이에는 방을 열지 않는다). run 을 다시 켜야 적용
+  python excer_bot.py export          대화 내보내기 설정(켬, 시각, 받을 앱, node)과 마지막 결과를 보인다. export on, export off, export at 05:40
+                                      (run 을 다시 켜야 적용). 켜면 매일 그 시각에 알릴 방의 대화 내용을 텍스트로 내보내 태블릿 안에서 분석하고
+                                      결과만 서버에 올린다(운영 화면 데이터 탭에서 반영). 봇 열쇠가 있어야 한다
+  python excer_bot.py export check    node 가 있는지, 분석기 파일을 받을 수 있는지, 봇 열쇠, Termux 다운로드 폴더를 본다(화면은 안 건드림)
+  python excer_bot.py export study    (tablet) 알릴 방 메뉴, 채팅방 설정, 내보내기 창, 공유 창, 받는 앱의 창을 차례로 excer_bot_export_study.txt 에
+                                      적고 클립보드에 담는다(대화 글과 이름은 가림. 실제로 한 번 내보내 파일을 받고 크기만 적은 뒤 지운다). run 을 먼저 Ctrl+C
+  python excer_bot.py export now      (tablet) 지금 한 번 내보내 분석하고 올린다(몇 분, 긴 대화는 더). run 을 먼저 Ctrl+C
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
                                       바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
   python excer_bot.py once            한 번만 보고 끝낸다
 기록: excer_bot_state.json(본 글, 시험 방은 excer_bot_test_state.json, 시험 파일은 excer_bot_feed_state.json),
       excer_bot_voice.json(보이스룸 켜짐과 끊김), excer_bot_alive.json(run 이 30초마다 남기는 살아 있음 표시),
-      excer_bot_members.txt(members 로 읽은 멤버 이름), excer_bot_members_check.txt(members check 결과), excer_bot.log(한 일). 이 파일 옆에 생긴다.
+      excer_bot_members.txt(members 로 읽은 멤버 이름), excer_bot_members_check.txt(members check 결과), excer_bot.log(한 일),
+      scan/(대화 내보내기 분석기 파일 넷과 마지막 분석 결과, 올린 뒤 지움), export/(기기 저장소에서 받은 대화 파일, 분석 뒤 지움). 이 파일 옆에 생긴다.
 """
 import argparse
 import hashlib
@@ -165,8 +180,9 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-28.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
-RAW_URL = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/tools/excer_bot.py"
+VERSION = "2026-10-31.1"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
+RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
 DOW = "월화수목금토일"
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -224,6 +240,14 @@ DEFAULTS = {
               "on_text": "보이스룸에 참여 중", "end_text": "보이스룸 종료",   # 카카오톡 알림 글자(실측). 바뀌면 여기만
               "renew_hours": 47.5, "mute": True, "volume0": True, "recover": True,   # recover: 끊기면 다시 켠다(2단계). 끄면 기록만
               "kick_retry_min": 0, "max_new_per_day": 6, "alert_test_room": False},
+    # 대화 내보내기와 언어 점검(docs/BOT_AUTOMATION_PLAN.md 7절): 하루 한 번 알릴 방의 대화 내용을 텍스트로 내보내 태블릿 안에서 사이트와 같은 분석기(node)로
+    # 읽고 결과(사람별 집계, 채팅 언어 점검)만 서버에 올린다. export on, off, at 으로 바꾼다. 봇 열쇠가 있어야 한다
+    "export": {"on": False,                      # 켬
+               "at": "05:40",                    # 매일 이 시각(그 뒤 세 시간 안). 조용한 시간이어도 한다(방에 올리는 것이 없다)
+               "share": ["Termux", "파일", "Files", "내 파일", "드라이브", "Drive"],   # 공유 창에서 받을 앱(이 순서로 찾는다). Termux 면 ~/downloads 로 바로 온다
+               "node": "node",                   # 분석기를 돌릴 node 명령(pkg install nodejs)
+               "wait_min": 15,                   # 공유 창과 파일이 오기까지 기다리는 분(긴 대화는 몇 분 걸린다)
+               "keep": False},                   # 분석한 뒤 대화 파일을 남길지(기본은 지운다: 대화 원문을 태블릿에 쌓지 않는다)
 }
 
 
@@ -626,6 +650,40 @@ class Site:
         d = json.loads(body)
         return d if isinstance(d, dict) else {"ok": False, "error": "모양이 다름"}
 
+    def ops_cfg(self, key):
+        """운영 화면이 봇을 위해 둔 설정(bot_ops_cfg, 2026-10-31-bot-analysis.sql): 채팅 언어 단어 목록 설정(끈 항목, 더한 말, 예외 말)과 직접 이은 줄.
+        서버의 답 {ok, cfg} 또는 {ok: false, error}. 그 SQL 이 없는 서버는 None"""
+        url = self.cfg["supa"] + "/rest/v1/rpc/bot_ops_cfg"
+        data = json.dumps({"p_key": key}).encode("utf-8")
+        for fresh in (False, True):
+            k = self.anon_key(fresh)
+            code, body = self.post(url, data, {"apikey": k, "Authorization": "Bearer " + k})
+            if code != 401:
+                break
+        if code == 404:
+            return None
+        if not 200 <= code < 300:
+            raise RuntimeError("HTTP %s" % code)
+        d = json.loads(body)
+        return d if isinstance(d, dict) else {"ok": False, "error": "모양이 다름"}
+
+    def analysis_put(self, key, kind, payload, meta=None):
+        """봇 분석 결과 올리기(bot_analysis_put): kind 는 ledger(사람별 집계), lang(채팅 언어 점검), status(마친 때와 한 줄). 종류마다 서버에 한 줄(통째로 바꿈).
+        대화 원문은 넣지 않는다(분석기 결과뿐). 큰 결과(몇 MB)라 넉넉히 기다린다. 서버의 답. 그 SQL 이 없는 서버는 None"""
+        url = self.cfg["supa"] + "/rest/v1/rpc/bot_analysis_put"
+        data = json.dumps({"p_key": key, "p_kind": kind, "p_payload": payload, "p_meta": meta}, ensure_ascii=False).encode("utf-8")
+        for fresh in (False, True):
+            k = self.anon_key(fresh)
+            code, body = self.post(url, data, {"apikey": k, "Authorization": "Bearer " + k}, timeout=180)
+            if code != 401:
+                break
+        if code == 404:
+            return None
+        if not 200 <= code < 300:
+            raise RuntimeError("HTTP %s %s" % (code, clean(body, 80)))
+        d = json.loads(body)
+        return d if isinstance(d, dict) else {"ok": False, "error": "모양이 다름"}
+
     def posts(self):
         """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
         어제 것도 읽는 까닭: 자정을 넘겨 끝나는 벙(19:00 시작 01:00 끝)이 자정에 공지에서 빠지지 않게"""
@@ -852,6 +910,8 @@ def beat_text(bot, now):
         out.append("운영 화면: " + ctl_text(bot, now.ts))
     if members_beat(bot):
         out.append(members_beat(bot))
+    if export_beat(bot):
+        out.append(export_beat(bot))
     if greet_able(bot) and st.get("greet_block") and greet_cfg(bot.cfg)["on"] != "off":
         out.append("신입 인사: 멈춤(%s). 알릴 방 입력 칸을 손으로 비운 뒤 python excer_bot.py greet on 하고 run 을 다시 켜세요" % st["greet_block"])
     return "\n".join(out)
@@ -975,6 +1035,143 @@ def members_alive(bot):
     elif float(st.get("members_retry_at") or 0) > bot.ts():
         out.append("%s 에 다시" % hm_of(st["members_retry_at"])[6:])
     return ", ".join(out)
+
+
+# ── 대화 내보내기와 언어 점검(export, docs/BOT_AUTOMATION_PLAN.md 7절): 설정, 상태 줄, 분석기 파일과 node 실행 ──
+TERMUX_DL = os.path.expanduser("~/downloads")        # Termux 가 공유로 받은 파일을 두는 곳
+SCAN_SRC = {"chat-parser.js": "assets/chat-parser.js", "ops-lang.js": "assets/ops-lang.js",
+            "ops-analyzer.js": "assets/ops-analyzer.js", "ops_scan.js": "tools/ops_scan.js"}   # 태블릿에서 돌리는 분석기 파일(저장소 main 의 사이트와 같은 파일)
+
+
+def export_cfg(cfg):
+    """대화 내보내기 설정(기본값을 채움). on 은 참 거짓, at 은 HH:MM(틀리면 기본), share 는 앱 이름 목록"""
+    x = dict(DEFAULTS["export"], **((cfg or {}).get("export") or {}))
+    v = x.get("on")
+    x["on"] = v is True or str(v).strip().lower() in ("on", "true", "1", "yes")
+    x["at"] = x["at"] if TIME_RE.match(str(x.get("at") or "")) else DEFAULTS["export"]["at"]
+    sh = x.get("share")
+    x["share"] = [str(s).strip() for s in (sh if isinstance(sh, list) else str(sh or "").split(",")) if str(s).strip()] or list(DEFAULTS["export"]["share"])
+    x["node"] = str(x.get("node") or "node").strip() or "node"
+    try:
+        x["wait_min"] = max(1, int(x.get("wait_min") or 15))
+    except (TypeError, ValueError):
+        x["wait_min"] = 15
+    x["keep"] = bool(x.get("keep"))
+    return x
+
+
+def export_able(bot):
+    """이 run 이 대화 내보내기를 하는가: tablet 방식, 알릴 방(시험 방 run 이 아님)"""
+    return greet_able(bot)
+
+
+def export_last_text(last):
+    """마지막 내보내기 한 줄: '10/30 05:42 메시지 123,456건, 걸린 줄 12건' 또는 '10/30 05:42 실패(까닭)'"""
+    if not isinstance(last, dict) or not last.get("at"):
+        return ""
+    m = re.match(r"^\d{4}-(\d{2})-(\d{2}) (\d{2}:\d{2})", str(last["at"]))
+    t = "%d/%d %s" % (int(m.group(1)), int(m.group(2)), m.group(3)) if m else str(last["at"])
+    if last.get("error"):
+        return "%s 실패(%s)" % (t, last["error"])
+    return "%s 메시지 %s건, 걸린 줄 %s건" % (t, format(int(last.get("messages") or 0), ","), format(int(last.get("hits") or 0), ","))
+
+
+def export_alive(bot):
+    """살아 있음 표시에 남길 대화 내보내기 상태(status 의 '대화 내보내기:'). 이 run 이 하지 않거나 꺼져 있으면 ''"""
+    if not export_able(bot):
+        return ""
+    x, st = export_cfg(bot.cfg), bot.st
+    if not x["on"]:
+        return ""
+    if not bot.cfg.get("members_key"):
+        return "봇 열쇠 없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"
+    t = export_last_text(st.get("export_last"))
+    out = ["매일 %s" % x["at"], "마지막 " + t if t else "아직 안 함"]
+    if float(st.get("export_retry_at") or 0) > bot.ts():
+        out.append("%s 에 다시" % hm_of(st["export_retry_at"])[6:])
+    return ", ".join(out)
+
+
+def export_beat(bot):
+    """'봇 정상' 줄에 붙일 대화 내보내기 한 줄(켜져 있고 봇 열쇠가 있을 때만)"""
+    if not (export_able(bot) and export_cfg(bot.cfg)["on"] and bot.cfg.get("members_key")):
+        return ""
+    return "대화 내보내기: " + (export_last_text(bot.st.get("export_last")) or "아직 안 함")
+
+
+def scan_assets(cfg, log=None, get=None):
+    """분석기 파일 넷(SCAN_SRC)을 저장소(main)에서 받아 이 파일 옆 scan 폴더에 둔다(내용이 바뀐 것만 바꿔 쓴다). 못 받은 것은 있는 것을 그대로 쓴다.
+    돌려주는 것: 그 폴더. 하나라도 없으면 RuntimeError"""
+    d = os.path.join(HERE, "scan")
+    os.makedirs(d, exist_ok=True)
+    fails = []
+    for name, src in SCAN_SRC.items():
+        p = os.path.join(d, name)
+        try:
+            code, body = (get or http_get)(RAW_BASE + src + "?t=%d" % int(time.time()), timeout=60)
+            if code != 200 or len(body) < 200:
+                raise RuntimeError("HTTP %s" % code)
+        except Exception as e:
+            fails.append("%s(%s)" % (name, clean(str(e), 60)))
+            continue
+        try:
+            with open(p, encoding="utf-8") as f:
+                cur = f.read()
+        except OSError:
+            cur = ""
+        if cur != body:
+            with open(p + ".tmp", "w", encoding="utf-8") as f:
+                f.write(body)
+            os.replace(p + ".tmp", p)
+    missing = [n for n in SCAN_SRC if not os.path.exists(os.path.join(d, n))]
+    if missing:
+        raise RuntimeError("분석기 파일을 받지 못함: %s" % ", ".join(fails or missing))
+    if fails and log:
+        log("분석기 파일을 새로 받지 못해 있는 것을 씀: %s" % ", ".join(fails))
+    return d
+
+
+def scan_run(path, ocfg, assets, x, timeout=3600):
+    """node 로 분석기(ops_scan.js)를 돌린다: 대화 파일을 조각씩 읽어 사람별 집계(ledger)와 채팅 언어 점검(lang)을 scan/last_out.json 에 쓴다.
+    ocfg: 서버의 단어 목록 설정과 직접 이은 줄. 돌려주는 것: 결과(dict). 안 되면 RuntimeError(한 줄)"""
+    out, cfgp = os.path.join(assets, "last_out.json"), os.path.join(assets, "cfg.json")
+    with open(cfgp, "w", encoding="utf-8") as f:
+        json.dump({"lang": (ocfg or {}).get("lang") or {}, "links": (ocfg or {}).get("links") or {}}, f, ensure_ascii=False)
+    try:
+        p = subprocess.run([x["node"], os.path.join(assets, "ops_scan.js"), path, out, cfgp, assets], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    except FileNotFoundError:
+        raise RuntimeError("'%s' 명령이 없음(Termux 에서 pkg install nodejs)" % x["node"])
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("분석이 %d분 안에 끝나지 않음" % (timeout // 60))
+    if p.returncode != 0:
+        err = (p.stderr.decode("utf-8", "replace").strip().split("\n") or [""])[-1][:160]
+        why = {2: "실행기 사용법", 3: "대화 파일이 없음", 4: "파일에서 대화를 찾지 못함(카카오톡 대화 내보내기 파일인지)"}.get(p.returncode, "분석기 오류")
+        raise RuntimeError("%s(%s)" % (why, err or "끝 코드 %d" % p.returncode))
+    with open(out, encoding="utf-8") as f:
+        res = json.load(f)
+    if not isinstance(res, dict) or not res.get("range") or not isinstance(res.get("ledger"), dict):
+        raise RuntimeError("분석 결과 모양이 다름")
+    return res
+
+
+def export_check_lines(cfg, get=None):
+    """export check: node, 분석기 파일, 봇 열쇠, Termux 다운로드 폴더(화면은 건드리지 않는다)"""
+    x = export_cfg(cfg)
+    out = ["대화 내보내기: %s(매일 %s, 받을 앱 %s)" % ("켬" if x["on"] else "꺼짐", x["at"], ", ".join(x["share"]))]
+    try:
+        p = subprocess.run([x["node"], "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        v = p.stdout.decode("utf-8", "replace").strip()
+        out.append("node: %s" % (v if p.returncode == 0 and v else "안 됨(Termux 에서 pkg install nodejs)"))
+    except (OSError, subprocess.TimeoutExpired):
+        out.append("node: 없음(Termux 에서 pkg install nodejs)")
+    try:
+        d = scan_assets(cfg, None, get)
+        out.append("분석기 파일: 받음(%s)" % d)
+    except Exception as e:
+        out.append("분석기 파일: 못 받음(%s)" % e)
+    out.append("봇 열쇠: %s" % ("있음" if cfg.get("members_key") else "없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"))
+    out.append("Termux 다운로드 폴더: %s" % ("있음(%s)" % TERMUX_DL if os.path.isdir(TERMUX_DL) else "없음(공유로 파일을 처음 받을 때 생긴다)"))
+    return out
 
 
 def has_changes(ch):
@@ -1387,7 +1584,8 @@ class Bot:
         d = d or {}
         plan = plan_times(d.get("members_plan"))      # 멤버 읽기 세 시각(2026-10-25-member-times.sql). 다시 켜도 쓰게 기록에 둔다
         self.ctl = {"notice": float(d.get("notice_until_ts") or 0), "pause": float(d.get("pause_until_ts") or 0),
-                    "mreq": float(d.get("members_req_ts") or 0), "mdone": float(d.get("members_done_ts") or 0), "mplan": plan}
+                    "mreq": float(d.get("members_req_ts") or 0), "mdone": float(d.get("members_done_ts") or 0), "mplan": plan,
+                    "ereq": float(d.get("export_req_ts") or 0), "edone": float(d.get("export_done_ts") or 0)}   # 지금 내보내기 요청과 마친 때(2026-10-31 SQL)
         if plan and plan != self.st.get("members_plan"):
             self.st["members_plan"] = plan
             self.save()
@@ -1571,6 +1769,174 @@ class Bot:
             self.members_report(0, False, members_short(why), "read")   # 올리기 실패는 서버가 이미 안다
         self.log("멤버 %s 실패(%s 시각의 %d번째, %s): %s" % (what, slot, k, tail, why))
         return "members-fail"
+
+    # ── 대화 내보내기와 언어 점검(export, docs/BOT_AUTOMATION_PLAN.md 7절) ──
+    def export_due(self, now):
+        """오늘 정한 시각(export.at)이 지났고 세 시간 안이고 아직 안 했으면 True. 그 시각 전 한 시간 안에 이미 했으면(지금 내보내기) 오늘은 끝"""
+        x = export_cfg(self.cfg)
+        if self.st.get("export_done_ymd") == now.ymd or now.hm < x["at"] or mins(now.hm) - mins(x["at"]) > 180:
+            return False
+        if float(self.st.get("export_ok_ts") or 0) >= ts_at(datetime.fromtimestamp(now.ts, KST).date(), x["at"]) - 3600:
+            self.st["export_done_ymd"] = now.ymd
+            self.save()
+            return False
+        return True
+
+    def export_report(self, req, ok, note, extra=None):
+        """내보내기 결과(status)를 서버에(운영 화면 데이터 탭에 보임. req 는 '지금 내보내기' 요청 때). 못 보내도 그냥 간다(처음 한 번만 적는다)"""
+        fn, key = getattr(self.site, "analysis_put", None), self.cfg.get("members_key") or ""
+        if not fn or not key or getattr(self, "xrep_off", False):
+            return
+        now = Now(self.clock())
+        payload = dict({"ok": bool(ok), "note": clean(note, 80), "at": "%s %s" % (now.ymd, now.hm), "ver": VERSION}, **(extra or {}))
+        try:
+            if fn(key, "status", payload, {"req_ts": req or None}) is None:
+                self.xrep_off = True                        # 그 SQL 이 없는 서버: 다시 켤 때까지 부르지 않는다
+        except Exception as e:
+            if not getattr(self, "xrep_warned", False):
+                self.xrep_warned = True
+                self.log("내보내기 결과를 서버에 남기지 못함(그냥 감): %s" % e)
+
+    def export_tick(self):
+        """대화 내보내기(설정 export, 봇 열쇠가 있을 때, tablet): 매일 export.at(그 뒤 세 시간 안)에 알릴 방의 대화 내용을 텍스트로 내보내 태블릿 안에서
+        사이트와 같은 분석기(node)로 읽고 결과(ledger, lang)와 상태만 서버에 올린다. 운영 화면의 '지금 내보내기'(30분 안의 요청, 한 번만)도 한다.
+        보내기나 읽기가 막 실패해 쉬는 중이면 다음에, 전체 멈춤 중에는 쉰다(요청에는 그렇다고 알린다). 실패하면 20분, 40분, 60분 뒤 다시(하루 세 번까지).
+        무엇을 했는지 한 낱말로"""
+        now, cfg, st = Now(self.clock()), self.cfg, self.st
+        x, key = export_cfg(cfg), cfg.get("members_key") or ""
+        if not (x["on"] and key and export_able(self)):
+            return ""
+        ctl = self.control(now)
+        req = float(ctl.get("ereq") or 0)
+        manual = req > float(st.get("export_req_done") or 0) and float(ctl.get("edone") or 0) < req   # 서버에 이미 끝난 요청이면 하지 않는다
+        if manual and now.ts - req > 1800:                  # 30분 넘게 지난 요청(봇이 꺼져 있었음): 하지 않고 알린다
+            st["export_req_done"] = req
+            self.save()
+            self.export_report(req, False, "30분 넘게 지난 요청이라 하지 않음")
+            manual = False
+        if not manual and not self.export_due(now):
+            return ""
+        if now.ts < self.hold_until:
+            return ""                                       # 보내기나 읽기가 막 실패해 쉬는 중(요청은 쉼이 끝나면)
+        if ctl["pause"] > now.ts:                           # 운영 화면의 전체 멈춤 중에는 화면을 건드리지 않는다
+            if not manual:
+                return ""
+            st["export_req_done"] = req
+            self.save()
+            self.export_report(req, False, "전체 멈춤 중이라 하지 않음")
+            self.log("운영 화면의 지금 내보내기: 전체 멈춤 중이라 하지 않음")
+            return "export-skip"
+        if not manual and now.ts < float(st.get("export_retry_at") or 0):
+            return ""
+        if manual:
+            st["export_req_done"] = req                     # 요청은 한 번만(실패하면 결과를 알리고, 다시 하려면 다시 누른다)
+            self.save()
+        self.log("대화 내보내기 시작%s" % ("(운영 화면의 지금 내보내기)" if manual else ""))
+        try:
+            got = self.export_run(now, req if manual else 0)
+        except Exception as e:
+            return self.export_failed(now, e, req if manual else 0)
+        finally:
+            if hasattr(self.sender, "done"):
+                self.sender.done()
+        st.update(export_retry_at=0, export_fail=0, export_ok_ts=self.ts(),
+                  export_last={"at": "%s %s" % (now.ymd, now.hm), "messages": got["messages"], "hits": got["hits"], "error": ""})
+        if not manual:
+            st["export_done_ymd"] = now.ymd
+        self.save()
+        rg = got.get("range") or {}
+        self.log("대화 내보내기 끝%s: %s ~ %s, 메시지 %s건, 사람 %d명, 걸린 줄 %s건, 파일 %sMB" % (
+            "(운영 화면의 지금 내보내기)" if manual else "", rg.get("from") or "?", rg.get("to") or "?", format(got["messages"], ","), got["people"],
+            format(got["hits"], ","), "%.1f" % (got["bytes"] / 1048576.0)))
+        return "export"
+
+    def export_run(self, now, req=0):
+        """내보내기 한 번: 서버의 단어 목록 설정(botcfg)을 읽고, 분석기 파일을 받아 두고, 방에서 대화 내용을 텍스트로 내보내 받아 node 로 읽은 뒤,
+        결과(ledger, lang)와 상태(status)를 올리고 파일을 지운다(keep 이 아니면). 지난번에 분석까지 하고 올리기만 실패했으면(세 시간 안) 올리기부터.
+        돌려주는 것: {messages, hits, range, bytes, people}. 안 되면 예외(글에는 수와 까닭만, 대화 원문과 이름은 없다)"""
+        cfg, x, key, st = self.cfg, export_cfg(self.cfg), self.cfg.get("members_key") or "", self.st
+        outp = os.path.join(HERE, "scan", "last_out.json")
+        pend = st.get("export_pending") if isinstance(st.get("export_pending"), dict) else None
+        res = None
+        if pend and os.path.exists(outp) and now.ts - float(pend.get("ts") or 0) < 10800:
+            try:
+                with open(outp, encoding="utf-8") as f:
+                    res = json.load(f)
+                self.log("지난번 분석 결과를 다시 올림(내보내기는 건너뜀)")
+            except (OSError, ValueError):
+                res = None
+        if res is None:
+            ocfg = {}
+            fn = getattr(self.site, "ops_cfg", None)
+            if fn:
+                try:
+                    r = fn(key)
+                    if r and r.get("ok"):
+                        ocfg = r.get("cfg") or {}
+                    elif r and r.get("error") == "BAD_KEY":
+                        raise RuntimeError("봇 열쇠가 맞지 않음(운영 화면 데이터 탭에서 새 열쇠를 만들어 python excer_bot.py members key)")
+                except RuntimeError:
+                    raise
+                except Exception as e:
+                    self.log("단어 목록 설정을 읽지 못해 기본 목록으로 분석: %s" % e)
+            assets = scan_assets(cfg, self.log)
+            path = self.sender.export_chat(self.room, x)
+            try:
+                res = scan_run(path, ocfg, assets, x)
+            finally:
+                if not x["keep"]:
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+            st["export_pending"] = {"ts": self.ts()}
+            self.save()
+        meta = {"at": res.get("at"), "range": res.get("range"), "messages": (res.get("totals") or {}).get("messages"), "people": res.get("people"),
+                "hits": res.get("hits"), "file": res.get("file"), "scan": res.get("scan"), "lex": res.get("lex"), "ver": VERSION}
+        for kind in ("ledger", "lang"):
+            body = res.get(kind)
+            if body is None:
+                continue
+            r = self.site.analysis_put(key, kind, body, meta)
+            if r is None:
+                raise RuntimeError("서버에 봇 분석 SQL(2026-10-31-bot-analysis.sql)이 아직 없음")
+            if not r.get("ok"):
+                raise RuntimeError({"BAD_KEY": "봇 열쇠가 맞지 않음(운영 화면 데이터 탭에서 새 열쇠를 만들어 python excer_bot.py members key)",
+                                    "TOO_BIG": "%s 결과가 너무 커서 서버가 받지 않음" % kind, "RATE_LIMIT": "서버가 잠시 막음(한 시간에 40번)"}.get(
+                                        r.get("error"), "서버가 받지 않음(%s)" % r.get("error")))
+        out = {"messages": int(meta["messages"] or 0), "hits": int(meta["hits"] or 0), "range": meta["range"] or {},
+               "bytes": int((meta["file"] or {}).get("bytes") or 0), "people": int(meta["people"] or 0)}
+        self.export_report(req, True, "메시지 %s건, 걸린 줄 %s건" % (format(out["messages"], ","), format(out["hits"], ",")),
+                           dict(out, scan=res.get("scan"), lex=res.get("lex")))
+        st.pop("export_pending", None)
+        self.save()
+        try:
+            os.remove(outp)                                 # 결과(발췌가 들어 있다)도 올린 뒤에는 두지 않는다
+        except OSError:
+            pass
+        return out
+
+    def export_failed(self, now, e, req=0):
+        """내보내기 실패. 지금 내보내기는 한 번만 하고 결과를 알린다. 매일 것은 20분, 40분, 60분 뒤 다시(하루 세 번까지). 마지막 실패는 기록(export_last)에"""
+        st, why = self.st, clean(str(e), 160)
+        st["export_last"] = {"at": "%s %s" % (now.ymd, now.hm), "messages": 0, "hits": 0, "error": clean(why, 60)}
+        if req:
+            self.save()
+            self.export_report(req, False, why)
+            self.log("운영 화면의 지금 내보내기 실패: %s" % why)
+            return "export-fail"
+        k = (int(st.get("export_fail") or 0) if st.get("export_fail_ymd") == now.ymd else 0) + 1
+        st["export_fail_ymd"] = now.ymd
+        if k >= 3:
+            st.update(export_fail=0, export_retry_at=0, export_done_ymd=now.ymd)
+            tail = "오늘은 그만, 내일 다시"
+        else:
+            st.update(export_fail=k, export_retry_at=self.ts() + 1200 * k)
+            tail = "%d분 뒤 다시" % (20 * k)
+        self.save()
+        self.export_report(0, False, why)
+        self.log("대화 내보내기 실패(오늘 %d번째, %s): %s" % (k, tail, why))
+        return "export-fail"
 
     def greet_tick(self):
         """신입 인사(docs/BOT_AUTOMATION_PLAN.md 1절, 설정 greet). on 이면 알릴 방에 태그해서, test 면 시험 방에 태그 없이 보낸다.
@@ -5906,6 +6272,359 @@ class AdbSender:
                 "끝에 입력 칸 비움: %s" % ("됨" if not left.strip() else "안 됨(글 %d자 남음, 손으로 지워 주세요)" % len(left))]
         return "\n".join(out)
 
+    # ── 대화 내보내기(export, docs/BOT_AUTOMATION_PLAN.md 7절): 방 메뉴의 채팅방 설정에서 대화 내용을 텍스트로 내보내 공유 창의 앱(Termux)으로 받는다 ──
+    EXPORT_NEVER = ("해제", "나가기", "삭제", "신고", "차단", "초기화", "강퇴", "탈퇴", "지우기", "비우기")   # 어떤 흐름에서도 누르지 않는다(멤버 '내보내기 해제', '대화 내용 모두 삭제')
+    EXPORT_ITEM_RE = re.compile(r"대화\s*(내용|기록)?\s*(내보내기|저장|백업)")   # 설정 화면의 항목 '대화 내용 내보내기'
+    EXPORT_VIA_RE = re.compile(r"대화\s*(내용|기록)\s*관리")                   # 그 항목을 품은 칸(판에 따라 한 번 더 들어간다)
+    EXPORT_SETTINGS = ("채팅방 설정", "오픈채팅 설정", "채팅방설정", "설정")      # 방 메뉴의 설정 단추(이름이나 글이 이것과 같은 것)
+    EXPORT_CONFIRM = ("확인", "내보내기", "보내기", "다음")                     # 내보내기 창에서 항목을 고른 뒤 단추가 따로 있으면
+    EXPORT_OK = ("open directory", "디렉토리 열기", "디렉터리 열기", "저장", "save", "확인", "ok", "허용", "allow")   # 받는 앱(Termux)의 창에서 누를 단추(소문자로 견줌)
+    EXPORT_SHEET = ("공유", "공유 대상", "다음으로 공유", "공유하기", "share", "share with", "send to")   # 공유 창의 제목
+    EXPORT_KEEP_RE = re.compile(r"(설정|관리|내보내기|저장|백업|알림|이름|보기|검색|공유|초대|메시지|텍스트|저장소|파일|폴더|사진|동영상|링크|일정|공지|투표|멤버|대화상대|채팅방|오픈채팅|서랍|닫기|취소|확인|다음|이전|뒤로|삭제|나가기|신고|차단|open|save|edit|cancel|share|directory|termux|drive|files)", re.I)
+    EXPORT_DEV_DIRS = ("/sdcard/Download", "/sdcard/KakaoTalk/Chats/*", "/sdcard/Android/media/com.kakao.talk/KakaoTalk/Chats/*", "/sdcard/Documents")
+
+    def export_never(self, n):
+        lab = n["text"] + " " + n["desc"]
+        return any(w in lab for w in self.EXPORT_NEVER + self.VOICE_NEVER)
+
+    def export_tap(self, n, what=""):
+        """내보내기 흐름에서 누르는 것은 이것으로만. 위험한 말이 들었으면 누르지 않고 멈춘다. 지나온 곳에 무엇을 눌렀는지 한 마디"""
+        if self.export_never(n):
+            raise KakaoError("누르지 않음(%s)" % (ws(n["text"]) or ws(n["desc"]))[:20])
+        self.fact(what or ("누름 " + (ws(n["text"]) or ws(n["desc"]))[:16]))
+        self.tap(n)
+
+    def export_find(self, nodes, pred, before=None, pkg=None):
+        """글이나 이름(띄어쓰기 정리)이 pred 에 맞는 것(before 에 없던 것만, 위험한 말이 든 것은 빼고). 누를 수 있는 것을 먼저, 위에 있는 것부터.
+        pkg 가 kakao 면 카카오톡 것만, other 면 다른 앱(공유 창, 받는 앱) 것만. 누르는 자리는 그 글의 가운데(글을 품은 줄이 받는다)"""
+        seen = {(n["b"], n["text"], n["desc"]) for n in before} if before is not None else set()
+        mine = self.t["package"]
+        c = [n for n in nodes if (n["text"] or n["desc"]) and (n["b"], n["text"], n["desc"]) not in seen
+             and (pkg is None or (n.get("pkg") == mine) == (pkg == "kakao"))
+             and (pred(ws(n["text"])) or pred(ws(n["desc"]))) and not self.export_never(n)]
+        c.sort(key=lambda n: (not n["click"], n["b"][1]))
+        return c
+
+    def export_keep(self, t, inlist, btn):
+        """살피기 기록에 글을 그대로 둘지: 메뉴와 단추 말(EXPORT_KEEP_RE, 메뉴 이름), 수와 시각. 목록 안(대화 칸, 설정 목록)은 메뉴 말이고 짧을 때만.
+        나머지(대화 글, 닉네임, 파일 이름)는 글자 수만"""
+        t = ws(t)
+        if not t or len(t) <= 1 or self.MASK_KEEP_RE.match(t) or member_label(t):
+            return True
+        if len(t) > 30 or len(t.split(" ")) > 4:
+            return False
+        if self.EXPORT_KEEP_RE.search(t):
+            return True
+        return not inlist and (len(t) <= 16 if btn else len(t) <= 6)
+
+    def export_rows(self, nodes, before=None):
+        """내보내기 화면 한 장을 줄로(살피기와 진단): 종류|글|이름|id|누름|자리|앱. before 에 있던 것은 빼고. 대화 글과 이름은 글자 수만"""
+        seen = {(n["b"], n["text"], n["desc"]) for n in before} if before is not None else set()
+        try:
+            lists = self.in_lists(nodes)
+        except Exception:
+            lists = set()
+        rows = []
+        for n in nodes:
+            if (n["b"], n["text"], n["desc"]) in seen or not (n["text"] or n["desc"] or n["click"] or n["cls"].endswith("EditText")):
+                continue
+            btn, inl = n["click"] or bool(re.search(r"Button|ImageView", n["cls"])), n.get("i") in lists
+            t, d = ws(n["text"]), ws(n["desc"])
+            t = t if self.export_keep(t, inl, btn) else "(글 %d자)" % len(t)
+            d = d if self.export_keep(d, inl, btn) else "(이름 %d자)" % len(d)
+            rows.append("%s|%s|%s|%s|%s|[%d,%d][%d,%d]|%s" % (n["cls"].split(".")[-1], t[:40], d[:40], n["rid"].split("/")[-1], "누름" if n["click"] else "",
+                                                               n["b"][0], n["b"][1], n["b"][2], n["b"][3], (n.get("pkg") or "").split(".")[-1]))
+        return rows[:90]
+
+    def export_scroll(self, nodes):
+        """설정 화면을 아래로 민다(손가락을 위로): 밀리는 큰 칸(목록)이 있으면 그 안에서, 없으면 화면 오른쪽 절반(태블릿 왼쪽 채팅 목록을 밀지 않게).
+        돌려주는 것: (민 뒤 화면, 바뀌었는지)"""
+        wid, hgt = max(n["b"][2] for n in nodes), max(n["b"][3] for n in nodes)
+        c = [n for n in nodes if (n.get("scroll") or MEMBER_LIST_RE.search(n["cls"])) and n["kids"] and n["b"][3] - n["b"][1] > hgt * 0.3 and n["b"][2] > wid * 0.5]
+        if c:
+            l, t, r, b = max(c, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1]))["b"]
+        else:
+            l, t, r, b = (wid // 2 if wid > hgt else 0), int(hgt * 0.1), wid, hgt
+        x = (l + r) // 2
+        self.sh("input swipe %d %d %d %d 500" % (x, t + (b - t) * 3 // 4, x, t + (b - t) // 3))
+        self.sleep(0.9)
+        new = self.mem_settle(self.dump(), tries=1)
+        return new, [(n["b"], n["text"]) for n in new] != [(n["b"], n["text"]) for n in nodes]
+
+    def export_app(self, nodes, names):
+        """공유 창에서 받을 앱: names 순서로 글이나 이름이 그 이름(또는 그 이름으로 시작)인 것. 카카오톡 화면의 것은 아니다. (요소, 이름) 또는 (None, '')"""
+        for name in names:
+            low = name.lower()
+            c = self.export_find(nodes, lambda s, low=low: s.lower() == low or s.lower().startswith(low + " ") or s.lower().startswith(low + ","), pkg="other")
+            if c:
+                return c[0], name
+        return None, ""
+
+    def export_sheet(self, nodes):
+        """공유 창이 떠 있는지(다른 앱의 창에 공유 제목이 있다)"""
+        return bool(self.export_find(nodes, lambda s: s.lower() in self.EXPORT_SHEET, pkg="other"))
+
+    def export_chat(self, room, x=None, rec=None):
+        """알릴 방의 대화 내용을 텍스트로 내보내 파일로 받는다. 방을 열고 세 줄 단추(방 메뉴)에서 설정 단추, 채팅방 설정에서 '대화 내용 내보내기'(여섯 번까지
+        밀며, '대화 내용 관리' 안에 있으면 들어가서), 내보내기 창에서 '텍스트' 가 든 항목(단추가 따로 있으면 그것도), 공유 창(긴 대화는 몇 분 걸린다, wait_min)에서
+        받을 앱(share 순서), 받는 앱의 확인 단추(Open directory, 저장, 확인)를 누른다. 그 뒤 파일이 오기를 기다린다(Termux 다운로드 폴더, 없으면 기기 저장소에서
+        adb pull). 끝나면(안 되어도) 카카오톡을 앞으로 하고 뒤로 키로 방까지 닫는다. rec(이름표, 줄들): export_study 가 화면마다 받는다. 돌려주는 것: 파일 경로"""
+        x = export_cfg({"export": x or {}})
+        start = time.time()
+
+        def note(label, nodes, before=None):
+            rows = self.export_rows(nodes, before)
+            self.mem_snap(label, rows)
+            if rec:
+                rec(label, rows)
+        nodes = self.open_room(room)
+        self.new_trace()
+        try:
+            btn = self.mem_button(nodes)
+            if not btn:
+                self.save_diag()
+                raise KakaoError("방 오른쪽 위 세 줄 단추(방 메뉴)를 찾지 못함" + self.diag_note())
+            hgt = max(n["b"][3] for n in nodes)
+            note("방 위쪽(메뉴 단추 자리)", [n for n in nodes if n["b"][1] < hgt * 0.08])
+            self.export_tap(btn, "세 줄 단추")
+            drawer = self.mem_settle(self.wait_change(nodes, tries=3))
+            note("방 메뉴(새로 나온 것)", drawer, before=nodes)
+            gear = self.export_find(drawer, lambda s: s in self.EXPORT_SETTINGS, before=nodes, pkg="kakao")
+            gear.sort(key=lambda n: min(self.EXPORT_SETTINGS.index(s) for s in (ws(n["text"]), ws(n["desc"])) if s in self.EXPORT_SETTINGS))
+            if not gear:
+                self.save_diag()
+                raise KakaoError("방 메뉴에서 채팅방 설정 단추를 찾지 못함" + self.diag_note())
+            self.export_tap(gear[0], "설정 단추")
+            scr = self.mem_settle(self.wait_change(drawer, tries=3))
+            note("채팅방 설정", scr, before=drawer)
+            item, via_done = None, False
+            for k in range(9):
+                found = self.export_find(scr, lambda s: bool(self.EXPORT_ITEM_RE.search(s)), pkg="kakao")
+                if found:
+                    item = found[0]
+                    break
+                via = [] if via_done else self.export_find(scr, lambda s: bool(self.EXPORT_VIA_RE.search(s)), pkg="kakao")
+                if via:
+                    self.export_tap(via[0], "대화 내용 관리")
+                    via_done = True
+                    scr = self.mem_settle(self.wait_change(scr, tries=3))
+                    note("대화 내용 관리", scr)
+                    continue
+                if k >= 6:
+                    break
+                scr, moved = self.export_scroll(scr)
+                note("채팅방 설정 민 뒤 %d" % (k + 1), scr)
+                if not moved:
+                    break
+            if item is None:
+                self.save_diag()
+                raise KakaoError("채팅방 설정에서 대화 내용 내보내기 항목을 찾지 못함" + self.diag_note())
+            self.export_tap(item, "대화 내용 내보내기")
+            dlg = self.mem_settle(self.wait_change(scr, tries=4))
+            note("내보내기 창(새로 나온 것)", dlg, before=scr)
+            app, name = self.export_app(dlg, x["share"])
+            if app:
+                self.export_tap(app, "공유 앱 " + name)    # 창 없이 바로 공유 창이 뜨는 판
+            else:
+                opt = self.export_find(dlg, lambda s: "텍스트" in s, before=scr, pkg="kakao")
+                if not opt:
+                    self.save_diag()
+                    raise KakaoError("내보내기 창에서 텍스트 항목을 찾지 못함" + self.diag_note())
+                self.export_tap(opt[0], "텍스트 항목")
+                self.export_share(scr, x["share"], x["wait_min"] * 60, note)
+            self.export_receive(note)
+            path = self.export_wait_file(start, x["wait_min"] * 60)
+            self.fact("파일 %d바이트" % os.path.getsize(path))
+            return path
+        except KakaoError as e:
+            self.save_diag(fail=e)
+            raise
+        finally:
+            self.export_return(room)
+
+    def export_share(self, before, names, wait_s, note):
+        """공유 창이 뜨기를 기다려(긴 대화는 몇 분) 받을 앱을 누른다. 그 사이 카카오톡 창에 확인 단추가 뜨면 한 번 누른다. 공유 창에 앱이 안 보이면
+        아래로 밀어(세 번까지) 찾는다. 돌려주는 것: (누른 앱, 이름). 안 뜨면 KakaoError"""
+        t0, polls, swipes, confirmed, nodes = time.time(), 0, 0, False, None
+        while time.time() - t0 < wait_s and polls < max(10, wait_s // 2):
+            self.sleep(2.0)
+            polls += 1
+            nodes = self.dump()
+            app, name = self.export_app(nodes, names)
+            if app:
+                note("공유 창", nodes, before=before)
+                self.export_tap(app, "공유 앱 " + name)
+                return app, name
+            if not confirmed:
+                ok = self.export_find(nodes, lambda s: s in self.EXPORT_CONFIRM, before=before, pkg="kakao")
+                if ok:
+                    note("확인 단추가 뜬 창(새로 나온 것)", nodes, before=before)
+                    self.export_tap(ok[0], "내보내기 창 단추")
+                    confirmed = True
+                    continue
+            if self.export_sheet(nodes) and swipes < 3 and polls % 2 == 0:
+                swipes += 1
+                wid, hgt = max(n["b"][2] for n in nodes), max(n["b"][3] for n in nodes)
+                self.sh("input swipe %d %d %d %d 500" % (wid // 2, hgt * 4 // 5, wid // 2, hgt * 2 // 5))
+                self.fact("공유 창 밂")
+        if nodes is not None:
+            note("공유 창이 안 뜬 마지막 화면", nodes)
+        self.save_diag()
+        raise KakaoError("공유 창에서 받을 앱(%s)을 %d분 안에 찾지 못함" % (", ".join(names), max(1, wait_s // 60)) + self.diag_note())
+
+    def export_receive(self, note):
+        """받는 앱의 창(Termux 는 '~/downloads 에 저장' 창): 확인 단추(EXPORT_OK 의 첫 것부터)가 뜨면 누른다(한 번). 30초 안에 안 뜨면 그냥 간다(바로 받는 앱)"""
+        for k in range(12):
+            self.sleep(2.5)
+            nodes = self.dump()
+            ok = self.export_find(nodes, lambda s: s.lower() in self.EXPORT_OK, pkg="other")
+            if ok:
+                note("받는 앱의 창", nodes)
+                lab = lambda n: (ws(n["text"]) or ws(n["desc"])).lower()
+                ok.sort(key=lambda n: self.EXPORT_OK.index(lab(n)) if lab(n) in self.EXPORT_OK else 99)
+                self.export_tap(ok[0], "받는 앱 단추 " + lab(ok[0])[:16])
+                return True
+            if not self.on_kakao(nodes) and k >= 3:
+                note("받는 앱 화면(단추 없음)", nodes)
+                return False
+        return False
+
+    def export_wait_file(self, start, wait_s):
+        """내보낸 파일: Termux 다운로드 폴더(공유로 받은 것)에 start 뒤에 생긴 .txt(크기가 그대로일 때까지 기다림). 없으면 기기 저장소(Download, 카카오톡 폴더)의
+        새 .txt 를 adb pull 로 받고 기기의 것은 지운다. 돌려주는 것: 파일 경로. wait_s 안에 안 오면 KakaoError"""
+        t0, polls = time.time(), 0
+        while polls < 2 or (time.time() - t0 < wait_s and polls < max(4, wait_s // 5)):
+            polls += 1
+            p = self.export_local(start)
+            if p:
+                return self.export_settled(p)
+            p = self.export_pull(start)
+            if p:
+                return p
+            self.sleep(5)
+        raise KakaoError("내보낸 파일이 %d분 안에 오지 않음(Termux 다운로드 폴더 %s, 기기 저장소)" % (max(1, wait_s // 60), TERMUX_DL))
+
+    @staticmethod
+    def export_local(start):
+        """Termux 다운로드 폴더의 새 .txt(start 2분 전 뒤, 가장 새것). 없으면 ''"""
+        try:
+            c = [(os.path.getmtime(p), p) for p in (os.path.join(TERMUX_DL, f) for f in os.listdir(TERMUX_DL)) if p.lower().endswith(".txt") and os.path.isfile(p)]
+            c = [v for v in c if v[0] >= start - 120 and os.path.getsize(v[1]) > 0]
+        except OSError:
+            return ""
+        return max(c)[1] if c else ""
+
+    def export_settled(self, p):
+        """파일 크기가 그대로일 때까지(10초 간격, 3분까지) 기다린 뒤 그 경로"""
+        last = -1
+        for _ in range(18):
+            try:
+                size = os.path.getsize(p)
+            except OSError:
+                size = -1
+            if size == last and size > 0:
+                return p
+            last = size
+            self.sleep(10)
+        return p
+
+    def export_pull(self, start):
+        """기기 저장소의 새 .txt(start 2분 전 뒤) 하나를 받아 이 파일 옆 export 폴더에 둔다(기기의 것은 지운다). 없으면 ''"""
+        cmd = "for f in %s; do [ -f \"$f\" ] && stat -c '%%Y %%s %%n' \"$f\"; done 2>/dev/null; true" % " ".join(d + "/*.txt" for d in self.EXPORT_DEV_DIRS)
+        try:
+            out = self.sh(cmd, timeout=40)
+        except KakaoError:
+            return ""
+        c = []
+        for line in (out or "").splitlines():
+            m = re.match(r"^(\d+) (\d+) (.+)$", line.strip())
+            if m and float(m.group(1)) >= start - 120 and int(m.group(2)) > 0:
+                c.append((int(m.group(1)), int(m.group(2)), m.group(3)))
+        if not c:
+            return ""
+        mt, size, dev = max(c)
+        self.sleep(10)                                       # 아직 쓰는 중일 수 있다: 10초 뒤 크기가 같을 때만
+        try:
+            again = self.sh("stat -c '%%s' \"%s\" 2>/dev/null; true" % dev.replace('"', ""), timeout=20).strip()
+        except KakaoError:
+            again = ""
+        if again != str(size):
+            return ""
+        d = os.path.join(HERE, "export")
+        os.makedirs(d, exist_ok=True)
+        local = os.path.join(d, os.path.basename(dev))
+        self.adb("pull", dev, local, timeout=600)
+        if not os.path.exists(local) or os.path.getsize(local) != size:
+            raise KakaoError("기기 저장소의 파일을 받지 못함(%d바이트)" % size)
+        try:
+            self.sh("rm -f \"%s\"; true" % dev.replace('"', ""), timeout=20)
+        except KakaoError:
+            pass
+        self.fact("기기 저장소에서 받음")
+        return local
+
+    def export_return(self, room):
+        """내보내기 뒤(안 되어도): 카카오톡을 앞으로 하고 열려 있는 창(공유, 받는 앱)과 설정 화면과 방 메뉴를 뒤로 키로 닫아 방으로(여섯 번까지).
+        방이 보이면 멈추고, 눌러도 화면이 그대로면 그만둔다(입력 칸 자리는 누르지 않는다)"""
+        try:
+            self.start_app(self.t["package"])
+            self.sleep(1.2)
+            nodes = self.dump()
+            for _ in range(6):
+                if self.in_room(nodes, room):
+                    return nodes
+                if not self.on_kakao(nodes):
+                    self.start_app(self.t["package"])
+                    self.sleep(1.2)
+                    nodes = self.dump()
+                    continue
+                old = [(n["b"], n["text"]) for n in nodes]
+                self.key(4)
+                nodes = self.mem_settle(self.wait_change(nodes, tries=2), tries=1)
+                if [(n["b"], n["text"]) for n in nodes] == old:
+                    break
+            if not self.in_room(nodes, room):
+                self.brief("내보내기 뒤 방으로 못 돌아옴", nodes, room)
+                self.fact("방으로 못 돌아옴")
+            return nodes
+        except KakaoError:
+            return None
+
+    def export_study(self, room, x=None):
+        """대화 내보내기 화면 살피기(알릴 방): 세 줄 단추, 설정 단추, 채팅방 설정, 내보내기 창, 공유 창, 받는 앱의 창을 차례로 적고(대화 글과 이름은 글자 수만)
+        실제로 한 번 내보내 파일을 받은 뒤 크기만 적고 지운다(keep 이면 둔다). 안 되면 어디서 멈췄는지 적는다"""
+        x = export_cfg({"export": x or {}})
+        out = ["# 대화 내보내기 화면 살피기 %s (판 %s)" % (time.strftime("%Y-%m-%d %H:%M"), VERSION),
+               "대화 글과 이름은 글자 수만. 받을 앱: %s. 줄: 종류|글|이름|id|누름|자리|앱" % ", ".join(x["share"]), ""]
+
+        def rec(label, rows):
+            out.extend(["== %s (%d)" % (label, len(rows))] + rows + [""])
+        path, err = "", None
+        try:
+            path = self.export_chat(room, x, rec=rec)
+        except KakaoError as e:
+            err = e
+        out.append("== 정리")
+        if path:
+            size, head = os.path.getsize(path), ""
+            try:
+                with open(path, encoding="utf-8-sig", errors="replace") as f:
+                    head = f.readline().strip()
+            except OSError:
+                pass
+            looks = bool(re.search(r"카카오톡|KakaoTalk|대화", head))
+            out += ["파일: %s, %s바이트, 첫 줄은 %s" % (os.path.basename(path), format(size, ","), "카카오톡 대화 파일 모양" if looks else "모르는 모양(%d자)" % len(head)),
+                    "파일은 %s" % ("남겨 둠(keep)" if x["keep"] else "지움")]
+            if not x["keep"]:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        else:
+            out.append("멈춤: %s" % err)
+        out.append("지나온 곳: " + ", ".join(self.facts))
+        return "\n".join(out)
+
     # ── 보이스룸(docs/BOT_VOICE_ROOM.md) ──
     VOICE_START = ("시작", "시작하기", "만들기", "개설", "개설하기", "보이스룸 시작", "보이스룸 만들기", "확인")
     VOICE_PERM = ("앱 사용 중에만 허용", "이번만 허용", "허용")
@@ -6945,9 +7664,9 @@ def cmd_feed(path, op):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
-    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "greet", "rotate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, greet: on, test, off, text, study, now, remind, rotate: 가로, 세로, off")
-    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, greet text: 인사 글(없으면 클립보드), greet now: 태그할 닉네임, greet remind: 며칠마다(또는 off)")
+    ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "greet", "export", "rotate"])
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, greet: on, test, off, text, study, now, remind, export: on, off, at, now, study, check, rotate: 가로, 세로, off")
+    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, greet text: 인사 글(없으면 클립보드), greet now: 태그할 닉네임, greet remind: 며칠마다(또는 off), export at: 05:40")
     ap.add_argument("arg3", nargs="?", default="", help="greet remind: 시각(17:00)")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -7027,6 +7746,9 @@ def main(argv=None):
             print(e)
         except Exception as e:
             print("카카오톡 쪽: 확인하지 못함(%s)" % e)
+        if export_cfg(cfg)["on"]:                       # 대화 내보내기를 켰으면 node 와 분석기 파일도(끈 채면 export check 로)
+            for l in export_check_lines(cfg):
+                print(l)
         return
     if a.command == "study":
         room = cfg.get("test_room") or ""
@@ -7057,6 +7779,8 @@ def main(argv=None):
         return cmd_members(cfg, a, base, log)
     if a.command == "greet":                           # 신입 인사: 켜고 끄기, 시험, 인사 글, 태그 목록 화면 살피기
         return cmd_greet(cfg, a, base, log)
+    if a.command == "export":                          # 대화 내보내기: 켜고 끄기, 시각, 지금 한 번, 화면 살피기, 준비 확인
+        return cmd_export(cfg, a, base, log)
     if a.command == "rotate":                          # 화면 방향 고정: 가로, 세로, off. 바로 고정하고 run 은 카카오톡을 띄울 때마다 다시 맞춘다
         print(cmd_rotate(cfg, a.config, a.arg, log))
         return
@@ -7541,6 +8265,94 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
         print("다 적었습니다: %s (cat 으로 보세요)" % path)
 
 
+def cmd_export(cfg, a, base, log, sender=None, site=None):
+    """export: 대화 내보내기 설정과 마지막 결과를 보인다. on, off, at HH:MM 으로 바꾼다(run 을 다시 켜야 적용). now 는 지금 한 번(내보내기, 분석, 올리기.
+    run 을 멈추고), study 는 화면을 적는다(알릴 방. 파일은 받은 뒤 크기만 적고 지움), check 는 node 와 분석기 파일과 열쇠를 본다(화면은 안 건드림)"""
+    sub, val = (a.arg or "").strip().lower(), (getattr(a, "arg2", "") or "").strip()
+    x, sp = export_cfg(cfg), base + "_state.json"
+    usage = "python excer_bot.py export | export on | export off | export at 05:40 | export now | export study | export check"
+    if sub == "":
+        st = load_state(sp) if os.path.exists(sp) else {}
+        print("대화 내보내기: %s, 매일 %s(그 뒤 세 시간 안), 받을 앱 %s, node %s, 대화 파일은 %s" % (
+            "켬" if x["on"] else "꺼짐", x["at"], ", ".join(x["share"]), x["node"], "남김(keep)" if x["keep"] else "분석 뒤 지움"))
+        print("  마지막: %s" % (export_last_text(st.get("export_last")) or "아직 안 함"))
+        if not cfg.get("members_key"):
+            print("  봇 열쇠 없음: 운영 화면 데이터 탭에서 만들고 python excer_bot.py members key")
+        print("  바꾸려면: " + usage)
+        return
+    if sub in ("on", "off"):
+        cfg["export"] = dict(cfg.get("export") or {}, on=(sub == "on"))
+        save_cfg(a.config, cfg)
+        if sub == "on":
+            if os.path.exists(sp):                      # 실패 뒤 쉬는 것을 푼다(run 을 다시 켜면 바로 한다)
+                stt = load_state(sp)
+                if [stt.pop(k, None) for k in ("export_retry_at", "export_fail", "export_fail_ymd")] != [None] * 3:
+                    save_json(sp, stt)
+            print("대화 내보내기를 켰습니다(매일 %s). %srun 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다. 먼저 python excer_bot.py export check 와 export study 로 확인하세요" % (
+                x["at"], "" if cfg.get("members_key") else "봇 열쇠가 없어 올리지 못합니다(python excer_bot.py members key). "))
+        else:
+            print("대화 내보내기를 껐습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다")
+        return
+    if sub == "at":
+        m = re.match(r"^(\d{1,2}):(\d{2})$", val)
+        if not m or int(m.group(1)) > 23 or int(m.group(2)) > 59:
+            raise SystemExit("시각 모양이 다릅니다(24시간). 예: python excer_bot.py export at 05:40")
+        cfg["export"] = dict(cfg.get("export") or {}, at="%02d:%02d" % (int(m.group(1)), int(m.group(2))))
+        save_cfg(a.config, cfg)
+        print("대화 내보내기 시각을 매일 %s 로 정했습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % export_cfg(cfg)["at"])
+        return
+    if sub == "check":
+        for l in export_check_lines(cfg):
+            print(l)
+        return
+    if sub not in ("now", "study"):
+        raise SystemExit(usage)
+    if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py export " + sub)
+    room = cfg.get("room") or ""
+    if not room:
+        raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
+    sender = sender or make_sender(cfg, log)
+    if not isinstance(sender, AdbSender):
+        raise SystemExit("export 는 tablet 방식에서 씁니다.")
+    if sub == "study":
+        print("알릴 방(%s)의 방 메뉴, 채팅방 설정, 내보내기 창, 공유 창, 받는 앱의 창을 차례로 적습니다(대화 글과 이름은 가림). 실제로 한 번 내보내 파일을 받으면 크기만 적고 지웁니다. 몇 분 걸립니다. 태블릿을 만지지 마세요." % room)
+        try:
+            txt = sender.export_study(room, x)
+        finally:
+            sender.done()
+        path = base + "_export_study.txt"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(txt + "\n")
+        try:
+            sender.set_clip(txt)
+            print("다 적었습니다(%s). 클립보드에도 담았으니 개발 대화창에 붙여넣어 보내 주세요." % os.path.basename(path))
+        except KakaoError:
+            print("다 적었습니다: %s (cat 으로 보세요)" % path)
+        return
+    if not cfg.get("members_key"):
+        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 데이터 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
+    print("알릴 방(%s)의 대화 내용을 내보내 분석하고 결과를 올립니다. 몇 분(긴 대화는 더) 걸립니다. 태블릿을 만지지 마세요." % room)
+    b = Bot(cfg, sender, site or Site(cfg), sp, log, room=room)
+    now = Now(datetime.now(KST))
+    try:
+        got = b.export_run(now, 0)
+    except Exception as e:
+        why = clean(str(e), 160)
+        b.st["export_last"] = {"at": "%s %s" % (now.ymd, now.hm), "messages": 0, "hits": 0, "error": clean(why, 60)}
+        b.save()
+        b.export_report(0, False, why)
+        raise SystemExit("안 됨: %s" % why)
+    finally:
+        sender.done()
+    b.st.update(export_ok_ts=b.ts(), export_retry_at=0, export_fail=0,
+                export_last={"at": "%s %s" % (now.ymd, now.hm), "messages": got["messages"], "hits": got["hits"], "error": ""})
+    b.save()
+    rg = got.get("range") or {}
+    print("됐습니다: %s ~ %s, 메시지 %s건, 사람 %d명, 걸린 줄 %s건. 운영 화면 데이터 탭의 '봇 대화 내보내기' 에서 반영하세요" % (
+        rg.get("from") or "?", rg.get("to") or "?", format(got["messages"], ","), got["people"], format(got["hits"], ",")))
+
+
 def cmd_quiet(cfg, path, arg):
     """quiet 00:30-07:30: 그 사이에는 올리지 않는다. quiet off: 늘 올린다. 인자가 없으면 지금 설정을 보여 준다"""
     arg = (arg or "").strip()
@@ -7601,6 +8413,8 @@ def run_loop(bot, log, voice=None, alive_path=None):
                 ran = True
             if hasattr(bot, "greet_tick") and bot.greet_tick():   # 신입 인사(greet 설정이 켜져 있을 때, 10분마다 방 머리 인원 수)
                 ran = True
+            if hasattr(bot, "export_tick") and bot.export_tick():   # 대화 내보내기와 언어 점검(export 설정이 켜져 있을 때, 하루 한 번과 운영 화면의 지금 내보내기)
+                ran = True
             if ran and last_err:
                 log("오류가 멎음(%d번 이어졌음)" % err_n)
                 last_err, err_n = "", 0
@@ -7629,7 +8443,8 @@ def write_alive(path, bot, voice, err=""):
                          "notice_gaveup": int((bot.st.get("notice_gaveup") or 0) if getattr(bot, "st", None) else 0),
                          "ctl": ctl_text(bot, bot.ts() if callable(getattr(bot, "ts", None)) else time.time()),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
-                         "voice": (voice.st.get("state") or "") if voice else "", "members": members_alive(bot), "greet": greet_alive(bot), "error": err})
+                         "voice": (voice.st.get("state") or "") if voice else "", "members": members_alive(bot), "greet": greet_alive(bot),
+                         "export": export_alive(bot), "error": err})
     except (OSError, ValueError, TypeError, AttributeError):   # 표시를 못 남겨도 run 은 그대로 돈다(이 함수는 run_loop 의 try 밖)
         pass
 
@@ -7704,6 +8519,8 @@ def status_lines(base, now_ts=None):
             out.append("멤버 자동 갱신: " + alive["members"])
         if alive.get("greet"):
             out.append("신입 인사: " + alive["greet"])
+        if alive.get("export"):
+            out.append("대화 내보내기: " + alive["export"])
         if alive.get("error"):
             out.append("이어지는 오류: " + alive["error"])
     try:

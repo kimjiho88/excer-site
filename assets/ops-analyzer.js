@@ -474,34 +474,42 @@
      여러 파일이면 첫 메시지 시각 순서로 읽고, 앞 파일과 겹치는 부분은 건너뛴다 */
   var RE_START = /^(\d{4}년\s*\d{1,2}월\s*\d{1,2}일\s*(오전|오후)|\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*(오전|오후)|\[[^\]]+\]\s\[(오전|오후)|-{3,}\s*\d{4}년)/;
   var RE_PC_DAY = /^-{3,}\s*\d{4}년\s*\d{1,2}월\s*\d{1,2}일\s*[월화수목금토일]요일\s*-{3,}$/;
-  function streamFile(file, onBatch, onBytes) {
-    var CHUNK = 4 * 1024 * 1024, BATCH = 20000;
-    var dec = new TextDecoder("utf-8");
-    var carry = "", batch = [], pcDay = "", pcDayAtStart = "";
+  /* 줄을 받아 2만 줄씩(메시지 첫 줄에서 끊어) 파싱해 분석기에 넣는다. PC 내보내기의 날짜 구분선은 다음 묶음 머리에 다시 붙인다.
+     화면(파일 조각)과 태블릿의 node 실행기(tools/ops_scan.js, 파일 흐름)가 같이 쓴다. { push(line), end() } */
+  function lineFeeder(A, onBatch) {
+    var BATCH = 20000, batch = [], pcDay = "", pcDayAtStart = "";
     function flush() {
       if (!batch.length) return;
       var headLine = pcDayAtStart && !RE_PC_DAY.test(batch[0].trim()) ? pcDayAtStart + "\n" : "";
-      onBatch(headLine + batch.join("\n"));
+      var text = headLine + batch.join("\n");
       batch = []; pcDayAtStart = pcDay;
+      if (onBatch) { onBatch(text); return; }
+      var r = P.parse(text, { keepSystem: true });
+      for (var i = 0; i < r.messages.length; i++) A.add(r.messages[i]);
+      (r.meta.sys || []).forEach(A.addSys);
     }
-    function eat(lines) {
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
+    return {
+      push: function (line) {
         if (batch.length >= BATCH && RE_START.test(line)) flush();
         batch.push(line);
         if (line.charCodeAt(0) === 45 && RE_PC_DAY.test(line.trim())) pcDay = line;
-      }
-    }
+      },
+      end: flush
+    };
+  }
+  function streamFile(file, onBatch, onBytes) {
+    var CHUNK = 4 * 1024 * 1024;
+    var dec = new TextDecoder("utf-8");
+    var carry = "", feed = lineFeeder(null, onBatch);
     var pos = 0;
     function step() {
-      if (pos >= file.size) { if (carry) eat([carry]); carry = ""; flush(); return Promise.resolve(); }
+      if (pos >= file.size) { if (carry) feed.push(carry); carry = ""; feed.end(); return Promise.resolve(); }
       var end = Math.min(file.size, pos + CHUNK);
       return file.slice(pos, end).arrayBuffer().then(function (buf) {
         var text = carry + dec.decode(new Uint8Array(buf), { stream: end < file.size });
         var lines = text.split("\n");
         carry = lines.pop();
-        for (var i = 0; i < lines.length; i++) if (lines[i].charCodeAt(lines[i].length - 1) === 13) lines[i] = lines[i].slice(0, -1);
-        eat(lines);
+        for (var i = 0; i < lines.length; i++) { var l = lines[i]; if (l.charCodeAt(l.length - 1) === 13) l = l.slice(0, -1); feed.push(l); }
         pos = end;
         if (onBytes) onBytes(end);
         return step();
@@ -554,7 +562,7 @@
     });
   }
 
-  var OpsAnalyzer = { analyze: analyze, createAnalyzer: createAnalyzer, runFiles: runFiles, nickParts: nickParts, isBot: isBot, isDefaultName: isDefaultName, matchPrevious: matchPrevious, SIG: SIG };
+  var OpsAnalyzer = { analyze: analyze, createAnalyzer: createAnalyzer, runFiles: runFiles, lineFeeder: lineFeeder, nickParts: nickParts, isBot: isBot, isDefaultName: isDefaultName, matchPrevious: matchPrevious, SIG: SIG };
   global.OpsAnalyzer = OpsAnalyzer;
   if (typeof module !== "undefined" && module.exports) module.exports = OpsAnalyzer;
 })(typeof window !== "undefined" ? window : globalThis);
