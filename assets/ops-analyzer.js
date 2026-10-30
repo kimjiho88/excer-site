@@ -244,10 +244,11 @@
         if (lex) {
           var lsc = LANG.scan(text, lex);
           if (lsc) {
-            // 줄 열쇠: 날짜, 시각, 이름, 그 분 안에서 몇 번째 걸린 줄인지. 다른 기기의 내보내기로 다시 분석해도 같다(해당 없음 표시가 따라오게)
-            var lkey = m.date + "|" + hm(m) + "|" + name, lq = (langSeq[lkey] = (langSeq[lkey] || 0) + 1);
+            // 줄 열쇠: 날짜, 시각, 글 내용(해시), 그 분 안에서 같은 글이 몇 번째인지. 이름(닉네임 바꿈)이나 단어 목록이 바뀌어도,
+            // 다른 기기의 내보내기로 다시 분석해도 같다(해당 없음 표시가 따라오게)
+            var lkey = m.date + "|" + hm(m) + "|" + hash(text), lq = (langSeq[lkey] = (langSeq[lkey] || 0) + 1);
             var lx = LANG.excerpt(text, lsc.ms);
-            langHits.push({ d: m.date, t: hm(m), n: name, k: lsc.k, w: lsc.ms.map(function (q) { return [q.i, q.w]; }), x: lx.x, o: lx.o, h: hash(lkey + "|" + lq) });
+            langHits.push({ d: m.date, t: hm(m), n: name, k: lsc.k, w: lsc.ms.map(function (q) { return [q.i, q.w]; }), x: lx.x, h: hash(lkey + "|" + lq) });
             var ld = langDays[m.date] || (langDays[m.date] = { n: 0, c: Object.create(null), p: Object.create(null) });
             ld.n += 1; ld.c[lsc.k] = (ld.c[lsc.k] || 0) + 1;
             var lp = ld.p[name] || (ld.p[name] = Object.create(null)); lp[lsc.k] = (lp[lsc.k] || 0) + 1;
@@ -434,17 +435,27 @@
         lang: langOut(endN)
       };
     }
-    /* 채팅 언어 결과: 마지막 날부터 180일 안의 걸린 줄(2만 건까지, 발췌 포함)과 전체 기간의 날짜별 사람별 수. ops.html 은 이것을 ledger 와 따로 저장한다 */
+    /* 채팅 언어 결과: 마지막 날부터 180일 안의 걸린 줄(2만 건과 3MB 까지, 발췌 포함. 넘치면 오래된 날부터 날 단위로 뺀다)과
+       전체 기간의 날짜별 사람별 수. ops.html 은 이것을 ledger 와 따로 저장한다(열쇠 하나 4MB 한도) */
+    function utf8Len(s) { var n = 0; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xD800 && c <= 0xDBFF ? 4 : c >= 0xDC00 && c <= 0xDFFF ? 0 : 3; } return n; }
     function langOut(endN) {
       if (!lex) return null;
-      var keepFrom = dateOf(endN - 179);
-      var hits = langHits.filter(function (h) { return h.d >= keepFrom; });
-      var truncated = hits.length > 20000;
-      if (truncated) hits = hits.slice(-20000);
+      var keepFrom = dateOf(endN - 179), MAXN = 20000, MAXB = 3000000;
+      var start = langHits.length, bytes = 0, cut = false;
+      while (start > 0) {
+        var h = langHits[start - 1];
+        if (h.d < keepFrom) break;
+        var b = utf8Len(JSON.stringify(h)) + 1;
+        if (langHits.length - start + 1 > MAXN || bytes + b > MAXB) { cut = true; break; }
+        bytes += b; start -= 1;
+      }
+      // 잘렸으면 그 날은 통째로 뺀다(하루의 일부만 남아 어디에도 세지 않는 줄이 없게)
+      if (cut && start < langHits.length && start > 0 && langHits[start - 1].d === langHits[start].d) { var dd = langHits[start].d; while (start < langHits.length && langHits[start].d === dd) start += 1; }
+      var hits = langHits.slice(start);
       return {
-        v: 1, ver: LANG.VERSION, range: { from: first, to: lastDate },
+        v: 1, ver: LANG.VERSION, range: { from: first, to: lastDate }, ledgerTo: lastDate,
         cfg: { off: (langCfg.off || []).slice(), on: (langCfg.on || []).slice(), allow: (langCfg.allow || []).slice(), add: (langCfg.add || []).map(function (a) { return { id: a.id, t: a.t, k: a.k }; }) },
-        days: langDays, hits: hits, hitsFrom: hits.length ? hits[0].d : keepFrom, all: langHits.length, truncated: truncated
+        days: langDays, hits: hits, hitsFrom: hits.length ? hits[0].d : cut ? dateOf(endN + 1) : keepFrom, all: langHits.length, truncated: cut, bytes: bytes
       };
     }
     return { beginFile: beginFile, add: add, addSys: addSys, finish: finish };

@@ -2060,8 +2060,8 @@
       const btn = $("saveBtn"); btn.disabled = true; btn.textContent = "저장 중"; saving = true;
       try {
         const ledger = Object.assign({}, L0, { people: L0.people.map((p) => { const q = Object.assign({}, p); delete q.sig; return q; }) });
+        if (G0) await opsPut("lang", G0);   // 채팅 언어 결과(같은 분석에서 나온 것)를 먼저. 이것이 안 들어가면 대화 기록도 바꾸지 않는다(둘이 어긋나지 않게)
         const at = await opsPut("ledger", ledger);
-        if (G0) await opsPut("lang", G0);   // 채팅 언어 결과(같은 분석에서 나온 것)
         if (H0) { await opsPut("history", H0); S.history = H0; if (S.pendingHistory === H0) S.pendingHistory = null; }
         saveRecords();
         S.savedAt = at || new Date().toISOString(); S.savedRange = { from: L0.range.from, to: L0.range.to, n: L0.people.length };
@@ -3209,28 +3209,32 @@
     const LANG_COLOR = { curse: "var(--st-critical)", rude: "var(--s-orange)", slang: "#D9A441", jamo: "var(--s-violet)", filler: "#B9B2BE" };
     const LANG_PER = [["notice", "공지일부터"], ["today", "오늘"], ["yday", "어제"], ["7", "최근 7일"], ["30", "최근 30일"], ["all", "전체"]];
     const dShift = (d, n) => new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10) + n)).toISOString().slice(0, 10);
-    // 같은 객체를 돌려준다(빠진 칸만 채움). 단추 처리기는 그때그때 다시 불러 쓴다(기록이 서버 것과 합쳐지며 바뀔 수 있어서)
+    // 같은 객체를 돌려준다(빠진 칸만 채우고 모양이 틀린 값은 버림). 단추 처리기는 그때그때 다시 불러 쓴다(기록이 서버 것과 합쳐지며 바뀔 수 있어서)
+    const isDay = (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
     function langRec() {
       let r = S.records.lang;
       if (!r || typeof r !== "object" || Array.isArray(r)) r = S.records.lang = {};
-      if (typeof r.from !== "string") r.from = "";
+      if (!isDay(r.from)) r.from = "";
       ["off", "on", "allow", "dismiss"].forEach((k) => { if (!r[k] || typeof r[k] !== "object" || Array.isArray(r[k])) r[k] = {}; });
       ["add", "manual"].forEach((k) => { if (!Array.isArray(r[k])) r[k] = []; });
+      r.manual = r.manual.filter((m) => m && m.id && isDay(m.d) && m.n);
+      r.add = r.add.filter((a) => a && a.id && a.t);
       return r;
     }
     function langCfg() { const r = langRec(); return { off: Object.keys(r.off), on: Object.keys(r.on), add: r.add.map((a) => ({ id: a.id, t: a.t, k: a.k })), allow: Object.keys(r.allow).map((k) => r.allow[k]) }; }
     let langLexKey = "", langLex = null, langMemo = null;
     function langLexNow() { const k = JSON.stringify(langCfg()); if (k !== langLexKey) { langLexKey = k; langLex = OpsLang.compile(langCfg()); } return langLex; }
-    // 저장된 줄을 지금 설정으로 거른 것(끈 항목과 예외 말을 빼고 종류를 다시 정함). dis 는 해당 없음 표시
+    // 저장된 줄을 지금 설정으로 거른 것(끈 항목과 예외 말을 빼고 종류를 다시 정함). dis 는 해당 없음 표시. raw 는 열쇠로 찾는 분석 때 줄
     function langRows() {
       const G = S.lang, r = langRec(), lx = langLexNow(), dk = JSON.stringify(r.dismiss);
       if (langMemo && langMemo.G === G && langMemo.k === langLexKey && langMemo.d === dk) return langMemo.rows;
-      const rows = [];
-      ((G && G.hits) || []).forEach((h) => { const c = OpsLang.classify(h.w, lx); if (!c) return; rows.push({ d: h.d, t: h.t, n: h.n, k: c.k, ms: c.ms, x: h.x, o: h.o || [], h: h.h, dis: !!r.dismiss[h.h] }); });
-      langMemo = { G, k: langLexKey, d: dk, rows };
+      const rows = [], raw = new Map();
+      ((G && G.hits) || []).forEach((h) => { raw.set(h.h, h); const c = OpsLang.classify(h.w, lx); if (!c) return; rows.push({ d: h.d, t: h.t, n: h.n, k: c.k, ms: c.ms, x: h.x, h: h.h, dis: !!r.dismiss[h.h] }); });
+      langMemo = { G, k: langLexKey, d: dk, rows, raw };
       return rows;
     }
-    const langManualRow = (m) => ({ d: m.d, t: m.t || "", n: m.n, k: OpsLang.RANK[m.k] != null ? m.k : "rude", ms: [], x: m.x || "", o: [], h: "m:" + m.id, manual: true, id: m.id, note: m.note || "" });
+    const langRaw = (h) => { langRows(); return langMemo && langMemo.raw ? langMemo.raw.get(h) : null; };
+    const langManualRow = (m) => ({ d: m.d, t: m.t || "", n: m.n, k: OpsLang.RANK[m.k] != null ? m.k : "rude", ms: [], x: m.x || "", h: "m:" + m.id, manual: true, id: m.id, note: m.note || "" });
     function langPeriod() {
       const G = S.lang, r = langRec(), to = G && G.range ? G.range.to : todayKST(), from0 = G && G.range ? G.range.from : to, T = todayKST();
       let per = view.lang.per || (r.from && r.from <= to ? "notice" : "7");
@@ -3245,7 +3249,7 @@
       out.per = per; out.days = Math.max(0, dnum(out.to) - dnum(out.from) + 1);
       return out;
     }
-    function langPidName() { const p = view.lang.pid ? byPid(view.lang.pid) : null; return p ? p.name : ""; }
+    function langPidName() { const p = view.lang.pid ? byPid(view.lang.pid) : null; if (view.lang.pid && !p) view.lang.pid = ""; return p ? p.name : ""; }
     // 기간 안의 줄: 남은 줄(live, 직접 적은 줄 포함)과 해당 없음(dis)
     function langInRange(per) {
       const r = langRec(), nm = langPidName();
@@ -3269,22 +3273,28 @@
           if (d > out.to) out.to = d;
         });
       });
-      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (!x || !x.d || x.d < per.from || x.d > per.to || x.d >= G.hitsFrom) return; const o = out.by[x.n]; if (o && o[x.k] > 0) { o[x.k] -= 1; out.n -= 1; } });
+      // 해당 없음 표시의 종류는 분석 때 종류(k0)로 뺀다(날짜별 수가 그 기준이라서)
+      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (!x || !x.d || x.d < per.from || x.d > per.to || x.d >= G.hitsFrom) return; const o = out.by[x.n], kk = x.k0 || x.k; if (o && o[kk] > 0) { o[kk] -= 1; out.n -= 1; } });
       return out;
     }
+    // 사람별: 욕설과 막말(센 말)이 많은 사람부터, 같으면 합계
+    const langStrong = (c) => (c.curse || 0) + (c.rude || 0);
     function langByPerson(live, old) {
       const m = new Map();
       const get = (n) => { if (!m.has(n)) m.set(n, { n, total: 0, c: {}, days: new Set(), last: "", oldN: 0 }); return m.get(n); };
       live.forEach((h) => { const o = get(h.n); o.total += 1; o.c[h.k] = (o.c[h.k] || 0) + 1; o.days.add(h.d); if (h.d > o.last) o.last = h.d; });
       Object.keys(old.by).forEach((n) => { const o = get(n); Object.keys(old.by[n]).forEach((k) => { const v = old.by[n][k]; if (v > 0) { o.total += v; o.c[k] = (o.c[k] || 0) + v; o.oldN += v; } }); });
-      return [...m.values()].filter((o) => o.total > 0).sort((a, b) => b.total - a.total || a.n.localeCompare(b.n, "ko"));
+      return [...m.values()].filter((o) => o.total > 0).sort((a, b) => langStrong(b.c) - langStrong(a.c) || b.total - a.total || a.n.localeCompare(b.n, "ko"));
     }
     const langTag = (k) => `<span class="tag k-${esc(k)}">${esc(OpsLang.CAT_T[k] || k)}</span>`;
-    // 발췌에 걸린 말을 표시: 자리(o)가 있으면 자리로, 없으면 글자를 찾아서
+    // 발췌에 남은 걸린 말(끈 항목과 예외 말을 뺀 것)을 글자로 찾아 표시한다. 같은 말이 여럿이면 차례대로
     function langX(h) {
-      const x = String(h.x || "");
-      let marks = (h.o && h.o.length ? h.o.map(([s, l]) => [s, s + l]) : []).filter(([s, e]) => s >= 0 && e <= x.length && e > s);
-      if (!marks.length && h.ms && h.ms.length) h.ms.forEach((m) => { const i = x.indexOf(m.w); if (i >= 0) marks.push([i, i + m.w.length]); });
+      const x = String(h.x || ""), marks = [];
+      (h.ms || []).forEach((m) => {
+        if (!m.w) return;
+        let from = 0, i;
+        while ((i = x.indexOf(m.w, from)) >= 0) { const e = i + m.w.length; if (!marks.some(([s0, e0]) => i < e0 && e > s0)) { marks.push([i, e]); break; } from = i + 1; }
+      });
       marks.sort((a, b) => a[0] - b[0]);
       const parts = []; let pos = 0;
       marks.forEach(([s, e]) => { if (s < pos) return; parts.push(esc(x.slice(pos, s)), "<mark>", esc(x.slice(s, e)), "</mark>"); pos = e; });
@@ -3309,13 +3319,18 @@
         ${g.dis.length ? `<details class="more"><summary>해당 없음 ${nf(g.dis.length)}건</summary><ul class="lg-list">${g.dis.sort(tsort).map(langItem).join("")}</ul></details>` : ""}</section>`; }).join("")
         + (days.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-lgmore="1">${nf(days.length - shown.length)}일 더 보기</button></div>` : "");
     }
-    // 날마다 수(기간 60일까지), 그보다 길면 월요일 시작 주마다
+    // 날마다 수(기간 60일까지), 그보다 길면 월요일 시작 주마다. 걸린 줄 창 밖의 옛 날은 날짜별 수로 채운다(해당 없음은 뺌)
     function langBars(live, per) {
       if (!per.days || per.days > 400) return "";
       const weekly = per.days > 60, monday = (d) => dShift(d, -((dnum(d) + 3) % 7));
       const buckets = [], idx = new Map();
       for (let d = per.from; d <= per.to; d = dShift(d, 1)) { const key = weekly ? monday(d) : d; if (!idx.has(key)) { idx.set(key, buckets.length); buckets.push({ d: key, n: 0 }); } }
-      live.forEach((h) => { const key = weekly ? monday(h.d) : h.d; if (idx.has(key)) buckets[idx.get(key)].n += 1; });
+      const add = (d, n) => { const key = weekly ? monday(d) : d; if (idx.has(key)) buckets[idx.get(key)].n += n; };
+      live.forEach((h) => add(h.d, 1));
+      const G = S.lang, r = langRec(), nm = langPidName();
+      Object.keys((G && G.days) || {}).forEach((d) => { if (d < per.from || d > per.to || d >= G.hitsFrom) return; const day = G.days[d]; if (!nm) add(d, day.n || 0); else if (day.p && day.p[nm]) add(d, Object.keys(day.p[nm]).reduce((a, k) => a + day.p[nm][k], 0)); });
+      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (x && x.d && x.d >= per.from && x.d <= per.to && x.d < G.hitsFrom && (!nm || x.n === nm)) add(x.d, -1); });
+      buckets.forEach((b) => { if (b.n < 0) b.n = 0; });
       const max = Math.max(1, ...buckets.map((b) => b.n));
       return `<div class="lg-bars" style="grid-template-columns:repeat(${buckets.length},minmax(0,1fr))" role="img" aria-label="${weekly ? "주마다" : "날마다"} 걸린 줄 수">${buckets.map((b) => `<i class="${b.n ? "" : "z"}" style="height:${b.n ? Math.max(4, Math.round((b.n / max) * 100)) : 2}%"${tipAttr((weekly ? md(b.d) + " 주" : md(b.d) + "(" + wdOf(b.d) + ")") + ": " + nf(b.n) + "건")}></i>`).join("")}</div><div class="lg-bx"><span>${esc(md(buckets[0].d))}</span><span>${weekly ? "주마다" : "날마다"}</span><span>${esc(md(buckets[buckets.length - 1].d))}</span></div>`;
     }
@@ -3349,7 +3364,7 @@
       Object.keys(old.by).forEach((n) => Object.keys(old.by[n]).forEach((k) => { byCat[k] = (byCat[k] || 0) + Math.max(0, old.by[n][k]); }));
       const cats = (c) => LANG_CATS.filter((x) => c[x.k]).map((x) => x.t + " " + c[x.k]).join(", ");
       L.push("채팅 언어 리포트: " + per.label + (nm ? ", " + nm + "만" : ""));
-      L.push("대화 " + md(G.range.to) + "까지" + (r.from ? ", 공지 기준일 " + md(r.from) : "") + ", 단어 목록 " + langLexNow().list.length + "개 기준");
+      L.push("대화 " + md(G.range.to) + "까지" + (r.from ? ", 공지 기준일 " + md(r.from) : "") + ", 단어 목록 " + langLexNow().list.length + "개 기준. 한 메시지는 한 건, 가장 센 종류로 셉니다.");
       L.push("걸린 줄 " + total + "건, " + ppl.length + "명" + (total ? ". " + cats(byCat) : ""));
       if (ppl.length) { L.push("", "사람별"); ppl.forEach((o) => L.push("- " + o.n + ": " + o.total + "건(" + cats(o.c) + ")" + (o.last ? ", 마지막 " + md(o.last) : ""))); }
       if (live.length) {
@@ -3379,10 +3394,12 @@
       live.forEach((h) => { byCat[h.k] = (byCat[h.k] || 0) + 1; });
       Object.keys(old.by).forEach((n) => Object.keys(old.by[n]).forEach((k) => { byCat[k] = (byCat[k] || 0) + Math.max(0, old.by[n][k]); }));
       const future = per.to > G.range.to, onN = langLexNow().list.length, allowN = Object.keys(r.allow).length;
+      const mismatch = S.ledger.range && G.range.to !== S.ledger.range.to;   // 언어 결과가 대화 기록 저장본과 다른 분석에서 온 것(저장이 중간에 끊긴 경우)
       host.innerHTML = `
         <div class="panel lg-bar">
           <div class="chips" role="group" aria-label="기간">${LANG_PER.map(([k, t]) => `<button type="button" data-lgper="${k}" aria-pressed="${per.per === k}"${k === "notice" && !r.from ? " disabled" : ""}>${t}</button>`).join("")}${nm ? `<button type="button" data-lgpid="" aria-pressed="true">${esc(nm)}만 보기(풀기)</button>` : ""}</div>
-          <p class="sub">${esc(per.label)}. 대화 ${esc(md(G.range.to))}까지${future ? ", 그 뒤는 새 파일을 올려야 보입니다" : ""}. 단어 목록 ${nf(onN)}개 켬${r.add.length ? ", 더한 말 " + nf(r.add.length) : ""}${allowN ? ", 예외 말 " + nf(allowN) : ""}.${langCfgDiffers() ? " 단어 목록을 분석 뒤에 바꿨습니다. 걸린 줄에는 바로 적용했고, 옛 날의 수는 다음 분석부터 맞습니다." : ""}</p>
+          <p class="sub">${esc(per.label)}. 대화 ${esc(md(G.range.to))}까지${future ? ", 그 뒤는 새 파일을 올려야 보입니다" : ""}. 단어 목록 ${nf(onN)}개 켬${r.add.length ? ", 더한 말 " + nf(r.add.length) : ""}${allowN ? ", 예외 말 " + nf(allowN) : ""}. 한 메시지는 한 건, 가장 센 종류로 셉니다.${langCfgDiffers() ? " 단어 목록을 분석 뒤에 바꿨습니다. 걸린 줄에는 바로 적용했고, 옛 날의 수는 다음 분석부터 맞습니다." : ""}</p>
+          ${mismatch ? `<p class="notice">언어 결과는 대화 ${esc(md(G.range.to))}까지, 대화 기록 저장본은 ${esc(md(S.ledger.range.to))}까지입니다. 파일을 다시 올려 서버에 저장해 주세요.</p>` : ""}
           <div class="lg-tools"><label class="lg-from"><span>공지 기준일</span><input id="lgFrom" class="input" type="date" value="${esc(r.from || "")}" /></label><div class="chips"><button type="button" class="btn btn-secondary is-sm" id="lgCopy">리포트 복사</button><button type="button" class="btn btn-secondary is-sm" id="lgManualBtn" aria-expanded="${view.lang.manual}">직접 적기</button></div></div>
           ${view.lang.manual ? langManualForm() : ""}
         </div>
@@ -3391,10 +3408,10 @@
             <div class="lg-kpis"><div class="lg-kpi"><b>${nf(total)}</b><span>걸린 줄</span></div><div class="lg-kpi"><b>${nf(ppl.length)}</b><span>사람</span></div><div class="lg-kpi"><b>${per.days ? (Math.round((total / per.days) * 10) / 10).toLocaleString("ko-KR") : 0}</b><span>하루 평균</span></div></div>
             ${total ? stack(LANG_CATS.map((c) => ({ l: c.t, v: byCat[c.k] || 0, c: LANG_COLOR[c.k] })), "건") : ""}
             ${langBars(live, per)}
-            ${old.n ? `<p class="cap">${esc(md(old.from))} ~ ${esc(md(old.to))}의 ${nf(old.n)}건은 분석 때 센 수만 있고 발췌가 없습니다(걸린 줄은 마지막 날부터 180일 안만 둡니다).</p>` : ""}
-            ${G.truncated ? `<p class="cap">걸린 줄이 2만 건을 넘어 오래된 것은 수만 남겼습니다.</p>` : ""}
+            ${old.n ? `<p class="cap">${esc(md(old.from))} ~ ${esc(md(old.to))}의 ${nf(old.n)}건은 분석 때 센 수만 있고 발췌가 없습니다(걸린 줄은 ${esc(md(G.hitsFrom))}부터 둡니다).</p>` : ""}
+            ${G.truncated ? `<p class="cap">걸린 줄이 많아(2만 건이나 3MB) ${esc(md(G.hitsFrom))} 전은 수만 남겼습니다.</p>` : ""}
           </div>
-          <div class="panel" id="lgPeople"><h2>사람별 <small>${nf(ppl.length)}명</small></h2>
+          <div class="panel" id="lgPeople"><h2>사람별 <small>${nf(ppl.length)}명. 욕설과 막말이 많은 사람부터</small></h2>
             ${ppl.length ? `<div class="tbl-wrap"><table class="tbl lft lg-tbl"><thead><tr><th>이름</th><th class="num">합계</th>${LANG_CATS.map((c) => `<th class="num">${c.k === "jamo" ? "초성" : c.t}</th>`).join("")}<th class="num">날</th><th>마지막</th></tr></thead><tbody>${ppl.map((o) => { const p = people().find((q) => q.name === o.n); return `<tr${p ? ` data-person="${esc(p.pid)}" tabindex="0"` : ""}><td><span class="nm">${esc(o.n)}</span>${p && p.status !== "in" ? `<span class="tag out">${p.status === "kicked" ? "내보냄" : "나감"}</span>` : ""}</td><td class="num"><b>${nf(o.total)}</b></td>${LANG_CATS.map((c) => `<td class="num${o.c[c.k] ? "" : " mute"}">${nf(o.c[c.k] || 0)}</td>`).join("")}<td class="num">${o.days.size ? nf(o.days.size) + (o.oldN ? "+" : "") : o.oldN ? "수만" : "0"}</td><td>${o.last ? esc(mdS(o.last)) : ""}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="empty">이 기간에 걸린 줄이 없습니다.</p>`}
           </div>
         </div>
@@ -3429,10 +3446,11 @@
       host.querySelectorAll("[data-lgallowdel]").forEach((b) => b.addEventListener("click", () => { delete langRec().allow[b.dataset.lgallowdel]; view.open.add("lg:lex"); saveRecords(); renderAll(); }));
       $("lgAddBtn").addEventListener("click", () => {
         const t = norm($("lgAddT").value).slice(0, 30), k = $("lgAddK").value, R = langRec(); if (!t) return;
+        if (OpsLang.tight(t).length < 2) { toast("두 글자 넘게 적어 주세요(한 글자는 아무 데나 걸립니다)."); return; }
         if (R.add.some((a) => OpsLang.tight(a.t) === OpsLang.tight(t))) { toast("이미 있는 말입니다."); return; }
-        R.add.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t, k, at: todayKST() });
+        R.add.push({ id: "a" + OpsLang.hash(OpsLang.tight(t)), t, k, at: todayKST() });   // id 는 글자에서 만들어 지웠다 다시 더해도 같다
         view.open.add("lg:lex"); saveRecords(); renderAll();
-        if (srcFiles.length) runAnalysis("더한 말로 다시 분석했습니다. 저장하면 다른 기기에서도 보입니다."); else toast("더했습니다. 다음 파일 분석부터 걸립니다.");
+        if (srcFiles.length && window.confirm("지금 올린 파일로 다시 분석할까요? 큰 파일은 시간이 걸립니다. 아니오를 누르면 다음 분석부터 걸립니다.")) runAnalysis("더한 말로 다시 분석했습니다. 저장하면 다른 기기에서도 보입니다."); else toast("더했습니다. 다음 파일 분석부터 걸립니다.");
       });
       $("lgAllowBtn").addEventListener("click", () => {
         const t = norm($("lgAllowT").value).slice(0, 30); if (!t) return;
@@ -3445,10 +3463,11 @@
       const G = S.lang; if (!G || !G.range) return "";
       const to = G.range.to, from = dShift(to, -6), r = langRec();
       const all = langRows().filter((h) => !h.dis && h.d >= from && h.d <= to).concat(r.manual.filter((m) => m.d >= from && m.d <= to).map(langManualRow));
-      const by = new Map(); all.forEach((h) => by.set(h.n, (by.get(h.n) || 0) + 1));
-      const top = [...by.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko")).map(([n, c]) => ({ n, c, p: people().find((q) => q.name === n) }));
-      const lv = all.length ? "watch" : "good";
-      return `<article class="bcard lv-${lv}" id="langCard"><div class="b-head"><div><h3>채팅 언어(최근 7일)</h3><strong class="b-count">${nf(all.length)}<small>건</small></strong>${lvl(lv)}</div>${art("rules-manners")}</div>
+      const by = new Map(); all.forEach((h) => { const o = by.get(h.n) || { c: 0, s: 0 }; o.c += 1; if (h.k === "curse" || h.k === "rude") o.s += 1; by.set(h.n, o); });
+      const top = [...by.entries()].sort((a, b) => b[1].s - a[1].s || b[1].c - a[1].c || a[0].localeCompare(b[0], "ko")).map(([n, o]) => ({ n, c: o.c, p: people().find((q) => q.name === n) }));
+      const strong = all.filter((h) => h.k === "curse" || h.k === "rude").length;
+      const lv = strong ? "watch" : "good";   // 욕설이나 막말이 있을 때만 살펴보기. 추임새뿐이면 좋음으로 두고 수만 보인다
+      return `<article class="bcard lv-${lv}" id="langCard"><div class="b-head"><div><h3>채팅 언어(최근 7일)</h3><strong class="b-count">${nf(all.length)}<small>건</small></strong>${lvl(lv)}<span class="cap">욕설과 막말 ${nf(strong)}건</span></div>${art("rules-manners")}</div>
         ${top.length ? `<div class="nchips">${top.slice(0, 10).map((x) => x.p ? `<button type="button" class="nchip" data-person="${esc(x.p.pid)}">${esc(x.n)}<em>${nf(x.c)}</em></button>` : `<span class="nchip">${esc(x.n)}<em>${nf(x.c)}</em></span>`).join("")}${top.length > 10 ? `<span class="more">외 ${nf(top.length - 10)}명</span>` : ""}</div>` : `<p class="b-none">${esc(md(from))} ~ ${esc(md(to))}에 걸린 줄이 없습니다.</p>`}
         <button type="button" class="text-btn" data-tabgo="lang">언어에서 보기</button></article>`;
     }
@@ -3470,7 +3489,7 @@
       const t = e.target.closest && e.target.closest("[data-lgdis], [data-lgundis], [data-lgmdel], [data-lgperson]");
       if (!t) return;
       const r = langRec();
-      if (t.dataset.lgdis != null) { const h = t.dataset.lgdis, row = langRows().find((x) => x.h === h); if (!row) return; r.dismiss[h] = { d: row.d, n: row.n, k: row.k, at: todayKST() }; saveRecords(); renderAll(); toast("해당 없음으로 표시했습니다. 다음 분석에도 그대로입니다."); return; }
+      if (t.dataset.lgdis != null) { const h = t.dataset.lgdis, row = langRows().find((x) => x.h === h), raw = langRaw(h); if (!row) return; r.dismiss[h] = { d: row.d, n: row.n, k: row.k, k0: raw ? raw.k : row.k, at: todayKST() }; saveRecords(); renderAll(); toast("해당 없음으로 표시했습니다. 다음 분석에도 그대로입니다."); return; }
       if (t.dataset.lgundis != null) { delete r.dismiss[t.dataset.lgundis]; saveRecords(); renderAll(); toast("되돌렸습니다."); return; }
       if (t.dataset.lgmdel != null) { if (!window.confirm("직접 적은 이 줄을 지울까요?")) return; r.manual = r.manual.filter((m) => m.id !== t.dataset.lgmdel); saveRecords(); renderAll(); return; }
       if (t.dataset.lgperson != null) {
