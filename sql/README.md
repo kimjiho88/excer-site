@@ -294,6 +294,16 @@ v2 적용 후 `sql/site_features_v3.sql` 도 같은 방법으로 Run 하세요.
 
 확인: 4번 끝에 `카카오로그인 1`, `함수 15`. 5번 끝에 `명단함수 1`, `스스로풀기 0`. 6번 끝에 `참석잠금 1`, `글잠금 1`. `status.sql` 의 '서버 형식' 이 정상(최신), '안쪽 함수 잠금' 열림 0, '카카오 묶기' 줄이 보임. 운영 화면 데이터 탭의 묶기 칸에 '0명, 사이트 닉네임 목록 N명, 보이기 운영진 기기만'.
 
+## 봇 대화 내보내기 분석과 지금 내보내기 (2026-10-31)
+
+`2026-10-31-bot-analysis.sql` 한 파일을 SQL Editor 에 붙여넣고 **Run** 하세요. 다시 실행해도 안전하고, 글과 명단은 건드리지 않으며 봇은 멈추지 않아도 됩니다. `2026-10-25-member-times.sql` 뒤에 돌립니다. 그 뒤 태블릿에서 `pkg install nodejs`, `python excer_bot.py update`(판 2026-10-31.1), `export check`, `export study`, `export on`, run 다시 켜기.
+
+- 새 표 `ops_bot_analysis`: 봇이 태블릿에서 대화를 내보내 분석한 결과(종류 ledger, lang, status 마다 한 줄, 통째로 바꿈). 봇 열쇠로만 올리고(`bot_analysis_put`, 한 시간 40번, 8MB 까지) 운영진 비밀번호로만 읽습니다(`ops_bot_analysis`). 대화 원문은 없습니다(사람별 집계와 걸린 줄의 짧은 발췌).
+- `bot_ops_cfg`(봇 열쇠): 운영 화면이 `ops_store` 의 `botcfg` 열쇠에 둔 단어 목록 설정과 직접 이은 줄을 봇이 읽습니다.
+- `bot_control` 에 지금 내보내기 요청과 결과(`export_req_at`, `export_done_at`, `export_done_ok`, `export_done_note`)가 더해지고, `bot_control_set(비밀번호, 'export', 0)` 이 요청입니다. 멤버 읽기와 멈춤은 그대로입니다.
+
+확인: 끝에 `표 1`, `함수 4`. 운영 화면 데이터 탭의 '봇 대화 내보내기' 에서 '서버에 아직 없음' 이 사라집니다.
+
 ## 멤버 읽기 하루 세 번과 지금 읽기 (2026-10-25)
 
 `2026-10-25-member-times.sql` 한 파일을 SQL Editor 에 붙여넣고 **Run** 하세요. 다시 실행해도 안전하고, 글과 명단은 건드리지 않으며 봇은 멈추지 않아도 됩니다. `2026-10-18-ops-tune.sql` 뒤에 돌립니다. 그 뒤 봇을 `python excer_bot.py update` 로 새로 받습니다(판 2026-10-25.6).
