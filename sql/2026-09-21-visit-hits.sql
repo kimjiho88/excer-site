@@ -11,6 +11,9 @@
 -- 재실행 안전. 기기 키·개인정보는 더 이상 보내지도 저장하지도 않는다.
 -- 적용법: Supabase SQL Editor 에 붙여넣고 Run. 마지막 줄 결과가 1줄 나오면 끝.
 -- ============================================================
+do $g$ begin
+  if to_regclass('public.site_visit_hours') is not null then raise exception '이 서버에는 더 새로운 방문 카운터(2026-10-25-member-times.sql 부터)가 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 시간대별 방문과 스페셜 정리가 빠집니다)'; end if;
+end $g$;
 
 create table if not exists site_visit_counts (
   day  date   primary key,

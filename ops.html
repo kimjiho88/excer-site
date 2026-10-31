@@ -16,7 +16,7 @@
   <script src="assets/ops-lang.js?v=1"></script>
   <script src="assets/ops-analyzer.js?v=8"></script>
   <script src="assets/ops-sheet.js?v=6"></script>
-  <script src="assets/bung-photo.js?v=5"></script>
+  <script src="assets/bung-photo.js?v=6"></script>
   <style>
     /* 운영 대시보드(운영자 전용). 넓은 화면에서는 시트처럼 한눈에, 폰에서는 한 줄씩 */
     :root {
@@ -3239,7 +3239,7 @@
       if (r.action === "admin_author" || r.action === "admin_rename") return d.from ? "전: " + d.from : "";
       if (r.action === "admin_status") return d.status === "closed" ? "모집 마감" : "다시 모집";
       if (r.action === "admin_cap") return (d.from || "없음") + " 에서 " + (d.to || "없음") + " 으로";
-      if (r.action === "admin_pin") return d.pinned ? "고정" : "고정 해제";
+      if (r.action === "admin_pin") return d.auto || BG.posts.some((x) => x.id === r.post_id) ? (d.pinned ? "스페셜 올림" : d.auto ? "스페셜 내림(모임이 끝나 자동)" : "스페셜 내림") : d.pinned ? "고정" : "고정 해제";
       if (r.action === "admin_delete") return [d.title, d.date ? md(d.date) : ""].filter(Boolean).join(", ");
       return "";
     }
@@ -3262,14 +3262,14 @@
       const dday = m.date === todayKST() ? "오늘" : m.date === nextDay(todayKST()) ? "내일" : "";   // 소식 화면처럼 오늘과 내일 표시
       const row = (a) => `<li><span class="pn">${esc(a.nick)}</span>${bgWho(a.nick)}${a.host ? `<span class="tag out">모임장이 적음</span>` : ""}<span class="bg-when">${esc(md(kstDate(a.at)))} ${esc(kstHM(a.at))}</span><span class="bg-ab"><button type="button" class="text-btn" data-bg="rename" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>이름 고치기</button><button type="button" class="text-btn" data-bg="reset" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>비밀번호 초기화</button><button type="button" class="text-btn is-danger" data-bg="kick" data-id="${p.id}" data-nick="${esc(a.nick)}"${dis}>빼기</button></span></li>`;
       return `<article class="bg-post${st.past ? " is-past" : ""}${BG.hi === p.id ? " is-hi" : ""}" id="bung-${p.id}" data-bid="${p.id}">
-        <div><div class="bg-title"><b>${esc(p.title)}</b>${dday && !st.past ? `<span class="tag good">${dday}</span>` : ""}<span class="tag ${st.cls}">${st.text}</span>${p.pinned ? `<span class="tag in">고정</span>` : ""}</div>
+        <div><div class="bg-title"><b>${esc(p.title)}</b>${dday && !st.past ? `<span class="tag good">${dday}</span>` : ""}<span class="tag ${st.cls}">${st.text}</span>${p.pinned ? `<span class="tag in">스페셜</span>` : ""}</div>
           <div class="bg-meta"><span>${esc(when)}</span>${m.place ? `<span>${esc(m.place)}</span>` : ""}<span>모임장 <b>${esc(p.author)}</b>${bgWho(p.author)}</span><span>참석 <b>${n}</b>${m.cap ? " / " + esc(m.cap) : ""}명</span><a class="text-btn" href="news.html#post-${p.id}" target="_blank" rel="noopener">소식에서 열기</a></div></div>
         <div class="chips bg-acts">
           <button type="button" class="btn btn-secondary" data-bg="author" data-id="${p.id}"${dis}>모임장 바꾸기</button>
           <button type="button" class="btn btn-secondary" data-bg="pass" data-id="${p.id}"${dis}>글 비밀번호 재설정</button>
           <button type="button" class="btn btn-secondary" data-bg="status" data-id="${p.id}" data-to="${m.status === "closed" ? "open" : "closed"}"${dis}>${m.status === "closed" ? "다시 모집" : "모집 마감"}</button>
           <button type="button" class="btn btn-secondary" data-bg="cap" data-id="${p.id}"${dis}>정원 ${m.cap ? esc(m.cap) + "명" : "없음"}</button>
-          <button type="button" class="btn btn-secondary" data-bg="pin" data-id="${p.id}" data-to="${p.pinned ? "0" : "1"}"${dis}>${p.pinned ? "고정 해제" : "고정"}</button>
+          <button type="button" class="btn btn-secondary" data-bg="pin" data-id="${p.id}" data-to="${p.pinned ? "0" : "1"}"${dis}>${p.pinned ? "스페셜 내리기" : "스페셜 올리기"}</button>
           <button type="button" class="btn btn-secondary is-danger" data-bg="delete" data-id="${p.id}"${dis}>삭제</button>
         </div>
         <div class="bg-att"><div class="bg-att-h"><b>참석 명단</b><small>${n}명</small><button type="button" class="text-btn" data-bg="add" data-id="${p.id}"${dis}>참석자 추가</button></div>
@@ -3387,7 +3387,8 @@
       const was = document.activeElement && host.contains(document.activeElement) ? document.activeElement.dataset : null;   // 다시 그려도 포커스를 같은 단추에
       const wasId = was && document.activeElement.id && /^bgt/.test(document.activeElement.id) ? document.activeElement.id : "";   // 닉네임 칸은 id 로
       host.innerHTML = `<div class="panel"><h2>소식 관리 <small>${BG.busy && !BG.loaded ? "읽는 중" : BG.loaded ? "모임 글 " + BG.posts.length + "건, 다른 글 " + BG.others.length + "건" : ""}</small></h2>
-          <p class="sub">운영진의 소식 관리는 모두 이 탭에서 합니다(소식 화면에는 운영진 단추가 없습니다). 모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 고정, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 공지와 다른 글은 아래 '다른 글' 에서 고정, 글 비밀번호, 삭제. 참석과 취소, 모든 조치는 맨 아래 기록에 남고 180일 뒤 지워집니다.</p>
+          <p class="sub">운영진의 소식 관리는 모두 이 탭에서 합니다(소식 화면에는 운영진 단추가 없습니다). 모임 모집 글과 참석 명단을 운영진 비밀번호로 바로 고칩니다. 모임장을 잘못 골랐으면 바꾸고, 모임장이 글 비밀번호를 잊었으면 다시 정해 알려 줍니다. 모집 마감과 다시 모집, 정원, 스페셜, 삭제, 명단의 이름 고치기와 참석 비밀번호 초기화, 빼기, 참석자 추가(마감이나 정원과 상관없이). 공지와 다른 글은 아래 '다른 글' 에서 고정, 글 비밀번호, 삭제. 참석과 취소, 모든 조치는 맨 아래 기록에 남고 180일 뒤 지워집니다.</p>
+          <p class="sub"><b>스페셜</b>: 올린 모임은 소식(전체, 모임 모집)과 홈 맨 위에 큰 카드로 보이고 모임이 끝나면 저절로 내려갑니다. 포스터는 assets/special/모임날짜.jpg(예: 2026-12-19.jpg).</p>
           ${BG.missing ? `<p class="notice">서버에 아직 없습니다. Supabase SQL Editor 에서 sql/${BG_SQL}을 차례로 실행해 주세요. 그 전에는 보기만 됩니다.</p>` : ""}
           ${BG.failed ? `<p class="notice">모임 글을 읽지 못했습니다. 연결을 확인하고 다시 읽기를 눌러 주세요.</p>` : ""}
           <div class="chips"><button type="button" class="btn btn-secondary" data-bg="reload"${BG.busy ? " disabled" : ""}>다시 읽기</button><a class="btn btn-secondary" href="news.html?cat=bung" target="_blank" rel="noopener">소식의 모임 모집</a><button type="button" class="btn btn-secondary" data-bgtjump="tools">닉네임 정해 주기</button></div>
@@ -3485,7 +3486,10 @@
       if (k === "pass") { const v = await bgAsk(b, { label: "새 글 비밀번호 (4자 이상)", ph: "모임장에게 알려 줄 비밀번호", ok: "재설정", max: 64 }); if (v == null) return; if (t(v).length < 4) { toast(BG_ERR.PASS_TOO_SHORT); return; } bungAct(id, "pass", { pass: v }, "글 비밀번호를 다시 정했습니다. 모임장에게 알려 주세요."); return; }
       if (k === "status") { const to = b.dataset.to; bungAct(id, "status", { status: to }, to === "closed" ? "모집을 마감했습니다." : "다시 모집합니다."); return; }
       if (k === "cap") { const v = await bgAsk(b, { label: "정원 (비우면 없음)", ph: "숫자", value: m.cap || "", type: "number", min: 1, max: 200, ok: "바꾸기" }); if (v == null) return; bungAct(id, "cap", { cap: t(v) }, t(v) ? "정원을 " + t(v) + "명으로 바꿨습니다." : "정원을 없앴습니다."); return; }
-      if (k === "pin") { const on = b.dataset.to === "1"; bungAct(id, "pin", { pinned: on }, on ? "글을 고정했습니다." : "고정을 해제했습니다."); return; }
+      if (k === "pin") {   // 모임 글은 스페셜(소식과 홈 맨 위 큰 카드), 다른 글은 고정
+        const on = b.dataset.to === "1", sp = BG.posts.some((x) => x.id === id);
+        bungAct(id, "pin", { pinned: on }, sp ? (on ? "스페셜로 올렸습니다. 소식과 홈 맨 위에 보입니다." : "스페셜에서 내렸습니다.") : on ? "글을 고정했습니다." : "고정을 해제했습니다."); return;
+      }
       if (k === "delete") {
         const n = (BG.att[id] || []).length, live = BG.posts.some((x) => x.id === id) && !bgStatus(p).past;   // 끝나지 않은 모임 글: 봇이 채팅방에 '벙 취소' 를 알린다
         if (!window.confirm("'" + p.title + "' 글을 지울까요?" + (n ? " 참석자 " + n + "명의 명단도 함께 지워집니다." : "") + " 되돌릴 수 없습니다."

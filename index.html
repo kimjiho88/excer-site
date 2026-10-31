@@ -117,6 +117,20 @@
     .news-row.is-event .row-state { grid-column: 3; grid-row: 1; }
     .news-row.is-event .row-meta { grid-column: 2 / -1; }
     .home-live .news-row.is-event .type-tag { display: none; }
+    /* 126차 스페셜 모임: 다가오는 모임 맨 위 큰 줄(왼쪽 포스터, 크림 바탕에 황토 테두리). 소식 화면의 스페셜 카드와 같은 표 */
+    .sp-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 2px 14px; align-items: start; margin: 6px 0 8px; padding: 12px; border: 1px solid rgba(126, 95, 37, 0.24); border-radius: 16px;
+      background: linear-gradient(135deg, #FFFDF8 0%, #FBF3E3 100%); color: var(--ink); text-decoration: none; box-shadow: 0 16px 32px -26px rgba(126, 95, 37, 0.6); }
+    .sp-row .sp-thumb { grid-row: 1 / span 5; width: 84px; height: 105px; border-radius: 10px; overflow: hidden; background: #F4ECDD; }
+    .sp-row .sp-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .sp-row .sp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sp-row .sp-tag, .sp-row .sp-dday { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
+    .sp-row .sp-tag { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
+    .sp-row .sp-dday { background: var(--brand); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+    .sp-row .sp-dday.is-now { background: var(--rust); }
+    .sp-row .row-title { margin-top: 4px; font-size: 16px; font-weight: 800; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+    .sp-row .sp-when { font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sp-row .sp-place, .sp-row .sp-att { color: var(--ink-2); font-size: var(--fs-caption); overflow-wrap: anywhere; }
+    @media (hover: hover) and (pointer: fine) { .sp-row:hover { border-color: rgba(126, 95, 37, 0.42); } }
     .rm-sub + .rm-who::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: var(--line-strong); vertical-align: -1px; }
     .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
     @media (max-width: 600px) {
@@ -188,7 +202,7 @@
   <script src="assets/site-core.js?v=15"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=14"></script>
-  <script src="assets/bung-photo.js?v=5"></script>
+  <script src="assets/bung-photo.js?v=6"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -430,6 +444,24 @@
           state +
           '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + w.join(", ") + "</span></span></a>";
       }
+      /* 126차 스페셜 모임 줄: 운영진이 스페셜로 올린(고정한) 끝나지 않은 모임 글. 포스터(assets/special/모임날짜.jpg)가 없으면 벙 사진 */
+      function spWhen(m) {
+        var hm = /^\d{2}:\d{2}$/, t = hm.test(m.time || "") ? m.time + (hm.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : "";
+        return C.dateText(m.date, { withDow: true }) + (t ? " " + t : "");
+      }
+      function specialRowHTML(v, today, nowK) {
+        var m = v.meta || {}, br = bungRow(v), d = C.daysFromToday(m.date, today), ph = C.bungPhase(m, nowK);
+        var dd = ph === "ongoing" ? "진행 중" : d > 0 ? "D-" + d : "오늘";
+        var fb = window.BUNGPHOTO ? BUNGPHOTO.image(v.raw, m) : "";
+        var img = '<img src="assets/special/' + esc(m.date) + '.jpg" data-fb="' + esc(fb) + '" alt="" width="168" height="210" decoding="async" onerror="if(this.dataset.fb&&this.src.indexOf(this.dataset.fb)<0){this.src=this.dataset.fb}else{this.remove()}" />';
+        return '<a class="sp-row" href="news.html?cat=bung#post-' + v.id + '">' +
+          '<span class="sp-thumb">' + img + "</span>" +
+          '<span class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday' + (ph === "ongoing" || d <= 0 ? " is-now" : "") + '">' + esc(dd) + "</span></span>" +
+          '<span class="row-title">' + esc(v.title || "제목 없음") + "</span>" +
+          '<span class="sp-when">' + esc(spWhen(m)) + "</span>" +
+          (m.place ? '<span class="sp-place">' + esc(m.place) + "</span>" : "") +
+          (br ? '<span class="sp-att">' + esc(br.text + (br.state ? ", " + br.state : "")) + "</span>" : "") + "</a>";
+      }
       function renderLive(rows) {
         var host = $("liveList");
         var today = C.kstToday(), now = C.kstNowHM();
@@ -439,7 +471,12 @@
           .sort(function (a, b) { return String(b.created_at || "").localeCompare(String(a.created_at || "")); })[0] || null;
         // 다가오는 모임: 날짜가 오늘 이후·마감 아님·오늘이면 시간이 아직 안 지난 것. 가까운 순 2건 (조건은 content.js isUpcoming)
         var canJoin = function (v) { var br = bungRow(v); return br && br.state ? 1 : 0; };   // 정원이 찼거나 신청이 끝난 모임은 뒤로
-        var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now); })
+        // 스페셜 모임(고정한 끝나지 않은 모임 글)은 맨 위 큰 줄로 따로. 아래 두 건과 겹치지 않는다
+        var nowK = today + "T" + now, when = function (v) { return String(v.meta.date + (v.meta.time || "")); };
+        var specials = views.filter(function (v) { return v.pinned && v.kind === "bung" && v.meta && v.meta.date && C.bungPhase(v.meta, nowK) !== "ended"; })
+          .sort(function (a, b) { return when(a).localeCompare(when(b)); });
+        var isSp = function (v) { return specials.indexOf(v) >= 0; };
+        var upcoming = views.filter(function (v) { return C.isUpcoming(v, today, now) && !isSp(v); })
           .sort(function (a, b) { return (canJoin(a) - canJoin(b)) || String(a.meta.date + (a.meta.time || "")).localeCompare(String(b.meta.date + (b.meta.time || ""))); })
           .slice(0, 2);
         // 지난번 소식 방문(소식 페이지가 남긴 시각) 뒤에 올라온 글 수 → 주요 기능의 소식 옆 알약. 방문 기록이 없으면 표시하지 않는다
@@ -453,9 +490,11 @@
         if (notice) html += '<div class="group-h">' + icon("megaphone") + '공지</div><div class="rows">' + rowHTML(notice) + "</div>";
         // 다가오는 모임 머리에 '모임 올리기'(소식의 모임 모집 창을 바로 연다). 보이는 2건보다 많으면 전체 수와 함께 모임 모집 탭으로
         var upAll = views.filter(function (v) { return C.isUpcoming(v, today, now); }).length;
+        var shown = upcoming.length + specials.filter(function (v) { return C.isUpcoming(v, today, now); }).length;
+        var spHTML = specials.map(function (v) { return specialRowHTML(v, today, nowK); }).join("");
         var addLink = '<a class="group-act" href="news.html?cat=bung&amp;write=1">' + icon("pencil") + '모임 올리기</a>';
-        if (upcoming.length) html += '<div class="group-h">' + icon("calendar") + '다가오는 모임' + addLink + '</div><div class="rows">' + upcoming.map(rowHTML).join("") +
-          (upAll > upcoming.length ? '<a class="row group-more" href="news.html?cat=bung">다가오는 모임 ' + upAll + '건 모두 보기</a>' : "") + "</div>";
+        if (upcoming.length || specials.length) html += '<div class="group-h">' + icon("calendar") + '다가오는 모임' + addLink + '</div><div class="rows">' + spHTML + upcoming.map(rowHTML).join("") +
+          (upAll > shown ? '<a class="row group-more" href="news.html?cat=bung">다가오는 모임 ' + upAll + '건 모두 보기</a>' : "") + "</div>";
         else html += '<div class="group-h">' + icon("calendar") + '다가오는 모임' + addLink + '</div><div class="rows"><p class="row group-none">예정된 모임이 없습니다.</p></div>';
         if (review) html += '<div class="group-h">' + icon("sparkle") + '최근 모임 후기</div><div class="rows">' + rowHTML(review) + "</div>";
         host.innerHTML = html;

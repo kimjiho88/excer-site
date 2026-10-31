@@ -281,6 +281,48 @@
     .ev-quick .btn { min-height: 36px; padding: 0 14px; font-size: 13px; }
     .post-row.is-event.has-quick .row-meta { padding-right: 76px; }
     @media (min-width: 641px) { .ev-quick { right: 16px; bottom: 14px; } .ev-quick .btn { min-height: 40px; padding: 0 16px; font-size: 14px; } .post-row.is-event.has-quick .row-meta { padding-right: 96px; } }
+    /* ── 126차 스페셜 모임: 운영진이 스페셜로 올린 끝나지 않은 모임 글. 전체와 모임 모집 탭(모임 날짜순) 맨 위 큰 카드(C안: 왼쪽 포스터 전체, 오른쪽 정보와 참석) ── */
+    .sp-wrap { display: grid; gap: 10px; margin-top: 12px; }
+    .sp-wrap[hidden] { display: none; }
+    .sp-card { position: relative; display: grid; grid-template-columns: minmax(124px, 38%) minmax(0, 1fr); min-height: 248px; border: 1px solid rgba(126, 95, 37, 0.24); border-radius: 18px; overflow: hidden;
+      background: linear-gradient(135deg, #FFFDF8 0%, #FBF3E3 100%); box-shadow: 0 1px 2px rgba(31, 22, 44, 0.04), 0 20px 40px -28px rgba(126, 95, 37, 0.6); }
+    .sp-poster { position: relative; display: block; margin: 0; padding: 0; border: 0; border-right: 1px solid rgba(126, 95, 37, 0.16); background: #F4ECDD; cursor: pointer; overflow: hidden; }
+    .sp-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+    .sp-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 14px 14px 14px 16px; }
+    .sp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sp-tag, .sp-dday { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
+    .sp-tag { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
+    .sp-dday { background: var(--brand); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+    .sp-dday.is-now { background: var(--rust); }
+    .sp-title { margin: 2px 0 0; font-size: 17px; font-weight: 800; line-height: 1.3; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+    .sp-title a { color: var(--ink); text-decoration: none; }
+    .sp-title a::after { content: ""; position: absolute; inset: 0; }   /* 카드 어디를 눌러도 글로(참석 단추는 위에 올림) */
+    .sp-when { margin: 0; color: var(--ink); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sp-place { margin: 0; color: var(--ink-2); font-size: 13px; overflow-wrap: anywhere; }
+    .sp-att { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .sp-att b { color: var(--ink); }
+    .sp-att .sp-left { margin-left: 6px; color: var(--brand); }
+    .sp-att .sp-left.is-off { color: var(--ink-2); }
+    .sp-bar { display: block; height: 6px; border-radius: 999px; background: rgba(75, 42, 130, 0.12); overflow: hidden; }
+    .sp-bar i { display: block; height: 100%; min-width: 6px; border-radius: inherit; background: linear-gradient(90deg, #6D4AAE, var(--brand)); }
+    .sp-go { position: relative; z-index: 1; margin-top: auto; width: 100%; min-height: 46px; font-size: 15px; font-weight: 800; }
+    .sp-me { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 4px; margin-top: auto; color: var(--brand); font-size: 14px; font-weight: 800; }
+    .sp-me .ic { width: 16px; height: 16px; }
+    @media (hover: hover) and (pointer: fine) { .sp-card:hover { border-color: rgba(126, 95, 37, 0.4); } }
+    .sp-card:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+    @media (min-width: 641px) {
+      .sp-card { grid-template-columns: 216px minmax(0, 1fr); min-height: 270px; }
+      .sp-body { gap: 7px; padding: 18px 20px; }
+      .sp-title { font-size: 20px; }
+      .sp-when { font-size: 15px; }
+      .sp-go { align-self: flex-start; width: auto; min-width: 180px; }
+    }
+    /* 날짜 목록의 스페셜 줄: 제목 앞 '스페셜' 표, 작은 사진은 포스터 가운데 */
+    .sp-mini { flex: none; display: inline-flex; align-items: center; min-height: 20px; margin: 1px 6px 0 0; padding: 0 7px; border-radius: 6px; background: var(--gold-soft); color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
+    .post-row.is-event .ev-thumb.is-poster img { transform: scale(1.8); transform-origin: 50% 50%; }
+    .ev-kickers { display: flex; flex-wrap: wrap; gap: 6px; justify-self: start; }
+    .ev-kicker.is-special { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
+    .ev-kicker.is-special::before { background: #F3D9A0; }
     /* 펼친 글의 작은 제목(모임 정보, 소개): 보라 막대. 모임 정보 표는 줄마다 가는 선, 모임장 줄은 얼굴표 */
     .pd-h { display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; color: var(--ink); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
     .pd-h::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: linear-gradient(180deg, #6D4AAE, var(--brand)); }
@@ -631,7 +673,7 @@
   <script src="assets/site-core.js?v=15"></script>
   <script src="assets/icons.js?v=3"></script>
   <script src="assets/content.js?v=15"></script>
-  <script src="assets/bung-photo.js?v=5"></script>
+  <script src="assets/bung-photo.js?v=6"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -690,6 +732,7 @@
         <div class="me-row"><button type="button" class="me-chip is-empty" id="meChip"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><b>내 닉네임 정하기</b></button></div>
         <!-- 카카오 로그인(서버에 kakao_login 이 있고 설정이 켜진 기기에서만): 로그인 단추, 로그인 뒤 닉네임 고르기, 묶은 뒤에는 닉네임 칩과 바꾸기, 풀기, 로그아웃 -->
         <div class="kakao-row" id="kakaoRow" hidden aria-live="polite"></div>
+        <div class="sp-wrap" id="specialWrap" hidden></div>
         <div class="prompt-card" id="promptCard" hidden>
           <!-- 글감 종류 그림(2세대 posts-*, 후기는 flow-record) 96px. 못 읽으면 전구 아이콘으로 -->
           <img class="spot-img pc-art" id="promptArt" src="assets/img/posts-free-320.webp" width="320" height="320" alt="" decoding="async" onerror="this.closest('.prompt-card').classList.add('no-image')" />
@@ -1680,34 +1723,92 @@
       const stateEl = stateText ? `<span class="row-state${dim ? " is-past" : ""}">${esc(stateText)}</span>` : "";
       if (expanded) {   // 펼친 글: 줄 대신 사진 머리(벙 사진, 없으면 날짜 표 위 보라 바탕). 제목과 참석, 모임장은 그 위에 흰 글자
         const name = bungPhotoName(post), label = name ? BUNGPHOTO.label(name) : "";   // 사진 종류 이름표(곱창전골, 카페)는 제목 위 작은 알약
+        const sp = isSpecial(post);
         const hero = name ? `<img class="ev-hero-img" src="assets/bung/${name}.jpg" alt="" width="800" height="400" decoding="async" onerror="this.remove()" />`
           : `<span class="ev-hero-badge">${/^\d{4}-\d{2}-\d{2}$/.test(m.date || "") ? `<img src="assets/cal/sq/${m.date.slice(5)}.png" alt="" width="240" height="240" decoding="async" onerror="this.remove()" />` : ""}</span>`;
         return `
-        <article class="row post-row is-event is-open${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
+        <article class="row post-row is-event is-open${dim ? " is-past-ev" : ""}${pinnedNow(post) ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head ev-hero ${name ? "has-photo" : "no-photo"}" data-act="toggle" data-id="${post.id}" aria-expanded="true" title="접기">
               ${hero}<span class="ev-hero-shade" aria-hidden="true"></span>
               <span class="ev-hero-top">${stateEl}<span class="ev-hero-fold" aria-hidden="true">${icon("chevDown", "is-sm")}</span></span>
-              <span class="ev-hero-body">${label ? `<span class="ev-kicker">${esc(label)}</span>` : ""}<span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              <span class="ev-hero-body">${sp || label ? `<span class="ev-kickers">${sp ? `<span class="ev-kicker is-special">스페셜</span>` : ""}${label ? `<span class="ev-kicker">${esc(label)}</span>` : ""}</span>` : ""}<span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
                 ${sub}<span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span></span>
             </button>
           </h3>
           <div class="post-detail">${detailHTML(post)}</div>
         </article>`;
       }
+      const special = isSpecial(post);
       const quick = state.attendOn && bs.open && !mine ? `<div class="ev-quick"><button type="button" class="btn btn-primary" data-act="attend" data-id="${post.id}" aria-label="${esc(v.title || "모임")} 참석">참석</button></div>` : "";
       return `
-        <article class="row post-row is-event${dim ? " is-past-ev" : ""}${post.pinned ? " is-pinned" : ""}${quick ? " has-quick" : ""}" id="post-${post.id}">
+        <article class="row post-row is-event${dim ? " is-past-ev" : ""}${pinnedNow(post) ? " is-pinned" : ""}${quick ? " has-quick" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="false">
-              <span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>
-              <span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              ${special ? `<span class="ev-thumb${posterOf(post) ? " is-poster" : ""}">${posterImg(post, bungThumb(post, m), 88, 88, ' loading="lazy"')}</span>` : `<span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>`}
+              <span class="nr-line">${special ? '<span class="sp-mini">스페셜</span>' : ""}<span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
               ${stateEl}
               ${sub}
               <span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span>
             </button>
           </h3>${quick}
         </article>`;
+    }
+    /* ── 126차 스페셜 모임: 운영진이 스페셜로 올린(고정한) 끝나지 않은 모임 글. 전체와 모임 모집 탭(모임 날짜순) 맨 위 큰 카드와 날짜 목록의 '스페셜' 표.
+       포스터는 assets/special/모임날짜.jpg 가 있으면 그것, 없으면 벙 사진. 모임이 끝나면 카드에서 빠지고 서버가 고정을 푼다(2026-10-31-special-bung.sql) ── */
+    const isEndedBung = (p) => p.category === "벙 소식" && !!dateOf(p) && bungStatus(p).why === "started";
+    const pinnedNow = (p) => !!p.pinned && !isEndedBung(p);   // 끝난 모임 글은 서버가 고정을 풀기 전에도 고정으로 보이지 않는다
+    const isSpecial = (p) => !!p.pinned && p.category === "벙 소식" && !!dateOf(p) && !isEndedBung(p);
+    const POSTER_NO = new Set();   // 포스터가 없는 모임 날짜(한 번 못 읽으면 다시 찾지 않는다)
+    const posterOf = (p) => (POSTER_NO.has(dateOf(p)) ? "" : "assets/special/" + dateOf(p) + ".jpg");
+    window.spPosterFail = (img) => {
+      POSTER_NO.add(img.dataset.day || "");
+      img.onerror = () => img.remove();
+      if (img.parentNode) img.parentNode.classList.remove("is-poster");
+      if (img.dataset.fb) img.src = img.dataset.fb; else img.remove();
+    };
+    function posterImg(p, fb, w, h, extra) {
+      const poster = posterOf(p), src = poster || fb;
+      if (!src) return "";
+      return `<img src="${esc(src)}" alt="" width="${w}" height="${h}" decoding="async"${extra || ""}${poster ? ` data-day="${esc(dateOf(p))}" data-fb="${esc(fb || "")}" onerror="spPosterFail(this)"` : ` onerror="this.remove()"`} />`;
+    }
+    /* "12월 19일 (토) 19:00~24:00". 자정에 끝나면 24:00, 그 뒤까지면 '다음 날' */
+    function spWhen(m) {
+      const hm = /^\d{2}:\d{2}$/, t = hm.test(m.time || "") ? m.time + (hm.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : "";
+      return C.dateText(m.date, { withDow: true }) + (t ? " " + t : "");
+    }
+    function spDday(p, bs) {
+      if (bs.ongoing) return { t: "진행 중", now: true };
+      const n = C.daysFromToday(dateOf(p), C.kstToday());
+      return n > 0 ? { t: "D-" + n, now: false } : { t: "오늘", now: true };
+    }
+    function specialCardHTML(p) {
+      const m = C.postMeta(p) || {}, bs = bungStatus(p), v = C.postView(p);
+      const list = (state.attend[p.id] || {}).list || null;
+      const n = list ? list.length : bs.n, cap = bs.cap, left = cap ? Math.max(0, cap - n) : 0;
+      const mine = !!(list && list.some((x) => isMe(x.nick, p.id)));
+      const dd = spDday(p, bs), why = !bs.open ? WHY_LABEL[bs.why] || "" : "";
+      const att = state.attendOn ? `<p class="sp-att">참석 <b>${n}${cap ? "/" + cap : ""}</b>${bs.open && cap ? `<b class="sp-left${left > 0 ? "" : " is-off"}">${left > 0 ? left + "자리 남음" : "정원 마감"}</b>` : why ? `<b class="sp-left is-off">${esc(why)}</b>` : ""}</p>`
+        + (cap ? `<span class="sp-bar" aria-hidden="true"><i style="width:${Math.min(100, Math.round((n / cap) * 100))}%"></i></span>` : "") : "";
+      const act = mine ? `<span class="sp-me">${icon("check")}내 참석</span>`
+        : state.attendOn && bs.open ? `<button type="button" class="btn btn-primary sp-go" data-act="attend" data-id="${p.id}" aria-label="${esc(v.title || "모임")} 참석">참석</button>` : "";
+      return `<article class="sp-card" data-sp="${p.id}">
+          <span class="sp-poster" aria-hidden="true">${posterImg(p, BUNGPHOTO.image(p, m), 432, 540)}</span>
+          <div class="sp-body">
+            <div class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday${dd.now ? " is-now" : ""}">${esc(dd.t)}</span></div>
+            <h3 class="sp-title"><a href="#post-${p.id}" data-act="goto" data-id="${p.id}">${esc(v.title || "제목 없음")}</a></h3>
+            <p class="sp-when">${esc(spWhen(m))}</p>${m.place ? `<p class="sp-place">${esc(m.place)}</p>` : ""}
+            ${att}${act}
+          </div>
+        </article>`;
+    }
+    function renderSpecial() {
+      const w = $("specialWrap"); if (!w) return;
+      const ae = document.activeElement, keep = ae && w.contains(ae) && ae.dataset && ae.dataset.act ? [ae.dataset.act, ae.dataset.id] : null;
+      const list = dateMode() && !state.degraded ? state.posts.filter(isSpecial).sort((a, b) => (dateOf(a) + " " + timeOf(a)).localeCompare(dateOf(b) + " " + timeOf(b))) : [];
+      w.hidden = !list.length;
+      w.innerHTML = list.map(specialCardHTML).join("");
+      if (keep) { const b = w.querySelector(`[data-act="${keep[0]}"][data-id="${keep[1]}"]`); if (b) b.focus({ preventScroll: true }); }
     }
     function rowHTML(post) {
       const v = C.postView(post);
@@ -1722,10 +1823,10 @@
       }
       const st = v.subline.state ? `<span class="row-state${v.subline.past ? " is-past" : ""}">${esc(v.subline.state)}</span>` : "";
       return `
-        <article class="row post-row${post.pinned ? " is-pinned" : ""}" id="post-${post.id}">
+        <article class="row post-row${pinnedNow(post) ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
-              <span class="nr-line">${tagHTML(v)}<span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
+              <span class="nr-line">${tagHTML(v)}${isSpecial(post) ? '<span class="sp-mini">스페셜</span>' : ""}<span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
               ${st}
               <span class="row-meta">${metaLine(v)}</span>
             </button>
@@ -1794,6 +1895,7 @@
       updateMoreBtn();
       renderPrompt();
       renderPopular();
+      renderSpecial();
       if (!state.degraded && posts.length) C.nickSuggest($("wNick"), posts.map((p) => p.author));
       updateDock();
     }
@@ -1891,6 +1993,7 @@
       const skel = `<div class="skel-rows" aria-hidden="true"><span class="skeleton skeleton-line is-lg" style="width:60%"></span><span class="skeleton skeleton-line" style="width:44%"></span></div>`;
       $("postList").innerHTML = skel + skel + skel;
       $("postList").setAttribute("aria-busy", "true");
+      if (!dateMode()) $("specialWrap").hidden = true;   // 스페셜 카드는 전체와 모임 모집 탭(모임 날짜순)에서만
       updateMoreBtn();
     }
     function updateMoreBtn() {
@@ -3510,6 +3613,18 @@
         const b = e.target.closest("button[data-ev]"); if (!b) return;
         state.evFilter = b.dataset.ev === state.evFilter ? "all" : b.dataset.ev;
         renderList(); const nb = $("evBar").querySelector(`button[data-ev="${state.evFilter}"]`); if (nb) nb.focus({ preventScroll: true });
+      });
+      /* 스페셜 카드: 카드를 누르면 그 글로(거르기 칩에 가린 글이면 모두로), 참석 단추는 목록의 참석과 같은 흐름 */
+      $("specialWrap").addEventListener("click", (e) => {
+        const el = e.target.closest("[data-act]"); if (!el) return;
+        const id = Number(el.dataset.id);
+        if (el.dataset.act === "goto") {
+          e.preventDefault();
+          const p = findPost(id);
+          if (p && evMode() && state.evFilter && state.evFilter !== "all" && !evPass(p, C.kstToday())) state.evFilter = "all";
+          gotoPost(id); return;
+        }
+        if (el.dataset.act === "attend") { if (state.degraded) { showToast(OFFLINE_MSG); return; } startAttend(id); }
       });
       $("postList").addEventListener("click", (e) => {
         const el = e.target.closest("[data-act]");
