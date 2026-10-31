@@ -327,6 +327,61 @@
     .ev-kickers { display: flex; flex-wrap: wrap; gap: 6px; justify-self: start; }
     .ev-kicker.is-special { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
     .ev-kicker.is-special::before { background: #F3D9A0; }
+    /* ── 127차 크리스마스 스페셜: 12월 모임이거나 제목에 크리스마스, 성탄, 연말, 송년이 있으면(isXmas). 사진에 눈이 내리고 사진과 글 사이에 전구 줄이 반짝인다.
+       빨강(#B3202A, 흰 글자 6.9:1), 소나무 초록(#1F6B45, 크림 위 6.4:1), 금색. 움직임 줄이기 설정이면 멈춘다 ── */
+    .sp-card.is-xmas { isolation: isolate; border: 2px solid transparent;
+      background: linear-gradient(180deg, #FFFDF8 0%, #FFF4E6 100%) padding-box,
+        linear-gradient(135deg, #B3202A 0%, #E2B24A 28%, #1F6B45 52%, #E2B24A 76%, #B3202A 100%) border-box;
+      box-shadow: 0 0 0 4px rgba(226, 178, 74, 0.16), 0 24px 44px -26px rgba(140, 24, 32, 0.6); }
+    .sp-card.is-xmas::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;   /* 글 칸 오른쪽에 옅은 눈송이(왼쪽 글 쪽은 흐려 없앤다) */
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cpath d='M52 60L52 46M52 51.9l2.8 -3.1M52 51.9l-2.8 -3.1M52 60L39.9 53M45 55.9l-1.3 -4M45 55.9l-4.1 0.9M52 60L39.9 67M45 64.1l-4.1 -0.9M45 64.1l-1.3 4M52 60L52 74M52 68.1l-2.8 3.1M52 68.1l2.8 3.1M52 60L64.1 67M59 64.1l1.3 4M59 64.1l4.1 -0.9M52 60L64.1 53M59 55.9l4.1 0.9M59 55.9l1.3 -4M178 132L178 122M178 126.2l2 -2.2M178 126.2l-2 -2.2M178 132L169.3 127M173 129.1l-0.9 -2.9M173 129.1l-2.9 0.6M178 132L169.3 137M173 134.9l-2.9 -0.6M173 134.9l-0.9 2.9M178 132L178 142M178 137.8l-2 2.2M178 137.8l2 2.2M178 132L186.7 137M183 134.9l0.9 2.9M183 134.9l2.9 -0.6M178 132L186.7 127M183 129.1l2.9 0.6M183 129.1l0.9 -2.9M92 196L92 189M92 191.9l1.4 -1.6M92 191.9l-1.4 -1.6M92 196L85.9 192.5M88.5 194l-0.6 -2M88.5 194l-2.1 0.4M92 196L85.9 199.5M88.5 198l-2.1 -0.4M88.5 198l-0.6 2M92 196L92 203M92 200.1l-1.4 1.6M92 200.1l1.4 1.6M92 196L98.1 199.5M95.5 198l0.6 2M95.5 198l2.1 -0.4M92 196L98.1 192.5M95.5 194l2.1 0.4M95.5 194l0.6 -2M206 28L206 22M206 24.5l1.2 -1.3M206 24.5l-1.2 -1.3M206 28L200.8 25M203 26.3l-0.6 -1.7M203 26.3l-1.8 0.4M206 28L200.8 31M203 29.7l-1.8 -0.4M203 29.7l-0.6 1.7M206 28L206 34M206 31.5l-1.2 1.3M206 31.5l1.2 1.3M206 28L211.2 31M209 29.7l0.6 1.7M209 29.7l1.8 -0.4M206 28L211.2 25M209 26.3l1.8 0.4M209 26.3l0.6 -1.7' fill='none' stroke='%23C9A15A' stroke-opacity='.42' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E") 0 0 / 240px 240px;
+      -webkit-mask-image: linear-gradient(100deg, transparent 38%, #000 82%); mask-image: linear-gradient(100deg, transparent 38%, #000 82%); }
+    .sp-card.is-xmas .sp-photo { isolation: isolate; border-bottom: 0; }
+    .sp-card.is-xmas .sp-photo::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;   /* 위아래를 살짝 어둡게: 눈과 전구가 밝은 사진에서도 보이게 */
+      background: linear-gradient(180deg, rgba(40, 10, 18, 0.26) 0%, rgba(40, 10, 18, 0) 34%, rgba(40, 10, 18, 0) 60%, rgba(40, 10, 18, 0.42) 100%); }
+    .sp-snow { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+    .sp-snow::before, .sp-snow::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; will-change: transform; }
+    .sp-snow::before { top: -220px; opacity: 0.85; animation: spSnowFar 19s linear infinite;   /* 먼 눈: 작고 느리게 */
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='35' cy='143' r='1.2' fill-opacity='.58'/%3E%3Ccircle cx='81' cy='15' r='1.3' fill-opacity='.73'/%3E%3Ccircle cx='94' cy='181' r='1' fill-opacity='.59'/%3E%3Ccircle cx='138' cy='207' r='1.1' fill-opacity='.75'/%3E%3Ccircle cx='213' cy='12' r='1.2' fill-opacity='.85'/%3E%3Ccircle cx='33' cy='28' r='1.1' fill-opacity='.66'/%3E%3Ccircle cx='83' cy='120' r='1.4' fill-opacity='.57'/%3E%3Ccircle cx='67' cy='173' r='1.3' fill-opacity='.79'/%3E%3Ccircle cx='126' cy='115' r='1.1' fill-opacity='.86'/%3E%3Ccircle cx='64' cy='213' r='1.5' fill-opacity='.59'/%3E%3Ccircle cx='165' cy='35' r='1.2' fill-opacity='.72'/%3E%3Ccircle cx='146' cy='167' r='.9' fill-opacity='.75'/%3E%3Ccircle cx='206' cy='104' r='1.6' fill-opacity='.78'/%3E%3Ccircle cx='154' cy='142' r='.9' fill-opacity='.9'/%3E%3Ccircle cx='64' cy='85' r='1.6' fill-opacity='.78'/%3E%3Ccircle cx='102' cy='38' r='.9' fill-opacity='.59'/%3E%3Ccircle cx='179' cy='188' r='1.6' fill-opacity='.65'/%3E%3Ccircle cx='52' cy='107' r='1.1' fill-opacity='.76'/%3E%3Ccircle cx='3' cy='93' r='1.1' fill-opacity='.68'/%3E%3Ccircle cx='208' cy='151' r='1.4' fill-opacity='.73'/%3E%3Ccircle cx='148' cy='14' r='1.4' fill-opacity='.86'/%3E%3Ccircle cx='37' cy='75' r='1.1' fill-opacity='.57'/%3E%3Ccircle cx='8' cy='191' r='1.2' fill-opacity='.76'/%3E%3Ccircle cx='103' cy='107' r='1.7' fill-opacity='.58'/%3E%3Ccircle cx='76' cy='59' r='1' fill-opacity='.84'/%3E%3Ccircle cx='152' cy='59' r='1.6' fill-opacity='.68'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 220px 220px; }
+    .sp-snow::after { top: -300px; animation: spSnowNear 12s linear infinite;   /* 가까운 눈: 크고 빠르게 */
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='233' cy='156' r='2.8' fill-opacity='.89'/%3E%3Ccircle cx='296' cy='88' r='2.5' fill-opacity='.83'/%3E%3Ccircle cx='80' cy='99' r='2.3' fill-opacity='.85'/%3E%3Ccircle cx='63' cy='24' r='2.7' fill-opacity='.84'/%3E%3Ccircle cx='117' cy='218' r='2.7' fill-opacity='.94'/%3E%3Ccircle cx='33' cy='217' r='2.5' fill-opacity='.94'/%3E%3Ccircle cx='196' cy='91' r='2.5' fill-opacity='.96'/%3E%3Ccircle cx='235' cy='283' r='3' fill-opacity='.84'/%3E%3Ccircle cx='218' cy='238' r='2.7' fill-opacity='.87'/%3E%3Ccircle cx='187' cy='34' r='2.2' fill-opacity='.93'/%3E%3Ccircle cx='137' cy='144' r='2' fill-opacity='.82'/%3E%3Ccircle cx='11' cy='114' r='2.3' fill-opacity='.82'/%3E%3Ccircle cx='282' cy='275' r='2.8' fill-opacity='.9'/%3E%3C/g%3E%3C/svg%3E") 70px 0 / 300px 300px; }
+    @keyframes spSnowFar { to { transform: translateY(220px); } }   /* 무늬 한 장 높이만큼 내려 이음매 없이 되풀이 */
+    @keyframes spSnowNear { to { transform: translateY(300px); } }
+    .sp-lights { position: relative; z-index: 3; display: block; height: 22px; margin: -25px -16px 2px; pointer-events: none; }   /* 사진 아래 끝에 걸친 전구 줄(글 칸 첫 줄) */
+    .sp-lights svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .sp-lights path { fill: none; stroke: #1E4D2E; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+    .sp-lights i { position: absolute; width: 8px; height: 11px; margin-left: -4px; border-radius: 45% 45% 50% 50% / 35% 35% 65% 65%; background: var(--c); box-shadow: 0 0 7px 2px var(--g);
+      animation: spTwinkle 2.6s ease-in-out infinite; }
+    .sp-lights i::before { content: ""; position: absolute; left: 2px; top: -3px; width: 4px; height: 4px; border-radius: 1px; background: #24432C; }
+    .sp-lights i:nth-of-type(4n + 1) { --c: #FF4B4B; --g: rgba(255, 75, 75, 0.75); }
+    .sp-lights i:nth-of-type(4n + 2) { --c: #FFC83D; --g: rgba(255, 200, 61, 0.75); animation-delay: -0.9s; }
+    .sp-lights i:nth-of-type(4n + 3) { --c: #35D07F; --g: rgba(53, 208, 127, 0.7); animation-delay: -1.7s; }
+    .sp-lights i:nth-of-type(4n) { --c: #4DA3FF; --g: rgba(77, 163, 255, 0.7); animation-delay: -0.4s; }
+    .sp-lights i:nth-of-type(3n) { animation-duration: 3.3s; }
+    @keyframes spTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.38; } }
+    .sp-card.is-xmas .sp-tags { align-items: center; }
+    .sp-card.is-xmas .sp-tag { background: linear-gradient(135deg, #9E1B24, #D7333B); color: #FFF3D6; box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.55); }
+    .sp-card.is-xmas .sp-dday { background: #1F6B45; }
+    .sp-card.is-xmas .sp-dday.is-now { background: #E2B24A; color: var(--ink); }
+    .sp-holly { display: inline-flex; width: 34px; height: 24px; margin-left: auto; }
+    .sp-holly svg { width: 100%; height: 100%; }
+    .sp-card.is-xmas .sp-att .sp-left { color: #B3202A; }
+    .sp-card.is-xmas .sp-att .sp-left.is-off { color: var(--ink-2); }
+    .sp-card.is-xmas .sp-bar { height: 8px; background: rgba(31, 107, 69, 0.14); }
+    .sp-card.is-xmas .sp-bar i { min-width: 8px; background: repeating-linear-gradient(-45deg, #C8232C 0 5px, #FFFFFF 5px 10px); box-shadow: inset 0 0 0 1px rgba(200, 35, 44, 0.4); }   /* 지팡이 사탕 줄무늬 */
+    .sp-card.is-xmas .sp-go { background: linear-gradient(180deg, #D7333B 0%, #B3202A 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 18px -10px rgba(179, 32, 42, 0.75); }
+    @media (hover: hover) and (pointer: fine) {
+      .sp-card.is-xmas:hover { border-color: transparent; }
+      .sp-card.is-xmas .sp-go:hover { background: linear-gradient(180deg, #E0434B 0%, #9E1B24 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 22px -10px rgba(179, 32, 42, 0.8); }
+    }
+    .sp-card.is-xmas .sp-go:focus-visible { outline-color: #B3202A; }
+    .sp-card.is-xmas .sp-me { color: #1F6B45; }
+    .sp-card.is-xmas:focus-within { outline-color: #B3202A; }
+    .sp-lights.is-wide { display: none; }
+    @media (min-width: 641px) { .sp-lights { margin: -27px -22px 4px; } .sp-lights.is-narrow { display: none; } .sp-lights.is-wide { display: block; } }
+    .sp-mini.is-xmas { background: #B3202A; color: #FFF3D6; }
+    .ev-kicker.is-special.is-xmas { background: linear-gradient(135deg, #9E1B24, #D7333B); }
+    @media (prefers-reduced-motion: reduce) { .sp-snow::before, .sp-snow::after, .sp-lights i { animation: none; } }
     /* 펼친 글의 작은 제목(모임 정보, 소개): 보라 막대. 모임 정보 표는 줄마다 가는 선, 모임장 줄은 얼굴표 */
     .pd-h { display: flex; align-items: center; gap: 8px; margin: 22px 0 10px; color: var(--ink); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
     .pd-h::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: linear-gradient(180deg, #6D4AAE, var(--brand)); }
@@ -1736,7 +1791,7 @@
             <button type="button" class="post-head ev-hero ${name ? "has-photo" : "no-photo"}" data-act="toggle" data-id="${post.id}" aria-expanded="true" title="접기">
               ${hero}<span class="ev-hero-shade" aria-hidden="true"></span>
               <span class="ev-hero-top">${stateEl}<span class="ev-hero-fold" aria-hidden="true">${icon("chevDown", "is-sm")}</span></span>
-              <span class="ev-hero-body">${sp || label ? `<span class="ev-kickers">${sp ? `<span class="ev-kicker is-special">스페셜</span>` : ""}${label ? `<span class="ev-kicker">${esc(label)}</span>` : ""}</span>` : ""}<span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              <span class="ev-hero-body">${sp || label ? `<span class="ev-kickers">${sp ? `<span class="ev-kicker is-special${isXmas(post) ? " is-xmas" : ""}">스페셜</span>` : ""}${label ? `<span class="ev-kicker">${esc(label)}</span>` : ""}</span>` : ""}<span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
                 ${sub}<span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span></span>
             </button>
           </h3>
@@ -1750,7 +1805,7 @@
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="false">
               ${special ? `<span class="ev-thumb${posterOf(post) ? " is-poster" : ""}">${posterImg(post, bungThumb(post, m), 88, 88, ' loading="lazy"')}</span>` : `<span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>`}
-              <span class="nr-line"><span class="row-title">${special ? '<span class="sp-mini">스페셜</span>' : ""}${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              <span class="nr-line"><span class="row-title">${special ? `<span class="sp-mini${isXmas(post) ? " is-xmas" : ""}">스페셜</span>` : ""}${esc(v.title || "제목 없음")}</span>${newDot}</span>
               ${stateEl}
               ${sub}
               <span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span>
@@ -1763,6 +1818,26 @@
     const isEndedBung = (p) => p.category === "벙 소식" && !!dateOf(p) && bungStatus(p).why === "started";
     const pinnedNow = (p) => !!p.pinned && !isEndedBung(p);   // 끝난 모임 글은 서버가 고정을 풀기 전에도 고정으로 보이지 않는다
     const isSpecial = (p) => !!p.pinned && p.category === "벙 소식" && !!dateOf(p) && !isEndedBung(p);
+    /* 127차: 12월 모임이거나 제목에 크리스마스, 성탄, 연말, 송년, 망년이 있으면 크리스마스 꾸밈(눈, 전구 줄, 빨강과 초록) */
+    const isXmas = (p) => dateOf(p).slice(5, 7) === "12" || /크리스마스|성탄|x-?mas|연말|송년|망년/i.test(String(p.title || ""));
+    const SP_LIGHTS = (() => {   // 사진 아래 끝에 걸린 전구 줄: 폰은 굽이 10개, 넓은 화면은 16개. 걸이와 굽이 바닥마다 전구(높이 22px, 1칸 2.2px)
+      const px = (y) => (y * 2.2 + 2).toFixed(1) + "px", f = (x) => +x.toFixed(3);
+      const one = (n, cls) => {
+        const w = 100 / n; let d = "M0 2", bulbs = "";
+        for (let k = 0; k < n; k++) {
+          d += ` Q${f((k + 0.5) * w)} 9 ${f((k + 1) * w)} 2`;
+          bulbs += `<i style="left:${f((k + 0.5) * w)}%;top:${px(5.5)}"></i>` + (k < n - 1 ? `<i style="left:${f((k + 1) * w)}%;top:${px(2)}"></i>` : "");
+        }
+        return `<span class="sp-lights ${cls}" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none" focusable="false"><path d="${d}"/></svg>${bulbs}</span>`;
+      };
+      return one(10, "is-narrow") + one(16, "is-wide");
+    })();
+    const SP_HOLLY = (() => {   // 호랑가시나무 잎 둘과 열매 셋
+      const leaf = "M0 0Q1.6 -2.2 3 -2.6L3.9 -4.6Q5 -3.2 6.4 -3.4L7.6 -5.2Q8.6 -3.4 10 -3.2L11.4 -4.4Q12.4 -2.4 15 0Q12.4 2.4 11.4 4.4L10 3.2Q8.6 3.4 7.6 5.2L6.4 3.4Q5 3.2 3.9 4.6L3 2.6Q1.6 2.2 0 0Z";
+      const one = (deg, c) => `<g transform="rotate(${deg})"><path d="${leaf}" fill="${c}"/><path d="M1 0H13.5" stroke="#0F3D22" stroke-width=".7" stroke-linecap="round"/></g>`;
+      const berry = (x, y) => `<circle cx="${x}" cy="${y}" r="2.7" fill="#C8232C"/><circle cx="${+(x - 0.8).toFixed(1)}" cy="${+(y - 0.9).toFixed(1)}" r=".8" fill="#fff" fill-opacity=".75"/>`;
+      return `<span class="sp-holly" aria-hidden="true"><svg viewBox="0 0 34 24" focusable="false"><g transform="translate(17 15)">${one(-158, "#1F6B45")}${one(-22, "#2E8A57")}${berry(-2.4, 2.2)}${berry(2.4, 2.4)}${berry(0, -1.4)}</g></svg></span>`;
+    })();
     const POSTER_NO = new Set();   // 포스터가 없는 모임 날짜(한 번 못 읽으면 다시 찾지 않는다)
     const posterOf = (p) => (POSTER_NO.has(dateOf(p)) ? "" : "assets/special/" + dateOf(p) + ".jpg");
     window.spPosterFail = (img) => {
@@ -1796,10 +1871,11 @@
         + (cap ? `<span class="sp-bar" aria-hidden="true"><i style="width:${Math.min(100, Math.round((n / cap) * 100))}%"></i></span>` : "") + `</div>` : "";
       const act = mine ? `<span class="sp-me">${icon("check")}내 참석</span>`
         : state.attendOn && bs.open ? `<button type="button" class="btn btn-primary sp-go" data-act="attend" data-id="${p.id}" aria-label="${esc(v.title || "모임")} 참석">참석</button>` : "";
-      return `<article class="sp-card" data-sp="${p.id}">
-          <span class="sp-photo" aria-hidden="true">${posterImg(p, BUNGPHOTO.image(p, m), 800, 400)}</span>
-          <div class="sp-body">
-            <div class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday${dd.now ? " is-now" : ""}">${esc(dd.t)}</span></div>
+      const xm = isXmas(p);
+      return `<article class="sp-card${xm ? " is-xmas" : ""}" data-sp="${p.id}">
+          <span class="sp-photo" aria-hidden="true">${posterImg(p, BUNGPHOTO.image(p, m), 800, 400)}${xm ? '<span class="sp-snow"></span>' : ""}</span>
+          <div class="sp-body">${xm ? SP_LIGHTS : ""}
+            <div class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday${dd.now ? " is-now" : ""}">${esc(dd.t)}</span>${xm ? SP_HOLLY : ""}</div>
             <h3 class="sp-title"><a href="#post-${p.id}" data-act="goto" data-id="${p.id}">${esc(v.title || "제목 없음")}</a></h3>
             <p class="sp-when">${esc(spWhen(m))}</p>${m.place ? `<p class="sp-place">${esc(m.place)}</p>` : ""}
             ${att || act ? `<div class="sp-foot">${att || "<span></span>"}${act}</div>` : ""}
@@ -1830,7 +1906,7 @@
         <article class="row post-row${pinnedNow(post) ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="${expanded}">
-              <span class="nr-line">${tagHTML(v)}${isSpecial(post) ? '<span class="sp-mini">스페셜</span>' : ""}<span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
+              <span class="nr-line">${tagHTML(v)}${isSpecial(post) ? `<span class="sp-mini${isXmas(post) ? " is-xmas" : ""}">스페셜</span>` : ""}<span class="row-title">${esc(v.title || "제목 없음")}</span>${lastSeen && String(post.created_at || "") > lastSeen ? '<i class="new-dot" role="img" aria-label="새 글"></i>' : ""}</span>
               ${st}
               <span class="row-meta">${metaLine(v)}</span>
             </button>
