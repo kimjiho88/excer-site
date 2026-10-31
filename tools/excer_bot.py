@@ -180,7 +180,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-31.2"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-31.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -1039,6 +1039,26 @@ def members_alive(bot):
 
 # ── 대화 내보내기와 언어 점검(export, docs/BOT_AUTOMATION_PLAN.md 7절): 설정, 상태 줄, 분석기 파일과 node 실행 ──
 TERMUX_DL = os.path.expanduser("~/downloads")        # Termux 가 공유로 받은 파일을 두는 곳
+TERMUX_EDITOR = os.path.expanduser("~/bin/termux-file-editor")   # Termux 받기 창의 EDIT 가 부르는 스크립트. 봇이 바로 끝나는 것을 둔다(끝난 세션은 Termux 가 지워 세션이 쌓이지 않는다)
+TERMUX_EDITOR_MARK = "# excer-bot: 공유로 받은 파일을 그대로 두고 바로 끝난다"
+
+
+def export_editor_ok():
+    """Termux 받기 창에서 EDIT 를 눌러도 되는지: ~/bin/termux-file-editor 가 봇이 둔 것이면 True, 없으면 만들고 True. 다른 스크립트가 있으면
+    건드리지 않고 False(그때는 Open directory 를 누른다. 그 세션은 남는다). 못 만들어도 False"""
+    try:
+        if os.path.exists(TERMUX_EDITOR):
+            with open(TERMUX_EDITOR, encoding="utf-8", errors="replace") as f:
+                return TERMUX_EDITOR_MARK in f.read(2000)
+        os.makedirs(os.path.dirname(TERMUX_EDITOR), exist_ok=True)
+        with open(TERMUX_EDITOR, "w", encoding="utf-8") as f:
+            f.write("#!/bin/sh\n%s\nexit 0\n" % TERMUX_EDITOR_MARK)
+        os.chmod(TERMUX_EDITOR, 0o755)
+        return True
+    except OSError:
+        return False
+
+
 SCAN_SRC = {"chat-parser.js": "assets/chat-parser.js", "ops-lang.js": "assets/ops-lang.js",
             "ops-analyzer.js": "assets/ops-analyzer.js", "ops_scan.js": "tools/ops_scan.js"}   # 태블릿에서 돌리는 분석기 파일(저장소 main 의 사이트와 같은 파일)
 
@@ -1171,6 +1191,7 @@ def export_check_lines(cfg, get=None):
         out.append("분석기 파일: 못 받음(%s)" % e)
     out.append("봇 열쇠: %s" % ("있음" if cfg.get("members_key") else "없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"))
     out.append("Termux 다운로드 폴더: %s" % ("있음(%s)" % TERMUX_DL if os.path.isdir(TERMUX_DL) else "없음(공유로 파일을 처음 받을 때 생긴다)"))
+    out.append("Termux 받기 스크립트(%s): %s" % (TERMUX_EDITOR, "봇이 둔 것(받기 창에서 EDIT 를 눌러 바로 끝남)" if export_editor_ok() else "다른 것이 있어 그대로 둠(Open directory 로 받음, 세션이 하나씩 남음)"))
     return out
 
 
@@ -6379,6 +6400,7 @@ class AdbSender:
         adb pull). 끝나면(안 되어도) 카카오톡을 앞으로 하고 뒤로 키로 방까지 닫는다. rec(이름표, 줄들): export_study 가 화면마다 받는다. 돌려주는 것: 파일 경로"""
         x = export_cfg({"export": x or {}})
         start = time.time()
+        self.editor_ok = export_editor_ok()                  # Termux 받기 창에서 EDIT(바로 끝나는 스크립트)를 눌러도 되는지
 
         def note(label, nodes, before=None):
             rows = self.export_rows(nodes, before)
@@ -6495,16 +6517,22 @@ class AdbSender:
         raise KakaoError("텍스트 항목을 누른 뒤 %d분 안에 공유 창(받을 앱 %s)도 저장된 파일도 없음" % (max(1, wait_s // 60), ", ".join(names)) + self.diag_note())
 
     def export_receive(self, note):
-        """받는 앱의 창(Termux 는 '~/downloads 에 저장' 창): 확인 단추(EXPORT_OK 의 첫 것부터)가 뜨면 누른다(한 번). 30초 안에 안 뜨면 그냥 간다(바로 받는 앱)"""
+        """받는 앱의 창(Termux 는 'Save file in ~/downloads/' 창: EDIT, 취소, OPEN DIRECTORY. 2026-10-31 살피기): Termux 창이고 봇이 둔 받기 스크립트가 있으면 EDIT
+        (파일을 둔 뒤 스크립트가 바로 끝나 세션이 남지 않는다), 아니면 확인 단추(EXPORT_OK 의 첫 것부터, Open directory 는 세션이 하나 남는다)를 누른다(한 번).
+        30초 안에 안 뜨면 그냥 간다(바로 받는 앱)"""
         for k in range(12):
             self.sleep(2.5)
             nodes = self.dump()
-            ok = self.export_find(nodes, lambda s: s.lower() in self.EXPORT_OK, pkg="other")
+            ok = self.export_find(nodes, lambda s: s.lower() in self.EXPORT_OK or s.lower() == "edit", pkg="other")
             if ok:
                 note("받는 앱의 창", nodes)
                 lab = lambda n: (ws(n["text"]) or ws(n["desc"])).lower()
-                ok.sort(key=lambda n: self.EXPORT_OK.index(lab(n)) if lab(n) in self.EXPORT_OK else 99)
-                self.export_tap(ok[0], "받는 앱 단추 " + lab(ok[0])[:16], nodes)
+                edit = [n for n in ok if lab(n) == "edit" and n.get("pkg") == "com.termux"]
+                rest = sorted([n for n in ok if lab(n) != "edit"], key=lambda n: self.EXPORT_OK.index(lab(n)) if lab(n) in self.EXPORT_OK else 99)
+                pick = edit[0] if edit and getattr(self, "editor_ok", False) else (rest[0] if rest else None)
+                if pick is None:
+                    continue
+                self.export_tap(pick, "받는 앱 단추 " + lab(pick)[:16], nodes)
                 return True
             if not self.on_kakao(nodes) and k >= 3:
                 note("받는 앱 화면(단추 없음)", nodes)
