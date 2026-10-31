@@ -5,6 +5,7 @@
 -- 3. 운영 화면의 '지금 멤버 읽기'(bot_control_set 의 members)와 봇이 읽은 결과(member_read_report, 봇 열쇠).
 -- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(2026-10-31-bot-analysis.sql 뒤에는 첫 줄에서 멈춘다). 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
 do $g$ begin
+  if to_regprocedure('public.bung_unpin_ended()') is not null then raise exception '이 서버에는 더 새로운 방문 카운터(2026-10-31-special-bung.sql)가 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 스페셜 정리가 빠집니다)'; end if;
   if to_regprocedure('public.bot_ops_cfg(text)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-31-bot-analysis.sql 부터)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 봇 조종 값이 옛 판으로 돌아갑니다)'; end if;
   if to_regclass('public.site_visit_counts') is null then raise exception '방문 횟수(2026-09-21-visit-hits.sql)를 먼저 실행하세요'; end if;
   if to_regprocedure('public.bot_seen(text,text)') is null then raise exception '운영 손질(2026-10-18-ops-tune.sql)을 먼저 실행하세요'; end if;
