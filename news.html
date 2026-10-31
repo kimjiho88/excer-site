@@ -126,7 +126,7 @@
       .post-row.is-event .row-title { font-size: 17px; }
     }
     /* 참석: 얼굴표(닉네임 첫 글자) 몇 개와 '참석 N/정원', 남은 자리. 내가 참석했으면 확인 표 */
-    .ev-att { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    .ev-att { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; min-width: 0; }   /* 얼굴표가 많고 남은 자리가 길면 다음 줄로(참석 단추 밑으로 들어가지 않게) */
     .ev-faces { display: inline-flex; }
     .ev-faces i { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: -6px; border: 2px solid var(--surface); border-radius: 50%; background: var(--av, #CFC1E6); color: #fff; font-size: 10px; font-weight: 800; font-style: normal; line-height: 1; }
     .ev-faces i:first-child { margin-left: 0; }
@@ -279,7 +279,7 @@
     .post-row.is-event { position: relative; }
     .ev-quick { position: absolute; right: 12px; bottom: 12px; }
     .ev-quick .btn { min-height: 36px; padding: 0 14px; font-size: 13px; }
-    .post-row.is-event.has-quick .row-meta { padding-right: 76px; }
+    .post-row.is-event.has-quick .row-meta { padding-right: 62px; }   /* 참석 단추 앞 6px 까지. 넘치는 참석 줄은 감긴다(.ev-att) */
     @media (min-width: 641px) { .ev-quick { right: 16px; bottom: 14px; } .ev-quick .btn { min-height: 40px; padding: 0 16px; font-size: 14px; } .post-row.is-event.has-quick .row-meta { padding-right: 96px; } }
     /* ── 126차 스페셜 모임: 운영진이 스페셜로 올린 끝나지 않은 모임 글. 전체와 모임 모집 탭(모임 날짜순) 맨 위 큰 카드(C안: 왼쪽 포스터 전체, 오른쪽 정보와 참석) ── */
     .sp-wrap { display: grid; gap: 10px; margin-top: 12px; }
@@ -319,6 +319,7 @@
     }
     /* 날짜 목록의 스페셜 줄: 제목 앞 '스페셜' 표, 작은 사진은 포스터 가운데 */
     .sp-mini { flex: none; display: inline-flex; align-items: center; min-height: 20px; margin: 1px 6px 0 0; padding: 0 7px; border-radius: 6px; background: var(--gold-soft); color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
+    .row-title .sp-mini { margin-top: 0; vertical-align: 2px; }   /* 모임 모집 탭 줄: 제목 글 안에(두 줄로 감길 때 표 아래로) */
     .post-row.is-event .ev-thumb.is-poster img { transform: scale(1.8); transform-origin: 50% 50%; }
     .ev-kickers { display: flex; flex-wrap: wrap; gap: 6px; justify-self: start; }
     .ev-kicker.is-special { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
@@ -1746,7 +1747,7 @@
           <h3 class="post-h">
             <button type="button" class="post-head" data-act="toggle" data-id="${post.id}" aria-expanded="false">
               ${special ? `<span class="ev-thumb${posterOf(post) ? " is-poster" : ""}">${posterImg(post, bungThumb(post, m), 88, 88, ' loading="lazy"')}</span>` : `<span class="ev-thumb"><img src="${bungThumb(post, m)}" alt="" width="88" height="88" loading="lazy" decoding="async" onerror="this.parentNode.style.visibility='hidden'" /></span>`}
-              <span class="nr-line">${special ? '<span class="sp-mini">스페셜</span>' : ""}<span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
+              <span class="nr-line"><span class="row-title">${special ? '<span class="sp-mini">스페셜</span>' : ""}${esc(v.title || "제목 없음")}</span>${newDot}</span>
               ${stateEl}
               ${sub}
               <span class="row-meta"><span class="rm-who">${att}<span class="rm-txt">${who.join(", ")}</span></span></span>
