@@ -63,13 +63,13 @@ select 9, '속도 제한 압박(하루치, 한 주소의 최대 / 한도)', coal
             when (select count(*) from site_rate_hit) = 0 then '기록이 없어요. 아무도 안 썼거나 제한이 꺼진 것(status.sql 의 속도 제한 트리거 줄)' else '' end
 union all
 select 10, '멤버 닉네임 목록', format('%s명, %s 올림', count(*), coalesce(to_char(max(at) at time zone 'Asia/Seoul', 'MM-DD HH24:MI'), '없음')),
-       case when count(*) = 0 then '운영 화면 데이터 탭에서 사이트에 올리기'
+       case when count(*) = 0 then '운영 화면 멤버 탭에서 사이트에 올리기'
             when max(at) < now() - interval '3 days' then '사흘 넘게 안 바뀜. 봇 자동 갱신(05:10)이 도는지 보고, 아니면 운영 화면에서 사이트에 올리기' else '' end
   from site_members
 union all
 select 11, '봇 멤버 자동 갱신', coalesce(nullif(concat_ws(', ', case when key_hash is null then '열쇠 없음' else '열쇠 있음' end, '마지막 ' || to_char(last_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || ' ' || last_n || '명',
        '실패 ' || to_char(last_error_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') || ' ' || last_error), ''), '표만 있음'),
-       case when key_hash is null then '켜려면 운영 화면 데이터 탭에서 봇 열쇠 만들기' when last_error_at > coalesce(last_at, '-infinity'::timestamptz) then '마지막 시도가 실패. 운영 화면 데이터 탭을 보세요'
+       case when key_hash is null then '켜려면 운영 화면 봇 탭에서 봇 열쇠 만들기' when last_error_at > coalesce(last_at, '-infinity'::timestamptz) then '마지막 시도가 실패. 운영 화면 봇 탭을 보세요'
             when coalesce(last_at, key_at) < now() - interval '2 days' then '이틀 넘게 안 올라옴. 태블릿에서 python excer_bot.py status' else '' end
   from site_member_bot where id = 1
 union all
