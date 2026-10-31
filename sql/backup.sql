@@ -10,6 +10,7 @@
 -- 2026-10-09: 내용의 & < > 가 &amp; &lt; &gt; 로 바뀌어 담기던 것을 되돌린다(그 전에 받은 파일은 바뀐 채라 되살릴 때 알린다). 멤버 닉네임 목록도 담는다.
 -- 2026-10-18: XML 을 거치지 않고 바로 JSON 으로 담는다(한 표가 10MB 를 넘으면 전체가 실패하던 것). 명단 변경 기록(site_bung_log)도 담는다.
 -- 2026-10-25: 카카오 묶기 표 셋(site_kakao_links, site_kakao_link_log, site_settings)도 담는다. 카카오 회원번호가 들어 있으니 받은 파일은 운영진만 본다.
+-- 2026-10-31: 멤버 목록 변화 기록(site_member_changes)도 담는다.
 -- ============================================================
 create or replace function pg_temp.dump(t text) returns text language plpgsql as $$
 declare r text;
@@ -29,7 +30,7 @@ with want (ord, t) as (values
   (1, 'site_posts'), (2, 'site_comments'), (3, 'site_bung_attend'), (4, 'site_post_reactions'),
   (5, 'site_places'), (6, 'site_place_notes'), (7, 'site_settlements'), (8, 'site_reports'),
   (9, 'site_visit_counts'), (10, 'ops_store'), (11, 'site_members'), (12, 'site_bung_log'),
-  (13, 'site_kakao_links'), (14, 'site_kakao_link_log'), (15, 'site_settings'), (16, 'site_visit_hours')
+  (13, 'site_kakao_links'), (14, 'site_kakao_link_log'), (15, 'site_settings'), (16, 'site_visit_hours'), (17, 'site_member_changes')
 )
 select t as "표", pg_temp.cnt(t) as "줄 수", coalesce(pg_temp.dump(t), '표가 없어요') as "내용(JSON)"
   from want

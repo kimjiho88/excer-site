@@ -30,11 +30,11 @@ admin as (
 inner_fn (sig) as (values
   ('public.site_is_admin(text)'), ('public.site_hash(text)'), ('public.site_kst_now()'),
   ('public.bung_is_open(bigint,jsonb)'), ('public.bung_attend_list(bigint)'), ('public.bung_check(jsonb,bigint,jsonb)'), ('public.bung_check(jsonb,bigint,jsonb,boolean)'),
-  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)'), ('public.ops_sheet_store(jsonb,jsonb,text)'), ('public.bung_migrate(jsonb)'), ('public.kakao_log(uuid,text,text,text,jsonb)'), ('public.kakao_identity(uuid)'), ('public.kakao_link_check(uuid)'), ('public.kakao_me()'), ('public.kakao_post_mine(site_posts,site_kakao_links)'), ('public.kakao_members_sync()'), ('public.member_times()')
+  ('public.ops_auth(text)'), ('public.ops_client_ip()'), ('public.site_rate_ok(text,integer,interval)'), ('public.member_replace(jsonb)'), ('public.member_clean(jsonb)'), ('public.bung_cancel_open(jsonb)'), ('public.bung_log(bigint,text,text,text,jsonb)'), ('public.ops_sheet_store(jsonb,jsonb,text)'), ('public.bung_migrate(jsonb)'), ('public.kakao_log(uuid,text,text,text,jsonb)'), ('public.kakao_identity(uuid)'), ('public.kakao_link_check(uuid)'), ('public.kakao_me()'), ('public.kakao_post_mine(site_posts,site_kakao_links)'), ('public.kakao_members_sync()'), ('public.member_times()'), ('public.kakao_follow()'), ('public.member_log_changes(jsonb,timestamp with time zone)'), ('public.bot_key_ok(text)')
 ),
 locks as (
   select count(*) filter (where to_regprocedure(sig) is not null) as 있음,
-         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean|ops_sheet_store|bung_migrate|kakao_') as 빠짐
+         count(*) filter (where to_regprocedure(sig) is not null and has_function_privilege('anon', to_regprocedure(sig), 'execute')) as 열림, count(*) filter (where to_regprocedure(sig) is null and sig !~ 'member_|bung_cancel_open|bung_log|boolean|ops_sheet_store|bung_migrate|kakao_|bot_key_ok') as 빠짐
     from inner_fn
 ),
 schema_v as (

@@ -351,6 +351,10 @@
     .tbl.lft th, .tbl.lft td { text-align: left; white-space: normal; vertical-align: top; }
     .tbl.lft td.num, .tbl.lft th.num { text-align: right; white-space: nowrap; }
     .tbl.lft tr.mute td { color: var(--ink-2); }
+    .link-cands { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px; }
+    .link-cands .mini-btn { color: var(--ink); }
+    #memChgList .mc-k { display: inline; grid-column: auto; font-size: 13px; color: var(--ink); font-weight: 700; margin-right: 4px; }
+    #memChgList .tag { margin-left: 4px; }
     .tbl.lft td:first-child { white-space: nowrap; }
     /* 시트 탭: 위 연동 줄, 늘고 줆, 순위 시상대, 인사이트, 할 일, 날짜별 벙 */
     .sbar { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; }
@@ -591,15 +595,16 @@
             <div class="chips"><button id="botExpApply" class="btn btn-primary is-sm" type="button" hidden>반영하고 저장</button><button id="botExpNow" class="btn btn-secondary is-sm" type="button">지금 내보내기</button><label class="sub" style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" id="botExpAuto" /> 열 때 새 결과를 바로 반영하고 저장</label></div>
             <p class="sub mem-req" id="botExpReq" aria-live="polite" hidden></p>
           </div>
-          <div class="panel">
-            <h2>현재 명단 <small id="rosterInfo"></small></h2>
-            <p class="sub">채팅방 대화상대 목록의 닉네임을 한 줄에 한 명씩 붙여넣습니다. 대화 기록과 대조해 말한 적 없는 멤버와 명단에서 빠진 사람을 봅니다.</p>
-            <textarea id="rosterText" class="textarea" rows="6" aria-label="현재 명단"></textarea>
-            <div class="chips"><button id="rosterSave" class="btn btn-secondary" type="button">명단 저장</button></div>
+          <div class="panel" id="memChgPanel" hidden>
+            <h2>멤버 변화 <small id="memChgInfo"></small></h2>
+            <p class="sub">봇이 방 메뉴에서 멤버를 읽어 올릴 때마다 직전 목록과 견준 들어옴, 나감, 이름 바뀜입니다. 하트나 기호만 바뀌었거나 입장일을 뗀 이름은 같은 사람으로 보고 카카오 로그인 묶기와 끝나지 않은 모임의 참석도 따라갑니다. 이 명단으로 대화 기록과 대조합니다.</p>
+            <div class="chips" id="memChgDays" role="group" aria-label="기간"><button type="button" data-mcdays="7" aria-pressed="true">7일</button><button type="button" data-mcdays="30" aria-pressed="false">30일</button><button type="button" id="memChgReload">새로 고침</button></div>
+            <div id="memChgList"></div>
+            <details class="group" id="memNowBox"><summary><h3>지금 명단 <span class="tag" id="memNowN"></span></h3></summary><ul class="nlist" id="memNowList"></ul></details>
           </div>
           <div class="panel">
             <h2>사이트 닉네임 목록 <small id="memInfo"></small></h2>
-            <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 명단이 대화 기록보다 새로우면 명단을, 아니면 대화 기록의 지금 멤버를 올립니다. 명단 저장이나 서버 저장을 하면 사흘 안의 자료일 때 함께 올라갑니다. 봇 자동 갱신이 돌고 있으면 저장할 때 함께 올리지 않습니다(봇이 방 메뉴에서 읽은 목록을 덮지 않게).</p>
+            <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 봇이 방 메뉴에서 읽어 올립니다. 봇이 멈췄을 때는 사이트에 올리기로 대화 기록의 지금 멤버를 올립니다(서버 저장을 하면 사흘 안의 대화 기록일 때 함께 올라갑니다). 봇 자동 갱신이 돌고 있으면 함께 올리지 않습니다(봇이 방 메뉴에서 읽은 목록을 덮지 않게).</p>
             <div class="chips"><button id="memPush" class="btn btn-secondary" type="button">사이트에 올리기</button></div>
             <div class="mem-bot" id="memBot" hidden>
               <p class="sub"><b>봇 자동 갱신</b>: <span id="memBotInfo"></span></p>
@@ -764,8 +769,7 @@
           recBase = jclone(srv); recAt = data.records.updated_at || "";
           if (recFail) { recFail = 0; saveRecords(); }
         } else recBase = jclone(S.records);
-        if (data.roster) S.roster = data.roster.value;
-        if (data.history) S.history = data.history.value;
+        if (data.history) S.history = data.history.value;   // 명단(대화 기록과 대조)은 손으로 붙여넣던 roster 대신 봇이 읽은 명단(admin_members, memNamesLoad)
         S.lang = data.lang ? data.lang.value : null;   // 채팅 언어 결과(ledger 와 같은 분석에서 나온 것, 따로 저장)
         botCfgLast = data.botcfg ? canon(data.botcfg.value) : "";   // 봇이 읽는 설정의 서버 것(같으면 다시 쓰지 않는다)
         $("gatePass").value = "";
@@ -2228,25 +2232,59 @@
     $("botExpNow").addEventListener("click", botExpNow);
     $("botExpAuto").addEventListener("change", () => { S.records.settings = S.records.settings || {}; if ($("botExpAuto").checked) S.records.settings.botAuto = true; else delete S.records.settings.botAuto; saveRecords(); });
 
-    $("rosterSave").addEventListener("click", async () => {
-      const names = $("rosterText").value.split(/\r?\n/).map(norm).filter((x) => x && !x.startsWith("#"));
-      const uniq = [...new Set(names)];
-      if (!uniq.length) { toast("명단이 비어 있습니다."); return; }
-      S.roster = { at: todayKST(), names: uniq };
-      renderAll();
-      if (localOnly) { toast("명단을 이 화면에만 넣었습니다."); return; }
-      try { await opsPut("roster", S.roster); toast("명단을 저장했습니다. " + rosterNames().length + "명"); memPush(true); }
-      catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; } toast("명단을 저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "")); }
-    });
-    /* 사이트 닉네임 목록(소식 화면의 내 닉네임 고르기, 2026-10-09 SQL). 명단이 대화 기록보다 새로우면 명단, 아니면 대화 기록의 지금 멤버.
+    /* 사이트 닉네임 목록(소식 화면의 내 닉네임 고르기, 2026-10-09 SQL). 봇이 방 메뉴에서 읽어 올린다. 손으로 올리는 것은 대화 기록의 지금 멤버.
        저장할 때 함께 올리는 것은 사흘 안의 자료일 때만(옛 대화 파일로 지금 목록을 덮지 않게). 절반 아래로 줄면 묻는다 */
     let memState = null, memBusy = false;
     function siteNames() {
-      const rn = rosterNames(), L = S.ledger;
-      const useRoster = !!rn.length && (!L || (S.roster.at || "") >= L.range.to);
-      const names = useRoster ? rn : members().map((p) => p.name);
-      return { names: [...new Set(names.map(norm).filter((n) => n && !OpsAnalyzer.isBot(n)))], src: useRoster ? "명단 " + md(S.roster.at) : L ? "대화 기록 " + md(L.range.to) + "까지" : "", day: useRoster ? S.roster.at : L ? L.range.to : "" };
+      const L = S.ledger;
+      return { names: [...new Set(members().map((p) => norm(p.name)).filter((n) => n && !OpsAnalyzer.isBot(n)))], src: L ? "대화 기록 " + md(L.range.to) + "까지" : "", day: L ? L.range.to : "" };
     }
+    /* 봇이 읽은 명단과 멤버 변화(2026-10-31-member-follow.sql): admin_members 의 이름(처음 보인 때, 묶였는지)과 최근 30일 변화.
+       이 명단이 대화 기록과 대조하는 명단(S.roster)이 된다(예전에 손으로 붙여넣던 명단 칸 대신). 서버에 함수가 없으면 대조 없이 */
+    let MEM = null, memChgDays = 7;
+    async function memNamesLoad() {
+      if (localOnly || !PASS) return;
+      try {
+        const r = await rpc("admin_members", { p_pass: PASS, p_days: 30 });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        MEM = r;
+        S.roster = r.n && r.at ? { at: kstDate(r.at), atFull: r.at, names: (r.names || []).map((x) => x.n), src: "bot" } : null;
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        MEM = missingFn(e) ? { missing: true } : MEM;
+      }
+      softRender();
+    }
+    // 이름 견주기(서버의 member_base 와 같게): 하트, 이모지, 기호를 빼고 끝의 입장일을 뗀 것
+    const memBase = (s) => String(s || "").normalize("NFC").toLowerCase().replace(/[­​-‏⁠-⁯﻿︀-️]/g, "").replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, "").replace(/\s+/g, " ").trim().replace(/\s[0-9]{4}$/, "");
+    function memChgShow() {
+      const panel = $("memChgPanel"); if (!panel) return;
+      panel.hidden = localOnly || !MEM;
+      if (panel.hidden) return;
+      const info = $("memChgInfo"), list = $("memChgList");
+      document.querySelectorAll("#memChgDays [data-mcdays]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.mcdays === memChgDays)));
+      if (MEM.missing) { info.textContent = "서버에 아직 없음(2026-10-31-member-follow.sql)"; list.innerHTML = `<p class="sub">서버에 2026-10-31-member-follow.sql 을 실행하면 봇이 읽을 때마다 들어옴, 나감, 이름 바뀜이 여기에 쌓입니다.</p>`; $("memNowBox").hidden = true; return; }
+      const names = MEM.names || [], ch = MEM.changes || [], since = Date.now() - memChgDays * 86400000;
+      const lk = new Map(((links && links.rows) || []).map((r) => [r.nick, r]));
+      const rows = ch.filter((c) => Date.parse(c.at) >= since);
+      const cnt = (k) => rows.filter((c) => c.k === k).length;
+      const need = ((links && links.rows) || []).filter((r) => !r.in_members).length;
+      info.textContent = (MEM.at ? "지금 " + nf(MEM.n) + "명, " + memWhen(MEM.at) + " 읽음" : "아직 안 읽음") + (rows.length ? ", 최근 " + memChgDays + "일 들어옴 " + nf(cnt("join")) + ", 나감 " + nf(cnt("leave")) + ", 이름 바뀜 " + nf(cnt("rename")) : "") + (need ? ", 묶기 확인 " + nf(need) + "명" : "");
+      // 같은 때(한 번 읽음)끼리 묶는다. 나간 이름에 카카오 묶기가 남아 있으면 표시(아래 묶기 표에서 후보로 바꾼다), 나갔다 다시 보인 이름도 표시
+      const groups = [];
+      rows.forEach((c) => { const g = groups.length && groups[groups.length - 1].at === c.at ? groups[groups.length - 1] : (groups.push({ at: c.at, items: [] }), groups[groups.length - 1]); g.items.push(c); });
+      const left = new Set(ch.filter((c) => c.k === "leave").map((c) => c.n));
+      const order = { rename: 0, join: 1, leave: 2 }, kind = { rename: "이름 바뀜", join: "들어옴", leave: "나감" };
+      list.innerHTML = groups.length ? `<ul class="ev">${groups.map((g) => g.items.sort((a, b) => order[a.k] - order[b.k]).map((c) => {
+        const tags = (c.f ? `<span class="tag good">묶기 따라감</span>` : "") + (c.k === "leave" && lk.has(c.n) ? `<span class="tag watch">묶기 남음</span>` : "") + (c.k === "join" && left.has(c.n) ? `<span class="tag">다시 보임</span>` : "");
+        return `<li><time>${esc(memWhen(c.at))}</time><span><b class="mc-k">${kind[c.k] || esc(c.k)}</b> ${esc(c.n)}${c.p ? ` <small>(전: ${esc(c.p)})</small>` : ""} ${tags}</span></li>`;
+      }).join("")).join("")}</ul>` : `<p class="empty">최근 ${memChgDays}일 동안 바뀐 것이 없습니다.</p>`;
+      $("memNowBox").hidden = !names.length;
+      $("memNowN").textContent = nf(names.length) + "명";
+      $("memNowList").innerHTML = names.map((x) => `<li><span class="pn">${esc(x.n)}</span><span class="tags">${x.l ? `<span class="tag in">묶기</span>` : ""}${x.s && Date.now() - Date.parse(x.s) < 14 * 86400000 ? `<span class="tag">${esc(memWhen(x.s))}부터</span>` : ""}</span></li>`).join("");
+    }
+    $("memChgDays").addEventListener("click", (e) => { const b = e.target.closest("[data-mcdays]"); if (!b) return; memChgDays = +b.dataset.mcdays; memChgShow(); });
+    $("memChgReload").addEventListener("click", () => { memNamesLoad(); linkLoad(); });
     function memShow() {
       const el = $("memInfo"); if (!el) return;
       // 봇이 마지막으로 올린 때가 목록 시각과 1분 안이면 봇이 올린 목록(2026-10-09-memberbot.sql 전 서버는 bot 칸이 없다)
@@ -2261,6 +2299,7 @@
       try { memState = await rpc("member_info", {}); } catch (e) { memState = missingFn(e) ? { missing: true } : null; }
       memShow();
       memBotLoad();
+      memNamesLoad();
     }
     async function memPush(auto) {
       if (localOnly || !PASS || memBusy) return;
@@ -2464,21 +2503,50 @@
        이름은 이 화면에서만 보인다. 서버에 함수가 없으면 안내만 */
     let links = null, linkBusy = false;
     const LINK_SET = { off: "끔", staff: "운영진 기기만", all: "모두" };
-    const LINK_ACT = { link: "묶음", relink: "바꿈", unlink: "풂", auto_unlink: "자동으로 풂(명단에 30일 없음)", admin_unlink: "운영진이 풂", admin_relink: "운영진이 바꿈" };
+    const LINK_ACT = { link: "묶음", relink: "바꿈", unlink: "풂", auto_unlink: "자동으로 풂(명단에 30일 없음)", admin_unlink: "운영진이 풂", admin_relink: "운영진이 바꿈", auto_relink: "이름 바뀜을 따라감" };
     const linkWhen = (t) => { if (!t) return ""; const d = new Date(t); return isNaN(d) ? "" : (d.getMonth() + 1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
     function linkShow() {
       const t = $("linkTbl"), info = $("linkInfo"); if (!t) return;
       if (!links) { info.textContent = ""; t.innerHTML = ""; return; }
       if (links.missing) { info.textContent = "서버에 아직 없음(2026-10-25-kakao-login-1~4.sql)"; t.innerHTML = ""; return; }
       const rows = links.rows || [];
-      info.textContent = nf(rows.length) + "명, 사이트 닉네임 목록 " + (links.members ? nf(links.members) + "명" : "없음") + ", 보이기 " + (LINK_SET[links.setting] || links.setting || "?");
+      const miss = rows.filter((r) => !r.in_members);
+      info.textContent = nf(rows.length) + "명, 사이트 닉네임 목록 " + (links.members ? nf(links.members) + "명" : "없음") + ", 보이기 " + (LINK_SET[links.setting] || links.setting || "?") + (miss.length ? ", 목록에 없음 " + nf(miss.length) + "명" : "");
       document.querySelectorAll("#linkSetting [data-linkset]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.linkset === links.setting)));
+      // 목록에 없는 줄은 위로(확인할 것). 서버가 준 비슷한 이름 후보(2026-10-31-member-follow.sql)는 한 번 눌러 바꾼다
+      const sorted = miss.concat(rows.filter((r) => r.in_members));
       t.innerHTML = rows.length
-        ? `<thead><tr><th>닉네임</th><th>카카오</th><th>묶은 때</th><th>목록</th><th class="num">참석</th><th class="num">글</th><th></th></tr></thead><tbody>` + rows.map((r) =>
+        ? `<thead><tr><th>닉네임</th><th>카카오</th><th>묶은 때</th><th>목록</th><th class="num">참석</th><th class="num">글</th><th></th></tr></thead><tbody>` + sorted.map((r) =>
           `<tr${r.in_members ? "" : ' class="mute"'}><td>${esc(r.nick)}</td><td>${esc(r.kakao_nick || "")}${r.kakao_hint ? ` <small>끝 ${esc(r.kakao_hint)}</small>` : ""}</td><td>${esc(linkWhen(r.linked_at))}</td>`
-          + `<td>${r.in_members ? "있음" : "없음" + (r.missing_at ? "(" + esc(linkWhen(r.missing_at)) + "부터)" : "")}</td><td class="num">${nf(r.attends)}</td><td class="num">${nf(r.posts)}</td>`
+          + `<td>${r.in_members ? "있음" : "없음" + (r.missing_at ? "(" + esc(linkWhen(r.missing_at)) + "부터)" : "") + ((r.cands || []).length ? `<div class="link-cands"><span class="sub">이 이름인가요:</span> ${r.cands.map((c) => `<button type="button" class="mini-btn" data-linkto="${esc(c)}" data-user="${esc(r.user_id)}" data-nick="${esc(r.nick)}">${esc(c)}</button>`).join(" ")}</div>` : "")}</td><td class="num">${nf(r.attends)}</td><td class="num">${nf(r.posts)}</td>`
           + `<td><button type="button" class="mini-btn" data-linkact="relink" data-user="${esc(r.user_id)}" data-nick="${esc(r.nick)}">바꾸기</button> <button type="button" class="mini-btn" data-linkact="unlink" data-user="${esc(r.user_id)}" data-nick="${esc(r.nick)}">풀기</button></td></tr>`).join("") + "</tbody>"
         : '<tbody><tr><td class="sub">아직 묶은 사람이 없습니다.</td></tr></tbody>';
+      memChgShow();
+    }
+    /* 바꾸기: 봇이 읽은 명단(admin_members)에서 아무도 안 묶은 이름을 고른다(첫 칸이 같은 이름부터). 명단을 못 읽었으면 예전처럼 적는다 */
+    function linkPick(btn) {
+      const user = btn.dataset.user, nick = btn.dataset.nick, all = (MEM && MEM.names) || [];
+      if (!all.length) { linkAct("relink", user, nick); return; }
+      const head = memBase(nick).split(" ")[0];
+      const opts = all.filter((m) => !m.l).map((m) => m.n).sort((a, b) => ((memBase(b).split(" ")[0] === head) - (memBase(a).split(" ")[0] === head)) || a.localeCompare(b, "ko"));
+      const sel = document.createElement("select");
+      sel.className = "input"; sel.dataset.linkpick = user; sel.setAttribute("aria-label", nick + " 의 묶기를 바꿀 이름");
+      sel.innerHTML = `<option value="">바꿀 이름 고르기(묶지 않은 ${nf(opts.length)}명)</option>` + opts.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join("");
+      btn.replaceWith(sel); sel.focus();
+      sel.addEventListener("change", () => { if (sel.value) linkRelinkTo(user, nick, sel.value); });
+    }
+    async function linkRelinkTo(user, nick, to) {
+      if (localOnly || !PASS || linkBusy) return;
+      if (!window.confirm(nick + " 의 묶기를 " + to + " 으로 바꿉니다. 끝나지 않은 모임의 참석도 따라갑니다. 바꿀까요?")) { linkShow(); return; }
+      linkBusy = true;
+      try {
+        const r = await linkCall("admin_relink", { p_user: user, p_nick: to });
+        toast("바꿨습니다: " + (r.nick || to));
+        await linkLoad();
+        memNamesLoad();
+        if (!$("linkLogList").hidden) await linkLogLoad();
+      } catch (e) { linkFail(e, "바꾸지 못했습니다."); linkShow(); }
+      finally { linkBusy = false; }
     }
     async function linkCall(name, body) {
       const r = await rpc(name, Object.assign({ p_pass: PASS }, body || {}));
@@ -2511,6 +2579,7 @@
         const r = await linkCall(action === "relink" ? "admin_relink" : "admin_unlink", body);
         toast(action === "relink" ? "바꿨습니다: " + (r.nick || body.p_nick) : "풀었습니다: " + nick);
         await linkLoad();
+        memNamesLoad();
         if (!$("linkLogList").hidden) await linkLogLoad();
       } catch (e) { linkFail(e, action === "relink" ? "바꾸지 못했습니다." : "풀지 못했습니다."); }
       finally { linkBusy = false; }
@@ -2535,7 +2604,11 @@
     $("linkReload").addEventListener("click", () => linkLoad());
     $("linkLogBtn").addEventListener("click", () => { const ul = $("linkLogList"); if (!ul.hidden) { ul.hidden = true; return; } linkLogLoad(); });
     $("linkSetting").addEventListener("click", (e) => { const b = e.target.closest("[data-linkset]"); if (b && !(links && links.setting === b.dataset.linkset)) linkSet(b.dataset.linkset); });
-    $("linkTbl").addEventListener("click", (e) => { const b = e.target.closest("[data-linkact]"); if (b) linkAct(b.dataset.linkact, b.dataset.user, b.dataset.nick); });
+    $("linkTbl").addEventListener("click", (e) => {
+      const c = e.target.closest("[data-linkto]"); if (c) { linkRelinkTo(c.dataset.user, c.dataset.nick, c.dataset.linkto); return; }
+      const b = e.target.closest("[data-linkact]"); if (!b) return;
+      if (b.dataset.linkact === "relink") linkPick(b); else linkAct(b.dataset.linkact, b.dataset.user, b.dataset.nick);
+    });
     /* 봇 원격 조종(2026-10-09 SQL): 공지 멈춤(공지 걸기만 쉼)과 전체 멈춤(알림과 공지). 봇이 1분마다 읽는다 */
     let botCtl = null, botCtlBusy = false;
     function botCtlShow() {
@@ -2955,9 +3028,7 @@
       });
     })();
     function renderFilesExtra() {
-      const rn = (S.roster && S.roster.names) || [];
-      $("rosterInfo").textContent = rn.length ? md(S.roster.at) + ", " + rn.length + "명" : "없음";
-      if (rn.length && document.activeElement !== $("rosterText") && !$("rosterText").value) $("rosterText").value = rn.join("\n");
+      memChgShow();
       const L = S.ledger;
       const un = L ? L.unread || [] : [];
       $("unreadPanel").hidden = !L;
@@ -3331,7 +3402,7 @@
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
       }
       const botHtml = `<div class="panel"><h2>카카오 봇 <small>벙 일정 공지</small></h2>
-          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 오늘 벙을 카드로 적은 글(첫 줄 '오늘의 벙 10/9(금) 3건')을 공지로 겁니다. 오늘 벙에 새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소가 있거나 카드에 보이는 벙의 제목이 바뀌거나 날이 바뀌면 다시 올려 겁니다(사이트가 바뀐 뒤 2분 동안 더 바뀌지 않을 때 한 번에). 벙이 시작하거나 끝날 때, 맨 아래 이후 벙 줄만 바뀔 때는 그대로 둡니다. 마감했거나 정원이 찬 벙, 끝나고 2시간 지난 벙도 건수에 세고 '외 N건' 에 넣습니다. 카드마다 그 벙 주소(참여링크)를 적습니다. 새 벙은 처음 올라왔을 때 그 벙 주소와 함께 한 번 공유하고, 바뀐 것은 알림을 따로 올리고, 하루 한 번 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꿉니다(봇 열쇠가 있을 때). 켜 두면(export on) 매일 새벽 방의 대화 내용을 내보내 태블릿 안에서 분석하고 결과만 올립니다(위의 봇 대화 내보내기).</p>
+          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 오늘 벙을 카드로 적은 글(첫 줄 '오늘의 벙 10/9(금) 3건')을 공지로 겁니다. 오늘 벙에 새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소가 있거나 카드에 보이는 벙의 제목이 바뀌거나 날이 바뀌면 다시 올려 겁니다(사이트가 바뀐 뒤 2분 동안 더 바뀌지 않을 때 한 번에). 벙이 시작하거나 끝날 때, 맨 아래 이후 벙 줄만 바뀔 때는 그대로 둡니다. 마감했거나 정원이 찬 벙, 끝나고 2시간 지난 벙도 건수에 세고 '외 N건' 에 넣습니다. 카드마다 그 벙 주소(참여링크)를 적습니다. 새 벙은 처음 올라왔을 때 그 벙 주소와 함께 한 번 공유하고, 바뀐 것은 알림을 따로 올리고, 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꿉니다(봇 열쇠가 있을 때. 08:00~24:00 에 10분마다 방 머리의 인원 수를 보고 바뀌면 바로, 그대로여도 두 시간마다). 켜 두면(export on) 매일 새벽 방의 대화 내용을 내보내 태블릿 안에서 분석하고 결과만 올립니다(위의 봇 대화 내보내기).</p>
           <ol class="steps">
             <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
             <li>태블릿에 F-Droid 에서 Termux 와 Termux:API 를 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤 pkg install python android-tools termux-api curl nodejs 를 실행합니다(nodejs 는 대화 내보내기 분석용).</li>
@@ -3665,7 +3736,7 @@
     }
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };
     window.addEventListener("resize", setTopH); setTopH();
-    window.__ops = { S, view, SH, sheetLoad, save: saveRecords };   // 시험용
+    window.__ops = { S, view, SH, sheetLoad, save: saveRecords, memBase };   // 시험용
     $("gatePass").focus();
   })();
   </script>
