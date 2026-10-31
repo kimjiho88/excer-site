@@ -179,10 +179,10 @@
     .spark { width: 64px; height: 18px; display: block; }
     /* 넓은 화면: 신호 근거는 종류별 칸을 격자로, 기록과 데이터는 두 단 */
     @media (min-width: 1000px) {
-      [data-panel="signals"] > .panel:first-child { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); align-items: start; column-gap: 16px; }
-      [data-panel="signals"] > .panel:first-child > :not(.group) { grid-column: 1 / -1; }
-      [data-panel="records"]:not([hidden]), [data-panel="data"]:not([hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-      [data-panel="records"] > .panel:first-child, #dataDyn, #unreadPanel { grid-column: 1 / -1; }
+      #subSignals > .panel:first-child { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); align-items: start; column-gap: 16px; }
+      #subSignals > .panel:first-child > :not(.group) { grid-column: 1 / -1; }
+      #subRecords:not([hidden]), [data-panel="data"]:not([hidden]), [data-panel="members"]:not([hidden]), [data-panel="bot"]:not([hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      #subRecords > .panel:first-child, #dataDyn, #unreadPanel, #memChgPanel, #linkPanel, #botHero, #botSetPanel, #botGuide { grid-column: 1 / -1; }
       #dataDyn { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
       #dataDyn > .panel:last-child:nth-child(odd) { grid-column: 1 / -1; }
     }
@@ -517,15 +517,134 @@
     .lg-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .lg-form .input { flex: 1 1 180px; min-height: 36px; }
     .lg-form select.input { flex: 0 1 130px; }
+
+    /* ── 125차: 탭 정리와 디자인 다듬기(아이콘 탭, 둥근 칸과 옅은 그림자, 봇 탭, 사이트 운영 지표) ── */
+    :root { --ops-r: 14px; --ops-line: #E7E2E9; --ops-shadow: 0 1px 2px rgba(36, 30, 44, 0.04), 0 6px 18px rgba(36, 30, 44, 0.05); --ops-ok: #0c8a3e; --ops-warn: #c2620f; --ops-bad: #c93636; }
+    body { background: #F6F4EE; }
+    .ops-top { background: rgba(255, 255, 255, 0.88); }
+    .ops-mark { background: linear-gradient(135deg, #7B57C4, #4B2A82); box-shadow: 0 2px 8px rgba(75, 42, 130, 0.28); border-radius: 9px; }
+    .ops-tabs { background: rgba(246, 244, 238, 0.94); }
+    .ops-tabs-in { gap: 6px; }
+    .ops-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 0 13px; border-color: transparent; background: transparent; color: var(--ink-2); }
+    .ops-tabs button[hidden] { display: none; }
+    @media (hover: hover) { .ops-tabs button:hover { background: #fff; color: var(--ink); border-color: var(--line); } }
+    .ops-tabs button[aria-selected="true"] { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 3px 10px rgba(75, 42, 130, 0.24); }
+    .ti { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .ops-tabs .ti { width: 18px; height: 18px; }
+    .tab-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #D9502F; color: #fff; font-size: 11px; font-weight: 800; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+    .tab-n[hidden], .tab-dot[hidden] { display: none; }
+    .tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ops-warn); }
+    .tab-dot[data-lv="bad"] { background: var(--ops-bad); }
+    .panel { border-radius: var(--ops-r); border-color: var(--ops-line); box-shadow: var(--ops-shadow); }
+    .panel > h2, .panel > summary > h2 { font-size: 17px; letter-spacing: -0.01em; }
+    .card, .kpi, .bcard { border-radius: var(--ops-r); border-color: var(--ops-line); box-shadow: var(--ops-shadow); }
+    .dsec-wrap { display: grid; gap: 14px; min-width: 0; }
+    .dsec-wrap:empty { display: none; }
+    .dsec > h2 { font-size: 19px; letter-spacing: -0.01em; align-items: center; }
+    .dsec > h2::before { content: ""; width: 4px; height: 18px; border-radius: 2px; background: var(--brand); }
+    .subpanel { display: grid; gap: 14px; min-width: 0; }
+    .subpanel[hidden] { display: none; }
+    .subtabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+    details.panel > summary { list-style: none; cursor: pointer; }
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary h2 { margin: 0; display: flex; align-items: center; gap: 8px; }
+    details.panel > summary h2::after { content: ""; width: 8px; height: 8px; margin-left: auto; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform 0.15s; }
+    details.panel[open] > summary h2::after { transform: rotate(-135deg); }
+    /* 머리의 봇 표시와 봇 상태 점(색과 글을 늘 함께) */
+    .bot-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .bot-pill[hidden] { display: none; }
+    .bp-dot, .bh-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex: none; }
+    .bot-pill[data-lv="good"] .bp-dot, .bh-dot[data-lv="good"] { background: var(--ops-ok); box-shadow: 0 0 0 3px rgba(12, 138, 62, 0.16); }
+    .bot-pill[data-lv="watch"] .bp-dot, .bh-dot[data-lv="watch"] { background: var(--ops-warn); box-shadow: 0 0 0 3px rgba(194, 98, 15, 0.16); }
+    .bot-pill[data-lv="bad"] .bp-dot, .bh-dot[data-lv="bad"] { background: var(--ops-bad); box-shadow: 0 0 0 3px rgba(201, 54, 54, 0.16); }
+    .bot-hero { background: linear-gradient(180deg, #FFFFFF 0%, #FAF8FD 100%); }
+    .bh-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+    .bh-dot { width: 14px; height: 14px; }
+    .bh-main h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+    .bh-sub { margin: 3px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+    .bh-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+    .bh-acts .btn { display: inline-flex; align-items: center; gap: 6px; }
+    @media (max-width: 699px) { .bh-top { grid-template-columns: auto minmax(0, 1fr); } .bh-acts { grid-column: 1 / -1; justify-content: flex-start; } }
+    .bh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 8px; }
+    .bh-grid:empty { display: none; }
+    .bh-tile { display: grid; gap: 2px; align-content: start; padding: 10px 12px; border-radius: 10px; background: #F7F5F1; border: 1px solid #EEEAE5; font-size: 13px; line-height: 1.5; min-width: 0; }
+    .bh-tile b { font-size: 12px; color: var(--ink-2); font-weight: 700; }
+    .bh-tile span { overflow-wrap: anywhere; }
+    .bh-tile.is-warn { background: #FFF4E8; border-color: #F3D9BC; }
+    .bot-log { max-height: 380px; overflow: auto; }
+    .bot-log span { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+    /* 봇 설정 칸 */
+    .bs-form { display: grid; gap: 12px; }
+    @media (min-width: 1000px) { .bs-form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .bs-acts { grid-column: 1 / -1; } }
+    .bs-form fieldset { margin: 0; padding: 12px 14px 14px; border: 1px solid #ECE7EE; border-radius: 12px; display: grid; gap: 10px; min-width: 0; background: #FDFCFE; }
+    .bs-form legend { padding: 0 6px; font-size: 14px; font-weight: 800; color: var(--ink); }
+    .bs-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .bs-row > label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+    .bs-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bs-full { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    .bs-form .input { min-height: 38px; }
+    .bs-form textarea.input { min-height: 84px; resize: vertical; line-height: 1.5; }
+    .bs-form input[type="text"].input { width: min(100%, 200px); }
+    .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: #EEEAF0; justify-self: start; }
+    .seg label { position: relative; display: inline-flex; align-items: center; min-height: 32px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+    .seg input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+    .seg label:has(input:checked) { background: #fff; color: var(--brand); box-shadow: 0 1px 3px rgba(36, 30, 44, 0.14); }
+    .seg label:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .seg label:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
+    .sw { display: inline-flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; }
+    .sw input { -webkit-appearance: none; appearance: none; position: relative; flex: none; width: 40px; height: 24px; margin: 0; border-radius: 999px; background: #D7D1DB; cursor: pointer; transition: background 0.15s; }
+    .sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: transform 0.15s; }
+    .sw input:checked { background: var(--brand); }
+    .sw input:checked::after { transform: translateX(16px); }
+    .sw input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .sw input:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* 사이트 운영 지표 */
+    .mt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 760px) { .mt-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 1280px) { .mt-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .mt-kpi .k-v { font-size: 28px; }
+    .mt-kpi .k-v small { font-size: 14px; font-weight: 700; color: var(--ink-2); margin-left: 2px; }
+    .mt-kpi.is-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    @media (hover: hover) { .mt-kpi.is-link:hover { border-color: var(--line-strong); } }
+    .dl { font-weight: 700; }
+    .dl.up { color: #0c7a37; }
+    .dl.down { color: #b4432f; }
+    .warn-t { color: #b4432f; }
+    .meter { display: block; height: 6px; margin-top: 6px; border-radius: 999px; background: #EEE9F3; overflow: hidden; }
+    .meter i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #8A6AD0, #4B2A82); }
+    .mt-grid > .mt-card { grid-column: span 12; }
+    @media (min-width: 760px) { .mt-grid > .mt-card { grid-column: span 6; } }
+    @media (min-width: 1280px) { .mt-grid > .mt-card { grid-column: span 4; } }
+    .mt-bars .bar rect:not(.hit) { fill: #C2B2E3; }
+    .mt-bars .bar.is-hi rect:not(.hit) { fill: var(--s-violet); }
+    .mt-div .up { fill: var(--s-teal); }
+    .mt-div .down { fill: var(--s-orange); }
+    .legend .lg-up { background: var(--s-teal); }
+    .legend .lg-down { background: var(--s-orange); }
+    .notice.is-warn { background: #FFF4E8; border-color: #F3D9BC; }
   </style>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+    <symbol id="ti-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></symbol>
+    <symbol id="ti-bung" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="ti-members" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M15.5 4.6a3.5 3.5 0 0 1 0 6.8M18 14.6c1.8.7 3 2.5 3.5 5.4"/></symbol>
+    <symbol id="ti-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3.5"/><path d="M12 4.5V8M9 13.5v.5M15 13.5v.5M9.5 17h5M2 13v3M22 13v3"/><circle cx="12" cy="3.5" r="1.2"/></symbol>
+    <symbol id="ti-check" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-4.5"/></symbol>
+    <symbol id="ti-lang" viewBox="0 0 24 24"><path d="M4 5h16v11H10l-6 4.5V5z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+    <symbol id="ti-data" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+    <symbol id="ti-sheet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M3 14.5h18M9 4v16"/></symbol>
+    <symbol id="ti-send" viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z"/><path d="M10 13l4.5-4.5"/></symbol>
+    <symbol id="ti-again" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="ti-down" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+  </defs></svg>
   <header class="ops-top">
     <div class="wrap ops-top-in">
       <span class="ops-mark" aria-hidden="true">운</span>
       <b class="ops-title">운영 대시보드</b>
       <span id="opsStamp" class="ops-stamp" aria-live="polite"></span>
       <div class="ops-acts" id="opsActs" hidden>
+        <button type="button" class="bot-pill" id="botPill" hidden><i class="bp-dot" aria-hidden="true"></i><span id="botPillText">봇</span></button>
         <button type="button" class="btn btn-secondary" id="fileBtn">파일 올리기</button>
         <button id="saveBtn" class="btn btn-primary" type="button" disabled>서버에 저장</button>
         <button id="lockBtn" class="mini-btn" type="button">잠그기</button>
@@ -551,50 +670,25 @@
 
     <div id="app" hidden>
       <nav class="ops-tabs" aria-label="운영 대시보드"><div class="wrap ops-tabs-in" role="tablist">
-        <button type="button" role="tab" id="tab-dash" aria-controls="panel-dash" tabindex="0" data-tab="dash" aria-selected="true">대시보드</button>
-        <button type="button" role="tab" id="tab-bung" aria-controls="panel-bung" tabindex="-1" data-tab="bung" aria-selected="false">소식</button>
-        <button type="button" role="tab" id="tab-sheet" aria-controls="panel-sheet" tabindex="-1" data-tab="sheet" aria-selected="false">시트</button>
-        <button type="button" role="tab" id="tab-signals" aria-controls="panel-signals" tabindex="-1" data-tab="signals" aria-selected="false">신호 근거</button>
-        <button type="button" role="tab" id="tab-lang" aria-controls="panel-lang" tabindex="-1" data-tab="lang" aria-selected="false">언어</button>
-        <button type="button" role="tab" id="tab-records" aria-controls="panel-records" tabindex="-1" data-tab="records" aria-selected="false">조치</button>
-        <button type="button" role="tab" id="tab-data" aria-controls="panel-data" tabindex="-1" data-tab="data" aria-selected="false">데이터</button>
+        <button type="button" role="tab" id="tab-dash" aria-controls="panel-dash" tabindex="0" data-tab="dash" aria-selected="true"><svg class="ti" aria-hidden="true"><use href="#ti-dash"/></svg><span>대시보드</span></button>
+        <button type="button" role="tab" id="tab-bung" aria-controls="panel-bung" tabindex="-1" data-tab="bung" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-bung"/></svg><span>소식</span></button>
+        <button type="button" role="tab" id="tab-members" aria-controls="panel-members" tabindex="-1" data-tab="members" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-members"/></svg><span>멤버</span><b class="tab-n" id="tabNMembers" hidden></b></button>
+        <button type="button" role="tab" id="tab-bot" aria-controls="panel-bot" tabindex="-1" data-tab="bot" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-bot"/></svg><span>봇</span><i class="tab-dot" id="tabDotBot" hidden></i></button>
+        <button type="button" role="tab" id="tab-check" aria-controls="panel-check" tabindex="-1" data-tab="check" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-check"/></svg><span>신호와 조치</span></button>
+        <button type="button" role="tab" id="tab-lang" aria-controls="panel-lang" tabindex="-1" data-tab="lang" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-lang"/></svg><span>언어</span></button>
+        <button type="button" role="tab" id="tab-data" aria-controls="panel-data" tabindex="-1" data-tab="data" aria-selected="false"><svg class="ti" aria-hidden="true"><use href="#ti-data"/></svg><span>데이터</span></button>
+        <button type="button" role="tab" id="tab-sheet" aria-controls="panel-sheet" tabindex="-1" data-tab="sheet" aria-selected="false" hidden><svg class="ti" aria-hidden="true"><use href="#ti-sheet"/></svg><span>시트</span></button>
       </div></nav>
       <div class="wrap ops-body">
         <p id="unsavedNote" class="notice" hidden>새로 분석한 결과를 아직 서버에 저장하지 않았습니다. 위의 서버에 저장을 누르면 다른 기기에서도 보입니다.</p>
         <p id="botExpNote" class="notice" hidden><span id="botExpNoteText"></span> <button type="button" class="text-btn" id="botExpNoteBtn">반영하고 저장</button> <button type="button" class="text-btn" id="botExpNoteLater">나중에</button></p>
-        <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 위의 파일 올리기로 카카오톡 대화 내보내기 파일을 올려 주세요.</p>
-        <section id="panel-dash" role="tabpanel" aria-labelledby="tab-dash" data-panel="dash"></section>
+        <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 봇이 대화를 내보내 올리면 열 때 바로 반영합니다(봇 탭). 파일 올리기로 직접 올려도 됩니다.</p>
+        <section id="panel-dash" role="tabpanel" aria-labelledby="tab-dash" data-panel="dash">
+          <div id="dashSite" class="dsec-wrap"></div>
+          <div id="dashChat" class="dsec-wrap"></div>
+        </section>
         <section id="panel-bung" role="tabpanel" aria-labelledby="tab-bung" data-panel="bung" hidden></section>
-        <section id="panel-sheet" role="tabpanel" aria-labelledby="tab-sheet" data-panel="sheet" hidden></section>
-        <section id="panel-signals" role="tabpanel" aria-labelledby="tab-signals" data-panel="signals" hidden></section>
-        <section id="panel-lang" role="tabpanel" aria-labelledby="tab-lang" data-panel="lang" hidden></section>
-        <section id="panel-records" role="tabpanel" aria-labelledby="tab-records" data-panel="records" hidden></section>
-        <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" data-panel="data" hidden>
-          <div class="panel" id="botCtlPanel">
-            <h2>봇 원격 조종 <small id="botCtlInfo"></small></h2>
-            <p class="sub">태블릿이 집에 있어도 이 화면에서 봇을 잠시 쉬게 합니다. 봇은 1분 안에 따르고, 쉬는 시간이 끝나거나 다시 켜면 봇 공지를 다시 겁니다.</p>
-            <p class="sub"><b>공지 멈춤</b>: 운영진이 직접 건 공지를 덮지 않게 공지 걸기만 쉽니다. 새 벙 알림은 그대로 올라갑니다.</p>
-            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="notice:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:1440">하루</button><button type="button" class="btn btn-secondary" data-botctl="notice:0">공지 다시 켜기</button></div>
-            <p class="sub"><b>전체 멈춤</b>: 알림과 공지를 모두 쉽니다. 그동안 바뀐 것은 알리지 않습니다.</p>
-            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="pause:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:0">전체 다시 켜기</button></div>
-          </div>
-          <div class="panel">
-            <h2>대화 파일</h2>
-            <p class="sub">카카오톡 채팅방 메뉴의 대화 내보내기로 받은 .txt 파일입니다. 전체 파일을 올립니다. 여러 파일을 함께 올리면 겹치는 부분은 한 번만 셉니다. 파일은 이 기기 안에서만 읽고, 서버에는 분석 결과와 신호에 걸린 줄의 짧은 발췌만 저장합니다.</p>
-            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 끌어다 놓기"><b>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</b></div>
-            <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" aria-label="대화 파일 선택" />
-            <div id="progWrap" class="prog-wrap" hidden><div class="prog"><i id="progBar"></i></div><span id="progText" aria-live="polite"></span></div>
-            <div id="fileInfo" class="rows"></div>
-            <p id="saveState" class="save-state"></p>
-            <div id="pubInfo" class="pub-info" hidden></div>
-          </div>
-          <div class="panel" id="botExpPanel" hidden>
-            <h2>봇 대화 내보내기 <small id="botExpInfo"></small></h2>
-            <p class="sub">태블릿의 봇이 매일 방의 대화 내용을 내보내 태블릿 안에서 이 화면과 같은 분석기로 읽고, 결과(사람별 집계와 채팅 언어 점검)만 서버에 올립니다. 대화 원문은 올라오지 않습니다. 반영하면 파일을 올려 분석한 것과 같이 저장합니다. 태블릿에서 python excer_bot.py export on 으로 켭니다(Termux 에 nodejs 가 있어야 합니다).</p>
-            <p class="sub" id="botExpState" aria-live="polite"></p>
-            <div class="chips"><button id="botExpApply" class="btn btn-primary is-sm" type="button" hidden>반영하고 저장</button><button id="botExpNow" class="btn btn-secondary is-sm" type="button">지금 내보내기</button><label class="sub" style="display:inline-flex;align-items:center;gap:6px;margin:0"><input type="checkbox" id="botExpAuto" /> 열 때 새 결과를 바로 반영하고 저장</label></div>
-            <p class="sub mem-req" id="botExpReq" aria-live="polite" hidden></p>
-          </div>
+        <section id="panel-members" role="tabpanel" aria-labelledby="tab-members" data-panel="members" hidden>
           <div class="panel" id="memChgPanel" hidden>
             <h2>멤버 변화 <small id="memChgInfo"></small></h2>
             <p class="sub">봇이 방 메뉴에서 멤버를 읽어 올릴 때마다 직전 목록과 견준 들어옴, 나감, 이름 바뀜입니다. 하트나 기호만 바뀌었거나 입장일을 뗀 이름은 같은 사람으로 보고 카카오 로그인 묶기와 끝나지 않은 모임의 참석도 따라갑니다. 이 명단으로 대화 기록과 대조합니다.</p>
@@ -606,13 +700,6 @@
             <h2>사이트 닉네임 목록 <small id="memInfo"></small></h2>
             <p class="sub">소식 화면에서 멤버가 자기 닉네임을 찾아 고르는 목록입니다. 봇이 방 메뉴에서 읽어 올립니다. 봇이 멈췄을 때는 사이트에 올리기로 대화 기록의 지금 멤버를 올립니다(서버 저장을 하면 사흘 안의 대화 기록일 때 함께 올라갑니다). 봇 자동 갱신이 돌고 있으면 함께 올리지 않습니다(봇이 방 메뉴에서 읽은 목록을 덮지 않게).</p>
             <div class="chips"><button id="memPush" class="btn btn-secondary" type="button">사이트에 올리기</button></div>
-            <div class="mem-bot" id="memBot" hidden>
-              <p class="sub"><b>봇 자동 갱신</b>: <span id="memBotInfo"></span></p>
-              <p class="sub" id="memPlan" hidden></p>
-              <p class="sub mem-req" id="memReq" aria-live="polite" hidden></p>
-              <div class="chips"><button id="memReadNow" class="btn btn-primary is-sm" type="button" hidden>지금 멤버 읽기</button><button id="memBotNew" class="btn btn-secondary is-sm" type="button">봇 열쇠 만들기</button><button id="memBotOff" class="btn btn-secondary is-sm" type="button" hidden>자동 갱신 끄기</button></div>
-              <div class="mem-bot-key" id="memBotKey" hidden></div>
-            </div>
           </div>
           <div class="panel" id="linkPanel">
             <h2>카카오 로그인 묶기 <small id="linkInfo"></small></h2>
@@ -621,13 +708,118 @@
             <div class="tbl-wrap"><table class="tbl lft" id="linkTbl" aria-label="묶은 닉네임"></table></div>
             <ul id="linkLogList" class="ev" hidden aria-label="묶기 기록"></ul>
           </div>
+        </section>
+        <section id="panel-bot" role="tabpanel" aria-labelledby="tab-bot" data-panel="bot" hidden>
+          <div class="panel bot-hero" id="botHero">
+            <div class="bh-top">
+              <span class="bh-dot" id="botDot" aria-hidden="true"></span>
+              <div class="bh-main"><h2 id="botHead">봇 상태</h2><p class="bh-sub" id="botSub" aria-live="polite"></p></div>
+              <div class="bh-acts">
+                <button type="button" class="btn btn-secondary is-sm" data-botreq="ping"><svg class="ti" aria-hidden="true"><use href="#ti-send"/></svg>시험 글</button>
+                <button type="button" class="btn btn-secondary is-sm" data-botreq="restart"><svg class="ti" aria-hidden="true"><use href="#ti-again"/></svg>다시 켜기</button>
+                <button type="button" class="btn btn-primary is-sm" data-botreq="update" id="botUpdBtn"><svg class="ti" aria-hidden="true"><use href="#ti-down"/></svg>새 판 받기</button>
+              </div>
+            </div>
+            <div class="bh-grid" id="botLines"></div>
+            <p class="sub mem-req" id="botReqNote" aria-live="polite" hidden></p>
+          </div>
+          <div class="panel" id="botSetPanel">
+            <h2>봇 설정 <small id="botSetInfo"></small></h2>
+            <p class="sub">저장하면 봇이 1분 안에 받아 적용하고 스스로 다시 켭니다.</p>
+            <form id="botSetForm" class="bs-form" novalidate>
+              <fieldset><legend>신입 인사</legend>
+                <div class="seg" role="radiogroup" aria-label="신입 인사"><label><input type="radio" name="greet_on" value="off" />끔</label><label><input type="radio" name="greet_on" value="on" />알릴 방에</label><label><input type="radio" name="greet_on" value="test" />시험 방에</label></div>
+                <label class="sw"><input type="checkbox" name="greet_watch" /><span>입장 즉시 인사</span></label>
+                <div class="bs-row"><label>독려 <select class="input" name="greet_remind_every"><option value="0">끔</option><option value="1">매일</option><option value="2">이틀마다</option><option value="3">사흘마다</option><option value="7">일주일마다</option></select></label><label>시각 <input class="input" type="time" name="greet_remind_at" /></label></div>
+                <label class="bs-full">인사 글 <textarea class="input" name="greet_text" rows="3" maxlength="300"></textarea></label>
+              </fieldset>
+              <fieldset><legend>대화 내보내기</legend>
+                <label class="sw"><input type="checkbox" name="export_on" /><span>매일 내보내 분석</span></label>
+                <div class="bs-row"><label>시각 <input class="input" type="time" name="export_at" /></label></div>
+              </fieldset>
+              <fieldset><legend>멤버 읽기</legend>
+                <div class="bs-row"><label>하루 시각 <select class="input" name="members_mode"><option value="auto">서버가 정함</option><option value="fixed">직접 정함</option><option value="off">끔</option></select></label><label>직접 정한 시각 <input class="input" type="text" name="members_times" placeholder="09:00,15:00,21:00" inputmode="numeric" /></label></div>
+                <div class="bs-row"><label>인원 수 보기 <select class="input" name="members_watch"><option value="0">끔</option><option value="15">15분마다</option><option value="30">30분마다</option><option value="60">한 시간마다</option></select></label><label>다시 읽기 <select class="input" name="members_every"><option value="0">끔</option><option value="120">두 시간마다</option><option value="240">네 시간마다</option><option value="480">여덟 시간마다</option></select></label></div>
+              </fieldset>
+              <fieldset><legend>그 밖</legend>
+                <div class="bs-row"><label class="sw"><input type="checkbox" name="quiet_on" /><span>조용한 시간</span></label><label><input class="input" type="time" name="quiet_from" aria-label="조용한 시간 시작" /></label><label><input class="input" type="time" name="quiet_to" aria-label="조용한 시간 끝" /></label></div>
+                <div class="bs-row"><label class="sw"><input type="checkbox" name="beat_on" /><span>시험 방에 매일 봇 정상 줄</span></label><label><input class="input" type="time" name="heartbeat_at" aria-label="봇 정상 줄 시각" /></label></div>
+                <label class="sw"><input type="checkbox" name="notice" /><span>오늘의 벙 공지 걸기</span></label>
+                <label class="sw"><input type="checkbox" name="voice_on" /><span>보이스룸 지키기</span></label>
+                <label class="sw"><input type="checkbox" name="update_auto" /><span>새 판 자동 받기</span></label>
+              </fieldset>
+              <div class="bs-acts"><button type="submit" class="btn btn-primary" id="botSetSave">저장하고 봇에 보내기</button><button type="button" class="btn btn-secondary" id="botSetReset">봇의 지금 설정으로</button></div>
+            </form>
+          </div>
+          <div class="panel" id="botCtlPanel">
+            <h2>봇 원격 조종 <small id="botCtlInfo"></small></h2>
+            <p class="sub">태블릿이 집에 있어도 이 화면에서 봇을 잠시 쉬게 합니다. 봇은 1분 안에 따르고, 쉬는 시간이 끝나거나 다시 켜면 봇 공지를 다시 겁니다.</p>
+            <p class="sub"><b>공지 멈춤</b>: 운영진이 직접 건 공지를 덮지 않게 공지 걸기만 쉽니다. 새 벙 알림은 그대로 올라갑니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="notice:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="notice:1440">하루</button><button type="button" class="btn btn-secondary" data-botctl="notice:0">공지 다시 켜기</button></div>
+            <p class="sub"><b>전체 멈춤</b>: 알림과 공지를 모두 쉽니다. 그동안 바뀐 것은 알리지 않습니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary" data-botctl="pause:60">1시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:180">3시간</button><button type="button" class="btn btn-secondary" data-botctl="pause:0">전체 다시 켜기</button></div>
+          </div>
+          <div class="panel" id="botMemPanel">
+            <h2>멤버 읽기 <small id="botMemInfo"></small></h2>
+            <p class="sub">봇이 방 메뉴에서 멤버를 읽어 사이트 닉네임 목록에 올립니다. 하루 세 번, 지금 읽기, 신입이 소식 화면의 닉네임 고르기 창을 열 때, 다른 일로 방을 연 김에 본 인원 수가 바뀌었을 때 읽습니다.</p>
+            <div class="mem-bot" id="memBot" hidden>
+              <p class="sub"><b>봇 자동 갱신</b>: <span id="memBotInfo"></span></p>
+              <p class="sub" id="memPlan" hidden></p>
+              <p class="sub mem-req" id="memReq" aria-live="polite" hidden></p>
+              <div class="chips"><button id="memReadNow" class="btn btn-primary is-sm" type="button" hidden>지금 멤버 읽기</button><button id="memBotNew" class="btn btn-secondary is-sm" type="button">봇 열쇠 만들기</button><button id="memBotOff" class="btn btn-secondary is-sm" type="button" hidden>자동 갱신 끄기</button></div>
+              <div class="mem-bot-key" id="memBotKey" hidden></div>
+            </div>
+          </div>
+          <div class="panel" id="botExpPanel" hidden>
+            <h2>봇 대화 내보내기 <small id="botExpInfo"></small></h2>
+            <p class="sub">태블릿의 봇이 매일 방의 대화 내용을 내보내 태블릿 안에서 이 화면과 같은 분석기로 읽고, 결과(사람별 집계와 채팅 언어 점검)만 서버에 올립니다. 대화 원문은 올라오지 않습니다. 반영하면 파일을 올려 분석한 것과 같이 저장합니다. 켜고 끄기와 시각은 위의 봇 설정에서 합니다(태블릿 Termux 에 nodejs 가 있어야 합니다).</p>
+            <p class="sub" id="botExpState" aria-live="polite"></p>
+            <div class="chips"><button id="botExpApply" class="btn btn-primary is-sm" type="button" hidden>반영하고 저장</button><button id="botExpNow" class="btn btn-secondary is-sm" type="button">지금 내보내기</button><label class="sw"><input type="checkbox" id="botExpAuto" /><span>열 때 새 결과를 바로 반영하고 저장</span></label></div>
+            <p class="sub mem-req" id="botExpReq" aria-live="polite" hidden></p>
+          </div>
+          <details class="panel" id="botLogPanel"><summary><h2>최근 기록 <small id="botLogInfo"></small></h2></summary><ul class="ev bot-log" id="botLog"></ul></details>
+          <details class="panel" id="botGuide"><summary><h2>처음 설치와 봇이 하는 일</h2></summary>
+            <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 오늘 벙을 카드로 적은 글(첫 줄 '오늘의 벙 10/9(금) 3건')을 공지로 겁니다. 오늘 벙에 새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소가 있거나 카드에 보이는 벙의 제목이 바뀌거나 날이 바뀌면 다시 올려 겁니다(사이트가 바뀐 뒤 2분 동안 더 바뀌지 않을 때 한 번에). 새 벙은 처음 올라왔을 때 그 벙 주소와 함께 한 번 공유하고, 바뀐 것은 알림을 따로 올리고, 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꿉니다(봇 열쇠가 있을 때). 켜 두면 매일 새벽 방의 대화 내용을 내보내 태블릿 안에서 분석하고 결과만 올립니다.</p>
+            <ol class="steps">
+              <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
+              <li>태블릿에 F-Droid 에서 Termux 와 Termux:API 를 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤 pkg install python android-tools termux-api curl nodejs 를 실행합니다(nodejs 는 대화 내보내기 분석용).</li>
+              <li>개발자 옵션의 무선 디버깅을 켜고 adb pair 127.0.0.1:포트 로 한 번 짝을 맺습니다.</li>
+              <li>Termux 에서 스크립트를 받고(curl -LO https://excer-site.vercel.app/tools/excer_bot.py) connect 포트, setup, check, test, run --test 로 시험 방에서 확인한 뒤 run 으로 켭니다. <a class="text-btn" href="tools/excer_bot.py" download>스크립트 받기</a></li>
+            </ol>
+            <p class="sub">평소에는 태블릿을 만지지 않습니다. 새 판은 봇이 한 시간마다 보고 스스로 받아 다시 켜고(위의 새 판 받기로 바로), 설정은 위의 봇 설정에서 바꿉니다. 태블릿을 다시 켰으면 무선 디버깅 켜기, connect, run 이 필요합니다.</p>
+            <p class="sub">벙 일정 주소: excer-site.vercel.app/bung <button type="button" class="text-btn" data-copytext="https://excer-site.vercel.app/bung">주소 복사</button></p>
+          </details>
+        </section>
+        <section id="panel-check" role="tabpanel" aria-labelledby="tab-check" data-panel="check" hidden>
+          <div class="chips subtabs" id="checkSub" role="group" aria-label="보기"><button type="button" data-checksub="signals" aria-pressed="true">신호 근거</button><button type="button" data-checksub="records" aria-pressed="false">조치 기록</button></div>
+          <div id="subSignals" class="subpanel"></div>
+          <div id="subRecords" class="subpanel" hidden></div>
+        </section>
+        <section id="panel-lang" role="tabpanel" aria-labelledby="tab-lang" data-panel="lang" hidden></section>
+        <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" data-panel="data" hidden>
+          <div class="panel">
+            <h2>대화 파일</h2>
+            <p class="sub">카카오톡 채팅방 메뉴의 대화 내보내기로 받은 .txt 파일입니다. 전체 파일을 올립니다. 여러 파일을 함께 올리면 겹치는 부분은 한 번만 셉니다. 파일은 이 기기 안에서만 읽고, 서버에는 분석 결과와 신호에 걸린 줄의 짧은 발췌만 저장합니다.</p>
+            <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="대화 파일 선택 또는 끌어다 놓기"><b>여기에 .txt 파일을 끌어다 놓거나 눌러서 선택</b></div>
+            <input id="fileInput" type="file" accept=".txt,text/plain" multiple class="sr-only" aria-label="대화 파일 선택" />
+            <div id="progWrap" class="prog-wrap" hidden><div class="prog"><i id="progBar"></i></div><span id="progText" aria-live="polite"></span></div>
+            <div id="fileInfo" class="rows"></div>
+            <p id="saveState" class="save-state"></p>
+            <div id="pubInfo" class="pub-info" hidden></div>
+          </div>
           <div id="dataDyn" style="display:grid;gap:14px;min-width:0"></div>
           <div class="panel" id="unreadPanel" hidden>
             <h2>읽지 못한 줄 <small id="unreadCount"></small></h2>
             <p class="sub">시스템 알림 가운데 뜻을 알지 못한 줄입니다. 대화 내용이 아니라 알림 문구입니다. 비어 있으면 모두 읽은 것입니다.</p>
             <ul id="unreadList" class="ev"></ul>
           </div>
+          <div class="panel" id="sheetLinkPanel" hidden>
+            <h2>구글 시트 연동 <small id="sheetLinkInfo"></small></h2>
+            <p class="sub">시트 탭은 시트에서 2주 안에 받은 것이 있을 때만 위에 보입니다.</p>
+            <div class="chips"><button type="button" class="btn btn-secondary is-sm" id="sheetLinkOpen">시트 탭 열기</button></div>
+          </div>
         </section>
+        <section id="panel-sheet" role="tabpanel" aria-labelledby="tab-sheet" data-panel="sheet" hidden></section>
       </div>
     </div>
   </main>
@@ -661,7 +853,7 @@
     let localOnly = false;
     const S = { ledger: null, lang: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {} }, history: { people: [] }, roster: null, savedAt: "", unsaved: false };
     let srcFiles = [], busy = false;
-    let tab = "dash";
+    let tab = "dash", checkSub = "signals";
     const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set(), memberMode: "list", ioEdit: "", sheet: { q: "", filter: "in", sort: "check", dir: -1, maxD30: 1 }, lang: { per: "", pid: "", days: 7, manual: false } };
 
     /* ── 서버 ── */
@@ -794,13 +986,24 @@
       PASS = ""; location.reload();
     });
     window.addEventListener("beforeunload", (e) => { if (!$("app").hidden && (S.unsaved || recPending())) { e.preventDefault(); e.returnValue = ""; } });
+    /* 1분마다(화면이 보일 때): 봇 조종 값(머리의 봇 표시), 봇 탭이면 봇 상태, 대시보드면 5분마다 지표 */
+    let opsPoll = null;
+    function opsPollStart() {
+      clearInterval(opsPoll);
+      opsPoll = setInterval(() => {
+        if (document.visibilityState !== "visible" || !PASS || localOnly) return;
+        botCtlLoad();
+        if (tab === "bot" && !bsPoll) botStLoad();
+        if (tab === "dash" && MT && Date.now() - MT.loadedAt > 300000) metricsLoad();
+      }, 60000);
+    }
     function openApp() {
       $("gate").hidden = true; $("app").hidden = false; $("opsActs").hidden = false; setTopH();
       $("saveBtn").textContent = localOnly ? "저장 안 함(서버 설정 전)" : "서버에 저장";
       // 지난번 연 때를 기억(한 시간 안에 다시 열면 그대로)
       if (!localOnly) { const st = S.records.settings = S.records.settings || {}; S.prevSeen = st.lastSeen || ""; if (!st.lastSeen || Date.now() - new Date(st.lastSeen).getTime() > 3600000) { st.lastSeen = new Date().toISOString(); saveRecords(); } }
       renderAll();
-      if (!localOnly) { sheetLoad(); sheetStartPoll(); bungLoad(); botCfgSync(); botAnLoad().then(botExpOpen); }
+      if (!localOnly) { sheetLoad(); sheetStartPoll(); bungLoad(); botCfgSync(); botAnLoad().then(botExpOpen); metricsLoad(); botStLoad(); opsPollStart(); }
       const hm = /^#bung-(\d+)$/.exec(location.hash || "");   // 소식 화면의 운영진 줄 '운영 화면' 에서 온 글: 모임 탭을 열고 그 글로
       if (hm && !localOnly) { BG.focus = Number(hm[1]); BG.scroll = true; setTab("bung"); }
     }
@@ -813,13 +1016,24 @@
       if (j < 0) return; e.preventDefault(); setTab(tabs[j].dataset.tab); tabs[j].focus();
     });
     $("fileBtn").addEventListener("click", () => $("fileInput").click());
+    /* 신호와 조치: 두 보기(신호 근거, 조치 기록) */
+    function checkSubShow() {
+      $("subSignals").hidden = checkSub !== "signals"; $("subRecords").hidden = checkSub !== "records";
+      document.querySelectorAll("[data-checksub]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.checksub === checkSub)));
+    }
+    $("checkSub").addEventListener("click", (e) => { const b = e.target.closest("[data-checksub]"); if (!b) return; checkSub = b.dataset.checksub; checkSubShow(); });
+    const NEEDS_LEDGER = ["check", "lang"];   // 대화 분석이 없으면 빈 탭(대시보드는 사이트 지표가 먼저라 안내를 안에)
     function setTab(t) {
+      if (t === "signals" || t === "records") { checkSub = t; t = "check"; }   // 옛 이름(시험, 바로 가기)
       tab = t;
+      if (t === "check") checkSubShow();
       document.querySelectorAll("[data-tab]").forEach((b) => { b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"); b.tabIndex = b.dataset.tab === t ? 0 : -1; if (b.dataset.tab === t) try { b.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (e) {} });
       document.querySelectorAll("[data-panel]").forEach((p) => { p.hidden = p.dataset.panel !== t; });
-      $("noDataNote").hidden = !!S.ledger || t === "sheet" || t === "bung";
+      $("noDataNote").hidden = !!S.ledger || !NEEDS_LEDGER.includes(t);
       window.scrollTo({ top: 0 });
       if (t === "bung" && !localOnly && !BG.loaded && !BG.busy) bungLoad();
+      if (t === "bot" && !localOnly) botStLoad();
+      if (t === "dash" && !localOnly && (!MT || Date.now() - MT.loadedAt > 300000)) metricsLoad();
     }
 
     /* ── 사람 보조 ── */
@@ -934,7 +1148,7 @@
     const SIG_ORDER = ["other_room", "promo", "contact", "private", "bibung", "married", "abuse", "sexual", "flood", "conflict", "mention_focus", "welcomer", "thanked", "organizer", "sharer", "steady"];
     const sigRank = (c) => { const i = SIG_ORDER.indexOf(c); return i < 0 ? 99 : i; };
     function renderSignals() {
-      const host = document.querySelector('[data-panel="signals"]');
+      const host = $("subSignals");
       if (!S.ledger) { host.innerHTML = ""; return; }
       const side = view.sigSide;
       const codes = {};
@@ -980,7 +1194,7 @@
       return m.warnings.filter((w) => !acts.some((a) => (w.date && a.date === w.date) || (!w.date && w.reason && a.reason && tightK(a.reason) === tightK(w.reason))));
     }
     function renderRecords() {
-      const host = document.querySelector('[data-panel="records"]');
+      const host = $("subRecords");
       const acts = S.records.actions.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       const name = (pid) => { const p = byPid(pid); return p ? p.name : (acts.find((a) => a.pid === pid) || {}).name || pid; };
       // 시트의 경고(멤버 탭 경고여부, 경고사유, 경고일)도 함께. 시트에서 고치면 여기서도 바뀐다
@@ -2115,7 +2329,7 @@
       try { await opsPut("botcfg", cfg); botCfgLast = key; }
       catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") sessionLost(e.code); }
     }
-    const botExpAuto = () => !!(S.records.settings && S.records.settings.botAuto);
+    const botExpAuto = () => !(S.records.settings && S.records.settings.botAuto === false);   // 기본은 켬(125차): 열 때 봇이 올린 새 분석을 반영하고 저장
     const botAnOn = () => !!(botAn && !botAn.missing);
     // 봇 분석이 저장본보다 새것인가(봇이 올린 때가 저장본의 저장 때보다 뒤). 저장본이 없으면 있기만 하면 새것
     const botAnNew = () => botAnOn() && botAn.ledger && botAn.ledger.at && (!S.savedAt || Date.parse(botAn.ledger.at) > Date.parse(S.savedAt));
@@ -2164,7 +2378,7 @@
       let t = "";
       if (req && Date.now() - Date.parse(req) < 6 * 3600000) {
         if (done && Date.parse(done) >= Date.parse(req)) t = memWhen(done) + (botCtl.export_done_ok ? " 내보내 올림: " + (botCtl.export_done_note || "") : " 하지 못함: " + (botCtl.export_done_note || "까닭 모름"));
-        else t = memWhen(req) + " 내보내기 요청. " + (Date.now() - Date.parse(req) < 20 * 60000 ? "봇이 1분 안에 시작합니다(긴 대화는 몇 분 걸림)." : "아직 결과가 없습니다. 태블릿에서 python excer_bot.py status 로 봐 주세요.");
+        else t = memWhen(req) + " 내보내기 요청. " + (Date.now() - Date.parse(req) < 20 * 60000 ? "봇이 1분 안에 시작합니다(긴 대화는 몇 분 걸림)." : "아직 결과가 없습니다. 위의 봇 상태를 봐 주세요.");
       }
       rq.hidden = !t; rq.textContent = t;
     }
@@ -2199,7 +2413,7 @@
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
         botCtl = r; botCtlShow();
         const ago = botCtl.seen_at ? (Date.now() - Date.parse(botCtl.seen_at)) / 60000 : null;
-        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 하지 못할 수 있습니다." : "요청했습니다. 봇이 1분 안에 시작합니다(긴 대화는 몇 분). 봇에서 export on 이 켜져 있어야 합니다.");
+        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 하지 못할 수 있습니다." : "요청했습니다. 봇이 1분 안에 시작합니다(긴 대화는 몇 분).");
         botExpWatch();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -2230,7 +2444,6 @@
     $("botExpNoteBtn").addEventListener("click", () => botAnApply(false));
     $("botExpNoteLater").addEventListener("click", () => { botExpLater = botAn && botAn.ledger ? botAn.ledger.at : ""; botExpShow(); });
     $("botExpNow").addEventListener("click", botExpNow);
-    $("botExpAuto").addEventListener("change", () => { S.records.settings = S.records.settings || {}; if ($("botExpAuto").checked) S.records.settings.botAuto = true; else delete S.records.settings.botAuto; saveRecords(); });
 
     /* 사이트 닉네임 목록(소식 화면의 내 닉네임 고르기, 2026-10-09 SQL). 봇이 방 메뉴에서 읽어 올린다. 손으로 올리는 것은 대화 기록의 지금 멤버.
        저장할 때 함께 올리는 것은 사흘 안의 자료일 때만(옛 대화 파일로 지금 목록을 덮지 않게). 절반 아래로 줄면 묻는다 */
@@ -2377,14 +2590,14 @@
       if (plan) {
         const bt = botTimes(), diff = !!(bt && bt.join() !== plan.times.join());
         el.textContent = "읽는 때: " + plan.times.join(", ") + " (" + (PLAN_SRC[plan.src] || "") + ")" +
-          (diff ? ". 봇은 지금 " + bt.join(", ") + " 에 읽습니다. 태블릿에서 python excer_bot.py members at auto 하면 위 시각으로 읽습니다" : "") +
-          (botOld() ? ". 봇 판이 옛 판입니다. 태블릿에서 python excer_bot.py update 뒤 run 을 다시 켜 주세요" : "");
+          (diff ? ". 봇은 지금 " + bt.join(", ") + " 에 읽습니다. 위의 봇 설정에서 하루 시각을 서버가 정함으로 하면 위 시각으로 읽습니다" : "") +
+          (botOld() ? ". 봇 판이 옛 판입니다. 위의 새 판 받기를 눌러 주세요" : "");
       }
       const req = plan && botCtl.members_req_at, done = plan && botCtl.members_done_at;
       let t = "";
       if (req && Date.now() - Date.parse(req) < 6 * 3600000) {
         if (done && Date.parse(done) >= Date.parse(req)) t = memWhen(done) + (botCtl.members_done_ok ? " 읽어 올림: " + (botCtl.members_done_note || "") : " 읽지 못함: " + (botCtl.members_done_note || "까닭 모름"));
-        else t = memWhen(req) + " 읽기 요청. " + (Date.now() - Date.parse(req) < 6 * 60000 ? "봇이 1분 안에 읽기 시작합니다(1~2분 걸림)." : "아직 결과가 없습니다. 태블릿에서 python excer_bot.py status 로 봐 주세요.");
+        else t = memWhen(req) + " 읽기 요청. " + (Date.now() - Date.parse(req) < 6 * 60000 ? "봇이 1분 안에 읽기 시작합니다(1~2분 걸림)." : "아직 결과가 없습니다. 위의 봇 상태를 봐 주세요.");
       }
       rq.hidden = !t; rq.textContent = t;
     }
@@ -2397,7 +2610,7 @@
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
         botCtl = r; botCtlShow();
         const ago = botCtl.seen_at ? (Date.now() - Date.parse(botCtl.seen_at)) / 60000 : null;
-        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 읽지 못할 수 있습니다." : botOld() ? "요청했습니다. 봇 판이 옛 판이라 태블릿에서 update 해야 읽습니다." : "요청했습니다. 봇이 1분 안에 읽기 시작합니다.");
+        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 읽지 못할 수 있습니다." : botOld() ? "요청했습니다. 봇 판이 옛 판이라 새 판 받기를 먼저 눌러 주세요." : "요청했습니다. 봇이 1분 안에 읽기 시작합니다.");
         memReqWatch();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -2507,6 +2720,7 @@
     const linkWhen = (t) => { if (!t) return ""; const d = new Date(t); return isNaN(d) ? "" : (d.getMonth() + 1) + "/" + d.getDate() + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
     function linkShow() {
       const t = $("linkTbl"), info = $("linkInfo"); if (!t) return;
+      tabBadges();
       if (!links) { info.textContent = ""; t.innerHTML = ""; return; }
       if (links.missing) { info.textContent = "서버에 아직 없음(2026-10-25-kakao-login-1~4.sql)"; t.innerHTML = ""; return; }
       const rows = links.rows || [];
@@ -2622,12 +2836,13 @@
       if ("seen_at" in botCtl) {
         const ago = botCtl.seen_at ? Math.round((Date.now() - Date.parse(botCtl.seen_at)) / 60000) : null;
         seen = ago == null ? "봇 살아 있음 표시 아직 없음(봇 판 2026-10-18.1 과 봇 열쇠가 있어야 남김)"
-          : "봇 마지막 확인 " + (ago < 1 ? "방금" : ago < 60 ? ago + "분 전" : md(kstDate(botCtl.seen_at)) + " " + kstHM(botCtl.seen_at)) + (botCtl.seen_note ? ", " + botCtl.seen_note : "") + (ago >= 20 ? ". 20분 넘게 소식이 없어요. 태블릿에서 python excer_bot.py status" : "");
+          : "봇 마지막 확인 " + (ago < 1 ? "방금" : ago < 60 ? ago + "분 전" : md(kstDate(botCtl.seen_at)) + " " + kstHM(botCtl.seen_at)) + (botCtl.seen_note ? ", " + botCtl.seen_note : "") + (ago >= 20 ? ". 20분 넘게 소식이 없어요(태블릿이 꺼졌거나 무선 디버깅이 끊김)" : "");
       }
       el.textContent = (parts.length ? parts.join(", ") : "평소대로") + (seen ? ". " + seen : "");
       el.classList.toggle("is-stale", /소식이 없어요/.test(seen));
       memPlanShow();
       botExpShow();
+      botStShow();
     }
     async function botCtlLoad() {
       if (localOnly) return;
@@ -2650,6 +2865,282 @@
       } finally { botCtlBusy = false; }
     }
     $("botCtlPanel").addEventListener("click", (e) => { const b = e.target.closest("[data-botctl]"); if (!b) return; const [w, m] = b.dataset.botctl.split(":"); botCtlSet(w, Number(m)); });
+
+    /* ── 봇 탭(2026-10-31-bot-remote.sql, 봇 판 2026-10-31.6): 봇이 5분마다 올리는 상태, 새 판 받기와 다시 켜기와 시험 글, 봇 설정.
+       설정은 ops_store 의 botset 에 두고 봇이 1분 안에 받아 적용한 뒤 스스로 다시 켠다. 태블릿에 가지 않고 여기서 다 한다 ── */
+    let BS = null, bsBusy = false, bsWatchT = null, bsDirty = false, bsPoll = null;
+    const BS_SQL = "2026-10-31-bot-remote.sql";
+    const epochIso = (t) => (t ? new Date(Number(t) * 1000).toISOString() : "");
+    const agoMin = (iso) => (iso ? Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)) : null);
+    const agoText = (m) => (m == null ? "" : m < 1 ? "방금" : m < 60 ? m + "분 전" : m < 1440 ? Math.floor(m / 60) + "시간 전" : Math.floor(m / 1440) + "일 전");
+    const spanText = (sec) => { const m = Math.round(sec / 60); return m < 60 ? m + "분" : m < 1440 ? Math.floor(m / 60) + "시간" : Math.floor(m / 1440) + "일"; };
+    const verGt = (a, b) => { const x = verNum(a), y = verNum(b); if (!x || !y) return false; for (let i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] > y[i]; return false; };
+    async function botStLoad() {
+      if (localOnly || !PASS) return;
+      try {
+        const r = await rpc("admin_bot_status", { p_pass: PASS });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        BS = r; BS.loadedAt = Date.now();
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        BS = missingFn(e) ? { missing: true } : BS;
+      }
+      botStShow();
+    }
+    /* 봇 상태 한 줄: good 정상, watch 멈춤이나 오류, bad 소식 없음(20분), none 아직 모름 */
+    function botState() {
+      const st = BS && !BS.missing ? BS.status : null;
+      const seenIso = (BS && !BS.missing && (BS.status_at || BS.seen_at)) || (botCtl && botCtl.seen_at) || "";
+      const ago = agoMin(seenIso);
+      if (ago == null) return { lv: "none", label: "소식 없음", ago };
+      if (ago >= 20) return { lv: "bad", label: "응답 없음(" + agoText(ago) + ")", ago };
+      if (botCtl && botCtl.pause_until) return { lv: "watch", label: "전체 멈춤 중", ago };
+      if (st && (st.error_n > 0 || (st.fails && (st.fails.send > 2 || st.fails.read > 5)))) return { lv: "watch", label: "오류가 있음", ago };
+      if (botCtl && botCtl.notice_until) return { lv: "watch", label: "공지 멈춤 중", ago };
+      return { lv: "good", label: "정상", ago };
+    }
+    function botPillShow() {
+      const s = botState(), pill = $("botPill"), dot = $("tabDotBot");
+      if (pill) { pill.hidden = localOnly || s.lv === "none"; pill.dataset.lv = s.lv; $("botPillText").textContent = "봇 " + s.label; pill.setAttribute("aria-label", "봇 " + s.label + ", 봇 탭 열기"); }
+      if (dot) { dot.hidden = localOnly || s.lv === "good" || s.lv === "none"; dot.dataset.lv = s.lv; }
+    }
+    function botStShow() {
+      botPillShow();
+      const head = $("botHead"); if (!head) return;
+      const s = botState(), st = BS && !BS.missing ? BS.status : null;
+      $("botDot").dataset.lv = s.lv;
+      head.textContent = "봇 " + s.label;
+      const reqBtns = document.querySelectorAll("[data-botreq]");
+      if (BS && BS.missing) {
+        $("botSub").textContent = "새 판 받기, 다시 켜기, 봇 설정은 서버에 " + BS_SQL + " 을 실행하면 쓸 수 있습니다. 봇이 남긴 마지막 확인: " + (agoText(s.ago) || "없음");
+        reqBtns.forEach((b) => { b.disabled = true; });
+        $("botLines").innerHTML = ""; botSetShow(); botLogShow(); return;
+      }
+      reqBtns.forEach((b) => { b.disabled = bsBusy; });
+      const remote = st && st.update && st.update.remote, newer = !!(st && remote && verGt(remote, st.v));
+      const sub = st ? ["판 " + st.v + (newer ? "(새 판 " + remote + " 있음)" : remote ? "(최신)" : ""), st.started ? "켠 지 " + spanText(Date.now() / 1000 - st.started) : "", "마지막 확인 " + agoText(s.ago)]
+        : [botCtl && botCtl.seen_note ? botCtl.seen_note : "", s.ago != null ? "마지막 확인 " + agoText(s.ago) : "봇이 아직 상태를 올리지 않았습니다(봇 판 2026-10-31.6 부터)"];
+      $("botSub").textContent = sub.filter(Boolean).join(", ");
+      const upd = $("botUpdBtn"); upd.classList.toggle("btn-primary", newer); upd.classList.toggle("btn-secondary", !newer);
+      const L = (st && st.lines) || {};
+      const tiles = [["멈춤", L.ctl], ["멤버 읽기", L.members], ["신입 인사", L.greet], ["대화 내보내기", L.export], ["보이스룸", L.voice], ["오늘 공지", L.notice]]
+        .filter((x) => x[1]).map((x) => `<div class="bh-tile"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`);
+      if (st && st.fails && (st.fails.read || st.fails.send || st.fails.notice)) tiles.push(`<div class="bh-tile is-warn"><b>이어진 실패</b><span>${esc(["사이트 읽기 " + st.fails.read, "보내기 " + st.fails.send, "공지 걸기 " + st.fails.notice].filter((x) => !/ 0$/.test(x)).join(", "))}</span></div>`);
+      if (st && st.error) tiles.push(`<div class="bh-tile is-warn"><b>오류</b><span>${esc(st.error)}${st.error_n > 1 ? " (" + nf(st.error_n) + "번)" : ""}</span></div>`);
+      $("botLines").innerHTML = tiles.join("");
+      botReqShow(); botSetShow(); botLogShow();
+    }
+    function botLogShow() {
+      const ul = $("botLog"); if (!ul) return;
+      const lines = (BS && !BS.missing && BS.status && BS.status.log) || [];
+      $("botLogInfo").textContent = lines.length ? nf(lines.length) + "줄" : "";
+      ul.innerHTML = lines.length ? lines.slice().reverse().map((l) => { const m = /^(\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.*)$/.exec(l); return `<li><time>${esc(m ? m[1].slice(3).replace("-", ".") : "")}</time><span>${esc(m ? m[2] : l)}</span></li>`; }).join("") : `<li class="empty">봇이 올린 기록이 없습니다.</li>`;
+    }
+    /* 요청 결과 한 줄(새 판, 다시 켜기, 시험 글, 설정 적용) */
+    function botReqShow() {
+      const el = $("botReqNote"), st = BS && !BS.missing ? BS.status : null; if (!el) return;
+      const out = [];
+      const w = bsWatchT;
+      if (w) {
+        const done = st && st.reqs && Number(st.reqs[w.what] || 0) >= w.ts - 5;
+        if (!done) out.push(memWhen(new Date(w.ts * 1000).toISOString()) + " " + { update: "새 판 받기", restart: "다시 켜기", ping: "시험 글" }[w.what] + " 요청. 봇이 1분 안에 합니다.");
+      }
+      const u = st && st.update && st.update.last;
+      if (u && u.at && Date.now() / 1000 - u.at < 6 * 3600) out.push(memWhen(epochIso(u.at)) + " 새 판: " + (u.note || (u.ok ? "됨" : "안 됨")));
+      const p = st && st.reqs && st.reqs.ping_last;
+      if (p && p.at && Date.now() / 1000 - p.at < 6 * 3600) out.push(memWhen(epochIso(p.at)) + " 시험 글: " + (p.note || (p.ok ? "보냄" : "못 보냄")));
+      if (st && st.why && st.started && Date.now() / 1000 - st.started < 6 * 3600) out.push(memWhen(epochIso(st.started)) + " " + ({ settings: "설정을 적용해 다시 켜짐", update: "새 판으로 다시 켜짐", restart: "다시 켜짐", rollback: "새 판이 돌지 않아 옛 판으로 돌아옴" }[st.why] || "다시 켜짐"));
+      el.hidden = !out.length; el.textContent = out.join(". ");
+    }
+    async function botReq(what) {
+      if (localOnly || !PASS || bsBusy) return;
+      if (BS && BS.missing) { toast("서버에 " + BS_SQL + " 을 먼저 실행해 주세요."); return; }
+      const ask = { update: "봇이 저장소의 새 판을 받아 시험한 뒤 바꾸고 다시 켭니다(시험이 안 되면 그대로). 받을까요?", restart: "봇을 다시 켭니다(몇 초 걸림). 할까요?" }[what];
+      if (ask && !window.confirm(ask)) return;
+      bsBusy = true; botStShow();
+      try {
+        const r = await rpc("bot_control_set", { p_pass: PASS, p_what: what, p_minutes: 0 });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        botCtl = r; botCtlShow();
+        const ts = Number(r[what + "_req_ts"]) || Date.now() / 1000;
+        bsWatchT = { what, ts, t0: Date.now() };
+        toast({ update: "요청했습니다. 봇이 1분 안에 새 판을 받아 시험한 뒤 다시 켭니다.", restart: "요청했습니다. 봇이 1분 안에 다시 켭니다.", ping: "요청했습니다. 봇이 1분 안에 시험 방에 봇 정상 줄을 보냅니다." }[what]);
+        botStWatch();
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        toast(e.code === "BAD_ARG" || missingFn(e) ? "서버에 " + BS_SQL + " 을 먼저 실행해 주세요." : "요청하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : ""));
+      } finally { bsBusy = false; botStShow(); }
+    }
+    /* 요청 뒤 10초마다 6분까지 상태를 다시 읽는다(봇이 따르면 상태를 곧바로 올린다) */
+    function botStWatch() {
+      clearInterval(bsPoll);
+      const t0 = Date.now();
+      bsPoll = setInterval(async () => {
+        if (!PASS || Date.now() - t0 > 6 * 60000) { clearInterval(bsPoll); bsPoll = null; bsWatchT = null; botStShow(); return; }
+        await botStLoad();
+        const st = BS && BS.status, w = bsWatchT;
+        if (w && st && st.reqs && Number(st.reqs[w.what] || 0) >= w.ts - 5 && (w.what !== "restart" && w.what !== "update" || (st.started && st.started * 1000 > w.t0 - 60000))) { bsWatchT = null; botStShow(); clearInterval(bsPoll); bsPoll = null; }
+      }, 10000);
+    }
+    document.querySelectorAll("[data-botreq]").forEach((b) => b.addEventListener("click", () => botReq(b.dataset.botreq)));
+    /* 봇 설정: 봇이 실제로 쓰는 값(상태의 cfg)을 칸에 채우고, 저장하면 botset 에 둔다. 아직 안 받은 설정이 있으면 그것을 채운다 */
+    const BSF = () => $("botSetForm");
+    function botSetValues() {
+      const st = BS && !BS.missing ? BS.status : null, set = BS && !BS.missing ? BS.set : null;
+      const pending = !!(set && set.values && BS.set_ts && (!st || !st.set || Number(st.set.ts || 0) < Number(BS.set_ts) - 1));
+      return { v: pending ? Object.assign({}, (st && st.cfg) || {}, set.values) : (st && st.cfg) || (set && set.values) || null, pending };
+    }
+    function botSetFill(v) {
+      const f = BSF(); if (!f || !v) return;
+      const set = (n, val) => { const el = f.elements[n]; if (!el) return; if (el.length && el[0] && el[0].type === "radio") [...el].forEach((r) => { r.checked = r.value === val; }); else if (el.type === "checkbox") el.checked = !!val; else el.value = val == null ? "" : String(val); };
+      set("greet_on", v.greet_on || "off"); set("greet_watch", v.greet_watch === "on"); set("greet_remind_every", String(v.greet_remind_every ?? 1)); set("greet_remind_at", v.greet_remind_at || "17:00"); set("greet_text", v.greet_text || "");
+      set("export_on", !!v.export_on); set("export_at", v.export_at || "05:40");
+      const ma = String(v.members_at || "auto"); set("members_mode", ma === "auto" || ma === "off" ? ma : "fixed"); set("members_times", ma === "auto" || ma === "off" ? "" : ma);
+      const pick = (n, x, opts) => { const el = f.elements[n]; if (!el) return; if (![...el.options].some((o) => o.value === String(x))) el.add(new Option(x + "분마다", String(x))); el.value = String(x); };
+      pick("members_watch", Number(v.members_watch || 0)); pick("members_every", Number(v.members_every || 0));
+      const q = Array.isArray(v.quiet) && v.quiet.length === 2 ? v.quiet : null;
+      set("quiet_on", !!q); set("quiet_from", q ? q[0] : "00:00"); set("quiet_to", q ? q[1] : "07:00");
+      set("beat_on", !!v.heartbeat_at); set("heartbeat_at", v.heartbeat_at || "09:00");
+      set("notice", v.notice !== false); set("voice_on", !!v.voice_on); set("update_auto", v.update_auto !== false);
+      const tr = f.querySelector('input[name="greet_on"][value="test"]'); if (tr && BS && BS.status) tr.disabled = BS.status.test_room === false;
+    }
+    function botSetShow() {
+      const f = BSF(); if (!f) return;
+      const info = $("botSetInfo"), dis = !BS || BS.missing;
+      [...f.elements].forEach((el) => { el.disabled = dis || (el.name === "members_times" && f.elements.members_mode.value !== "fixed"); });
+      if (dis) { info.textContent = BS && BS.missing ? "서버에 아직 없음(" + BS_SQL + ")" : ""; return; }
+      const { v, pending } = botSetValues(), st = BS.status;
+      const errs = st && st.set && st.set.err && st.set.err.length ? st.set.err : [];
+      info.textContent = pending ? "보낸 설정을 봇이 아직 받지 않음(" + memWhen(BS.set_at) + " 보냄)" : st && st.set && st.set.at ? "봇이 " + memWhen(epochIso(st.set.at)) + " 에 받음" + (errs.length ? ", 틀려서 뺀 것: " + errs.join(", ") : "") : st ? "봇의 지금 설정" : "봇이 아직 상태를 올리지 않음";
+      info.classList.toggle("is-stale", !!errs.length);
+      if (!bsDirty && v) botSetFill(v);
+    }
+    function botSetCollect() {
+      const f = BSF(), E = f.elements, errs = [], hm = (x) => /^([01]\d|2[0-3]):[0-5]\d$/.test(x || "");
+      const v = { greet_on: [...E.greet_on].find((r) => r.checked)?.value || "off", greet_watch: E.greet_watch.checked ? "on" : "off", greet_remind_every: Number(E.greet_remind_every.value), greet_remind_at: E.greet_remind_at.value,
+        greet_text: E.greet_text.value.trim(), export_on: E.export_on.checked, export_at: E.export_at.value, members_watch: Number(E.members_watch.value), members_every: Number(E.members_every.value),
+        notice: E.notice.checked, voice_on: E.voice_on.checked, update_auto: E.update_auto.checked };
+      if (!hm(v.greet_remind_at)) errs.push("독려 시각");
+      if (!v.greet_text) errs.push("인사 글");
+      if (!hm(v.export_at)) errs.push("내보내기 시각");
+      const mode = E.members_mode.value;
+      if (mode === "fixed") {
+        const t = E.members_times.value.split(/[,\s]+/).filter(Boolean).map((x) => x.replace(/^(\d):/, "0$1:"));
+        if (!t.length || t.length > 4 || !t.every(hm) || new Set(t).size !== t.length) errs.push("멤버 읽는 시각(09:00,15:00 처럼 넷까지)");
+        v.members_at = t.sort().join(",");
+      } else v.members_at = mode;
+      if (E.quiet_on.checked) { if (!hm(E.quiet_from.value) || !hm(E.quiet_to.value) || E.quiet_from.value === E.quiet_to.value) errs.push("조용한 시간"); v.quiet = [E.quiet_from.value, E.quiet_to.value]; } else v.quiet = [];
+      if (E.beat_on.checked) { if (!hm(E.heartbeat_at.value)) errs.push("봇 정상 줄 시각"); v.heartbeat_at = E.heartbeat_at.value; } else v.heartbeat_at = "";
+      return { v, errs };
+    }
+    async function botSetSave(e) {
+      e.preventDefault();
+      if (localOnly || !PASS || bsBusy || !BS || BS.missing) return;
+      const { v, errs } = botSetCollect();
+      if (errs.length) { toast("확인해 주세요: " + errs.join(", ")); return; }
+      bsBusy = true; $("botSetSave").disabled = true;
+      try {
+        const at = await opsPut("botset", { rev: Date.now(), values: v });
+        BS.set = { rev: Date.now(), values: v }; BS.set_at = at; BS.set_ts = at ? Date.parse(at) / 1000 : Date.now() / 1000;
+        bsDirty = false;
+        toast("저장했습니다. 봇이 1분 안에 받아 적용하고 다시 켭니다.");
+        bsWatchT = null; botStWatch();
+      } catch (er) {
+        if (er.code === "BAD_PASS" || er.code === "LOCKED") { sessionLost(er.code); return; }
+        toast("저장하지 못했습니다. 연결을 확인해 주세요." + (er.code && er.code !== "FAIL" ? " (" + er.code + ")" : ""));
+      } finally { bsBusy = false; $("botSetSave").disabled = false; botStShow(); }
+    }
+    $("botSetForm").addEventListener("submit", botSetSave);
+    $("botSetForm").addEventListener("input", () => { bsDirty = true; });
+    $("botSetForm").addEventListener("change", (e) => { bsDirty = true; if (e.target.name === "members_mode") $("botSetForm").elements.members_times.disabled = e.target.value !== "fixed"; });
+    $("botSetReset").addEventListener("click", () => { bsDirty = false; const { v } = botSetValues(); if (v) botSetFill(v); botSetShow(); });
+    $("botExpAuto").addEventListener("change", (e) => { S.records.settings = S.records.settings || {}; S.records.settings.botAuto = e.target.checked; saveRecords(); });
+
+    /* ── 사이트 운영 지표(2026-10-31-ops-metrics.sql, admin_metrics): 대시보드 맨 위. 대화 분석이 없어도 보인다 ── */
+    let MT = null;
+    async function metricsLoad() {
+      if (localOnly || !PASS) return;
+      try {
+        const r = await rpc("admin_metrics", { p_pass: PASS, p_weeks: 12 });
+        if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
+        MT = r; MT.loadedAt = Date.now();
+      } catch (e) {
+        if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
+        MT = missingFn(e) ? { missing: true, loadedAt: Date.now() } : MT;
+      }
+      renderSite();
+    }
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+    const delta = (a, b) => { if (!b && !a) return ""; if (!b) return `<span class="dl up">새로</span>`; const d = Math.round(((a - b) / b) * 100); return d === 0 ? `<span class="dl">지난주와 같음</span>` : `<span class="dl ${d > 0 ? "up" : "down"}">지난주보다 ${d > 0 ? "+" : ""}${d}%</span>`; };
+    /* 막대(한 계열, 한 축). vals 숫자 목록, labs 아래 글, tips 말풍선 글. hi 는 강조할 막대(이번 주) */
+    function barSvg(vals, labs, tips, opt) {
+      opt = opt || {};
+      const W = opt.w || 520, H = opt.h || 150, padL = 30, padB = 22, padT = 8, n = vals.length, max = Math.max(1, ...vals.map((x) => Math.abs(x)));
+      const step = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / step) * step, iw = W - padL - 6, ih = H - padB - padT, bw = iw / n;
+      const y = (v) => padT + ih - (v / top) * ih;
+      const grid = [0, 0.5, 1].map((k) => `<line class="gl${k === 0 ? " zero" : ""}" x1="${padL}" x2="${W - 6}" y1="${y(top * k)}" y2="${y(top * k)}"/><text class="yt" x="${padL - 6}" y="${y(top * k) + 4}">${nf(Math.round(top * k))}</text>`).join("");
+      const bars = vals.map((v, i) => { const x = padL + i * bw + bw * 0.18, w = Math.max(2, bw * 0.64), h = Math.max(v > 0 ? 2 : 0, (v / top) * ih); return `<g class="bar${opt.hi === i ? " is-hi" : ""}"><rect x="${x.toFixed(1)}" y="${(y(0) - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3"/><rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${ih}"><title>${esc(tips[i])}</title></rect></g>`; }).join("");
+      const every = Math.ceil(n / (opt.labs || 6));
+      const xl = labs.map((l, i) => (i % every === 0 || i === n - 1 ? `<text class="xt" x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${H - 6}">${esc(l)}</text>` : "")).join("");
+      return `<svg class="viz mt-bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opt.label || "")}">${grid}${bars}${xl}</svg>`;
+    }
+    /* 들어옴(위)과 나감(아래) 한 그림: 0 을 가운데 */
+    function divSvg(ups, downs, labs, label) {
+      const W = 520, H = 150, padL = 30, padB = 22, padT = 8, n = ups.length, max = Math.max(1, ...ups, ...downs), ih = H - padB - padT, mid = padT + ih / 2, bw = (W - padL - 6) / n;
+      const s = (v) => (v / max) * (ih / 2);
+      const bars = ups.map((u, i) => { const x = padL + i * bw + bw * 0.18, w = Math.max(2, bw * 0.64); return `<g class="bar"><rect class="up" x="${x.toFixed(1)}" y="${(mid - s(u)).toFixed(1)}" width="${w.toFixed(1)}" height="${s(u).toFixed(1)}" rx="2"/><rect class="down" x="${x.toFixed(1)}" y="${mid.toFixed(1)}" width="${w.toFixed(1)}" height="${s(downs[i]).toFixed(1)}" rx="2"/><rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${ih}"><title>${esc(labs[i] + " 주: 들어옴 " + u + ", 나감 " + downs[i])}</title></rect></g>`; }).join("");
+      const every = Math.ceil(n / 6);
+      const xl = labs.map((l, i) => (i % every === 0 || i === n - 1 ? `<text class="xt" x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${H - 6}">${esc(l)}</text>` : "")).join("");
+      return `<svg class="viz mt-div" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}"><line class="gl zero" x1="${padL}" x2="${W - 6}" y1="${mid}" y2="${mid}"/><text class="yt" x="${padL - 6}" y="${padT + 10}">+${nf(max)}</text><text class="yt" x="${padL - 6}" y="${H - padB}">-${nf(max)}</text>${bars}${xl}</svg>`;
+    }
+    function renderSite() {
+      const host = $("dashSite"); if (!host) return;
+      if (localOnly) { host.innerHTML = ""; return; }
+      if (!MT) { host.innerHTML = `<div class="dsec"><h2>사이트 운영 <small>읽는 중</small></h2></div>`; return; }
+      if (MT.missing) { host.innerHTML = `<div class="dsec"><h2>사이트 운영</h2><p class="empty">서버에 2026-10-31-ops-metrics.sql 을 실행하면 방문, 모임, 참석, 카카오 로그인, 신입 첫 참석, 멤버 드나듦이 여기에 주마다 보입니다.</p></div>`; return; }
+      const W = MT.weeks || [], N = MT.now || {}, cur = W[W.length - 1] || {}, prev = W[W.length - 2] || {};
+      const lab = W.map((w) => { const d = String(w.w || ""); return d ? Number(d.slice(5, 7)) + "." + Number(d.slice(8, 10)) : ""; });
+      const sum = (k, ws) => (ws || W).reduce((a, w) => a + Number(w[k] || 0), 0);
+      const last4 = W.slice(-4);
+      const linkP = pct(N.linked || 0, N.members || 0), actP = pct(N.active_4w || 0, N.members || 0);
+      const kpi = (label, val, sub, extra, go) => `<article class="kpi mt-kpi${go ? " is-link" : ""}"${go ? ` data-tabgo="${go}" role="button" tabindex="0"` : ""}><span class="k-l">${label}</span><b class="k-v">${val}</b><span class="k-s">${sub}</span>${extra || ""}</article>`;
+      const meter = (p) => `<span class="meter" aria-hidden="true"><i style="width:${Math.min(100, p)}%"></i></span>`;
+      const kpis = [
+        kpi("이번 주 방문", nf(cur.visits || 0), delta(cur.visits || 0, prev.visits || 0) + ` 오늘 ${nf(N.visits_today || 0)}`),
+        kpi("이번 주 모임", nf(cur.bungs || 0) + "<small>개</small>", `연 사람 ${nf(cur.hosts || 0)}명, 다가오는 모임 ${nf(N.upcoming || 0)}개` + (N.upcoming_empty ? `, <b class="warn-t">참석 없음 ${nf(N.upcoming_empty)}개</b>` : ""), "", "bung"),
+        kpi("이번 주 참석", nf(cur.attends || 0) + "<small>명</small>", `로그인으로 ${pct(cur.attends_login || 0, cur.attends || 0)}%, 취소 ${nf(cur.cancels || 0)}, 뺌 ${nf(cur.kicks || 0)}`),
+        kpi("카카오 로그인 묶기", linkP + "<small>%</small>", `멤버 ${nf(N.members || 0)}명 가운데 ${nf(N.linked || 0)}명` + (N.kakao && N.kakao !== "all" ? `, 보이기 ${N.kakao === "staff" ? "운영진 기기만" : "끔"}` : ""), meter(linkP), "members"),
+        kpi("신입 첫 참석", N.newcomers ? nf(N.newcomers_attended || 0) + "<small>/" + nf(N.newcomers) + "</small>" : "0", N.newcomers ? `입장일 단 신입(30일 안) 가운데 사이트로 참석한 사람` : "입장일 단 신입 없음", N.newcomers ? meter(pct(N.newcomers_attended || 0, N.newcomers)) : ""),
+        kpi("최근 4주 참여", nf(N.active_4w || 0) + "<small>명</small>", `참석, 댓글, 글을 남긴 사람(멤버의 ${actP}%)`, meter(actP))
+      ].join("");
+      const sec = (title, sub, body) => `<article class="card mt-card"><div class="c-head"><h3>${title} <small class="cap">${sub}</small></h3></div>${body}</article>`;
+      const hrs = (N.hours || []).map(Number);
+      const peak = hrs.length ? hrs.indexOf(Math.max(...hrs)) : -1;
+      const charts = [
+        sec("주별 방문", `최근 ${W.length}주, 합계 ${nf(sum("visits"))}`, barSvg(W.map((w) => Number(w.visits || 0)), lab, W.map((w, i) => lab[i] + " 주 방문 " + nf(w.visits || 0)), { hi: W.length - 1, label: "주별 방문" })),
+        sec("주별 모임", `최근 4주 ${nf(sum("bungs", last4))}개, 연 사람 주평균 ${(sum("hosts", last4) / Math.max(1, last4.length)).toFixed(1)}명`, barSvg(W.map((w) => Number(w.bungs || 0)), lab, W.map((w, i) => lab[i] + " 주 모임 " + nf(w.bungs || 0) + "개, 연 사람 " + nf(w.hosts || 0) + "명"), { hi: W.length - 1, label: "주별 모임" })),
+        sec("주별 참석", `최근 4주 ${nf(sum("attends", last4))}명, 취소 ${nf(sum("cancels", last4))}`, barSvg(W.map((w) => Number(w.attends || 0)), lab, W.map((w, i) => lab[i] + " 주 참석 " + nf(w.attends || 0) + "명(로그인 " + nf(w.attends_login || 0) + "), 취소 " + nf(w.cancels || 0)), { hi: W.length - 1, label: "주별 참석" })),
+        sec("멤버 드나듦", `최근 4주 들어옴 ${nf(sum("joins", last4))}, 나감 ${nf(sum("leaves", last4))}, 이름 바뀜 ${nf(sum("renames", last4))}`, divSvg(W.map((w) => Number(w.joins || 0)), W.map((w) => Number(w.leaves || 0)), lab, "멤버 드나듦") + `<p class="legend"><span><i class="lg-up"></i>들어옴</span><span><i class="lg-down"></i>나감</span></p>`),
+        sec("시간대별 방문", peak >= 0 && hrs[peak] ? `최근 4주, 가장 많은 때 ${peak}시` : "최근 4주", barSvg(hrs, hrs.map((x, i) => String(i)), hrs.map((x, i) => i + "시 " + nf(x)), { hi: peak, label: "시간대별 방문", labs: 8, h: 130 })),
+        sec("댓글과 반응", `최근 4주 댓글 ${nf(sum("comments", last4))}, 반응 ${nf(sum("reactions", last4))}, 새 묶기 ${nf(sum("links", last4))}`, barSvg(W.map((w) => Number(w.comments || 0) + Number(w.reactions || 0)), lab, W.map((w, i) => lab[i] + " 주 댓글 " + nf(w.comments || 0) + ", 반응 " + nf(w.reactions || 0)), { hi: W.length - 1, label: "댓글과 반응" }))
+      ].join("");
+      const warn = N.auth_fail_24h ? `<p class="notice is-warn">하루 동안 운영진 비밀번호 틀림 ${nf(N.auth_fail_24h)}번(접속 주소 ${nf(N.auth_fail_ips || 0)}곳). 여덟 번 틀리면 그 주소는 15분 잠깁니다.</p>` : "";
+      host.innerHTML = `<div class="dsec"><h2>사이트 운영 <small>${esc(memWhen(MT.at))} 기준, 주는 월요일부터</small></h2>${warn}<div class="kpis mt-kpis">${kpis}</div><div class="cgrid mt-grid">${charts}</div></div>`;
+    }
+    $("botPill").addEventListener("click", () => setTab("bot"));
+    document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target && e.target.matches && e.target.matches("article[data-tabgo]")) { e.preventDefault(); setTab(e.target.dataset.tabgo); } });
+    /* 탭 머리의 수: 멤버(카카오 묶기에서 확인할 줄) */
+    /* 시트 탭: 시트에서 2주 안에 받은 것이 있을 때만(시트를 안 쓰면 숨김). 데이터 탭에서 열 수 있다 */
+    function sheetTabShow() {
+      const st = SH.status, ok = st && st.last_ok_at && Date.now() - Date.parse(st.last_ok_at) < 14 * 86400000;
+      const on = !!ok || tab === "sheet", b = $("tab-sheet"); if (b) b.hidden = !on;
+      const lp = $("sheetLinkPanel"); if (lp) { lp.hidden = on || localOnly || !(st && (st.has_token || (SH.versions && SH.versions.length))); if (!lp.hidden) $("sheetLinkInfo").textContent = st && st.last_ok_at ? "마지막 받음 " + memWhen(st.last_ok_at) : "받은 것 없음"; }
+    }
+    $("sheetLinkOpen").addEventListener("click", () => { $("tab-sheet").hidden = false; setTab("sheet"); });
+    function tabBadges() {
+      const n = ((links && links.rows) || []).filter((r) => !r.in_members).length, b = $("tabNMembers");
+      if (b) { b.hidden = !n; b.textContent = n ? String(n) : ""; }
+    }
 
     /* ── 모임 탭: 운영진의 모임 관리(서버 bung_admin, 2026-10-15 SQL).
        글과 명단은 공개 보기(site_posts_v, site_bung_attend_v)에서 읽고, 조치는 운영진 비밀번호로 bung_admin 을 부른다. 함수는 거절을 {ok:false, error} 로 돌려준다.
@@ -3154,9 +3645,9 @@
     }
 
     function renderDash() {
-      const host = document.querySelector('[data-panel="dash"]');
+      const host = $("dashChat");
       const L = S.ledger;
-      if (!L) { host.innerHTML = ""; return; }
+      if (!L) { host.innerHTML = localOnly ? "" : `<div class="dsec"><h2>대화 분석</h2><p class="empty">아직 분석한 대화가 없습니다. 봇이 대화를 내보내 올리면 이 화면을 열 때 바로 반영합니다(봇 탭의 봇 설정에서 대화 내보내기를 켭니다).</p></div>`; return; }
       const M = members(), E = endN();
       const lastM = L.months[L.months.length - 1] || { m: "", joins: 0, leaves: 0, kicks: 0, net: 0 };
       const queue = M.map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length);
@@ -3401,17 +3892,7 @@
             <ul class="ev">${g.lines.map((u) => `<li><time>${esc(md(u.d))} ${esc(u.t)}</time><span>${u.k === "join" ? "들어옴" : u.how === "kick" ? "내보냄" : "나감"}${canLink && u.key ? ` <button class="text-btn" type="button" data-link="${esc(u.key)}" data-head="${esc(g.name.split(" ")[0])}">사람에게 잇기</button>` : ""}</span></li>`).join("")}</ul></details>`).join("") : `<p class="empty">없습니다.</p>`}
           ${ug.length > 120 ? `<p class="sub">최근 이름 120개만 보여 줍니다.</p>` : ""}</div>`;
       }
-      const botHtml = `<div class="panel"><h2>카카오 봇 <small>벙 일정 공지</small></h2>
-          <p class="sub">봇 계정으로 로그인한 태블릿의 카카오톡을, 같은 태블릿의 Termux 에서 도는 파이썬이 조작합니다. 사이트를 20초마다 보고, 오늘 벙을 카드로 적은 글(첫 줄 '오늘의 벙 10/9(금) 3건')을 공지로 겁니다. 오늘 벙에 새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소가 있거나 카드에 보이는 벙의 제목이 바뀌거나 날이 바뀌면 다시 올려 겁니다(사이트가 바뀐 뒤 2분 동안 더 바뀌지 않을 때 한 번에). 벙이 시작하거나 끝날 때, 맨 아래 이후 벙 줄만 바뀔 때는 그대로 둡니다. 마감했거나 정원이 찬 벙, 끝나고 2시간 지난 벙도 건수에 세고 '외 N건' 에 넣습니다. 카드마다 그 벙 주소(참여링크)를 적습니다. 새 벙은 처음 올라왔을 때 그 벙 주소와 함께 한 번 공유하고, 바뀐 것은 알림을 따로 올리고, 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꿉니다(봇 열쇠가 있을 때). 켜 두면(export on) 매일 새벽 방의 대화 내용을 내보내 태블릿 안에서 분석하고 결과만 올립니다(위의 봇 대화 내보내기).</p>
-          <ol class="steps">
-            <li>봇 계정을 방의 부방장으로 둡니다. 공지는 방장과 부방장만 겁니다.</li>
-            <li>태블릿에 F-Droid 에서 Termux 와 Termux:API 를 깔고, Termux 에서 yes | pkg upgrade 로 기본 부품을 먼저 올린 뒤 pkg install python android-tools termux-api curl nodejs 를 실행합니다(nodejs 는 대화 내보내기 분석용).</li>
-            <li>개발자 옵션의 무선 디버깅을 켜고 adb pair 127.0.0.1:포트 로 한 번 짝을 맺습니다.</li>
-            <li>Termux 에서 스크립트를 받고(curl -LO https://excer-site.vercel.app/tools/excer_bot.py) connect 포트, setup, check, test, run --test 로 시험 방에서 확인한 뒤 run 으로 켭니다. <a class="text-btn" href="tools/excer_bot.py" download>스크립트 받기</a></li>
-          </ol>
-          <p class="sub">평소: 매일 09:00 시험 방에 '봇 정상' 한 줄이 옵니다. 안 오면 Termux 에서 python excer_bot.py status. 멈췄으면 무선 디버깅 켜기, connect, run. 새 판: Ctrl+C, update, run. SQL 로 글을 한꺼번에 옮기거나 지운 뒤: Ctrl+C, reset, run.</p>
-          <p class="sub">벙 일정 주소: excer-site.vercel.app/bung <button type="button" class="text-btn" data-copytext="https://excer-site.vercel.app/bung">주소 복사</button></p></div>`;
-      host.innerHTML = setHtml + rosterHtml + unHtml + botHtml;
+      host.innerHTML = setHtml + rosterHtml + unHtml;
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) { view.open.add(k); view.closed.delete(k); } else { view.open.delete(k); view.closed.add(k); } }));
       const rf = $("ruleFrom");
       if (rf) rf.addEventListener("change", () => { if (rf.value) S.records.settings.ruleFrom = rf.value; else delete S.records.settings.ruleFrom; saveRecords(); renderAll(); });
@@ -3727,16 +4208,16 @@
 
     function renderAll() {
       $("unsavedNote").hidden = !(S.unsaved && !localOnly);
-      $("noDataNote").hidden = !!S.ledger || tab === "sheet";
+      $("noDataNote").hidden = !!S.ledger || !NEEDS_LEDGER.includes(tab);
       setStamp();
       sheetLinks();
-      [renderDash, renderSheetTab, renderSignals, renderLang, renderRecords, renderData, renderFilesExtra, renderBung].forEach((fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } });
+      [renderSite, renderDash, renderSheetTab, renderSignals, renderLang, renderRecords, renderData, renderFilesExtra, renderBung, sheetTabShow, tabBadges].forEach((fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } });
       if (sheetPid && !$("sheet").hidden) { const p = byPid(sheetPid); if (p) renderSheet(p); }
       if (sheetMid && !$("sheet").hidden) { const m = shMember(sheetMid); if (m) renderSheetMember(m); else closeSheet(); }
     }
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };
     window.addEventListener("resize", setTopH); setTopH();
-    window.__ops = { S, view, SH, sheetLoad, save: saveRecords, memBase };   // 시험용
+    window.__ops = { S, view, SH, sheetLoad, save: saveRecords, memBase, get BS() { return BS; }, get MT() { return MT; }, botSetCollect };   // 시험용
     $("gatePass").focus();
   })();
   </script>
