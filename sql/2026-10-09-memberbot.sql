@@ -1,10 +1,11 @@
 -- 같은 시간대 검사(시간이 겹치는 모임), 봇 멤버 자동 갱신 (2026-10-09)
--- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(올려 둔 목록과 봇 열쇠는 그대로). 이 파일 뒤에는 members 와 midjoin-botctl 을 다시 돌리지 않는다(첫 줄에서 멈춘다).
+-- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(올려 둔 목록과 봇 열쇠는 그대로). 이 파일 뒤에는 members 와 midjoin-botctl 을 다시 돌리지 않는다(첫 줄에서 멈춘다). 2026-10-31-member-follow.sql 뒤에는 이 파일도 다시 돌리지 않는다.
 -- 먼저 있어야 하는 것: 끝나는 시간 두 쪽(2026-10-05), 운영 대시보드 저장소(2026-09-27), 속도 제한(2026-10-06), 2026-10-09 의 members 와 midjoin-botctl.
 -- 1) 같은 시간대: 앞뒤 2시간이 아니라 시간이 겹치는 모임. 앞 벙주가 동의하면 같은 시간대에도 열 수 있다. 끝나는 시간만 늦춰도 늘어난 부분을 본다.
 -- 2) 봇 멤버 자동 갱신: 태블릿의 봇이 하루 한 번 방 메뉴의 멤버를 읽어 사이트 닉네임 목록을 바꾼다. 봇은 운영진 비밀번호 대신 봇 열쇠만
 --    가진다(목록 바꾸기 말고는 못 한다). 열쇠는 운영 화면 데이터 탭에서 만들고 끈다. 지금 목록의 70% 아래로 줄면 바꾸지 않는다.
 do $g$ begin
+  if to_regclass('public.site_member_changes') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-31-member-follow.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 멤버 목록 변화 기록과 카카오 묶기 따라가기가 멈춥니다)'; end if;
   if to_regprocedure('public.bung_end(jsonb)') is null or to_regprocedure('public.bung_is_open(bigint,jsonb)') is null then raise exception '끝나는 시간 두 쪽(2026-10-05)을 먼저 실행하세요'; end if;
   if to_regprocedure('public.ops_auth(text)') is null then raise exception '운영 대시보드 저장소(2026-09-27-ops-store.sql)를 먼저 실행하세요'; end if;
   if to_regprocedure('public.site_rate_ok(text,integer,interval)') is null then raise exception '속도 제한(2026-10-06-rate-limit.sql)을 먼저 실행하세요'; end if;

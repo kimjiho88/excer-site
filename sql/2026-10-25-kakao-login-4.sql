@@ -1,6 +1,7 @@
 -- 카카오 로그인 4/4 (2026-10-25): 운영진의 묶기 관리(목록, 풀기, 바꾸기, 기록, 보이기 설정)와 서버 형식 kakao_login 줄
--- 3쪽 뒤에 실행. 다시 실행해도 안전하다. 운영진 비밀번호는 운영 화면과 같은 잠금(ops_auth)을 거친다. 거절은 예외가 아니라 {ok:false, error}.
+-- 3쪽 뒤에 실행. 5쪽 전까지는 다시 실행해도 안전하다(5쪽 뒤에는 첫 줄에서 멈춘다). 운영진 비밀번호는 운영 화면과 같은 잠금(ops_auth)을 거친다. 거절은 예외가 아니라 {ok:false, error}.
 do $g$ begin
+  if to_regprocedure('public.member_names()') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-25-kakao-login-5.sql 부터)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 묶기 바꾸기와 묶기 목록이 옛 판으로 돌아갑니다)'; end if;
   if to_regprocedure('public.post_create_me(text,text,text,jsonb)') is null then raise exception '3쪽을 먼저 실행하세요'; end if;
   if to_regprocedure('public.ops_auth(text)') is null then raise exception '운영 대시보드 저장소(2026-09-27-ops-store.sql)를 먼저 실행하세요'; end if;
 end $g$;

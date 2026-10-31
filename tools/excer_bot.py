@@ -52,6 +52,10 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     멤버의 닉네임을 읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의
     더보기 단추, 뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(한 시각에 세 번까지). 서버는 지금 목록의
     7할 아래로 줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다. 읽은 결과와 읽기 실패는 운영 화면에 보인다.
+    멤버 지켜보기(2026-10-31, 기본으로 켬): 08:00~24:00 에 10분마다(members watch) 알릴 방 머리의 인원 수를 보고 지난번 읽을 때와 다르면
+    바로 읽어 올리고(들어옴, 나감), 그대로여도 120분마다(members every) 다시 읽어 올린다(하트를 달거나 떼는 이름 바뀜). 조용한 시간에는 쉰다.
+    신입 인사가 읽은 멤버도 올린다. 서버는 직전 목록과 견줘 들어옴, 나감, 이름 바뀜을 남기고, 꾸밈(하트, 기호)과 입장일만 바뀐 이름은
+    카카오 로그인 묶기도 따라가게 한다(2026-10-31-member-follow.sql).
   - 신입 인사(greet on 일 때, 기본은 끔): 기본(greet watch off)은 독려만 한다. 매일 17:00 의 30분 전에 멤버를
     한 번 읽어 끝에 입장일(월일 네 자리)이 붙은 사람 모두(오늘부터 30일 전까지)를 모아 두고 17:00 에 한 메시지(여덟 명까지, 넘치면 1분 뒤
     다음 메시지)에 태그하고 인사 글을 붙여 보낸다. 그 사이에는 방을 열지 않는다. greet watch on 이면 10분마다 알릴 방 머리의 인원 수('91명')를
@@ -137,6 +141,9 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py members at auto   멤버를 읽어 올리는 때. auto(기본)는 서버가 정한 하루 세 시각(지난 4주 시간대별 방문에서
                                       붐비기 시작하는 때의 1시간 전), members at 08:00,12:00,18:00 은 고정 시각(넷까지), members at off 로 끈다.
                                       운영 화면 데이터 탭의 '지금 멤버 읽기' 는 run 이 1분 안에 따른다. run 을 다시 켜야 적용
+  python excer_bot.py members watch 10   알릴 방 머리의 인원 수를 몇 분마다 볼지(바뀌면 바로 읽어 올림, 5~180분, 기본 10). off 로 끈다
+  python excer_bot.py members every 120  인원 수가 그대로여도 몇 분마다 다시 읽어 올릴지(이름 바뀜, 30~1440분, 기본 120). off 로 끈다.
+                                      둘 다 08:00~24:00 에만 하고 조용한 시간에는 쉰다. members at off 면 둘 다 하지 않는다. run 을 다시 켜야 적용
   python excer_bot.py greet           신입 인사 설정을 보인다. greet on(알릴 방에 태그해서), greet test(시험 방에 태그 없이), greet off.
                                       run 을 다시 켜야 적용
   python excer_bot.py greet text "인사 글"   태그 뒤에 붙는 인사 글을 바꾼다(글을 안 적으면 클립보드에서)
@@ -180,7 +187,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-31.3"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-31.4"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -211,7 +218,10 @@ DEFAULTS = {
     "members_at": "auto",                # (tablet) 알릴 방 메뉴(세 줄 단추)의 멤버를 읽어 사이트 닉네임 목록에 올리는 때. auto 는 서버가 정한 하루 세 시각
                                          # (지난 4주 시간대별 방문에서 붐비기 시작하는 때의 1시간 전), "08:00,12:00,18:00" 처럼 고정 시각(넷까지), "" 이나 "off" 면 안 한다
     "members_key": "",                   # 봇 열쇠(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key 로 넣는다). 멤버 목록만 바꿀 수 있다
-    "members": {"min_ratio": 0.9, "min": 20, "rid": ""},   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
+    "members": {"min_ratio": 0.9, "min": 20, "rid": "",   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
+                "watch": 10,                     # 멤버 지켜보기(2026-10-31): 이만큼(분)마다 알릴 방 머리의 인원 수를 보고 바뀌었으면 바로 읽어 올린다(들어옴, 나감). 0 이면 안 한다
+                "every": 120,                    # 인원 수가 그대로여도 이만큼(분)마다 다시 읽어 올린다(하트를 달거나 떼는 이름 바뀜). 0 이면 안 한다
+                "from": "08:00", "to": "00:00"}, # 지켜보기와 다시 읽기는 이 사이에만(00:00 은 자정). 조용한 시간에는 쉰다. 하루 세 번과 운영 화면의 지금 읽기는 그대로
     # 신입 인사(docs/BOT_AUTOMATION_PLAN.md 1절): 닉네임 끝에 입장일이 붙은 새 멤버를 태그하고 인사 글을 보낸다. greet on, off, test 로 바꾼다
     "greet": {"on": "off",                     # off 끔, on 알릴 방에 태그해서, test 알릴 방 대신 시험 방에 태그 없이(무엇을 보낼지 보기)
               "watch": "off",                  # on 이면 입장 즉시 인사: check_sec 마다 알릴 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게. off 면 독려만(greet watch)
@@ -956,6 +966,35 @@ def members_slots(bot):
     return sorted({x for x in got if isinstance(x, str) and TIME_RE.match(x)})[:4] or list(DEFAULT_MEMBER_TIMES)
 
 
+def members_watch_cfg(cfg):
+    """멤버 지켜보기 설정: (인원 수를 볼 간격 분, 다시 읽을 간격 분, 시작, 끝). 간격 0 은 안 함. 틀린 값은 기본값, 너무 짧은 간격은 5분과 30분으로"""
+    m = dict(DEFAULTS["members"], **((cfg or {}).get("members") or {}))
+
+    def num(k, lo, hi):
+        try:
+            v = int(m.get(k))
+        except (TypeError, ValueError):
+            v = DEFAULTS["members"][k]
+        return 0 if v <= 0 else max(lo, min(hi, v))
+    a = str(m.get("from") or "")
+    b = str(m.get("to") or "")
+    return num("watch", 5, 180), num("every", 30, 1440), a if TIME_RE.match(a) else "08:00", b if TIME_RE.match(b) else "00:00"
+
+
+def in_window(hm, a, b):
+    """hm 이 a 와 b 사이인가(b 가 a 보다 이르면 자정을 넘는다. a 와 b 가 같으면 늘)"""
+    if a == b:
+        return True
+    return a <= hm < b if a < b else (hm >= a or hm < b)
+
+
+def members_watch_text(cfg):
+    """멤버 지켜보기 설정 한 줄: '인원 수 10분마다, 120분마다 다시 읽음(08:00~24:00)'. 둘 다 끄면 ''"""
+    watch, every, a, b = members_watch_cfg(cfg)
+    parts = (["인원 수 %d분마다" % watch] if watch else []) + (["%d분마다 다시 읽음" % every] if every else [])
+    return ", ".join(parts) + "(%s~%s)" % (a, "24:00" if b == "00:00" else b) if parts else ""
+
+
 def members_on(bot):
     """이 run 이 멤버 자동 갱신을 하는가: tablet 방식, 알릴 방(시험 방이나 시험 파일이 아님), 사이트에 올리는 길이 있음"""
     cfg = getattr(bot, "cfg", None) or {}
@@ -981,7 +1020,8 @@ def members_result(r):
         return "stop", "멤버 목록을 올리지 못함: 서버에 2026-10-09-memberbot.sql 을 먼저 실행해야 함"
     if r.get("ok"):
         sk = int(r.get("skipped") or 0)
-        return "ok", "멤버 목록 %d명을 사이트에 올림%s" % (int(r.get("n") or 0), "(겹치거나 쓸 수 없는 이름 %d개 뺌)" % sk if sk else "")
+        ch = members_changes_text(r)
+        return "ok", "멤버 목록 %d명을 사이트에 올림%s%s" % (int(r.get("n") or 0), "(겹치거나 쓸 수 없는 이름 %d개 뺌)" % sk if sk else "", ": " + ch if ch else "")
     e = str(r.get("error") or "")
     if e == "SHRINK":
         return "stop", ("멤버 목록을 올리지 않음: 사이트 목록 %s명에서 %s명으로 줄어 서버가 막음. 방 메뉴의 멤버를 다 읽었는지 python excer_bot.py members 로 확인. "
@@ -995,6 +1035,20 @@ def members_result(r):
     if e in ("EMPTY", "BAD_NAMES", "TOO_MANY"):
         return "stop", "멤버 목록을 올리지 못함: 서버가 이름을 받지 않음(%s)" % e
     return "retry", "멤버 목록을 올리지 못함(%s)" % (e or "알 수 없는 답")
+
+
+def members_changes_text(r):
+    """서버가 알려 준 목록 변화(2026-10-31-member-follow.sql): '들어옴 1, 이름 바뀜 1, 카카오 묶기 따라감 1'. 없거나 옛 서버면 ''"""
+    ch = [("들어옴", "joins"), ("나감", "leaves"), ("이름 바뀜", "renames"), ("카카오 묶기 따라감", "follow")]
+    out = []
+    for t, k in ch:
+        try:
+            v = int((r or {}).get(k) or 0)
+        except (TypeError, ValueError):
+            v = 0
+        if v:
+            out.append("%s %d" % (t, v))
+    return ", ".join(out)
 
 
 def members_last_text(last, when=True):
@@ -1028,8 +1082,9 @@ def members_alive(bot):
     if not key:
         return "봇 열쇠 없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"
     t = members_last_text(st.get("members_last"))
-    out = ["하루 %d번 %s(%s)" % (len(slots), ", ".join(slots), "서버가 방문 시간대로 정함" if members_mode(cfg) == "auto" else "고정"),
-           "마지막 " + t if t else "아직 안 함"]
+    wt = members_watch_text(cfg)
+    out = ["하루 %d번 %s(%s)" % (len(slots), ", ".join(slots), "서버가 방문 시간대로 정함" if members_mode(cfg) == "auto" else "고정")] + ([wt] if wt else []) + \
+          ["마지막 " + t if t else "아직 안 함"]
     if st.get("members_badkey") == member_key_tag(key):
         out.append("열쇠를 바꿀 때까지 쉼")
     elif float(st.get("members_retry_at") or 0) > bot.ts():
@@ -1691,7 +1746,10 @@ class Bot:
         시간대별 방문에서 붐비기 시작하는 때의 1시간 전으로 정한 시각, 또는 고정 시각)과 운영 화면의 '지금 멤버 읽기'(1분 안에). 각 시각은 세
         시간 안에만 하고, 그 시각 전 한 시간 안에 이미 읽었으면 건너뛴다. 방에 올리는 것이 없어 조용한 시간에도 한다. 운영 화면의 전체 멈춤
         중에는 쉰다(지금 읽기 요청에는 멈춤 중이라 읽지 않았다고 알린다). 실패하면 30분 뒤 다시(한 시각에 세 번까지), 서버가 줄어서 막거나
-        (SHRINK) SQL 이 없으면 그 시각은 그만, 열쇠가 맞지 않으면 열쇠를 바꿀 때까지 쉰다. 무엇을 했는지 한 낱말로"""
+        (SHRINK) SQL 이 없으면 그 시각은 그만, 열쇠가 맞지 않으면 열쇠를 바꿀 때까지 쉰다.
+        멤버 지켜보기(2026-10-31, members watch 와 every): 정한 때(08:00~24:00) 안에서 조용한 시간이 아니면 watch 분마다 알릴 방 머리의 인원 수를
+        보고 지난번 읽을 때와 다르면 바로 읽어 올리고(들어옴, 나감), 인원 수가 그대로여도 every 분마다 다시 읽어 올린다(하트를 달거나 떼는 이름 바뀜).
+        지켜보기 읽기가 실패하면 15분, 30분, 60분, 120분 뒤 다시. 무엇을 했는지 한 낱말로"""
         now, cfg, st = Now(self.clock()), self.cfg, self.st
         key = cfg.get("members_key") or ""
         if not (key and members_on(self)):
@@ -1705,7 +1763,8 @@ class Bot:
             self.members_report(req, False, "30분 넘게 지난 요청이라 읽지 않음", "none")
             manual = False
         slot = "" if manual else self.members_due(now)
-        if not manual and not slot:
+        watch = not manual and not slot and self.members_watch_ok(now)
+        if not manual and not slot and not watch:
             return ""
         if st.get("members_badkey") == member_key_tag(key):
             if manual:                                      # 맞지 않던 열쇠 그대로다(members key 로 새 열쇠를 넣으면 다시). 결과도 못 보낸다
@@ -1729,26 +1788,48 @@ class Bot:
                 self.members_mark(now, slot)                # 그 시각 전 한 시간 안에(지금 읽기 등으로) 이미 읽었다
                 self.save()
                 return ""
-        names, step = [], "read"
+        why = ""
+        if watch:
+            try:
+                why = self.members_look(now)
+            except Exception as e:
+                return self.members_look_failed(e)
+            finally:
+                if not why and hasattr(self.sender, "done"):
+                    self.sender.done()                      # 인원 수만 보고 끝: Termux 로
+            if not why:
+                self.save()
+                return "members-look"
+        names, step, n_room = [], "read", None
         last = st.get("members_last") or {}
         self.sender.mem_last_n = int(last.get("n") or 0) if not last.get("error") else 0   # 지난번 성공한 수: 대화상대 수를 못 읽은 날의 하한(2026-10-18)
         try:
             names = self.sender.read_members(self.room, cfg.get("members") or {})
+            n_room = self.members_room_now()
             step = "push"
             r = self.site.push_members(names, key)
         except Exception as e:
+            if why:
+                return self.members_wfailed(now, step, e, len(names), why)
             return self.members_failed(now, step, e, len(names), slot, req if manual else 0)
         finally:
             if hasattr(self.sender, "done"):
                 self.sender.done()
         kind, msg = members_result(r)
         if kind == "retry":
+            if why:
+                return self.members_wfailed(now, "push", msg, len(names), why)
             return self.members_failed(now, "push", msg, len(names), slot, req if manual else 0)
         n = int(r.get("n") or 0) if kind == "ok" else len(names)
-        st.update(members_retry_at=0, members_fail=0, members_last={
+        st.update(members_retry_at=0, members_fail=0, members_wfail=0, members_last={
             "at": "%s %s" % (now.ymd, now.hm), "n": n, "error": "" if kind == "ok" else members_short(msg), "step": "push"})
         if kind == "ok":
             st["members_ok_ts"] = self.ts()
+            self.mem_cache = (self.ts(), list(names), "members")   # 신입 인사가 곧바로 같은 서랍을 다시 읽지 않게
+            if n_room is not None:
+                st.update(members_n=n_room, members_look_at=now.ts)   # 읽을 때 본 인원 수(지켜보기가 곧바로 다시 보지 않게)
+        elif why and kind == "stop":
+            st["members_retry_at"] = self.ts() + 7200       # 서버가 막음(줄어듦 등): 지켜보기는 두 시간 뒤 다시
         if slot:
             self.members_mark(now, slot)
         if manual:
@@ -1759,9 +1840,10 @@ class Bot:
             st.pop("members_badkey", None)
         self.save()
         if manual:
-            self.members_report(req, kind == "ok", "%d명" % n if kind == "ok" else members_short(msg), "push")
-        self.log(("운영 화면의 지금 멤버 읽기: " if manual else "") + msg +
-                 {"ok": "", "stop": ". 이 시각은 다시 하지 않음", "key": ". 새 열쇠를 넣을 때까지 하지 않음"}[kind])
+            ch = members_changes_text(r) if kind == "ok" else ""
+            self.members_report(req, kind == "ok", ("%d명" % n + (", " + ch if ch else "")) if kind == "ok" else members_short(msg), "push")
+        self.log(("운영 화면의 지금 멤버 읽기: " if manual else {"count": "인원 수가 바뀌어 읽음: ", "every": ""}.get(why, "")) + msg +
+                 {"ok": "", "stop": ". 이 시각은 다시 하지 않음" if not why else ". 두 시간 뒤 다시", "key": ". 새 열쇠를 넣을 때까지 하지 않음"}[kind])
         return "members" if kind == "ok" else "members-fail"
 
     def members_failed(self, now, step, e, n, slot="", req=0):
@@ -1790,6 +1872,113 @@ class Bot:
             self.members_report(0, False, members_short(why), "read")   # 올리기 실패는 서버가 이미 안다
         self.log("멤버 %s 실패(%s 시각의 %d번째, %s): %s" % (what, slot, k, tail, why))
         return "members-fail"
+
+    # ── 멤버 지켜보기(2026-10-31): 인원 수가 바뀌면 바로, 그대로여도 every 분마다 읽어 올린다. 신입 인사와 인원 수, 읽은 목록을 같이 쓴다 ──
+    def members_watch_ok(self, now):
+        """지켜보기 차례인가(화면은 아직 건드리지 않는다): watch 나 every 가 켜져 있고, 멤버 자동 갱신이 꺼져 있지 않고, 정한 때 안이고, 조용한 시간이
+        아니고, 실패 뒤 쉬는 중이 아니고, 인원 수를 볼 때(watch 분)나 다시 읽을 때(every 분)가 됐다"""
+        watch, every, a, b = members_watch_cfg(self.cfg)
+        if not (watch or every) or members_mode(self.cfg) == "off" or not in_window(now.hm, a, b) or in_quiet(now.hm, self.cfg.get("quiet")):
+            return False
+        st = self.st
+        if now.ts < float(st.get("members_retry_at") or 0):
+            return False
+        if every and now.ts - float(st.get("members_ok_ts") or 0) >= every * 60:
+            return True
+        return bool(watch) and now.ts - float(st.get("members_look_at") or 0) >= watch * 60
+
+    def members_look(self, now):
+        """지켜보기 한 번: 다시 읽을 때(every)면 'every'. 아니면 방 머리의 인원 수를 보고 지난번 읽을 때의 수와 다르면 'count', 같으면 ''.
+        지난 수가 없으면(처음) 지금 수를 적어 두고 ''. 인원 수를 못 읽으면 ''"""
+        watch, every, a, b = members_watch_cfg(self.cfg)
+        st = self.st
+        if every and now.ts - float(st.get("members_ok_ts") or 0) >= every * 60:
+            return "every"
+        st["members_look_at"] = now.ts
+        n = self.room_n()
+        st["members_lfail"] = 0
+        if n is None:
+            return ""
+        last = st.get("members_n")
+        if last is None:
+            st["members_n"] = n
+            return ""
+        return "count" if int(last) != int(n) else ""
+
+    def members_look_failed(self, e):
+        """방 머리의 인원 수를 못 봄(방을 못 엶 등): 10분, 20분, ... 60분 뒤 다시. 기록은 처음과 여섯 번째마다"""
+        st = self.st
+        k = int(st.get("members_lfail") or 0) + 1
+        st.update(members_lfail=k, members_retry_at=self.ts() + min(3600, 600 * k))
+        self.save()
+        if k == 1 or k % 6 == 0:
+            self.log("멤버 지켜보기: 방 머리의 인원 수를 보지 못함(%d번째, %d분 뒤 다시): %s" % (k, min(60, 10 * k), e))
+        return "members-look-fail"
+
+    def members_wfailed(self, now, step, e, n, why):
+        """지켜보기 읽기나 올리기 실패: 15분, 30분, 60분, 120분 뒤 다시. 읽기 실패는 처음 한 번 서버에 알린다(운영 화면의 봇 자동 갱신 줄)"""
+        st, msg = self.st, str(e)
+        k = int(st.get("members_wfail") or 0) + 1
+        wait = min(120, 15 * 2 ** min(k - 1, 3))
+        st.update(members_wfail=k, members_retry_at=self.ts() + wait * 60,
+                  members_last={"at": "%s %s" % (now.ymd, now.hm), "n": n, "error": members_short(msg), "step": step})
+        self.save()
+        if step == "read" and k == 1:
+            self.members_report(0, False, members_short(msg), "read")
+        if k == 1 or k % 6 == 0:
+            self.log("멤버 %s 실패(%s, %d번째, %d분 뒤 다시): %s" % ("읽기" if step == "read" else "올리기",
+                                                            "인원 수가 바뀜" if why == "count" else "다시 읽을 때", k, wait, msg))
+        return "members-fail"
+
+    def room_n(self, max_age=60):
+        """알릴 방 머리의 인원 수(멤버 지켜보기와 신입 인사가 같이 쓴다. max_age 초 안에 본 것이면 방을 다시 열지 않는다). 못 읽으면 None"""
+        c = getattr(self, "room_n_cache", None)
+        if c and self.ts() - c[0] <= max_age:
+            return c[1]
+        n = self.sender.room_count(self.room)
+        self.room_n_cache = (self.ts(), n)
+        return n
+
+    def members_room_now(self):
+        """멤버를 읽은 뒤 방 머리의 인원 수(지켜보기가 켜져 있을 때만. 5분 안에 본 수가 있으면 그것). 못 읽으면 None(읽기는 그대로)"""
+        if not members_watch_cfg(self.cfg)[0]:
+            return None
+        try:
+            return self.room_n(max_age=300)
+        except Exception:
+            return None
+
+    def members_read_shared(self, max_age=180):
+        """신입 인사가 멤버를 읽을 때: 멤버 자동 갱신이 max_age 초 안에 읽은 목록이 있으면 그것을 쓴다(같은 서랍을 곧바로 두 번 읽지 않게).
+        아니면 읽고, 멤버 자동 갱신을 하는 run 이면 사이트에도 올린다(올리기가 안 되어도 인사는 그대로)"""
+        c = getattr(self, "mem_cache", None)
+        if c and c[2] == "members" and self.ts() - c[0] <= max_age:
+            return list(c[1])
+        names = self.sender.read_members(self.room, self.cfg.get("members") or {})
+        self.members_push_quiet(names)
+        return names
+
+    def members_push_quiet(self, names):
+        """신입 인사로 읽은 멤버도 사이트에 올린다(봇 열쇠가 있고 멤버 자동 갱신이 꺼져 있지 않을 때). 결과는 기록과 상태에만(실패해도 인사는 그대로)"""
+        cfg, st, key = self.cfg, self.st, self.cfg.get("members_key") or ""
+        if not (key and members_on(self)) or members_mode(cfg) == "off" or st.get("members_badkey") == member_key_tag(key):
+            return
+        now = Now(self.clock())
+        try:
+            r = self.site.push_members(names, key)
+        except Exception as e:
+            self.log("신입 인사로 읽은 멤버 목록을 올리지 못함(인사는 그대로): %s" % e)
+            return
+        kind, msg = members_result(r)
+        if kind == "ok":
+            st.update(members_ok_ts=self.ts(), members_retry_at=0, members_fail=0, members_wfail=0,
+                      members_last={"at": "%s %s" % (now.ymd, now.hm), "n": int(r.get("n") or 0), "error": "", "step": "push"})
+            c = getattr(self, "room_n_cache", None)
+            if c and c[1] is not None and self.ts() - c[0] <= 300:
+                st.update(members_n=c[1], members_look_at=now.ts)   # 신입 인사가 방금 본 인원 수(지켜보기가 같은 수로 다시 읽지 않게)
+        elif kind == "key":
+            st["members_badkey"] = member_key_tag(key)
+        self.log("신입 인사로 읽은 " + msg)
 
     # ── 대화 내보내기와 언어 점검(export, docs/BOT_AUTOMATION_PLAN.md 7절) ──
     def export_due(self, now):
@@ -1999,7 +2188,7 @@ class Bot:
             st.update(greet_pending=[], greet_pend_fail=0)
         try:
             if not pend:
-                n = self.sender.room_count(self.room)
+                n = self.room_n(max_age=20)           # 멤버 지켜보기와 같이 본다(같은 순간에 두 번 열지 않게)
                 last_n = st.get("greet_n")
                 remind = greet_remind_due(st, g, now, today)   # 신입 독려 때: 인원 수가 그대로여도 읽는다
                 due = remind or not st.get("greet_seen") or (n is not None and last_n is not None and n > int(last_n)) or \
@@ -2010,7 +2199,7 @@ class Bot:
                     st.update(greet_fail=0, greet_err="")
                     return "greet-look"
                 base = not st.get("greet_seen")
-                names = self.sender.read_members(self.room, self.cfg.get("members") or {})
+                names = self.members_read_shared()      # 멤버 지켜보기가 방금 읽은 것이면 그것(읽으면 사이트에도 올림)
                 grow = n - int(last_n) if n is not None and last_n is not None else None
                 st.update(greet_full_at=now.ts, greet_fail=0, greet_err="")
                 if n is not None:
@@ -2073,7 +2262,7 @@ class Bot:
             if now.hm >= stop_hm:
                 st["greet_next"] = ts_at(date.fromordinal(t + 1), read_hm)   # 오늘은 늦었다: 내일 다시
                 return ""
-            names = self.sender.read_members(self.room, self.cfg.get("members") or {})
+            names = self.members_read_shared()
             batch = greet_remind(names, st, today, g)
             st.update(greet_remind_day=t, greet_fail=0, greet_err="", greet_pending=batch, greet_pending_at=now.ts, greet_pend_fail=0, greet_pending_kind="remind")
             self.log("신입 독려: 멤버 %d명을 읽음. 입장일이 붙은 사람 %d명%s" % (len(names), len(batch), ("에게 %s에 보냄" % send_hm if now.hm < send_hm else "에게 바로 보냄") if batch else "(보낼 사람 없음)"))
@@ -7716,8 +7905,8 @@ def cmd_feed(path, op):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="사이트의 벙 일정을 늘 지켜보다가 오픈채팅방에 올리고 공지로 건다")
     ap.add_argument("command", choices=["setup", "connect", "check", "status", "update", "quiet", "reset", "list", "test", "run", "once", "sample-feed", "feed", "ui", "study", "calibrate", "voice", "members", "greet", "export", "rotate"])
-    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, greet: on, test, off, text, study, now, remind, export: on, off, at, now, study, check, rotate: 가로, 세로, off")
-    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, greet text: 인사 글(없으면 클립보드), greet now: 태그할 닉네임, greet remind: 며칠마다(또는 off), export at: 05:40")
+    ap.add_argument("arg", nargs="?", default="", help="connect: 무선 디버깅 포트, feed: add, change, close, del, soon, full, deadline, voice: study, status, raw, now, look, on, off, quiet: 00:30-07:30 또는 off, members: push, check, study, key, at, watch, every, greet: on, test, off, text, study, now, remind, export: on, off, at, now, study, check, rotate: 가로, 세로, off")
+    ap.add_argument("arg2", nargs="?", default="", help="members key: 봇 열쇠(없으면 클립보드), members at: 05:10 또는 off, members watch: 10 또는 off, members every: 120 또는 off, greet text: 인사 글(없으면 클립보드), greet now: 태그할 닉네임, greet remind: 며칠마다(또는 off), export at: 05:40")
     ap.add_argument("arg3", nargs="?", default="", help="greet remind: 시각(17:00)")
     ap.add_argument("--config", default=os.path.join(HERE, "excer_bot.json"))
     ap.add_argument("--test", action="store_true", help="run, once, reset: 알릴 방 대신 시험 방으로(기록도 따로)")
@@ -8102,6 +8291,25 @@ def members_at_cmd(cfg, path, val):
             else "멤버 자동 갱신을 매일 %s 로 정했습니다" % ", ".join(members_fixed(cfg))) + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
 
 
+def members_watch_cmd(cfg, path, what, val):
+    """members watch 10: 알릴 방 머리의 인원 수를 몇 분마다 볼지(바뀌면 바로 읽어 올림). members every 120: 인원 수가 그대로여도 몇 분마다 다시 읽을지
+    (하트를 달거나 떼는 이름 바뀜). off 는 끈다. 둘 다 08:00~24:00 에만, 조용한 시간에는 쉰다. 인자가 없으면 지금 설정을 보인다"""
+    val = (val or "").strip().lower()
+    how = "예: python excer_bot.py members watch 10 (5~180분, off 로 끔), members every 120 (30~1440분, off 로 끔)"
+    if not val:
+        return "멤버 지켜보기: %s. %s" % (members_watch_text(cfg) or "꺼짐", how)
+    lo, hi = (5, 180) if what == "watch" else (30, 1440)
+    if val in ("off", "0"):
+        n = 0
+    elif re.match(r"^\d{1,4}$", val) and lo <= int(val) <= hi:
+        n = int(val)
+    else:
+        return "모양이 다릅니다. " + how
+    cfg["members"] = dict(cfg.get("members") or {}, **{what: n})
+    save_cfg(path, cfg)
+    return "멤버 지켜보기: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (members_watch_text(cfg) or "꺼짐")
+
+
 def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     """members: 알릴 방 메뉴(서랍)의 멤버를 지금 읽는다(올리지 않음). push 는 읽어 올리고, check 는 읽어 닉네임 양식이 틀린 사람을 보이고,
     study 는 화면을 적고, key 는 봇 열쇠를, at 은 매일 시각을 정한다. 화면을 쓰는 것(members, push, check, study)은 run 이 돌면 하지 않는다"""
@@ -8112,8 +8320,11 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     if sub == "at":
         print(members_at_cmd(cfg, a.config, val))
         return
+    if sub in ("watch", "every"):
+        print(members_watch_cmd(cfg, a.config, sub, val))
+        return
     if sub not in ("", "push", "check", "study"):
-        raise SystemExit("python excer_bot.py members | members push | members check | members study | members key [열쇠] | members at auto (또는 08:00,12:00,18:00, off)")
+        raise SystemExit("python excer_bot.py members | members push | members check | members study | members key [열쇠] | members at auto (또는 08:00,12:00,18:00, off) | members watch 10 (또는 off) | members every 120 (또는 off)")
     if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
         raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py members" + (" " + sub if sub else ""))
     room, key = cfg.get("room") or "", cfg.get("members_key") or ""
