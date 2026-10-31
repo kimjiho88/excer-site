@@ -132,6 +132,17 @@
     .sp-row .sp-when { font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
     .sp-row .sp-place, .sp-row .sp-att { color: var(--ink-2); font-size: var(--fs-caption); overflow-wrap: anywhere; }
     @media (hover: hover) and (pointer: fine) { .sp-row:hover { border-color: rgba(126, 95, 37, 0.42); } }
+    /* 127차 크리스마스 스페셜 줄(12월 모임이거나 제목에 크리스마스, 성탄, 연말, 송년): 빨강 금색 초록 테두리, 빨간 표와 초록 D-day, 호랑가시 잎. 소식 화면 카드와 같은 색 */
+    .sp-row.is-xmas { position: relative; isolation: isolate; border: 2px solid transparent;
+      background: linear-gradient(135deg, #FFFDF8 0%, #FFF4E6 100%) padding-box, linear-gradient(135deg, #B3202A 0%, #E2B24A 28%, #1F6B45 52%, #E2B24A 76%, #B3202A 100%) border-box;
+      box-shadow: 0 0 0 3px rgba(226, 178, 74, 0.16), 0 16px 32px -24px rgba(140, 24, 32, 0.6); }
+    .sp-row.is-xmas .sp-tags { align-items: center; }
+    .sp-row.is-xmas .sp-tag { background: linear-gradient(135deg, #9E1B24, #D7333B); color: #FFF3D6; box-shadow: inset 0 0 0 1px rgba(255, 214, 140, 0.55); }
+    .sp-row.is-xmas .sp-dday { background: #1F6B45; }
+    .sp-row.is-xmas .sp-dday.is-now { background: #E2B24A; color: var(--ink); }
+    .sp-row .sp-holly { display: inline-flex; width: 30px; height: 21px; margin-left: auto; }
+    .sp-row .sp-holly svg { width: 100%; height: 100%; }
+    @media (hover: hover) and (pointer: fine) { .sp-row.is-xmas:hover { border-color: transparent; } }
     .rm-sub + .rm-who::before { content: ""; display: inline-block; width: 1px; height: 11px; margin: 0 8px; background: var(--line-strong); vertical-align: -1px; }
     .live-none { margin: 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: var(--fs-sm); }
     @media (max-width: 600px) {
@@ -450,14 +461,21 @@
         var hm = /^\d{2}:\d{2}$/, t = hm.test(m.time || "") ? m.time + (hm.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : "";
         return C.dateText(m.date, { withDow: true }) + (t ? " " + t : "");
       }
+      /* 127차: 12월 모임이거나 제목에 크리스마스, 성탄, 연말, 송년, 망년이 있으면 크리스마스 꾸밈. 호랑가시 잎 둘과 열매 셋(소식 화면과 같은 그림) */
+      var SP_HOLLY_LEAF = "M0 0Q1.6 -2.2 3 -2.6L3.9 -4.6Q5 -3.2 6.4 -3.4L7.6 -5.2Q8.6 -3.4 10 -3.2L11.4 -4.4Q12.4 -2.4 15 0Q12.4 2.4 11.4 4.4L10 3.2Q8.6 3.4 7.6 5.2L6.4 3.4Q5 3.2 3.9 4.6L3 2.6Q1.6 2.2 0 0Z";
+      var SP_HOLLY = '<span class="sp-holly" aria-hidden="true"><svg viewBox="0 0 34 24" focusable="false"><g transform="translate(17 15)">' +
+        [[-158, "#1F6B45"], [-22, "#2E8A57"]].map(function (l) { return '<g transform="rotate(' + l[0] + ')"><path d="' + SP_HOLLY_LEAF + '" fill="' + l[1] + '"/><path d="M1 0H13.5" stroke="#0F3D22" stroke-width=".7" stroke-linecap="round"/></g>'; }).join("") +
+        [[-2.4, 2.2], [2.4, 2.4], [0, -1.4]].map(function (b) { return '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="2.7" fill="#C8232C"/><circle cx="' + +(b[0] - 0.8).toFixed(1) + '" cy="' + +(b[1] - 0.9).toFixed(1) + '" r=".8" fill="#fff" fill-opacity=".75"/>'; }).join("") +
+        "</g></svg></span>";
+      function spIsXmas(v) { return String((v.meta || {}).date || "").slice(5, 7) === "12" || /크리스마스|성탄|x-?mas|연말|송년|망년/i.test(String(v.title || "")); }
       function specialRowHTML(v, today, nowK) {
         var m = v.meta || {}, br = bungRow(v), d = C.daysFromToday(m.date, today), ph = C.bungPhase(m, nowK);
-        var dd = ph === "ongoing" ? "진행 중" : d > 0 ? "D-" + d : "오늘";
+        var dd = ph === "ongoing" ? "진행 중" : d > 0 ? "D-" + d : "오늘", xm = spIsXmas(v);
         var fb = window.BUNGPHOTO ? BUNGPHOTO.thumb(v.raw, m) : "";
         var img = '<img src="assets/special/' + esc(m.date) + '.jpg" data-fb="' + esc(fb) + '" alt="" width="144" height="144" decoding="async" onerror="this.parentNode.classList.remove(\'is-poster\');if(this.dataset.fb&&this.src.indexOf(this.dataset.fb)<0){this.src=this.dataset.fb}else{this.remove()}" />';
-        return '<a class="sp-row" href="news.html?cat=bung#post-' + v.id + '">' +
+        return '<a class="sp-row' + (xm ? " is-xmas" : "") + '" href="news.html?cat=bung#post-' + v.id + '">' +
           '<span class="sp-thumb is-poster">' + img + "</span>" +
-          '<span class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday' + (ph === "ongoing" || d <= 0 ? " is-now" : "") + '">' + esc(dd) + "</span></span>" +
+          '<span class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday' + (ph === "ongoing" || d <= 0 ? " is-now" : "") + '">' + esc(dd) + "</span>" + (xm ? SP_HOLLY : "") + "</span>" +
           '<span class="row-title">' + esc(v.title || "제목 없음") + "</span>" +
           '<span class="sp-when">' + esc(spWhen(m)) + "</span>" +
           (m.place ? '<span class="sp-place">' + esc(m.place) + "</span>" : "") +

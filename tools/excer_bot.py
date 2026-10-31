@@ -18,7 +18,8 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     정한다(끝나는 시각은 쓰지 않는다): 지금 벙(가장 늦게 시작한 시각의 벙. 다음 벙이 시작할 때까지, 길어도 세 시간), 다음 시간 벙,
     앞서 시작한 벙(늦게 시작한 벙이 위). 같은 시각이면 먼저 등록한 글이 위. 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄로 센다.
     그다음 내일 이후 모집 중인(마감 안 함, 정원 남음, 신청 마감 전) 벙은 첫 벙만 한 줄('외 N건'). 오늘 모집 중인 벙이 없으면 다음 벙을
-    장소까지. 오늘 벙이 모두 마감이면 첫 줄 'N건 모두 마감'(1건이면 '1건 마감'). 시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고,
+    장소까지. 그 가운데 운영진이 스페셜로 올린 모임이 있으면 다음 벙 대신 스페셜 한 줄('스페셜 12/19(토) 19:00~23:59 제목')과 그 모임 주소
+    (오늘 모집 중인 벙이 없으면 장소까지. 글이 길면 주소 줄을 먼저 뺀다). 오늘 벙이 모두 마감이면 첫 줄 'N건 모두 마감'(1건이면 '1건 마감'). 시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고,
     끝나는 시각에서 2시간 지난 벙은 카드 대신 '외 N건'으로 센다(notice_fold_min. 시간이 지난 것만으로 다시 올리지는 않고, 다음에 올리는 글부터).
     오늘 벙이 바뀌어 첫 두 줄과 카드, '외 N건' 이 달라질 때(새 벙, 시간이나 장소 바뀜, 마감, 정원 참, 다시 모집, 취소, 카드에 보이는
     벙의 제목)와 날이 바뀔 때 지금 글을 방에 올리고 길게 눌러 공지로 건다. 글을 만들 때 10분 안에 시작할 벙이 있으면 그 시각의 차례로 만든다.
@@ -189,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-31.6"                    # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-10-31.7"                   # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -474,7 +475,7 @@ def notice_line(line):
     """봇 공지 글의 줄처럼 생겼는지(📣, 👉, 카드 번호, 📍, 👥, 🔒, 🗓, ⏳ 로 시작하거나 '외 N건')"""
     t = (line or "").strip()
     return t.startswith((EMO["next"], EMO["go"], EMO["place"], EMO["people"], EMO["벙 마감"], EMO["later"], EMO["live"]) + tuple(CARD_NO)) \
-        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일) |(참석|벙 올리기|벙 생성) https?://|참여링크 : https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 주소, 인원 줄
+        or bool(re.match(r"외 \d+건$|\d?\s*\d{1,2}:\d{2}(~\d{1,2}:\d{2})? |(마감|다음 벙|내일|스페셜) |(참석|벙 올리기|벙 생성) https?://|참여링크 : https?://|(정원|참석) \d", t))   # 이모지가 빠진 화면 글의 카드, 마감, 다음 벙, 스페셜, 주소, 인원 줄
 
 
 def whole_notice(band, text):
@@ -553,7 +554,7 @@ def norm(p):
             "place": clean(m.get("place"), 40), "addr": clean(m.get("addr"), 60), "cap": cap, "closed": m.get("status") == "closed",
             "deadline": dl if re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", dl) else "",
             "attend": att, "full": bool(cap and att is not None and att >= cap),
-            "created": str(p.get("created_at") or "")}
+            "created": str(p.get("created_at") or ""), "pinned": p.get("pinned") is True}   # 운영진이 스페셜로 올린 모임(127차)
 
 
 def http_get(url, headers=None, timeout=15):
@@ -727,7 +728,7 @@ class Site:
     def posts(self):
         """어제 이후 날짜의 모임 모집 글(최근 100개). 지난 글은 읽지 않으니 멀리 잡은 벙이 목록 밖으로 밀리지 않는다.
         어제 것도 읽는 까닭: 자정을 넘겨 끝나는 벙(19:00 시작 01:00 끝)이 자정에 공지에서 빠지지 않게"""
-        cols = "id,title,author,meta,created_at" + ("" if getattr(self, "no_attend", False) else ",attend_count")
+        cols = "id,title,author,pinned,meta,created_at" + ("" if getattr(self, "no_attend", False) else ",attend_count")   # pinned: 스페셜(127차)
         q = urllib.parse.urlencode({"select": cols, "category": "eq.벙 소식", "meta->>date": "gte." + Now(datetime.now(KST) - timedelta(days=1)).ymd,
                                     "order": "created_at.desc", "limit": "100"}, quote_via=urllib.parse.quote)
         url = self.cfg["supa"] + "/rest/v1/site_posts_v?" + q
@@ -1372,6 +1373,7 @@ def notice_build(posts, now, cfg, at="now", room=None):
     (공지 띠에 보이는 두 줄), 모집 중인 오늘 벙은 카드로(번호와 시간, 제목, 장소, 정원과 신청 마감). 카드는 at(기본은 now) 때의 시작 시각 차례
     (notice_slots: 지금 벙, 다음 벙, 앞서 시작한 벙). 넷까지, 카드에 못 든 벙과 마감했거나 정원이 찬 오늘 벙은 '외 N건' 한 줄.
     그다음 이후 벙 한 줄(오늘 모집 중인 벙이 없으면 장소까지. 모두 마감이면 첫 줄 'N건 모두 마감', 1건이면 '1건 마감').
+    이후 모집 중인 벙 가운데 스페셜(운영진이 고정한 모임)이 있으면 그 자리에 스페셜 줄과 그 모임 주소 줄(127차).
     시작했거나 끝났거나 신청 마감이 지난 오늘 벙도 카드로 남고, at 때 끝나는 시각에서 notice_fold_min(기본 120분) 지난 벙은 카드 대신
     '외 N건'(마감 벙처럼 센다. at 으로 가르므로 시간만 지나서는 오늘 부분이 바뀌지 않는다). 카드마다 그 벙의 짧은 주소 줄(/b/번호, notice_links).
     오늘은 조용한 시간이 끝날 때(없으면 자정) 넘어간다.
@@ -1388,8 +1390,10 @@ def notice_build(posts, now, cfg, at="now", room=None):
     links = bool(cfg.get("link", True) and cfg.get("notice_links", True))
     total = len(on) + len(off)
 
-    def build(nc, pin, tail=True):
-        """nc: 카드 수, pin: 다음 벙의 장소 줄, tail: 맨 아래 이후 벙 줄까지"""
+    sp = next((v for v in later if v.get("pinned")), None)   # 127차: 스페셜(운영진이 올린 이후 모집 중인 모임)이 있으면 맨 아래 줄은 다음 벙 대신 스페셜
+
+    def build(nc, pin, sx=True, tail=True):
+        """nc: 카드 수, pin: 다음 벙(스페셜)의 장소 줄, sx: 스페셜의 참여링크 줄, tail: 맨 아래 이후 벙 줄까지"""
         out = [EMO["next"] + " 오늘의 벙 " + md(today) + (" %d건" % total if on else (" 1건 마감" if total == 1 else " %d건 모두 마감" % total) if off else " 없음")]
         if cfg.get("link", True):                        # 둘째 줄도 공지 띠에 보인다
             out.append(EMO["go"] + " 벙 생성 " + cfg["site"] + "/bung")
@@ -1399,7 +1403,11 @@ def notice_build(posts, now, cfg, at="now", room=None):
                 ([EMO["go"] + " 참여링크 : " + bung_short(cfg, v)] if links else [])   # 장소 이름만(상세 주소는 글에), 그 벙 주소
         if on and total > nc:
             out += ["", "외 %d건" % (total - nc)]          # 카드에 못 든 벙과 마감했거나 정원이 찬 벙(모두 마감이면 첫 줄이 말한다)
-        if later and tail:
+        if sp and tail:                                  # '🗓 스페셜 12/19(토) 19:00~23:59 제목', 장소(오늘 모집 중인 벙이 없을 때), 그 모임 주소
+            out += ["", " ".join((EMO["later"], "스페셜", md(sp["date"]), span(sp), sp["title"]))] + \
+                ([EMO["place"] + " " + sp["place"]] if pin and not on and sp["place"] else []) + \
+                ([EMO["go"] + " 참여링크 : " + bung_short(cfg, sp)] if links and sx else [])
+        elif later and tail:
             v = later[0]
             k = sum(1 for x in later[1:] if x["date"] == v["date"])   # '외 N건' 은 그 날의 다른 벙만(내일 3건처럼 읽히지 않게)
             more = " 외 %d건" % k if k else ""
@@ -1410,15 +1418,17 @@ def notice_build(posts, now, cfg, at="now", room=None):
                     ([EMO["place"] + " " + v["place"]] if pin and v["place"] else [])
         return "\n".join(out)
 
-    cap = int(cfg.get("notice_max_chars", 400) or 0)    # 글 길이 한도(0 이면 없음). 넘치면 카드를 줄이고('외 N건'), 다음 벙의 장소 줄을 뺀다
-    nc, pin = min(len(on), len(CARD_NO)), True
-    size = lambda nc, pin: u16(build(nc, pin, False)) + room if room is not None and on else u16(build(nc, pin))
-    while cap and size(nc, pin) > cap and (nc > 1 or pin):
-        if nc > 1:
+    cap = int(cfg.get("notice_max_chars", 400) or 0)    # 글 길이 한도(0 이면 없음). 넘치면 스페셜의 참여링크 줄을 먼저 빼고, 카드를 줄이고('외 N건'), 장소 줄을 뺀다
+    nc, pin, sx = min(len(on), len(CARD_NO)), True, bool(sp)
+    size = lambda nc, pin, sx: u16(build(nc, pin, sx, False)) + room if room is not None and on else u16(build(nc, pin, sx))
+    while cap and size(nc, pin, sx) > cap and (sx or nc > 1 or pin):
+        if sx:
+            sx = False
+        elif nc > 1:
             nc -= 1
         else:
             pin = False
-    return build(nc, pin), [v["id"] for v in on[:nc]]
+    return build(nc, pin, sx), [v["id"] for v in on[:nc]]
 
 
 def later_line(v, nextday):
