@@ -44,11 +44,11 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 매일 09:00(heartbeat_at, 조용한 시간이면 끝난 뒤) 시험 방에 '봇 정상' 한 줄(사이트를 본 때, 공지 상태). 안 오면 태블릿을 본다.
   - 공지 걸기를 네 번 실패해 쉬는 동안은 status 와 '봇 정상' 줄에 '직접 공지로 걸어 주세요' 가 계속 보인다.
   - 매일 정한 시각에 공지 글을 한 번 더 올릴 수 있다(digest_at, 기본은 끔).
-  - 운영 화면(ops.html 데이터 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
+  - 운영 화면(ops.html 봇 탭의 봇 원격 조종)에서 공지 멈춤(공지 글만 쉼, 알림은 그대로)이나 전체 멈춤(알림과 공지 모두 쉼,
     그동안 바뀐 것은 기억만)을 누르면 1분 안에 따른다. 멈춤이 끝나면(정한 시간이 지나거나 다시 켜기) 방 공지 띠를 보고 봇 공지가
     아니면 다시 올려 건다(조용한 시간 안에 멈췄다 풀려도 끝나면 본다).
   - 멤버: 하루 세 번(members_at auto: 서버가 지난 4주 시간대별 방문에서 붐비기 시작하는 때의 1시간 전으로 정한 시각, 또는 고정 시각)과
-    운영 화면 데이터 탭의 '지금 멤버 읽기'(1분 안에) 알릴 방 오른쪽 위 세 줄 단추(방 메뉴)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는
+    운영 화면 봇 탭의 '지금 멤버 읽기'(1분 안에) 알릴 방 오른쪽 위 세 줄 단추(방 메뉴)를 열고 대화상대 칸을 끝까지 밀어 지금 방에 있는
     멤버의 닉네임을 읽어(봇 자신은 빼고) 사이트 닉네임 목록에 올린다(tablet, 봇 열쇠가 있을 때). 누르는 것은 세 줄 단추, 대화상대 칸의
     더보기 단추, 뒤로 키뿐이다. 대화상대 수(봇 빼고)의 9할을 못 읽으면 올리지 않고 30분 뒤 다시(한 시각에 세 번까지). 서버는 지금 목록의
     7할 아래로 줄면 바꾸지 않는다. 조용한 시간에도 하고, 운영 화면의 전체 멈춤 중에는 쉰다. 읽은 결과와 읽기 실패는 운영 화면에 보인다.
@@ -69,14 +69,14 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
   - 대화 내보내기(export on 일 때, 기본은 끔. docs/BOT_AUTOMATION_PLAN.md 7절): 매일 05:40(export at) 알릴 방 메뉴의 설정 단추, 채팅방 설정의
     '대화 내용 내보내기', 내보내기 창의 텍스트 항목을 눌러 공유 창에서 Termux 로 파일을 받고, 태블릿 안에서 사이트와 같은 분석기(node, 저장소에서
     받아 둔 파일)로 읽어 사람별 집계와 채팅 언어 점검 결과만 서버에 올린다(봇 열쇠). 대화 원문은 올리지 않고 파일은 분석 뒤 지운다.
-    운영 화면 데이터 탭의 '지금 내보내기'(30분 안의 요청)도 따른다. 누르는 것은 세 줄 단추, 설정 단추, 그 두 항목, 공유 창의 앱, 받는 앱의 확인 단추뿐이고
+    운영 화면 봇 탭의 '지금 내보내기'(30분 안의 요청)도 따른다. 누르는 것은 세 줄 단추, 설정 단추, 그 두 항목, 공유 창의 앱, 받는 앱의 확인 단추뿐이고
     해제, 나가기, 삭제, 신고, 차단이 든 것은 어떤 흐름에서도 누르지 않는다. 실패하면 20분, 40분, 60분 뒤 다시(하루 세 번까지). 조용한 시간에도 하고
     전체 멈춤 중에는 쉰다. 분석까지 하고 올리기만 실패했으면 다음에는 올리기만 다시 한다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 대화 내보내기를 켰으면 하루 한 번 내보낼 때, 신입 인사를 켰으면 독려 날 읽고 보낼 때(watch on 이면 방 머리의 인원 수를 볼 때도)뿐이다.
     채팅 목록에서 방을 못 찾거나 방으로 가는 길에 누를 자리가
     보이스룸 작은 창에 가려 있으면 1, 2, 5, 10, 15분 간격으로 다시 본다. 채팅 목록으로는 아래(또는 옆) 메뉴의 '채팅' 으로 가고, 맨 위 머리 제목 글자는 누르지 않는다.
-가진 것: 멤버 목록과 봇 분석 결과만 올릴 수 있는 봇 열쇠(members_key, 운영 화면 데이터 탭에서 만든다). 사이트의 공개 글만 읽는다.
+가진 것: 멤버 목록과 봇 분석 결과만 올릴 수 있는 봇 열쇠(members_key, 운영 화면 봇 탭에서 만든다). 사이트의 공개 글만 읽는다.
 공개 접속 키는 사이트에서 읽어 온다. 운영진 비밀번호는 여기에 두지 않는다.
 
 tablet 준비(태블릿 하나로)
@@ -135,13 +135,13 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py members check   (tablet) 알릴 방 메뉴에서 멤버를 지금 읽어 닉네임 양식이 틀린 사람과 틀린 곳을 보이고
                                       excer_bot_members_check.txt 와 클립보드에 담는다(사이트에 올리지 않음). 양식: 닉네임 지역
                                       성별(남, 여) 출생연도(두 자리), 사이 한 칸씩. 끝의 입장일(네 자리)과 하트는 있어도 된다. run 을 먼저 Ctrl+C
-  python excer_bot.py members key     운영 화면 데이터 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
+  python excer_bot.py members key     운영 화면 봇 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
                                       끝 네 글자만 보인다. members key off 로 지운다)
   python excer_bot.py members study   대화상대 칸 화면을 단계마다 excer_bot_members_study.txt 에 적고 클립보드에 담는다
                                       (멤버 이름은 가린다. 읽기가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
   python excer_bot.py members at auto   멤버를 읽어 올리는 때. auto(기본)는 서버가 정한 하루 세 시각(지난 4주 시간대별 방문에서
                                       붐비기 시작하는 때의 1시간 전), members at 08:00,12:00,18:00 은 고정 시각(넷까지), members at off 로 끈다.
-                                      운영 화면 데이터 탭의 '지금 멤버 읽기' 는 run 이 1분 안에 따른다. run 을 다시 켜야 적용
+                                      운영 화면 봇 탭의 '지금 멤버 읽기' 는 run 이 1분 안에 따른다. run 을 다시 켜야 적용
   python excer_bot.py members watch 30   인원 수만 보러 몇 분마다 방을 열지(바뀌면 바로 읽어 올림, 5~180분, 기본 끔). off 로 끈다
   python excer_bot.py members every 240  인원 수가 그대로여도 몇 분마다 다시 읽어 올릴지(이름 바뀜, 30~1440분, 기본 끔). off 로 끈다.
                                       둘 다 08:00~24:00 에만 하고 조용한 시간에는 쉰다. 꺼 두어도 다른 일로 방을 연 김에 본 인원 수가
@@ -159,7 +159,7 @@ tablet 준비(태블릿 하나로)
                                       greet watch off(기본) 면 독려만(그 사이에는 방을 열지 않는다). run 을 다시 켜야 적용
   python excer_bot.py export          대화 내보내기 설정(켬, 시각, 받을 앱, node)과 마지막 결과를 보인다. export on, export off, export at 05:40
                                       (run 을 다시 켜야 적용). 켜면 매일 그 시각에 알릴 방의 대화 내용을 텍스트로 내보내 태블릿 안에서 분석하고
-                                      결과만 서버에 올린다(운영 화면 데이터 탭에서 반영). 봇 열쇠가 있어야 한다
+                                      결과만 서버에 올린다(운영 화면 봇 탭에서 반영). 봇 열쇠가 있어야 한다
   python excer_bot.py export check    node 가 있는지, 분석기 파일을 받을 수 있는지, 봇 열쇠, Termux 다운로드 폴더를 본다(화면은 안 건드림)
   python excer_bot.py export study    (tablet) 알릴 방 메뉴, 채팅방 설정, 내보내기 창, 공유 창, 받는 앱의 창을 차례로 excer_bot_export_study.txt 에
                                       적고 클립보드에 담는다(대화 글과 이름은 가림. 실제로 한 번 내보내 파일을 받고 크기만 적은 뒤 지운다). run 을 먼저 Ctrl+C
@@ -219,7 +219,7 @@ DEFAULTS = {
     "heartbeat_at": "09:00",             # 매일 이 시각에 시험 방에 '봇 정상' 한 줄(안 오면 태블릿을 본다). 조용한 시간이면 끝난 뒤. "" 이면 끔
     "members_at": "auto",                # (tablet) 알릴 방 메뉴(세 줄 단추)의 멤버를 읽어 사이트 닉네임 목록에 올리는 때. auto 는 서버가 정한 하루 세 시각
                                          # (지난 4주 시간대별 방문에서 붐비기 시작하는 때의 1시간 전), "08:00,12:00,18:00" 처럼 고정 시각(넷까지), "" 이나 "off" 면 안 한다
-    "members_key": "",                   # 봇 열쇠(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key 로 넣는다). 멤버 목록만 바꿀 수 있다
+    "members_key": "",                   # 봇 열쇠(운영 화면 봇 탭에서 만들고 python excer_bot.py members key 로 넣는다). 멤버 목록만 바꿀 수 있다
     "members": {"min_ratio": 0.9, "min": 20, "rid": "",   # 다 읽었다고 볼 몫(대화상대 수에서 봇을 뺀 수의 0.9), 대화상대 수를 못 읽었을 때 적어도 몇 명, 이름 칸 id(비우면 스스로)
                 "watch": 0,                      # 멤버 지켜보기: 이만큼(분)마다 인원 수만 보러 알릴 방을 열고 바뀌었으면 바로 읽어 올린다. 0(기본, 2026-10-31.5)이면 안 한다
                 "every": 0,                      # 인원 수가 그대로여도 이만큼(분)마다 다시 읽어 올린다(하트를 달거나 떼는 이름 바뀜). 0(기본)이면 안 한다
@@ -1061,11 +1061,11 @@ def members_result(r):
     e = str(r.get("error") or "")
     if e == "SHRINK":
         return "stop", ("멤버 목록을 올리지 않음: 사이트 목록 %s명에서 %s명으로 줄어 서버가 막음. 방 메뉴의 멤버를 다 읽었는지 python excer_bot.py members 로 확인. "
-                        "방 인원이 실제로 그만큼 줄었으면 운영 화면 데이터 탭의 '사이트에 올리기' 로 한 번 올리면 다음 날부터 다시 됨" % (r.get("now"), r.get("got")))
+                        "방 인원이 실제로 그만큼 줄었으면 운영 화면 멤버 탭의 '사이트에 올리기' 로 한 번 올리면 다음 날부터 다시 됨" % (r.get("now"), r.get("got")))
     if e == "BAD_KEY":
-        return "key", "멤버 목록을 올리지 못함: 봇 열쇠가 맞지 않음. 운영 화면 데이터 탭에서 봇 열쇠를 다시 만들고 python excer_bot.py members key"
+        return "key", "멤버 목록을 올리지 못함: 봇 열쇠가 맞지 않음. 운영 화면 봇 탭에서 봇 열쇠를 다시 만들고 python excer_bot.py members key"
     if e == "NO_KEY":
-        return "key", "멤버 목록을 올리지 못함: 서버에 봇 열쇠가 없음(운영 화면에서 껐거나 아직 안 만듦). 운영 화면 데이터 탭에서 봇 열쇠를 만들고 python excer_bot.py members key"
+        return "key", "멤버 목록을 올리지 못함: 서버에 봇 열쇠가 없음(운영 화면에서 껐거나 아직 안 만듦). 운영 화면 봇 탭에서 봇 열쇠를 만들고 python excer_bot.py members key"
     if e == "RATE_LIMIT":
         return "retry", "멤버 목록을 올리지 못함: 서버가 잠시 막음(1시간에 30번까지)"
     if e in ("EMPTY", "BAD_NAMES", "TOO_MANY"):
@@ -1116,7 +1116,7 @@ def members_alive(bot):
     if not slots:
         return "꺼짐(켜려면 python excer_bot.py members at auto)"
     if not key:
-        return "봇 열쇠 없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"
+        return "봇 열쇠 없음(운영 화면 봇 탭에서 만들고 python excer_bot.py members key)"
     t = members_last_text(st.get("members_last"))
     wt = members_watch_text(cfg)
     out = ["하루 %d번 %s(%s)" % (len(slots), ", ".join(slots), "서버가 방문 시간대로 정함" if members_mode(cfg) == "auto" else "고정")] + ([wt] if wt else []) + \
@@ -1195,7 +1195,7 @@ def export_alive(bot):
     if not x["on"]:
         return ""
     if not bot.cfg.get("members_key"):
-        return "봇 열쇠 없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"
+        return "봇 열쇠 없음(운영 화면 봇 탭에서 만들고 python excer_bot.py members key)"
     t = export_last_text(st.get("export_last"))
     out = ["매일 %s" % x["at"], "마지막 " + t if t else "아직 안 함"]
     if float(st.get("export_retry_at") or 0) > bot.ts():
@@ -1280,7 +1280,7 @@ def export_check_lines(cfg, get=None):
         out.append("분석기 파일: 받음(%s)" % d)
     except Exception as e:
         out.append("분석기 파일: 못 받음(%s)" % e)
-    out.append("봇 열쇠: %s" % ("있음" if cfg.get("members_key") else "없음(운영 화면 데이터 탭에서 만들고 python excer_bot.py members key)"))
+    out.append("봇 열쇠: %s" % ("있음" if cfg.get("members_key") else "없음(운영 화면 봇 탭에서 만들고 python excer_bot.py members key)"))
     out.append("Termux 다운로드 폴더: %s" % ("있음(%s)" % TERMUX_DL if os.path.isdir(TERMUX_DL) else "없음(공유로 파일을 처음 받을 때 생긴다)"))
     out.append("Termux 받기 스크립트(%s): %s" % (TERMUX_EDITOR, "봇이 둔 것(받기 창에서 EDIT 를 눌러 바로 끝남)" if export_editor_ok() else "다른 것이 있어 그대로 둠(Open directory 로 받음, 세션이 하나씩 남음)"))
     return out
@@ -1731,7 +1731,7 @@ class Bot:
             self.seen_off = True
         elif not r.get("ok") and not self.seen_warned:
             self.seen_warned = True
-            self.log("살아 있음 표시를 서버가 받지 않음(%s): 운영 화면 데이터 탭의 봇 열쇠를 확인" % r.get("error"))
+            self.log("살아 있음 표시를 서버가 받지 않음(%s): 운영 화면 봇 탭의 봇 열쇠를 확인" % r.get("error"))
 
     # ── 운영 화면에서 다루기(2026-10-31, 125차, 2026-10-31-bot-remote.sql): 설정, 새 판, 다시 켜기, 시험 글, 상태 ──
     def remote_tick(self):
@@ -2271,7 +2271,7 @@ class Bot:
         return True
 
     def export_report(self, req, ok, note, extra=None):
-        """내보내기 결과(status)를 서버에(운영 화면 데이터 탭에 보임. req 는 '지금 내보내기' 요청 때). 못 보내도 그냥 간다(처음 한 번만 적는다)"""
+        """내보내기 결과(status)를 서버에(운영 화면 봇 탭에 보임. req 는 '지금 내보내기' 요청 때). 못 보내도 그냥 간다(처음 한 번만 적는다)"""
         fn, key = getattr(self.site, "analysis_put", None), self.cfg.get("members_key") or ""
         if not fn or not key or getattr(self, "xrep_off", False):
             return
@@ -2362,7 +2362,7 @@ class Bot:
                     if r and r.get("ok"):
                         ocfg = r.get("cfg") or {}
                     elif r and r.get("error") == "BAD_KEY":
-                        raise RuntimeError("봇 열쇠가 맞지 않음(운영 화면 데이터 탭에서 새 열쇠를 만들어 python excer_bot.py members key)")
+                        raise RuntimeError("봇 열쇠가 맞지 않음(운영 화면 봇 탭에서 새 열쇠를 만들어 python excer_bot.py members key)")
                 except RuntimeError:
                     raise
                 except Exception as e:
@@ -2389,7 +2389,7 @@ class Bot:
             if r is None:
                 raise RuntimeError("서버에 봇 분석 SQL(2026-10-31-bot-analysis.sql)이 아직 없음")
             if not r.get("ok"):
-                raise RuntimeError({"BAD_KEY": "봇 열쇠가 맞지 않음(운영 화면 데이터 탭에서 새 열쇠를 만들어 python excer_bot.py members key)",
+                raise RuntimeError({"BAD_KEY": "봇 열쇠가 맞지 않음(운영 화면 봇 탭에서 새 열쇠를 만들어 python excer_bot.py members key)",
                                     "TOO_BIG": "%s 결과가 너무 커서 서버가 받지 않음" % kind, "RATE_LIMIT": "서버가 잠시 막음(한 시간에 40번)"}.get(
                                         r.get("error"), "서버가 받지 않음(%s)" % r.get("error")))
         out = {"messages": int(meta["messages"] or 0), "hits": int(meta["hits"] or 0), "range": meta["range"] or {},
@@ -8554,11 +8554,11 @@ def members_key_cmd(cfg, path, val, clip=None):
     if not val:
         val, src = (clip or clip_text)() or "", "클립보드의 글"
         if not val.strip():
-            return ("클립보드가 비어 있거나 읽지 못했습니다(Termux:API 앱이 있어야 합니다). 운영 화면 데이터 탭에서 복사 단추를 누른 뒤 다시 "
+            return ("클립보드가 비어 있거나 읽지 못했습니다(Termux:API 앱이 있어야 합니다). 운영 화면 봇 탭에서 복사 단추를 누른 뒤 다시 "
                     "python excer_bot.py members key, 안 되면 열쇠를 길게 눌러 붙여 넣어 python excer_bot.py members key 열쇠")
     got = sorted(set(MEMBER_KEY_RE.findall(INVIS_RE.sub("", val))))
     if len(got) != 1:
-        return "%s(%d자)%s. 운영 화면 데이터 탭에서 봇 열쇠를 만들고 복사 단추를 다시 누르세요" % (
+        return "%s(%d자)%s. 운영 화면 봇 탭에서 봇 열쇠를 만들고 복사 단추를 다시 누르세요" % (
             src, len(val.strip()), "에 열쇠가 %d개 들어 있습니다" % len(got) if got else "이 봇 열쇠 모양이 아닙니다(mbk_ 뒤에 0~9, a~f 48자)")
     cfg["members_key"] = got[0]
     save_cfg(path, cfg)
@@ -8630,7 +8630,7 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     if not room:
         raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
     if sub == "push" and not key:
-        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 데이터 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
+        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 봇 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
     sender = sender or make_sender(cfg, log)
     if not isinstance(sender, AdbSender):
         raise SystemExit("members 는 tablet 방식에서 씁니다.")
@@ -8838,7 +8838,7 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
             "켬" if x["on"] else "꺼짐", x["at"], ", ".join(x["share"]), x["node"], "남김(keep)" if x["keep"] else "분석 뒤 지움"))
         print("  마지막: %s" % (export_last_text(st.get("export_last")) or "아직 안 함"))
         if not cfg.get("members_key"):
-            print("  봇 열쇠 없음: 운영 화면 데이터 탭에서 만들고 python excer_bot.py members key")
+            print("  봇 열쇠 없음: 운영 화면 봇 탭에서 만들고 python excer_bot.py members key")
         print("  바꾸려면: " + usage)
         return
     if sub in ("on", "off"):
@@ -8892,7 +8892,7 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
             print("다 적었습니다: %s (cat 으로 보세요)" % path)
         return
     if not cfg.get("members_key"):
-        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 데이터 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
+        raise SystemExit("봇 열쇠가 없습니다. 운영 화면 봇 탭에서 봇 열쇠를 만들어 복사한 뒤 python excer_bot.py members key")
     print("알릴 방(%s)의 대화 내용을 내보내 분석하고 결과를 올립니다. 몇 분(긴 대화는 더) 걸립니다. 태블릿을 만지지 마세요." % room)
     b = Bot(cfg, sender, site or Site(cfg), sp, log, room=room)
     now = Now(datetime.now(KST))
@@ -8910,7 +8910,7 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
                 export_last={"at": "%s %s" % (now.ymd, now.hm), "messages": got["messages"], "hits": got["hits"], "error": ""})
     b.save()
     rg = got.get("range") or {}
-    print("됐습니다: %s ~ %s, 메시지 %s건, 사람 %d명, 걸린 줄 %s건. 운영 화면 데이터 탭의 '봇 대화 내보내기' 에서 반영하세요" % (
+    print("됐습니다: %s ~ %s, 메시지 %s건, 사람 %d명, 걸린 줄 %s건. 운영 화면 봇 탭의 '봇 대화 내보내기' 에서 반영하세요" % (
         rg.get("from") or "?", rg.get("to") or "?", format(got["messages"], ","), got["people"], format(got["hits"], ",")))
 
 

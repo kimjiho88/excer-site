@@ -3124,7 +3124,7 @@
         sec("시간대별 방문", peak >= 0 && hrs[peak] ? `최근 4주, 가장 많은 때 ${peak}시` : "최근 4주", barSvg(hrs, hrs.map((x, i) => String(i)), hrs.map((x, i) => i + "시 " + nf(x)), { hi: peak, label: "시간대별 방문", labs: 8, h: 130 })),
         sec("댓글과 반응", `최근 4주 댓글 ${nf(sum("comments", last4))}, 반응 ${nf(sum("reactions", last4))}, 새 묶기 ${nf(sum("links", last4))}`, barSvg(W.map((w) => Number(w.comments || 0) + Number(w.reactions || 0)), lab, W.map((w, i) => lab[i] + " 주 댓글 " + nf(w.comments || 0) + ", 반응 " + nf(w.reactions || 0)), { hi: W.length - 1, label: "댓글과 반응" }))
       ].join("");
-      const warn = N.auth_fail_24h ? `<p class="notice is-warn">하루 동안 운영진 비밀번호 틀림 ${nf(N.auth_fail_24h)}번(접속 주소 ${nf(N.auth_fail_ips || 0)}곳). 여덟 번 틀리면 그 주소는 15분 잠깁니다.</p>` : "";
+      const warn = N.auth_fail_24h ? `<p class="notice is-warn">하루 동안 운영진 비밀번호 틀림 ${nf(N.auth_fail_24h)}번(접속 주소 ${nf(N.auth_fail_ips || 0)}곳). 15분 안에 여덟 번 틀리면 그 주소는 15분 잠깁니다.</p>` : "";
       host.innerHTML = `<div class="dsec"><h2>사이트 운영 <small>${esc(memWhen(MT.at))} 기준, 주는 월요일부터</small></h2>${warn}<div class="kpis mt-kpis">${kpis}</div><div class="cgrid mt-grid">${charts}</div></div>`;
     }
     $("botPill").addEventListener("click", () => setTab("bot"));
@@ -3489,7 +3489,7 @@
       if (k === "delete") {
         const n = (BG.att[id] || []).length, live = BG.posts.some((x) => x.id === id) && !bgStatus(p).past;   // 끝나지 않은 모임 글: 봇이 채팅방에 '벙 취소' 를 알린다
         if (!window.confirm("'" + p.title + "' 글을 지울까요?" + (n ? " 참석자 " + n + "명의 명단도 함께 지워집니다." : "") + " 되돌릴 수 없습니다."
-          + (live ? "\n\n봇이 채팅방에 '벙 취소' 를 알립니다. 조용히 지우려면 먼저 데이터 탭의 봇 전체 멈춤을 켜 주세요." : ""))) return;
+          + (live ? "\n\n봇이 채팅방에 '벙 취소' 를 알립니다. 조용히 지우려면 먼저 봇 탭의 전체 멈춤을 켜 주세요." : ""))) return;
         bungAct(id, "delete", {}, "글을 지웠습니다."); return;
       }
       if (k === "add") { const v = t(await bgAsk(b, { label: "참석자 닉네임", ph: "채팅방 닉네임 그대로", list: "bgNames", ok: "추가" })); if (v) bungAct(id, "add", { nick: v }, "참석자를 추가했습니다: " + v); return; }

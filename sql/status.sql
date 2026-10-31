@@ -64,7 +64,7 @@ mbot as (
 select 항목, 값, 판정 from (
 select ord, 부름 as 항목, case when reg is null then '표가 없어요' else n::text || '줄' end as 값,
        case when reg is null then case when t = 'site_rate_hit' then '2026-10-06-rate-limit.sql 을 돌리면 생겨요' when t = 'site_members' then '2026-10-09-members.sql 을 돌리면 생겨요' when t = 'site_kakao_links' then '카카오 로그인은 2026-10-25-kakao-login-1.sql 부터 돌리면 생겨요' when t = 'site_visit_hours' then '2026-10-25-member-times.sql 을 돌리면 생겨요' else '설치가 덜 됐어요' end
-            when t = 'site_members' and n = 0 then '운영 화면 데이터 탭에서 사이트에 올리기' else '' end as 판정
+            when t = 'site_members' and n = 0 then '운영 화면 멤버 탭에서 사이트에 올리기' else '' end as 판정
   from cnt
 union all
 select 10, '벙 날짜, 장소 칸', case when ok then '있음' else '없음' end,
@@ -86,7 +86,7 @@ select 17, '진행 중 참석, 봇 원격 조종', case when ctl is null then '�
   from botctl
 union all
 select 18, '멤버 자동 갱신', coalesce(v, '표가 없어요'), case when v is null then '2026-10-09-memberbot.sql 을 돌리면 생겨요'
-       when fn < 2 then '옛 판으로 돌아갔어요. 2026-10-09-memberbot.sql 을 다시 돌리세요' when v like '열쇠 없음%' then '켜려면 운영 화면 데이터 탭에서 봇 열쇠 만들기' when v like '%실패%' then '봇이 목록을 못 바꿨어요. 운영 화면 데이터 탭을 보세요' else '' end
+       when fn < 2 then '옛 판으로 돌아갔어요. 2026-10-09-memberbot.sql 을 다시 돌리세요' when v like '열쇠 없음%' then '켜려면 운영 화면 봇 탭에서 봇 열쇠 만들기' when v like '%실패%' then '봇이 목록을 못 바꿨어요. 운영 화면 봇 탭을 보세요' else '' end
   from mbot
 union all
 select 20, '안쪽 함수 잠금', format('%s개 가운데 %s개 열림', 있음, 열림),
