@@ -1098,7 +1098,7 @@
       LOGIN_REQUIRED: "카카오 로그인이 풀렸습니다. 다시 로그인해 주세요.",
       NOT_LINKED: "먼저 채팅방 닉네임을 골라 주세요.",
       NOT_KAKAO: "카카오 계정으로 로그인해 주세요.",
-      NOT_MEMBER: "채팅방 멤버 명단에 없는 이름입니다. 명단은 봇이 매일 아침 올립니다. 방금 들어왔으면 내일 다시 해 주세요.",
+      NOT_MEMBER: "채팅방 멤버 명단에 없는 이름입니다. 방금 들어왔으면 잠시 뒤 다시 해 주세요.",
       NICK_LINKED: "이 닉네임은 카카오 로그인으로 묶인 이름입니다. 카카오 로그인 뒤 참석해 주세요.",
       NOT_OWNER: "내 글이 아닙니다.",
       NOT_HOST: "모임장만 할 수 있습니다.",
@@ -2863,6 +2863,24 @@
       ME.names = rows;
       renderMeSel(rows, "");
       setTimeout(() => $("meSelQ").focus(), 30);
+      meAsk(seq);
+    }
+    /* 막 들어온 사람: 창을 열면 봇에게 명단 읽기를 부탁하고(2026-10-31-member-ask.sql. 서버는 명단이 15분 넘게 지났을 때 15분에 한 번만 받는다)
+       창이 열려 있는 동안 75초와 150초 뒤에 명단을 다시 읽어 드롭다운을 바꾼다(좁히기 글과 고른 이름은 그대로). 함수가 없는 서버면 그냥 둔다 */
+    async function meAsk(seq) {
+      let r = null;
+      try { r = await supaFetch("/rest/v1/rpc/me_members_ask", { method: "POST", body: "{}" }); } catch (err) { return; }
+      if (seq !== ME.seq || !r || !r.ok || !(r.asked || r.why === "pending")) return;
+      ME.askT = [75, 150].map((sec) => setTimeout(() => meReload(seq), sec * 1000));
+    }
+    async function meReload(seq) {
+      if (seq !== ME.seq || $("meBackdrop").hidden || $("meSelWrap").hidden || ME.busy || !ME.names) return;
+      let rows;
+      try { rows = await memberNames(); } catch (err) { return; }
+      if (seq !== ME.seq || ME.busy || !rows.length) return;
+      if (rows.length === ME.names.length && rows.every((r, i) => r.name === ME.names[i].name)) return;
+      ME.names = rows;
+      renderMeSel(rows, $("meSelQ").value);
     }
     /* 좁히기(드롭다운 위의 칸): 앞 글자나 포함된 글자, 초성(ㅇㅅ), 끝에 붙은 낱자음(엑ㅅ)으로 목록을 줄인다. 고르기는 드롭다운에서만 */
     function narrowNames(all, q) {
@@ -2889,7 +2907,7 @@
     }
     function closeMe() {
       if ($("meBackdrop").hidden) return;
-      $("meBackdrop").hidden = true; clearTimeout(ME.timer); ME.seq++; ME.cb = null; ME.link = false;
+      $("meBackdrop").hidden = true; clearTimeout(ME.timer); (ME.askT || []).forEach(clearTimeout); ME.askT = null; ME.seq++; ME.cb = null; ME.link = false;
       const back = ME.back; ME.back = null;
       if (back && back.isConnected) { try { back.focus({ preventScroll: true }); } catch (e) {} }
     }

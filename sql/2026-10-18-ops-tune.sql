@@ -1,7 +1,8 @@
 -- 운영 손질 (2026-10-18): 봇 살아 있음 표시(bot_seen), 봇 조종 값에 마지막 확인 때, 운영 화면 기록 보기의 더 보기(p_before)
--- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다. 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
+-- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(2026-10-25-member-times.sql 뒤에는 첫 줄에서 멈춘다). 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
 -- 먼저 있어야 하는 것: 운영진 모임 관리 2쪽(2026-10-15-admin-bung-2.sql), 멤버 자동 갱신(2026-10-09-memberbot.sql), 속도 제한(2026-10-06).
 do $g$ begin
+  if to_regprocedure('public.member_read_report(text,double precision,boolean,text,text)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-25-member-times.sql 부터)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 봇 조종 값이 옛 판으로 돌아갑니다)'; end if;
   if to_regprocedure('public.bung_admin_log(text,bigint,integer)') is null and to_regprocedure('public.bung_admin_log(text,bigint,integer,bigint)') is null then
     raise exception '운영진 모임 관리 2쪽(2026-10-15-admin-bung-2.sql)을 먼저 실행하세요';
   end if;

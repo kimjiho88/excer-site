@@ -3,8 +3,9 @@
 -- 2. 봇이 멤버를 읽는 세 시각(member_times): 지난 4주 시간대별 방문에서 평소보다 붐비기 시작하는 때의 1시간 전.
 --    방문 시간 자료가 7일 안 되면 사이트에서 참석하거나 글과 댓글을 쓴 시각(지난 8주)으로, 그것도 적으면 11:00, 17:00, 20:00.
 -- 3. 운영 화면의 '지금 멤버 읽기'(bot_control_set 의 members)와 봇이 읽은 결과(member_read_report, 봇 열쇠).
--- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다. 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
+-- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(2026-10-31-bot-analysis.sql 뒤에는 첫 줄에서 멈춘다). 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
 do $g$ begin
+  if to_regprocedure('public.bot_ops_cfg(text)') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-31-bot-analysis.sql 부터)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 봇 조종 값이 옛 판으로 돌아갑니다)'; end if;
   if to_regclass('public.site_visit_counts') is null then raise exception '방문 횟수(2026-09-21-visit-hits.sql)를 먼저 실행하세요'; end if;
   if to_regprocedure('public.bot_seen(text,text)') is null then raise exception '운영 손질(2026-10-18-ops-tune.sql)을 먼저 실행하세요'; end if;
 end $g$;
