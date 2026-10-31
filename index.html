@@ -118,10 +118,11 @@
     .news-row.is-event .row-meta { grid-column: 2 / -1; }
     .home-live .news-row.is-event .type-tag { display: none; }
     /* 126차 스페셜 모임: 다가오는 모임 맨 위 큰 줄(왼쪽 포스터, 크림 바탕에 황토 테두리). 소식 화면의 스페셜 카드와 같은 표 */
-    .sp-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 2px 14px; align-items: start; margin: 6px 0 8px; padding: 12px; border: 1px solid rgba(126, 95, 37, 0.24); border-radius: 16px;
+    .sp-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 2px 14px; align-items: start; margin: 6px 0 8px; padding: 12px; border: 1px solid rgba(126, 95, 37, 0.24); border-radius: 16px;
       background: linear-gradient(135deg, #FFFDF8 0%, #FBF3E3 100%); color: var(--ink); text-decoration: none; box-shadow: 0 16px 32px -26px rgba(126, 95, 37, 0.6); }
-    .sp-row .sp-thumb { grid-row: 1 / span 5; width: 84px; height: 105px; border-radius: 10px; overflow: hidden; background: #F4ECDD; }
+    .sp-row .sp-thumb { grid-row: 1 / span 5; width: 72px; height: 72px; border-radius: 12px; overflow: hidden; background: #F4ECDD; }
     .sp-row .sp-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .sp-row .sp-thumb.is-poster img { transform: scale(1.8); }   /* 포스터는 가운데(그림)만. 글자는 줄의 글로 */
     .sp-row .sp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .sp-row .sp-tag, .sp-row .sp-dday { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
     .sp-row .sp-tag { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
@@ -444,7 +445,7 @@
           state +
           '<span class="row-meta">' + (sub ? '<span class="rm-sub">' + esc(sub) + "</span>" : "") + '<span class="rm-who">' + w.join(", ") + "</span></span></a>";
       }
-      /* 126차 스페셜 모임 줄: 운영진이 스페셜로 올린(고정한) 끝나지 않은 모임 글. 포스터(assets/special/모임날짜.jpg)가 없으면 벙 사진 */
+      /* 126차 스페셜 모임 줄: 운영진이 스페셜로 올린(고정한) 끝나지 않은 모임 글. 작은 그림은 포스터(assets/special/모임날짜.jpg) 가운데, 없으면 벙 사진 */
       function spWhen(m) {
         var hm = /^\d{2}:\d{2}$/, t = hm.test(m.time || "") ? m.time + (hm.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : "";
         return C.dateText(m.date, { withDow: true }) + (t ? " " + t : "");
@@ -452,10 +453,10 @@
       function specialRowHTML(v, today, nowK) {
         var m = v.meta || {}, br = bungRow(v), d = C.daysFromToday(m.date, today), ph = C.bungPhase(m, nowK);
         var dd = ph === "ongoing" ? "진행 중" : d > 0 ? "D-" + d : "오늘";
-        var fb = window.BUNGPHOTO ? BUNGPHOTO.image(v.raw, m) : "";
-        var img = '<img src="assets/special/' + esc(m.date) + '.jpg" data-fb="' + esc(fb) + '" alt="" width="168" height="210" decoding="async" onerror="if(this.dataset.fb&&this.src.indexOf(this.dataset.fb)<0){this.src=this.dataset.fb}else{this.remove()}" />';
+        var fb = window.BUNGPHOTO ? BUNGPHOTO.thumb(v.raw, m) : "";
+        var img = '<img src="assets/special/' + esc(m.date) + '.jpg" data-fb="' + esc(fb) + '" alt="" width="144" height="144" decoding="async" onerror="this.parentNode.classList.remove(\'is-poster\');if(this.dataset.fb&&this.src.indexOf(this.dataset.fb)<0){this.src=this.dataset.fb}else{this.remove()}" />';
         return '<a class="sp-row" href="news.html?cat=bung#post-' + v.id + '">' +
-          '<span class="sp-thumb">' + img + "</span>" +
+          '<span class="sp-thumb is-poster">' + img + "</span>" +
           '<span class="sp-tags"><span class="sp-tag">SPECIAL</span><span class="sp-dday' + (ph === "ongoing" || d <= 0 ? " is-now" : "") + '">' + esc(dd) + "</span></span>" +
           '<span class="row-title">' + esc(v.title || "제목 없음") + "</span>" +
           '<span class="sp-when">' + esc(spWhen(m)) + "</span>" +
