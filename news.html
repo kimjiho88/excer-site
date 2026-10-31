@@ -325,6 +325,10 @@
     .row-title .sp-mini { margin-top: 0; vertical-align: 2px; }   /* 모임 모집 탭 줄: 제목 글 안에(두 줄로 감길 때 표 아래로) */
     .post-row.is-event .ev-thumb.is-poster img { transform: scale(1.9); transform-origin: 50% 55%; }   /* 포스터 가운데 그림(위 제목과 아래 일시 글자는 빼고) */
     .sp-photo.is-poster img { object-position: 50% 53.5%; }   /* 포스터는 위 제목 글자가 걸리지 않게 조금 아래 */
+    /* 펼친 글 머리의 포스터: 리스 가운데만(폰은 1.5배로 위 제목과 아래 일시 글자를 빼고), 밝은 포스터 위 흰 글자가 읽히게 그늘을 짙게 */
+    .ev-hero.is-poster .ev-hero-img { object-position: 50% 58%; transform: scale(1.5); }
+    .ev-hero.is-poster .ev-hero-shade { background: linear-gradient(180deg, rgba(20, 10, 35, 0.30) 0%, rgba(20, 10, 35, 0.12) 24%, rgba(20, 10, 35, 0.55) 50%, rgba(20, 10, 35, 0.90) 100%); }
+    @media (min-width: 641px) { .ev-hero.is-poster .ev-hero-img { object-position: 50% 56%; transform: none; } }
     .ev-kickers { display: flex; flex-wrap: wrap; gap: 6px; justify-self: start; }
     .ev-kicker.is-special { background: linear-gradient(135deg, #8F6C2C, var(--gold)); }
     .ev-kicker.is-special::before { background: #F3D9A0; }
@@ -1783,13 +1787,14 @@
       const stateEl = stateText ? `<span class="row-state${dim ? " is-past" : ""}">${esc(stateText)}</span>` : "";
       if (expanded) {   // 펼친 글: 줄 대신 사진 머리(벙 사진, 없으면 날짜 표 위 보라 바탕). 제목과 참석, 모임장은 그 위에 흰 글자
         const name = bungPhotoName(post), label = name ? BUNGPHOTO.label(name) : "";   // 사진 종류 이름표(곱창전골, 카페)는 제목 위 작은 알약
-        const sp = isSpecial(post);
-        const hero = name ? `<img class="ev-hero-img" src="assets/bung/${name}.jpg" alt="" width="800" height="400" decoding="async" onerror="this.remove()" />`
+        const sp = isSpecial(post), poster = sp ? posterOf(post) : "";   // 스페셜은 카드와 같은 포스터(못 읽으면 벙 사진)
+        const hero = poster ? posterImg(post, name ? `assets/bung/${name}.jpg` : "", 800, 400, ' class="ev-hero-img"')
+          : name ? `<img class="ev-hero-img" src="assets/bung/${name}.jpg" alt="" width="800" height="400" decoding="async" onerror="this.remove()" />`
           : `<span class="ev-hero-badge">${/^\d{4}-\d{2}-\d{2}$/.test(m.date || "") ? `<img src="assets/cal/sq/${m.date.slice(5)}.png" alt="" width="240" height="240" decoding="async" onerror="this.remove()" />` : ""}</span>`;
         return `
         <article class="row post-row is-event is-open${dim ? " is-past-ev" : ""}${pinnedNow(post) ? " is-pinned" : ""}" id="post-${post.id}">
           <h3 class="post-h">
-            <button type="button" class="post-head ev-hero ${name ? "has-photo" : "no-photo"}" data-act="toggle" data-id="${post.id}" aria-expanded="true" title="접기">
+            <button type="button" class="post-head ev-hero ${poster || name ? "has-photo" : "no-photo"}${poster ? " is-poster" : ""}" data-act="toggle" data-id="${post.id}" aria-expanded="true" title="접기">
               ${hero}<span class="ev-hero-shade" aria-hidden="true"></span>
               <span class="ev-hero-top">${stateEl}<span class="ev-hero-fold" aria-hidden="true">${icon("chevDown", "is-sm")}</span></span>
               <span class="ev-hero-body">${sp || label ? `<span class="ev-kickers">${sp ? `<span class="ev-kicker is-special${isXmas(post) ? " is-xmas" : ""}">스페셜</span>` : ""}${label ? `<span class="ev-kicker">${esc(label)}</span>` : ""}</span>` : ""}<span class="nr-line"><span class="row-title">${esc(v.title || "제목 없음")}</span>${newDot}</span>
