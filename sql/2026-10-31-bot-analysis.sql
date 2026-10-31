@@ -3,8 +3,9 @@
 --    봇 열쇠로만 쓰고 운영진 비밀번호로만 읽는다. 대화 원문은 없다(사람별 집계와 걸린 줄의 짧은 발췌뿐).
 -- 2. bot_ops_cfg: 운영 화면이 ops_store 의 botcfg 열쇠에 둔 단어 목록 설정(끈 항목, 더한 말, 예외 말)과 직접 이은 줄을 봇이 읽는다(봇 열쇠).
 -- 3. 운영 화면의 '지금 내보내기': site_bot_control 에 요청 때와 결과, bot_control_set 의 'export'. 봇이 올린 status 줄이 결과를 적는다.
--- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다. 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
+-- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(2026-10-31-member-ask.sql 뒤에는 첫 줄에서 멈춘다). 글과 명단은 건드리지 않는다. 봇은 멈추지 않아도 된다(새 봇 판은 이 파일 뒤에 받는다).
 do $g$ begin
+  if to_regprocedure('public.me_members_ask()') is not null then raise exception '이 서버에는 더 새로운 판(2026-10-31-member-ask.sql)이 적용되어 있습니다. 이 파일은 다시 돌리지 않습니다(돌리면 봇 조종 값이 옛 판으로 돌아갑니다)'; end if;
   if to_regprocedure('public.member_read_report(text,double precision,boolean,text,text)') is null then raise exception '멤버 읽기 하루 세 번(2026-10-25-member-times.sql)을 먼저 실행하세요'; end if;
 end $g$;
 
