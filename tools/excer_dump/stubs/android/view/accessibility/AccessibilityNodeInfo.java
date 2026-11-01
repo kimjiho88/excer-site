@@ -1,5 +1,9 @@
 package android.view.accessibility;
 public class AccessibilityNodeInfo {
+    public static final int ACTION_CLICK = 16;
+    public static final int ACTION_LONG_CLICK = 32;
+    public boolean performAction(int action) { return false; }
+    public AccessibilityNodeInfo getParent() { return null; }
     public int getChildCount() { return 0; }
     public AccessibilityNodeInfo getChild(int i) { return null; }
     public CharSequence getText() { return null; }
