@@ -687,6 +687,7 @@
       <div class="wrap ops-body">
         <p id="unsavedNote" class="notice" hidden>새로 분석한 결과를 아직 서버에 저장하지 않았습니다. 위의 서버에 저장을 누르면 다른 기기에서도 보입니다.</p>
         <p id="botExpNote" class="notice" hidden><span id="botExpNoteText"></span> <button type="button" class="text-btn" id="botExpNoteBtn">반영하고 저장</button> <button type="button" class="text-btn" id="botExpNoteLater">나중에</button></p>
+        <p id="apxNote" class="notice" hidden aria-live="polite"><span id="apxNoteText"></span> <button type="button" class="text-btn" id="apxNoteBtn" hidden>다시 옮기기</button></p>
         <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 봇이 대화를 내보내 올리면 열 때 바로 반영합니다(봇 탭). 파일 올리기로 직접 올려도 됩니다.</p>
         <section id="panel-dash" role="tabpanel" aria-labelledby="tab-dash" data-panel="dash">
           <div id="dashSite" class="dsec-wrap"></div>
@@ -1671,7 +1672,15 @@
 
     /* ── 부록: 시트에 적어 두었던 경고, 특이사항, 불편한 사람, 이슈, 노쇼와 벙 메모(서버 ops_store 'appendix').
        시트 연동을 걷어내며(133차) 서버에 남은 시트 판에서 한 번 옮겨 둔다. 그 뒤로는 바뀌지 않고, 대화 기록의 사람과 잇기만 바꾼다(records.apx.link) ── */
-    const APX = { busy: false, err: "", none: false, q: "", open: "" };
+    const APX = { busy: false, err: "", none: false, q: "", open: "", step: "" };
+    function apxShow() {
+      const n = $("apxNote"); if (!n) return;
+      const on = !S.appendix && !localOnly && (APX.busy || !!APX.err);
+      n.hidden = !on; if (!on) return;
+      $("apxNoteText").textContent = APX.busy ? "시트 기록을 부록으로 옮기는 중입니다" + (APX.step ? "(" + APX.step + ")" : "") + ". 끝날 때까지 이 화면을 닫지 말아 주세요." : APX.err;
+      $("apxNoteBtn").hidden = APX.busy;
+    }
+    const apxRetry = () => { if (APX.busy) return; APX.err = ""; APX.none = false; apxMake(); };
     function apxRec() { const r = S.records.apx || (S.records.apx = {}); if (!isObj(r.link)) r.link = {}; return r; }   // 쓸 때
     const apxLinks = () => (isObj(S.records.apx) && isObj(S.records.apx.link) ? S.records.apx.link : {});   // 읽을 때
     function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("LOAD")); document.head.appendChild(s); }); }
@@ -1721,38 +1730,48 @@
         people: keep, issues: [...issues.values()].sort((a, b) => at(a).localeCompare(at(b))), memos: [...memos.values()].sort((a, b) => at(a).localeCompare(at(b))), pairs: [...pairs.values()] };
     }
     // 한 번 옮기기: 서버에 시트 판이 있으면 최신 판과 보던 판, 그 앞의 판 몇 개(지운 줄까지)를 읽어 부록을 만들고 저장한다. 시트 해석기는 이때만 불러온다
+    // 멤버 탭처럼 보이는 탭(앞 500줄 안에 이름 칸과 성별 칸이 같은 줄에 있음). 시트 해석기를 부르기 전에 가볍게 거른다
+    const APX_NAME = ["이름", "닉네임", "닉"], APX_SEX = ["성별"];
+    const looksMember = (t) => { const v = t && Array.isArray(t.values) ? t.values : []; for (let r = 0; r < Math.min(v.length, 500); r++) { const row = Array.isArray(v[r]) ? v[r].map((c) => tightK(c)) : []; if (row.some((c) => APX_NAME.includes(c)) && row.some((c) => APX_SEX.includes(c))) return true; } return false; };
+    const APX_BUNG = { name: "부록용 빈 벙 탭", values: [["날짜", "벙주"]] };   // 다른 멤버 탭만 읽을 때 벙 탭 자리(실제 벙 탭을 거듭 읽지 않게)
+    const tick = () => new Promise((res) => setTimeout(res, 0));
+    // 한 번 옮기기: 서버에 시트 판이 있으면 최신 판과 보던 판, 그 앞의 판 몇 개(지운 줄까지)를 읽어 부록을 만들고 저장한다. 시트 해석기는 이때만 불러온다
     async function apxMake() {
       if (localOnly || !PASS || S.appendix || APX.busy || APX.none) return;
-      APX.busy = true; APX.err = ""; renderApx();
+      APX.busy = true; APX.err = ""; APX.step = "시트 판 받는 중"; apxShow(); renderApx();
       const old = S.records.sheet || {};
       try {
-        const get = async (ids) => { const r = await rpc("ops_sheet_get", { p_pass: PASS, p_since: null, p_ids: ids && ids.length ? ids : null }); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r; };
+        const get = async (ids, since) => { const r = await rpc("ops_sheet_get", { p_pass: PASS, p_since: since || null, p_ids: ids && ids.length ? ids : null }); if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; } return r; };
         let r;
         try { r = await get(old.acceptedId ? [old.acceptedId] : null); } catch (e) { if (missingFn(e)) { APX.none = true; migrateSheetRec(); return; } throw e; }
         if (!r.latest) { APX.none = true; migrateSheetRec(); return; }
         const snaps = new Map([[r.latest.id, r.latest]]); (r.snaps || []).forEach((s) => snaps.set(s.id, s));
-        // 앞의 판: 남아 있는 판(최근 300판) 사이를 고르게 열 개
+        // 앞의 판: 남아 있는 판(최근 300판) 사이를 고르게 열 개(최신 판은 다시 받지 않음). 못 받아도 최신 판으로 만든다
         const hiId = r.latest.id, loId = Math.max(1, hiId - 299), want = [];
         for (let k = 0; k < 10; k++) { const id = Math.round(loId + ((hiId - 1 - loId) * k) / 9); if (id >= 1 && id < hiId && !snaps.has(id) && !want.includes(id)) want.push(id); }
-        if (want.length) { try { const r2 = await get(want); (r2.snaps || []).forEach((s) => snaps.set(s.id, s)); } catch (e) {} }
+        if (want.length) { APX.step = "앞 판 받는 중"; apxShow(); try { const r2 = await get(want, hiId); (r2.snaps || []).forEach((s) => snaps.set(s.id, s)); } catch (e) { if (e.code === "BAD_PASS" || e.code === "LOCKED") throw e; } }
         if (!window.OpsSheet) await loadScript("assets/ops-sheet.js?v=6");
         const fixes = { alias: old.alias || {} }, list = [];   // 뺀 줄 규칙은 셈에만 썼으므로 부록에는 쓰지 않는다(적어 둔 노쇼와 메모는 남김)
-        for (const s of [...snaps.values()].sort((a, b) => b.id - a.id)) {
-          await new Promise((res) => setTimeout(res, 0));
-          let p; try { p = OpsSheet.parse(s.tabs, { fixes, today: todayKST(), snapDate: kstDate(s.at) }); } catch (e) { continue; }
+        const all = [...snaps.values()].sort((a, b) => b.id - a.id);
+        for (let i = 0; i < all.length; i++) {
+          const s = all[i];
+          APX.step = "판 " + (i + 1) + "/" + all.length + " 읽는 중"; apxShow();
+          await tick();
+          let p; try { p = OpsSheet.parse(s.tabs, { fixes, today: todayKST(), snapDate: kstDate(s.at) }); } catch (e) { console.error(e); continue; }
           if (!p.structure.ok) continue;
-          const st = p.structure.tabs, more = [];
-          const bungTab = s.tabs.find((t) => st.bung && t.name === st.bung.name);
-          s.tabs.forEach((t) => {
-            if (!t || [st.member && st.member.name, st.bung && st.bung.name, st.issue && st.issue.name].includes(t.name)) return;
-            try { const q = OpsSheet.parse([Object.assign({}, t, { hidden: false }), bungTab], { fixes, today: todayKST(), snapDate: kstDate(s.at) }); if (q.structure.ok && q.structure.tabs.member && q.structure.tabs.member.name === t.name && q.members.length) more.push(q); } catch (e) {}
-          });
+          const st = p.structure.tabs, more = [], used = [st.member && st.member.name, st.bung && st.bung.name, st.issue && st.issue.name];
+          for (const t of s.tabs || []) {
+            if (!t || used.includes(t.name) || !looksMember(t)) continue;
+            await tick();
+            try { const q = OpsSheet.parse([Object.assign({}, t, { hidden: false }), APX_BUNG], { fixes, today: todayKST(), snapDate: kstDate(s.at) }); if (q.structure.ok && q.structure.tabs.member && q.structure.tabs.member.name === t.name && q.members.length) more.push(q); } catch (e) { console.error(e); }
+          }
           list.push({ s, p, more });
         }
-        if (!list.length) { APX.err = "시트 판을 읽지 못했습니다. 다음에 열 때 다시 합니다."; return; }
+        if (!list.length) { APX.err = "시트 기록을 부록으로 옮기지 못했습니다(시트 판을 읽지 못함)."; toast(APX.err); return; }
         // 보던 판을 고정했거나 최신 판이 한꺼번에 많이 줄었으면 보던 판을 앞에(부록의 기준 판). 다른 판의 기록도 합친다
         const iAcc = list.findIndex((x) => x.s.id === old.acceptedId);
         if (iAcc > 0 && (old.pinned || OpsSheet.guard(list[iAcc].p, list[0].p).state !== "ok")) list.unshift(list.splice(iAcc, 1)[0]);
+        APX.step = "저장 중"; apxShow();
         const A = apxBuild(list, old);
         await opsPut("appendix", A);
         S.appendix = A; apxIdx = null;
@@ -1761,8 +1780,9 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
         console.error(e);
-        APX.err = "부록을 옮기지 못했습니다. 다음에 열 때 다시 합니다.";
-      } finally { APX.busy = false; if (!$("app").hidden) renderAll(); }
+        APX.err = "시트 기록을 부록으로 옮기지 못했습니다(" + String(e.code || e.message || "오류").slice(0, 60) + ").";
+        toast(APX.err);
+      } finally { APX.busy = false; APX.step = ""; apxShow(); if (!$("app").hidden) renderAll(); }
     }
     // 시트에 쓰던 기록(records.sheet)을 옮기고 지운다: 직접 이은 사람은 부록으로, 기준 일수와 소식 이름 규칙, 뺀 소식 글은 참여로, 연락함은 사람 열쇠로
     function migrateSheetRec() {
@@ -1806,7 +1826,7 @@
     function renderApx() {
       const host = $("subApx"); if (!host) return;
       const A = S.appendix;
-      if (!A) { host.innerHTML = `<div class="panel"><h2>부록</h2><p class="empty">${APX.busy ? "시트 기록을 옮기는 중입니다." : APX.err ? esc(APX.err) : APX.none || localOnly ? "옮겨 온 시트 기록이 없습니다." : "확인 중입니다."}</p></div>`; return; }
+      if (!A) { host.innerHTML = `<div class="panel"><h2>부록</h2><p class="empty">${APX.busy ? "시트 기록을 옮기는 중입니다" + (APX.step ? "(" + esc(APX.step) + ")" : "") + "." : APX.err ? esc(APX.err) : APX.none || localOnly ? "옮겨 온 시트 기록이 없습니다." : "확인 중입니다."}</p>${APX.err && !APX.busy ? `<div class="chips"><button type="button" class="btn btn-secondary is-sm" data-apxretry>다시 옮기기</button></div>` : ""}</div>`; return; }
       const keep = document.activeElement && document.activeElement.id === "apxQ" ? document.activeElement.selectionStart : null;
       const ix = apxIndex(), q = APX.q.trim().toLowerCase(), hit = (...xs) => !q || xs.flat().some((x) => String(x || "").toLowerCase().includes(q));
       const nameOf = (k) => { const e = ix.byKey.get(k); return e ? e.name : String(k).replace(/^m:/, "").split("|")[0]; };
@@ -1842,6 +1862,7 @@
       if (keep != null) { const el = $("apxQ"); if (el) { el.focus(); try { el.setSelectionRange(keep, keep); } catch (e) {} } }
     }
     document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-apxretry]")) { apxRetry(); return; }
       const pk = e.target.closest("[data-apxpick]"); if (pk) { APX.open = APX.open === pk.dataset.apxpick ? "" : pk.dataset.apxpick; renderApx(); const s = document.querySelector(`[data-apxlinkto="${CSS.escape(pk.dataset.apxpick)}"]`); if (s) s.focus(); return; }
       const un = e.target.closest("[data-apxunlink]"); if (un) { apxRec().link[un.dataset.apxunlink] = "none"; apxIdx = null; ptChanged("잇기를 풀었습니다."); return; }
       const jp = e.target.closest("[data-apxjump]"); if (jp) { if (!$("sheet").hidden) closeSheet(); checkSub = "apx"; setTab("check"); renderApx(); const x = document.querySelector(`[data-apx="${CSS.escape(jp.dataset.apxjump)}"]`); if (x) { x.scrollIntoView({ block: "center" }); x.classList.add("is-hi"); setTimeout(() => x.classList.remove("is-hi"), 2400); } return; }
@@ -4097,8 +4118,10 @@
       }
     });
 
+    $("apxNoteBtn").addEventListener("click", apxRetry);
     function renderAll() {
       $("unsavedNote").hidden = !(S.unsaved && !localOnly);
+      apxShow();
       $("noDataNote").hidden = !!S.ledger || !NEEDS_LEDGER.includes(tab);
       setStamp();
       [renderSite, renderDash, renderPart, renderSignals, renderLang, renderRecords, renderApx, renderData, renderFilesExtra, renderBung, tabBadges].forEach((fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } });
