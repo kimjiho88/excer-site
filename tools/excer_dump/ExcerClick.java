@@ -36,28 +36,36 @@ public class ExcerClick {
             } catch (Throwable e) {
                 // 그대로
             }
-            List<AccessibilityNodeInfo> roots = new ArrayList<AccessibilityNodeInfo>();
-            try {                                    // 그 앱의 창들(앱 창이 먼저)
-                List<AccessibilityWindowInfo> ws = ua.getWindows();
-                for (int pass = 0; pass < 2 && ws != null; pass++) {
-                    for (AccessibilityWindowInfo wi : ws) {
-                        if ((wi.getType() == AccessibilityWindowInfo.TYPE_APPLICATION) != (pass == 0)) continue;
-                        AccessibilityNodeInfo rt = null;
-                        try {
-                            rt = wi.getRoot();
-                        } catch (Throwable e) {
-                            rt = null;
-                        }
-                        CharSequence rp = rt != null ? rt.getPackageName() : null;
-                        if (rt != null && (pkg.length() == 0 || pkg.equals(rp != null ? rp.toString() : ""))) roots.add(rt);
-                    }
-                }
-            } catch (Throwable e) {
-                // 창 목록을 못 읽으면 활성 창만
+            try {                                    // 막 붙은 때는 창 목록이 비어 있다(읽기 도우미처럼 잠깐 기다린다, 2026-11-01 no-root)
+                ua.waitForIdle(100, 1000);
+            } catch (Exception e) {
+                // 바빠도 그대로
             }
-            if (roots.isEmpty()) {
-                AccessibilityNodeInfo rt = ua.getRootInActiveWindow();
-                if (rt != null) roots.add(rt);
+            List<AccessibilityNodeInfo> roots = new ArrayList<AccessibilityNodeInfo>();
+            for (int tries = 0; tries < 20 && roots.isEmpty(); tries++) {
+                if (tries > 0) Thread.sleep(100);
+                try {                                // 그 앱의 창들(앱 창이 먼저)
+                    List<AccessibilityWindowInfo> ws = ua.getWindows();
+                    for (int pass = 0; pass < 2 && ws != null; pass++) {
+                        for (AccessibilityWindowInfo wi : ws) {
+                            if ((wi.getType() == AccessibilityWindowInfo.TYPE_APPLICATION) != (pass == 0)) continue;
+                            AccessibilityNodeInfo rt = null;
+                            try {
+                                rt = wi.getRoot();
+                            } catch (Throwable e) {
+                                rt = null;
+                            }
+                            CharSequence rp = rt != null ? rt.getPackageName() : null;
+                            if (rt != null && (pkg.length() == 0 || pkg.equals(rp != null ? rp.toString() : ""))) roots.add(rt);
+                        }
+                    }
+                } catch (Throwable e) {
+                    // 창 목록을 못 읽으면 활성 창만
+                }
+                if (roots.isEmpty() && tries >= 5) {
+                    AccessibilityNodeInfo rt = ua.getRootInActiveWindow();
+                    if (rt != null) roots.add(rt);
+                }
             }
             if (!roots.isEmpty()) {
                 AccessibilityNodeInfo hit = null;
