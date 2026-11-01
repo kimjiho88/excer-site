@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.5"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.6"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -3545,43 +3545,45 @@ DUMPER_JAR = (
 )
 
 # 가린 칸 누르기 도우미(tools/excer_dump/ExcerClick.java, 2026-11-01). 다른 창(보이스룸 작은 창)이 덮은 칸을 자리로 누르면 덮은 창이 눌려서
-# 그 칸 자체에 접근성 누르기를 한다. 읽기 도우미와 따로 둔다(읽기는 그대로). 다시 만들기: sh tools/excer_dump/build.sh (sha1 ec27f8d609c7bad20bf231b904743ae93360f341)
+# 그 칸 자체에 접근성 누르기를 한다. 읽기 도우미와 따로 둔다(읽기는 그대로). 다시 만들기: sh tools/excer_dump/build.sh (sha1 59b0444ae60aa808391be18443ec6804f653d3c5)
 CLICK_JAR = (
-    "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"
+    "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"
 )
 # ── 보이스룸 신호: 화면을 건드리지 않고 adb dumpsys 로 읽는다(docs/BOT_VOICE_ROOM.md 3절) ──
 VOICE_SERVICE_RE = re.compile(r"vox|voice|call|room", re.I)
@@ -4542,10 +4544,33 @@ class AdbSender:
         if not ws_:
             return ""
         parts = []
-        for w in ws_[:8]:
+        for w in ws_[:12]:                                       # 자판 창이 아홉째라 잘린 적이 있다(2026-11-01)
             l, t, r, b = w["b"]
             parts.append("%s %dx%d+%d+%d%s%s" % (self.win_name(w), r - l, b - t, l, t, " 활성" if w["active"] else "", " 읽음" if w["read"] else ""))
         return "창: " + ", ".join(parts) + (" (작은 창이 활성이라 앱 창을 읽음)" if getattr(self, "picked", "") == "app" else "")
+
+    def ime_win(self):
+        """자판(입력기) 창이 떠 있으면 그 창, 아니면 None(마지막으로 읽은 창 목록에서)"""
+        for w in getattr(self, "windows", None) or []:
+            if w["type"] == "2" and not w["read"] and w["b"][3] - w["b"][1] > 50:
+                return w
+        return None
+
+    def ime_hide(self, nodes):
+        """자판이 떠 있으면 뒤로 키로 닫는다(자판이 떠 있을 때의 뒤로 키는 자판이 받는다. 화면은 그대로). 목록을 찾고 밀기 전에.
+        2026-11-01: 태블릿 두 칸에서 오른쪽 방의 입력 칸이 자판을 띄워 둬 왼쪽 목록 아래 절반이 가려 밀지 못함. 자판이 없으면 아무것도 누르지 않는다.
+        다시 읽은 화면(자판이 없었으면 그대로)"""
+        if self.ime_win() is None or time.time() - getattr(self, "ime_stuck", 0.0) < 600:
+            return nodes                                         # 자판이 없거나, 막 뒤로 키로 안 닫힌 자판(거듭 누르지 않는다. 10분 뒤 다시)
+        self.key(4)
+        self.sleep(0.6)
+        new = self.dump()
+        if self.ime_win() is None:
+            self.fact("자판 닫음")
+        else:
+            self.ime_stuck = time.time()
+            self.fact("자판 안 닫힘")
+        return new
 
     def cover_at(self, x, y, n=None):
         """(x, y) 를 덮은 창: 읽은 창보다 위에 겹친 다른 창(보이스룸 작은 창, 화면 가장자리 막대 같은). 그 자리를 누르면 그 창이 눌린다.
@@ -5108,6 +5133,12 @@ class AdbSender:
     def scroll_list(self, nodes, up=False):
         """목록을 민다. 보통은 아래로(손가락을 위로), up 이면 맨 위 쪽으로(손가락을 아래로)"""
         l, t, r, b = self.list_box(nodes)
+        ime = self.ime_win()
+        if ime is not None and ime["b"][1] < b and ime["b"][3] > t:   # 자판이 목록을 가림: 닫고, 그래도 떠 있으면 가리지 않은 위쪽에서만 민다
+            self.ime_hide(nodes)
+            ime = self.ime_win()
+            if ime is not None and ime["b"][1] - t >= 300:
+                b = min(b, ime["b"][1] - 10)
         lo, hi = t + (b - t) // 3, t + (b - t) * 3 // 4
         x = self.free_x((l + r) // 2, lo if up else hi, l, r)
         self.sh("input swipe %d %d %d %d 400" % ((x, lo, x, hi) if up else (x, hi, x, lo)))
@@ -5136,9 +5167,28 @@ class AdbSender:
         h = max(1, box[3] - box[1])
         return any(nodes[k]["b"][3] - nodes[k]["b"][1] >= h * 0.6 for k in lists[0]["kids"])
 
-    def seek_room(self, nodes, room, seen):
+    def seek_room(self, nodes, room, seen, more=False):
         """지금 목록에서 방 찾기: 맨 위까지 올리며 본 뒤 끝까지 내리며 본다(지난번에 밀어 둔 자리에서 시작해도). (화면, 찾은 줄 또는 None).
-        목록이 아닌 화면(숏폼 동영상 같은, not_list)은 밀지 않는다"""
+        목록이 아닌 화면(숏폼 동영상 같은, not_list)은 밀지 않는다. more 면(오픈채팅 목록) 내 방 몇 개 아래의 '더보기' 가 보일 때 눌러 펼친다
+        (세 번까지. 2026-11-01: 지금 탭 오픈채팅은 최근 방 셋과 '더보기' 뒤에 끝없는 추천 글이라 밀기만 해서는 시험 방이 안 나옴)"""
+        presses = [0]
+
+        def unfold(ns):
+            if not more or presses[0] >= 3:
+                return ns, None, False
+            btn = self.more_button(ns)
+            if btn is None:
+                return ns, None, False
+            presses[0] += 1
+            self.tap(btn)
+            ns = self.wait_change(ns, lambda x: self.room_item(x, room) is not None)
+            self.fact("더보기 누름%s" % ("" if getattr(self, "changed", True) else ", 안 바뀜"))
+            self.snap("더보기를 누른 뒤", ns)
+            seen.update(self._names(ns))
+            return ns, self.room_item(ns, room), True
+        nodes, item, _ = unfold(nodes)
+        if item:
+            return nodes, item
         def kind(ns):                                            # 진단: 민 칸이 목록(RecyclerView, ListView)인지 화면 전체인지
             box = self.list_box(ns)
             return next((("RV" if "RecyclerView" in n["cls"] else "LV") for n in ns if n["b"] == box
@@ -5151,6 +5201,12 @@ class AdbSender:
             sig = self.list_sig(nodes)
             n_sw = n_mv = 0
             for _ in range(most):
+                if not up:                                       # 내리며 '더보기' 가 보이면 먼저 펼친다
+                    nodes, item, pressed = unfold(nodes)
+                    if item:
+                        return nodes, item
+                    if pressed:
+                        sig = self.list_sig(nodes)
                 self.scroll_list(nodes, up)
                 n_sw += 1
                 nodes = self.dump()
@@ -5159,6 +5215,14 @@ class AdbSender:
                 if item:
                     return nodes, item
                 now = self.list_sig(nodes)
+                if now == sig and not up:                        # 끝에 닿았어도 마지막에 '더보기' 가 보이면 펼쳐 본다
+                    nodes, item, pressed = unfold(nodes)
+                    if item:
+                        return nodes, item
+                    if pressed:
+                        sig = self.list_sig(nodes)
+                        n_mv += 1
+                        continue
                 if now == sig:
                     break
                 n_mv += 1
@@ -5202,6 +5266,46 @@ class AdbSender:
                 return self.dump()
         self.changed = [(n["b"], n["text"]) for n in new] != old   # 진단(지나온 곳): 누른 뒤 화면이 바뀌었는지
         return new
+
+    MORE_WORDS = ("더보기", "더 보기", "전체보기", "전체 보기", "모두 보기")
+
+    def more_button(self, nodes):
+        """오픈채팅 목록에서 내 방 몇 개 아래의 '더보기'(누르면 나머지 방). 글자(text)가 그 말 그대로인 칸이 목록 칸 안에 있고, 그것을 품은 누를 칸이
+        작은 단추(화면 높이 10% 안, 목록 폭보다 좁음)인 것 가운데 위의 것. 아이콘 이름(content-desc)뿐인 '더보기'(글 메뉴, 머리 띠)는 아니다. 없으면 None"""
+        if not nodes:
+            return None
+        l, t, r, b = self.list_box(nodes)
+        hgt = max(n["b"][3] for n in nodes)
+        par = {k: x["i"] for x in nodes for k in x["kids"]}
+        c = []
+        for n in nodes:
+            if ws(n["text"]) not in self.MORE_WORDS:
+                continue
+            cx, cy = self.center(n)
+            if not (l <= cx <= r and t <= cy <= b):
+                continue
+            row = self.row_of(nodes, n, par)
+            if row is None or row["b"][3] - row["b"][1] > hgt * 0.1 or row["b"][2] - row["b"][0] >= (r - l) * 0.9:
+                continue
+            c.append((0 if "more" in (row["rid"] + " " + n["rid"]).lower() else 1, n["b"][1], row["i"]))
+        return nodes[min(c)[2]] if c else None
+
+    def tab_picked(self, nodes, chip):
+        """탭 칸(chip)이 이미 골라진 것으로 보이는지. 고름 표시(selected)가 있는 판은 그것으로(tab_shown). 없으면: 그 칸을 품은 작은 누를 칸이 없고
+        같은 줄의 다른 탭 칸은 누를 수 있으면 골라진 칸(카카오톡은 골라진 탭과 메뉴를 누를 수 없게 그린다. 2026-11-01 지금 탭의 '오픈채팅')"""
+        shown = self.tab_shown(nodes, chip)
+        if shown is not None:
+            return shown
+        par = {k: x["i"] for x in nodes for k in x["kids"]}
+
+        def tight(n):
+            r = self.row_of(nodes, n, par)
+            return r is not None and r["b"][3] - r["b"][1] <= (n["b"][3] - n["b"][1]) * 4 and r["b"][2] - r["b"][0] <= (n["b"][2] - n["b"][0]) * 4
+        if tight(chip):
+            return False
+        t, b = chip["b"][1], chip["b"][3]
+        others = [n for n in nodes if n is not chip and 0 < len(ws(n["text"])) <= 8 and abs((n["b"][1] + n["b"][3]) - (t + b)) <= 16 and tight(n)]
+        return bool(others)
 
     OPEN_SUB_RE = re.compile(r"^오픈\s*채팅(\s*탭)?\s*(\(?\d[\d,+]*\)?\s*개?)?\s*(,.*)?$", re.S)
     NEVER_WORDS = ("나가기", "삭제", "신고", "차단")
@@ -5265,6 +5369,9 @@ class AdbSender:
             if not sub:
                 self.fact("오픈채팅 칸 못 찾음")
                 return nodes
+        if self.tab_picked(nodes, sub[0]):                       # 이미 골라진 칸(누를 칸이 없음): 지금 목록이 오픈채팅이다
+            self.fact("오픈채팅 칸은 이미 골라짐")
+            return nodes
         try:
             self.tap(sub[0])
         except Covered as e:
@@ -5371,6 +5478,7 @@ class AdbSender:
             if self.room_open(nodes, room):                      # 주소로 연 방이 늦게 떴다(목록으로 가려고 뒤로 가기를 누르면 방이 닫힌다)
                 self.fact("주소로 연 방이 늦게 뜸")
                 return nodes
+        nodes = self.ime_hide(nodes)                             # 오른쪽 방의 입력 칸이 띄운 자판이 목록 아래를 가리지 않게
         nodes = self.goto_list(nodes)
         self.snap("채팅 목록", nodes)
         seen = set(self._names(nodes))
@@ -5397,8 +5505,8 @@ class AdbSender:
                 nodes = op
                 seen.update(self._names(nodes))
                 item = self.room_item(nodes, room)
-                if not item:                                     # 오픈채팅 목록을 훑고, 없으면 채팅 탭으로 돌아가 훑는다
-                    nodes, item = self.seek_room(nodes, room, seen)
+                if not item:                                     # 오픈채팅 목록을 훑고(접힌 '더보기' 는 펼치며), 없으면 채팅 탭으로 돌아가 훑는다
+                    nodes, item = self.seek_room(nodes, room, seen, more=True)
                 if not item:
                     nodes = self.goto_list(nodes)
                     seen.update(self._names(nodes))
