@@ -2,6 +2,7 @@
 -- SQL Editor 에 붙여넣고 Run. 다시 실행해도 안전하다(목록은 그대로). 먼저 있어야 하는 것: 2026-10-09-members.sql
 -- 전에는 앞 글자로만 찾았다. 이제 가운데 글자로도 찾고, 닉네임 사이의 / _ - . | 는 띄어쓰기와 같게 본다.
 -- 앞 글자가 맞는 이름이 먼저 나온다. 한 번에 8명, 접속 주소마다 10분에 300번은 그대로. 목록 전체를 돌려주는 함수는 여전히 없다.
+-- 로그인 잠금(2026-11-01-member-find-login.sql)이 걸린 서버에서 돌려도 잠금은 그대로 둔다.
 do $g$ begin
   if to_regprocedure('public.member_find(text)') is null then raise exception '2026-10-09-members.sql 을 먼저 실행하세요'; end if;
 end $g$;
@@ -13,13 +14,19 @@ returns text language sql immutable set search_path = public as $$
 $$;
 
 -- 찾기(누구나): 같은 이름, 앞 글자(기호를 뗀 앞 글자도), 가운데 글자 차례로 8명까지. 모두 초성이면 초성으로(앞이 먼저)
-create or replace function member_find(p_q text)
+-- 지금 함수에 로그인 잠금 줄이 있으면 같은 자리에 다시 넣는다(이 파일을 나중에 돌려도 잠금이 풀리지 않게)
+do $g$
+declare
+  v_lock text := case when (select prosrc from pg_proc where oid = 'public.member_find(text)'::regprocedure) like '%LOGIN_REQUIRED%'
+    then E'\n  if site_setting(''kakao_login'') = ''all'' and auth.uid() is null then raise exception ''LOGIN_REQUIRED''; end if;' else '' end;
+begin
+  execute $f$create or replace function member_find(p_q text)
 returns table (name text) language plpgsql volatile security definer set search_path = public as $$
 declare
   q text := member_flat(bung_nick_key(left(coalesce(p_q, ''), 24)));
   c text := replace(q, ' ', '');
 begin
-  if q = '' then return; end if;
+  if q = '' then return; end if;$f$ || v_lock || $f$
   if not site_rate_ok('member', 300, interval '10 minutes') then raise exception 'RATE_LIMIT'; end if;
   if c ~ '^[ㄱ-ㅎ]+$' then
     return query select m.name from site_members m where strpos(m.cho, c) > 0
@@ -32,7 +39,9 @@ begin
               (left(member_flat(m.key), length(q)) = q or left(member_flat(m.bare), length(q)) = q) desc,
               length(m.name), m.name
      limit 8;
-end $$;
+end $$
+$f$;
+end $g$;
 
 revoke execute on function member_flat(text) from public, anon, authenticated;
 revoke execute on function member_find(text) from public;

@@ -3,7 +3,7 @@
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 남짓(붙여넣다 잘리지 않게).
 -- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지, 끝난 모임 지키기. 2026-10-11: 운영진의 지난 날짜 고치기.
--- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin). 2026-10-25: 카카오 묶기 줄, 안쪽 함수 다섯, 서버 형식 kakao_login. 시간대별 방문 줄과 member_times.
+-- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin). 2026-10-25: 카카오 묶기 줄, 안쪽 함수 다섯, 서버 형식 kakao_login. 시간대별 방문 줄과 member_times. 2026-11-01: 옛 방문 기록 줄, 멤버 찾기 로그인 잠금 줄.
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
@@ -95,6 +95,9 @@ select 20, '안쪽 함수 잠금', format('%s개 가운데 %s개 열림', 있음
   from locks
 union all
 select 22, '옛 방문 기록(site_visit_log)', case when to_regclass('public.site_visit_log') is null then '지움' else '남아 있어요' end, case when to_regclass('public.site_visit_log') is null then '정상' else '브라우저 기기 값이 남아 있어요. 2026-10-16-privacy-cleanup.sql 을 돌리세요' end
+union all
+select 23, '멤버 찾기 로그인 잠금', case when f is null then '함수가 없어요' when f like '%LOGIN_REQUIRED%' then '걸림' else '안 걸림' end, case when f is null then '' when f like '%LOGIN_REQUIRED%' then '정상' else '2026-11-01-member-find-login.sql 을 돌리세요' end
+  from (select (select prosrc from pg_proc where oid = to_regprocedure('public.member_find(text)')) as f) mf
 union all
 select 30, '운영진 비밀번호', case when n is null then '확인 불가' when n > 0 then '설정됨' else '아직 없음' end,
        case when n is null then '설정 표가 없어요' when n > 0 then '정상' else 'set_admin_password.sql 을 돌려야 발행과 공지가 열려요' end
