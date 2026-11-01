@@ -3,7 +3,7 @@
 -- 판정에 적힌 파일은 '아직 안 돌린' 파일이다. 이미 적용된 서버에서 옛 설치 파일을 다시 돌리면 안 된다(sql/README.md).
 -- 2026-10-06: 참석 명단, 반응, 운영 원장, 속도 제한, 서버 형식 다섯 줄, 안쪽 함수 잠금을 함께 본다. 100줄 남짓(붙여넣다 잘리지 않게).
 -- 2026-10-09: 멤버 닉네임 목록(소식 화면의 내 닉네임 고르기) 줄, 진행 중 참석과 봇 원격 조종 줄, 멤버 자동 갱신(봇 열쇠) 줄. 2026-10-10: 참석 취소를 끝나기 전까지, 끝난 모임 지키기. 2026-10-11: 운영진의 지난 날짜 고치기.
--- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin). 2026-10-25: 카카오 묶기 줄, 안쪽 함수 다섯, 서버 형식 kakao_login. 시간대별 방문 줄과 member_times. 2026-11-01: 옛 방문 기록 줄, 멤버 찾기 로그인 잠금 줄.
+-- 2026-10-15: 운영진 모임 관리와 명단 변경 기록(세 쪽. bung_admin, bung_log 잠금, 서버 형식 bung_admin). 2026-10-25: 카카오 묶기 줄, 안쪽 함수 다섯, 서버 형식 kakao_login. 시간대별 방문 줄과 member_times. 2026-11-01: 옛 방문 기록 줄, 멤버 찾기 로그인 잠금 줄, 용량 줄 둘(데이터베이스 크기, 운영 저장의 가장 큰 칸. 보낼 때 크기로 재고 한도는 4MB).
 with want (ord, t, 부름) as (values
   (1, 'site_posts', '소식 글'), (2, 'site_comments', '댓글'), (3, 'site_bung_attend', '참석 명단'),
   (4, 'site_post_reactions', '반응'), (5, 'site_reports', '발행 리포트'), (6, 'site_settlements', '정산 공유'),
@@ -42,6 +42,7 @@ schema_v as (
               else (xpath('/row/c/text()', query_to_xml($q$select string_agg(key, ', ' order by key) as c from site_schema_v$q$, false, true, '')))[1]::text end as keys
 ),
 rate as (select (select count(*) from pg_trigger where tgname = 'site_rate_trg') as n),
+cap as (select case when to_regclass('public.ops_store') is null then null else query_to_xml($q$select key as k, pg_column_size(value::text::jsonb) as b from ops_store order by 2 desc limit 1$q$, false, true, '') end as x),
 -- 진행 중 참석(참석 함수가 끝나는 시각까지 받는가)과 봇 원격 조종(지금 멈춤이 있는가)
 botctl as (
   select (select count(*) from pg_proc where proname = 'bung_attend' and prosrc like '%bung_end(rec.meta)%') as mid, (select count(*) from pg_proc where proname = 'bung_unattend' and prosrc like '%bung_cancel_open(rec.meta)%') as cn, (select count(*) from pg_proc where proname = 'post_delete' and prosrc like '%PAST_BUNG%') as kp, (select count(*) from pg_proc where proname = 'post_update' and prosrc like '%site_is_admin(p_pass));%') as ap, (select count(*) from pg_proc where proname = 'bung_admin') as adm,
@@ -98,6 +99,12 @@ select 22, '옛 방문 기록(site_visit_log)', case when to_regclass('public.si
 union all
 select 23, '멤버 찾기 로그인 잠금', case when f is null then '함수가 없어요' when f like '%LOGIN_REQUIRED%' then '걸림' else '안 걸림' end, case when f is null then '' when f like '%LOGIN_REQUIRED%' then '정상' else '2026-11-01-member-find-login.sql 을 돌리세요' end
   from (select (select prosrc from pg_proc where oid = to_regprocedure('public.member_find(text)')) as f) mf
+union all
+select 24, '데이터베이스 크기', pg_size_pretty(pg_database_size(current_database())), case when pg_database_size(current_database()) > 400 * 1048576 then '무료 요금제 한도(500MB)에 가까워요' else '정상' end
+union all
+select 25, '운영 저장 가장 큰 칸', case when x is null then '표가 없어요' else coalesce((xpath('/row/k/text()', x))[1]::text || ' ' || round((xpath('/row/b/text()', x))[1]::text::numeric / 1048576, 1) || 'MB', '없음') end,
+       case when x is null then '' when coalesce((xpath('/row/b/text()', x))[1]::text::numeric, 0) > 3600000 then '저장 한도(4MB)에 가까워요' else '정상' end
+  from cap
 union all
 select 30, '운영진 비밀번호', case when n is null then '확인 불가' when n > 0 then '설정됨' else '아직 없음' end,
        case when n is null then '설정 표가 없어요' when n > 0 then '정상' else 'set_admin_password.sql 을 돌려야 발행과 공지가 열려요' end
