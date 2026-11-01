@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=25" />
   <script src="assets/chat-parser.js?v=10"></script>
-  <script src="assets/ops-lang.js?v=1"></script>
-  <script src="assets/ops-analyzer.js?v=9"></script>
+  <script src="assets/ops-lang.js?v=2"></script>
+  <script src="assets/ops-analyzer.js?v=10"></script>
   <script src="assets/ops-part.js?v=1"></script>
   <script src="assets/bung-photo.js?v=6"></script>
   <style>
@@ -57,6 +57,7 @@
     /* 대시보드 */
     .jump { position: sticky; top: calc(var(--top-h, 57px) + 53px); z-index: 18; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 6px 0; background: var(--bg); }
     .jump::-webkit-scrollbar { display: none; }
+    .jump[hidden] { display: none; }
     .jump button { flex: none; min-height: 30px; padding: 0 10px; border-radius: var(--r-pill); border: 0; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 600; }
     @media (hover: hover) { .jump button:hover { background: var(--surface-2); color: var(--ink); } }
     .dsec { display: grid; gap: 12px; scroll-margin-top: calc(var(--top-h, 57px) + 96px); min-width: 0; }
@@ -76,21 +77,9 @@
     .kpi.hero > div { display: grid; gap: 4px; }
     .kpi.hero .k-l, .kpi.hero .k-s { color: var(--on-dark-body); display: block; }
     .kpi.hero .k-v { color: #fff; font-size: 40px; }
-    .hero-art { width: 88px; height: 88px; border-radius: 12px; background: rgba(255, 255, 255, 0.9); }
     @media (min-width: 1000px) { .kpi.hero { grid-column: auto; } }
     .lvl { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 700; color: var(--ink); }
     .lvl-i { width: 14px; height: 14px; flex: none; }
-    .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-    .bcard { background: #fff; border: 1px solid var(--line); border-top-width: 4px; border-radius: var(--r-md); padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
-    .bcard.lv-rule { border-top-color: var(--st-critical); }
-    .bcard.lv-watch { border-top-color: var(--st-serious); }
-    .bcard.lv-good { border-top-color: var(--st-good); }
-    .b-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
-    .b-head > div { display: grid; gap: 4px; justify-items: start; }
-    .bcard h3 { margin: 0; font-size: 15px; }
-    .b-count { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .b-count small { font-size: 14px; margin-left: 2px; font-weight: 700; }
-    .b-none { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.55; }
     .card-art { width: 80px; height: 80px; object-fit: contain; flex: none; }
     .nchips { display: flex; flex-wrap: wrap; gap: 6px; }
     .nchip { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 12px; font-weight: 600; text-align: left; }
@@ -183,8 +172,8 @@
     .spark { width: 64px; height: 18px; display: block; }
     /* 넓은 화면: 신호 근거는 종류별 칸을 격자로, 기록과 데이터는 두 단 */
     @media (min-width: 1000px) {
-      #subSignals > .panel:first-child { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); align-items: start; column-gap: 16px; }
-      #subSignals > .panel:first-child > :not(.group) { grid-column: 1 / -1; }
+      #subSignals:not([hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      #subSignals > .sg-head { grid-column: 1 / -1; }
       #subRecords:not([hidden]), #subApx:not([hidden]), [data-panel="data"]:not([hidden]), [data-panel="members"]:not([hidden]), [data-panel="bot"]:not([hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
       #subRecords > .panel:first-child, #subApx > .panel:first-child, #dataDyn, #unreadPanel, #memChgPanel, #linkPanel, #botHero, #botSetPanel, #botGuide { grid-column: 1 / -1; }
       #dataDyn { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
@@ -535,7 +524,7 @@
     .tab-dot[data-lv="bad"] { background: var(--ops-bad); }
     .panel { border-radius: var(--ops-r); border-color: var(--ops-line); box-shadow: var(--ops-shadow); }
     .panel > h2, .panel > summary > h2 { font-size: 17px; letter-spacing: -0.01em; }
-    .card, .kpi, .bcard { border-radius: var(--ops-r); border-color: var(--ops-line); box-shadow: var(--ops-shadow); }
+    .card, .kpi, .brow, .td-clear { border-radius: var(--ops-r); border-color: var(--ops-line); box-shadow: var(--ops-shadow); }
     .dsec-wrap { display: grid; gap: 14px; min-width: 0; }
     .dsec-wrap:empty { display: none; }
     .dsec > h2 { font-size: 19px; letter-spacing: -0.01em; align-items: center; }
@@ -605,14 +594,82 @@
     .sw input:checked::after { transform: translateX(16px); }
     .sw input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
     .sw input:disabled { opacity: 0.5; cursor: not-allowed; }
-    /* 사이트 운영 지표 */
-    .mt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    @media (min-width: 760px) { .mt-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (min-width: 1280px) { .mt-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-    .mt-kpi .k-v { font-size: 28px; }
-    .mt-kpi .k-v small { font-size: 14px; font-weight: 700; color: var(--ink-2); margin-left: 2px; }
-    .mt-kpi.is-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-    @media (hover: hover) { .mt-kpi.is-link:hover { border-color: var(--line-strong); } }
+    /* 신호와 조치(137차): 종류마다 칸, 사람마다 한 줄(누르면 근거). 보기 단추에 수 */
+    .subtabs button b { margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .subtabs button[aria-pressed="true"] b { background: rgba(255, 255, 255, 0.22); color: #fff; }
+    .sg-sum button b, .lg-cats button b { margin-left: 4px; font-variant-numeric: tabular-nums; }
+    .sg-group > h2 { align-items: center; }
+    .sg-group > h2 .lvl { font-size: 12px; }
+    .sg-list { display: grid; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+    .sg-row { background: #fff; border-top: 1px solid var(--line); }
+    .sg-row:first-child { border-top: 0; }
+    .sg-row > summary { list-style: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 12px; cursor: pointer; }
+    .sg-row > summary::-webkit-details-marker { display: none; }
+    .sg-row > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+    @media (hover: hover) { .sg-row > summary:hover { background: var(--bg); } }
+    .sg-row[open] > summary { background: var(--surface-2); }
+    .sg-who { display: grid; gap: 1px; min-width: 0; }
+    .sg-who b { font-size: 14px; overflow-wrap: anywhere; }
+    .sg-x { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+    .sg-meta { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 8px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .sg-meta::after { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); margin: -3px 2px 0 4px; transition: transform 0.15s; }
+    .sg-row[open] .sg-meta::after { transform: rotate(-135deg); margin-top: 3px; }
+    .sg-n b { color: var(--ink); font-size: 14px; margin-right: 2px; }
+    .sg-d { min-width: 44px; text-align: right; }
+    .sg-body { padding: 8px 12px 12px; display: grid; gap: 8px; }
+    .rc-tbl td { vertical-align: middle; }
+    .rc-tbl .rc-d { white-space: nowrap; color: var(--ink-2); }
+    .rc-tbl .rc-r { min-width: 160px; }
+    /* 폰: 표 대신 두 줄(날짜, 이름, 단계 / 종류, 사유) */
+    @media (max-width: 699px) {
+      .rc-tbl thead { display: none; }
+      .rc-tbl, .rc-tbl tbody { display: block; }
+      .rc-tbl tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+      .rc-tbl td { border: 0; padding: 0; }
+      .rc-tbl td:nth-child(2) { grid-column: 2; grid-row: 1; white-space: normal; overflow-wrap: anywhere; }
+      .rc-tbl td:nth-child(4) { grid-column: 3; grid-row: 1; }
+      .rc-tbl td:nth-child(3) { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--ink-2); }
+      .rc-tbl td.rc-r { grid-column: 2 / -1; grid-row: 2; min-width: 0; }
+    }
+    .ns-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; }
+    .ns-n { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .ns-l { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+    .ladder { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+    .ladder em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--ink); margin-right: 4px; }
+    .ladder i { font-style: normal; display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .ladder i.done { background: var(--ink); color: #fff; }
+    .ladder i.next { background: #FFF1D6; color: #7A4A00; box-shadow: inset 0 0 0 2px var(--st-serious); }
+    /* 대시보드 머리(137차). 지금 확인할 것: 줄마다 왼쪽 상태 띠와 아이콘, 글(색만으로 말하지 않는다). 없는 것은 '이상 없음' 한 줄 */
+    .blist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+    @media (min-width: 900px) { .blist { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+    .brow { background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--line-strong); padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+    .brow.lv-rule { border-left-color: var(--st-critical); }
+    .brow.lv-watch { border-left-color: var(--st-serious); }
+    .td-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+    .td-h h3 { margin: 0; font-size: 15px; line-height: 1.35; min-width: 0; overflow-wrap: anywhere; }
+    .td-n { font-size: 22px; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .td-n small { font-size: 13px; font-weight: 700; margin-left: 2px; }
+    .td-act { margin-left: auto; }
+    .td-note { margin: 0; font-size: 12px; line-height: 1.55; color: var(--ink-2); }
+    .more-btn { min-height: 30px; padding: 0 6px; border: 0; background: none; font: inherit; font-size: 12px; font-weight: 700; color: var(--brand); cursor: pointer; }
+    .more-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+    .td-clear { margin: 0; display: flex; gap: 8px; align-items: flex-start; padding: 10px 14px; background: #fff; border: 1px solid var(--line); font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+    .td-clear .lvl-i { margin-top: 3px; }
+    .td-clear b { color: var(--ink); margin-right: 6px; }
+    /* 한눈에: 폰은 두 칸(인원은 한 줄), 중간은 세 칸, 넓은 화면은 네 칸 두 줄 */
+    .kpis.bk { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpis.bk > .kpi.hero { grid-column: 1 / -1; background: linear-gradient(135deg, var(--brand) 0%, #3B2168 100%); }
+    .kpis.bk > .kpi:last-child:nth-child(even) { grid-column: 1 / -1; }
+    @media (min-width: 760px) { .kpis.bk { grid-template-columns: repeat(3, minmax(0, 1fr)); } .kpis.bk > .kpi.hero { grid-column: span 2; } .kpis.bk > .kpi:last-child:nth-child(even) { grid-column: auto; } }
+    @media (min-width: 1100px) { .kpis.bk { grid-template-columns: repeat(4, minmax(0, 1fr)); } .kpis.bk > .kpi.hero { grid-column: auto; } }
+    .kpis.bk .k-v { font-size: 28px; }
+    .kpis.bk .k-v small { font-size: 14px; font-weight: 700; color: var(--ink-2); margin-left: 2px; }
+    .kpis.bk .kpi.hero .k-v { font-size: 38px; }
+    .kpis.bk .kpi.hero .k-v small { color: var(--on-dark-body); }
+    .kpi .k-side { color: var(--on-dark-body); font-size: 12px; line-height: 1.55; text-align: right; font-variant-numeric: tabular-nums; }
+    .kpi .k-side b { display: block; color: #fff; font-size: 13px; }
+    .kpi.is-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    @media (hover: hover) { .kpi.is-link:hover { border-color: var(--line-strong); } }
     .dl { font-weight: 700; }
     .dl.up { color: #0c7a37; }
     .dl.down { color: #b4432f; }
@@ -692,6 +749,8 @@
         <p id="apxNote" class="notice" hidden aria-live="polite"><span id="apxNoteText"></span> <button type="button" class="text-btn" id="apxNoteBtn" hidden>다시 옮기기</button></p>
         <p id="noDataNote" class="notice" hidden>아직 분석한 대화가 없습니다. 봇이 대화를 내보내 올리면 열 때 바로 반영합니다(봇 탭). 파일 올리기로 직접 올려도 됩니다.</p>
         <section id="panel-dash" role="tabpanel" aria-labelledby="tab-dash" data-panel="dash">
+          <nav class="jump" id="dashJump" aria-label="대시보드 안에서 이동" hidden></nav>
+          <div id="dashBrief" class="dsec-wrap"></div>
           <div id="dashSite" class="dsec-wrap"></div>
           <div id="dashChat" class="dsec-wrap"></div>
         </section>
@@ -859,7 +918,7 @@
     const S = { ledger: null, lang: null, records: { actions: [], notes: {}, exceptions: {}, reviewed: {}, links: {}, settings: {}, io: {} }, history: { people: [] }, roster: null, savedAt: "", unsaved: false };
     let srcFiles = [], busy = false;
     let tab = "dash", checkSub = "signals";
-    const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set(), memberMode: "list", ioEdit: "", sheet: { q: "", filter: "in", sort: "check", dir: -1, maxD30: 1 }, lang: { per: "", pid: "", days: 7, manual: false } };
+    const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set(), memberMode: "list", ioEdit: "", sheet: { q: "", filter: "in", sort: "check", dir: -1, maxD30: 1 }, lang: { per: "", pid: "", days: 7, manual: false, cat: "", dayOpen: new Set(), pplAll: false }, sigCode: "", sigMore: new Set() };
 
     /* ── 서버 ── */
     async function rpc(name, body) {
@@ -969,7 +1028,7 @@
           if (recFail) { recFail = 0; saveRecords(); }
         } else recBase = jclone(S.records);
         if (data.history) S.history = data.history.value;   // 명단(대화 기록과 대조)은 손으로 붙여넣던 roster 대신 봇이 읽은 명단(admin_members, memNamesLoad)
-        S.lang = data.lang ? data.lang.value : null;
+        S.lang = langIn(data.lang ? data.lang.value : null);
         S.appendix = data.appendix ? data.appendix.value : null;   // 부록(시트에 적어 두었던 경고와 특이사항, 133차에 한 번 옮김)   // 채팅 언어 결과(ledger 와 같은 분석에서 나온 것, 따로 저장)
         botCfgLast = data.botcfg ? canon(data.botcfg.value) : "";   // 봇이 읽는 설정의 서버 것(같으면 다시 쓰지 않는다)
         $("gatePass").value = "";
@@ -1273,24 +1332,49 @@
     const sigRank = (c) => { const i = SIG_ORDER.indexOf(c); return i < 0 ? 99 : i; };
     function renderSignals() {
       const host = $("subSignals");
-      if (!S.ledger) { host.innerHTML = ""; return; }
+      if (!S.ledger) { host.innerHTML = ""; checkSubCounts(); return; }
       const side = view.sigSide;
       const codes = {};
       members().forEach((p) => effFlags(p).forEach((f) => { if ((side === "bad" && f.l === "watch" && !QUIET.includes(f.c)) || (side === "good" && f.l === "good")) (codes[f.c] = codes[f.c] || { t: f.t, list: [] }).list.push({ p, f }); }));
       const keys = Object.keys(codes).sort((a, b) => sigRank(a) - sigRank(b));
-      const evOf = (p, c) => (p.ev || []).filter((e) => e.c === c || (c === "organizer" && e.c === "meetup"));
-      const L = S.ledger;
-      host.innerHTML = `<div class="panel">
+      if (view.sigCode && !codes[view.sigCode]) view.sigCode = "";
+      const evOf = (p, c) => (p.ev || []).filter((e) => e.c === c || (c === "organizer" && e.c === "meetup")).slice().sort((a, b) => (b.d + b.t).localeCompare(a.d + a.t));
+      const L = S.ledger, ppl = new Set();
+      keys.forEach((c) => codes[c].list.forEach(({ p }) => ppl.add(p.pid)));
+      // 사람마다 한 줄: 이름, 신호 풀이, 근거 수, 마지막 근거 날, 조치 수. 누르면 근거 줄(최근 것부터)과 상세 단추
+      const row = (p, f, c) => {
+        const ev = evOf(p, c), acts = S.records.actions.filter((a) => a.pid === p.pid).length;
+        return `<details class="sg-row"><summary><span class="sg-who"><b>${esc(p.name)}</b>${f.x ? `<span class="sg-x">${esc(f.x)}</span>` : ""}</span><span class="sg-meta">${p.status !== "in" ? statusTag0(p) : ""}${acts ? `<span class="tag watch">조치 ${nf(acts)}건</span>` : ""}<span class="sg-n"><b>${nf(ev.length)}</b>근거</span><span class="sg-d">${ev[0] ? esc(mdS(ev[0].d)) : ""}</span></span></summary>
+          <div class="sg-body">${ev.length ? `<ul class="ev">${ev.map((e) => `<li><time>${esc(md(e.d))} ${esc(e.t)}</time><span>${esc(e.x)}</span></li>`).join("")}</ul>` : `<p class="cap">근거 줄이 없습니다.</p>`}<div class="chips"><button type="button" class="btn btn-secondary is-sm" data-person="${esc(p.pid)}">멤버 상세</button></div></div></details>`;
+      };
+      const group = (c) => {
+        const list = codes[c].list.map((x) => Object.assign({ ev: evOf(x.p, c) }, x)).sort((a, b) => ((b.ev[0] || {}).d || "").localeCompare((a.ev[0] || {}).d || "") || b.ev.length - a.ev.length || a.p.name.localeCompare(b.p.name, "ko"));
+        const more = view.sigMore.has(c), lim = 12, vis = more ? list : list.slice(0, lim);
+        return `<div class="panel sg-group"><h2>${lvl(side === "bad" ? "watch" : "good")}<span>${esc(codes[c].t)}</span><small>${nf(list.length)}명</small></h2>
+          <div class="sg-list">${vis.map(({ p, f }) => row(p, f, c)).join("")}</div>
+          ${list.length > lim ? `<button type="button" class="more-btn" data-sigmore="${esc(c)}" aria-expanded="${more}">${more ? "접기" : "외 " + nf(list.length - lim) + "명 더 보기"}</button>` : ""}</div>`;
+      };
+      const shown = view.sigCode ? [view.sigCode] : keys;
+      host.innerHTML = `<div class="panel sg-head">
         <div class="chips" role="group" aria-label="신호 종류"><button type="button" data-side="bad" aria-pressed="${side === "bad"}">살필 신호</button><button type="button" data-side="good" aria-pressed="${side === "good"}">좋은 신호</button></div>
         <p class="sub">${side === "bad" ? "지금 방에 있는 사람의 최근 90일입니다. 단어와 행동 모양으로 찾은 것이라 틀릴 수 있으니 근거 줄을 보고 판단해 주세요." : "환영, 감사 받음, 모임 제안, 정보 공유, 꾸준함입니다."}</p>
-        ${keys.length ? keys.map((c) => `<div class="group"><h3>${esc(codes[c].t)} <span class="tag">${codes[c].list.length}명</span></h3><div class="rows">${codes[c].list.sort((a, b) => b.p.n - a.p.n).map(({ p, f }) => {
-          const ev = evOf(p, c);
-          return personRow(p, `<span>${esc(f.x)}</span>`) + (ev.length ? `<details class="more"><summary>근거 줄 ${ev.length}개</summary><ul class="ev">${ev.map((e) => `<li><time>${esc(md(e.d))} ${esc(e.t)}</time><span>${esc(e.x)}</span></li>`).join("")}</ul></details>` : "");
-        }).join("")}</div></div>`).join("") : `<p class="empty">없습니다.</p>`}
+        ${keys.length ? `<div class="chips sg-sum" role="group" aria-label="보이는 종류"><button type="button" data-sigcode="" aria-pressed="${!view.sigCode}">모두 <b>${nf(ppl.size)}명</b></button>${keys.map((c) => `<button type="button" data-sigcode="${esc(c)}" aria-pressed="${view.sigCode === c}">${esc(codes[c].t)} <b>${nf(codes[c].list.length)}</b></button>`).join("")}</div>` : ""}
       </div>
+      ${keys.length ? shown.map(group).join("") : `<div class="panel"><p class="empty">없습니다.</p></div>`}
       ${side === "bad" ? `<div class="panel"><h2>감정싸움 후보 <small>${(L.conflicts || []).length}건</small></h2>${(L.conflicts || []).length ? `<ul class="ev">${L.conflicts.slice().reverse().map((c) => `<li><time>${esc(md(c.d))} ${esc(c.t)}</time><span>${nameBtn(c.a)}, ${nameBtn(c.b)}: ${c.n}번 주고받음, 부정 표현 ${c.neg}번</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>
       <div class="panel"><h2>답 없는 질문 <small>30분 안에 아무도 답하지 않음, ${nf(L.unanswered.count)}건</small></h2>${L.unanswered.recent.length ? `<ul class="ev">${L.unanswered.recent.slice().reverse().map((q) => `<li><time>${esc(md(q.d))} ${esc(q.t)}</time><span>${esc(nowName(q.name))}: ${esc(q.x)}</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>` : ""}`;
-      host.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { view.sigSide = b.dataset.side; renderSignals(); }));
+      host.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { view.sigSide = b.dataset.side; view.sigCode = ""; renderSignals(); const x = host.querySelector(`[data-side="${b.dataset.side}"]`); if (x) x.focus({ preventScroll: true }); }));
+      host.querySelectorAll("[data-sigcode]").forEach((b) => b.addEventListener("click", () => { view.sigCode = b.dataset.sigcode; renderSignals(); const x = host.querySelector(`[data-sigcode="${CSS.escape(b.dataset.sigcode)}"]`); if (x) x.focus({ preventScroll: true }); }));
+      host.querySelectorAll("[data-sigmore]").forEach((b) => b.addEventListener("click", () => { const c = b.dataset.sigmore; if (view.sigMore.has(c)) view.sigMore.delete(c); else view.sigMore.add(c); renderSignals(); const x = host.querySelector(`[data-sigmore="${CSS.escape(c)}"]`); if (x) x.focus({ preventScroll: true }); }));
+      checkSubCounts();
+    }
+    // 신호와 조치의 보기 단추에 수: 살필 신호의 사람, 조치 기록, 부록 경고
+    function checkSubCounts() {
+      const put = (k, n) => { const b = document.querySelector(`[data-checksub="${k}"]`); if (!b) return; let i = b.querySelector("b"); if (!n) { if (i) i.remove(); return; } if (!i) { i = document.createElement("b"); b.appendChild(i); } i.textContent = nf(n); };
+      const ppl = new Set(); if (S.ledger) members().forEach((p) => { if (effFlags(p).some((f) => f.l === "watch" && !QUIET.includes(f.c))) ppl.add(p.pid); });
+      put("signals", ppl.size);
+      put("records", (S.records.actions || []).length);
+      put("apx", S.appendix ? S.appendix.people.reduce((n, e) => n + Math.max(e.warns.length, e.warnN || 0), 0) : 0);
     }
 
     /* ── 기록 ── */
@@ -1321,16 +1405,24 @@
       const acts = S.records.actions.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       const name = (pid) => { const p = byPid(pid); return p ? p.name : (acts.find((a) => a.pid === pid) || {}).name || pid; };
       const who = (pid) => (byPid(pid) ? `<button type="button" class="linkish" data-person="${esc(pid)}">${esc(name(pid))}</button>` : `<b style="display:inline;color:var(--ink)">${esc(name(pid))}</b>`);
-      const items = acts.map((a) => `<li><time>${esc(md(a.date))}</time><span>${who(a.pid)} ${esc(KIND[a.kind] || "")} ${esc(STEP[a.step] || "")}${a.reason ? ": " + esc(a.reason) : ""}</span></li>`);
+      const items = acts.map((a) => `<tr><td class="rc-d">${esc(md(a.date))}</td><td>${who(a.pid)}</td><td>${esc(KIND[a.kind] || "")}</td><td><span class="tag${STEP_LV[a.step] >= 3 ? " rule" : STEP_LV[a.step] ? " watch" : ""}">${esc(STEP[a.step] || "")}</span></td><td class="rc-r">${a.reason ? esc(a.reason) : `<span class="mute">사유 없음</span>`}</td></tr>`);
+      // 세 단계(1차 구두 경고, 2차 면담, 3차 강제퇴장): 한 단계는 채우고, 다음 단계는 테두리
+      const ladder = (label, list) => {
+        if (!list.length) return "";
+        const lv = ladderLv(list), kicked = list.some((a) => a.step === "kick"), at = Math.min(lv, 2);   // 강제퇴장은 적힌 때만 채운다(횟수가 셋이어도 다음 단계로 둔다)
+        const cls = (i) => (kicked || (i < 2 && i < at) ? "done" : i === at ? "next" : "");
+        return `<span class="ladder" role="img" aria-label="${esc(label)}: ${kicked ? "강제퇴장까지 함" : "다음은 " + STEP[nextStepOf(lv)]}"><em>${esc(label)}</em>${["warn", "talk", "kick"].map((k, i) => `<i class="${cls(i)}">${i + 1}차 ${esc(STEP[k])}</i>`).join("")}</span>`;
+      };
       // 다음 단계는 지금 방에 있는 사람만. 부록에 경고가 있는 사람도(참고)
       const apxP = S.appendix ? [...apxIndex().byP.keys()].filter((pid) => apxWarnsOf(pid).length) : [];
       const pidsAll = [...new Set(acts.map((a) => a.pid).concat(apxP))];
       const pids = pidsAll.filter((pid) => { const p = byPid(pid); return p && p.status === "in"; }), outN = pidsAll.length - pids.length;
       const apxN = S.appendix ? S.appendix.people.reduce((n, e) => n + Math.max(e.warns.length, e.warnN || 0), 0) : 0;
       host.innerHTML = `<div class="panel"><h2>조치 기록 <small>${acts.length}건</small>${apxN ? `<button type="button" class="text-btn" data-apxjump="">부록의 시트 경고 ${nf(apxN)}건</button>` : ""}</h2>
-        ${items.length ? `<ul class="ev">${items.join("")}</ul>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
-        ${pids.length ? `<div class="panel"><h2>다음 단계 <small>지금 방에 있는 사람${outN ? ", 나간 사람 " + nf(outN) + "명은 뺌" : ""}</small></h2><div class="rows">${pids.map((pid) => { const p = byPid(pid); const ns = nextStep(pid); const n = S.records.actions.filter((a) => a.pid === pid).length; return personRow(p, ns.map((x) => `<span class="tag watch">${esc(x)}</span>`).join(""), [n + "건", "조치"]); }).join("")}</div></div>` : ""}
+        ${items.length ? `<div class="tbl-wrap"><table class="tbl lft rc-tbl"><thead><tr><th>날짜</th><th>이름</th><th>종류</th><th>단계</th><th>사유</th></tr></thead><tbody>${items.join("")}</tbody></table></div>` : `<p class="empty">아직 없습니다. 멤버 상세에서 조치를 적습니다.</p>`}</div>
+        ${pids.length ? `<div class="panel"><h2>다음 단계 <small>지금 방에 있는 사람${outN ? ", 나간 사람 " + nf(outN) + "명은 뺌" : ""}</small></h2><div class="rows">${pids.map((pid) => { const p = byPid(pid), mine = S.records.actions.filter((a) => a.pid === pid), sw = apxOnlyWarnings(pid, mine); return `<div class="ns-row"><button type="button" class="linkish" data-person="${esc(pid)}">${esc(p.name)}</button><span class="ns-n">조치 ${nf(mine.length)}건</span><div class="ns-l">${ladder("금지 행동", mine.filter((a) => a.kind === "rule"))}${ladder("비벙", mine.filter((a) => a.kind === "bibung"))}${sw.length ? `<span class="tag">부록 경고 ${sw.length}회(참고)</span>` : ""}</div></div>`; }).join("")}</div></div>` : ""}
         ${ioPanel()}`;
+      checkSubCounts();
     }
     /* 입퇴장 메모 모아 보기: 사람 메모와 줄마다 메모(날짜 순) */
     function ioPanel() {
@@ -2205,7 +2297,7 @@
         const lang = langCfg();   // 채팅 언어 단어 목록 설정(끈 항목, 켠 항목, 더한 말, 예외 말)
         const here = () => OpsAnalyzer.runFiles(list, { links, lang, onProgress: onP }).then(resolve, reject);
         let w = null;
-        try { w = new Worker("assets/ops-worker.js?v=6"); } catch (e) { w = null; }
+        try { w = new Worker("assets/ops-worker.js?v=7"); } catch (e) { w = null; }
         if (!w) { here(); return; }
         let started = false;
         w.onmessage = (e) => {
@@ -2229,7 +2321,7 @@
       busy = false; setProgress(null);
       if (!r) { $("saveBtn").disabled = !S.unsaved || localOnly; toast(r === undefined ? "파일을 읽지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요." : "대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
       resolvePeople(r);
-      const langNew = r.lang || null; delete r.lang;   // 채팅 언어 결과는 ledger 와 따로 둔다(저장 열쇠도 따로)
+      const langNew = langIn(r.lang); delete r.lang;   // 채팅 언어 결과는 ledger 와 따로 둔다(저장 열쇠도 따로)
       const prev = S.ledger && S.ledger.range ? S.ledger : null;   // 앞서 보던 것(서버 저장본이나 앞 분석): 이번 파일로 무엇이 새로 들어왔는지
       S.ledger = r; S.lang = langNew; S.unsaved = true; S.savedAt = S.savedAt || "";
       const dm = prev ? (r.totals.messages || 0) - ((prev.totals && prev.totals.messages) || 0) : 0;
@@ -2289,14 +2381,25 @@
       let done = false;
       try {
         const ledger = Object.assign({}, L0, { people: L0.people.map((p) => { const q = Object.assign({}, p); delete q.sig; return q; }) });
-        if (G0) await opsPut("lang", G0);   // 채팅 언어 결과(같은 분석에서 나온 것)를 먼저. 이것이 안 들어가면 대화 기록도 바꾸지 않는다(둘이 어긋나지 않게)
+        // 채팅 언어 결과(같은 분석에서 나온 것)를 먼저. 서버가 너무 크다고 하면(열쇠 하나 4MB) 오래된 날의 발췌부터 덜어 다시 보낸다(그 날들은 날짜별 수로 남는다).
+        // 여섯 번 덜어도 안 되면 언어 결과만 빼고 대화 기록은 저장한다(언어 탭이 어긋남을 알린다). 연결 오류는 전처럼 둘 다 멈춘다
+        let langErr = "";
+        if (G0) {
+          let W = OpsLang.pack(G0), cut = 0;
+          for (;;) {
+            try { await opsPut("lang", W); break; }
+            catch (e) { if (e.code !== "TOO_BIG") throw e; if (cut >= 6) { langErr = "TOO_BIG"; break; } W = OpsLang.trim(W, 0.7); cut += 1; }
+          }
+          if (cut && !langErr && S.lang === G0) S.lang = langIn(W);   // 덜어 낸 것을 이 화면에도(저장본과 같게)
+        }
+        S.langSaveErr = langErr;
         const at = await opsPut("ledger", ledger);
         if (H0) { await opsPut("history", H0); S.history = H0; if (S.pendingHistory === H0) S.pendingHistory = null; }
         saveRecords();
         S.savedAt = at || new Date().toISOString(); S.savedRange = { from: L0.range.from, to: L0.range.to, n: L0.people.length };
         if (S.ledger === L0) S.unsaved = false;   // 저장하는 동안 다시 분석했으면 그것은 아직 저장 안 함
         $("saveState").textContent = "서버에 저장했습니다(대화 " + md(L0.range.to) + " 까지, " + kstHM(S.savedAt) + "). 다른 기기에서 열어도 이 결과가 보입니다.";
-        toast("서버에 저장했습니다.");
+        toast(langErr ? "대화 기록은 저장했습니다. 언어 결과는 너무 커서 저장하지 못했습니다." : "서버에 저장했습니다.");
         done = true;
         renderAll();
         memPush(true);
@@ -2305,6 +2408,7 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return false; }   // 비밀번호가 바뀐 뒤 거듭 누르면 잠기므로 바로 멈춘다
         $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "");
+        toast($("saveState").textContent);   // 데이터 탭 밖에서도 보이게(봇 분석을 열 때 바로 저장하는 길)
       } finally { saving = false; btn.disabled = !S.unsaved; btn.textContent = "서버에 저장"; }
       return done;
     }
@@ -2386,13 +2490,14 @@
       botAnBusy = true; botExpShow();
       try {
         const rows = await botAnLoad(true);
-        const row = rows && rows.ledger, r = row && row.payload, G = rows && rows.lang ? rows.lang.payload : null;
+        const row = rows && rows.ledger, r = row && row.payload, lr = rows && rows.lang, G = lr ? lr.payload : null;
         if (!r || !r.range || !Array.isArray(r.people)) { toast("봇이 올린 분석을 읽지 못했습니다."); return false; }
         r.upTo = row.at || "";                           // 대화 내용이 끝난 때의 위 한계(봇이 올린 때). 지금 닉네임에서 명단과 견준다
         resolvePeople(r);
         srcFiles = [];                                   // 파일로 분석한 것이 아니다(사람에게 잇기는 다음 봇 분석부터 적용)
         const prev = S.ledger && S.ledger.range ? S.ledger : null;
-        S.ledger = r; S.lang = G || null; S.unsaved = true; S.savedAt = S.savedAt || ""; S.botApplied = row.at;
+        S.ledger = r; S.lang = langIn(G); S.unsaved = true; S.savedAt = S.savedAt || ""; S.botApplied = row.at;
+        S.langLag = lr && lr.at && row.at && Date.parse(lr.at) < Date.parse(row.at) - 30 * 60000 ? lr.at : "";   // 봇이 이번에 언어 결과를 올리지 못하고 옛것만 남은 때
         const dm = prev ? (r.totals.messages || 0) - ((prev.totals && prev.totals.messages) || 0) : 0;
         $("fileInfo").innerHTML = `<p class="sub">봇이 ${esc(botExpWhen(row.at))} 에 내보낸 대화 ${esc(md(r.range.from))} ~ ${esc(md(r.range.to))}, 메시지 ${nf(r.totals.messages)}건, 말한 사람 ${nf(r.totals.people)}명, 들어옴 ${nf(r.totals.joins)}, 나감 ${nf(r.totals.leaves)}, 내보냄 ${nf(r.totals.kicks)}</p>` +
           (prev ? `<p class="file-added">${r.range.to > prev.range.to ? `새로 더한 대화: ${esc(md(nextDay(prev.range.to)))} ~ ${esc(md(r.range.to))}, 메시지 ${dm >= 0 ? "+" : ""}${nf(dm)}건.` : `새로 더한 날이 없습니다. 앞서 본 대화와 같이 ${esc(md(prev.range.to))} 까지입니다.`}</p>` : "");
@@ -3126,15 +3231,15 @@
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
         MT = missingFn(e) ? { missing: true, loadedAt: Date.now() } : MT;
       }
-      renderSite();
+      renderSite(); renderBrief();
     }
     const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
     const delta = (a, b) => { if (!b && !a) return ""; if (!b) return `<span class="dl up">새로</span>`; const d = Math.round(((a - b) / b) * 100); return d === 0 ? `<span class="dl">지난주와 같음</span>` : `<span class="dl ${d > 0 ? "up" : "down"}">지난주보다 ${d > 0 ? "+" : ""}${d}%</span>`; };
     /* 막대(한 계열, 한 축). vals 숫자 목록, labs 아래 글, tips 말풍선 글. hi 는 강조할 막대(이번 주) */
     function barSvg(vals, labs, tips, opt) {
       opt = opt || {};
-      const W = opt.w || 520, H = opt.h || 150, padL = 30, padB = 22, padT = 8, n = vals.length, max = Math.max(1, ...vals.map((x) => Math.abs(x)));
-      const step = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / step) * step, iw = W - padL - 6, ih = H - padB - padT, bw = iw / n;
+      const W = opt.w || 520, H = opt.h || 150, padB = 22, padT = 8, n = vals.length, max = Math.max(1, ...vals.map((x) => Math.abs(x)));
+      const step = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / step) * step, padL = Math.max(30, 12 + nf(top).length * 6.6), iw = W - padL - 6, ih = H - padB - padT, bw = iw / n;
       const y = (v) => padT + ih - (v / top) * ih;
       const grid = [0, 0.5, 1].map((k) => `<line class="gl${k === 0 ? " zero" : ""}" x1="${padL}" x2="${W - 6}" y1="${y(top * k)}" y2="${y(top * k)}"/><text class="yt" x="${padL - 6}" y="${y(top * k) + 4}">${nf(Math.round(top * k))}</text>`).join("");
       const bars = vals.map((v, i) => { const x = padL + i * bw + bw * 0.18, w = Math.max(2, bw * 0.64), h = Math.max(v > 0 ? 2 : 0, (v / top) * ih); return `<g class="bar${opt.hi === i ? " is-hi" : ""}"><rect x="${x.toFixed(1)}" y="${(y(0) - h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="3"/><rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${ih}"><title>${esc(tips[i])}</title></rect></g>`; }).join("");
@@ -3144,7 +3249,7 @@
     }
     /* 들어옴(위)과 나감(아래) 한 그림: 0 을 가운데 */
     function divSvg(ups, downs, labs, label) {
-      const W = 520, H = 150, padL = 30, padB = 22, padT = 8, n = ups.length, max = Math.max(1, ...ups, ...downs), ih = H - padB - padT, mid = padT + ih / 2, bw = (W - padL - 6) / n;
+      const W = 520, H = 150, padB = 22, padT = 8, n = ups.length, max = Math.max(1, ...ups, ...downs), padL = Math.max(30, 18 + nf(max).length * 6.6), ih = H - padB - padT, mid = padT + ih / 2, bw = (W - padL - 6) / n;
       const s = (v) => (v / max) * (ih / 2);
       const bars = ups.map((u, i) => { const x = padL + i * bw + bw * 0.18, w = Math.max(2, bw * 0.64); return `<g class="bar"><rect class="up" x="${x.toFixed(1)}" y="${(mid - s(u)).toFixed(1)}" width="${w.toFixed(1)}" height="${s(u).toFixed(1)}" rx="2"/><rect class="down" x="${x.toFixed(1)}" y="${mid.toFixed(1)}" width="${w.toFixed(1)}" height="${s(downs[i]).toFixed(1)}" rx="2"/><rect class="hit" x="${(padL + i * bw).toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${ih}"><title>${esc(labs[i] + " 주: 들어옴 " + u + ", 나감 " + downs[i])}</title></rect></g>`; }).join("");
       const every = Math.ceil(n / 6);
@@ -3154,23 +3259,12 @@
     function renderSite() {
       const host = $("dashSite"); if (!host) return;
       if (localOnly) { host.innerHTML = ""; return; }
-      if (!MT) { host.innerHTML = `<div class="dsec"><h2>사이트 운영 <small>읽는 중</small></h2></div>`; return; }
-      if (MT.missing) { host.innerHTML = `<div class="dsec"><h2>사이트 운영</h2><p class="empty">서버에 2026-10-31-ops-metrics.sql 을 실행하면 방문, 모임, 참석, 카카오 로그인, 신입 첫 참석, 멤버 드나듦이 여기에 주마다 보입니다.</p></div>`; return; }
-      const W = MT.weeks || [], N = MT.now || {}, cur = W[W.length - 1] || {}, prev = W[W.length - 2] || {};
+      if (!MT) { host.innerHTML = `<div class="dsec"><h2>사이트 흐름 <small>읽는 중</small></h2></div>`; return; }
+      if (MT.missing) { host.innerHTML = `<div class="dsec"><h2>사이트 흐름</h2><p class="empty">서버에 2026-10-31-ops-metrics.sql 을 실행하면 방문, 모임, 참석, 카카오 로그인, 신입 첫 참석, 멤버 드나듦이 여기에 주마다 보입니다.</p></div>`; return; }
+      const W = MT.weeks || [], N = MT.now || {};
       const lab = W.map((w) => { const d = String(w.w || ""); return d ? Number(d.slice(5, 7)) + "." + Number(d.slice(8, 10)) : ""; });
       const sum = (k, ws) => (ws || W).reduce((a, w) => a + Number(w[k] || 0), 0);
       const last4 = W.slice(-4);
-      const linkP = pct(N.linked || 0, N.members || 0), actP = pct(N.active_4w || 0, N.members || 0);
-      const kpi = (label, val, sub, extra, go) => `<article class="kpi mt-kpi${go ? " is-link" : ""}"${go ? ` data-tabgo="${go}" role="button" tabindex="0"` : ""}><span class="k-l">${label}</span><b class="k-v">${val}</b><span class="k-s">${sub}</span>${extra || ""}</article>`;
-      const meter = (p) => `<span class="meter" aria-hidden="true"><i style="width:${Math.min(100, p)}%"></i></span>`;
-      const kpis = [
-        kpi("이번 주 방문", nf(cur.visits || 0), delta(cur.visits || 0, prev.visits || 0) + ` 오늘 ${nf(N.visits_today || 0)}`),
-        kpi("이번 주 모임", nf(cur.bungs || 0) + "<small>개</small>", `연 사람 ${nf(cur.hosts || 0)}명, 다가오는 모임 ${nf(N.upcoming || 0)}개` + (N.upcoming_empty ? `, <b class="warn-t">참석 없음 ${nf(N.upcoming_empty)}개</b>` : ""), "", "bung"),
-        kpi("이번 주 참석", nf(cur.attends || 0) + "<small>명</small>", `로그인으로 ${pct(cur.attends_login || 0, cur.attends || 0)}%, 취소 ${nf(cur.cancels || 0)}, 뺌 ${nf(cur.kicks || 0)}`),
-        kpi("카카오 로그인 묶기", linkP + "<small>%</small>", `멤버 ${nf(N.members || 0)}명 가운데 ${nf(N.linked || 0)}명` + (N.kakao && N.kakao !== "all" ? `, 보이기 ${N.kakao === "staff" ? "운영진 기기만" : "끔"}` : ""), meter(linkP), "members"),
-        kpi("신입 첫 참석", N.newcomers ? nf(N.newcomers_attended || 0) + "<small>/" + nf(N.newcomers) + "</small>" : "0", N.newcomers ? `입장일 단 신입(30일 안) 가운데 사이트로 참석한 사람` : "입장일 단 신입 없음", N.newcomers ? meter(pct(N.newcomers_attended || 0, N.newcomers)) : ""),
-        kpi("최근 4주 참여", nf(N.active_4w || 0) + "<small>명</small>", `참석, 댓글, 글을 남긴 사람(멤버의 ${actP}%)`, meter(actP))
-      ].join("");
       const sec = (title, sub, body) => `<article class="card mt-card"><div class="c-head"><h3>${title} <small class="cap">${sub}</small></h3></div>${body}</article>`;
       const hrs = (N.hours || []).map(Number);
       const peak = hrs.length ? hrs.indexOf(Math.max(...hrs)) : -1;
@@ -3182,8 +3276,7 @@
         sec("시간대별 방문", peak >= 0 && hrs[peak] ? `최근 4주, 가장 많은 때 ${peak}시` : "최근 4주", barSvg(hrs, hrs.map((x, i) => String(i)), hrs.map((x, i) => i + "시 " + nf(x)), { hi: peak, label: "시간대별 방문", labs: 8, h: 130 })),
         sec("댓글과 반응", `최근 4주 댓글 ${nf(sum("comments", last4))}, 반응 ${nf(sum("reactions", last4))}, 새 묶기 ${nf(sum("links", last4))}`, barSvg(W.map((w) => Number(w.comments || 0) + Number(w.reactions || 0)), lab, W.map((w, i) => lab[i] + " 주 댓글 " + nf(w.comments || 0) + ", 반응 " + nf(w.reactions || 0)), { hi: W.length - 1, label: "댓글과 반응" }))
       ].join("");
-      const warn = N.auth_fail_24h ? `<p class="notice is-warn">하루 동안 운영진 비밀번호 틀림 ${nf(N.auth_fail_24h)}번(접속 주소 ${nf(N.auth_fail_ips || 0)}곳). 15분 안에 여덟 번 틀리면 그 주소는 15분 잠깁니다.</p>` : "";
-      host.innerHTML = `<div class="dsec"><h2>사이트 운영 <small>${esc(memWhen(MT.at))} 기준, 주는 월요일부터</small></h2>${warn}<div class="kpis mt-kpis">${kpis}</div><div class="cgrid mt-grid">${charts}</div></div>`;
+      host.innerHTML = `<section class="dsec" id="d-site"><h2>사이트 흐름 <small>${esc(memWhen(MT.at))} 기준, 주는 월요일부터</small></h2><div class="cgrid mt-grid">${charts}</div></section>`;
     }
     $("botPill").addEventListener("click", () => setTab("bot"));
     document.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target && e.target.matches && e.target.matches("article[data-tabgo]")) { e.preventDefault(); setTab(e.target.dataset.tabgo); } });
@@ -3700,46 +3793,125 @@
       rv._at = todayKST();
     }
 
+    /* ── 대시보드 머리(137차): 지금 확인할 것과 한눈에.
+       지금 확인할 것: 규칙과 살펴보기를 한 줄에 하나씩(규칙 먼저, 정한 차례대로). 없는 것은 '이상 없음' 한 줄로 모은다.
+       확인함(boardSeen)은 전처럼 수에서 빼고 줄 안에 따로 보인다. 한눈에: 사이트 지표와 대화 분석의 핵심 수를 한 격자에(있는 것만) ── */
+    const briefOpen = new Set();   // 이름을 다 펼친 줄
+    const BRIEF_PRI = ["reentry", "kick_return", "meet", "fmt", "name_change", "auth", "stale", "lang", "signals", "empty", "atlimit", "apx_warn", "roster", "quiet"];
+    function briefRows() {
+      const out = [], clear = [], L = S.ledger;
+      const P = (p, d) => ({ pid: p.pid, n: p.name, d: d == null ? "" : String(d) });
+      if (L) {
+        BOARD.forEach((b) => {
+          const all = boardRows(b.key);
+          if (!all.length && b.hideZero) return;
+          const rows = all.filter((x) => !boardSeen(x.p, b.key, x.d)), seen = all.filter((x) => boardSeen(x.p, b.key, x.d));
+          if (!rows.length) { clear.push(b.t + (seen.length ? "(확인함 " + nf(seen.length) + "명)" : "")); return; }
+          out.push({ key: b.key, l: b.l, t: b.t, n: rows.length, u: "명", names: rows.map((x) => P(x.p, x.d)), seen: seen.map((x) => P(x.p, x.d)), act: `<button type="button" class="text-btn" data-sheetfilter="chk:${b.key}">표에서 보기</button>` });
+        });
+        // 채팅 언어: 최근 7일(대화 마지막 날 기준)의 욕설과 막말. 추임새만 있으면 이상 없음으로 둔다
+        const G = S.lang;
+        if (G && G.range) {
+          const to = G.range.to, from = dShift(to, -6), r = langRec();
+          const all = langRows().filter((h) => !h.dis && h.d >= from && h.d <= to).concat(r.manual.filter((m) => m.d >= from && m.d <= to).map(langManualRow));
+          const strong = all.filter((h) => h.k === "curse" || h.k === "rude"), by = new Map();
+          strong.forEach((h) => { const p = pByName(h.n), k = p ? "p:" + p.pid : "n:" + h.n, o = by.get(k) || { pid: p ? p.pid : "", n: p ? p.name : h.n, c: 0 }; o.c += 1; by.set(k, o); });
+          const top = [...by.values()].sort((a, b) => b.c - a.c || a.n.localeCompare(b.n, "ko"));
+          if (strong.length) out.push({ key: "lang", id: "langCard", l: "watch", t: "채팅 욕설과 막말(최근 7일)", n: strong.length, u: "건", names: top.map((x) => ({ pid: x.pid, n: x.n, d: nf(x.c) })), note: esc(md(from)) + " ~ " + esc(md(to)) + ", 걸린 줄 모두 " + nf(all.length) + "건", act: `<button type="button" class="text-btn" data-tabgo="lang">언어에서 보기</button>` });
+          else clear.push("채팅 욕설과 막말(최근 7일)");
+        }
+        const rc = rosterCompare();
+        if (rc) {
+          const d = rc.gone.length + rc.back.length;
+          if (d) out.push({ key: "roster", l: "watch", t: "명단과 대화 기록이 다름", n: d, u: "명", names: rc.gone.concat(rc.back).map((p) => P(p)), note: `명단 ${esc(md(rc.at))}, ${nf(rc.total)}명. 파일로는 방에 있는데 명단에 없음 ${nf(rc.gone.length)}명, 나갔는데 명단에 있음 ${nf(rc.back.length)}명.`, act: `<button type="button" class="text-btn" data-tabgo="data">데이터에서 보기</button>` });
+          else clear.push("명단과 대화 기록");
+        }
+        const old = dnum(todayKST()) - dnum(L.upTo ? kstDate(L.upTo) : L.range.to);
+        if (old >= 3) out.push({ key: "stale", l: "watch", t: "대화 기록이 오래됨", n: old, u: "일 전", names: [], note: "대화 " + esc(md(L.range.to)) + "까지. 봇의 대화 내보내기를 봐 주세요.", act: `<button type="button" class="text-btn" data-tabgo="bot">봇에서 보기</button>` });
+      }
+      const N = MT && !MT.missing ? MT.now || {} : null;
+      if (N) {
+        if (N.upcoming_empty) out.push({ key: "empty", l: "watch", t: "참석 없는 다가오는 모임", n: N.upcoming_empty, u: "개", names: [], note: "다가오는 모임 " + nf(N.upcoming || 0) + "개 가운데", act: `<button type="button" class="text-btn" data-tabgo="bung">소식에서 보기</button>` });
+        else if (N.upcoming) clear.push("다가오는 모임 참석");
+        if (N.auth_fail_24h) out.push({ key: "auth", l: "watch", t: "운영진 비밀번호 틀림(24시간)", n: N.auth_fail_24h, u: "번", names: [], note: "접속 주소 " + nf(N.auth_fail_ips || 0) + "곳. 15분 안에 여덟 번 틀리면 그 주소는 15분 잠깁니다." });
+      }
+      const pri = (k) => { const i = BRIEF_PRI.indexOf(k); return i < 0 ? 99 : i; };
+      out.sort((a, b) => (a.l === b.l ? 0 : a.l === "rule" ? -1 : 1) || pri(a.key) - pri(b.key));
+      return { out, clear };
+    }
+    function briefRowHtml(x) {
+      const open = briefOpen.has(x.key), lim = window.matchMedia && window.matchMedia("(max-width: 699px)").matches ? 4 : 8, list = open ? x.names : x.names.slice(0, lim);
+      const chip = (y) => (y.pid ? `<button type="button" class="nchip" data-person="${esc(y.pid)}">` : `<span class="nchip">`) + esc(y.n) + (y.d ? `<em>${esc(y.d)}</em>` : "") + (y.pid ? "</button>" : "</span>");
+      return `<li class="brow lv-${x.l}"${x.id ? ` id="${x.id}"` : ""}>
+        <div class="td-h"><span class="lvl">${ICON[x.l]}${LVL[x.l]}</span><h3>${esc(x.t)}</h3><strong class="td-n">${nf(x.n)}<small>${esc(x.u)}</small></strong>${x.act ? `<span class="td-act">${x.act}</span>` : ""}</div>
+        ${x.note ? `<p class="td-note">${x.note}</p>` : ""}
+        ${x.names.length ? `<div class="nchips">${list.map(chip).join("")}${x.names.length > lim ? `<button type="button" class="more-btn" data-brief="${esc(x.key)}" aria-expanded="${open}">${open ? "접기" : "외 " + nf(x.names.length - lim) + "명"}</button>` : ""}</div>` : ""}
+        ${x.seen && x.seen.length ? `<details class="more"><summary>확인한 사람 ${nf(x.seen.length)}명</summary><div class="nchips">${x.seen.map(chip).join("")}</div></details>` : ""}
+      </li>`;
+    }
+    function briefKpis() {
+      const L = S.ledger, N = MT && !MT.missing ? MT.now || {} : null, W = N ? MT.weeks || [] : [], cur = W[W.length - 1] || {}, prev = W[W.length - 2] || {};
+      const tile = (o) => `<article class="kpi${o.hero ? " hero" : ""}${o.go ? " is-link" : ""}"${o.go ? ` data-tabgo="${o.go}" role="button" tabindex="0"` : ""}>${o.hero ? "<div>" : ""}<span class="k-l">${o.l}</span><strong class="k-v">${o.v}</strong><span class="k-s">${o.s || ""}</span>${o.hero ? "</div>" : ""}${o.x || ""}</article>`;
+      const meter = (p) => `<span class="meter" aria-hidden="true"><i style="width:${Math.min(100, p)}%"></i></span>`;
+      const T = [];
+      let M = null, f = null, E = 0;
+      if (L) {
+        M = members(); f = L.funnel; E = endN();
+        const rn = rosterNames().length, lastM = L.months[L.months.length - 1] || { m: "", joins: 0, leaves: 0, kicks: 0 };
+        const mon = lastM.m ? Number(lastM.m.slice(5, 7)) + "월" : "이번 달";
+        T.push({ hero: true, l: "지금 인원", v: nf(rn || M.length), s: rn ? "명단 " + esc(md(S.roster.at)) + " 기준" : "대화 기록 기준", x: `<span class="k-side"><b>${esc(mon)}</b>들어옴 ${nf(lastM.joins)}<br />나감 ${nf(lastM.leaves + lastM.kicks)}</span>` });
+      } else if (N && N.members) T.push({ hero: true, l: "지금 인원", v: nf(N.members), s: "사이트 멤버 목록 기준" });
+      if (N) {
+        T.push({ l: "이번 주 방문", v: nf(cur.visits || 0), s: delta(cur.visits || 0, prev.visits || 0) + " 오늘 " + nf(N.visits_today || 0) });
+        T.push({ l: "이번 주 모임", v: nf(cur.bungs || 0) + "<small>개</small>", s: "참석 " + nf(cur.attends || 0) + "명, 다가오는 모임 " + nf(N.upcoming || 0) + "개", go: "bung" });
+      }
+      if (L) {
+        const talk30 = M.filter((p) => p.d30 > 0).length, msg30 = M.reduce((a, p) => a + (p.d30 || 0), 0);
+        const newbies = M.filter((p) => !p.joinedBeforeFile && (p.firstJoin || p.joinedAt) && E - dnum(p.firstJoin || p.joinedAt) < 30);
+        T.push({ l: "최근 30일 말한 멤버", v: pctN(talk30, M.length) + "<small>%</small>", s: nf(talk30) + "명, 메시지 " + nf(msg30) + "건" });
+        T.push({ l: "신입(30일 안)", v: nf(newbies.length) + "<small>명</small>", s: "7일 안 첫 대화 " + pctN(f.spoke7, f.joined) + "%" + (N && N.newcomers ? ", 첫 참석 " + nf(N.newcomers_attended || 0) + "/" + nf(N.newcomers) : "") });
+        T.push({ l: "90일 뒤 남는 비율", v: pctN(f.stay90, f.base90) + "<small>%</small>", s: "7일 안에 나감 " + pctN(f.left7, f.joined) + "%" });
+      }
+      if (N) {
+        const linkP = pct(N.linked || 0, N.members || 0), actP = pct(N.active_4w || 0, N.members || 0);
+        T.push({ l: "카카오 로그인 묶기", v: linkP + "<small>%</small>", s: "멤버 " + nf(N.members || 0) + "명 가운데 " + nf(N.linked || 0) + "명" + (N.kakao && N.kakao !== "all" ? ", 보이기 " + (N.kakao === "staff" ? "운영진 기기만" : "끔") : ""), x: meter(linkP), go: "members" });
+        T.push({ l: "최근 4주 참여", v: nf(N.active_4w || 0) + "<small>명</small>", s: "참석, 댓글, 글을 남긴 사람(멤버의 " + actP + "%)", x: meter(actP) });
+      }
+      return T.length ? `<div class="kpis bk">${T.map(tile).join("")}</div>` : "";
+    }
+    function renderBrief() {
+      const host = $("dashBrief"), nav = $("dashJump"); if (!host) return;
+      const L = S.ledger, hasMT = !!(MT && !MT.missing && MT.now);
+      if (!L && !hasMT) { host.innerHTML = ""; if (nav) nav.hidden = true; return; }
+      const { out, clear } = briefRows();
+      const jumps = [["d-check", "확인할 것"], ["d-sum", "한눈에"]].concat(hasMT ? [["d-site", "사이트 흐름"]] : []).concat(L ? [["d-flow", "대화 흐름"], ["d-comp", "구성"], ["d-act", "활동"], ["d-sheet", "멤버 표"], ["d-good", "좋은 활동"], ["d-recent", "최근 드나듦"]] : []);
+      if (nav) { nav.hidden = false; nav.innerHTML = jumps.map(([id, t]) => `<button type="button" data-jump="${id}">${t}</button>`).join(""); }
+      const ruleN = out.filter((x) => x.l === "rule").length;
+      const head = out.length ? (ruleN ? "규칙 " + nf(ruleN) + "가지, " : "") + "살펴보기 " + nf(out.length - ruleN) + "가지" : "모두 이상 없음";
+      let since = "";
+      if (L && S.prevSeen) {
+        const d0 = kstDate(S.prevSeen), inN = members().filter((p) => p.joinedAt && p.joinedAt >= d0).length, outN = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && p.outDate >= d0).length, C = part(), bn = C ? C.P.bungs.filter((b) => b.state === "ok" && b.date >= d0).length : null;
+        since = `<p class="cap">지난번 연 날(${esc(md(d0))} ${esc(kstHM(S.prevSeen))})부터: 들어옴 ${nf(inN)}, 나감 ${nf(outN)}${bn != null ? ", 모임 " + nf(bn) + "개" : ""}${L.range.to < d0 ? ". 대화 기록은 " + esc(md(L.range.to)) + "까지라 새 분석이 오면 더 보입니다" : ""}</p>`;
+      }
+      const asOf = [L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) : "", hasMT ? "사이트 " + memWhen(MT.at) + " 기준" : ""].filter(Boolean).join(", ");
+      host.innerHTML = `<section class="dsec" id="d-check"><h2>지금 확인할 것 <small>${esc(head)}${L ? ", 지금 멤버 " + nf(members().length) + "명, 규칙 기준일 " + esc(md(ruleFrom())) : ""}</small></h2>
+          ${out.length ? `<ul class="blist">${out.map(briefRowHtml).join("")}</ul>` : ""}
+          ${clear.length ? `<p class="td-clear">${ICON.good}<span><b>이상 없음</b>${clear.map(esc).join(", ")}</span></p>` : ""}
+        </section>
+        <section class="dsec" id="d-sum"><h2>한눈에 <small>${esc(asOf)}</small></h2>${since}${briefKpis()}</section>`;
+    }
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest("[data-brief]"); if (!b) return;
+      const k = b.dataset.brief; if (briefOpen.has(k)) briefOpen.delete(k); else briefOpen.add(k);
+      renderBrief(); const again = document.querySelector(`[data-brief="${CSS.escape(k)}"]`); if (again) again.focus({ preventScroll: true });
+    });
+
     function renderDash() {
       const host = $("dashChat");
       const L = S.ledger;
       if (!L) { host.innerHTML = localOnly ? "" : `<div class="dsec"><h2>대화 분석</h2><p class="empty">아직 분석한 대화가 없습니다. 봇이 대화를 내보내 올리면 이 화면을 열 때 바로 반영합니다(봇 탭의 봇 설정에서 대화 내보내기를 켭니다).</p></div>`; return; }
       const M = members(), E = endN();
-      const lastM = L.months[L.months.length - 1] || { m: "", joins: 0, leaves: 0, kicks: 0, net: 0 };
-      const queue = M.map((p) => ({ p, list: pending(p) })).filter((x) => x.list.length);
-      const ruleN = queue.filter((x) => x.list.some((f) => f.l === "rule")).length;
-      const newbies = M.filter((p) => !p.joinedBeforeFile && (p.firstJoin || p.joinedAt) && E - dnum(p.firstJoin || p.joinedAt) < 30);
-      const rejoin30 = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) < 30 && !newbies.includes(p)).length;
-      const talk30 = M.filter((p) => p.d30 > 0).length, msg30 = M.reduce((a, p) => a + (p.d30 || 0), 0);
-      const f = L.funnel, rn = rosterNames().length;
-      const staff = L.staff && (L.staff.owner || L.staff.subs.length) ? (L.staff.owner ? "방장 " + nowName(L.staff.owner) : "") + (L.staff.subs.length ? (L.staff.owner ? ", " : "") + "부방장 " + L.staff.subs.map(nowName).join(", ") : "") : "";
-
-      // 1) 요약 숫자
-      const kpis = `<div class="kpis">
-        <div class="kpi hero"><div><span class="k-l">지금 인원</span><strong class="k-v">${nf(rn || M.length)}</strong><span class="k-s">${rn ? "명단 " + esc(md(S.roster.at)) + " 기준" : "대화 기록 기준"}${staff ? "<br />" + esc(staff) : ""}</span></div>${art("rules-nickname", "hero-art")}</div>
-        <div class="kpi"><span class="k-l">${esc(lastM.m)} 들어옴</span><strong class="k-v">${nf(lastM.joins)}</strong><span class="k-s">나감 ${nf(lastM.leaves)}, 내보냄 ${nf(lastM.kicks)}, 순증 ${lastM.net > 0 ? "+" : ""}${nf(lastM.net)}</span>${miniFlow(L.months)}</div>
-        <div class="kpi is-link" data-jump="d-check" tabindex="0" role="button"><span class="k-l">확인할 사람</span><strong class="k-v">${nf(queue.length)}</strong><span class="k-s">${lvl("rule")} ${nf(ruleN)}명, 나머지는 살펴보기</span></div>
-        <div class="kpi"><span class="k-l">신입(처음 들어옴, 30일 안)</span><strong class="k-v">${nf(newbies.length)}</strong><span class="k-s">${rejoin30 ? "다시 들어옴 " + nf(rejoin30) + "명, " : ""}들어온 사람 중 7일 안 첫 대화 ${pctN(f.spoke7, f.joined)}%</span></div>
-        <div class="kpi"><span class="k-l">최근 30일 말한 멤버</span><strong class="k-v">${pctN(talk30, M.length)}<small>%</small></strong><span class="k-s">${nf(talk30)}명, 메시지 ${nf(msg30)}건</span></div>
-        <div class="kpi"><span class="k-l">90일 뒤까지 남는 비율</span><strong class="k-v">${pctN(f.stay90, f.base90)}<small>%</small></strong><span class="k-s">7일 안에 나감 ${pctN(f.left7, f.joined)}%</span></div>
-      </div>`;
-
-      // 2) 확인할 것
-      const cards = BOARD.map((b) => {
-        const all = boardRows(b.key);
-        if (!all.length && b.hideZero) return "";
-        const rows = all.filter((x) => !boardSeen(x.p, b.key, x.d)), seen = all.filter((x) => boardSeen(x.p, b.key, x.d));
-        const chip = (x) => `<button type="button" class="nchip" data-person="${esc(x.p.pid)}">${esc(x.p.name)}${x.d ? `<em>${esc(x.d)}</em>` : ""}</button>`;
-        return `<article class="bcard lv-${b.l}">
-          <div class="b-head"><div><h3>${esc(b.t)}</h3><strong class="b-count">${nf(rows.length)}<small>명</small></strong>${lvl(b.l)}</div>${b.img ? art(b.img) : ""}</div>
-          ${rows.length ? `<div class="nchips">${rows.slice(0, 12).map(chip).join("")}${rows.length > 12 ? `<span class="more">외 ${rows.length - 12}명</span>` : ""}</div>` : `<p class="b-none">${seen.length ? "모두 확인했습니다." : "없습니다."}</p>`}
-          ${seen.length ? `<details class="more"><summary>확인한 사람 ${nf(seen.length)}명</summary><div class="nchips">${seen.map(chip).join("")}</div></details>` : ""}
-          ${all.length ? `<button type="button" class="text-btn" data-sheetfilter="chk:${b.key}">표에서 보기</button>` : ""}
-        </article>`;
-      }).join("");
-      const rc = rosterCompare();
-      const rosterCard = rc && S.ledger ? `<article class="bcard lv-${rc.gone.length || rc.back.length ? "watch" : "good"}"><div class="b-head"><div><h3>명단과 대화 기록</h3><strong class="b-count">${nf(rc.gone.length + rc.back.length)}<small>명 다름</small></strong>${lvl(rc.gone.length || rc.back.length ? "watch" : "good")}</div>${art("rules-faq")}</div>
-        <p class="b-none">명단 ${esc(md(rc.at))}, ${nf(rc.total)}명. 파일로는 방에 있는데 명단에 없음 ${nf(rc.gone.length)}명, 나갔는데 명단에 있음 ${nf(rc.back.length)}명.</p><button type="button" class="text-btn" data-tabgo="data">데이터에서 보기</button></article>` : "";
+      const f = L.funnel;
 
       // 3) 흐름
       const funnel = hbars([
@@ -3783,10 +3955,7 @@
       const hg = heartGroups();
 
       host.innerHTML = `
-        <nav class="jump" aria-label="대시보드 안에서 이동">${[["d-sum", "요약"], ["d-check", "확인할 것"], ["d-flow", "흐름"], ["d-comp", "구성"], ["d-act", "활동"], ["d-sheet", "멤버 표"], ["d-good", "좋은 활동"], ["d-recent", "최근 드나듦"]].map(([id, t]) => `<button type="button" data-jump="${id}">${t}</button>`).join("")}</nav>
-        <section class="dsec" id="d-sum"><h2>요약 <small>대화 ${esc(md(L.range.from))} ~ ${esc(md(L.range.to))}</small></h2>${S.prevSeen ? (() => { const d0 = kstDate(S.prevSeen), inN = members().filter((p) => p.joinedAt && p.joinedAt >= d0).length, outN = people().filter((p) => p.status !== "in" && !p.dflt && p.outDate && p.outDate >= d0).length, C = part(), bn = C ? C.P.bungs.filter((b) => b.state === "ok" && b.date >= d0).length : null; return `<p class="cap">지난번 연 날(${esc(md(d0))} ${esc(kstHM(S.prevSeen))})부터: 들어옴 ${nf(inN)}, 나감 ${nf(outN)}${bn != null ? ", 모임 " + nf(bn) + "개" : ""}${L.range.to < d0 ? ". 대화 기록은 " + esc(md(L.range.to)) + "까지라 새 파일을 올리면 더 보입니다" : ""}</p>`; })() : ""}${kpis}</section>
-        <section class="dsec" id="d-check"><h2>확인할 것 <small>지금 멤버 ${nf(M.length)}명, 규칙 기준일 ${esc(md(ruleFrom()))}</small></h2><div class="board">${cards}${langCardHtml()}${rosterCard}</div></section>
-        <section class="dsec" id="d-flow"><h2>흐름</h2><div class="cgrid">
+        <section class="dsec" id="d-flow"><h2>대화 흐름</h2><div class="cgrid">
           <article class="card span-8"><h3>월별 들어옴과 나감</h3><p class="cap">막대에 대면 그 달의 수가 보입니다.</p>${monthlyChart(L.months)}
             <details class="more"><summary>월별 표 보기</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>월</th><th>들어옴</th><th>나감</th><th>내보냄</th><th>순증</th><th>메시지</th><th>말한 사람</th><th>가려진 메시지</th></tr></thead><tbody>${L.months.slice().reverse().map((m) => `<tr><td>${esc(m.m)}</td><td>${nf(m.joins)}</td><td>${nf(m.leaves)}</td><td>${nf(m.kicks)}</td><td>${m.net > 0 ? "+" : ""}${nf(m.net)}</td><td>${nf(m.msgs)}</td><td>${nf(m.speakers)}</td><td>${nf(m.hidden || 0)}</td></tr>`).join("")}</tbody></table></div></details></article>
           <article class="card span-4"><div class="c-head"><div><h3>신입 흐름</h3><p class="cap">들어옴 ${nf(f.joined)}번 기준(같은 사람이 여러 번 들어오면 각각)</p></div>${art("flow-enter")}</div>${funnel}</article>
@@ -3971,6 +4140,8 @@
     const dShift = (d, n) => new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10) + n)).toISOString().slice(0, 10);
     // 같은 객체를 돌려준다(빠진 칸만 채우고 모양이 틀린 값은 버림). 단추 처리기는 그때그때 다시 불러 쓴다(기록이 서버 것과 합쳐지며 바뀔 수 있어서)
     const isDay = (d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
+    // 언어 결과가 들어오는 길(저장본, 파일 분석, 봇 분석) 모두 이것으로: 저장 꼴(v2, 이름 표와 하루 한 줄)을 화면이 쓰는 꼴로. 옛 꼴은 그대로
+    function langIn(G) { return G && typeof G === "object" && G.range ? OpsLang.unpack(G) : null; }
     function langRec() {
       let r = S.records.lang;
       if (!r || typeof r !== "object" || Array.isArray(r)) r = S.records.lang = {};
@@ -4074,8 +4245,8 @@
       live.forEach((h) => put(h, "live")); dis.forEach((h) => put(h, "dis"));
       const days = [...by.keys()].sort().reverse(), shown = days.slice(0, view.lang.days);
       const tsort = (a, b) => (a.t || "").localeCompare(b.t || "") || String(a.h).localeCompare(String(b.h));
-      return shown.map((d) => { const g = by.get(d), ppl = new Set(g.live.map((h) => { const p = pByName(h.n); return p ? "p:" + p.pid : "n:" + h.n; })).size; return `<section class="lg-day"><h3>${esc(md(d))}(${wdOf(d)}) <small>${nf(g.live.length)}건, ${nf(ppl)}명</small></h3>
-        ${g.live.length ? `<ul class="lg-list">${g.live.sort(tsort).map(langItem).join("")}</ul>` : `<p class="sub">남은 줄이 없습니다.</p>`}
+      return shown.map((d) => { const g = by.get(d), ppl = new Set(g.live.map((h) => { const p = pByName(h.n); return p ? "p:" + p.pid : "n:" + h.n; })).size, open = view.lang.dayOpen.has(d), cap = 20, lines = g.live.sort(tsort), vis = open ? lines : lines.slice(0, cap); return `<section class="lg-day"><h3>${esc(md(d))}(${wdOf(d)}) <small>${nf(g.live.length)}건, ${nf(ppl)}명</small></h3>
+        ${lines.length ? `<ul class="lg-list">${vis.map(langItem).join("")}</ul>${lines.length > cap ? `<button type="button" class="more-btn" data-lgday="${esc(d)}" aria-expanded="${open}">${open ? "접기" : "이 날 " + nf(lines.length - cap) + "건 더 보기"}</button>` : ""}` : `<p class="sub">남은 줄이 없습니다.</p>`}
         ${g.dis.length ? `<details class="more"><summary>해당 없음 ${nf(g.dis.length)}건</summary><ul class="lg-list">${g.dis.sort(tsort).map(langItem).join("")}</ul></details>` : ""}</section>`; }).join("")
         + (days.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-lgmore="1">${nf(days.length - shown.length)}일 더 보기</button></div>` : "");
     }
@@ -4148,18 +4319,21 @@
       const host = document.querySelector('[data-panel="lang"]'); if (!host) return;
       const G = S.lang, r = langRec();
       if (!S.ledger) { host.innerHTML = ""; return; }
-      if (!G || !G.range) { host.innerHTML = `<div class="panel"><h2>언어</h2><p class="sub">이 저장본에는 언어 점검 결과가 없습니다. 대화 파일을 올려 분석하고 서버에 저장하면 보입니다.</p></div>`; return; }
+      if (!G || !G.range) { host.innerHTML = `<div class="panel"><h2>언어</h2><p class="sub">아직 언어 점검 결과가 없습니다. 봇이 대화를 내보내 올리면 이 화면을 열 때 반영합니다(봇 탭의 봇 설정에서 대화 내보내기를 켭니다). 파일 올리기로 직접 올려도 됩니다.</p></div>`; return; }
       const per = langPeriod(), { live, dis } = langInRange(per), old = langOld(per), ppl = langByPerson(live, old);
       const pp = langPid(), total = live.length + old.n, byCat = {};
       live.forEach((h) => { byCat[h.k] = (byCat[h.k] || 0) + 1; });
       Object.keys(old.by).forEach((n) => Object.keys(old.by[n]).forEach((k) => { byCat[k] = (byCat[k] || 0) + Math.max(0, old.by[n][k]); }));
       const future = per.to > G.range.to, onN = langLexNow().list.length, allowN = Object.keys(r.allow).length;
-      const mismatch = S.ledger.range && G.range.to !== S.ledger.range.to;   // 언어 결과가 대화 기록 저장본과 다른 분석에서 온 것(저장이 중간에 끊긴 경우)
+      const mismatch = S.ledger.range && G.range.to !== S.ledger.range.to;
+      const catN = {}; live.forEach((h) => { catN[h.k] = (catN[h.k] || 0) + 1; });
+      if (view.lang.cat && !catN[view.lang.cat]) view.lang.cat = "";
+      const catF = view.lang.cat;   // 언어 결과가 대화 기록 저장본과 다른 분석에서 온 것(저장이 중간에 끊긴 경우)
       host.innerHTML = `
         <div class="panel lg-bar">
           <div class="chips" role="group" aria-label="기간">${LANG_PER.map(([k, t]) => `<button type="button" data-lgper="${k}" aria-pressed="${per.per === k}"${k === "notice" && !r.from ? " disabled" : ""}>${t}</button>`).join("")}${pp ? `<button type="button" data-lgpid="" aria-pressed="true">${esc(pp.name)}만 보기(풀기)</button>` : ""}</div>
           <p class="sub">${esc(per.label)}. 대화 ${esc(md(G.range.to))}까지${future ? ", 그 뒤는 새 파일을 올려야 보입니다" : ""}. 단어 목록 ${nf(onN)}개 켬${r.add.length ? ", 더한 말 " + nf(r.add.length) : ""}${allowN ? ", 예외 말 " + nf(allowN) : ""}. 한 메시지는 한 건, 가장 센 종류로 셉니다.${langCfgDiffers() ? " 단어 목록을 분석 뒤에 바꿨습니다. 걸린 줄에는 바로 적용했고, 옛 날의 수는 다음 분석부터 맞습니다." : ""}</p>
-          ${mismatch ? `<p class="notice">언어 결과는 대화 ${esc(md(G.range.to))}까지, 대화 기록 저장본은 ${esc(md(S.ledger.range.to))}까지입니다. 파일을 다시 올려 서버에 저장해 주세요.</p>` : ""}
+          ${mismatch ? `<p class="notice">언어 결과는 대화 ${esc(md(G.range.to))}까지, 대화 기록은 ${esc(md(S.ledger.range.to))}까지입니다. ${S.langLag ? "봇이 이번에는 언어 결과를 올리지 못했습니다. 봇 탭의 마지막 내보내기를 봐 주세요." : S.langSaveErr ? "언어 결과가 너무 커서 저장하지 못했습니다." : "다음 봇 분석이나 파일 분석을 저장하면 맞춰집니다."}</p>` : ""}
           <div class="lg-tools"><label class="lg-from"><span>공지 기준일</span><input id="lgFrom" class="input" type="date" value="${esc(r.from || "")}" /></label><div class="chips"><button type="button" class="btn btn-secondary is-sm" id="lgCopy">리포트 복사</button><button type="button" class="btn btn-secondary is-sm" id="lgManualBtn" aria-expanded="${view.lang.manual}">직접 적기</button></div></div>
           ${view.lang.manual ? langManualForm() : ""}
         </div>
@@ -4169,20 +4343,24 @@
             ${total ? stack(LANG_CATS.map((c) => ({ l: c.t, v: byCat[c.k] || 0, c: LANG_COLOR[c.k] })), "건") : ""}
             ${langBars(live, per)}
             ${old.n ? `<p class="cap">${esc(md(old.from))} ~ ${esc(md(old.to))}의 ${nf(old.n)}건은 분석 때 센 수만 있고 발췌가 없습니다(걸린 줄은 ${esc(md(G.hitsFrom))}부터 둡니다).</p>` : ""}
-            ${G.truncated ? `<p class="cap">걸린 줄이 많아(2만 건이나 3MB) ${esc(md(G.hitsFrom))} 전은 수만 남겼습니다.</p>` : ""}
+            ${G.truncated ? `<p class="cap">걸린 줄이 많아 ${esc(md(G.hitsFrom))} 전은 날짜별 수만 남겼습니다(서버 저장 한도).${G.daysFrom ? " " + esc(md(G.daysFrom)) + " 전은 수도 남기지 못했습니다." : ""}</p>` : ""}
           </div>
           <div class="panel" id="lgPeople"><h2>사람별 <small>${nf(ppl.length)}명. 욕설과 막말이 많은 사람부터</small></h2>
-            ${ppl.length ? `<div class="tbl-wrap"><table class="tbl lft lg-tbl"><thead><tr><th>이름</th><th class="num">합계</th>${LANG_CATS.map((c) => `<th class="num">${c.k === "jamo" ? "초성" : c.t}</th>`).join("")}<th class="num">날</th><th>마지막</th></tr></thead><tbody>${ppl.map((o) => { const p = o.p; return `<tr${p ? ` data-person="${esc(p.pid)}" tabindex="0"` : ""}><td><span class="nm">${esc(o.n)}</span>${p && p.status !== "in" ? `<span class="tag out">${p.status === "kicked" ? "내보냄" : "나감"}</span>` : ""}</td><td class="num"><b>${nf(o.total)}</b></td>${LANG_CATS.map((c) => `<td class="num${o.c[c.k] ? "" : " mute"}">${nf(o.c[c.k] || 0)}</td>`).join("")}<td class="num">${o.days.size ? nf(o.days.size) + (o.oldN ? "+" : "") : o.oldN ? "수만" : "0"}</td><td>${o.last ? esc(mdS(o.last)) : ""}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="empty">이 기간에 걸린 줄이 없습니다.</p>`}
+            ${ppl.length ? `<div class="tbl-wrap"><table class="tbl lft lg-tbl"><thead><tr><th>이름</th><th class="num">합계</th>${LANG_CATS.map((c) => `<th class="num">${c.k === "jamo" ? "초성" : c.t}</th>`).join("")}<th class="num">날</th><th>마지막</th></tr></thead><tbody>${(view.lang.pplAll ? ppl : ppl.slice(0, 20)).map((o) => { const p = o.p; return `<tr${p ? ` data-person="${esc(p.pid)}" tabindex="0"` : ""}><td><span class="nm">${esc(o.n)}</span>${p && p.status !== "in" ? `<span class="tag out">${p.status === "kicked" ? "내보냄" : "나감"}</span>` : ""}</td><td class="num"><b>${nf(o.total)}</b></td>${LANG_CATS.map((c) => `<td class="num${o.c[c.k] ? "" : " mute"}">${nf(o.c[c.k] || 0)}</td>`).join("")}<td class="num">${o.days.size ? nf(o.days.size) + (o.oldN ? "+" : "") : o.oldN ? "수만" : "0"}</td><td>${o.last ? esc(mdS(o.last)) : ""}</td></tr>`; }).join("")}</tbody></table></div>${ppl.length > 20 ? `<button type="button" class="more-btn" data-lgppl="1" aria-expanded="${view.lang.pplAll}">${view.lang.pplAll ? "접기" : nf(ppl.length - 20) + "명 더 보기"}</button>` : ""}` : `<p class="empty">이 기간에 걸린 줄이 없습니다.</p>`}
           </div>
         </div>
         <div class="lg-col">
           <div class="panel" id="lgDays"><h2>날짜별 <small>${nf(live.length)}건${dis.length ? ", 해당 없음 " + nf(dis.length) + "건" : ""}</small></h2>
-            ${live.length || dis.length ? langDaysHtml(live, dis) : `<p class="empty">${per.per === "notice" && r.from > G.range.to ? "공지 기준일이 대화 마지막 날보다 뒤입니다. 새 파일을 올리면 보입니다." : "이 기간에 걸린 줄이 없습니다."}</p>`}
+            ${live.length ? `<div class="chips lg-cats" role="group" aria-label="종류"><button type="button" data-lgcat="" aria-pressed="${!catF}">모두 <b>${nf(live.length)}</b></button>${LANG_CATS.filter((c) => catN[c.k]).map((c) => `<button type="button" data-lgcat="${c.k}" aria-pressed="${catF === c.k}">${c.t} <b>${nf(catN[c.k])}</b></button>`).join("")}</div>` : ""}
+            ${live.length || dis.length ? langDaysHtml(catF ? live.filter((h) => h.k === catF) : live, catF ? dis.filter((h) => h.k === catF) : dis) : `<p class="empty">${per.per === "notice" && r.from > G.range.to ? "공지 기준일이 대화 마지막 날보다 뒤입니다. 새 파일을 올리면 보입니다." : "이 기간에 걸린 줄이 없습니다."}</p>`}
           </div>
           ${langLexHtml(r)}
         </div>`;
       const refocus = (sel) => { const x = host.querySelector(sel); if (x) x.focus({ preventScroll: true }); };
-      host.querySelectorAll("[data-lgper]").forEach((b) => b.addEventListener("click", () => { view.lang.per = b.dataset.lgper; view.lang.days = 7; renderLang(); refocus(`[data-lgper="${b.dataset.lgper}"]`); }));
+      host.querySelectorAll("[data-lgper]").forEach((b) => b.addEventListener("click", () => { view.lang.per = b.dataset.lgper; view.lang.days = 7; view.lang.dayOpen.clear(); view.lang.pplAll = false; renderLang(); refocus(`[data-lgper="${b.dataset.lgper}"]`); }));
+      host.querySelectorAll("[data-lgcat]").forEach((b) => b.addEventListener("click", () => { view.lang.cat = b.dataset.lgcat; view.lang.dayOpen.clear(); renderLang(); refocus(`[data-lgcat="${b.dataset.lgcat}"]`); }));
+      host.querySelectorAll("[data-lgday]").forEach((b) => b.addEventListener("click", () => { const d = b.dataset.lgday; if (view.lang.dayOpen.has(d)) view.lang.dayOpen.delete(d); else view.lang.dayOpen.add(d); renderLang(); refocus(`[data-lgday="${d}"]`); }));
+      host.querySelectorAll("[data-lgppl]").forEach((b) => b.addEventListener("click", () => { view.lang.pplAll = !view.lang.pplAll; renderLang(); refocus("[data-lgppl]"); }));
       host.querySelectorAll("[data-lgpid]").forEach((b) => b.addEventListener("click", () => { view.lang.pid = ""; renderLang(); refocus("[data-lgper][aria-pressed='true']"); }));
       host.querySelectorAll("[data-lgmore]").forEach((b) => b.addEventListener("click", () => { view.lang.days += 7; renderLang(); }));
       const lf = $("lgFrom");
@@ -4217,19 +4395,6 @@
         langRec().allow[OpsLang.tight(t)] = t; view.open.add("lg:lex"); saveRecords(); renderAll(); toast("예외 말에 더했습니다.");
       });
       host.querySelectorAll("details[data-open]").forEach((d) => d.addEventListener("toggle", () => { const k = d.dataset.open; if (d.open) view.open.add(k); else view.open.delete(k); }));
-    }
-    // 대시보드 확인할 것: 최근 7일(대화 마지막 날 기준) 걸린 줄과 사람
-    function langCardHtml() {
-      const G = S.lang; if (!G || !G.range) return "";
-      const to = G.range.to, from = dShift(to, -6), r = langRec();
-      const all = langRows().filter((h) => !h.dis && h.d >= from && h.d <= to).concat(r.manual.filter((m) => m.d >= from && m.d <= to).map(langManualRow));
-      const by = new Map(); all.forEach((h) => { const p = pByName(h.n), key = p ? "p:" + p.pid : "n:" + h.n, o = by.get(key) || { n: p ? p.name : h.n, p, c: 0, s: 0 }; o.c += 1; if (h.k === "curse" || h.k === "rude") o.s += 1; by.set(key, o); });
-      const top = [...by.values()].sort((a, b) => b.s - a.s || b.c - a.c || a.n.localeCompare(b.n, "ko"));
-      const strong = all.filter((h) => h.k === "curse" || h.k === "rude").length;
-      const lv = strong ? "watch" : "good";   // 욕설이나 막말이 있을 때만 살펴보기. 추임새뿐이면 좋음으로 두고 수만 보인다
-      return `<article class="bcard lv-${lv}" id="langCard"><div class="b-head"><div><h3>채팅 언어(최근 7일)</h3><strong class="b-count">${nf(all.length)}<small>건</small></strong>${lvl(lv)}<span class="cap">욕설과 막말 ${nf(strong)}건</span></div>${art("rules-manners")}</div>
-        ${top.length ? `<div class="nchips">${top.slice(0, 10).map((x) => x.p ? `<button type="button" class="nchip" data-person="${esc(x.p.pid)}">${esc(x.n)}<em>${nf(x.c)}</em></button>` : `<span class="nchip">${esc(x.n)}<em>${nf(x.c)}</em></span>`).join("")}${top.length > 10 ? `<span class="more">외 ${nf(top.length - 10)}명</span>` : ""}</div>` : `<p class="b-none">${esc(md(from))} ~ ${esc(md(to))}에 걸린 줄이 없습니다.</p>`}
-        <button type="button" class="text-btn" data-tabgo="lang">언어에서 보기</button></article>`;
     }
     // 사람 상세: 최근 30일과 전체 수, 최근 8건
     function langPersonPanel(p) {
@@ -4267,7 +4432,7 @@
       apxShow();
       $("noDataNote").hidden = !!S.ledger || !NEEDS_LEDGER.includes(tab);
       setStamp();
-      [renderSite, renderDash, renderPart, renderSignals, renderLang, renderRecords, renderApx, renderData, renderFilesExtra, renderBung, tabBadges].forEach((fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } });
+      [renderSite, renderBrief, renderDash, renderPart, renderSignals, renderLang, renderRecords, renderApx, renderData, renderFilesExtra, renderBung, tabBadges].forEach((fn) => { try { fn(); } catch (e) { console.error(fn.name, e); } });
       if (sheetPid && !$("sheet").hidden) { const p = byPid(sheetPid); if (p) renderSheet(p); }
     }
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };

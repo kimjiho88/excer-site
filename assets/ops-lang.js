@@ -320,7 +320,69 @@
 
   function entries() { return ENTRIES.map(function (e) { return { id: e.id, k: e.k, t: e.t, def: e.def !== false }; }); }
 
-  var OpsLang = { VERSION: VERSION, CATS: CATS, RANK: RANK, CAT_T: CAT_T, compile: compile, scan: scan, excerpt: excerpt, classify: classify, entries: entries, tight: tight, prep: prep, hash: hash };
+  /* 저장 꼴(137차, v2): 날짜별 사람별 수를 이름 표 하나(names)와 하루 한 줄 글자("이름 번호:욕설.막말.비속어.초성.추임새;...", 0 은 비움)로 둔다.
+     옛 꼴(v1: days[날짜] = { n, c, p: { 이름: { 종류: 수 } } })은 바쁜 방에서 서버 jsonb 로 3MB 를 넘어 저장(열쇠 하나 4MB)이 막혔다.
+     unpack 은 두 꼴을 모두 받아 화면이 쓰는 꼴(v1 의 days)로 돌려준다. pack 은 그 반대. 걸린 줄(hits)은 그대로 */
+  var CAT_KEYS = CATS.map(function (c) { return c.k; });
+  function packDays(days) {
+    var names = [], ix = Object.create(null), out = {};
+    Object.keys(days || {}).sort().forEach(function (d) {
+      var p = (days[d] && days[d].p) || {}, parts = [];
+      Object.keys(p).forEach(function (n) {
+        var row = CAT_KEYS.map(function (k) { var v = +p[n][k] || 0; return v > 0 ? String(v) : ""; }).join(".");
+        if (!/[1-9]/.test(row)) return;
+        if (!(n in ix)) { ix[n] = names.length; names.push(n); }
+        parts.push(ix[n] + ":" + row);
+      });
+      if (parts.length) out[d] = parts.join(";");
+    });
+    return { names: names, days: out };
+  }
+  function unpackDays(names, days) {
+    var out = Object.create(null);
+    Object.keys(days || {}).forEach(function (d) {
+      var s = days[d]; if (typeof s !== "string") return;
+      var day = { n: 0, c: Object.create(null), p: Object.create(null) };
+      s.split(";").forEach(function (part) {
+        var i = part.indexOf(":"), n = i > 0 ? names[+part.slice(0, i)] : null; if (n == null) return;
+        var v = part.slice(i + 1).split("."), o = day.p[n] || (day.p[n] = Object.create(null));
+        for (var j = 0; j < CAT_KEYS.length; j++) { var c = +v[j] || 0; if (c > 0) { o[CAT_KEYS[j]] = (o[CAT_KEYS[j]] || 0) + c; day.c[CAT_KEYS[j]] = (day.c[CAT_KEYS[j]] || 0) + c; day.n += c; } }
+      });
+      if (day.n) out[d] = day;
+    });
+    return out;
+  }
+  function isPacked(G) { return !!(G && Array.isArray(G.names) && G.days && typeof G.days === "object"); }
+  function copyOf(G, over) { var o = {}; Object.keys(G).forEach(function (k) { o[k] = G[k]; }); Object.keys(over).forEach(function (k) { if (over[k] === undefined) delete o[k]; else o[k] = over[k]; }); return o; }
+  function unpack(G) {
+    if (!G || typeof G !== "object" || !isPacked(G)) return G || null;
+    return copyOf(G, { v: 1, names: undefined, days: unpackDays(G.names, G.days) });
+  }
+  function pack(G) {
+    if (!G || typeof G !== "object" || isPacked(G)) return G || null;
+    var pd = packDays(G.days);
+    return copyOf(G, { v: 2, names: pd.names, days: pd.days });
+  }
+  function utf8Len(s) { var n = 0; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xD800 && c <= 0xDBFF ? 4 : c >= 0xDC00 && c <= 0xDFFF ? 0 : 3; } return n; }
+  /* 저장 꼴을 더 줄인다: 발췌가 있는 걸린 줄을 오래된 날부터 날 단위로 덜어 ratio 만큼으로(그 날들은 날짜별 수로 남는다).
+     걸린 줄이 다 빠져도 크면 날짜별 수를 오래된 날부터 덜고 daysFrom 에 남긴다. 서버가 너무 크다고 할 때 ops.html 이 부른다 */
+  function trim(W, ratio) {
+    W = isPacked(W) ? W : pack(W);
+    var hits = W.hits || [], bytes = utf8Len(JSON.stringify(hits)), goal = Math.floor(bytes * (ratio || 0.7));
+    if (hits.length) {
+      var start = 0, cut = bytes;
+      while (start < hits.length && cut > goal) { var d0 = hits[start].d; while (start < hits.length && hits[start].d === d0) { cut -= utf8Len(JSON.stringify(hits[start])) + 1; start += 1; } }
+      var kept = hits.slice(start), last = hits[start - 1];
+      var next = last ? (function (d) { var t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + 1); return t.toISOString().slice(0, 10); })(last.d) : W.hitsFrom;
+      return copyOf(W, { hits: kept, hitsFrom: kept.length ? kept[0].d : next, truncated: true, bytes: Math.max(0, cut) });
+    }
+    var keys = Object.keys(W.days || {}).sort(), drop = Math.max(1, Math.floor(keys.length * (1 - (ratio || 0.7)))), days = {};
+    keys.slice(drop).forEach(function (d) { days[d] = W.days[d]; });
+    return copyOf(W, { days: days, daysFrom: keys[drop] || W.hitsFrom, truncated: true });
+  }
+
+  var OpsLang = { VERSION: VERSION, CATS: CATS, RANK: RANK, CAT_T: CAT_T, compile: compile, scan: scan, excerpt: excerpt, classify: classify, entries: entries, tight: tight, prep: prep, hash: hash,
+    packDays: packDays, unpackDays: unpackDays, pack: pack, unpack: unpack, trim: trim, utf8Len: utf8Len };
   global.OpsLang = OpsLang;
   if (typeof module !== "undefined" && module.exports) module.exports = OpsLang;
 })(typeof window !== "undefined" ? window : globalThis);
