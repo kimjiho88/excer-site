@@ -416,7 +416,7 @@
       return {
         v: 2,
         range: { from: first, to: lastDate },
-        totals: { messages: totalN, people: ledger.length, joins: joinsAll.length, leaves: events.filter(function (e) { return e.kind === "leave" && e.how !== "kick"; }).length, kicks: events.filter(function (e) { return e.how === "kick"; }).length, hiddenMsgs: hiddenMsgs },
+        totals: { messages: totalN, people: ledger.length, joins: events.filter(function (e) { return e.kind === "join"; }).length, leaves: events.filter(function (e) { return e.kind === "leave" && e.how !== "kick"; }).length, kicks: events.filter(function (e) { return e.how === "kick"; }).length, hiddenMsgs: hiddenMsgs },
         inRoom: ledger.filter(function (r) { return r.status === "in"; }).length,
         months: monthList,
         funnel: funnel,

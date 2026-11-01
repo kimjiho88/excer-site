@@ -21,6 +21,7 @@
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/img/icon-192.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
   <meta name="apple-mobile-web-app-title" content="동네친구들" />
@@ -28,8 +29,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=24" />
+  <link rel="preconnect" href="https://drggzlnzwvkhtalvkqyo.supabase.co" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=25" />
 
   <style>
     /* ============================================================
@@ -734,9 +736,9 @@
     /* 펼친 글은 아래에 같은 내용이 있으므로 제목 아래 요약 줄을 뺀다 */
     @media (max-width: 860px) { .post-head[aria-expanded="true"] .rm-sub { display: none; } }
   </style>
-  <script src="assets/site-core.js?v=15"></script>
+  <script src="assets/site-core.js?v=16"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=15"></script>
+  <script src="assets/content.js?v=16"></script>
   <script src="assets/bung-photo.js?v=6"></script>
 </head>
 <body>
@@ -1183,7 +1185,7 @@
       BUNG_END: "끝나는 시간이 시작 시간과 같습니다.",
       BUNG_PAST: "지난 시각입니다. 날짜와 시간을 확인해 주세요.",
       BUNG_DEADLINE: "신청 마감은 모임 시작보다 늦을 수 없고, 지금보다 뒤여야 합니다.",
-      BUNG_DUP: "같은 시간대에 모집 중인 모임이 있습니다. 앞 벙주의 동의를 받아야 합니다.",
+      BUNG_DUP: "같은 시간대에 모집 중인 모임이 있습니다. 앞 모임장의 동의를 받아야 합니다.",
       BUNG_CAP: "모집 인원이 이미 참석한 사람 수보다 적습니다. 먼저 명단에서 빼 주세요.",
       HAS_ATTENDEES: "참석자가 있는 모집 글은 글 종류를 바꿀 수 없습니다. 먼저 명단을 비워 주세요.",
       NICK_TAKEN: "같은 닉네임으로 이미 참석했습니다. 그때 넣은 비밀번호를 입력해 주세요.",
@@ -1333,7 +1335,7 @@
     }
     function renderBody(text) {
       const escaped = esc(text);
-      const linked = escaped.replace(/https?:\/\/[^\s<]+/g, (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+      const linked = escaped.replace(/https?:\/\/[^\s<]*[^\s<.,)\]!?]/g, (m) => `<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);   // 끝의 괄호와 마침표는 링크에 넣지 않는다
       return linkifyMentions(linked).replace(/\n/g, "<br>");
     }
     function rpcErrorMessage(err) {
@@ -1739,7 +1741,7 @@
         ${infoH}${factsHTML(facts)}
         ${bodyH}${body}
         ${v.kind === "bung" && !state.attendOn && !(v.bung && (v.bung.past || v.bung.closed)) ? (state.capsFailed ? `<p class="att-empty" aria-busy="true">서버 설정을 다시 읽는 중입니다. 잠시 뒤 참석 단추가 보입니다.</p>` : `<a class="btn btn-primary is-sm bung-cta" href="${OPEN_CHAT}" target="_blank" rel="noopener noreferrer">오픈채팅에서 참석 신청</a>`) : ""}
-        ${v.kind === "bung" && v.bung && v.bung.past ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
+        ${v.kind === "bung" && (card ? bungStatus(post).why === "started" : v.bung && v.bung.past) ? `<button type="button" class="btn btn-secondary is-sm bung-cta" data-act="write-review" data-id="${post.id}">${icon("pencil", "is-sm")} 이 모임 후기 쓰기</button>` : ""}
         ${updated}
         ${reactBarHTML(post)}
         <div class="post-actions">
@@ -1857,9 +1859,9 @@
       if (!src) return "";
       return `<img src="${esc(src)}" alt="" width="${w}" height="${h}" decoding="async"${extra || ""}${poster ? ` data-day="${esc(dateOf(p))}" data-fb="${esc(fb || "")}" onerror="spPosterFail(this)"` : ` onerror="this.remove()"`} />`;
     }
-    /* "12월 19일 (토) 19:00~24:00". 자정에 끝나면 24:00, 그 뒤까지면 '다음 날' */
+    /* "12월 19일 (토) 19:00~다음 날 00:00". 목록 줄과 펼친 카드와 같은 표기(C.timeRange) */
     function spWhen(m) {
-      const hm = /^\d{2}:\d{2}$/, t = hm.test(m.time || "") ? m.time + (hm.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : "";
+      const t = C.timeRange(m);
       return C.dateText(m.date, { withDow: true }) + (t ? " " + t : "");
     }
     function spDday(p, bs) {
@@ -2035,7 +2037,7 @@
       const d = dateOf(p);
       if (f === "open") return bungStatus(p).open;
       if (f === "soon") { const n = C.daysFromToday(d, today); return n === 0 || n === 1; }
-      if (f === "weekend") { const n = C.daysFromToday(d, today), dow = new Date(d + "T00:00:00Z").getUTCDay(); return n >= 0 && n <= 7 && (dow === 0 || dow === 6) && !(dow === 0 && n === 7); }
+      if (f === "weekend") { const td = new Date(today + "T00:00:00Z").getUTCDay(), dow = new Date(d + "T00:00:00Z").getUTCDay(), n = C.daysFromToday(d, today); return n >= 0 && n <= 7 && (dow === 0 || dow === 6) && !(n === 7 && td === 6); }   // 주말: 오늘부터 7일 안의 토요일과 일요일. 토요일에는 오늘과 내일만(다음 토요일은 빼고), 일요일에는 오늘과 다음 토요일과 일요일
       if (f === "mine") return (((state.attend[p.id] || {}).list) || []).some((x) => isMe(x.nick, p.id));
       return true;
     }
@@ -2598,7 +2600,7 @@
             ${m.place ? `<div class="bc-tile is-place"><div class="bc-row bc-place">${icon("pin")}<div class="bc-pl"><span>${esc(m.place)}</span>${m.addr ? `<small>${esc(m.addr)}</small>` : ""}${links}</div></div></div>` : ""}
           </div>
           <div class="bc-attend">
-            <div class="bc-cap${seats ? " has-seats" : ""}${st.why === "full" ? " is-full" : ""}"><div class="bc-n"><b>참석 <em>${n}</em>${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}${seats}${leftN ? `<span class="bc-remain" data-left="${leftN}" aria-hidden="true"></span>` : ""}</div>
+            <div class="bc-cap${seats ? " has-seats" : ""}${st.why === "full" ? " is-full" : ""}"><div class="bc-n"><b>참석 <em>${n}</em>${st.cap ? " / " + st.cap + "명" : "명"}</b><span class="att-state${st.open ? "" : " is-off"}">${esc(stateText)}</span></div>${st.cap ? `<div class="cap-bar${st.why === "full" ? " is-full" : ""}"><i style="--p:${pct}%"></i></div>` : ""}${seats}${leftN ? `<span class="bc-remain" data-left="${leftN}" role="img" aria-label="${leftN}자리 남음"></span>` : ""}</div>
             ${btn || shareBtn ? `<div class="att-acts">${btn}${shareBtn}</div>` : ""}
             ${names}
           </div>
@@ -2696,7 +2698,7 @@
       const sent = !!(window.KSHARE && KSHARE.sendNow && KSHARE.sendNow({ title: CARD_LABEL, url: i.url,
         imageUrl: SHARE.img || ogImage(), imageWidth: SHARE.img ? 800 : 0, imageHeight: SHARE.img ? 400 : 0,
         itemContent: item, social: Object.keys(social).length ? social : null,
-        buttons: [{ title: i.btn, url: i.url }, { title: "다른 벙 보기", url: location.origin + "/bung" }] }));
+        buttons: [{ title: i.btn, url: i.url }, { title: "다른 모임 보기", url: location.origin + "/bung" }] }));
       if (sent) { closeShare(); return; }
       if (navigator.share) {   // 카카오톡 공유를 못 쓰면 기기 공유 창(카카오톡을 고를 수 있다), 그것도 안 되면 글 복사
         navigator.share({ title: i.title, text: i.text }).then(closeShare).catch((e) => { if (!(e && e.name === "AbortError")) copyShareText(); });

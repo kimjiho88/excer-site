@@ -71,7 +71,7 @@ excer-bot: 사이트의 모임 모집(벙) 글을 늘 지켜보다가 오픈채�
     '대화 내용 내보내기', 내보내기 창의 텍스트 항목을 눌러 공유 창에서 Termux 로 파일을 받고, 태블릿 안에서 사이트와 같은 분석기(node, 저장소에서
     받아 둔 파일)로 읽어 사람별 집계와 채팅 언어 점검 결과만 서버에 올린다(봇 열쇠). 대화 원문은 올리지 않고 파일은 분석 뒤 지운다.
     운영 화면 봇 탭의 '지금 내보내기'(30분 안의 요청)도 따른다. 누르는 것은 세 줄 단추, 설정 단추, 그 두 항목, 공유 창의 앱, 받는 앱의 확인 단추뿐이고
-    해제, 나가기, 삭제, 신고, 차단이 든 것은 어떤 흐름에서도 누르지 않는다. 실패하면 20분, 40분, 60분 뒤 다시(하루 세 번까지). 조용한 시간에도 하고
+    해제, 나가기, 삭제, 신고, 차단이 든 것은 어떤 흐름에서도 누르지 않는다. 실패하면 20분 뒤, 그다음 40분 뒤 한 번씩 더(하루 세 번까지). 조용한 시간에도 하고
     전체 멈춤 중에는 쉰다. 분석까지 하고 올리기만 실패했으면 다음에는 올리기만 다시 한다.
   - 알릴 방이 열려 있지 않으면 오픈채팅 주소(room_link, 기본은 사이트의 오픈채팅 참여 주소)로 바로 연다. 안 되면 채팅 목록에서 찾는다.
   - 카카오톡을 건드리는 것은 올릴 것이 있을 때, 하루 한 번 멤버를 읽을 때, 대화 내보내기를 켰으면 하루 한 번 내보낼 때, 신입 인사를 켰으면 독려 날 읽고 보낼 때(watch on 이면 방 머리의 인원 수를 볼 때도)뿐이다.
@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.7"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.8"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -299,7 +299,10 @@ def load_cfg(path):
     cfg = json.loads(json.dumps(DEFAULTS))
     if os.path.exists(path):
         with open(path, encoding="utf-8-sig") as f:
-            got = json.load(f)
+            try:
+                got = json.load(f)
+            except ValueError as e:
+                raise SystemExit("설정 파일을 읽지 못함(JSON 모양이 아님): %s (%s)" % (path, str(e)[:80]))
         for k, v in got.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict):
                 cfg[k].update(v)
@@ -1160,6 +1163,9 @@ def export_cfg(cfg):
     x = dict(DEFAULTS["export"], **((cfg or {}).get("export") or {}))
     v = x.get("on")
     x["on"] = v is True or str(v).strip().lower() in ("on", "true", "1", "yes")
+    m = re.match(r"^(\d{1,2}):(\d{2})$", str(x.get("at") or "").strip())
+    if m and int(m.group(1)) <= 23 and int(m.group(2)) <= 59:
+        x["at"] = "%02d:%02d" % (int(m.group(1)), int(m.group(2)))   # 손으로 고친 설정의 한 자리 시각(7:30)도 받는다
     x["at"] = x["at"] if TIME_RE.match(str(x.get("at") or "")) else DEFAULTS["export"]["at"]
     sh = x.get("share")
     x["share"] = [str(s).strip() for s in (sh if isinstance(sh, list) else str(sh or "").split(",")) if str(s).strip()] or list(DEFAULTS["export"]["share"])
@@ -1243,6 +1249,13 @@ def scan_assets(cfg, log=None, get=None):
     return d
 
 
+def unlink_quiet(p):
+    try:
+        os.remove(p)
+    except OSError:
+        pass
+
+
 def scan_run(path, ocfg, assets, x, timeout=3600):
     """node 로 분석기(ops_scan.js)를 돌린다: 대화 파일을 조각씩 읽어 사람별 집계(ledger)와 채팅 언어 점검(lang)을 scan/last_out.json 에 쓴다.
     ocfg: 서버의 단어 목록 설정과 직접 이은 줄. 돌려주는 것: 결과(dict). 안 되면 RuntimeError(한 줄)"""
@@ -1252,9 +1265,12 @@ def scan_run(path, ocfg, assets, x, timeout=3600):
     try:
         p = subprocess.run([x["node"], os.path.join(assets, "ops_scan.js"), path, out, cfgp, assets], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     except FileNotFoundError:
+        unlink_quiet(cfgp)
         raise RuntimeError("'%s' 명령이 없음(Termux 에서 pkg install nodejs)" % x["node"])
     except subprocess.TimeoutExpired:
+        unlink_quiet(cfgp)
         raise RuntimeError("분석이 %d분 안에 끝나지 않음" % (timeout // 60))
+    unlink_quiet(cfgp)                                      # 직접 이은 줄의 이름이 든 파일은 분석이 끝나면 지운다(2026-11-01)
     if p.returncode != 0:
         err = (p.stderr.decode("utf-8", "replace").strip().split("\n") or [""])[-1][:160]
         why = {2: "실행기 사용법", 3: "대화 파일이 없음", 4: "파일에서 대화를 찾지 못함(카카오톡 대화 내보내기 파일인지)"}.get(p.returncode, "분석기 오류")
@@ -2336,7 +2352,7 @@ class Bot:
     def export_tick(self):
         """대화 내보내기(설정 export, 봇 열쇠가 있을 때, tablet): 매일 export.at(그 뒤 세 시간 안)에 알릴 방의 대화 내용을 텍스트로 내보내 태블릿 안에서
         사이트와 같은 분석기(node)로 읽고 결과(ledger, lang)와 상태만 서버에 올린다. 운영 화면의 '지금 내보내기'(30분 안의 요청, 한 번만)도 한다.
-        보내기나 읽기가 막 실패해 쉬는 중이면 다음에, 전체 멈춤 중에는 쉰다(요청에는 그렇다고 알린다). 실패하면 20분, 40분, 60분 뒤 다시(하루 세 번까지).
+        보내기나 읽기가 막 실패해 쉬는 중이면 다음에, 전체 멈춤 중에는 쉰다(요청에는 그렇다고 알린다). 실패하면 20분 뒤, 그다음 40분 뒤 한 번씩 더(하루 세 번까지).
         무엇을 했는지 한 낱말로"""
         now, cfg, st = Now(self.clock()), self.cfg, self.st
         x, key = export_cfg(cfg), cfg.get("members_key") or ""
@@ -2369,7 +2385,7 @@ class Bot:
             self.save()
         self.log("대화 내보내기 시작%s" % ("(운영 화면의 지금 내보내기)" if manual else ""))
         try:
-            self.busy_on("export", export_cfg(self.cfg)["wait_min"] * 60 + 600)   # 파일을 기다리는 분(wait_min)에 화면 오가기와 분석과 올리기
+            self.busy_on("export", export_cfg(self.cfg)["wait_min"] * 60 + 3600 + 600)   # 파일을 기다리는 분(wait_min)에 분석(최대 60분)과 화면 오가기와 올리기
             got = self.export_run(now, req if manual else 0)
         except Exception as e:
             return self.export_failed(now, e, req if manual else 0)
@@ -2396,6 +2412,8 @@ class Bot:
         outp = os.path.join(HERE, "scan", "last_out.json")
         pend = st.get("export_pending") if isinstance(st.get("export_pending"), dict) else None
         res = None
+        if os.path.exists(outp) and not (pend and now.ts - float(pend.get("ts") or 0) < 10800):
+            unlink_quiet(outp)                              # 다시 올릴 수 없게 된 지난번 결과(발췌와 이름)는 두지 않는다(2026-11-01)
         if pend and os.path.exists(outp) and now.ts - float(pend.get("ts") or 0) < 10800:
             try:
                 with open(outp, encoding="utf-8") as f:
@@ -8670,6 +8688,8 @@ def main(argv=None):
         return
     if a.command == "voice":
         return cmd_voice(cfg, a, base, log)
+    if a.command in ("ui", "calibrate", "test") and run_alive(base):   # 도는 run 과 같은 화면을 번갈아 누르게 된다
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py " + a.command)
     if a.command == "ui":
         sender = make_sender(cfg, log)
         if isinstance(sender, AdbSender):
@@ -9719,8 +9739,10 @@ def install_bot_file(me, body, cfg_path=None, run=None, allow_same_version=True)
     if cur and cur == body.replace("\r\n", "\n"):
         return False, ver, "이미 최신 판(%s)" % VERSION
     tail = 'if __name__ == "__main__":'
-    if (tail in cur and tail not in body) or len(body) < len(cur) * 0.8 or not ver:   # 끝까지 오지 않은 파일(문법 검사는 통과할 수 있다)
+    if (tail in cur and tail not in body) or not ver:   # 끝까지 오지 않은 파일(문법 검사는 통과할 수 있다)
         return False, ver, "받은 파일이 끝까지 오지 않아 바꾸지 않음(받은 판 %s)" % (ver or "?")
+    if len(body) < len(cur) * 0.8 and not allow_same_version:   # 자동 받기만: 많이 짧으면 끊긴 받기로 본다. 운영 화면과 명령의 요청은 끝 표시와 문법과 selftest 로 가린다
+        return False, ver, "받은 파일이 지금 파일의 80%% 보다 짧아 받지 않음(끊긴 받기로 봄, 받은 판 %s). 운영 화면의 새 판 받기로는 받습니다" % ver
     if version_key(ver) and version_key(VERSION) and (version_key(ver) < version_key(VERSION) or (version_key(ver) == version_key(VERSION) and not allow_same_version)):
         return False, ver, "받은 판(%s)이 지금 판(%s)보다 새롭지 않아 바꾸지 않음" % (ver, VERSION)
     new = me + ".new"
@@ -9807,6 +9829,7 @@ def cmd_selftest(cfg_path):
     assert remote_apply(c2, {})[0] == [] and remote_apply(c2, {"members_watch": 0})[1] == []
     assert version_key(VERSION) and plan_times({"times": ["21:00", "10:00"]}) == ["10:00", "21:00"]
     assert mask_log_line("방 '가' 없음") == "방 '(가림)' 없음"
+    assert export_cfg({"export": {"at": "7:30"}})["at"] == "07:30" and export_cfg({"export": {"at": "x"}})["at"] == DEFAULTS["export"]["at"]
     print("selftest ok %s" % VERSION)
 
 

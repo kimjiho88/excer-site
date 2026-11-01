@@ -10,6 +10,7 @@
   <meta name="robots" content="noindex" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/img/icon-192.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
   <meta name="apple-mobile-web-app-title" content="동네친구들" />
@@ -17,8 +18,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=24" />
+  <link rel="preconnect" href="https://drggzlnzwvkhtalvkqyo.supabase.co" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=25" />
   <script src="assets/chat-parser.js?v=10"></script>
 
   <style>
@@ -306,7 +308,7 @@
     .field-hint .text-btn, #reuseLabelBtn { min-height: 32px; padding: 0 6px; vertical-align: middle; }
     .auto-note summary { display: inline-flex; align-items: center; min-height: 32px; }
   </style>
-  <script src="assets/site-core.js?v=15"></script>
+  <script src="assets/site-core.js?v=16"></script>
   <script src="assets/icons.js?v=3"></script>
 </head>
 <body>
@@ -1346,12 +1348,26 @@
         dh.innerHTML = dropped.size ? `<span>뺀 단어</span>` + [...dropped].map((w) => `<button type="button" data-restore="${escapeHTML(w)}" aria-label="${escapeHTML(w)} 되살리기">${escapeHTML(w)}</button>`).join("") : "";
       }
 
+      /* 통계 화면과 홈이 쓰는 규칙(집계 중인 마지막 날은 뺀다): 발행 날이 마지막 날이거나, 20시 전에 끝나고 평소(앞 7일 중앙값)의 30%도 안 되면 */
+      function fullDays(st) {
+        const d = (st && st.days) || [], n = d.length;
+        if (n < 2) return n;
+        const last = d[n - 1]; let lastHour = -1;
+        (last.byHour || []).forEach((v, h) => { if (v > 0) lastHour = h; });
+        const prev = d.slice(Math.max(0, n - 8), n - 1).map((x) => Number(x.c) || 0).sort((a, b) => a - b);
+        const mid = prev.length >> 1, base = !prev.length ? 0 : prev.length % 2 ? prev[mid] : (prev[mid - 1] + prev[mid]) / 2;
+        const t = Date.parse(st.generatedAt || ""), gen = new Date((isNaN(t) ? Date.now() : t) + 9 * 3600 * 1000).toISOString().slice(0, 10);
+        const byShape = n >= 3 && !!last.byHour && lastHour < 20 && base > 0 && (Number(last.c) || 0) < 0.3 * base;
+        return gen === last.d || byShape ? n - 1 : n;
+      }
+      const talkers = (st) => ((st && st.members) || []).filter((m) => m && (Number(m.count) || 0) > 0 && !isBotName(m.name));
       function renderMiniSummary(st) {
         const total = st ? st.meta.totalMessages : null;
-        const daysN = st && st.days.length ? st.days.length : 0;
+        const F = st ? fullDays(st) : 0;
+        let fullTotal = 0; for (let k = 0; k < F; k++) fullTotal += Number(st.days[k].c) || 0;
         $("sumMsg").textContent = st ? nf(total) : "-";
-        $("sumMember").textContent = st ? nf(st.members.length) + "명" : "-";
-        $("sumAvg").textContent = st && daysN ? nf(total / daysN) + "건" : "-";
+        $("sumMember").textContent = st ? nf(talkers(st).length) + "명" : "-";
+        $("sumAvg").textContent = st && F ? nf(fullTotal / F) + "건" : "-";
         $("sumJoin").textContent = st ? nf(st.newMembers.count) + "명" : "-";
         const pc = $("publishCheck");
         if (pc) {
@@ -1435,9 +1451,9 @@
       function publishedSummary(st) {
         const days = Array.isArray(st.days) ? st.days : [];
         const total = (st.meta && Number(st.meta.totalMessages)) || days.reduce((a, d) => a + (Number(d.c) || 0), 0);
-        const members = Array.isArray(st.members) ? st.members.length : 0;
+        const members = talkers(st).length, F = fullDays(st);
         const hourly = new Array(24).fill(0);
-        days.forEach((d) => (d.byHour || []).forEach((c, h) => { hourly[h] += Number(c) || 0; }));
+        days.slice(0, F || days.length).forEach((d) => (d.byHour || []).forEach((c, h) => { hourly[h] += Number(c) || 0; }));
         const max = Math.max(...hourly), peak = hourly.indexOf(max);
         return [total ? `메시지 ${total.toLocaleString("ko-KR")}건` : "", members ? `이야기한 멤버 ${members}명` : "", max > 0 ? `가장 활발한 시간 ${peak}시` : ""].filter(Boolean).join(", ");
       }

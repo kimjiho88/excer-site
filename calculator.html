@@ -35,7 +35,7 @@
       src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
     }
   </style>
-  <link rel="stylesheet" href="assets/site.css?v=24" />
+  <link rel="stylesheet" href="assets/site.css?v=25" />
 
   <style>
     /* ============================================================
@@ -574,7 +574,7 @@
       [aria-labelledby="stepTitle3"] .field.is-wide { grid-column: 1 / -1; }
     }
   </style>
-  <script src="assets/site-core.js?v=15"></script>
+  <script src="assets/site-core.js?v=16"></script>
   <script src="assets/icons.js?v=3"></script>
 </head>
 
@@ -1556,7 +1556,9 @@
         while ((m = re.exec(s))) total += Number(m[1]) * ({ 만: 10000, 천: 1000, 백: 100 }[m[2]] || 1);
         return Math.min(9999999999, Math.round(total));
       }
-      return Math.min(9999999999, Number(s.replace(/[^\d]/g, "") || 0));
+      // 단위 글자가 없으면 점 뒤는 버린다(12000.00 이 1,200,000 이 되지 않게). 12.000 처럼 점을 천 단위 구분으로 쓴 꼴은 12,000
+      const t = /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "") : s.replace(/\..*$/, "");
+      return Math.min(9999999999, Number(t.replace(/[^\d]/g, "") || 0));
     }
     /* 날짜 입력값(YYYY-MM-DD)을 채팅에서 읽기 쉬운 꼴로 — "2026년 9월 20일 (일)" */
     function formatDateKo(iso) {
@@ -1662,7 +1664,7 @@
       const L = [];
       if (state.eventTitle.trim()) L.push(`${state.eventTitle.trim()} 정산`);
       L.push(`1인 ${formatWon(q.per)}씩${q.to ? ` ${q.to}에게` : ""} 보내 주세요`);   // 보내는 사람이 자기 이름을 적는 글이라 '님' 을 붙이지 않는다
-      L.push(`총 ${formatWon(q.total)}, ${q.count}명`);
+      L.push(`총 ${formatWon(q.total)}, ${q.count}명${q.per * q.count !== q.total ? `, 1인 금액 합계 ${formatWon(q.per * q.count)}` : ""}`);
       const pt = payText();
       if (pt) L.push(`입금계좌  ${pt}`);
       return L.join("\n");
@@ -2517,7 +2519,7 @@
 
     /* 공유 링크에 담을 경량 영수증 — 크기 예산 안에서 최대 2장 */
     const SHARE_RECEIPT_MAX = 2;
-    const SHARE_RECEIPT_BUDGET = 300 * 1024;   // base64 문자 수 예산
+    const SHARE_RECEIPT_BUDGET = 150 * 1024;   // base64 문자 수 예산(서버의 payload 한도 200KB 안에 두 장이 들어가게)
     function buildShareReceipts() {
       const out = [];
       let left = SHARE_RECEIPT_BUDGET;
