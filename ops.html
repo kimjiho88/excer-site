@@ -31,8 +31,10 @@
     .ops-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--brand); flex: none; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px; }
     .ops-title { font-size: 16px; font-weight: 800; color: var(--ink); white-space: nowrap; }
     .ops-stamp { flex: 1 1 160px; min-width: 0; color: var(--ink-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ops-acts { display: flex; gap: 6px; align-items: center; }
+    .ops-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .ops-acts > * { flex: none; }   /* 단추 글이 세로로 꺾이지 않게: 자리가 모자라면 줄을 바꾼다(머리 높이는 setTopH 가 따라감) */
     .ops-acts .btn { min-height: 36px; padding: 0 12px; font-size: 13px; }
+    @media (max-width: 479px) { .ops-acts { gap: 4px; } .ops-acts .btn, .ops-acts .bot-pill { padding: 0 9px; } }
     .top-prog { height: 3px; background: transparent; }
     .top-prog i { display: block; height: 100%; width: 0; background: var(--brand); transition: width 0.2s; }
     .ops-tabs { position: sticky; top: var(--top-h, 57px); z-index: 19; background: rgba(247, 245, 239, 0.96); border-bottom: 1px solid var(--line); }
@@ -553,6 +555,7 @@
     /* 머리의 봇 표시와 봇 상태 점(색과 글을 늘 함께) */
     .bot-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 12px; font-weight: 700; white-space: nowrap; }
     .bot-pill[hidden] { display: none; }
+    @media (max-width: 479px) { .bp-more { display: none; } }   /* 폰: 괄호 안(몇 분 전, 하는 일)은 봇 탭에서. 머리 줄이 넘치지 않게 */
     .bp-dot, .bh-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex: none; }
     .bot-pill[data-lv="good"] .bp-dot, .bh-dot[data-lv="good"] { background: var(--ops-ok); box-shadow: 0 0 0 3px rgba(12, 138, 62, 0.16); }
     .bot-pill[data-lv="watch"] .bp-dot, .bh-dot[data-lv="watch"] { background: var(--ops-warn); box-shadow: 0 0 0 3px rgba(194, 98, 15, 0.16); }
@@ -571,6 +574,11 @@
     .bh-tile b { font-size: 12px; color: var(--ink-2); font-weight: 700; }
     .bh-tile span { overflow-wrap: anywhere; }
     .bh-tile.is-warn { background: #FFF4E8; border-color: #F3D9BC; }
+    /* 봇이 응답하지 않을 때(꺼짐이나 망 끊김): 단추가 닿지 않는다는 것과 켜는 명령 */
+    .bh-off { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #FDF0F0; border: 1px solid #F2CACA; font-size: 13px; line-height: 1.5; }
+    .bh-off[hidden] { display: none; }
+    .bh-off b { color: var(--ops-bad); }
+    .bh-off code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; padding: 1px 5px; border-radius: 5px; background: #fff; border: 1px solid #F2CACA; overflow-wrap: anywhere; }
     .bot-log { max-height: 380px; overflow: auto; }
     .bot-log span { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
     /* 봇 설정 칸 */
@@ -644,7 +652,7 @@
       <b class="ops-title">운영 대시보드</b>
       <span id="opsStamp" class="ops-stamp" aria-live="polite"></span>
       <div class="ops-acts" id="opsActs" hidden>
-        <button type="button" class="bot-pill" id="botPill" hidden><i class="bp-dot" aria-hidden="true"></i><span id="botPillText">봇</span></button>
+        <button type="button" class="bot-pill" id="botPill" hidden><i class="bp-dot" aria-hidden="true"></i><span><span id="botPillText">봇</span><span class="bp-more" id="botPillMore"></span></span></button>
         <button type="button" class="btn btn-secondary" id="fileBtn">파일 올리기</button>
         <button id="saveBtn" class="btn btn-primary" type="button" disabled>서버에 저장</button>
         <button id="lockBtn" class="mini-btn" type="button">잠그기</button>
@@ -720,6 +728,7 @@
                 <button type="button" class="btn btn-primary is-sm" data-botreq="update" id="botUpdBtn"><svg class="ti" aria-hidden="true"><use href="#ti-down"/></svg>새 판 받기</button>
               </div>
             </div>
+            <div class="bh-off" id="botOff" role="status" hidden><b>봇이 꺼졌거나 태블릿 망이 끊겼습니다</b><span>이 탭의 단추는 켜진 봇만 받습니다. 태블릿 Termux 에서 켜기: <code>cd &amp;&amp; python excer_bot.py run</code></span></div>
             <div class="bh-grid" id="botLines"></div>
             <p class="sub mem-req" id="botReqNote" aria-live="polite" hidden></p>
           </div>
@@ -986,14 +995,13 @@
       PASS = ""; location.reload();
     });
     window.addEventListener("beforeunload", (e) => { if (!$("app").hidden && (S.unsaved || recPending())) { e.preventDefault(); e.returnValue = ""; } });
-    /* 1분마다(화면이 보일 때): 봇 조종 값(머리의 봇 표시), 봇 탭이면 봇 상태, 대시보드면 5분마다 지표 */
+    /* 1분마다(화면이 보일 때): 봇 조종 값(머리의 봇 표시), 봇 탭이거나 봇이 새 상태를 올렸으면 봇 상태, 대시보드면 5분마다 지표 */
     let opsPoll = null;
     function opsPollStart() {
       clearInterval(opsPoll);
       opsPoll = setInterval(() => {
         if (document.visibilityState !== "visible" || !PASS || localOnly) return;
-        botCtlLoad();
-        if (tab === "bot" && !bsPoll) botStLoad();
+        botCtlLoad().then(() => { if (!bsPoll && (tab === "bot" || bsStale())) botStLoad(); });   // 다른 탭에서도 봇이 새 상태를 올렸으면(머리의 봇 표시)
         if (tab === "dash" && MT && Date.now() - MT.loadedAt > 300000) metricsLoad();
       }, 60000);
     }
@@ -2412,8 +2420,8 @@
         const r = await rpc("bot_control_set", { p_pass: PASS, p_what: "export", p_minutes: 0 });
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
         botCtl = r; botCtlShow();
-        const ago = botCtl.seen_at ? (Date.now() - Date.parse(botCtl.seen_at)) / 60000 : null;
-        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 하지 못할 수 있습니다." : "요청했습니다. 봇이 1분 안에 시작합니다(긴 대화는 몇 분).");
+        const bs = botState();
+        toast(bs.lv === "none" || bs.off ? botOffToast(bs) : "요청했습니다. 봇이 1분 안에 시작합니다(긴 대화는 몇 분).");
         botExpWatch();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -2609,8 +2617,8 @@
         const r = await rpc("bot_control_set", { p_pass: PASS, p_what: "members", p_minutes: 0 });
         if (!r || !r.ok) { const e = new Error((r && r.error) || "FAIL"); e.code = r && r.error; throw e; }
         botCtl = r; botCtlShow();
-        const ago = botCtl.seen_at ? (Date.now() - Date.parse(botCtl.seen_at)) / 60000 : null;
-        toast(ago == null || ago >= 20 ? "요청했습니다. 봇이 20분 넘게 소식이 없어 읽지 못할 수 있습니다." : botOld() ? "요청했습니다. 봇 판이 옛 판이라 새 판 받기를 먼저 눌러 주세요." : "요청했습니다. 봇이 1분 안에 읽기 시작합니다.");
+        const bs = botState();
+        toast(bs.lv === "none" || bs.off ? botOffToast(bs) : botOld() ? "요청했습니다. 봇 판이 옛 판이라 새 판 받기를 먼저 눌러 주세요." : "요청했습니다. 봇이 1분 안에 읽기 시작합니다.");
         memReqWatch();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -2831,15 +2839,16 @@
       if (botCtl.missing) { el.textContent = "서버에 아직 없음(2026-10-09-midjoin-botctl.sql)"; return; }
       const until = (t) => md(kstDate(t)) + " " + kstHM(t) + "까지";
       const parts = [botCtl.pause_until ? "전체 멈춤 " + until(botCtl.pause_until) : "", botCtl.notice_until ? "공지 멈춤 " + until(botCtl.notice_until) : ""].filter(Boolean);
-      // 봇 살아 있음(2026-10-18 SQL 과 봇 판 2026-10-18.1): 봇이 5분마다 남긴 마지막 확인 때. 20분 넘게 없으면 태블릿을 본다
-      let seen = "";
+      // 봇 살아 있음(2026-10-18 SQL 과 봇 판 2026-10-18.1): 봇이 5분마다 남긴 마지막 확인 때. 응답 없음은 봇 탭과 같은 판단(botState)
+      let seen = "", off = false;
       if ("seen_at" in botCtl) {
         const ago = botCtl.seen_at ? Math.round((Date.now() - Date.parse(botCtl.seen_at)) / 60000) : null;
+        off = ago != null && !!botState().off;
         seen = ago == null ? "봇 살아 있음 표시 아직 없음(봇 판 2026-10-18.1 과 봇 열쇠가 있어야 남김)"
-          : "봇 마지막 확인 " + (ago < 1 ? "방금" : ago < 60 ? ago + "분 전" : md(kstDate(botCtl.seen_at)) + " " + kstHM(botCtl.seen_at)) + (botCtl.seen_note ? ", " + botCtl.seen_note : "") + (ago >= 20 ? ". 20분 넘게 소식이 없어요(태블릿이 꺼졌거나 무선 디버깅이 끊김)" : "");
+          : "봇 마지막 확인 " + (ago < 1 ? "방금" : ago < 60 ? ago + "분 전" : md(kstDate(botCtl.seen_at)) + " " + kstHM(botCtl.seen_at)) + (botCtl.seen_note ? ", " + botCtl.seen_note : "") + (off ? ". 소식이 없어요(봇이 꺼졌거나 태블릿 망이 끊김)" : "");
       }
       el.textContent = (parts.length ? parts.join(", ") : "평소대로") + (seen ? ". " + seen : "");
-      el.classList.toggle("is-stale", /소식이 없어요/.test(seen));
+      el.classList.toggle("is-stale", off);
       memPlanShow();
       botExpShow();
       botStShow();
@@ -2868,7 +2877,7 @@
 
     /* ── 봇 탭(2026-10-31-bot-remote.sql, 봇 판 2026-10-31.6): 봇이 5분마다 올리는 상태, 새 판 받기와 다시 켜기와 시험 글, 봇 설정.
        설정은 ops_store 의 botset 에 두고 봇이 1분 안에 받아 적용한 뒤 스스로 다시 켠다. 태블릿에 가지 않고 여기서 다 한다 ── */
-    let BS = null, bsBusy = false, bsWatchT = null, bsDirty = false, bsPoll = null;
+    let BS = null, bsBusy = false, bsWatchT = null, bsDirty = false, bsPoll = null, BV = null;
     const BS_SQL = "2026-10-31-bot-remote.sql";
     const epochIso = (t) => (t ? new Date(Number(t) * 1000).toISOString() : "");
     const agoMin = (iso) => (iso ? Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)) : null);
@@ -2885,23 +2894,62 @@
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
         BS = missingFn(e) ? { missing: true } : BS;
       }
+      if (botCtl && !botCtl.missing) botCtlShow(); else botStShow();   // 멈춤 칸의 마지막 확인도 새 상태로(botCtlShow 가 botStShow 를 부른다)
+      botVerLoad();
+    }
+    /* 저장소의 봇 판: 사이트에 같이 올라간 tools/excer_bot.py 의 VERSION 줄(앞 64KB 만). 봇이 한 시간마다 보는 판보다 빠르다. 10분에 한 번 */
+    async function botVerLoad() {
+      if (localOnly || (BV && Date.now() - BV.at < 10 * 60000)) return;
+      BV = { v: (BV && BV.v) || "", at: Date.now() };
+      try {
+        const r = await fetch("/tools/excer_bot.py", { headers: { Range: "bytes=0-65535" }, cache: "no-cache" });
+        const m = r.ok ? /^VERSION = "(\d{4}-\d{2}-\d{2}\.\d+)"/m.exec(await r.text()) : null;
+        if (m) BV.v = m[1];
+      } catch (e) { /* 못 읽으면 봇이 본 판으로 */ }
       botStShow();
     }
-    /* 봇 상태 한 줄: good 정상, watch 멈춤이나 오류, bad 소식 없음(20분), none 아직 모름 */
+    /* 봇 상태 한 줄: good 정상, watch 멈춤이나 오류나 확인 늦음, bad 응답 없음, none 아직 모름.
+       봇은 5분마다 상태를 올리고, 긴 일(멤버 읽기, 대화 내보내기)은 시작할 때 하는 일(busy)을 올린다(봇 판 2026-11-01.4).
+       BOT_LATE 분 넘게 소식이 없고 하는 긴 일도 없으면 응답 없음(off: 꺼졌거나 망이 끊김, 단추가 닿지 않음).
+       busy 를 올리지 않는 옛 판은 BOT_GONE 분까지 확인 늦음 */
+    const BOT_LATE = 11, BOT_GONE = 20;
+    const BUSY_NAME = { members: ["멤버 읽는 중", "멤버 읽기"], export: ["대화 내보내는 중", "대화 내보내기"] };
+    /* 가장 새로운 확인 때: 봇 탭이 아니면 BS 가 오래될 수 있어 1분마다 읽는 bot_control 의 seen_at 과 견준다(상태를 올리면 둘 다 바뀐다) */
+    function botSeenIso() {
+      return [BS && !BS.missing && BS.status_at, BS && !BS.missing && BS.seen_at, botCtl && botCtl.seen_at].filter(Boolean)
+        .reduce((a, b) => (!a || Date.parse(b) > Date.parse(a) ? b : a), "");
+    }
+    const bsStale = () => !!(BS && !BS.missing && BS.status_at && botCtl && botCtl.seen_at && Date.parse(botCtl.seen_at) - Date.parse(BS.status_at) > 30000);
+    /* 지금 하는 긴 일: 가진 상태가 마지막 것이고, 길어야 끝날 때(시작 + 최대 + 2분)를 넘지 않았을 때만 */
+    function botBusy() {
+      const st = BS && !BS.missing ? BS.status : null, b = st && st.busy;
+      if (!b || !Number(b.at) || bsStale()) return null;
+      const now = Date.now() / 1000, at = Number(b.at);
+      if (now > at + Number(b.max || 0) + 120) return null;
+      const nm = BUSY_NAME[b.what] || ["긴 일 하는 중", "긴 일"];
+      return { what: b.what, name: nm[0], noun: nm[1], min: Math.max(0, Math.floor((now - at) / 60)) };
+    }
     function botState() {
       const st = BS && !BS.missing ? BS.status : null;
-      const seenIso = (BS && !BS.missing && (BS.status_at || BS.seen_at)) || (botCtl && botCtl.seen_at) || "";
-      const ago = agoMin(seenIso);
+      const ago = agoMin(botSeenIso()), bz = botBusy();
       if (ago == null) return { lv: "none", label: "소식 없음", ago };
-      if (ago >= 20) return { lv: "bad", label: "응답 없음(" + agoText(ago) + ")", ago };
-      if (botCtl && botCtl.pause_until) return { lv: "watch", label: "전체 멈춤 중", ago };
-      if (st && (st.error_n > 0 || (st.fails && (st.fails.send > 2 || st.fails.read > 5)))) return { lv: "watch", label: "오류가 있음", ago };
-      if (botCtl && botCtl.notice_until) return { lv: "watch", label: "공지 멈춤 중", ago };
-      return { lv: "good", label: "정상", ago };
+      if (ago >= BOT_LATE && !bz) {
+        if ((st && "busy" in st) || ago >= BOT_GONE) return { lv: "bad", label: "응답 없음(" + agoText(ago) + ")", ago, off: true };
+        return { lv: "watch", label: "확인 늦음(" + agoText(ago) + ")", ago };
+      }
+      if (botCtl && botCtl.pause_until) return { lv: "watch", label: "전체 멈춤 중", ago, bz };
+      if (st && (st.error_n > 0 || (st.fails && (st.fails.send > 2 || st.fails.read > 5)))) return { lv: "watch", label: "오류가 있음", ago, bz };
+      if (botCtl && botCtl.notice_until) return { lv: "watch", label: "공지 멈춤 중", ago, bz };
+      return { lv: "good", label: bz ? "정상(" + bz.name + ")" : "정상", ago, bz };
     }
     function botPillShow() {
       const s = botState(), pill = $("botPill"), dot = $("tabDotBot");
-      if (pill) { pill.hidden = localOnly || s.lv === "none"; pill.dataset.lv = s.lv; $("botPillText").textContent = "봇 " + s.label; pill.setAttribute("aria-label", "봇 " + s.label + ", 봇 탭 열기"); }
+      if (pill) {
+        const m = /^(.*?)(\(.*\))$/.exec(s.label);
+        pill.hidden = localOnly || s.lv === "none"; pill.dataset.lv = s.lv;
+        $("botPillText").textContent = "봇 " + (m ? m[1] : s.label); $("botPillMore").textContent = m ? m[2] : "";
+        pill.setAttribute("aria-label", "봇 " + s.label + ", 봇 탭 열기");
+      }
       if (dot) { dot.hidden = localOnly || s.lv === "good" || s.lv === "none"; dot.dataset.lv = s.lv; }
     }
     function botStShow() {
@@ -2910,6 +2958,7 @@
       const s = botState(), st = BS && !BS.missing ? BS.status : null;
       $("botDot").dataset.lv = s.lv;
       head.textContent = "봇 " + s.label;
+      $("botOff").hidden = !s.off;
       const reqBtns = document.querySelectorAll("[data-botreq]");
       if (BS && BS.missing) {
         $("botSub").textContent = "새 판 받기, 다시 켜기, 봇 설정은 서버에 " + BS_SQL + " 을 실행하면 쓸 수 있습니다. 봇이 남긴 마지막 확인: " + (agoText(s.ago) || "없음");
@@ -2917,8 +2966,10 @@
         $("botLines").innerHTML = ""; botSetShow(); botLogShow(); return;
       }
       reqBtns.forEach((b) => { b.disabled = bsBusy; });
-      const remote = st && st.update && st.update.remote, newer = !!(st && remote && verGt(remote, st.v));
-      const sub = st ? ["판 " + st.v + (newer ? "(새 판 " + remote + " 있음)" : remote ? "(최신)" : ""), st.started ? "켠 지 " + spanText(Date.now() / 1000 - st.started) : "", "마지막 확인 " + agoText(s.ago)]
+      // 판: 사이트에 올라간 봇 파일의 판(botVerLoad)과 견준다. 그것을 못 읽었으면 봇이 한 시간마다 본 판
+      const remote = (BV && BV.v) || (st && st.update && st.update.remote) || "", newer = !!(st && remote && verGt(remote, st.v));
+      const bz = s.bz, sub = st ? ["판 " + st.v + (newer ? "(새 판 " + remote + " 있음)" : remote && remote === st.v ? "(최신)" : ""), st.started && !s.off ? "켠 지 " + spanText(Date.now() / 1000 - st.started) : "",
+        bz ? bz.noun + " " + (bz.min < 1 ? "막 시작" : bz.min + "분째") : "", "마지막 확인 " + agoText(s.ago)]
         : [botCtl && botCtl.seen_note ? botCtl.seen_note : "", s.ago != null ? "마지막 확인 " + agoText(s.ago) : "봇이 아직 상태를 올리지 않았습니다(봇 판 2026-10-31.6 부터)"];
       $("botSub").textContent = sub.filter(Boolean).join(", ");
       const upd = $("botUpdBtn"); upd.classList.toggle("btn-primary", newer); upd.classList.toggle("btn-secondary", !newer);
@@ -2937,14 +2988,18 @@
       ul.innerHTML = lines.length ? lines.slice().reverse().map((l) => { const m = /^(\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.*)$/.exec(l); return `<li><time>${esc(m ? m[1].slice(3).replace("-", ".") : "")}</time><span>${esc(m ? m[2] : l)}</span></li>`; }).join("") : `<li class="empty">봇이 올린 기록이 없습니다.</li>`;
     }
     /* 요청 결과 한 줄(새 판, 다시 켜기, 시험 글, 설정 적용) */
+    const REQ_NAME = { update: "새 판 받기", restart: "다시 켜기", ping: "시험 글" };
+    const botOffToast = (bs) => "요청했습니다. 봇이 응답하지 않습니다(" + (bs.ago == null ? "소식 없음" : "마지막 확인 " + agoText(bs.ago)) + "). 태블릿에서 켜면 30분 안의 요청은 따릅니다.";
     function botReqShow() {
       const el = $("botReqNote"), st = BS && !BS.missing ? BS.status : null; if (!el) return;
-      const out = [];
-      const w = bsWatchT;
-      if (w) {
-        const done = st && st.reqs && Number(st.reqs[w.what] || 0) >= w.ts - 5;
-        if (!done) out.push(memWhen(new Date(w.ts * 1000).toISOString()) + " " + { update: "새 판 받기", restart: "다시 켜기", ping: "시험 글" }[w.what] + " 요청. 봇이 1분 안에 합니다.");
-      }
+      const out = [], s = botState(), now = Date.now() / 1000;
+      // 봇이 아직 받지 않은 요청: 서버의 요청 때(bot_control)와 봇이 받은 요청(상태의 reqs)을 견준다(화면을 다시 열어도). 30분 지난 요청은 봇이 하지 않는다
+      ["update", "restart", "ping"].forEach((w) => {
+        const r = Number((botCtl && botCtl[w + "_req_ts"]) || 0), d = Number((st && st.reqs && st.reqs[w]) || 0), m = Math.floor((now - r) / 60);
+        if (!r || r <= d + 1 || now - r > 1800) return;
+        out.push(memWhen(epochIso(r)) + " " + REQ_NAME[w] + " 요청: " + (s.off ? "봇이 응답하지 않아 받지 않음(30분 안에 켜면 그때 따름)"
+          : s.bz ? "봇이 " + s.bz.noun + "를 마치면 받음" : m < 2 ? "봇이 1분 안에 받음" : "봇이 아직 받지 않음(" + m + "분째)"));
+      });
       const u = st && st.update && st.update.last;
       if (u && u.at && Date.now() / 1000 - u.at < 6 * 3600) out.push(memWhen(epochIso(u.at)) + " 새 판: " + (u.note || (u.ok ? "됨" : "안 됨")));
       const p = st && st.reqs && st.reqs.ping_last;
@@ -2955,7 +3010,9 @@
     async function botReq(what) {
       if (localOnly || !PASS || bsBusy) return;
       if (BS && BS.missing) { toast("서버에 " + BS_SQL + " 을 먼저 실행해 주세요."); return; }
-      const ask = { update: "봇이 저장소의 새 판을 받아 시험한 뒤 바꾸고 다시 켭니다(시험이 안 되면 그대로). 받을까요?", restart: "봇을 다시 켭니다(몇 초 걸림). 할까요?" }[what];
+      // 응답이 없는 봇(꺼짐이나 망 끊김)에는 단추가 닿지 않는다: 켜는 명령을 보이고, 그래도 남기면 30분 안에 켰을 때 봇이 따른다
+      const off = botState(), ask = off.off ? "봇이 응답하지 않습니다(마지막 확인 " + agoText(off.ago) + "). 꺼져 있으면 요청이 닿지 않습니다.\n태블릿 Termux 에서 켜기: cd && python excer_bot.py run\n\n그래도 " + REQ_NAME[what] + " 요청을 남길까요? 30분 안에 켜면 봇이 그때 따릅니다."
+        : { update: "봇이 저장소의 새 판을 받아 시험한 뒤 바꾸고 다시 켭니다(시험이 안 되면 그대로). 받을까요?", restart: "봇을 다시 켭니다(몇 초 걸림). 할까요?" }[what];
       if (ask && !window.confirm(ask)) return;
       bsBusy = true; botStShow();
       try {
@@ -2964,7 +3021,7 @@
         botCtl = r; botCtlShow();
         const ts = Number(r[what + "_req_ts"]) || Date.now() / 1000;
         bsWatchT = { what, ts, t0: Date.now() };
-        toast({ update: "요청했습니다. 봇이 1분 안에 새 판을 받아 시험한 뒤 다시 켭니다.", restart: "요청했습니다. 봇이 1분 안에 다시 켭니다.", ping: "요청했습니다. 봇이 1분 안에 시험 방에 봇 정상 줄을 보냅니다." }[what]);
+        toast(off.off ? "요청을 남겼습니다. 태블릿에서 봇을 켜면 따릅니다." : { update: "요청했습니다. 봇이 1분 안에 새 판을 받아 시험한 뒤 다시 켭니다.", restart: "요청했습니다. 봇이 1분 안에 다시 켭니다.", ping: "요청했습니다. 봇이 1분 안에 시험 방에 봇 정상 줄을 보냅니다." }[what]);
         botStWatch();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return; }
@@ -4221,6 +4278,7 @@
     }
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };
     window.addEventListener("resize", setTopH); setTopH();
+    if (window.ResizeObserver) new ResizeObserver(setTopH).observe(document.querySelector(".ops-top"));   // 머리 줄이 바뀌면(봇 표시 글 등) 탭 줄 자리도
     window.__ops = { S, view, SH, sheetLoad, save: saveRecords, memBase, get BS() { return BS; }, get MT() { return MT; }, botSetCollect };   // 시험용
     $("gatePass").focus();
   })();
