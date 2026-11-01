@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.1"                  # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.2"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -4343,7 +4343,8 @@ class AdbSender:
         self.serial = addr
         done = []
         # Termux 가 오래 돌 때 안드로이드가 끄지 않게. 화면은 꺼져도 된다(봇이 쓸 때 켠다)
-        for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),):
+        for cmd, what in (("settings put global settings_enable_monitor_phantom_procs false", "Termux 강제 종료 막기"),
+                          ("cmd deviceidle whitelist +com.termux.api", "Termux:API 절전 예외")):   # 클립보드 명령이 잠들어 멈추지 않게(2026-10-31)
             try:
                 self.sh(cmd)
                 done.append(what)
@@ -4624,9 +4625,39 @@ class AdbSender:
         self.sleep(0.3)
 
     def set_clip(self, text):
-        code, out, err = self.run([self.t["clip"]], text.encode("utf-8"), 20)
+        """클립보드에 넣는다(Termux:API). 대답이 없거나 실패하면 Termux:API 를 절전에서 빼고(api_wake) 한 번 더 해 본다"""
+        for k in range(2):
+            try:
+                code, out, err = self.run([self.t["clip"]], text.encode("utf-8"), 20)
+            except KakaoError as e:
+                if k == 0 and "끝나지 않음" in str(e) and self.api_wake():
+                    continue
+                raise
+            if code != 0 and k == 0 and self.api_wake():
+                continue
+            break
         if code != 0:
             raise KakaoError("클립보드에 넣지 못함(%s, Termux:API 앱이 깔려 있는지): %s" % (self.t["clip"], (err or out).strip()[:120]))
+
+    API_PKG = "com.termux.api"
+
+    def api_wake(self):
+        """클립보드 명령이 대답하지 않을 때(2026-10-31: 20초 넘게 멈춰 알림과 보이스룸 복구가 실패): 태블릿이 Termux:API 를 절전으로 재운 것으로 보고
+        adb 로 절전 예외(deviceidle), 백그라운드 실행 허용(appops), 대기 단계 active 를 준다. 화면과 앱은 건드리지 않는다(보내는 중에도 된다).
+        30분에 한 번까지. 했으면 True"""
+        now = time.time()
+        if now - getattr(self, "api_woke", 0.0) < 1800:
+            return False
+        self.api_woke = now
+        p = self.API_PKG
+        try:
+            self.sh("cmd deviceidle whitelist +%s >/dev/null 2>&1; cmd appops set %s RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1; "
+                    "am set-standby-bucket %s active >/dev/null 2>&1; true" % (p, p, p), timeout=30)
+        except KakaoError:
+            return False
+        if callable(getattr(self, "log", None)):
+            self.log("클립보드(Termux:API)가 대답하지 않아 절전에서 빼고 다시 해 봄")
+        return True
 
     # 카카오톡 채팅 목록과 방
     def on_kakao(self, nodes):
@@ -5196,11 +5227,16 @@ class AdbSender:
             op = None
             try:
                 op = self.goto_open_list(nodes, room)
-            except Covered as e:                                 # '오픈채팅' 칸이 작은 창에 가렸다: 채팅 탭에서라도 찾는다
+            except Covered as e:                                 # '오픈채팅' 칸이 작은 창에 가렸다
                 covered = e
-                nodes = self.goto_list(self.dump())
-                seen.update(self._names(nodes))
-                item = self.room_item(nodes, room)
+                cur = self.dump()
+                if not self.not_list(cur) and self._names(cur):  # '지금' 을 눌러 이미 방 목록이 떠 있으면 그 목록을 끝까지 훑는다(2026-11-01: 작은 창은 늘 그 자리였는데,
+                    self.fact("가린 칸 대신 지금 목록")         # 시험 방이 목록 첫 화면 밖으로 밀리자 가린 칸을 누르려다 멈췄다. 가린 단추 하나에 기대지 않는다)
+                    op = cur
+                else:                                            # 방 목록이 아니면(숏폼 같은) 채팅 탭에서라도 찾는다
+                    nodes = self.goto_list(cur)
+                    seen.update(self._names(nodes))
+                    item = self.room_item(nodes, room)
             if op:
                 nodes = op
                 seen.update(self._names(nodes))
