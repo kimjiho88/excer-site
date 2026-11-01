@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.4"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.5"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -3543,6 +3543,46 @@ DUMPER_JAR = (
     "4v9asn3+e8x/AVBLAQIUAxQAAAAIAAAAQV29EbLUgQ4AAMgZAAALAAAAAAAAAAAAAACAAQAAAABjbGFzc2VzLmRleFBLBQYAAAAAAQAB"
     "ADkAAACqDgAAAAA="
 )
+
+# 가린 칸 누르기 도우미(tools/excer_dump/ExcerClick.java, 2026-11-01). 다른 창(보이스룸 작은 창)이 덮은 칸을 자리로 누르면 덮은 창이 눌려서
+# 그 칸 자체에 접근성 누르기를 한다. 읽기 도우미와 따로 둔다(읽기는 그대로). 다시 만들기: sh tools/excer_dump/build.sh (sha1 ec27f8d609c7bad20bf231b904743ae93360f341)
+CLICK_JAR = (
+    "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"
+)
 # ── 보이스룸 신호: 화면을 건드리지 않고 adb dumpsys 로 읽는다(docs/BOT_VOICE_ROOM.md 3절) ──
 VOICE_SERVICE_RE = re.compile(r"vox|voice|call|room", re.I)
 
@@ -4247,6 +4287,7 @@ class AdbSender:
     """태블릿(또는 폰) 안의 Termux 에서 돈다. adb 로 같은 기기에 붙어 화면을 읽고(uiautomator dump) 누른다(input)"""
     TMP = "/data/local/tmp/excer_ui.xml"
     JAR = "/data/local/tmp/excer_dump.jar"
+    CLICK = "/data/local/tmp/excer_click.jar"                    # 가린 칸 누르기 도우미(CLICK_JAR)
     diag_path = None                                             # 안 될 때 그때 화면을 적을 파일(main 이 정한다)
     mem_left = None                                              # 멤버 읽기가 서랍을 닫았다고 보지 못하고 끝났으면 {pre, marks}. 다음 open_room 이 먼저 닫는다
 
@@ -4448,6 +4489,25 @@ class AdbSender:
         except KakaoError:
             return False
 
+    def install_clicker(self):
+        """가린 칸 누르기 도우미를 기기에 둔다(이미 같은 것이 있으면 그대로, 한 run 에 한 번 본다). 됐으면 True"""
+        if getattr(self, "click_ok", None) is not None:
+            return self.click_ok
+        import base64
+        import hashlib
+        data = base64.b64decode("".join(CLICK_JAR))
+        want = hashlib.sha1(data).hexdigest()
+        try:
+            have = self.sh("sha1sum %s 2>/dev/null; true" % self.CLICK).split(" ")[0].strip()
+            if have != want:
+                b64 = base64.b64encode(data).decode()
+                self.sh("rm -f %s; echo %s | base64 -d > %s; chmod 444 %s; true" % (self.CLICK, b64, self.CLICK, self.CLICK))
+                have = self.sh("sha1sum %s 2>/dev/null; true" % self.CLICK).split(" ")[0].strip()
+            self.click_ok = have == want
+        except Exception:
+            self.click_ok = False
+        return self.click_ok
+
     def _parse_dump(self, out):
         i, j = out.find("<hierarchy"), out.rfind("</hierarchy>")
         if i < 0 or j <= i:
@@ -4621,6 +4681,7 @@ class AdbSender:
                 m = BOUNDS_RE.match(a.get("bounds", ""))
                 n = {"text": a.get("text", ""), "desc": a.get("content-desc", ""), "rid": a.get("resource-id", ""),
                      "cls": a.get("class", ""), "click": a.get("clickable") == "true", "scroll": a.get("scrollable") == "true", "pkg": a.get("package", ""),
+                     "sel": a.get("selected") == "true",                # 골라진 칸(탭 칸). 고름 표시가 없는 판은 모두 False
                      "b": tuple(int(x) for x in m.groups()) if m else (0, 0, 0, 0), "kids": [], "i": len(out)}
                 out.append(n)
                 if parent is not None:
@@ -4637,13 +4698,52 @@ class AdbSender:
         return (l + r) // 2, (t + b) // 2
 
     def tap(self, n):
-        self.sh("input tap %d %d" % self.point(n))
+        try:
+            p = self.point(n)
+        except Covered:
+            if self.a11y_click(n):                               # 다른 창(보이스룸 작은 창)이 다 가린 칸: 그 칸 자체를 접근성 누르기로
+                self.sleep(0.6)
+                return
+            raise
+        self.sh("input tap %d %d" % p)
         self.sleep(0.6)
 
     def hold(self, n, ms=1000, what="길게 누를 곳"):
-        x, y = self.point(n, what)
+        try:
+            x, y = self.point(n, what)
+        except Covered:
+            if self.a11y_click(n, long=True):
+                self.sleep(0.9)
+                return
+            raise
         self.sh("input swipe %d %d %d %d %d" % (x, y, x, y, ms))
         self.sleep(0.9)
+
+    A11Y_RES = {"clicked": "됨", "refused": "안 받음", "not-found": "칸 못 찾음", "no-root": "화면 못 읽음"}
+
+    def a11y_click(self, n, long=False):
+        """다른 창이 다 가린 칸을 누르기 도우미(ExcerClick)의 접근성 누르기로 누른다(그 칸이나 누를 수 있는 윗칸에 click, long 이면 길게 누르기).
+        자리로 누르는 것이 아니라 위를 덮은 창은 눌리지 않는다(2026-11-01: 지금 메뉴 위쪽 '오픈채팅' 칸이 왼쪽 위 보이스룸 작은 창 밑이라
+        시험 방을 못 엶. 작은 창을 옮기지 않고 누른다). 글자(또는 이름)와 자리로 찾고, 못 찾으면 자리로만 한 번 더.
+        도우미가 없거나(기본 방식) 칸을 못 찾거나 받지 않으면 False(예전처럼 가렸다고 멈춘다)"""
+        if not self.fast or not self.install_clicker():
+            return False
+        lab, res = n["text"] or n["desc"], "답 없음"
+        for want in ([lab.encode("utf-8").hex()] if lab else []) + ["-"]:
+            try:
+                out = self.sh("CLASSPATH=/system/framework/uiautomator.jar:%s app_process /system/bin ExcerClick %d %d %d %d %s %s%s 2>/dev/null; true"
+                              % ((self.CLICK,) + tuple(n["b"]) + (self.t["package"], want, " long" if long else "")), timeout=30)
+            except Exception:
+                break
+            m = re.search(r"^(clicked|refused|not-found|no-root)\b", out or "", re.M)
+            res = m.group(1) if m else "답 없음"
+            if res != "not-found":
+                break
+        self.fact("가린 칸 접근성 %s %s" % ("길게 누름" if long else "누름", self.A11Y_RES.get(res, res)))
+        if res == "clicked" and not getattr(self, "a11y_said", False) and callable(getattr(self, "log", None)):
+            self.a11y_said = True                                # 기록에는 이 run 에서 한 번만
+            self.log("다른 창(보이스룸 작은 창)이 가린 칸을 접근성 누르기로 누름(%s)" % self.tap_label(n))
+        return res == "clicked"
 
     def key(self, *codes):
         self.sh("input keyevent " + " ".join(str(c) for c in codes))
@@ -5114,6 +5214,33 @@ class AdbSender:
              and not any(w in n["text"] + " " + n["desc"] for w in self.NEVER_WORDS)]
         return sorted(c, key=lambda n: (not n["click"], n["b"][1]))
 
+    def tab_shown(self, nodes, chip):
+        """가린 탭 칸(chip)이 지금 골라져 있는지: True 그 칸이나 그 안팎 칸이 골라짐(지금 목록이 그 탭), False 같은 줄의 다른 칸이 골라짐,
+        None 모름(그 칸이 안 보이거나 고름 표시가 없는 판)"""
+        if chip is None:
+            return None
+        same = next((n for n in nodes if n["b"] == chip["b"] and n["text"] == chip["text"] and n["desc"] == chip["desc"]), None)
+        if same is None:
+            return None
+        par = {k: x["i"] for x in nodes for k in x["kids"]}
+        fam, j = set(), same["i"]
+        for _ in range(3):                                       # 그 칸과 윗칸 둘(글자 칸을 품은 탭 칸)
+            fam.add(j)
+            j = par.get(j)
+            if j is None:
+                break
+        stack = list(same["kids"])
+        while stack:                                             # 그 칸 안의 칸
+            k = stack.pop()
+            fam.add(k)
+            stack.extend(nodes[k]["kids"])
+        mine = [k for k in fam if nodes[k]["b"][3] - nodes[k]["b"][1] <= (chip["b"][3] - chip["b"][1]) * 3]   # 목록 전체 같은 큰 윗칸은 빼고
+        if any(nodes[k].get("sel") for k in mine):
+            return True
+        t, b = chip["b"][1], chip["b"][3]
+        row = [n for n in nodes if n.get("sel") and n["i"] not in fam and n["b"][1] < b and n["b"][3] > t]
+        return False if row else None
+
     def goto_open_list(self, nodes, room=None):
         """오픈채팅 목록으로. 채팅 목록 위의 '오픈채팅' 칸이 있는 판, 아래 메뉴 '지금'(오픈채팅) 안의 '오픈채팅' 칸인 판.
         '오픈채팅' 칸이 작은 창에 다 가려 있으면 Covered"""
@@ -5140,8 +5267,9 @@ class AdbSender:
                 return nodes
         try:
             self.tap(sub[0])
-        except Covered:
+        except Covered as e:
             self.fact("오픈채팅 칸 가림 [%d,%d][%d,%d]" % sub[0]["b"])
+            e.node = sub[0]                                      # 지금 목록이 오픈채팅인지(그 칸이 골라져 있는지) 보게
             raise
         nodes = self.wait_change(nodes, ok)
         self.fact("오픈채팅 칸 누름%s" % ("" if getattr(self, "changed", True) else ", 안 바뀜"))
@@ -5252,10 +5380,13 @@ class AdbSender:
             op = None
             try:
                 op = self.goto_open_list(nodes, room)
-            except Covered as e:                                 # '오픈채팅' 칸이 작은 창에 가렸다
+            except Covered as e:                                 # '오픈채팅' 칸이 작은 창에 가렸다(접근성 누르기도 안 됨)
                 covered = e
                 cur = self.dump()
-                if not self.not_list(cur) and self._names(cur):  # '지금' 을 눌러 이미 방 목록이 떠 있으면 그 목록을 끝까지 훑는다(2026-11-01: 작은 창은 늘 그 자리였는데,
+                shown = self.tab_shown(cur, getattr(e, "node", None))
+                if shown is False:                               # 다른 칸(추천, 숏폼 같은)이 골라져 있다: 끝없는 목록을 훑지 않는다(2026-11-01 16:22, 1분 넘게 훑음)
+                    self.fact("지금 목록은 오픈채팅이 아님")
+                if shown is not False and not self.not_list(cur) and self._names(cur):   # '지금' 을 눌러 이미 방 목록이 떠 있으면 그 목록을 끝까지 훑는다(2026-11-01: 작은 창은 늘 그 자리였는데,
                     self.fact("가린 칸 대신 지금 목록")         # 시험 방이 목록 첫 화면 밖으로 밀리자 가린 칸을 누르려다 멈췄다. 가린 단추 하나에 기대지 않는다)
                     op = cur
                 else:                                            # 방 목록이 아니면(숏폼 같은) 채팅 탭에서라도 찾는다
@@ -5277,7 +5408,7 @@ class AdbSender:
         if not item:
             self.save_diag(nodes)
             if covered is not None:
-                raise Covered(self.with_note("%s. 채팅 탭에도 없음%s" % (str(covered), self.facts_note())))
+                raise Covered(self.with_note("%s. 채팅 탭에도 없음(목록에서 본 방 %d개)%s" % (str(covered), len(seen), self.facts_note())))
             l, t, r, b = self.list_box(nodes)
             taps = sum(1 for n in nodes if n["click"] and l <= self.center(n)[0] <= r and t <= self.center(n)[1] <= b)
             raise RoomNotFound("채팅 목록에서 '%s' 방을 찾지 못함(%s, 화면 요소 %d개, 누를 수 있는 것 %d개)%s%s" % (
