@@ -2113,7 +2113,7 @@
       function readNoteFields(ids) {
         return {
           body: $(ids.body).value.trim(), menu: state.caps >= 2 ? $(ids.menu).value.trim() : "", tip: state.caps >= 2 ? $(ids.tip).value.trim() : "",
-          date: $(ids.date).value || "", per: parseInt($(ids.per).value, 10) || 0, again: $(ids.again).checked
+          date: $(ids.date).value || "", per: Number($(ids.per).value) || 0, again: $(ids.again).checked
         };
       }
       function clearNoteFields(ids) {
@@ -2132,7 +2132,7 @@
         if (f.menu.length > 40) { setError(ids.menu, "추천 메뉴는 40자까지입니다."); ok = false; }
         if (f.tip.length > 120) { setError(ids.tip, "방문 팁은 120자까지입니다."); ok = false; }
         if (f.date && f.date > C.kstToday()) { setError(ids.date, "방문일은 오늘 이전이어야 합니다."); ok = false; }
-        if ($(ids.per).value && !(f.per >= 0 && f.per <= 1000000)) { setError(ids.per, "1인 금액은 0원에서 1,000,000원 사이로 입력해 주세요."); ok = false; }
+        if ($(ids.per).value && !(Number.isInteger(f.per) && f.per >= 0 && f.per <= 1000000)) { setError(ids.per, "1인 금액은 0원에서 1,000,000원 사이의 원 단위로 입력해 주세요."); ok = false; }
         return ok;
       }
       function noteCreateBody(placeId, nick, pass, f) {
