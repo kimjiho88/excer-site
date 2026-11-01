@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.3"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.4"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -1267,6 +1267,7 @@ def scan_run(path, ocfg, assets, x, timeout=3600):
 
 
 NODE_MISSING = "node 가 없어 내보내지 않음(Termux 에서 pkg install nodejs)"
+MEM_BUSY_S = 600                                     # 멤버 읽기가 길어야 몇 초(다시 열어 한 번 더 읽어도). 상태의 busy 로 운영 화면에 간다
 
 
 def node_ok(x):
@@ -1695,6 +1696,7 @@ class Bot:
         self.seen_at, self.seen_off, self.seen_warned = 0.0, False, False   # 서버에 살아 있음 표시(bot_seen)를 남긴 때, 그 SQL 이 없음, 한 번 적음
         self.restart_why = ""                           # 운영 화면의 설정, 새 판, 다시 켜기 요청으로 run 을 다시 켤 까닭(run_loop 가 한 바퀴 끝에 다시 켠다)
         self.status_at, self.status_off, self.status_warned = 0.0, False, False   # 상태를 올린 때, 그 SQL 이 없음, 한 번 적음
+        self.busy = None                                # 지금 하는 긴 일(멤버 읽기, 대화 내보내기): 상태에 실어 운영 화면이 꺼진 봇과 가린다
         self.started = time.time()                      # 이 run 을 켠 때(상태에 보인다)
         self.voice = None                               # 보이스룸 지키기(run 이 넣는다. 상태 줄에 쓴다)
 
@@ -1915,6 +1917,18 @@ class Bot:
             self.log("상태를 서버에 올리지 못함(그냥 감): %s" % r.get("error"))
         return "status"
 
+    def busy_on(self, what, max_s):
+        """긴 일(멤버 읽기, 대화 내보내기)을 시작할 때: 하는 일과 시작한 때와 길어야 몇 초인지를 상태에 싣고 곧바로 올린다.
+        긴 일을 하는 동안은 5분마다 올리지 못해서, 운영 화면이 이것으로 꺼진 봇과 일하는 봇을 가린다(2026-11-01). 끝나면 busy_off"""
+        self.busy = {"what": what, "at": time.time(), "max": int(max_s)}
+        self.status_tick(force=True)
+
+    def busy_off(self):
+        """긴 일이 끝남: 하는 일을 지우고, 1분 넘게 걸렸으면 이 바퀴 끝에서 상태를 곧바로 올린다(서버 한도는 1시간에 40번)"""
+        b, self.busy = getattr(self, "busy", None), None
+        if b and time.time() - float(b.get("at") or 0) >= 60:
+            self.status_soon = True
+
     def status_snapshot(self):
         """운영 화면의 봇 탭이 보일 상태: 판, 켠 때, 할 일 줄(멈춤, 멤버, 신입 인사, 대화 내보내기, 보이스룸, 공지 첫 줄), 실패 수, 설정, 받은 설정,
         새 판, 요청 결과, 끝의 기록 몇 줄(따옴표 안 글 가림). 멤버 이름은 넣지 않는다"""
@@ -1935,6 +1949,7 @@ class Bot:
                            "mark": update_mark_read(getattr(self, "cfg_path", ""))},
                 "reqs": {"update": st.get("update_req_done"), "restart": st.get("restart_req_done"), "ping": st.get("ping_req_done"),
                          "ping_last": st.get("ping_last") or {}},
+                "busy": dict(self.busy) if getattr(self, "busy", None) else None,
                 "log": [mask_log_line(x) for x in lines[-25:]]}
         return snap
 
@@ -2058,6 +2073,7 @@ class Bot:
         last = st.get("members_last") or {}
         self.sender.mem_last_n = int(last.get("n") or 0) if not last.get("error") else 0   # 지난번 성공한 수: 대화상대 수를 못 읽은 날의 하한(2026-10-18)
         try:
+            self.busy_on("members", MEM_BUSY_S)
             names = self.sender.read_members(self.room, cfg.get("members") or {})
             if getattr(self.sender, "mem_retried", False):
                 self.log("멤버 읽기: 대화상대 칸을 처음에 못 봐 방 메뉴를 다시 열어 읽음")
@@ -2069,6 +2085,7 @@ class Bot:
                 return self.members_wfailed(now, step, e, len(names), why)
             return self.members_failed(now, step, e, len(names), slot, req if manual else 0)
         finally:
+            self.busy_off()
             if hasattr(self.sender, "done"):
                 self.sender.done()
         kind, msg = members_result(r)
@@ -2255,8 +2272,12 @@ class Bot:
         c = getattr(self, "mem_cache", None)
         if c and c[2] == "members" and self.ts() - c[0] <= max_age:
             return list(c[1])
-        names = self.sender.read_members(self.room, self.cfg.get("members") or {})
-        self.members_push_quiet(names)
+        self.busy_on("members", MEM_BUSY_S)
+        try:
+            names = self.sender.read_members(self.room, self.cfg.get("members") or {})
+            self.members_push_quiet(names)
+        finally:
+            self.busy_off()
         return names
 
     def members_push_quiet(self, names):
@@ -2345,10 +2366,12 @@ class Bot:
             self.save()
         self.log("대화 내보내기 시작%s" % ("(운영 화면의 지금 내보내기)" if manual else ""))
         try:
+            self.busy_on("export", export_cfg(self.cfg)["wait_min"] * 60 + 600)   # 파일을 기다리는 분(wait_min)에 화면 오가기와 분석과 올리기
             got = self.export_run(now, req if manual else 0)
         except Exception as e:
             return self.export_failed(now, e, req if manual else 0)
         finally:
+            self.busy_off()
             if hasattr(self.sender, "done"):
                 self.sender.done()
         st.update(export_retry_at=0, export_fail=0, export_ok_ts=self.ts(),
