@@ -105,14 +105,14 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py check           사이트, 기기 연결, 클립보드를 확인한다(보내지 않음)
   python excer_bot.py status          run 이 돌고 있는지, 사이트를 마지막으로 본 때, 공지 첫 줄, 보이스룸, 멤버 자동 갱신, 최근 기록 다섯 줄,
                                       저장소에 새 판이 있는지. 기기를 건드리지 않으니 run 이 도는 동안 다른 창에서 쳐도 된다
-  python excer_bot.py update          저장소의 봇 파일이 이 파일과 다르면 받아 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 Ctrl+C
+  python excer_bot.py update          저장소의 봇 파일이 이 파일과 다르면 받아 바꾼다(문법 검사 뒤, 옛 파일은 .bak). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py quiet 00:30-07:30   이 사이에는 방에 올리지 않는다(새벽 글은 끝나는 시각에 한꺼번에). quiet off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py reset           본 글 기록을 비운다. 다음 run 은 처음 켤 때처럼 알리지 않고 기억만 한 뒤 방 공지가 지금 글과 다르면 공지 글을 새로 올린다
-                                      (사이트 글을 한꺼번에 옮기거나 지운 뒤, 새 벙과 취소 알림이 쏟아지지 않게). run 을 먼저 Ctrl+C
+                                      (사이트 글을 한꺼번에 옮기거나 지운 뒤, 새 벙과 취소 알림이 쏟아지지 않게). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py list            지금 목록을 찍어 본다(보내지 않음)
   python excer_bot.py test            시험 방에 지금 목록을 보내고 공지까지 걸어 본다
   python excer_bot.py run --test      시험 방으로 늘 지켜보기(알릴 방은 건드리지 않음, 기록도 따로)
-  python excer_bot.py run             알릴 방으로 늘 지켜보기(멈추려면 Ctrl+C)
+  python excer_bot.py run             알릴 방으로 늘 지켜보기. Ctrl+C 한 번은 멈춤 대기(운영 화면 봇 탭의 켜기나 그 창의 엔터로 다시 켬), 두 번은 끝냄
   python excer_bot.py sample-feed     시험 파일(excer_bot_feed.json)을 만든다. run --test --feed excer_bot_feed.json 으로 켜고
   python excer_bot.py feed add        다른 창에서 feed add, change, close, del, soon, full, deadline 으로 새 벙, 바뀜, 마감, 취소,
                                       곧 시작하는 벙, 정원 참, 2분 뒤 신청 마감을 흉내 낸다
@@ -131,15 +131,15 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py voice look      켜 둔 보이스룸(알릴 방)의 띠와 보이스룸 화면 단추 이름을 excer_bot_voice_look.txt 에 적고
                                       클립보드에 담는다(갱신이 안 될 때 원인 찾기. 나가기는 누르지 않고 작게 접는다, 대화 글은 안 들어감)
   python excer_bot.py members         (tablet) 알릴 방 메뉴(세 줄 단추)에서 멤버를 지금 읽어 수와 가린 보기 다섯을 보이고
-                                      excer_bot_members.txt 에 적는다(사이트에 올리지 않음). run 을 먼저 Ctrl+C
-  python excer_bot.py members push    지금 읽어 사이트 닉네임 목록에 올린다. run 을 먼저 Ctrl+C
+                                      excer_bot_members.txt 에 적는다(사이트에 올리지 않음). run 을 먼저 끝냄(Ctrl+C 두 번)
+  python excer_bot.py members push    지금 읽어 사이트 닉네임 목록에 올린다. run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py members check   (tablet) 알릴 방 메뉴에서 멤버를 지금 읽어 닉네임 양식이 틀린 사람과 틀린 곳을 보이고
                                       excer_bot_members_check.txt 와 클립보드에 담는다(사이트에 올리지 않음). 양식: 닉네임 지역
-                                      성별(남, 여) 출생연도(두 자리), 사이 한 칸씩. 끝의 입장일(네 자리)과 하트는 있어도 된다. run 을 먼저 Ctrl+C
+                                      성별(남, 여) 출생연도(두 자리), 사이 한 칸씩. 끝의 입장일(네 자리)과 하트는 있어도 된다. run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py members key     운영 화면 봇 탭에서 복사한 봇 열쇠를 저장한다(클립보드에서 읽는다. 뒤에 열쇠를 적어도 된다.
                                       끝 네 글자만 보인다. members key off 로 지운다)
   python excer_bot.py members study   대화상대 칸 화면을 단계마다 excer_bot_members_study.txt 에 적고 클립보드에 담는다
-                                      (멤버 이름은 가린다. 읽기가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
+                                      (멤버 이름은 가린다. 읽기가 안 될 때 원인 찾기). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py members at auto   멤버를 읽어 올리는 때. auto(기본)는 서버가 정한 하루 세 시각(지난 4주 시간대별 방문에서
                                       붐비기 시작하는 때의 1시간 전), members at 08:00,12:00,18:00 은 고정 시각(넷까지), members at off 로 끈다.
                                       운영 화면 봇 탭의 '지금 멤버 읽기' 는 run 이 1분 안에 따른다. run 을 다시 켜야 적용
@@ -151,9 +151,9 @@ tablet 준비(태블릿 하나로)
                                       run 을 다시 켜야 적용
   python excer_bot.py greet text "인사 글"   태그 뒤에 붙는 인사 글을 바꾼다(글을 안 적으면 클립보드에서)
   python excer_bot.py greet study     (tablet) 시험 방 입력 칸에 '@' 를 치고 뜨는 태그 목록 화면을 excer_bot_greet_study.txt 에 적고
-                                      클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 Ctrl+C
+                                      클립보드에 담는다(보내지 않음, 이름은 가림. 태그가 안 될 때 원인 찾기). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py greet now "닉네임"   (tablet) 알릴 방에 그 사람을 태그해 인사 글을 한 번 보낸다(태그 목록에 그 이름이 없으면
-                                      보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 Ctrl+C
+                                      보내지 않음. 알릴 방에서 태그가 되는지 볼 때). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py greet remind 1 17:00   신입 독려: 끝에 입장일이 붙은 사람 모두에게 매일 17:00 에 같은 인사 글을 태그해 보낸다
                                       (30분 전에 멤버를 한 번 읽음. greet on 일 때, 기본 매일 17:00. 이틀마다면 2). greet remind off 로 끈다. run 을 다시 켜야 적용
   python excer_bot.py greet watch on  입장 즉시 인사: 10분마다 방 머리의 인원 수를 보고 늘면 바로 읽어 처음 보는 신입에게 인사한다.
@@ -163,8 +163,8 @@ tablet 준비(태블릿 하나로)
                                       결과만 서버에 올린다(운영 화면 봇 탭에서 반영). 봇 열쇠가 있어야 한다
   python excer_bot.py export check    node 가 있는지, 분석기 파일을 받을 수 있는지, 봇 열쇠, Termux 다운로드 폴더를 본다(화면은 안 건드림)
   python excer_bot.py export study    (tablet) 알릴 방 메뉴, 채팅방 설정, 내보내기 창, 공유 창, 받는 앱의 창을 차례로 excer_bot_export_study.txt 에
-                                      적고 클립보드에 담는다(대화 글과 이름은 가림. 실제로 한 번 내보내 파일을 받고 크기만 적은 뒤 지운다). run 을 먼저 Ctrl+C
-  python excer_bot.py export now      (tablet) 지금 한 번 내보내 분석하고 올린다(몇 분, 긴 대화는 더). run 을 먼저 Ctrl+C
+                                      적고 클립보드에 담는다(대화 글과 이름은 가림. 실제로 한 번 내보내 파일을 받고 크기만 적은 뒤 지운다). run 을 먼저 끝냄(Ctrl+C 두 번)
+  python excer_bot.py export now      (tablet) 지금 한 번 내보내 분석하고 올린다(몇 분, 긴 대화는 더). run 을 먼저 끝냄(Ctrl+C 두 번)
   python excer_bot.py rotate 가로     (tablet) 화면 방향을 가로로 고정한다(기본). rotate 세로, rotate off(봇이 방향을 건드리지 않음).
                                       바로 고정하고, run 은 카카오톡을 띄울 때마다 자동 회전을 끄고 다시 맞춘다
   python excer_bot.py calibrate       (pc) 우클릭 메뉴의 복사, 공지 자리를 잡는다
@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.6"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.7"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -1697,6 +1697,8 @@ class Bot:
         self.restart_why = ""                           # 운영 화면의 설정, 새 판, 다시 켜기 요청으로 run 을 다시 켤 까닭(run_loop 가 한 바퀴 끝에 다시 켠다)
         self.status_at, self.status_off, self.status_warned = 0.0, False, False   # 상태를 올린 때, 그 SQL 이 없음, 한 번 적음
         self.busy = None                                # 지금 하는 긴 일(멤버 읽기, 대화 내보내기): 상태에 실어 운영 화면이 꺼진 봇과 가린다
+        self.paused, self.exited = 0.0, 0.0             # Ctrl+C 로 멈춘 때(멈춤 대기), 끝낸 때(Ctrl+C 두 번). 상태로 운영 화면에 곧바로
+        self.why = ""                                   # 이 run 을 다시 켠 까닭(settings, update, restart, rollback, resume). 상태에 보인다
         self.started = time.time()                      # 이 run 을 켠 때(상태에 보인다)
         self.voice = None                               # 보이스룸 지키기(run 이 넣는다. 상태 줄에 쓴다)
 
@@ -1937,7 +1939,8 @@ class Bot:
         lines = getattr(self.log, "lines", None) or []
         vs = (self.voice.st.get("state") or "") if self.voice is not None and hasattr(self.voice, "st") else ""
         snap = {"v": VERSION, "note": "판 " + VERSION + (", 멤버 " + " ".join(slots) if slots else ""), "pid": os.getpid(), "started": self.started,
-                "at": now, "why": os.environ.get(REEXEC_ENV, ""), "last_check": float(self.last_check or 0),
+                "at": now, "why": getattr(self, "why", "") or os.environ.get(REEXEC_ENV, ""), "last_check": float(self.last_check or 0),
+                "paused": float(getattr(self, "paused", 0) or 0) or None, "exited": float(getattr(self, "exited", 0) or 0) or None,
                 "lines": {"ctl": ctl_text(self, self.ts()), "members": members_alive(self), "greet": greet_alive(self), "export": export_alive(self),
                           "voice": vs, "notice": (st.get("notice_text") or "").split("\n")[0][:120]},
                 "fails": {"read": int(self.read_fails or 0), "send": int(self.send_fails or 0), "notice": int(st.get("notice_fail") or 0),
@@ -8563,7 +8566,7 @@ def main(argv=None):
         for l in status_lines(base):
             print(l)
         ver, _ = remote_version()
-        print("저장소의 판: %s%s" % (ver or "읽지 못함", "" if not ver or ver == VERSION else " (새 판이 있습니다: Ctrl+C 로 run 을 멈추고 python excer_bot.py update)"))
+        print("저장소의 판: %s%s" % (ver or "읽지 못함", "" if not ver or ver == VERSION else " (새 판이 있습니다: 운영 화면 봇 탭의 새 판 받기, 또는 run 을 끝낸 뒤(Ctrl+C 두 번) python excer_bot.py update)"))
         return
     if a.command == "update":
         print(cmd_update(base, cfg_path=a.config))
@@ -8729,10 +8732,13 @@ def main(argv=None):
         log("한 번 봄: " + bot.cycle())
         return
     if run_alive(base):                                 # 다른 창에서 이미 도는 봇이 있으면 켜지 않는다(둘이 같은 화면을 번갈아 누르고 같은 글을 두 번 올림)
+        if run_paused(base):
+            raise SystemExit("Ctrl+C 로 멈춘 run 이 그 창에서 기다리는 중입니다. 그 창에서 엔터를 치거나 운영 화면 봇 탭의 '켜기'를 누르세요(끝내려면 그 창에서 Ctrl+C 를 한 번 더)")
         raise SystemExit("이미 run 이 돌고 있습니다. 그 창을 그대로 두세요. 상태는 python excer_bot.py status")
+    bot.why = os.environ.pop(REEXEC_ENV, "")
     log("켬(판 %s): %s 방%s, %s 방식, %d초마다 %s 확인%s" % (VERSION, room, "(시험)" if a.test else "", cfg["backend"], int(cfg.get("check_sec", 20)), "시험 파일" if a.feed else "사이트",
                                                    {"settings": ", 운영 화면의 설정을 적용해 다시 켬", "update": ", 새 판으로 다시 켬", "restart": ", 운영 화면의 요청으로 다시 켬",
-                                                    "rollback": ", 옛 판으로 돌아와 다시 켬"}.get(os.environ.pop(REEXEC_ENV, ""), "")))
+                                                    "rollback": ", 옛 판으로 돌아와 다시 켬", "resume": ", 멈춤에서 다시 켬"}.get(bot.why, "")))
     if not a.test and not a.feed:
         bot.cfg_path = a.config                         # 운영 화면의 설정을 받아 이 파일에 넣는다(알릴 방 run 만)
     if isinstance(bot.sender, AdbSender):
@@ -8754,7 +8760,11 @@ def main(argv=None):
     bot.voice = voice
     try:
         run_loop(bot, log, voice, base + "_alive.json")
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
+        if getattr(bot, "cfg_path", ""):                # 알릴 방 run: 끝내지 않고 멈춤 대기(운영 화면의 켜기, 엔터. 한 번 더 Ctrl+C 면 끝)
+            pause_wait(bot, log, base + "_alive.json", voice)
+        raise
+    except SystemExit:
         raise
     except Exception as e:                              # run_loop 밖으로 나온 오류: 막 바꾼 새 판이면 옛 판으로 돌아가 다시 켠다
         if update_rollback(a.config, e, log):
@@ -8902,7 +8912,7 @@ def members_key_cmd(cfg, path, val, clip=None):
     if val == "off":
         cfg["members_key"] = ""
         save_cfg(path, cfg)
-        return "봇 열쇠를 지웠습니다. 멤버 자동 갱신을 하지 않습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
+        return "봇 열쇠를 지웠습니다. 멤버 자동 갱신을 하지 않습니다. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다"
     src = "적은 글"
     if not val:
         val, src = (clip or clip_text)() or "", "클립보드의 글"
@@ -8915,7 +8925,7 @@ def members_key_cmd(cfg, path, val, clip=None):
             src, len(val.strip()), "에 열쇠가 %d개 들어 있습니다" % len(got) if got else "이 봇 열쇠 모양이 아닙니다(mbk_ 뒤에 0~9, a~f 48자)")
     cfg["members_key"] = got[0]
     save_cfg(path, cfg)
-    return "봇 열쇠를 저장했습니다(끝 %s). run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다. 바로 올려 보려면 run 을 멈춘 채 python excer_bot.py members push" % got[0][-4:]
+    return "봇 열쇠를 저장했습니다(끝 %s). run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다. 바로 올려 보려면 run 을 끝낸 뒤(Ctrl+C 두 번) python excer_bot.py members push" % got[0][-4:]
 
 
 def members_at_cmd(cfg, path, val):
@@ -8940,7 +8950,7 @@ def members_at_cmd(cfg, path, val):
     save_cfg(path, cfg)
     mode = members_mode(cfg)
     return ("멤버 자동 갱신을 껐습니다" if mode == "off" else "멤버 자동 갱신을 서버가 정한 하루 세 시각(auto)으로 정했습니다" if mode == "auto"
-            else "멤버 자동 갱신을 매일 %s 로 정했습니다" % ", ".join(members_fixed(cfg))) + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
+            else "멤버 자동 갱신을 매일 %s 로 정했습니다" % ", ".join(members_fixed(cfg))) + ". run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다"
 
 
 def members_watch_cmd(cfg, path, what, val):
@@ -8959,7 +8969,7 @@ def members_watch_cmd(cfg, path, what, val):
         return "모양이 다릅니다. " + how
     cfg["members"] = dict(cfg.get("members") or {}, **{what: n})
     save_cfg(path, cfg)
-    return "멤버 지켜보기: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (members_watch_text(cfg) or "꺼짐")
+    return "멤버 지켜보기: %s. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다" % (members_watch_text(cfg) or "꺼짐")
 
 
 def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
@@ -8978,7 +8988,7 @@ def cmd_members(cfg, a, base, log, sender=None, site=None, clip=None):
     if sub not in ("", "push", "check", "study"):
         raise SystemExit("python excer_bot.py members | members push | members check | members study | members key [열쇠] | members at auto (또는 08:00,12:00,18:00, off) | members watch 30 (또는 off) | members every 240 (또는 off)")
     if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
-        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py members" + (" " + sub if sub else ""))
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py members" + (" " + sub if sub else ""))
     room, key = cfg.get("room") or "", cfg.get("members_key") or ""
     if not room:
         raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
@@ -9068,7 +9078,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
             raise SystemExit("python excer_bot.py greet watch on (입장 즉시 인사 켬) 또는 greet watch off (독려만)")
         cfg["greet"] = dict(cfg.get("greet") or {}, watch=val)
         save_cfg(a.config, cfg)
-        print("입장 즉시 인사: %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % ("켬(인원 수가 늘면 바로 읽어 처음 보는 신입에게)" if val == "on" else "안 함(독려만)"))
+        print("입장 즉시 인사: %s. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다" % ("켬(인원 수가 늘면 바로 읽어 처음 보는 신입에게)" if val == "on" else "안 함(독려만)"))
         return
     if sub == "remind":                                 # 신입 독려: 입장일이 붙은 사람 모두에게 며칠마다 다시(같은 인사 글)
         how = "예: python excer_bot.py greet remind 1 17:00 (매일 17:00, 이틀마다면 2. 시각은 안 적으면 그대로), 끄려면 greet remind off"
@@ -9092,7 +9102,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
         g2, q, warn = greet_cfg(cfg), cfg.get("quiet") or [], ""
         if g2["remind_every"] > 0 and len(q) == 2 and (in_quiet(g2["remind_at"], q) or in_quiet(hm_add(g2["remind_at"], -g2["remind_read_min"]), q)):
             warn = " 조용한 시간(%s~%s) 안이라 그 시간에는 하지 않습니다. 시각을 바꾸세요." % (q[0], q[1])
-        print("신입 독려: %s.%s run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (greet_remind_text(g2), warn))
+        print("신입 독려: %s.%s run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다" % (greet_remind_text(g2), warn))
         return
     if sub in ("on", "off", "test"):
         if sub == "test" and (not cfg.get("test_room") or cfg.get("test_room") == cfg.get("room")):
@@ -9106,7 +9116,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
                 save_json(sp, stt)
         print({"on": "신입 인사를 켰습니다(알릴 방에 태그해서).", "test": "신입 인사를 시험으로 켰습니다(알릴 방 대신 시험 방에 태그 없이).",
                "off": "신입 인사를 껐습니다."}[sub] + (" 처음에는 지금 멤버를 기준으로만 잡고, 그 뒤로 들어오는 신입부터 인사합니다." if sub != "off" else "")
-              + " run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다")
+              + " run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다")
         return
     if sub == "text":
         src = "적은 글"
@@ -9121,11 +9131,11 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
             raise SystemExit("%s이 너무 깁니다(%d자). 300자 안으로 해 주세요" % (src, len(val)))
         cfg["greet"] = dict(cfg.get("greet") or {}, text=val)
         save_cfg(a.config, cfg)
-        print("인사 글을 바꿨습니다(%s): %s. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % (src, val))
+        print("인사 글을 바꿨습니다(%s): %s. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다" % (src, val))
         return
     if sub == "now":                                    # 한 사람에게 지금 바로(알릴 방에 태그해서). 알릴 방에서 태그가 되는지 볼 때
         if run_alive(base):
-            raise SystemExit('run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py greet now "닉네임"')
+            raise SystemExit('run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py greet now "닉네임"')
         name = member_name(val)
         if not name:
             raise SystemExit('태그할 닉네임을 방에 보이는 그대로 적어 주세요. 예: python excer_bot.py greet now "엑서 논현 남 88"')
@@ -9157,7 +9167,7 @@ def cmd_greet(cfg, a, base, log, sender=None, clip=None):
     if sub != "study":
         raise SystemExit(usage)
     if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
-        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py greet study")
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py greet study")
     room = cfg.get("test_room") or ""
     if not room or room == cfg.get("room"):
         raise SystemExit("excer_bot.json 의 test_room(시험 방)을 먼저 넣으세요(setup). 살피기는 시험 방에서만 합니다.")
@@ -9202,10 +9212,10 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
                 stt = load_state(sp)
                 if [stt.pop(k, None) for k in ("export_retry_at", "export_fail", "export_fail_ymd")] != [None] * 3:
                     save_json(sp, stt)
-            print("대화 내보내기를 켰습니다(매일 %s). %srun 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다. 먼저 python excer_bot.py export check 와 export study 로 확인하세요" % (
+            print("대화 내보내기를 켰습니다(매일 %s). %srun 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다. 먼저 python excer_bot.py export check 와 export study 로 확인하세요" % (
                 x["at"], "" if cfg.get("members_key") else "봇 열쇠가 없어 올리지 못합니다(python excer_bot.py members key). "))
         else:
-            print("대화 내보내기를 껐습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다")
+            print("대화 내보내기를 껐습니다. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다")
         return
     if sub == "at":
         m = re.match(r"^(\d{1,2}):(\d{2})$", val)
@@ -9213,7 +9223,7 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
             raise SystemExit("시각 모양이 다릅니다(24시간). 예: python excer_bot.py export at 05:40")
         cfg["export"] = dict(cfg.get("export") or {}, at="%02d:%02d" % (int(m.group(1)), int(m.group(2))))
         save_cfg(a.config, cfg)
-        print("대화 내보내기 시각을 매일 %s 로 정했습니다. run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다" % export_cfg(cfg)["at"])
+        print("대화 내보내기 시각을 매일 %s 로 정했습니다. run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다" % export_cfg(cfg)["at"])
         return
     if sub == "check":
         for l in export_check_lines(cfg):
@@ -9222,7 +9232,7 @@ def cmd_export(cfg, a, base, log, sender=None, site=None):
     if sub not in ("now", "study"):
         raise SystemExit(usage)
     if run_alive(base):                                 # 도는 run 과 이 명령이 같은 화면을 번갈아 누르게 된다
-        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py export " + sub)
+        raise SystemExit("run 이 돌고 있습니다. 둘이 같은 화면을 누르게 되니 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py export " + sub)
     room = cfg.get("room") or ""
     if not room:
         raise SystemExit("excer_bot.json 의 room(알릴 방)을 먼저 넣으세요(setup).")
@@ -9281,14 +9291,14 @@ def cmd_quiet(cfg, path, arg):
             return "모양이 다릅니다. 예: python excer_bot.py quiet 00:30-07:30 (시작-끝, 24시간), 끄려면 quiet off"
         cfg["quiet"] = [arg[:5], arg[6:]]
     save_cfg(path, cfg)
-    return ("조용한 시간을 %s~%s 로 정했습니다" % tuple(cfg["quiet"]) if cfg["quiet"] else "조용한 시간을 껐습니다(늘 올림)") + ". run 이 돌고 있으면 Ctrl+C 로 멈추고 다시 켜야 적용됩니다"
+    return ("조용한 시간을 %s~%s 로 정했습니다" % tuple(cfg["quiet"]) if cfg["quiet"] else "조용한 시간을 껐습니다(늘 올림)") + ". run 이 돌고 있으면 운영 화면 봇 탭의 다시 켜기(또는 그 창에서 Ctrl+C 뒤 엔터)로 다시 켜야 적용됩니다"
 
 
 def cmd_reset(base, state_path):
     """본 글 기록을 비운다. 다음 run 은 처음 켤 때처럼 지금 글을 알리지 않고 기억만 한 뒤 공지 글을 새로 올려 건다.
     도는 run 은 기록을 제 손에 들고 있다가 다시 써 버리므로, run 이 돌고 있으면 먼저 멈추라고 한다"""
     if run_alive(base):
-        return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py reset"
+        return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py reset"
     st = load_state(state_path)
     n = len(st.get("known") or {})
     for k in ("init", "notice_text", "send_fail_text", "send_unsure", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done", "settle", "notice_fail_band", "unshared", "pre_up", "bulk_ids", "day_base", "card_old"):
@@ -9375,7 +9385,7 @@ def write_alive(path, bot, voice, err=""):
                          "ctl": ctl_text(bot, bot.ts() if callable(getattr(bot, "ts", None)) else time.time()),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
                          "voice": (voice.st.get("state") or "") if voice else "", "members": members_alive(bot), "greet": greet_alive(bot),
-                         "export": export_alive(bot), "error": err})
+                         "export": export_alive(bot), "error": err, "paused": float(getattr(bot, "paused", 0) or 0)})
     except (OSError, ValueError, TypeError, AttributeError):   # 표시를 못 남겨도 run 은 그대로 돈다(이 함수는 run_loop 의 try 밖)
         pass
 
@@ -9413,6 +9423,86 @@ def run_alive(base, now_ts=None):
         return False
 
 
+def run_paused(base):
+    """돌고 있는 run 이 Ctrl+C 로 멈춰 기다리는 중인가(살아 있음 파일의 paused 와 그 프로세스)"""
+    try:
+        with open(base + "_alive.json", encoding="utf-8-sig") as f:
+            alive = json.load(f)
+        return float(alive.get("paused") or 0) > 0 and int(alive.get("pid") or 0) != os.getpid() and bool(pid_alive(alive.get("pid")))
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+
+
+PAUSE_POLL = 30                                         # 멈춤 대기에서 운영 화면 요청을 보는 초
+
+
+def stdin_enter(timeout):
+    """timeout 초 동안 이 창의 엔터를 기다린다(터미널에서 돌 때만). 엔터면 True. 터미널이 아니면 그냥 기다린다"""
+    try:
+        import select
+        if sys.stdin is None or not sys.stdin.isatty():
+            time.sleep(timeout)
+            return False
+        r, _, _ = select.select([sys.stdin], [], [], timeout)
+        return bool(r) and sys.stdin.readline() != ""
+    except (OSError, ValueError):
+        time.sleep(timeout)
+        return False
+
+
+def pause_wait(bot, log, alive_path=None, voice=None, enter=None, clock=None):
+    """Ctrl+C 로 멈춘 뒤(2026-11-01: 끝난 봇은 운영 화면 단추를 받을 수 없었다): 카카오톡은 건드리지 않고 운영 화면의 켜기(다시 켜기)나 새 판 받기,
+    또는 이 창의 엔터를 기다렸다가 같은 명령으로 다시 켠다. 멈춘 것을 곧바로 상태로 올리고(운영 화면이 '멈춤' 으로 안다) 30초마다 요청을,
+    5분마다 상태를 본다. 멈춘 뒤에 누른 요청만 따른다(멈추기 전에 쌓인 요청으로 곧바로 다시 켜지 않게). Ctrl+C 를 한 번 더 누르면 끝내고
+    끝낸 것도 상태로 올린다(운영 화면이 11분을 기다리지 않고 '꺼짐' 으로 안다). 돌아오지 않는다(다시 켜거나 SystemExit)"""
+    enter = enter or stdin_enter
+    clock = clock or time.time
+    bot.paused, bot.busy = clock(), None
+    log("멈춤(Ctrl+C). 운영 화면 봇 탭의 '켜기'나 이 창의 엔터로 다시 켭니다. 끝내려면 Ctrl+C 를 한 번 더")
+    why, polled, beat = "", 0.0, 0.0
+    try:
+        bot.status_tick(force=True)
+        while not why:
+            if alive_path and clock() - beat >= 30:      # status 명령과 다른 창의 run 이 멈춤 대기인 것을 안다
+                beat = clock()
+                write_alive(alive_path, bot, voice)
+            if enter(2.0):
+                log("이 창의 엔터: 다시 켬")
+                why = "resume"
+                break
+            if clock() - polled >= PAUSE_POLL:
+                polled = clock()
+                bot.ctl_read = 0.0                       # 1분을 기다리지 않고 읽는다
+                ctl = bot.control(Now(bot.clock()))
+                upd, rst = float(ctl.get("upd") or 0), float(ctl.get("rst") or 0)
+                if upd > bot.paused - 2 and upd > float(bot.st.get("update_req_done") or 0):
+                    bot.st["update_req_done"] = upd
+                    bot.save()
+                    log("운영 화면의 새 판 받기(멈춘 동안)")
+                    bot.remote_update(Now(bot.clock()), manual=True)
+                    why = bot.restart_why or "resume"
+                elif rst > bot.paused - 2 and rst > float(bot.st.get("restart_req_done") or 0):
+                    bot.st["restart_req_done"] = rst
+                    bot.save()
+                    log("운영 화면의 켜기 요청: 다시 켬")
+                    why = "resume"
+            bot.status_tick()
+    except KeyboardInterrupt:
+        bot.paused, bot.exited = 0.0, clock()
+        try:
+            bot.status_tick(force=True)
+        except KeyboardInterrupt:
+            pass
+        log("끝냄. 운영 화면에서는 켤 수 없습니다. 다시 켜려면 python excer_bot.py run")
+        raise SystemExit(0)
+    bot.paused = 0.0
+    try:
+        bot.save()
+    except Exception:
+        pass
+    reexec_bot(why)
+
+
 def status_lines(base, now_ts=None):
     """run 이 살아 있는지, 마지막으로 사이트를 본 때, 공지 첫 줄, 보이스룸, 멤버 자동 갱신, 최근 기록. 기기는 건드리지 않는다"""
     now_ts = now_ts or time.time()
@@ -9429,11 +9519,13 @@ def status_lines(base, now_ts=None):
         age = now_ts - float(alive.get("ts") or 0)
         busy = age >= 90 and bot_pid(alive.get("pid")) is True   # 표시는 오래됐지만 봇 프로세스는 살아 있음(공지 걸기 같은 긴 일 하는 중)
         live = (age < 90 and pid_alive(alive.get("pid"))) or busy
-        out.append("run: %s(마지막 표시 %s, %s)" % ("돌고 있음, 일하는 중" if busy else "돌고 있음" if live else "멈춤", alive.get("at", "?"), "%d초 전" % age if age < 120 else "%d분 전" % (age // 60)))
+        paused = live and float(alive.get("paused") or 0) > 0
+        out.append("run: %s(마지막 표시 %s, %s)" % ("멈춤 대기(Ctrl+C. 그 창에서 엔터나 운영 화면의 켜기로 다시 켬)" if paused else "돌고 있음, 일하는 중" if busy else "돌고 있음" if live else "멈춤",
+                                                alive.get("at", "?"), "%d초 전" % age if age < 120 else "%d분 전" % (age // 60)))
         if not live:
             out.append("  다시 켜려면: python excer_bot.py run   (재부팅했으면 무선 디버깅을 켜고 python excer_bot.py connect 먼저)")
         if live and alive.get("version") and alive["version"] != VERSION:
-            out.append("  돌고 있는 판(%s)이 이 파일(%s)과 다릅니다. Ctrl+C 로 멈추고 다시 켜세요" % (alive["version"], VERSION))
+            out.append("  돌고 있는 판(%s)이 이 파일(%s)과 다릅니다. 운영 화면 봇 탭의 다시 켜기(멈춤 대기면 켜기)를 누르세요" % (alive["version"], VERSION))
         lc = float(alive.get("last_check") or 0)
         out.append("사이트 마지막 확인: %s%s" % (datetime.fromtimestamp(lc, KST).strftime("%m-%d %H:%M:%S") if lc else "없음", ", 읽기 실패 %d번 이어짐" % alive["read_fails"] if alive.get("read_fails") else ""))
         if alive.get("send_fails"):
@@ -9732,8 +9824,9 @@ def cmd_update(base, get=None, me=None, cfg_path=None, run=None):
     """저장소의 봇 파일을 받아 이 파일을 바꾼다. 문법 검사와 시험(새 파일로 selftest)이 통과해야 바꾸고, 옛 파일은 .bak 으로 둔다.
     run 이 돌고 있으면 먼저 멈추라고 한다(2026-10-31.6 부터는 운영 화면의 새 판 받기나 새 판 자동 받기가 run 안에서 한다)"""
     me = me or os.path.abspath(__file__)
-    if run_alive(base):
-        return "run 이 돌고 있습니다. 운영 화면 봇 탭의 새 판 받기를 누르거나, 그 창에서 Ctrl+C 로 멈춘 뒤 다시 python excer_bot.py update"
+    paused = run_paused(base)
+    if run_alive(base) and not paused:
+        return "run 이 돌고 있습니다. 운영 화면 봇 탭의 새 판 받기를 누르거나, 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py update"
     ver, body = remote_version(get)
     if not body:
         return "저장소에서 봇 파일을 읽지 못했습니다(망 확인). 받은 판 없음"
@@ -9742,7 +9835,8 @@ def cmd_update(base, get=None, me=None, cfg_path=None, run=None):
         return ("이미 최신 판(%s)입니다" % VERSION) if "이미 최신" in msg else msg
     if cfg_path:
         update_mark_write(cfg_path, {"from": VERSION, "to": ver2, "at": time.time(), "state": "trying", "bad": ""})
-    return "바꿨습니다: %s -> %s (옛 파일은 %s). 이제 python excer_bot.py run" % (VERSION, ver2 or "?", os.path.basename(me) + ".bak")
+    return "바꿨습니다: %s -> %s (옛 파일은 %s). %s" % (VERSION, ver2 or "?", os.path.basename(me) + ".bak",
+                                                 "멈춰 기다리는 run 은 켜질 때 새 판으로 켜집니다(그 창에서 엔터나 운영 화면의 켜기)" if paused else "이제 python excer_bot.py run")
 
 
 if __name__ == "__main__":
