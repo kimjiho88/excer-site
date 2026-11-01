@@ -435,12 +435,14 @@
         lang: langOut(endN)
       };
     }
-    /* 채팅 언어 결과: 마지막 날부터 180일 안의 걸린 줄(2만 건과 3MB 까지, 발췌 포함. 넘치면 오래된 날부터 날 단위로 뺀다)과
-       전체 기간의 날짜별 사람별 수. ops.html 은 이것을 ledger 와 따로 저장한다(열쇠 하나 4MB 한도) */
+    /* 채팅 언어 결과: 마지막 날부터 180일 안의 걸린 줄(2만 건까지, 발췌 포함. 넘치면 오래된 날부터 날 단위로 뺀다)과
+       전체 기간의 날짜별 사람별 수(저장 꼴 v2: 이름 표와 하루 한 줄 글자, OpsLang.pack). ops.html 은 이것을 ledger 와 따로 저장한다.
+       서버 열쇠 하나가 jsonb 로 4MB 까지라(글자로 잰 것보다 걸린 줄은 1.3배쯤 커진다) 날짜별 수를 뺀 나머지로 걸린 줄의 크기를 정한다(137차) */
     function utf8Len(s) { var n = 0; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xD800 && c <= 0xDBFF ? 4 : c >= 0xDC00 && c <= 0xDFFF ? 0 : 3; } return n; }
     function langOut(endN) {
       if (!lex) return null;
-      var keepFrom = dateOf(endN - 179), MAXN = 20000, MAXB = 3000000;
+      var pd = LANG.packDays ? LANG.packDays(langDays) : null, dayB = pd ? utf8Len(JSON.stringify(pd)) : utf8Len(JSON.stringify(langDays)) * 1.6;
+      var keepFrom = dateOf(endN - 179), MAXN = 20000, MAXB = Math.max(150000, Math.min(2400000, Math.floor((3400000 - dayB * 1.05) / 1.45)));
       var start = langHits.length, bytes = 0, cut = false;
       while (start > 0) {
         var h = langHits[start - 1];
@@ -452,11 +454,13 @@
       // 잘렸으면 그 날은 통째로 뺀다(하루의 일부만 남아 어디에도 세지 않는 줄이 없게)
       if (cut && start < langHits.length && start > 0 && langHits[start - 1].d === langHits[start].d) { var dd = langHits[start].d; while (start < langHits.length && langHits[start].d === dd) start += 1; }
       var hits = langHits.slice(start);
-      return {
-        v: 1, ver: LANG.VERSION, range: { from: first, to: lastDate }, ledgerTo: lastDate,
+      var out = {
+        v: pd ? 2 : 1, ver: LANG.VERSION, range: { from: first, to: lastDate }, ledgerTo: lastDate,
         cfg: { off: (langCfg.off || []).slice(), on: (langCfg.on || []).slice(), allow: (langCfg.allow || []).slice(), add: (langCfg.add || []).map(function (a) { return { id: a.id, t: a.t, k: a.k }; }) },
-        days: langDays, hits: hits, hitsFrom: hits.length ? hits[0].d : cut ? dateOf(endN + 1) : keepFrom, all: langHits.length, truncated: cut, bytes: bytes
+        days: pd ? pd.days : langDays, hits: hits, hitsFrom: hits.length ? hits[0].d : cut ? dateOf(endN + 1) : keepFrom, all: langHits.length, truncated: cut, bytes: bytes
       };
+      if (pd) out.names = pd.names;
+      return out;
     }
     return { beginFile: beginFile, add: add, addSys: addSys, finish: finish };
   }
