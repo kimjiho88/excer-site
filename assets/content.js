@@ -320,8 +320,8 @@
     if (nowKey < s) return "before";
     return nowKey < bungEndKey(m) ? "ongoing" : "ended";
   }
-  /* "19:00~21:00". 자정을 넘기면 "22:00~다음 날 01:00". 끝나는 시간이 없으면 "19:00", 시간이 없으면 "" */
-  function timeRange(m) { return m && HM_RE.test(m.time || "") ? m.time + (HM_RE.test(m.end || "") ? "~" + (m.end <= m.time ? "다음 날 " : "") + m.end : "") : ""; }
+  /* "19:00~21:00". 자정에 끝나면 "19:00~24:00", 그 뒤까지면 "22:00~다음 날 01:00". 끝나는 시간이 없으면 "19:00", 시간이 없으면 "" */
+  function timeRange(m) { return m && HM_RE.test(m.time || "") ? m.time + (HM_RE.test(m.end || "") ? "~" + (m.end === "00:00" ? "24:00" : (m.end <= m.time ? "다음 날 " : "") + m.end) : "") : ""; }
   /* 상세에 표 형태로 놓는 사실 항목. 있는 것만 담긴다 */
   function postFacts(post, today) {
     var m = postMeta(post);
@@ -339,7 +339,7 @@
       if (m.apply || !over) f.push({ key: "apply", label: "신청 방법", value: m.apply || (attendOn ? "이 글의 참석 버튼" : "오픈채팅 공지의 참석 버튼") });
       if (m.bring) f.push({ key: "bring", label: "준비물과 유의사항", value: m.bring });
       if (m.status) f.push({ key: "status", label: "모집 상태", value: m.status === "closed" ? "마감" : "모집 중" });
-      if (m.dup === "consent") f.push({ key: "dup", label: "같은 시간대", value: "앞 벙주 동의" });
+      if (m.dup === "consent") f.push({ key: "dup", label: "같은 시간대", value: "앞 모임장 동의" });
     } else if (t === "notice") {
       if (m.audience) f.push({ key: "audience", label: "적용 대상", value: m.audience });
       var period = m.from ? dateText(m.from, { withYear: true }) + (m.to ? " ~ " + dateText(m.to, { withYear: true }) : "부터") : (m.to ? dateText(m.to, { withYear: true }) + "까지" : "");

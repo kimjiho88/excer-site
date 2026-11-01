@@ -214,8 +214,12 @@
     var counted = false;
     try { counted = sessionStorage.getItem(COUNTED_KEY) === "1"; } catch (e) {}
     // 이 탭에서 처음이면 +1(visit_hit), 이미 셌으면 숫자만 읽는다(visit_ping 의 읽기 전용 경로)
-    var path = counted ? "/rest/v1/rpc/visit_ping" : "/rest/v1/rpc/visit_hit";
-    var body = counted ? { p_device: "readonly", p_count: false } : {};
+    // 크롤러와 미리보기 봇, 자동 브라우저(webdriver)는 숫자만 읽는다(방문 수에 들어가지 않게)
+    var bot = false;
+    try { bot = !!navigator.webdriver || /bot|crawl|spider|slurp|headless|lighthouse|scrap|preview|facebookexternalhit|kakaotalk-scrap|yeti/i.test(navigator.userAgent || ""); } catch (e) {}
+    var readOnly = counted || bot;
+    var path = readOnly ? "/rest/v1/rpc/visit_ping" : "/rest/v1/rpc/visit_hit";
+    var body = readOnly ? { p_device: "readonly", p_count: false } : {};
 
     fetch(SUPA.url + path, {
       method: "POST",

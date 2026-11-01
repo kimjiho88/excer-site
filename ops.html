@@ -9,12 +9,14 @@
   <meta name="referrer" content="no-referrer" />
   <title>운영 대시보드</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/img/icon-192.png" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=24" />
+  <link rel="preconnect" href="https://drggzlnzwvkhtalvkqyo.supabase.co" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=25" />
   <script src="assets/chat-parser.js?v=10"></script>
   <script src="assets/ops-lang.js?v=1"></script>
-  <script src="assets/ops-analyzer.js?v=8"></script>
+  <script src="assets/ops-analyzer.js?v=9"></script>
   <script src="assets/ops-part.js?v=1"></script>
   <script src="assets/bung-photo.js?v=6"></script>
   <style>
@@ -836,7 +838,7 @@
 
   <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/site-core.js?v=15"></script>
+  <script src="assets/site-core.js?v=16"></script>
   <script>
   (function () {
     "use strict";
@@ -913,6 +915,7 @@
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { recFail += 1; sessionLost(e.code); return; }
         recFail += 1; setStamp();
+        if (e.code === "TOO_BIG") { toast("기록이 너무 커서 저장하지 못했습니다(4MB). 조치 기록이나 메모를 줄여 주세요."); return; }   // 다시 시도해도 같다
         recRetry = setTimeout(flushRecords, Math.min(60000, 5000 * Math.pow(2, recFail - 1)));
       } finally { recBusy = false; if (recAgain && !recFail) { recAgain = false; flushRecords(); } }
     }
@@ -941,7 +944,7 @@
     function setStamp(extra) {
       const L = S.ledger;
       const old = L ? dnum(todayKST()) - dnum(L.upTo ? kstDate(L.upTo) : L.range.to) : 0;   // 대화 기록이 며칠 전 것인지(내보낸 때, 모르면 마지막 대화 날)
-      const base = L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) + (old >= 2 ? "(" + old + "일 전)" : "") + (S.savedAt ? ", 저장 " + md(kstDate(S.savedAt)) : "") : "";
+      const base = L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) + (old >= 2 ? " (" + old + "일 전)" : "") + (S.savedAt ? ", 저장 " + md(kstDate(S.savedAt)) : "") : "";
       $("opsStamp").textContent = [base, recFail ? "기록 저장 실패, 다시 시도 중" : extra].filter(Boolean).join(", ");
       $("opsStamp").classList.toggle("is-bad", !!recFail || old >= 3);
     }
@@ -2057,7 +2060,7 @@
       const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}${n.via === "roster" ? ` <span class="tag">명단</span>` : ""}</span></li>`).join("");
       $("sheetBody").innerHTML = `
         <div class="panel">
-          <div class="chips">${statusTag(p)}${p.statusFile ? `<span class="tag in"${tipAttr("대화 기록에서는 " + (p.outFile ? md(p.outFile) + " " : "") + (p.statusFile === "kicked" ? "내보냄" : "나감"))}>명단 ${esc(md(S.roster.at))}에 다시 보임</span>` : ""}${p.nameFile ? `<span class="tag"${tipAttr("대화 기록 이름 " + p.nameFile)}>명단 ${esc(md(p.nameAt))} 이름</span>` : ""}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : `<span class="tag">파일 시작 전부터 있음</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}${pr.heart ? `<span class="tag">${esc(pr.heart)} ${esc(HEART_LABEL[pr.heartKind] || "")}${heartPartner(p.name) ? ": " + esc(heartPartner(p.name)) : ""}</span>` : ""}</div>
+          <div class="chips">${statusTag(p)}${p.statusFile ? `<span class="tag in"${tipAttr("대화 기록에서는 " + (p.outFile ? md(p.outFile) + " " : "") + (p.statusFile === "kicked" ? "내보냄" : "나감"))}>명단 ${esc(md(S.roster.at))}에 다시 보임</span>` : ""}${p.nameFile ? `<span class="tag"${tipAttr("대화 기록 이름 " + p.nameFile)}>명단 ${esc(md(p.nameAt))} 이름</span>` : ""}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : p.joinedBeforeFile ? `<span class="tag">파일 시작 전부터 있음</span>` : `<span class="tag">들어온 날 모름</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}${pr.heart ? `<span class="tag">${esc(pr.heart)} ${esc(HEART_LABEL[pr.heartKind] || "")}${heartPartner(p.name) ? ": " + esc(heartPartner(p.name)) : ""}</span>` : ""}</div>
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
           ${pend.length || BOARD.some((b) => b.pick(p) != null && !boardSeen(p, b.key, b.pick(p))) ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
           ${(S.records.reviewed[p.pid] || {})._at ? `<div class="chips"><span class="tag good">확인함 ${esc(md(S.records.reviewed[p.pid]._at))}</span><button id="unreviewBtn" class="text-btn" type="button">풀기</button></div>` : ""}
@@ -2176,7 +2179,8 @@
     }
     /* 대화 파일 머리의 '저장한 날짜'(내보낸 때, 한국 시각). 모든 파일에 있으면 가장 늦은 때(ISO), 하나라도 없으면 "" */
     function savedAtOf(head) {
-      const m = /저장한\s*날짜\s*[:：]\s*(\d{4})\s*[년.]\s*(\d{1,2})\s*[월.]\s*(\d{1,2})\s*일?\.?\s*(오전|오후)?\s*(\d{1,2}):(\d{2})/.exec(String(head || ""));
+      let m = /저장한\s*날짜\s*[:：]\s*(\d{4})\s*[년.]\s*(\d{1,2})\s*[월.]\s*(\d{1,2})\s*일?\.?\s*(오전|오후)?\s*(\d{1,2}):(\d{2})/.exec(String(head || ""));
+      if (!m) { const p = /저장한\s*날짜\s*[:：]\s*(\d{4})-(\d{2})-(\d{2})[T ](\d{1,2}):(\d{2})/.exec(String(head || "")); if (p) m = [p[0], p[1], p[2], p[3], "", p[4], p[5]]; }   // PC 꼴
       if (!m) return "";
       let h = +m[5];
       if (m[4] === "오후" && h < 12) h += 12;
@@ -2201,7 +2205,7 @@
         const lang = langCfg();   // 채팅 언어 단어 목록 설정(끈 항목, 켠 항목, 더한 말, 예외 말)
         const here = () => OpsAnalyzer.runFiles(list, { links, lang, onProgress: onP }).then(resolve, reject);
         let w = null;
-        try { w = new Worker("assets/ops-worker.js?v=5"); } catch (e) { w = null; }
+        try { w = new Worker("assets/ops-worker.js?v=6"); } catch (e) { w = null; }
         if (!w) { here(); return; }
         let started = false;
         w.onmessage = (e) => {

@@ -20,6 +20,7 @@
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='8'%20fill='%234B2A82'/%3E%3Ctext%20x='16'%20y='22'%20text-anchor='middle'%20font-size='17'%20font-weight='700'%20fill='white'%20font-family='sans-serif'%3E동%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/img/icon-192.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="apple-touch-icon" href="/assets/img/icon-180.png" />
   <meta name="apple-mobile-web-app-title" content="동네친구들" />
@@ -27,8 +28,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
-  <link rel="stylesheet" href="assets/site.css?v=24" />
+  <link rel="preconnect" href="https://drggzlnzwvkhtalvkqyo.supabase.co" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
+  <link rel="stylesheet" href="assets/site.css?v=25" />
 
   <style>
     /* ============================================================
@@ -211,9 +213,9 @@
       .place-card:hover .pc-name { color: var(--brand); }
     }
   </style>
-  <script src="assets/site-core.js?v=15"></script>
+  <script src="assets/site-core.js?v=16"></script>
   <script src="assets/icons.js?v=3"></script>
-  <script src="assets/content.js?v=15"></script>
+  <script src="assets/content.js?v=16"></script>
   <script src="assets/bung-photo.js?v=6"></script>
 </head>
 <body>
@@ -574,6 +576,8 @@
       /* ── E. 지난달 활동 — 가장 최근 발행된 통계 한 건 ──
          통계 기간이 실제 지난달이면 "지난달", 아니면 그 달 이름("6월")으로 부른다. 못 읽으면 "최근" */
       function periodWord(label) {
+        var r = /(\d{4})\s*년\s*(\d{1,2})\s*월\s*~\s*(?:(\d{4})\s*년\s*)?(\d{1,2})\s*월/.exec(String(label || ""));   // 두 달 기간("2026년 9월~10월")은 두 달을 그대로
+        if (r) { var nm = (+r[2]) + "월~" + (+r[4]) + "월"; return { k: nm, at: nm + "에" }; }
         var m = /(\d{4})\s*년\s*(\d{1,2})\s*월/.exec(String(label || "")) || /^(\d{4})-(\d{2})/.exec(String(label || ""));
         if (!m) return { k: "최근", at: "최근" };
         var y = Number(m[1]), mo = Number(m[2]);
