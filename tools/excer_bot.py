@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.2"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.3"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -2059,6 +2059,8 @@ class Bot:
         self.sender.mem_last_n = int(last.get("n") or 0) if not last.get("error") else 0   # 지난번 성공한 수: 대화상대 수를 못 읽은 날의 하한(2026-10-18)
         try:
             names = self.sender.read_members(self.room, cfg.get("members") or {})
+            if getattr(self.sender, "mem_retried", False):
+                self.log("멤버 읽기: 대화상대 칸을 처음에 못 봐 방 메뉴를 다시 열어 읽음")
             n_room = self.members_room_now()
             step = "push"
             r = self.site.push_members(names, key)
@@ -6576,6 +6578,11 @@ class AdbSender:
         (이름을 가린 지나온 화면은 diag 파일에). 기록이나 화면에 이름을 적지 않는다"""
         m = dict(DEFAULTS["members"], **(cfg_members or {}))
         res = self.mem_walk(room, m)
+        self.mem_retried = False
+        if not res["head"]:                                      # 대화상대 칸을 못 봄: 열던 순간의 화면 탓일 수 있다(2026-11-01: 15:00, 15:19 에 못 찾았는데
+            self.mem_retried = True                              # 15:38 살피기에서는 같은 화면 모양으로 그대로 읽힘). 방 메뉴를 닫은 뒤 다시 열어 한 번 더(누르는 것은 같다)
+            self.sleep(2.0)
+            res = self.mem_walk(room, m)
         self.mem_info = {k: res[k] for k in ("n", "head", "rid", "swipes", "more")}
         self.mem_raw = res.get("raw") or {}                      # 띄어쓰기를 그대로 둔 이름(members check 가 본다)
         names, n = res["names"], res["n"]
