@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-10-31.7"                   # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-01.1"                  # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -1264,6 +1264,18 @@ def scan_run(path, ocfg, assets, x, timeout=3600):
     if not isinstance(res, dict) or not res.get("range") or not isinstance(res.get("ledger"), dict):
         raise RuntimeError("분석 결과 모양이 다름")
     return res
+
+
+NODE_MISSING = "node 가 없어 내보내지 않음(Termux 에서 pkg install nodejs)"
+
+
+def node_ok(x):
+    """분석기를 돌릴 node 가 있는가(node --version 이 되는가)"""
+    try:
+        p = subprocess.run([x["node"], "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        return p.returncode == 0 and bool(p.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        return False
 
 
 def export_check_lines(cfg, get=None):
@@ -2364,6 +2376,8 @@ class Bot:
             except (OSError, ValueError):
                 res = None
         if res is None:
+            if not node_ok(x):                                  # 분석기(node)가 없으면 받은 파일을 읽지 못한다: 화면을 건드리지 않는다(2026-11-01)
+                raise RuntimeError(NODE_MISSING)
             ocfg = {}
             fn = getattr(self.site, "ops_cfg", None)
             if fn:
@@ -2425,6 +2439,8 @@ class Bot:
             return "export-fail"
         k = (int(st.get("export_fail") or 0) if st.get("export_fail_ymd") == now.ymd else 0) + 1
         st["export_fail_ymd"] = now.ymd
+        if NODE_MISSING in why:
+            k = max(k, 3)                                   # node 를 깔기 전에는 다시 해도 같다: 오늘은 그만
         if k >= 3:
             st.update(export_fail=0, export_retry_at=0, export_done_ymd=now.ymd)
             tail = "오늘은 그만, 내일 다시"
@@ -4762,7 +4778,31 @@ class AdbSender:
             nodes = self.dump()
             if self.on_kakao(nodes) and (self.chat_tab(nodes) or find(nodes, cls="EditText")):
                 break
+        if nodes and not self.on_kakao(nodes):
+            nodes = self.close_other(nodes)
         return nodes
+
+    @staticmethod
+    def top_pkg(nodes):
+        """화면 요소가 가장 많은 앱의 이름 끝 낱말(intentresolver, documentsui, termux). 지나온 곳 기록에만 쓴다"""
+        import collections
+        c = collections.Counter(n.get("pkg") for n in nodes if n.get("pkg"))
+        return c.most_common(1)[0][0].split(".")[-1] if c else ""
+
+    def close_other(self, nodes):
+        """카카오톡을 띄웠는데 다른 앱 화면이 앞에 있다: 카카오톡 작업 위에 남은 창(공유 창, 저장 창, 받는 앱 창)이면 띄우기만 되풀이해서는
+        그 창이 그대로 다시 앞에 온다(2026-11-01: 새벽 대화 내보내기가 남긴 창 때문에 '카카오톡이 앞으로 나오지 않음' 이 몇 시간 이어짐).
+        뒤로 키로 닫고(두 번까지) 그래도 아니면 한 번 더 띄운다. 돌려주는 것: 그 뒤 화면"""
+        for _ in range(2):
+            self.fact("카카오톡 위 다른 화면(%s)에 뒤로" % (self.top_pkg(nodes) or "모름"))
+            self.key(4)
+            self.sleep(1.0)
+            nodes = self.dump()
+            if self.on_kakao(nodes):
+                return nodes
+        self.start_app(self.t["package"])
+        self.sleep(2.0)
+        return self.dump()
 
     def room_open(self, nodes, room):
         """이 방이 이미 열려 있는지: 카카오톡이고, 방 칸 머리(head_texts)의 글이나 이름(content-desc)이 이 방 이름(name_shown)"""
@@ -7108,10 +7148,8 @@ class AdbSender:
             for _ in range(6):
                 if self.in_room(nodes, room):
                     return nodes
-                if not self.on_kakao(nodes):
-                    self.start_app(self.t["package"])
-                    self.sleep(1.2)
-                    nodes = self.dump()
+                if not self.on_kakao(nodes):                     # 공유 창, 저장 창, 받는 앱 창이 카카오톡 위에 남았으면 뒤로 키로 닫는다(띄우기만 하면 그 창이 다시 앞에 온다)
+                    nodes = self.close_other(nodes)
                     continue
                 old = [(n["b"], n["text"]) for n in nodes]
                 self.key(4)
