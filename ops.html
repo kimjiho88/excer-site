@@ -940,9 +940,10 @@
     }
     function setStamp(extra) {
       const L = S.ledger;
-      const base = L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) + (S.savedAt ? ", 저장 " + md(kstDate(S.savedAt)) : "") : "";
+      const old = L ? dnum(todayKST()) - dnum(L.upTo ? kstDate(L.upTo) : L.range.to) : 0;   // 대화 기록이 며칠 전 것인지(내보낸 때, 모르면 마지막 대화 날)
+      const base = L ? "대화 " + md(L.range.from) + " ~ " + md(L.range.to) + (old >= 2 ? "(" + old + "일 전)" : "") + (S.savedAt ? ", 저장 " + md(kstDate(S.savedAt)) : "") : "";
       $("opsStamp").textContent = [base, recFail ? "기록 저장 실패, 다시 시도 중" : extra].filter(Boolean).join(", ");
-      $("opsStamp").classList.toggle("is-bad", !!recFail);
+      $("opsStamp").classList.toggle("is-bad", !!recFail || old >= 3);
     }
 
     /* ── 문 ── */
@@ -1040,7 +1041,124 @@
     }
 
     /* ── 사람 보조 ── */
-    const people = () => (S.ledger && S.ledger.people) || [];
+    // 사람은 대화 기록의 사람. 이름과 닉네임 칸(하트, 입장일, 지역 등)은 더 새 명단이 있으면 그 이름으로(아래 지금 닉네임)
+    let PPL = null, MEM = null;   // MEM: 봇이 읽은 명단과 멤버 변화(admin_members, 아래 memNamesLoad)
+    const people = () => {
+      const L = S.ledger; if (!L) return [];
+      const f = rosterNewer();
+      if (PPL && PPL.L === L && PPL.R === S.roster && PPL.M === MEM && PPL.f === f) return PPL.list;
+      PPL = { L, R: S.roster, M: MEM, f, list: f ? nowPeople(L) : L.people || [] };
+      return PPL.list;
+    };
+    /* ── 지금 닉네임(134차): 대화 기록의 이름은 내보낸 때의 이름이라, 그 뒤에 하트를 떼거나 붙이고 입장일을 떼거나 붙이고 지역을 바꾸면 늦다.
+       봇이 방 메뉴에서 읽는 명단(하루 세 번과 지금 읽기)이 대화 기록보다 새것이면 그 명단의 이름을 쓴다. 저장하는 대화 기록은 그대로 둔다.
+       새것인지: 대화 기록이 끝난 때(봇이 올린 때, 파일 머리의 저장한 날짜, 없으면 서버에 저장한 때)보다 명단을 읽은 때가 뒤. 끝난 때를 모르면 날짜로.
+       같은 사람 찾기는 방에 있는 사람 먼저, 그다음 나간 사람(나간 사람이 하트를 뗀 사람의 이름을 가져가지 않게). 차례는 이름 그대로,
+       서버가 적은 이름 바뀜(대화 기록 뒤, 이어서), 하트와 기호와 끝의 입장일을 뗀 이름, 닉네임 첫 칸과 출생연도와 성별(지역을 바꾼 것).
+       뒤의 둘은 양쪽에 하나씩일 때만(명단 쪽이 여럿이면 입장일이 없거나 같은 이름이 하나일 때).
+       다시 들어옴: 대화 기록에서는 나갔는데 명단에 있음, 또는 방에 있던 사람이 대화 기록 뒤의 입장일을 새로 붙임.
+       들어온 날은 새로 붙인 입장일, 없으면 서버가 적은 들어옴 ── */
+    // 이름 견주기(서버의 member_plain, member_base, member_day 와 같게): 하트, 이모지, 기호를 뺀 것, 거기서 끝의 입장일을 뗀 것, 그 입장일
+    const memPlain = (s) => String(s || "").normalize("NFC").toLowerCase().replace(/[­​-‏⁠-⁯﻿︀-️]/g, "").replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, "").replace(/\s+/g, " ").trim();
+    const memBase = (s) => memPlain(s).replace(/\s[0-9]{4}$/, "");
+    const memDay = (s) => (/\s([0-9]{4})$/.exec(memPlain(s)) || [])[1] || "";
+    // 대화 기록 내용이 끝난 때의 위 한계
+    const ledUpTo = (L) => (L && L.upTo) || (!S.unsaved && S.savedAt) || "";
+    function rosterNewer() {
+      const L = S.ledger, R = S.roster;
+      if (!L || !L.range || !R || !R.at || !Array.isArray(R.names) || !R.names.length) return false;
+      const up = ledUpTo(L), a = Date.parse(R.atFull || ""), b = Date.parse(up || "");
+      return up && !isNaN(a) && !isNaN(b) ? a > b : R.at > L.range.to;
+    }
+    // 서버가 적은 때(at)가 대화 기록이 끝난 뒤인가. 끝난 때를 모르면 대화 마지막 날부터
+    function afterLedger(L, at) {
+      const up = ledUpTo(L), a = Date.parse(at || ""), b = Date.parse(up || "");
+      if (isNaN(a)) return false;
+      return up && !isNaN(b) ? a > b : kstDate(at) >= L.range.to;
+    }
+    function nowPeople(L) {
+      const R = S.roster, list = L.people || [];
+      const roster = R.names.filter((n) => n && !OpsAnalyzer.isBot(n)), byNorm = new Map(roster.map((n) => [norm(n), n]));
+      const used = new Set(), cur = new Map();
+      const take = (p, n) => { used.add(norm(n)); cur.set(p.pid, n); };
+      const ren = ((MEM && MEM.changes) || []).filter((c) => c && c.k === "rename" && c.p && c.n && afterLedger(L, c.at)).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      const headKey = (n) => { const np = OpsAnalyzer.nickParts(n); return np.nick && np.birth && np.sex ? tightK(np.nick) + "|" + np.birth + "|" + np.sex : ""; };
+      const pair = (ps, keyOf) => {
+        const rb = new Map(), pb = new Map(), add = (m, k, v) => { if (!m.has(k)) m.set(k, []); m.get(k).push(v); };
+        roster.forEach((n) => { const b = !used.has(norm(n)) && keyOf(n); if (b) add(rb, b, n); });
+        ps.forEach((p) => { const b = !cur.has(p.pid) && keyOf(p.name); if (b) add(pb, b, p); });
+        pb.forEach((xs, b) => {
+          if (xs.length !== 1) return;
+          let ns = rb.get(b) || [];
+          if (ns.length > 1) { const d0 = memDay(xs[0].name); ns = ns.filter((n) => !memDay(n) || memDay(n) === d0); }
+          if (ns.length === 1) take(xs[0], ns[0]);
+        });
+      };
+      const cand = list.filter((p) => !p.dflt);
+      [cand.filter((p) => p.status === "in"), cand.filter((p) => p.status !== "in")].forEach((ps) => {
+        ps.forEach((p) => { const k = norm(p.name); if (byNorm.has(k) && !used.has(k)) take(p, byNorm.get(k)); });
+        if (ren.length) ps.forEach((p) => {
+          if (cur.has(p.pid)) return;
+          let k = norm(p.name), moved = false;
+          ren.forEach((c) => { if (norm(c.p) === k) { k = norm(c.n); moved = true; } });
+          if (moved && byNorm.has(k) && !used.has(k)) take(p, byNorm.get(k));
+        });
+        pair(ps, memBase);
+        pair(ps, headKey);
+      });
+      return list.map((p) => { const nn = cur.get(p.pid); return nn && (norm(nn) !== norm(p.name) || p.status !== "in") ? nowPerson(p, nn, L, R) : p; });
+    }
+    // 서버가 대화 기록 뒤에 적은 들어옴의 가장 최근 날: 이 이름과, 이름 바뀜을 거슬러 이어진 전 이름들
+    function joinAfter(nn, L) {
+      const ch = ((MEM && MEM.changes) || []).filter((c) => c && c.n && afterLedger(L, c.at)), names = new Set([norm(nn)]);
+      ch.filter((c) => c.k === "rename" && c.p).sort((a, b) => String(b.at).localeCompare(String(a.at))).forEach((c) => { if (names.has(norm(c.n))) names.add(norm(c.p)); });
+      return ch.filter((c) => c.k === "join" && names.has(norm(c.n))).map((c) => kstDate(c.at)).sort().pop() || "";
+    }
+    function nowPerson(p, nn, L, R) {
+      const q = Object.assign({}, p), np = OpsAnalyzer.nickParts(nn), was = (p.parts || {}).day || "";
+      let fl = (p.flags || []).slice();
+      if (norm(nn) !== norm(p.name)) {
+        q.name = nn; q.nameFile = p.name; q.nameAt = R.at;
+        q.parts = { region: np.region, sex: np.sex, birth: np.birth, birthYear: np.birthYear || null, day: np.day, heart: np.heart, heartKind: np.heartKind };
+        q.fmtOk = np.ok; q.fmtIssues = np.issues; q.limit = np.reentryLimit || null;
+        q.nameHistory = (p.nameHistory || []).concat([{ n: nn, first: R.at, last: R.at, via: "roster" }]);
+        fl = fl.filter((f) => f.c !== "fmt");
+        if (!np.ok) fl.unshift({ c: "fmt", l: "rule", t: "닉네임 양식", x: np.issues.join(", ") });
+      }
+      const tok = /^\d{4}$/.test(np.day || "") ? OpsPart.dayDate(np.day, todayKST()) : "", tokNew = !!tok && np.day !== was;
+      if (p.status !== "in") {
+        // 대화 기록에서는 나갔는데 명단에 있음
+        const out = p.outDate || "", ja = joinAfter(nn, L), j = tokNew && tok >= out ? tok : ja && ja >= out ? ja : "";
+        q.status = "in"; q.statusFile = p.status; q.outFile = out; q.outDate = ""; q.outBy = ""; q.rejoin = true;
+        if (j && j > (p.joinedAt || "")) q.joinedAt = j;
+      } else if (tokNew && dnum(tok) >= dnum(L.range.to) - 1 && (!p.joinedAt || dnum(tok) - dnum(p.joinedAt) > 1)) {
+        // 방에 있던 사람이 대화 기록 뒤의 입장일을 새로 붙임: 나갔다 다시 들어옴
+        q.rejoin = true; q.joinedAt = tok;
+      }
+      // 닉네임 입장일과 실제가 다름(분석기와 같은 규칙): 지금 이름과 들어온 날로 다시
+      fl = fl.filter((f) => f.c !== "day");
+      if (q.joinedAt && tok) {
+        const nd = q.joinedAt.slice(0, 4) + "-" + np.day.slice(0, 2) + "-" + np.day.slice(2), diff = Math.abs(dnum(q.joinedAt) - dnum(nd));
+        if (!isNaN(diff) && diff > 1 && q.joinedAt.slice(5, 7) + q.joinedAt.slice(8, 10) !== np.day) fl.push({ c: "day", l: "info", t: "닉네임 입장일과 실제가 다름", x: "닉네임 " + np.day + ", 실제 들어옴 " + +q.joinedAt.slice(0, 4) + "." + +q.joinedAt.slice(5, 7) + "." + +q.joinedAt.slice(8, 10) });
+      }
+      q.flags = fl;
+      return q;
+    }
+    /* 이름으로 사람 찾기. 언어 줄, 감정싸움 후보, 답 없는 질문, 방장과 부방장, 멘션은 대화 파일에 적힌 이름이고, 직접 적은 줄과 명단은 지금 이름이다.
+       대화 파일 이름(덧씌우기 전)으로 먼저, 없으면 지금 이름으로. 보일 때는 지금 이름(nowName) */
+    const fileName = (p) => p.nameFile || p.name;
+    let PIX = null;
+    function pIdx() {
+      const list = people();
+      if (PIX && PIX.list === list) return PIX;
+      const file = new Map(), now = new Map();
+      list.forEach((p) => { const f = norm(fileName(p)), n = norm(p.name); if (!file.has(f)) file.set(f, p); if (!now.has(n)) now.set(n, p); });
+      PIX = { list, file, now };
+      return PIX;
+    }
+    const pByName = (n) => { if (!n) return null; const k = norm(n), x = pIdx(); return x.file.get(k) || x.now.get(k) || null; };
+    const nowName = (n) => { const p = pByName(n); return p ? p.name : n; };
+    const isName = (p, n) => !!p && !!n && (norm(n) === norm(p.name) || norm(n) === norm(fileName(p)));
     // 확인할 사람, 점검, 신호는 지금 방에 있는 사람만(나간 사람과 기본 프로필 이름은 멤버 탭에서)
     const members = () => people().filter((p) => p.status === "in" && !p.dflt);
     const byPid = (pid) => people().find((p) => p.pid === pid);
@@ -1114,7 +1232,7 @@
         at: S.roster.at, total: names.length, unGroups,
         silent: names.filter((n) => !byName.has(norm(n))),
         gone: people().filter((p) => p.status === "in" && !inRoster.has(norm(p.name))),
-        back: people().filter((p) => p.status !== "in" && inRoster.has(norm(p.name))),
+        back: people().filter((p) => (p.statusFile || p.status) !== "in" && inRoster.has(norm(p.name))),
         fmtBad: names.filter((n) => !OpsAnalyzer.nickParts(n).ok)
       };
     }
@@ -1146,7 +1264,7 @@
     }
 
     // 대화 기록 이름을 누르면 상세(같은 이름이 없으면 글자만)
-    const nameBtn = (n) => { const p = people().find((q) => q.name === n); return p ? `<button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(n)}</button>` : esc(n); };
+    const nameBtn = (n) => { const p = pByName(n); return p ? `<button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(p.name)}</button>` : esc(n); };
     /* ── 신호 ── */
     const SIG_ORDER = ["other_room", "promo", "contact", "private", "bibung", "married", "abuse", "sexual", "flood", "conflict", "mention_focus", "welcomer", "thanked", "organizer", "sharer", "steady"];
     const sigRank = (c) => { const i = SIG_ORDER.indexOf(c); return i < 0 ? 99 : i; };
@@ -1168,7 +1286,7 @@
         }).join("")}</div></div>`).join("") : `<p class="empty">없습니다.</p>`}
       </div>
       ${side === "bad" ? `<div class="panel"><h2>감정싸움 후보 <small>${(L.conflicts || []).length}건</small></h2>${(L.conflicts || []).length ? `<ul class="ev">${L.conflicts.slice().reverse().map((c) => `<li><time>${esc(md(c.d))} ${esc(c.t)}</time><span>${nameBtn(c.a)}, ${nameBtn(c.b)}: ${c.n}번 주고받음, 부정 표현 ${c.neg}번</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>
-      <div class="panel"><h2>답 없는 질문 <small>30분 안에 아무도 답하지 않음, ${nf(L.unanswered.count)}건</small></h2>${L.unanswered.recent.length ? `<ul class="ev">${L.unanswered.recent.slice().reverse().map((q) => `<li><time>${esc(md(q.d))} ${esc(q.t)}</time><span>${esc(q.name)}: ${esc(q.x)}</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>` : ""}`;
+      <div class="panel"><h2>답 없는 질문 <small>30분 안에 아무도 답하지 않음, ${nf(L.unanswered.count)}건</small></h2>${L.unanswered.recent.length ? `<ul class="ev">${L.unanswered.recent.slice().reverse().map((q) => `<li><time>${esc(md(q.d))} ${esc(q.t)}</time><span>${esc(nowName(q.name))}: ${esc(q.x)}</span></li>`).join("")}</ul>` : `<p class="empty">없습니다.</p>`}</div>` : ""}`;
       host.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => { view.sigSide = b.dataset.side; renderSignals(); }));
     }
 
@@ -1287,10 +1405,11 @@
     // 대화 기록의 사람(기본 프로필 이름 빼고). 방에 있는지는 대화 기록보다 새 명단이 있으면 명단으로
     function partPeople() {
       if (!S.ledger) return [];
-      const rn = rosterNames(), rNew = rn.length && S.roster && S.roster.at && S.roster.at > S.ledger.range.to ? new Set(rn.map(norm)) : null;
+      const rn = rosterNames(), rNew = rn.length && rosterNewer() ? new Set(rn.map(norm)) : null;
       const hist = new Map(((S.history && S.history.people) || []).map((h) => [h.pid, (h.names || []).map((n) => n.n)]));
+      // 다시 들어온 사람(지금 닉네임)은 들어옴과 재입장을 하나씩 더 센다(신입 흐름에서 빼고, 닉네임에 입장일이 없으면 정기 참여를 들어온 날부터)
       return people().filter((p) => !p.dflt).map((p) => ({ pid: p.pid, name: p.name, names: [...new Set([p.name].concat((p.nameHistory || []).map((n) => n.n), hist.get(p.pid) || [], p.sysNames || []))],
-        inRoom: rNew ? rNew.has(norm(p.name)) : p.status === "in", joinedAt: p.joinedAt || "", joinedBeforeFile: !!p.joinedBeforeFile, joins: p.joins || 0, re: (p.reentries || []).length, parts: p.parts || {}, d30: p.d30 || 0, first: p.first || "" }));
+        inRoom: rNew ? rNew.has(norm(p.name)) : p.status === "in", joinedAt: p.joinedAt || "", joinedBeforeFile: !!p.joinedBeforeFile, joins: (p.joins || 0) + (p.rejoin ? 1 : 0), re: (p.reentries || []).length + (p.rejoin ? 1 : 0), parts: p.parts || {}, d30: p.d30 || 0, first: p.first || "" }));
     }
     const PTODO = [
       { key: "first_late", l: "rule", t: (s) => "첫 모임 " + s.firstMeetDays + "일 넘김", match: (c) => c.c === "first_late", ord: (c) => c.d.join, chip: (c) => mdS(c.d.join) + " 입장, " + c.d.since + "일" },
@@ -1935,10 +2054,10 @@
           ${editing ? `<span class="io-edit"><input class="input" type="text" maxlength="200" id="ioEvText" value="${esc(note.note || "")}" placeholder="예: 기기 교체로 미리 알림" aria-label="이 줄 메모" />${re ? `<label class="io-chk"><input type="checkbox" id="ioEvExcuse"${note.excuse ? " checked" : ""} /> 한도에서 뺌</label>` : ""}<button class="btn btn-secondary is-sm" type="button" data-io-save="${esc(it.key)}">저장</button></span>` : ""}</li>`;
       }).join("");
       const kinds = p.kinds || {};
-      const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}</span></li>`).join("");
+      const names = (p.nameHistory || []).map((n) => `<li><time>${esc(md(n.first))}${n.last !== n.first ? " ~ " + esc(md(n.last)) : ""}</time><span>${esc(n.n)}${n.via === "roster" ? ` <span class="tag">명단</span>` : ""}</span></li>`).join("");
       $("sheetBody").innerHTML = `
         <div class="panel">
-          <div class="chips">${statusTag(p)}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : `<span class="tag">파일 시작 전부터 있음</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}${pr.heart ? `<span class="tag">${esc(pr.heart)} ${esc(HEART_LABEL[pr.heartKind] || "")}${heartPartner(p.name) ? ": " + esc(heartPartner(p.name)) : ""}</span>` : ""}</div>
+          <div class="chips">${statusTag(p)}${p.statusFile ? `<span class="tag in"${tipAttr("대화 기록에서는 " + (p.outFile ? md(p.outFile) + " " : "") + (p.statusFile === "kicked" ? "내보냄" : "나감"))}>명단 ${esc(md(S.roster.at))}에 다시 보임</span>` : ""}${p.nameFile ? `<span class="tag"${tipAttr("대화 기록 이름 " + p.nameFile)}>명단 ${esc(md(p.nameAt))} 이름</span>` : ""}${p.joinedAt ? `<span class="tag">들어옴 ${esc(md(p.joinedAt))}</span>` : `<span class="tag">파일 시작 전부터 있음</span>`}${p.fmtOk ? `<span class="tag good">양식 맞음</span>` : `<span class="tag rule">양식: ${esc(p.fmtIssues.join(", "))}</span>`}${pr.heart ? `<span class="tag">${esc(pr.heart)} ${esc(HEART_LABEL[pr.heartKind] || "")}${heartPartner(p.name) ? ": " + esc(heartPartner(p.name)) : ""}</span>` : ""}</div>
           <div class="nick-cells">${cell("닉네임", p.name.split(" ")[0], true)}${cell("지역", pr.region, true)}${cell("성별", pr.sex, true)}${cell("출생연도", pr.birth, true)}${cell("입장일", pr.day, true)}</div>
           ${pend.length || BOARD.some((b) => b.pick(p) != null && !boardSeen(p, b.key, b.pick(p))) ? `<div class="chips">${flagTags(pend)}<button id="reviewBtn" class="btn btn-secondary is-sm" type="button">확인함</button></div>` : ""}
           ${(S.records.reviewed[p.pid] || {})._at ? `<div class="chips"><span class="tag good">확인함 ${esc(md(S.records.reviewed[p.pid]._at))}</span><button id="unreviewBtn" class="text-btn" type="button">풀기</button></div>` : ""}
@@ -1961,7 +2080,7 @@
           <div><dt>가장 긴 침묵</dt><dd>${nf(p.maxGap)}일</dd></div><div><dt>새벽(1시에서 5시)</dt><dd>${p.nightShare}%</dd></div>
           <div><dt>대화 시작</dt><dd>${nf(p.starts)}번</dd></div><div><dt>5분 안에 답</dt><dd>${nf(p.replies)}번</dd></div>
           <div><dt>신입 환영</dt><dd>${nf(p.welcomes)}번</dd></div><div><dt>감사 받음, 보냄</dt><dd>${nf(p.thanksGot)}, ${nf(p.thanksGiven)}</dd></div>
-          <div><dt>멘션 받음</dt><dd>${nf(p.mentionsIn)}번</dd></div><div><dt>멘션 보냄</dt><dd>${(p.mentionsOut || []).length ? p.mentionsOut.map((m) => esc(m.to.split(" ")[0]) + " " + m.c).join(", ") : "없음"}</dd></div>
+          <div><dt>멘션 받음</dt><dd>${nf(p.mentionsIn)}번</dd></div><div><dt>멘션 보냄</dt><dd>${(p.mentionsOut || []).length ? p.mentionsOut.map((m) => esc(nowName(m.to).split(" ")[0]) + " " + m.c).join(", ") : "없음"}</dd></div>
           <div><dt>모임 제안, 정보 공유</dt><dd>${nf(p.meetup)}, ${nf(p.info)}</dd></div><div><dt>평균 글 길이</dt><dd>${nf(p.avgLen)}자</dd></div>
           <div><dt>사진, 동영상, 이모티콘</dt><dd>${nf(kinds.photo)}, ${nf(kinds.video)}, ${nf(kinds.emoticon)}</dd></div><div><dt>링크, 파일, 음성</dt><dd>${nf(kinds.link)}, ${nf(kinds.file)}, ${nf(kinds.voice)}</dd></div>
           <div><dt>삭제한 메시지</dt><dd>${nf(kinds.deleted)}건</dd></div>
@@ -2048,12 +2167,32 @@
       $("progBar").style.width = Math.round(p * 100) + "%";
       $("progText").textContent = "읽는 중 " + Math.round(p * 100) + "%";
     }
-    /* 사람 열쇠(pid)에서 지금 이름: 직접 이은 줄을 분석기에 넘길 때 쓴다 */
+    /* 사람 열쇠(pid)에서 대화 파일의 이름: 직접 이은 줄을 분석기에 넘길 때 쓴다(분석기는 파일에 적힌 이름으로 잇는다) */
     function pidNames() {
       const m = new Map();
       ((S.history && S.history.people) || []).forEach((h) => { const n = (h.names[h.names.length - 1] || {}).n; if (n) m.set(h.pid, n); });
-      people().forEach((p) => m.set(p.pid, p.name));
+      people().forEach((p) => m.set(p.pid, fileName(p)));
       return m;
+    }
+    /* 대화 파일 머리의 '저장한 날짜'(내보낸 때, 한국 시각). 모든 파일에 있으면 가장 늦은 때(ISO), 하나라도 없으면 "" */
+    function savedAtOf(head) {
+      const m = /저장한\s*날짜\s*[:：]\s*(\d{4})\s*[년.]\s*(\d{1,2})\s*[월.]\s*(\d{1,2})\s*일?\.?\s*(오전|오후)?\s*(\d{1,2}):(\d{2})/.exec(String(head || ""));
+      if (!m) return "";
+      let h = +m[5];
+      if (m[4] === "오후" && h < 12) h += 12;
+      if (m[4] === "오전" && h === 12) h = 0;
+      const p2 = (n) => String(n).padStart(2, "0"), t = Date.parse(m[1] + "-" + p2(m[2]) + "-" + p2(m[3]) + "T" + p2(h) + ":" + m[6] + ":00+09:00");
+      return isNaN(t) ? "" : new Date(t).toISOString();
+    }
+    async function filesSavedAt(files) {
+      let best = "";
+      for (const f of files || []) {
+        let t = "";
+        try { t = savedAtOf(await f.slice(0, 2048).text()); } catch (e) { t = ""; }
+        if (!t) return "";
+        if (t > best) best = t;
+      }
+      return best;
     }
     /* 파일 읽기와 분석은 워커에서(화면이 멈추지 않게). 워커를 못 쓰면 이 화면에서 */
     function analyzeFiles(list, links) {
@@ -2082,6 +2221,7 @@
       Object.keys(lk).forEach((k) => { const n = names.get(lk[k]); if (n) links[k] = n; });
       let r = null;
       try { r = await analyzeFiles(srcFiles, links); } catch (e) { r = undefined; }
+      if (r) r.upTo = await filesSavedAt(srcFiles);
       busy = false; setProgress(null);
       if (!r) { $("saveBtn").disabled = !S.unsaved || localOnly; toast(r === undefined ? "파일을 읽지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요." : "대화를 찾지 못했습니다. 카카오톡 대화 내보내기 파일인지 확인해 주세요."); return; }
       resolvePeople(r);
@@ -2244,6 +2384,7 @@
         const rows = await botAnLoad(true);
         const row = rows && rows.ledger, r = row && row.payload, G = rows && rows.lang ? rows.lang.payload : null;
         if (!r || !r.range || !Array.isArray(r.people)) { toast("봇이 올린 분석을 읽지 못했습니다."); return false; }
+        r.upTo = row.at || "";                           // 대화 내용이 끝난 때의 위 한계(봇이 올린 때). 지금 닉네임에서 명단과 견준다
         resolvePeople(r);
         srcFiles = [];                                   // 파일로 분석한 것이 아니다(사람에게 잇기는 다음 봇 분석부터 적용)
         const prev = S.ledger && S.ledger.range ? S.ledger : null;
@@ -2308,7 +2449,7 @@
     }
     /* 봇이 읽은 명단과 멤버 변화(2026-10-31-member-follow.sql): admin_members 의 이름(처음 보인 때, 묶였는지)과 최근 30일 변화.
        이 명단이 대화 기록과 대조하는 명단(S.roster)이 된다(예전에 손으로 붙여넣던 명단 칸 대신). 서버에 함수가 없으면 대조 없이 */
-    let MEM = null, memChgDays = 7;
+    let memChgDays = 7;   // MEM(admin_members 결과)과 memBase 는 위의 사람 보조에
     async function memNamesLoad() {
       if (localOnly || !PASS) return;
       try {
@@ -2322,8 +2463,6 @@
       }
       softRender();
     }
-    // 이름 견주기(서버의 member_base 와 같게): 하트, 이모지, 기호를 빼고 끝의 입장일을 뗀 것
-    const memBase = (s) => String(s || "").normalize("NFC").toLowerCase().replace(/[­​-‏⁠-⁯﻿︀-️]/g, "").replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, "").replace(/\s+/g, " ").trim().replace(/\s[0-9]{4}$/, "");
     function memChgShow() {
       const panel = $("memChgPanel"); if (!panel) return;
       panel.hidden = localOnly || !MEM;
@@ -3569,7 +3708,7 @@
       const rejoin30 = M.filter((p) => p.joinedAt && E - dnum(p.joinedAt) < 30 && !newbies.includes(p)).length;
       const talk30 = M.filter((p) => p.d30 > 0).length, msg30 = M.reduce((a, p) => a + (p.d30 || 0), 0);
       const f = L.funnel, rn = rosterNames().length;
-      const staff = L.staff && (L.staff.owner || L.staff.subs.length) ? (L.staff.owner ? "방장 " + L.staff.owner : "") + (L.staff.subs.length ? (L.staff.owner ? ", " : "") + "부방장 " + L.staff.subs.join(", ") : "") : "";
+      const staff = L.staff && (L.staff.owner || L.staff.subs.length) ? (L.staff.owner ? "방장 " + nowName(L.staff.owner) : "") + (L.staff.subs.length ? (L.staff.owner ? ", " : "") + "부방장 " + L.staff.subs.map(nowName).join(", ") : "") : "";
 
       // 1) 요약 숫자
       const kpis = `<div class="kpis">
@@ -3866,24 +4005,24 @@
       out.per = per; out.days = Math.max(0, dnum(out.to) - dnum(out.from) + 1);
       return out;
     }
-    function langPidName() { const p = view.lang.pid ? byPid(view.lang.pid) : null; if (view.lang.pid && !p) view.lang.pid = ""; return p ? p.name : ""; }
+    function langPid() { const p = view.lang.pid ? byPid(view.lang.pid) : null; if (view.lang.pid && !p) view.lang.pid = ""; return p || null; }   // 이 사람만 보기(줄은 대화 파일 이름, 직접 적은 줄은 지금 이름일 수 있어 isName 으로)
     // 기간 안의 줄: 남은 줄(live, 직접 적은 줄 포함)과 해당 없음(dis)
     function langInRange(per) {
-      const r = langRec(), nm = langPidName();
-      const rows = langRows().filter((h) => h.d >= per.from && h.d <= per.to && (!nm || h.n === nm));
-      const man = r.manual.filter((m) => m.d >= per.from && m.d <= per.to && (!nm || norm(m.n) === norm(nm))).map(langManualRow);
+      const r = langRec(), pp = langPid();
+      const rows = langRows().filter((h) => h.d >= per.from && h.d <= per.to && (!pp || isName(pp, h.n)));
+      const man = r.manual.filter((m) => m.d >= per.from && m.d <= per.to && (!pp || isName(pp, m.n))).map(langManualRow);
       return { live: rows.filter((h) => !h.dis).concat(man), dis: rows.filter((h) => h.dis) };
     }
     // 걸린 줄 창(마지막 날부터 180일) 밖의 옛 날: 발췌 없이 사람별 종류별 수만. 해당 없음 표시(날짜, 이름, 종류를 남겨 둠)는 뺀다
     function langOld(per) {
       const G = S.lang, out = { n: 0, by: {}, from: "", to: "" };
       if (!G || !G.days) return out;
-      const r = langRec(), nm = langPidName();
+      const r = langRec(), pp = langPid();
       Object.keys(G.days).forEach((d) => {
         if (d < per.from || d > per.to || d >= G.hitsFrom) return;
         const day = G.days[d];
         Object.keys(day.p || {}).forEach((n) => {
-          if (nm && n !== nm) return;
+          if (pp && !isName(pp, n)) return;
           const o = out.by[n] = out.by[n] || {};
           Object.keys(day.p[n]).forEach((k) => { o[k] = (o[k] || 0) + day.p[n][k]; out.n += day.p[n][k]; });
           if (!out.from || d < out.from) out.from = d;
@@ -3898,7 +4037,7 @@
     const langStrong = (c) => (c.curse || 0) + (c.rude || 0);
     function langByPerson(live, old) {
       const m = new Map();
-      const get = (n) => { if (!m.has(n)) m.set(n, { n, total: 0, c: {}, days: new Set(), last: "", oldN: 0 }); return m.get(n); };
+      const get = (n) => { const p = pByName(n), key = p ? "p:" + p.pid : "n:" + n; if (!m.has(key)) m.set(key, { n: p ? p.name : n, p, total: 0, c: {}, days: new Set(), last: "", oldN: 0 }); return m.get(key); };
       live.forEach((h) => { const o = get(h.n); o.total += 1; o.c[h.k] = (o.c[h.k] || 0) + 1; o.days.add(h.d); if (h.d > o.last) o.last = h.d; });
       Object.keys(old.by).forEach((n) => { const o = get(n); Object.keys(old.by[n]).forEach((k) => { const v = old.by[n][k]; if (v > 0) { o.total += v; o.c[k] = (o.c[k] || 0) + v; o.oldN += v; } }); });
       return [...m.values()].filter((o) => o.total > 0).sort((a, b) => langStrong(b.c) - langStrong(a.c) || b.total - a.total || a.n.localeCompare(b.n, "ko"));
@@ -3919,8 +4058,8 @@
       return parts.join("");
     }
     function langItem(h) {
-      const p = people().find((q) => q.name === h.n);
-      const who = p ? `<button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(h.n)}</button>` : `<b>${esc(h.n)}</b>`;
+      const p = pByName(h.n);
+      const who = p ? `<button type="button" class="linkish" data-person="${esc(p.pid)}">${esc(p.name)}</button>` : `<b>${esc(h.n)}</b>`;
       const terms = h.manual ? `<span class="tag">직접 적음</span>` : h.ms.map((m) => `<span class="lg-w">${esc(m.w)}</span>`).join(" ");
       const act = h.manual ? `<button type="button" class="text-btn is-quiet" data-lgmdel="${esc(h.id)}">지우기</button>` : h.dis ? `<button type="button" class="text-btn is-quiet" data-lgundis="${esc(h.h)}">되돌리기</button>` : `<button type="button" class="text-btn is-quiet" data-lgdis="${esc(h.h)}">해당 없음</button>`;
       return `<li class="lg-item${h.dis ? " is-dis" : ""}"><time>${esc(h.t || "시각 없음")}</time><span><span class="lg-h">${who}${langTag(h.k)}${terms}<span class="lg-acts">${act}</span></span><span class="lg-x">${langX(h)}${h.note ? ` <span class="cap">(${esc(h.note)})</span>` : ""}</span></span></li>`;
@@ -3931,7 +4070,7 @@
       live.forEach((h) => put(h, "live")); dis.forEach((h) => put(h, "dis"));
       const days = [...by.keys()].sort().reverse(), shown = days.slice(0, view.lang.days);
       const tsort = (a, b) => (a.t || "").localeCompare(b.t || "") || String(a.h).localeCompare(String(b.h));
-      return shown.map((d) => { const g = by.get(d), ppl = new Set(g.live.map((h) => h.n)).size; return `<section class="lg-day"><h3>${esc(md(d))}(${wdOf(d)}) <small>${nf(g.live.length)}건, ${nf(ppl)}명</small></h3>
+      return shown.map((d) => { const g = by.get(d), ppl = new Set(g.live.map((h) => { const p = pByName(h.n); return p ? "p:" + p.pid : "n:" + h.n; })).size; return `<section class="lg-day"><h3>${esc(md(d))}(${wdOf(d)}) <small>${nf(g.live.length)}건, ${nf(ppl)}명</small></h3>
         ${g.live.length ? `<ul class="lg-list">${g.live.sort(tsort).map(langItem).join("")}</ul>` : `<p class="sub">남은 줄이 없습니다.</p>`}
         ${g.dis.length ? `<details class="more"><summary>해당 없음 ${nf(g.dis.length)}건</summary><ul class="lg-list">${g.dis.sort(tsort).map(langItem).join("")}</ul></details>` : ""}</section>`; }).join("")
         + (days.length > shown.length ? `<div class="chips"><button type="button" class="btn btn-secondary" data-lgmore="1">${nf(days.length - shown.length)}일 더 보기</button></div>` : "");
@@ -3944,9 +4083,9 @@
       for (let d = per.from; d <= per.to; d = dShift(d, 1)) { const key = weekly ? monday(d) : d; if (!idx.has(key)) { idx.set(key, buckets.length); buckets.push({ d: key, n: 0 }); } }
       const add = (d, n) => { const key = weekly ? monday(d) : d; if (idx.has(key)) buckets[idx.get(key)].n += n; };
       live.forEach((h) => add(h.d, 1));
-      const G = S.lang, r = langRec(), nm = langPidName();
-      Object.keys((G && G.days) || {}).forEach((d) => { if (d < per.from || d > per.to || d >= G.hitsFrom) return; const day = G.days[d]; if (!nm) add(d, day.n || 0); else if (day.p && day.p[nm]) add(d, Object.keys(day.p[nm]).reduce((a, k) => a + day.p[nm][k], 0)); });
-      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (x && x.d && x.d >= per.from && x.d <= per.to && x.d < G.hitsFrom && (!nm || x.n === nm)) add(x.d, -1); });
+      const G = S.lang, r = langRec(), pp = langPid();
+      Object.keys((G && G.days) || {}).forEach((d) => { if (d < per.from || d > per.to || d >= G.hitsFrom) return; const day = G.days[d]; if (!pp) add(d, day.n || 0); else Object.keys(day.p || {}).forEach((n) => { if (isName(pp, n)) add(d, Object.keys(day.p[n]).reduce((a, k) => a + day.p[n][k], 0)); }); });
+      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (x && x.d && x.d >= per.from && x.d <= per.to && x.d < G.hitsFrom && (!pp || isName(pp, x.n))) add(x.d, -1); });
       buckets.forEach((b) => { if (b.n < 0) b.n = 0; });
       const max = Math.max(1, ...buckets.map((b) => b.n));
       return `<div class="lg-bars" style="grid-template-columns:repeat(${buckets.length},minmax(0,1fr))" role="img" aria-label="${weekly ? "주마다" : "날마다"} 걸린 줄 수">${buckets.map((b) => `<i class="${b.n ? "" : "z"}" style="height:${b.n ? Math.max(4, Math.round((b.n / max) * 100)) : 2}%"${tipAttr((weekly ? md(b.d) + " 주" : md(b.d) + "(" + wdOf(b.d) + ")") + ": " + nf(b.n) + "건")}></i>`).join("")}</div><div class="lg-bx"><span>${esc(md(buckets[0].d))}</span><span>${weekly ? "주마다" : "날마다"}</span><span>${esc(md(buckets[buckets.length - 1].d))}</span></div>`;
@@ -3975,12 +4114,12 @@
       </details>`;
     }
     function langReportText(per, live, old, ppl) {
-      const G = S.lang, r = langRec(), nm = langPidName(), L = [];
+      const G = S.lang, r = langRec(), pp = langPid(), L = [];
       const total = live.length + old.n, byCat = {};
       live.forEach((h) => { byCat[h.k] = (byCat[h.k] || 0) + 1; });
       Object.keys(old.by).forEach((n) => Object.keys(old.by[n]).forEach((k) => { byCat[k] = (byCat[k] || 0) + Math.max(0, old.by[n][k]); }));
       const cats = (c) => LANG_CATS.filter((x) => c[x.k]).map((x) => x.t + " " + c[x.k]).join(", ");
-      L.push("채팅 언어 리포트: " + per.label + (nm ? ", " + nm + "만" : ""));
+      L.push("채팅 언어 리포트: " + per.label + (pp ? ", " + pp.name + "만" : ""));
       L.push("대화 " + md(G.range.to) + "까지" + (r.from ? ", 공지 기준일 " + md(r.from) : "") + ", 단어 목록 " + langLexNow().list.length + "개 기준. 한 메시지는 한 건, 가장 센 종류로 셉니다.");
       L.push("걸린 줄 " + total + "건, " + ppl.length + "명" + (total ? ". " + cats(byCat) : ""));
       if (ppl.length) { L.push("", "사람별"); ppl.forEach((o) => L.push("- " + o.n + ": " + o.total + "건(" + cats(o.c) + ")" + (o.last ? ", 마지막 " + md(o.last) : ""))); }
@@ -3990,7 +4129,7 @@
         [...by.keys()].sort().reverse().forEach((d) => {
           const g = by.get(d).sort((a, b) => (a.t || "").localeCompare(b.t || ""));
           L.push(md(d) + "(" + wdOf(d) + ") " + g.length + "건");
-          g.forEach((h) => L.push("- " + (h.t ? h.t + " " : "") + h.n + " [" + (OpsLang.CAT_T[h.k] || h.k) + (h.manual ? ": 직접 적음" : h.ms.length ? ": " + h.ms.map((m) => m.w).join(", ") : "") + "] " + h.x + (h.note ? " (" + h.note + ")" : "")));
+          g.forEach((h) => L.push("- " + (h.t ? h.t + " " : "") + nowName(h.n) + " [" + (OpsLang.CAT_T[h.k] || h.k) + (h.manual ? ": 직접 적음" : h.ms.length ? ": " + h.ms.map((m) => m.w).join(", ") : "") + "] " + h.x + (h.note ? " (" + h.note + ")" : "")));
         });
       }
       if (old.n) L.push("", md(old.from) + " ~ " + md(old.to) + " " + old.n + "건은 수만 남아 있습니다(발췌 없음).");
@@ -4007,14 +4146,14 @@
       if (!S.ledger) { host.innerHTML = ""; return; }
       if (!G || !G.range) { host.innerHTML = `<div class="panel"><h2>언어</h2><p class="sub">이 저장본에는 언어 점검 결과가 없습니다. 대화 파일을 올려 분석하고 서버에 저장하면 보입니다.</p></div>`; return; }
       const per = langPeriod(), { live, dis } = langInRange(per), old = langOld(per), ppl = langByPerson(live, old);
-      const nm = langPidName(), total = live.length + old.n, byCat = {};
+      const pp = langPid(), total = live.length + old.n, byCat = {};
       live.forEach((h) => { byCat[h.k] = (byCat[h.k] || 0) + 1; });
       Object.keys(old.by).forEach((n) => Object.keys(old.by[n]).forEach((k) => { byCat[k] = (byCat[k] || 0) + Math.max(0, old.by[n][k]); }));
       const future = per.to > G.range.to, onN = langLexNow().list.length, allowN = Object.keys(r.allow).length;
       const mismatch = S.ledger.range && G.range.to !== S.ledger.range.to;   // 언어 결과가 대화 기록 저장본과 다른 분석에서 온 것(저장이 중간에 끊긴 경우)
       host.innerHTML = `
         <div class="panel lg-bar">
-          <div class="chips" role="group" aria-label="기간">${LANG_PER.map(([k, t]) => `<button type="button" data-lgper="${k}" aria-pressed="${per.per === k}"${k === "notice" && !r.from ? " disabled" : ""}>${t}</button>`).join("")}${nm ? `<button type="button" data-lgpid="" aria-pressed="true">${esc(nm)}만 보기(풀기)</button>` : ""}</div>
+          <div class="chips" role="group" aria-label="기간">${LANG_PER.map(([k, t]) => `<button type="button" data-lgper="${k}" aria-pressed="${per.per === k}"${k === "notice" && !r.from ? " disabled" : ""}>${t}</button>`).join("")}${pp ? `<button type="button" data-lgpid="" aria-pressed="true">${esc(pp.name)}만 보기(풀기)</button>` : ""}</div>
           <p class="sub">${esc(per.label)}. 대화 ${esc(md(G.range.to))}까지${future ? ", 그 뒤는 새 파일을 올려야 보입니다" : ""}. 단어 목록 ${nf(onN)}개 켬${r.add.length ? ", 더한 말 " + nf(r.add.length) : ""}${allowN ? ", 예외 말 " + nf(allowN) : ""}. 한 메시지는 한 건, 가장 센 종류로 셉니다.${langCfgDiffers() ? " 단어 목록을 분석 뒤에 바꿨습니다. 걸린 줄에는 바로 적용했고, 옛 날의 수는 다음 분석부터 맞습니다." : ""}</p>
           ${mismatch ? `<p class="notice">언어 결과는 대화 ${esc(md(G.range.to))}까지, 대화 기록 저장본은 ${esc(md(S.ledger.range.to))}까지입니다. 파일을 다시 올려 서버에 저장해 주세요.</p>` : ""}
           <div class="lg-tools"><label class="lg-from"><span>공지 기준일</span><input id="lgFrom" class="input" type="date" value="${esc(r.from || "")}" /></label><div class="chips"><button type="button" class="btn btn-secondary is-sm" id="lgCopy">리포트 복사</button><button type="button" class="btn btn-secondary is-sm" id="lgManualBtn" aria-expanded="${view.lang.manual}">직접 적기</button></div></div>
@@ -4029,7 +4168,7 @@
             ${G.truncated ? `<p class="cap">걸린 줄이 많아(2만 건이나 3MB) ${esc(md(G.hitsFrom))} 전은 수만 남겼습니다.</p>` : ""}
           </div>
           <div class="panel" id="lgPeople"><h2>사람별 <small>${nf(ppl.length)}명. 욕설과 막말이 많은 사람부터</small></h2>
-            ${ppl.length ? `<div class="tbl-wrap"><table class="tbl lft lg-tbl"><thead><tr><th>이름</th><th class="num">합계</th>${LANG_CATS.map((c) => `<th class="num">${c.k === "jamo" ? "초성" : c.t}</th>`).join("")}<th class="num">날</th><th>마지막</th></tr></thead><tbody>${ppl.map((o) => { const p = people().find((q) => q.name === o.n); return `<tr${p ? ` data-person="${esc(p.pid)}" tabindex="0"` : ""}><td><span class="nm">${esc(o.n)}</span>${p && p.status !== "in" ? `<span class="tag out">${p.status === "kicked" ? "내보냄" : "나감"}</span>` : ""}</td><td class="num"><b>${nf(o.total)}</b></td>${LANG_CATS.map((c) => `<td class="num${o.c[c.k] ? "" : " mute"}">${nf(o.c[c.k] || 0)}</td>`).join("")}<td class="num">${o.days.size ? nf(o.days.size) + (o.oldN ? "+" : "") : o.oldN ? "수만" : "0"}</td><td>${o.last ? esc(mdS(o.last)) : ""}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="empty">이 기간에 걸린 줄이 없습니다.</p>`}
+            ${ppl.length ? `<div class="tbl-wrap"><table class="tbl lft lg-tbl"><thead><tr><th>이름</th><th class="num">합계</th>${LANG_CATS.map((c) => `<th class="num">${c.k === "jamo" ? "초성" : c.t}</th>`).join("")}<th class="num">날</th><th>마지막</th></tr></thead><tbody>${ppl.map((o) => { const p = o.p; return `<tr${p ? ` data-person="${esc(p.pid)}" tabindex="0"` : ""}><td><span class="nm">${esc(o.n)}</span>${p && p.status !== "in" ? `<span class="tag out">${p.status === "kicked" ? "내보냄" : "나감"}</span>` : ""}</td><td class="num"><b>${nf(o.total)}</b></td>${LANG_CATS.map((c) => `<td class="num${o.c[c.k] ? "" : " mute"}">${nf(o.c[c.k] || 0)}</td>`).join("")}<td class="num">${o.days.size ? nf(o.days.size) + (o.oldN ? "+" : "") : o.oldN ? "수만" : "0"}</td><td>${o.last ? esc(mdS(o.last)) : ""}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="empty">이 기간에 걸린 줄이 없습니다.</p>`}
           </div>
         </div>
         <div class="lg-col">
@@ -4080,8 +4219,8 @@
       const G = S.lang; if (!G || !G.range) return "";
       const to = G.range.to, from = dShift(to, -6), r = langRec();
       const all = langRows().filter((h) => !h.dis && h.d >= from && h.d <= to).concat(r.manual.filter((m) => m.d >= from && m.d <= to).map(langManualRow));
-      const by = new Map(); all.forEach((h) => { const o = by.get(h.n) || { c: 0, s: 0 }; o.c += 1; if (h.k === "curse" || h.k === "rude") o.s += 1; by.set(h.n, o); });
-      const top = [...by.entries()].sort((a, b) => b[1].s - a[1].s || b[1].c - a[1].c || a[0].localeCompare(b[0], "ko")).map(([n, o]) => ({ n, c: o.c, p: people().find((q) => q.name === n) }));
+      const by = new Map(); all.forEach((h) => { const p = pByName(h.n), key = p ? "p:" + p.pid : "n:" + h.n, o = by.get(key) || { n: p ? p.name : h.n, p, c: 0, s: 0 }; o.c += 1; if (h.k === "curse" || h.k === "rude") o.s += 1; by.set(key, o); });
+      const top = [...by.values()].sort((a, b) => b.s - a.s || b.c - a.c || a.n.localeCompare(b.n, "ko"));
       const strong = all.filter((h) => h.k === "curse" || h.k === "rude").length;
       const lv = strong ? "watch" : "good";   // 욕설이나 막말이 있을 때만 살펴보기. 추임새뿐이면 좋음으로 두고 수만 보인다
       return `<article class="bcard lv-${lv}" id="langCard"><div class="b-head"><div><h3>채팅 언어(최근 7일)</h3><strong class="b-count">${nf(all.length)}<small>건</small></strong>${lvl(lv)}<span class="cap">욕설과 막말 ${nf(strong)}건</span></div>${art("rules-manners")}</div>
@@ -4092,11 +4231,11 @@
     function langPersonPanel(p) {
       const G = S.lang; if (!G || !G.range) return "";
       const r = langRec();
-      const all = langRows().filter((h) => h.n === p.name && !h.dis).concat(r.manual.filter((m) => norm(m.n) === norm(p.name)).map(langManualRow)).sort((a, b) => (b.d + (b.t || "")).localeCompare(a.d + (a.t || "")));
+      const all = langRows().filter((h) => isName(p, h.n) && !h.dis).concat(r.manual.filter((m) => isName(p, m.n)).map(langManualRow)).sort((a, b) => (b.d + (b.t || "")).localeCompare(a.d + (a.t || "")));
       const d30 = dShift(G.range.to, -29), n30 = all.filter((h) => h.d >= d30).length;
       let oldN = 0;
-      Object.keys(G.days || {}).forEach((d) => { if (d >= G.hitsFrom) return; const q = G.days[d].p && G.days[d].p[p.name]; if (q) Object.keys(q).forEach((k) => { oldN += q[k]; }); });
-      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (x && x.n === p.name && x.d < G.hitsFrom) oldN -= 1; });
+      Object.keys(G.days || {}).forEach((d) => { if (d >= G.hitsFrom) return; const dp = G.days[d].p || {}; Object.keys(dp).forEach((n) => { if (isName(p, n)) Object.keys(dp[n]).forEach((k) => { oldN += dp[n][k]; }); }); });
+      Object.keys(r.dismiss).forEach((h) => { const x = r.dismiss[h]; if (x && isName(p, x.n) && x.d < G.hitsFrom) oldN -= 1; });
       return `<div class="panel"><h2>언어 <small>최근 30일 ${nf(n30)}건, 전체 ${nf(all.length + Math.max(0, oldN))}건</small></h2>
         ${all.length ? `<ul class="lg-list">${all.slice(0, 8).map(langItem).join("")}</ul>${all.length > 8 ? `<p class="cap">최근 8건만 보입니다.</p>` : ""}` : `<p class="sub">걸린 줄이 없습니다.</p>`}
         <button type="button" class="btn btn-secondary is-sm" data-lgperson="${esc(p.pid)}">언어 탭에서 이 사람만 보기</button></div>`;
@@ -4130,7 +4269,7 @@
     const setTopH = () => { const h = document.querySelector(".ops-top"); if (h) document.documentElement.style.setProperty("--top-h", h.offsetHeight + "px"); };
     window.addEventListener("resize", setTopH); setTopH();
     if (window.ResizeObserver) new ResizeObserver(setTopH).observe(document.querySelector(".ops-top"));   // 머리 줄이 바뀌면(봇 표시 글 등) 탭 줄 자리도
-    window.__ops = { S, view, PV, APX, part, apxMake, save: saveRecords, memBase, get BS() { return BS; }, get MT() { return MT; }, botSetCollect };   // 시험용
+    window.__ops = { S, view, PV, APX, part, apxMake, save: saveRecords, memBase, people, get BS() { return BS; }, get MT() { return MT; }, botSetCollect };   // 시험용
     $("gatePass").focus();
   })();
   </script>
