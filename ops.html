@@ -3078,7 +3078,9 @@
       const L = (st && st.lines) || {};
       const tiles = [["멈춤", L.ctl], ["멤버 읽기", L.members], ["신입 인사", L.greet], ["대화 내보내기", L.export], ["보이스룸", L.voice], ["오늘 공지", L.notice]]
         .filter((x) => x[1]).map((x) => `<div class="bh-tile"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></div>`);
-      if (st && st.fails && (st.fails.read || st.fails.send || st.fails.notice)) tiles.push(`<div class="bh-tile is-warn"><b>이어진 실패</b><span>${esc(["사이트 읽기 " + st.fails.read, "보내기 " + st.fails.send, "공지 걸기 " + st.fails.notice].filter((x) => !/ 0$/.test(x)).join(", "))}</span></div>`);
+      const nb = st && st.fails && st.fails.notice_block, nf0 = nb ? 0 : (st && st.fails && st.fails.notice) || 0;   // 공지 막힘(방장 핀 고정, 봇 2026-11-07.1)은 실패 수가 아니라 따로
+      if (nb) tiles.push(`<div class="bh-tile is-warn"><b>공지 막힘</b><span>${esc(nb)}</span></div>`);
+      if (st && st.fails && (st.fails.read || st.fails.send || nf0)) tiles.push(`<div class="bh-tile is-warn"><b>이어진 실패</b><span>${esc(["사이트 읽기 " + (st.fails.read || 0), "보내기 " + (st.fails.send || 0), "공지 걸기 " + nf0].filter((x) => !/ 0$/.test(x)).join(", "))}</span></div>`);
       if (st && st.error) tiles.push(`<div class="bh-tile is-warn"><b>오류</b><span>${esc(st.error)}${st.error_n > 1 ? " (" + nf(st.error_n) + "번)" : ""}</span></div>`);
       $("botLines").innerHTML = tiles.join("");
       botReqShow(); botSetShow(); botLogShow();
