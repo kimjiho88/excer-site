@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-01.8"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-07.1"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -289,6 +289,15 @@ class WrongPin(KakaoError):
 class Covered(KakaoError):
     """누를 자리가 다른 창(보이스룸 작은 창 등)에 다 가려 누르지 않음. 방을 못 찾은 것처럼 되풀이할수록 길게 쉰다.
     방까지 못 간 것(RoomUnreachable)으로 보지 않는다: 공지를 걸다 가리면 공지 걸기 실패로 센다"""
+
+
+class NoticeBlocked(KakaoError):
+    """카카오톡이 공지 등록을 막음: '공지' 를 누르면 '방장이 핀기능을 사용 중일 때는 공지를 등록할 수 없습니다.' 같은 창이 뜬다(2026-11-07).
+    봇이 풀 수 없다(방장이 공지 띠의 핀 고정을 풀어야 한다). 글을 다시 올리지 않고, 길게 쉬며 띠의 핀 표시가 없어질 때를 기다린다. kakao: 창의 글"""
+
+    def __init__(self, kakao, note=""):
+        self.kakao = kakao
+        super().__init__("카카오톡이 공지 등록을 막음(%s)%s" % (kakao, note))
 
 
 ROOM_MISS_WAIT = (60, 120, 300, 600, 900)               # 방을 못 찾은 뒤 다시 하기까지(초): 1분마다 목록을 헛되이 훑지 않게
@@ -942,7 +951,9 @@ def beat_text(bot, now):
                                  "읽기 실패 %d번 이어짐" % bot.read_fails if getattr(bot, "read_fails", 0) else "실패 없음")]
     if err:
         out.append("이어지는 오류 %d번: %s. 태블릿에서 python excer_bot.py status" % (int(getattr(bot, "loop_err_n", 0) or 0), clean(err, 80)))
-    if st.get("notice_gaveup"):
+    if notice_block_text(st):
+        out.append("공지: 걸기 막힘(%s). 방장이 방 위쪽 공지 띠의 핀 고정을 풀면 봇이 다시 겁니다" % notice_block_text(st))
+    elif st.get("notice_gaveup"):
         out.append("공지: 걸기를 쉬는 중. 방에 올린 마지막 공지 글을 직접 공지로 걸어 주세요")
     elif st.get("notice_fail"):
         out.append("공지: 걸기 실패 %d번, 다시 거는 중" % int(st["notice_fail"]))
@@ -1680,6 +1691,22 @@ def drop_notices(st):
 
 # ── 한 차례 ──
 NOTICE_RETRY = [60, 300, 900]                           # 공지 걸기가 실패하면 1분, 5분, 15분 뒤 다시(세 번까지)
+NOTICE_BLOCK_WAIT = 1800                                # 카카오톡이 공지 등록을 막으면(방장 핀 고정) 30분마다 띠의 핀 표시를 본다(글은 다시 올리지 않는다)
+NOTICE_BLOCK_LOG = 3 * 3600                             # 막힘이 이어지면 기록은 세 시간에 한 줄
+
+
+def notice_block_on(st):
+    """공지 걸기가 카카오톡에 막혀 기다리는 글(걸기를 다시 하는 그 글일 때만). 없으면 ''"""
+    b = st.get("notice_blocked") or ""
+    return b if b and b == st.get("notice_fail_text") and int(st.get("notice_fail") or 0) > 0 else ""
+
+
+def notice_block_text(st):
+    """상태와 '봇 정상' 줄에 보일 막힘 한 마디(카카오톡 창의 글). 막히지 않았으면 ''"""
+    if not notice_block_on(st):
+        return ""
+    why = st.get("notice_block_why") or ""
+    return "방장 핀 고정" if "핀" in why else (clean(why, 60) or "카카오톡이 막음")
 
 
 class Bot:
@@ -1960,7 +1987,7 @@ class Bot:
                 "lines": {"ctl": ctl_text(self, self.ts()), "members": members_alive(self), "greet": greet_alive(self), "export": export_alive(self),
                           "voice": vs, "notice": (st.get("notice_text") or "").split("\n")[0][:120]},
                 "fails": {"read": int(self.read_fails or 0), "send": int(self.send_fails or 0), "notice": int(st.get("notice_fail") or 0),
-                          "notice_gaveup": int(st.get("notice_gaveup") or 0)},
+                          "notice_gaveup": int(st.get("notice_gaveup") or 0), "notice_block": notice_block_text(st)},
                 "error": clean(self.loop_err or "", 160), "error_n": int(self.loop_err_n or 0),
                 "cfg": remote_view(self.cfg), "test_room": bool(self.cfg.get("test_room") and self.cfg.get("test_room") != self.room),
                 "set": {"ts": st.get("set_ts_done"), "at": st.get("set_at"), "err": st.get("set_err") or [], "changed": st.get("set_changed") or []},
@@ -2819,6 +2846,8 @@ class Bot:
         if dg:
             ntext, built = fresh, lead.ts               # 매일 다시 올리기는 지금 차례로
         retry = float(st.get("notice_retry_at") or 0) if (st.get("notice_fail_text") or "").startswith(day_head(now, cfg)) else 0.0
+        if retry and notice_block_on(st) and ntext != st.get("notice_fail_text"):
+            retry = 0.0                                 # 막혀(방장 핀 고정) 30분을 기다리던 글과 다른 새 글은 기다리지 않고 올린다(걸기는 막혀도 글은 보인다)
         # 걸기를 다시 하던 글이 지난날 글이면 날이 바뀐 지금 글은 다시 걸 때를 기다리지 않는다
         want = not held and ((ntext != st.get("notice_text") and now.ts >= retry) or bool(dg))
         seen, looked = None, False
@@ -3132,6 +3161,28 @@ class Bot:
             self.log("올리는 사이 날이 바뀌어 지난날 공지 글은 올리지 않음")
             return "alert" if alerts else "none"
         again = bool(cfg.get("notice")) and not dg and st.get("notice_fail_text") == ntext and int(st.get("notice_fail") or 0) > 0
+        if st.get("notice_blocked") and not notice_block_on(st):
+            st.pop("notice_blocked", None)                   # 막혔던 글이 아니다(걸렸거나 글이 바뀜)
+        blocked = again and notice_block_on(st) == ntext
+        if blocked and hasattr(self.sender, "pin_lock_seen"):
+            # 카카오톡이 막았던 글(방장 핀 고정): 길게 누르지 않고 띠의 핀 표시만 본다. 그대로면 또 기다리고, 없어졌으면 다시 건다
+            try:
+                lock = self.sender.pin_lock_seen(self.room)
+            except RoomUnreachable as e:
+                self.send_fails += 1
+                wait = self.send_wait(e)
+                self.send_log("공지 막힘 확인", e, wait)
+                self.hold_until = self.ts() + wait
+                return "send-fail"
+            except Exception:
+                lock = None
+            if lock:
+                return self._notice_block_wait(st, ntext)
+            if lock is False:
+                st.update(notice_blocked="", notice_sends=1)  # 풀렸다: 이미 올린 글을 찾아 걸고, 위로 밀려 없으면 한 번 더 올려 건다
+                self.save()
+                self.log("띠의 핀 고정 표시가 없어져 공지를 다시 겁니다")
+                blocked = False
         sends = int(st.get("notice_sends") or st.get("notice_fail") or 1)   # 이 글을 방에 올린 횟수(옛 판 기록은 실패 수가 곧 올린 수)
         if again and hasattr(self.sender, "pin_again"):
             # 공지 걸기만 실패했던 같은 글: 방에 이미 올린 글을 찾아 공지로만 건다(같은 글을 또 올리지 않는다).
@@ -3146,6 +3197,8 @@ class Bot:
                 self.hold_until = self.ts() + wait
                 return "send-fail"
             except Exception as e:
+                if isinstance(e, NotFound) and blocked:      # 막힌 채(핀 표시를 못 읽음) 글을 또 올려도 걸 수 없다: 기다린다
+                    return self._notice_block_wait(st, ntext)
                 if not (isinstance(e, NotFound) and sends < 2):
                     return self._notice_failed(st, now, ntext, e)
                 self.log("이미 올린 공지 글을 찾지 못해 한 번 더 올림: %s" % e)
@@ -3200,11 +3253,31 @@ class Bot:
         self.log("공지로 걸었음")
         return "sent"
 
+    def _notice_block_wait(self, st, ntext):
+        """카카오톡이 막은 공지(방장 핀 고정)를 계속 기다린다: 30분 뒤 다시 본다. 기록은 세 시간에 한 줄"""
+        st["notice_retry_at"] = self.ts() + NOTICE_BLOCK_WAIT
+        if self.ts() - float(st.get("notice_block_log") or 0) >= NOTICE_BLOCK_LOG:
+            st["notice_block_log"] = self.ts()
+            self.log("공지 걸기 아직 막힘(%s). 방장이 공지 띠의 핀 고정을 풀면 30분 안에 겁니다" % (notice_block_text(st) or "카카오톡이 막음"))
+        self.save()
+        return "sent-no-notice"
+
     def _notice_failed(self, st, now, ntext, e):
-        """공지 걸기 실패: 1분, 5분, 15분 뒤 다시. 그래도 안 되면 다음 바뀜까지 쉰다(사람이 직접 걸 수 있게 알린다)"""
+        """공지 걸기 실패: 1분, 5분, 15분 뒤 다시. 그래도 안 되면 다음 바뀜까지 쉰다(사람이 직접 걸 수 있게 알린다).
+        카카오톡이 막았으면(NoticeBlocked, 방장 핀 고정) 그 사다리를 타지 않고 30분마다 띠만 본다(글을 다시 올리지 않는다)"""
         n = int(st.get("notice_fail") or 0) if st.get("notice_fail_text") == ntext else 0
         if not n:
             st["notice_fail_band"] = self.band_seen                  # 이 글을 걸기 전에 읽은 띠(다시 할 때 띠가 이 글로 바뀌었는지 본다)
+        if isinstance(e, NoticeBlocked):
+            first = not st.get("notice_blocked")
+            st.update(notice_fail=max(1, n), notice_fail_text=ntext, notice_retry_at=self.ts() + NOTICE_BLOCK_WAIT, notice_gaveup=0,
+                      notice_blocked=ntext, notice_block_why=clean(e.kakao, 120))
+            if first:
+                st["notice_block_log"] = self.ts()
+                self.log("공지 걸기 막힘(카카오톡 안내: %s). 방장이 방 위쪽 공지 띠의 핀 고정을 풀어야 걸 수 있습니다."
+                         " 글은 다시 올리지 않고 30분마다 띠를 봅니다" % clean(e.kakao, 120))
+            self.save()
+            return "sent-no-notice"
         if n < len(NOTICE_RETRY):
             st.update(notice_fail=n + 1, notice_fail_text=ntext, notice_retry_at=self.ts() + NOTICE_RETRY[n])
             self.log("공지 걸기 실패(%d번째, %d분 뒤 다시 건다): %s" % (n + 1, NOTICE_RETRY[n] // 60, e))
@@ -6049,6 +6122,47 @@ class AdbSender:
             raise RoomUnreachable(self.with_note(str(e))) from e   # 가림이면 길게 쉰다(send_wait)
         self.notice(room, text)
 
+    REFUSE_RE = re.compile(r"(공지|핀).*(할\s*수\s*없|불가)")
+
+    def notice_refusal(self, nodes, before=()):
+        """'공지' 를 누른 뒤 카카오톡이 띄운 막는 창의 글 칸(2026-11-07: '방장이 핀기능을 사용 중일 때는 공지를 등록할 수 없습니다.' 와 확인).
+        목록(대화 칸, 메뉴) 밖의 새 글이 공지나 핀과 '할 수 없' 을 함께 담은 것. 없으면 None"""
+        seen = {(n["b"], n["text"]) for n in before}
+        inlist = self.in_lists(nodes)
+        for n in nodes:
+            t = ws(n["text"])
+            if t and len(t) <= 120 and (n["b"], n["text"]) not in seen and n["i"] not in inlist and not n["cls"].endswith("EditText") \
+                    and self.REFUSE_RE.search(t):
+                return n
+        return None
+
+    def close_refusal(self, nodes, before, msg):
+        """막는 창을 닫는다: 그 글 바로 아래의 확인(닫기) 단추, 없으면 뒤로. 닫히지 않은 창이 다음 길게 누르기를 막지 않게"""
+        l, t, r, b = msg["b"]
+        btn = [n for n in self.labeled(nodes, ("확인", "닫기", "OK"), before)
+               if l - 120 <= self.center(n)[0] <= r + 120 and t <= n["b"][1] <= b + 260]
+        if btn:
+            self.tap(min(btn, key=lambda n: n["b"][1]))
+        else:
+            self.key(4)
+        return self.wait_change(nodes, lambda ns: self.notice_refusal(ns) is None, tries=3)
+
+    def pin_mark(self, nodes):
+        """방 위쪽 공지 띠의 핀 그림(방장이 공지를 핀으로 고정해 둔 표시, 2026-11 카카오톡 pin_icon): True, 없으면 False.
+        방 화면이 아니면(입력 칸이 없음) None. 대화 칸 목록 안의 것은 보지 않는다"""
+        e = find(nodes, cls="EditText")
+        if not e:
+            return None
+        el = min(n["b"][0] for n in e)
+        hgt = max(n["b"][3] for n in nodes)
+        inlist = self.in_lists(nodes)
+        return any(n["rid"].endswith(":id/pin_icon") and n["i"] not in inlist and n["b"][1] < hgt * 0.3 and self.center(n)[0] >= el - 60
+                   for n in nodes)
+
+    def pin_lock_seen(self, room):
+        """공지 걸기가 막힌 뒤 다시 할 때: 방을 열어 띠의 핀 표시를 본다(길게 누르지 않는다). True(아직 고정), False(풀림), None(모름)"""
+        return self.pin_mark(self.open_room(room))
+
     def notice(self, room, text):
         """보낸 글을 길게 눌러 공지로 건다. 건 뒤 위쪽 공지 띠가 봇 글이 아닌 다른 글이면(다른 말풍선이 걸렸을 수 있다)
         대화를 살짝 올려 멈춘 뒤 곧바로 한 번 더 건다(남의 글이 공지로 남지 않게)"""
@@ -6109,9 +6223,15 @@ class AdbSender:
         # 된 것: '공지가 등록되었습니다' 카드, 첫 줄이 같은 공지가 없던 띠에 이 글, 또는 띠가 바뀌어 이 글을 보인다(걸기 전 띠 글과 견줘 판가름)
         ok = lambda ns: not wrong(ns) and (self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip))
                                            or (notice_core(bt(ns)) != notice_core(before) and band_shows(bt(ns), text, [before] if before else [])))
-        dlg = self.wait_change(menu, lambda ns: ok(ns) or bool(self.labeled(ns, self.CONFIRM, menu) and any(
+        dlg = self.wait_change(menu, lambda ns: ok(ns) or self.notice_refusal(ns, menu) is not None or bool(self.labeled(ns, self.CONFIRM, menu) and any(
             re.search(r"공지.*(하시겠|할까요|1건만)|(하시겠|할까요).*공지", ws(n["text"])) for n in ns)), tries=4)
         self.snap("'공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
+        refused = self.notice_refusal(dlg, menu)
+        if refused is not None:                                  # 카카오톡이 막았다(방장 핀 고정 등): 창을 닫고 막힘으로 알린다(다시 올려도 같다)
+            why = ws(refused["text"])
+            self.snap("막는 창을 닫은 뒤", self.close_refusal(dlg, menu, refused), nodes)
+            self.save_diag()
+            raise NoticeBlocked(why, self.diag_note())
         if ok(dlg):                                              # 누르자마자 걸렸다(확인 창 없음). 확인을 또 누르지 않는다
             return
         # 확인 단추는 '공지를 등록하시겠습니까?' 같은 묻는 창이 떴을 때만 누른다(다른 알림 창의 '확인' 을 잘못 누르지 않게)
@@ -9321,7 +9441,7 @@ def cmd_reset(base, state_path):
         return "run 이 돌고 있습니다. 그 창에서 Ctrl+C 를 두 번 눌러 끝낸 뒤 다시 python excer_bot.py reset"
     st = load_state(state_path)
     n = len(st.get("known") or {})
-    for k in ("init", "notice_text", "send_fail_text", "send_unsure", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done", "settle", "notice_fail_band", "unshared", "pre_up", "bulk_ids", "day_base", "card_old"):
+    for k in ("init", "notice_text", "send_fail_text", "send_unsure", "notice_fail", "notice_fail_text", "notice_retry_at", "notice_posted", "notice_built", "notice_try", "alert_done", "settle", "notice_fail_band", "unshared", "pre_up", "bulk_ids", "day_base", "card_old", "notice_blocked", "notice_block_why", "notice_block_log"):
         st.pop(k, None)
     st["known"] = {}
     save_json(state_path, st)
@@ -9402,6 +9522,7 @@ def write_alive(path, bot, voice, err=""):
                          "send_fails": int(getattr(bot, "send_fails", 0) or 0),
                          "notice_fail": int((bot.st.get("notice_fail") or 0) if getattr(bot, "st", None) else 0),
                          "notice_gaveup": int((bot.st.get("notice_gaveup") or 0) if getattr(bot, "st", None) else 0),
+                         "notice_block": notice_block_text(bot.st) if getattr(bot, "st", None) else "",
                          "ctl": ctl_text(bot, bot.ts() if callable(getattr(bot, "ts", None)) else time.time()),
                          "notice": (bot.st.get("notice_text") or "").split("\n")[0] if getattr(bot, "st", None) else "",
                          "voice": (voice.st.get("state") or "") if voice else "", "members": members_alive(bot), "greet": greet_alive(bot),
@@ -9550,7 +9671,9 @@ def status_lines(base, now_ts=None):
         out.append("사이트 마지막 확인: %s%s" % (datetime.fromtimestamp(lc, KST).strftime("%m-%d %H:%M:%S") if lc else "없음", ", 읽기 실패 %d번 이어짐" % alive["read_fails"] if alive.get("read_fails") else ""))
         if alive.get("send_fails"):
             out.append("보내기 실패 %d번 이어짐: adb 가 안 붙었거나(무선 디버깅, connect) 카카오톡 화면이 달라짐(excer_bot_ui.txt)" % alive["send_fails"])
-        if alive.get("notice_fail"):
+        if alive.get("notice_block"):
+            out.append("공지 걸기 막힘(%s): 방장이 방 위쪽 공지 띠의 핀 고정을 풀어야 걸립니다. 봇은 글을 다시 올리지 않고 30분마다 띠를 봅니다" % alive["notice_block"])
+        elif alive.get("notice_fail"):
             out.append("공지 걸기 실패 %d번: 글은 올렸지만 공지로 못 걸었음(봇 계정이 부방장인지)" % alive["notice_fail"])
         if alive.get("ctl"):
             out.append("운영 화면의 원격 조종: " + alive["ctl"])
