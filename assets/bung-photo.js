@@ -5,17 +5,21 @@
    위에서부터 먼저 맞는 줄이 이기고, 사진이 여럿이면 글 번호로 골라 같은 벙은 늘 같은 사진.
    제목에 맞는 낱말이 없으면 장소 이름(논현 곱창집, 선릉역 카페), 그다음 본문 앞부분으로 한 번 더. 그래도 없으면 그 날짜의 달력 그림.
    음식, 술, 카페 86 종류 300장(1차)과 모임 활동, 장소 43 종류 125장(2차, 87차: 한강, 산책, 운동, 놀이, 공연, 여행, 집, 계절). 전의 한 장짜리 활동 사진은 같은 종류에 함께 돌려 쓴다.
-   규칙 글은 scratchpad gen.py 가 만든다(두루 쓰는 말은 맨 아래).
+   3차 46장(141차): 편의점, 경기 관람, 오징어, 횟집, 크리스마스 거리, 겨울 간식, 눈, 스케이트, 맥주 축제, 박람회와 노래방, 집, 포차, 연말, 일출, 클라이밍, 해장, 반려견, 러닝 더함.
+   두루 쓰는 말은 맨 아래. 낱말을 고치면 node tools/bung_photo_check.js 로 낱말 함정(가게 이름 속 낱말 같은)과 사진 파일을 확인한다.
    ============================================================ */
 (function () {
   "use strict";
   var RULES = [
     [/볼링/, ["bowling-01", "bowling-02", "bowling-03"]],
-    [/노래방|노래벙|코노|코인\s?노래/, ["karaoke-01"]],
+    [/노래방|노래벙|노래\s?연습장|래방|놀애방|코노|코인\s?노래|준코/, ["karaoke-01", "karaoke-02", "karaoke-03", "karaoke-04", "karaoke-05"]],
     [/파자마|홈시네마|집에서\s?영화/, ["home-04"]],
-    [/뮤지컬|연극|오페라|발레|공연|클래식/, ["cinema-02", "cinema-04"]],
+    [/뮤지컬|연극|오페라|발레|공연|클래식|스탠딩\s?(개그|코미디)|(개그|코미디|토크)\s?쇼/, ["cinema-02", "cinema-04"]],
+    [/비어\s?페스트|맥주\s?(축제|페스티벌|페스타)|비어\s?(페스티벌|페스타)|옥토버\s?페스트/, ["beerfest-01"]],   // 141차: 페스티벌(공연)보다 먼저
     [/콘서트|페스티벌|락페|워터밤/, ["cinema-03", "cinema-04"]],
     [/영화|시네마|무비|극장|메가박스|CGV|롯데시네마/i, ["cinema-01", "movie-01"]],
+    [/(펫|캣|애견|반려동물|고양이)\s?(쇼|페어|박람회|페스티벌|페스타)|케이\s?펫/, ["expo-01"]],   // 141차: 박람회는 관람(전시), 뷰티(마사지), 강아지보다 먼저
+    [/박람회|엑스포|페어(?![링플웨리])|페스타|카페쇼|코믹콘/, ["expo-02"]],
     [/전시|미술관|박물관|갤러리|관람/, ["exhibit-01", "exhibit-02", "exhibit-03"]],
     [/방탈출|탈출\s?카페/, ["escape-01", "escape-02"]],
     [/보드\s?게임|보드\s?겜|보겜|보드벙|보드\s?카페|루미큐브|카탄|마작|고스톱|화투|섯다|카드\s?게임/, ["boardgame-01", "boardgame-02", "boardgame-03", "game-01"]],
@@ -27,15 +31,20 @@
     [/독서|북클럽|(^|[^산])책\s?(벙|모임)|공부|스터디|코딩|회화|자격증/, ["study-01", "study-02", "study-03", "book-01"]],
     [/등산|산행|트레킹|북한산|관악산|청계산|인왕산|아차산|도봉산|수락산|불암산|대모산|우면산/, ["hike-01", "hike-02", "hike-03", "hike-04"]],
     [/탁구|탁벙|핑퐁/, ["pingpong-01", "pingpong-02", "pingpong-03", "sport-01"]],
-    [/러닝|런닝|마라톤|조깅/, ["running-01", "running-02", "running-03", "sport-02"]],
+    [/러닝|런닝|마라톤|조깅|(^|[^이그저요고조스어두홈])런(?![가-힣])/, ["running-01", "running-02", "running-03", "sport-02", "running-04", "running-05"]],   // 런: 기부런, 푸르메런(이런, 그런, 홈런, 런치는 아님)
     [/테니스/, ["badminton-02"]],
     [/배드민턴|라켓/, ["badminton-01", "badminton-03", "sport-03"]],
-    [/클라이밍|볼더링|암벽/, ["climbing-01", "climbing-02"]],
+    [/클라이밍|클라임|볼더링|암벽|돌잡이/, ["climbing-01", "climbing-02", "climbing-03", "climbing-04"]],
     [/필라테스/, ["yoga-02"]],
     [/(^|[^가-힣])요가|명상|스트레칭/, ["yoga-01"]],
+    [/풋살|구기/, ["futsal-01"]],   // 풋살 대회 결승은 하는 쪽
+    /* 141차: 경기를 함께 보는 모임(술집, 집). 뒤에 직관이 있으면 경기장이므로 야구 사진 */
+    [/롤드컵|LCK|(^|[^가-힣])티원|e\s?스포츠|이스포츠|(^|[^가-힣])롤\s?(결승|보면서|보는|뷰잉|응원)/, ["viewing-02"]],
+    [/((축구|월드컵|국대|A매치|챔스|손흥민)\s?(경기\s?)?(보면서|보는|시청|같이\s?보|응원|뷰잉)|(국대|A매치|챔스|월드컵)\s?경기|(단체|길거리)\s?응원)(?![\s\S]*직관)/, ["viewing-03"]],
+    [/(뷰잉|플옵|플레이\s?오프|와일드\s?카드|한국\s?시리즈|결승(?![선점])|응원\s?(벙|하러|파티)|(경기|야구|농구|배구)\s?(보면서|보는|시청|같이\s?보))(?![\s\S]*직관)/, ["viewing-01"]],
     [/농구/, ["futsal-02"]],
     [/야구\s?(동호회|연습)|배팅|캐치볼/, ["futsal-03"]],
-    [/풋살|축구|구기/, ["futsal-01"]],
+    [/축구/, ["futsal-01"]],
     [/야구|직관/, ["baseball-01", "baseball-02", "baseball-03"]],
     [/골프|라운딩/, ["golf-01", "golf-02", "golf-03"]],
     [/헬스|웨이트|운동|피트니스|다이어트|크로스핏|(^|[^A-Za-z])PT($|[^A-Za-z])/, ["gym-01", "gym-02", "gym-03"]],
@@ -52,35 +61,39 @@
     [/바다|해변|해수욕|바닷가/, ["beach-01", "beach-02", "beach-03", "beach-04", "trip-03"]],
     [/오사카|후쿠오카|도쿄|교토|삿포로|오키나와|일본\s?(여행|투어)/, ["japan-01", "japan-02", "japan-03"]],
     [/다낭|푸꾸옥|발리|세부|나트랑|동남아|(해외|베트남|태국)\s?(여행|투어)/, ["asia-01", "asia-02", "asia-03"]],
-    [/일출|해돋이|해맞이/, ["sunrise-01"]],
+    [/일출|해돋이|해맞이/, ["sunrise-01", "sunrise-03", "sunrise-04"]],
     [/모닝|조식/, ["sunrise-02"]],
     [/여행|드라이브|당일치기/, ["drive-01", "drive-02", "drive-03", "drive-04"]],
+    [/일루미네이션|루미나리에|빛\s?(축제|초롱)|크리스마스\s?(마켓|거리)|성탄\s?(마켓|트리)|트리\s?(점등|구경)|미디어\s?파사드/, ["xmas-01", "xmas-02"]],   // 141차: 연말 파티, 쇼핑보다 먼저
     [/불꽃놀이|불꽃축제/, ["flower-03"]],
     [/벚꽃|꽃구경|꽃놀이|꽃축제/, ["flower-01", "park-03", "park-04"]],
     [/단풍/, ["flower-02", "park-01"]],
+    [/스케이트(?!\s?보드)|스케이팅|아이스\s?링크|빙상장/, ["skate-01"]],
     [/(^|[^위])스키|스노보드|썰매|보드\s?타/, ["ski-01", "ski-02"]],
     [/낚시/, ["fishing-01", "fishing-02"]],
-    [/쇼핑|백화점|아울렛|스타필드|코엑스/, ["shopping-01"]],
-    [/장보기|시장|(^|[^가-힣])마트/, ["shopping-02"]],
+    [/쇼핑|백화점|아울렛|스타필드/, ["shopping-01"]],   // 141차: 코엑스 뺌(영화관, 박람회, 카페가 많음)
+    [/장보기|(^|[^어산])시장|(^|[^가-힣])마트/, ["shopping-02"]],   // 어시장, 수산시장은 횟집
     [/봉사|플로깅|줍깅|헌혈|나눔/, ["volunteer-01", "volunteer-02"]],
     [/출사|사진\s?(벙|모임|찍|산책|투어)|필름\s?카메라|카메라/, ["photo-01", "photo-02"]],
-    [/애견|강아지|반려견|댕댕|애카|반려동물/, ["pet-01"]],
+    [/애견|강아지|반려견|댕댕|애카|반려동물|🐶|🐕/, ["pet-01", "pet-03", "pet-04"]],
     [/고양이|냥이|반려묘/, ["pet-02"]],
     [/경마/, ["horse-01"]],
     [/놀이공원|에버랜드|롯데월드|서울랜드|테마파크|회전목마/, ["horse-02"]],
-    [/연말|송년|망년회|크리스마스|성탄|X-?MAS/i, ["yearend-01", "yearend-02", "yearend-03"]],   // 126차: 연말 파티(장소의 파티룸보다 먼저)
+    [/연말|송년|망년회|신년회|크리스마스|성탄|X-?MAS/i, ["yearend-04", "yearend-05", "yearend-06"]],   // 126차: 연말 파티(장소의 파티룸보다 먼저). 141차: 새로 만든 셋(yearend-01~03 은 다른 사진의 복사본이라 옛 공유 카드용으로만 남김)
     [/생일|생파|생축|파티룸/, ["birthday-01", "birthday-02", "birthday-03"]],
-    [/홈술|집술/, ["home-06", "home-01"]],
+    [/홈술|집술/, ["home-06", "home-01", "home-07", "home-09"]],
     [/요리벙|쿠킹/, ["home-02"]],
     [/한강\s?라면|편의점\s?라면/, ["hangang-03"]],
-    [/피크닉|포틀럭|돗자리|소풍/, ["picnic-01", "picnic-02", "river-01"]],
+    [/피크닉|포틀럭|포트럭|포트락|팟럭|돗자리|소풍(?!\s?나온)/, ["picnic-01", "picnic-02", "river-01"]],
     [/빙수/, ["bingsu-01", "bingsu-02"]],
     [/브런치/, ["brunch-01", "brunch-02", "brunch-03"]],
     [/(루프탑|옥상|옥탑)\s?(카페|커피)/, ["cafe-01", "cafe-02", "cafe-03", "cafe-04", "cafe-05", "cafe-06", "cafe-07", "cafe-08", "cafe-09", "cafe-10", "cafe-11"]],
+    [/붕어빵|잉어빵|호떡|군고구마|군밤|계란빵|호빵/, ["snack-01", "snack-02"]],   // 141차: 빵보다 먼저
     [/빵|베이커리|크루아상|소금빵/, ["bakery-01", "bakery-02", "bakery-03", "bakery-04", "bakery-05"]],
     [/디저트|케이크|마카롱|크로플|도넛/, ["dessert-01", "dessert-02", "dessert-03", "dessert-04"]],
     [/아이스크림|젤라또/, ["icecream-01", "icecream-02"]],
     [/찻집|전통차|티룸/, ["tea-01", "tea-02"]],
+    [/짬뽕/, ["jungsik-01", "jungsik-02", "jungsik-03", "jungsik-04"]],   // 141차: 차돌짬뽕, 해물짬뽕은 짬뽕(차돌, 해산물보다 먼저)
     [/곱창전골|곱도리/, ["gopjeongol-01", "gopjeongol-02"]],
     [/곱창|대창/, ["gopchang-01", "gopchang-02", "gopchang-03", "gopchang-04"]],
     [/막창/, ["makchang-01", "makchang-02", "makchang-03"]],
@@ -92,7 +105,7 @@
     [/소갈비|우대갈비|LA\s?갈비|갈비살/i, ["sogalbi-01", "sogalbi-02", "sogalbi-03", "sogalbi-04"]],
     [/한우|소고기|등심|안심|차돌|특수부위/, ["hanwoo-01", "hanwoo-02", "hanwoo-03", "hanwoo-04", "hanwoo-05", "hanwoo-06", "hanwoo-07", "hanwoo-08", "hanwoo-09"]],
     [/육회|육사시미/, ["yukhoe-01", "yukhoe-02"]],
-    [/삼겹|삼굡|오겹|목살|흑돼지|고깃집/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12"]],
+    [/삼겹|삼굡|오겹|목살|흑돼지|도야지|고깃집/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12"]],
     [/닭갈비/, ["dakgalbi-01", "dakgalbi-02", "dakgalbi-03"]],
     [/쪽갈비|바비큐|바베큐|폭립|(^|[^가-힣])립($|[^가-힣])/, ["jjokgalbi-01", "jjokgalbi-02"]],
     [/닭발|똥집|오돌뼈/, ["dakbal-01", "dakbal-02"]],
@@ -100,7 +113,7 @@
     [/족발|뽕족/, ["jokbal-01", "jokbal-02", "jokbal-03", "jokbal-04", "jokbal-05", "jokbal-06"]],
     [/보쌈|수육/, ["bossam-01", "bossam-02", "bossam-03"]],
     [/감자탕/, ["gamjatang-01", "gamjatang-02", "gamjatang-03"]],
-    [/해장|황태/, ["haejang-01", "haejang-02"]],
+    [/황태|북엇국|북어국|콩나물\s?국밥|콩나물국|선지/, ["haejang-01", "haejang-02", "haejang-03", "haejang-04"]],   // 141차: '해장' 낱말은 음식 이름 아래로(해장 파스타는 파스타)
     [/설렁탕|곰탕|갈비탕/, ["seolleongtang-01", "seolleongtang-02", "seolleongtang-03"]],
     [/국밥|순대/, ["gukbap-01", "gukbap-02", "gukbap-03"]],
     [/장어/, ["jangeo-01", "jangeo-02", "jangeo-03"]],
@@ -114,44 +127,47 @@
     [/조개|가리비/, ["jogae-01", "jogae-02", "jogae-03"]],
     [/새우|대하/, ["saeu-01", "saeu-02"]],
     [/아구|해물찜|해물탕/, ["agujjim-01", "agujjim-02", "agujjim-03"]],
-    [/낙지|쭈꾸미|주꾸미|오징어|문어/, ["nakji-01", "nakji-02", "nakji-03", "nakji-04"]],
+    [/오징어/, ["squid-01", "squid-02"]],
+    [/낙지|쭈꾸미|쭉꾸미|주꾸미|문어/, ["nakji-01", "nakji-02", "nakji-03", "nakji-04"]],
     [/굴벙|굴찜|생굴|과메기/, ["gul-01", "gul-02"]],
     [/연어|사케동/, ["salmon-01", "salmon-02"]],
     [/참치|챔치/, ["chamchi-01", "chamchi-02"]],
     [/초밥|스시|오마카세/, ["sushi-01", "sushi-02", "sushi-03", "sushi-04", "sushi-05", "sushi-06"]],
     [/회벙|횟집|모둠회|사시미|물회|광어|방어|우럭|도미|(^|[^가-힣\d])회([^가-힣\d]|$)/, ["hoe-01", "hoe-02", "hoe-03", "hoe-04", "hoe-05", "hoe-06", "hoe-07", "hoe-08", "hoe-09"]],
+    [/어시장|수산|막회|양어장|회\s?센터/, ["fishmarket-01", "fishmarket-02"]],
     [/냉면|막국수|밀면/, ["naengmyeon-01", "naengmyeon-02", "naengmyeon-03"]],
     [/칼국수|수제비/, ["kalguksu-01", "kalguksu-02"]],
     [/쌀국수|분짜|베트남/, ["pho-01", "pho-02", "pho-03"]],
     [/국수/, ["guksu-01", "guksu-02"]],
     [/만두|떡국|만둣국/, ["mandu-01", "mandu-02"]],
-    [/마라/, ["mala-01", "mala-02", "mala-03"]],
+    [/마라(탕|샹|전골|룽샤|롱샤|벙|맛|\s?(먹|땡|러버))/, ["mala-01", "mala-02", "mala-03"]],   // 141차: ~지마라, 마라톤은 아님
     [/훠궈/, ["hotpot-01", "hotpot-02"]],
-    [/짜장|짬뽕|탕수육|중식|중국집/, ["jungsik-01", "jungsik-02", "jungsik-03", "jungsik-04"]],
+    [/짜장|짬뽕|탕수육|중식|중국집|반점|중화\s?요리/, ["jungsik-01", "jungsik-02", "jungsik-03", "jungsik-04"]],
     [/딤섬|샤오롱바오/, ["dimsum-01", "dimsum-02"]],
     [/팟타이|태국|똠얌/, ["thai-01", "thai-02"]],
     [/커리|카레|인도/, ["curry-01", "curry-02"]],
     [/타코|멕시칸|부리또/, ["mexican-01", "mexican-02"]],
     [/라멘/, ["ramen-01", "ramen-02", "ramen-03"]],
-    [/우동|소바/, ["udon-01", "udon-02"]],
-    [/돈까스|돈카츠/, ["donkatsu-01", "donkatsu-02", "donkatsu-03"]],
+    [/우동|(^|[^레])소바/, ["udon-01", "udon-02"]],   // 에스프레소바는 아님
+    [/돈까스|돈가스|돈카/, ["donkatsu-01", "donkatsu-02", "donkatsu-03"]],
     [/텐동|규동|덮밥/, ["donburi-01", "donburi-02"]],
     [/파스타|스파게티|이탈리안/, ["pasta-01", "pasta-02", "pasta-03", "pasta-04"]],
     [/피자|피맥/, ["pizza-01", "pizza-02", "pizza-03"]],
     [/스테이크/, ["steak-01", "steak-02", "steak-03"]],
     [/버거/, ["burger-01", "burger-02", "burger-03"]],
     [/샐러드|포케|샌드위치/, ["salad-01", "salad-02"]],
-    [/떡볶이|즉떡|엽떡|분식|어묵|오뎅/, ["tteokbokki-01", "tteokbokki-02", "tteokbokki-03"]],
+    [/떡볶이|즉떡|엽떡|분식|어묵(?!탕)/, ["tteokbokki-01", "tteokbokki-02", "tteokbokki-03"]],   // 141차: 오뎅, 어묵탕은 포차
     [/김밥|(^|[^가-힣])라면/, ["kimbap-01", "kimbap-02"]],
-    [/한정식|한식|정식(?!\s?오픈)|백반|쌈밥|비빔밥|집밥/, ["hansik-01", "hansik-02", "hansik-03", "hansik-04", "hansik-05"]],
+    [/한정식|한식|(^|[^증])정식(?!\s?(오픈|모임|멤버|회원|으로))|백반|쌈밥|비빔밥|집밥|우렁(이|쌈|된장)/, ["hansik-01", "hansik-02", "hansik-03", "hansik-04", "hansik-05"]],
     [/생선구이|고등어|갈치/, ["saengseon-01"]],
-    [/치킨|치맥|통닭|후라이드|순살|교촌|굽네|BBQ|비비큐/i, ["chicken-01", "chicken-02", "chicken-03", "chicken-04", "chicken-05", "chicken-06", "chicken-07"]],
-    [/고기|꼬기|갈비|구이/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12", "hanwoo-01", "hanwoo-02", "hanwoo-03", "hanwoo-04", "hanwoo-05", "hanwoo-06", "hanwoo-07", "hanwoo-08", "hanwoo-09"]],
+    [/치킨|치맥|통닭|후라이드|순살|닭강정|교촌|굽네|BBQ|비비큐/i, ["chicken-01", "chicken-02", "chicken-03", "chicken-04", "chicken-05", "chicken-06", "chicken-07"]],
+    [/해장/, ["haejang-01", "haejang-02", "haejang-03", "haejang-04"]],
+    [/고기|꼬기|갈비|구이|축산|정육/, ["samgyeopsal-01", "samgyeopsal-02", "samgyeopsal-03", "samgyeopsal-04", "samgyeopsal-05", "samgyeopsal-06", "samgyeopsal-07", "samgyeopsal-08", "samgyeopsal-09", "samgyeopsal-10", "samgyeopsal-11", "samgyeopsal-12", "hanwoo-01", "hanwoo-02", "hanwoo-03", "hanwoo-04", "hanwoo-05", "hanwoo-06", "hanwoo-07", "hanwoo-08", "hanwoo-09"]],
     [/전골/, ["shabu-01", "shabu-02", "shabu-03"]],
     [/양식/, ["pasta-01", "pasta-02", "pasta-03", "pasta-04", "steak-01", "steak-02", "steak-03"]],
     [/일식/, ["sushi-01", "sushi-02", "sushi-03", "sushi-04", "sushi-05", "sushi-06", "izakaya-01", "izakaya-02", "izakaya-03", "izakaya-04"]],
-    [/편맥|편의점|(^|[^A-Za-z])(CU|GS25)($|[^A-Za-z0-9])|세븐일레븐|이마트24/, ["yajang-01", "yajang-02", "yajang-03", "hof-01", "hof-02", "hof-03", "hof-04", "hof-05"]],
-    [/포차|포장마차|오뎅바|골뱅이/, ["pocha-01", "pocha-02", "pocha-03", "pocha-04", "pocha-05", "pocha-06", "pocha-07", "pocha-08"]],
+    [/편맥|편쏘|편벙|(^|[^가-힣])편(소|편)|편의점|(^|[^A-Za-z])(CU|GS25)($|[^A-Za-z0-9])|세븐일레븐|이마트24/, ["conv-01", "conv-02", "conv-03", "conv-04"]],   // 단편소설은 아님
+    [/포차|포장마차|오뎅|오댕|오탕|어묵탕|골뱅이/, ["pocha-01", "pocha-02", "pocha-03", "pocha-04", "pocha-05", "pocha-06", "pocha-07", "pocha-08", "pocha-09", "pocha-10", "pocha-11", "pocha-12"]],
     [/소주|술벙|술집/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"]],
     [/수제맥주|펍|탭룸/, ["craftbeer-01", "craftbeer-02", "craftbeer-03"]],
     [/호프|맥주|생맥|노가리|간맥/, ["hof-01", "hof-02", "hof-03", "hof-04", "hof-05"]],
@@ -162,10 +178,12 @@
     [/와인|와벙|내추럴|샴페인|시음|낮와/, ["winebar-01", "winebar-02", "winebar-03", "winebar-04", "winebar-05", "winebar-06", "winebar-07"]],
     [/위스키|싱글몰트/, ["whisky-01", "whisky-02", "whisky-03", "whisky-04", "whisky-05"]],
     [/칵테일/, ["cocktail-01", "cocktail-02", "cocktail-03"]],
-    [/루프탑|옥상|옥탑/, ["rooftop-01", "rooftop-02", "rooftop-03"]],
+    [/루프탑|옥상|옥탑|옥벙/, ["rooftop-01", "rooftop-02", "rooftop-03"]],
     [/LP\s?바|재즈/i, ["lpbar-01", "lpbar-02"]],
     [/커벙|커피|카페|라떼|티타임|스벅|스타벅스|아아|수다|논알콜|무알콜/, ["cafe-01", "cafe-02", "cafe-03", "cafe-04", "cafe-05", "cafe-06", "cafe-07", "cafe-08", "cafe-09", "cafe-10", "cafe-11"], true],
-    [/집벙|홈파티|집들이|하우스/, ["home-01", "home-02", "home-03", "home-04", "home-05", "home-06"], true],
+    [/집벙|홈파티|집들이|하우스|자취방|🏠/, ["home-01", "home-02", "home-03", "home-04", "home-05", "home-06", "home-07", "home-08", "home-09", "home-10"], true],
+    [/\d{3,4}호(?![가-힣])/, ["home-01", "home-02", "home-03", "home-04", "home-05", "home-06", "home-07", "home-08", "home-09", "home-10"], true, "place"],   // 141차: 장소가 집 주소(202호. 호점, 호선은 아님). 넷째 칸 place 는 장소 칸에만(본문의 지도 주소는 아님)
+    [/첫\s?눈|함박눈|눈사람|눈싸움|설경|(^|[^가-힣])눈\s?(오는|내리는|온다|와요|오면|왔|쌓인|구경)/, ["snow-01", "snow-02"], true],   // 날씨는 두루 쓰는 말(눈 오는 날 막걸리는 막걸리)
     [/따릉이|자전거/, ["hangang-04"], true],
     [/야경/, ["hangang-02", "river-02", "park-05"], true],
     [/한강|반포|뚝섬|여의도|잠원/, ["hangang-01", "hangang-02", "hangang-03", "hangang-04", "hangang-05", "hangang-06", "river-01", "river-02"], true],
@@ -174,7 +192,7 @@
     [/부산|속초|강릉|양양|제주|여수|통영|을왕리|대부도/, ["beach-01", "beach-02", "beach-03", "beach-04"], true],
     [/가평|양평|춘천|경주|전주(?!비빔)|강화도/, ["drive-01", "drive-02", "drive-03", "drive-04"], true],
     [/야식|야밤|새벽|심야/, ["yasik-01", "yasik-02"], true],
-    [/한잔|낮술|간술|불금/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"], true],
+    [/한잔|낮술|간술|긴술|꽁술|불금|술상|안주|음주|마시기|마시자|마시러|(^|[^가-힣])술\s?(먹|마시|자리|약속|모임|한잔)/, ["soju-01", "soju-02", "soju-03", "soju-04", "soju-05", "soju-06", "soju-07"], true],
     [/밥|식사|점심|점벙|저녁|맛집|맛벙|먹벙|먹는벙|아침|회식|무한리필|뒷풀이|뒤풀이/, ["dinner-01", "dinner-02", "dinner-03", "dinner-04"], true],
   ];
   var LABEL = {
@@ -316,6 +334,16 @@
     "pet": "반려동물",
     "horse": "경마",
     "sunrise": "일출",
+    "conv": "편의점",
+    "viewing": "경기 관람",
+    "squid": "오징어",
+    "fishmarket": "횟집",
+    "xmas": "크리스마스 거리",
+    "snack": "겨울 간식",
+    "snow": "눈 오는 날",
+    "skate": "스케이트",
+    "beerfest": "맥주 축제",
+    "expo": "박람회",
     /* 한 종류에 다른 장면이 섞인 사진은 파일 이름으로(테니스장, 농구장, 전의 한 장짜리 사진) */
     "sport-01": "탁구",
     "sport-02": "러닝",
@@ -350,12 +378,14 @@
     "sunrise-02": "모닝",
     "pet-02": "고양이"
   };
-  /* 글(text)에 먼저 맞는 줄의 사진 이름. 사진이 여럿이면 글 번호로. 없으면 ''. g: 두루 쓰는 줄에 맞음 */
-  function match(text, id, byPos) {
+  /* 글(text)에 먼저 맞는 줄의 사진 이름. 사진이 여럿이면 글 번호로. 없으면 ''. g: 두루 쓰는 줄에 맞음.
+     src: 글의 어느 칸인지(title, place, body). 넷째 칸이 있는 줄은 그 칸에서만 본다 */
+  function match(text, id, byPos, src) {
     var t = String(text || "");
     var best = null, bestAt = -1, firstG = null;
     for (var i = 0; i < RULES.length; i++) {
       var rule = RULES[i];
+      if (rule[3] && rule[3] !== src) continue;
       if (!rule[0].test(t)) continue;
       var list = rule[1], r = { name: list[Math.abs(parseInt(id, 10) || 0) % list.length], g: !!rule[2] };
       if (!byPos) return r;                                   // 제목과 장소: 위에서부터 먼저 맞는 줄(구체적인 줄이 위)
@@ -371,11 +401,11 @@
      장소 이름(논현 곱창집), 그다음 본문 앞부분(300자)의 낱말로 고른다. 두루 쓰는 말보다 구체적인 낱말이 어디에 있든 이긴다 */
   function name(p, m) {
     p = p || {}; m = m || {};
-    var srcs = [p.title, m.place, String(p.body || "").slice(0, 300)];
+    var srcs = [p.title, m.place, String(p.body || "").slice(0, 300)], keys = ["title", "place", "body"];
     var first = null;
     for (var i = 0; i < srcs.length; i++) {
       if (!srcs[i]) continue;
-      var r = match(srcs[i], p.id, i === 2);
+      var r = match(srcs[i], p.id, i === 2, keys[i]);
       if (r && !r.g) return r.name;
       if (r && !first) first = r;
     }
