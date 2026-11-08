@@ -2258,7 +2258,7 @@
       $("wBodyLabel").innerHTML = isBung ? "내용 <small>선택</small>" : (cat === "후기" ? "후기 본문" : cat === "공지" ? "상세 내용" : "내용") + ' <small class="req-tag">필수</small>';
       if (bf) bf.classList.toggle("is-req", !isBung);   // 모임 모집만 내용이 선택
       $("wBody").placeholder = isBung ? "예: 편하게 오세요. 가게는 정해지면 알려드릴게요." : "내용";
-      $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : "글을 수정하거나 삭제할 때 필요합니다.";
+      $("wPassHint").textContent = cat === "공지" ? "운영진 비밀번호를 입력합니다." : state.editingId ? "글을 쓸 때 입력한 비밀번호 또는 운영진 비밀번호입니다." : "글을 수정하거나 삭제할 때 필요합니다.";   // 고칠 때는 운영진 비밀번호도 된다(서버 post_update)
       // 모임 모집은 올린 글의 카드가 곧 미리보기라 아래 미리보기 상자를 빼서 창을 줄인다
       const pv = document.querySelector("#writeForm .form-preview"); if (pv) pv.hidden = isBung;
       if (meta) fields.forEach((f) => { const el = $("wf_" + f.key); if (el && meta[f.key] != null) el.value = String(meta[f.key]); });
