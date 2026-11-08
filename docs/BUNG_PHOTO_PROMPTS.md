@@ -3,6 +3,8 @@
 모임 모집 글의 사진(assets/bung, 800x400 와 작은 사진 180x180)을 늘리기 위한 프롬프트 모음입니다.
 지금 사진 467장(음식과 술과 카페 86 종류, 활동과 장소 43 종류)과 같은 느낌의 실사 사진으로 만듭니다.
 
+**141차(2026-11-08)에 46장을 모두 받아 넣었습니다.** 쓰는 낱말과 이름표는 assets/bung-photo.js 에 있고(6절은 넣은 그대로), 낱말을 고치면 `node tools/bung_photo_check.js` 로 확인합니다.
+
 ## 1. 왜 이 종류인가: 실제 모집 글 193개(2026-08-27 ~ 11-08)
 
 | 본 것 | 결과 |
@@ -304,24 +306,26 @@ Pet fair in a large exhibition hall: people walking with small dogs and cats in 
 Weekend dessert and bakery fair in a big exhibition hall: colorful booths with cakes, cookies and bread on display, crowds with tote bags, friends sharing a sample seen from behind, bright cheerful light. Photorealistic candid lifestyle photo in Seoul, South Korea, warm natural light, 35mm lens, shallow depth of field, realistic colors. Landscape 3:2, 1536x1024, main subject in the middle band so a 2:1 center crop keeps it. Korean adults in their late 20s to 30s seen from behind or the side, faces not clearly visible. No text, no letters, no numbers, no logos, no brand labels, no watermark.
 ```
 
-## 6. 받은 뒤 넣을 이름표와 낱말 (참고)
+## 6. 넣은 이름표와 낱말 (141차)
 
-| 이름 | 이름표 | 붙일 낱말(예) |
+| 이름 | 이름표 | 붙인 낱말(예) |
 |---|---|---|
-| conv | 편의점 | 편맥, 편소, 편벙, 편의점, CU, GS25 |
-| karaoke | 노래방 | 노래방, 노래연습장, 래방, 코노, 준코 |
-| home | 집 모임 | 집벙, 홈파티, 집들이, 장소가 집 주소(호수) |
-| pocha | 포차 | 포차, 포장마차, 오뎅탕, 오탕 |
-| viewing | 단체 관람 | 직관 아닌 경기 보기, 뷰잉, 응원, 결승, 플옵, 와일드카드 |
-| squid, fishmarket | 오징어, 횟집 | 산오징어, 어시장, 수산, 막회, 양어장, 횟집 |
-| yearend | 연말 파티 | 연말, 송년, 크리스마스 |
-| xmas | 크리스마스 거리 | 일루미네이션, 크리스마스 마켓 |
-| snack | 겨울 간식 | 붕어빵, 호떡, 군고구마 |
-| sunrise | 해돋이 | 해돋이, 일출, 새해 |
-| snow | 눈 | 눈, 첫눈, 눈사람 |
-| skate | 스케이트 | 스케이트, 아이스링크 |
-| climbing | 클라이밍 | 클라이밍, 볼더링, 돌잡이 |
-| haejang | 해장 | 해장, 국밥, 콩나물국밥 |
-| pet | 반려동물 | 강아지, 애견, 반려견 |
-| running | 러닝 | 러닝, 런, 마라톤, 기부런 |
-| beerfest, expo | 맥주 축제, 박람회 | 비어페스트, 맥주 축제, 박람회, 페어, 펫쇼, 캣쇼 |
+| conv | 편의점 | 편맥, 편소, 편쏘, 편벙, 편편, 편의점, CU, GS25, 세븐일레븐 |
+| karaoke | 노래방 | 노래방, 노래연습장, 래방, 놀애방, 코노, 준코 |
+| home | 집 | 집벙, 홈파티, 집들이, 자취방, 🏠, 장소 칸이 집 주소(202호) |
+| pocha | 포차 | 포차, 포장마차, 오뎅, 오탕, 어묵탕, 골뱅이 |
+| viewing | 경기 관람 | 뷰잉, 플옵, 와일드카드, 결승, 경기 보면서(뒤에 직관이 있으면 야구장). 롤드컵과 티원은 e스포츠 사진, 축구와 국대는 축구 사진 |
+| squid | 오징어 | 오징어, 산오징어 |
+| fishmarket | 횟집 | 어시장, 수산, 막회, 양어장, 회센터(회, 광어, 횟집은 전의 회 사진) |
+| yearend | 연말 파티 | 연말, 송년, 신년회, 크리스마스 |
+| xmas | 크리스마스 거리 | 일루미네이션, 빛축제, 크리스마스 마켓, 트리 점등, 미디어파사드 |
+| snack | 겨울 간식 | 붕어빵, 잉어빵, 호떡, 군고구마, 군밤, 호빵 |
+| sunrise | 일출 | 일출, 해돋이, 해맞이 |
+| snow | 눈 오는 날 | 첫눈, 함박눈, 눈사람, 눈 오는 날(두루 쓰는 말이라 다른 낱말이 먼저) |
+| skate | 스케이트 | 스케이트, 아이스링크, 빙상장 |
+| climbing | 클라이밍 | 클라이밍, 더클라임, 볼더링, 돌잡이 |
+| haejang | 해장국 | 해장(음식 이름보다 아래), 콩나물국밥, 황태, 북엇국, 선지 |
+| pet | 반려동물 | 강아지, 애견, 반려견, 🐶 |
+| running | 러닝 | 러닝, 마라톤, 낱말 하나인 런(기부런, 푸르메런) |
+| beerfest | 맥주 축제 | 비어페스트, 맥주 축제, 옥토버페스트 |
+| expo | 박람회 | 펫쇼, 캣쇼, 애견 박람회(반려동물 사진), 박람회, 엑스포, 페어, 페스타, 카페쇼 |
