@@ -2130,6 +2130,19 @@
     $("sheetClose").addEventListener("click", closeSheet);
     $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+    /* 앞 이름(닉네임 첫 칸, 하트와 기호를 뺀 것)이 같은 다른 사람과 줄(142차): 폰이나 닉네임을 바꿔 다른 사람으로 센 이름, 누구인지 정하지 못한 들어옴과 나감.
+       대화 기록 전체(파일 시작부터)에서 찾으므로 한 달이 지난 옛 나감도 보인다. 기본 프로필 이름은 뺀다 */
+    const headOfName = (n) => memPlain(n).split(" ")[0] || "";
+    function sameHead(p) {
+      const heads = new Set([p.name].concat((p.nameHistory || []).map((n) => n.n)).map(headOfName).filter((h) => h.length >= 2));
+      if (!heads.size || !S.ledger) return { others: [], lines: [] };
+      const others = people().filter((q) => q.pid !== p.pid && !q.dflt && [q.name].concat((q.nameHistory || []).map((n) => n.n)).some((n) => heads.has(headOfName(n))));
+      const lines = [];
+      others.forEach((q) => (q.events || []).forEach((x) => lines.push({ d: x.d, t: x.t, k: x.k, how: x.how, name: x.name, who: q })));
+      (S.ledger.unlinked || []).forEach((u) => { if (heads.has(headOfName(u.name))) lines.push({ d: u.d, t: u.t, k: u.k, how: u.how, name: u.name, who: null }); });
+      lines.sort((a, b) => (b.d + " " + (b.t || "")).localeCompare(a.d + " " + (a.t || "")));
+      return { others, lines: lines.slice(0, 60), more: Math.max(0, lines.length - 60) };
+    }
     function renderSheet(p) {
       const e = exc(p.pid);
       const fl = effFlags(p);
@@ -2174,6 +2187,15 @@
           <label class="field"><span>입퇴장 메모</span><textarea id="ioNote" class="textarea" rows="2" maxlength="1000" placeholder="예: 기기 교체로 나갔다 들어옴, 미리 알림">${esc(io.note || "")}</textarea></label>
           <button id="ioNoteSave" class="btn btn-secondary is-sm" type="button">입퇴장 메모 저장</button>
         </div>
+        ${(() => {
+          const sh = sameHead(p);
+          if (!sh.others.length && !sh.lines.length) return "";
+          const st = (q) => (q.status === "in" ? "방에 있음" : q.status === "kicked" ? "내보냄" : "나감") + (q.status !== "in" && q.outDate ? " " + md(q.outDate) : "");
+          return `<div class="panel"><h2>앞 이름이 같은 다른 사람과 줄 <small>${esc(headOfName(p.name))}</small></h2>
+            ${sh.others.length ? `<ul class="timeline">${sh.others.map((q) => `<li><time>${esc(md(q.first || ""))} ~ ${esc(md(q.last || ""))}</time><span><button class="text-btn" type="button" data-person="${esc(q.pid)}">${esc(q.name)}</button></span><span class="tag">${esc(st(q))}</span><span class="tag">메시지 ${nf(q.n || 0)}건</span><span class="tag">재입장 ${reAfter(q).length}회</span></li>`).join("")}</ul>` : ""}
+            ${sh.lines.length ? `<ul class="timeline">${sh.lines.map((x) => `<li><time>${esc(md(x.d))}${x.t ? " " + esc(x.t) : ""}</time><span>${x.k === "join" ? "들어옴" : x.how === "kick" ? "내보냄" : "나감"}</span><span class="tag">줄 이름: ${esc(x.name)}</span><span class="tag">${x.who ? "다른 사람으로 셈" : "누구인지 정하지 못함"}</span></li>`).join("")}</ul>${sh.more ? `<p class="sub">오래된 줄 ${nf(sh.more)}개는 뺐습니다.</p>` : ""}` : ""}
+          </div>`;
+        })()}
         <div class="panel"><h2>닉네임 이력</h2>
           ${names ? `<ul class="timeline">${names}</ul><p class="sub">날짜는 그 이름이 보인 파일의 마지막 대화 날짜입니다.</p>` : ""}
           ${(p.sysNames || []).length ? `<p class="sub">들어옴, 나감 줄에 남은 다른 이름: ${p.sysNames.map(esc).join(", ")}</p>` : ""}
