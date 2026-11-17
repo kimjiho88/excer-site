@@ -31,7 +31,13 @@
   function snip(text) {
     var t = norm(String(text || "").replace(/\n/g, " "));
     t = t.replace(/(^|[^\d\/=._%-])(01[016789])[-\s.]?(\d{3,4})[-\s.]?(\d{4})(?!\d)/g, function (_, pre, a, b, c) { return pre + a + "-" + b.slice(0, 1) + "***-**" + c.slice(2); });
-    return t.length > 80 ? t.slice(0, 80) + "(생략)" : t;
+    return t.length > 80 ? head(t, 80) + "(생략)" : t;
+  }
+  /* 앞 n 자. 이모지처럼 두 칸인 글자(서로게이트 짝)는 가운데서 자르지 않는다(142차: 반쪽이 남으면 서버가 저장 전체를 받지 않는다) */
+  function head(t, n) {
+    if (t.length <= n) return t;
+    var c = t.charCodeAt(n), b = t.charCodeAt(n - 1);
+    return t.slice(0, c >= 0xDC00 && c <= 0xDFFF && b >= 0xD800 && b <= 0xDBFF ? n - 1 : n);
   }
   function hash(str) { var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 
@@ -282,7 +288,7 @@
       if ((r = tx.match(/^(.+?)님이\s*부방장이\s*되었습니다/))) roles.push({ d: s.date, name: norm(r[1]), act: "sub_on" });
       else if ((r = tx.match(/^(.+?)님이\s*부방장에서\s*해제되었습니다/))) roles.push({ d: s.date, name: norm(r[1]), act: "sub_off" });
       else if ((r = tx.match(/^방장이\s*(.+?)님에서\s*(.+?)님으로\s*변경되었습니다/))) roles.push({ d: s.date, name: norm(r[2]), from: norm(r[1]), act: "owner" });
-      if (s.type === "other" && unread.length < 50) unread.push({ d: s.date, x: tx.slice(0, 80) });
+      if (s.type === "other" && unread.length < 50) unread.push({ d: s.date, x: head(tx, 80) });
     }
 
     function finish() {

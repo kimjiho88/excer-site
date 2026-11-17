@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" />
   <link rel="stylesheet" href="assets/site.css?v=25" />
   <script src="assets/chat-parser.js?v=10"></script>
-  <script src="assets/ops-lang.js?v=2"></script>
-  <script src="assets/ops-analyzer.js?v=10"></script>
+  <script src="assets/ops-lang.js?v=3"></script>
+  <script src="assets/ops-analyzer.js?v=11"></script>
   <script src="assets/ops-part.js?v=1"></script>
   <script src="assets/bung-photo.js?v=7"></script>
   <style>
@@ -921,9 +921,15 @@
     const view = { q: "", filter: "in", sort: "count", sigSide: "bad", open: new Set(["fmt", "reentry", "kick_return", "name_change", "deleted"]), closed: new Set(), memberMode: "list", ioEdit: "", sheet: { q: "", filter: "in", sort: "check", dir: -1, maxD30: 1 }, lang: { per: "", pid: "", days: 7, manual: false, cat: "", dayOpen: new Set(), pplAll: false }, sigCode: "", sigMore: new Set() };
 
     /* ── 서버 ── */
+    /* 서버로 보낼 JSON. 짝 없는 반쪽 글자(JSON.stringify 는 짝 없는 서로게이트만 \udXXX 로 쓴다)와 \u0000 은
+       서버(jsonb 인자)가 거부해 요청 전체가 실패하므로 빈 글자 표시(U+FFFD)로 바꾸거나 뺀다(142차: 발췌가 이모지 가운데서 잘려 저장이 안 되던 것) */
+    const jsonOut = (x) => JSON.stringify(x).replace(/\\(?:u([0-9a-fA-F]{4})|[\s\S])/g, (m, h) => (!h ? m : /^d[89a-f]/i.test(h) ? "\\ufffd" : h === "0000" ? "" : m));
     async function rpc(name, body) {
-      const res = await fetch(SUPA.url + "/rest/v1/rpc/" + name, { method: "POST", headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) { let msg = ""; try { const j = await res.json(); msg = (j.code || "") + " " + (j.message || ""); } catch (e) {} const err = new Error(msg || "HTTP " + res.status); err.status = res.status; throw err; }
+      const res = await fetch(SUPA.url + "/rest/v1/rpc/" + name, { method: "POST", headers: { apikey: SUPA.anon, Authorization: "Bearer " + SUPA.anon, "Content-Type": "application/json" }, body: jsonOut(body) });
+      if (!res.ok) {   // 서버가 받지 않은 것(연결은 됨): 오류 코드(22P02, 57014 같은)를 안내 끝에 붙일 수 있게 code 로
+        let msg = "", code = ""; try { const j = await res.json(); code = j.code || ""; msg = code + " " + (j.message || ""); } catch (e) {}
+        const err = new Error(msg.trim() || "HTTP " + res.status); err.status = res.status; err.code = code || "HTTP " + res.status; throw err;
+      }
       return res.json();
     }
     const missingFn = (e) => e && (e.status === 404 || /PGRST202|Could not find the function|does not exist/i.test(e.message || ""));
@@ -2297,7 +2303,7 @@
         const lang = langCfg();   // 채팅 언어 단어 목록 설정(끈 항목, 켠 항목, 더한 말, 예외 말)
         const here = () => OpsAnalyzer.runFiles(list, { links, lang, onProgress: onP }).then(resolve, reject);
         let w = null;
-        try { w = new Worker("assets/ops-worker.js?v=7"); } catch (e) { w = null; }
+        try { w = new Worker("assets/ops-worker.js?v=8"); } catch (e) { w = null; }
         if (!w) { here(); return; }
         let started = false;
         w.onmessage = (e) => {
@@ -2407,7 +2413,9 @@
         botExpShow();
       } catch (e) {
         if (e.code === "BAD_PASS" || e.code === "LOCKED") { sessionLost(e.code); return false; }   // 비밀번호가 바뀐 뒤 거듭 누르면 잠기므로 바로 멈춘다
-        $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요." : "저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "");
+        $("saveState").textContent = e.code === "TOO_BIG" ? "결과가 너무 커서 저장하지 못했습니다. 기간이 짧은 파일로 나눠 주세요."
+          : e.status ? "서버가 저장을 받지 않았습니다(" + e.code + ")."   // 연결은 됐고 서버가 거절한 것(연결 문제가 아님)
+          : "저장하지 못했습니다. 연결을 확인해 주세요." + (e.code && e.code !== "FAIL" ? " (" + e.code + ")" : "");
         toast($("saveState").textContent);   // 데이터 탭 밖에서도 보이게(봇 분석을 열 때 바로 저장하는 길)
       } finally { saving = false; btn.disabled = !S.unsaved; btn.textContent = "서버에 저장"; }
       return done;

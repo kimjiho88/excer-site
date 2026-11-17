@@ -290,6 +290,9 @@
     return { k: topOf(ms), ms: ms };
   }
 
+  /* i 자리가 두 칸 글자의 뒤 반쪽인가(여기서 자르면 글자가 반으로 갈린다) */
+  function midPair(t, i) { var c = t.charCodeAt(i), b = t.charCodeAt(i - 1); return c >= 0xDC00 && c <= 0xDFFF && b >= 0xD800 && b <= 0xDBFF; }
+
   /* 발췌: 메시지가 80자 안이면 전부, 길면 첫 걸린 말 앞 30자부터 80자. 자리는 prep 과 같아 주소도 그대로 보인다. 전화번호는 가운데를 가린다 */
   function excerpt(text, ms, maxLen) {
     maxLen = maxLen || 80;
@@ -298,6 +301,9 @@
     if (t.length > maxLen) {
       start = Math.max(0, (ms[0] ? ms[0].s : 0) - 30); end = Math.min(t.length, start + maxLen);
       if (end - start < maxLen) start = Math.max(0, end - maxLen);
+      // 142차: 이모지처럼 두 칸인 글자(서로게이트 짝)를 가운데서 자르지 않는다. 반쪽이 남으면 서버(jsonb)가 저장 전체를 받지 않는다
+      if (start > 0 && midPair(t, start)) start += 1;
+      if (end < t.length && midPair(t, end)) end -= 1;
       if (start > 0) pre = "(앞 생략) ";
       if (end < t.length) post = " (뒤 생략)";
     }
