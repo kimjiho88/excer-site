@@ -10,7 +10,7 @@
    끝 코드: 0 됨, 2 사용법, 3 파일 없음, 4 대화를 찾지 못함, 5 그 밖의 오류(메시지는 stderr 한 줄)
    ============================================================ */
 "use strict";
-var VERSION = "2026-10-31";
+var VERSION = "2026-11-17";
 var fs = require("fs"), path = require("path");
 var argv = process.argv.slice(2);
 if (argv.length < 2) { process.stderr.write("usage: node ops_scan.js <chat.txt> <out.json> [cfg.json] [asset_dir]\n"); process.exit(2); }
@@ -53,7 +53,8 @@ rs.on("end", function () {
   var res = { v: 1, scan: VERSION, lex: OpsLang.VERSION, at: new Date().toISOString(), file: { bytes: bytes, lines: lines },
     range: r.range, totals: r.totals, people: r.people.length, hits: lang ? lang.all : 0, ledger: r, lang: lang };
   var tmp = out + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(res));
+  // 142차: 짝 없는 반쪽 글자(\udXXX)와 \u0000 은 서버(jsonb)와 봇(utf-8 로 다시 쓰기)이 받지 못해 올리기 전체가 실패하므로 바꾸거나 뺀다(운영 화면 rpc 와 같은 규칙)
+  fs.writeFileSync(tmp, JSON.stringify(res).replace(/\\(?:u([0-9a-fA-F]{4})|[\s\S])/g, function (m, h) { return !h ? m : /^d[89a-f]/i.test(h) ? "\\ufffd" : h === "0000" ? "" : m; }));
   fs.renameSync(tmp, out);
   process.stdout.write(JSON.stringify({ ok: true, range: r.range, messages: r.totals.messages, people: r.people.length, hits: res.hits, lines: lines, bytes: bytes }) + "\n");
 });
