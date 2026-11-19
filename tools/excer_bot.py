@@ -190,7 +190,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-07.1"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-20.1"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -5827,6 +5827,9 @@ class AdbSender:
 
     def pinned(self, nodes, text, skip=()):
         """방 위쪽 공지 띠에 이 글(첫 줄)이 보이는지. 말풍선이 아니라 방 칸의 맨 위 쪽에 있는 것(skip: 원래 있던 말풍선 자리)"""
+        ct = self.band_compose(nodes)
+        if ct:                                                   # 2026-11-19 카카오톡의 새 띠(글은 이름에만)
+            return same_head(ct, text.split("\n")[0])
         e = self.room_boxes(nodes)
         if not e:
             return False
@@ -5952,6 +5955,31 @@ class AdbSender:
              and not self.voice_mark(n, self.vcfg) and not (room and same_room(n["text"], room))]
         return ws(max(c, key=lambda n: n["b"][2] - n["b"][0])["text"]) if c else ""   # 띠 안에서 가장 넓은 글(앞의 '공지' 표시 글자는 빼고)
 
+    BAND_RIDS = (":id/talk_board_notice", ":id/ll_notice")      # 2026-11-19 카카오톡 공지 띠(Compose): 글은 이름(content-desc)에만, 오른쪽 '닫기'
+    BAND_SKIP = ("닫기", "접기", "펼치기", "더보기")
+
+    def band_compose(self, nodes, room=""):
+        """새 공지 띠의 글: 방 칸 위쪽 3할 안, 대화 칸 목록 밖의 talk_board_notice(또는 ll_notice) 묶음에서 가장 넓은 칸의 글(글이 없으면 이름).
+        띠를 누르면 뜨는 화면은 아직 모르므로 누를 칸은 주지 않는다. 없으면 ''"""
+        hgt = max([n["b"][3] for n in nodes] or [0])
+        inlist = self.in_lists(nodes)
+        boxes = [n for n in nodes if n["rid"].endswith(self.BAND_RIDS) and n["i"] not in inlist and n["b"][1] < hgt * 0.3]
+        if not boxes:
+            return ""
+        box = min(boxes, key=lambda n: (n["b"][2] - n["b"][0]) * (n["b"][3] - n["b"][1]))
+        under, stack = [box], list(box["kids"])
+        while stack:
+            j = stack.pop()
+            if j < len(nodes):
+                under.append(nodes[j])
+                stack.extend(nodes[j]["kids"])
+        lab = lambda n: (n["text"] or "").strip() or (n["desc"] or "").strip()
+        c = [n for n in under if lab(n) and lab(n) not in self.BAND_SKIP and lab(n) not in self.PIN_WORDS
+             and not re.search(r"Button|EditText", n["cls"]) and not self.voice_mark(n, self.vcfg) and not (room and same_room(lab(n), room))]
+        if not c:
+            return ""
+        return lab(max(c, key=lambda n: n["b"][2] - n["b"][0]))
+
     PIN_WORDS = ("핀 고정", "핀 해제", "고정 해제", "핀 고정 해제")   # 공지 띠 오른쪽의 단추(2026-10 카카오톡: 확성기, 공지 글, '핀 고정', X)
 
     def band_find(self, nodes, room=""):
@@ -5962,6 +5990,9 @@ class AdbSender:
         e = find(nodes, cls="EditText")
         if not e:
             return "", None, False
+        ct = self.band_compose(nodes, room)
+        if ct:                                               # 2026-11-19 카카오톡의 새 띠: 띠 묶음(아이디)으로 찾았으니 확실히 읽은 것
+            return ct, None, True
         el, er = min(n["b"][0] for n in e), max(n["b"][2] for n in e)
         hgt = max(n["b"][3] for n in nodes)
         inlist = self.in_lists(nodes)
@@ -6123,6 +6154,30 @@ class AdbSender:
         self.notice(room, text)
 
     REFUSE_RE = re.compile(r"(공지|핀).*(할\s*수\s*없|불가)")
+    # '공지' 를 누른 뒤 묻는 창의 글(이 글이 있을 때만 확인을 누른다. 다른 알림 창의 확인을 잘못 누르지 않게).
+    # 2026-11-19 카카오톡: 공지를 열 개까지 걸 수 있게 바뀌며 '공지가 10개 일 때 새로 등록하면, 가장 오래된 공지가 해제돼요.' 와 취소, 확인
+    NOTICE_ASK_RE = re.compile(r"공지.*(하시겠|할까요|1건만|새로\s*등록하면)|공지가?\s*\d+\s*개|(하시겠|할까요).*공지")
+    NOTICE_UNPIN_RE = re.compile(r"(해제|내리|삭제)\S*\s*(하시겠|할까요)")   # 공지를 내릴지 묻는 창은 아니다
+
+    def notice_ask(self, nodes, before=()):
+        """'공지' 를 누른 뒤 뜬 묻는 창의 글 칸들(before 에 없던 것, 대화 칸 목록 밖, 입력 칸이 아닌 것). 없으면 []"""
+        seen = {(n["b"], n["text"]) for n in before}
+        inlist = self.in_lists(nodes)
+        return [n for n in nodes if (n["b"], n["text"]) not in seen and n["i"] not in inlist and not n["cls"].endswith("EditText")
+                and self.NOTICE_ASK_RE.search(ws(n["text"])) and not self.NOTICE_UNPIN_RE.search(ws(n["text"]))]
+
+    def close_notice_ask(self, nodes, before=()):
+        """남은 공지 묻는 창을 취소로 닫는다(걸기가 안 된 채 끝날 때와 다음 걸기 전에). 남은 창이 말풍선 찾기를 가려 같은 글을 또 올리지 않게.
+        닫았으면 True"""
+        if not self.notice_ask(nodes, before):
+            return False
+        c = self.labeled(nodes, ("취소", "닫기"), before)
+        if c:
+            self.tap(c[0])
+        else:
+            self.key(4)
+        self.sleep(0.8)
+        return True
 
     def notice_refusal(self, nodes, before=()):
         """'공지' 를 누른 뒤 카카오톡이 띄운 막는 창의 글 칸(2026-11-07: '방장이 핀기능을 사용 중일 때는 공지를 등록할 수 없습니다.' 와 확인).
@@ -6178,6 +6233,8 @@ class AdbSender:
         self.key(224)
         self.sleep(1.0)
         nodes = self.dump()
+        if self.close_notice_ask(nodes):                         # 지난번 걸기에서 남은 묻는 창(공지 10개 안내)
+            nodes = self.dump()
         if not find(nodes, cls="EditText") or self.is_detail(nodes):   # 방 화면이 아니면(다른 창이나 공지 상세보기가 앞에) 방을 다시 연다
             nodes = self.open_room(room)
             if self.t.get("freeze", True):                       # 다시 연 방은 맨 아래에 붙어 있다: 살짝 올려 멈춘다
@@ -6223,8 +6280,7 @@ class AdbSender:
         # 된 것: '공지가 등록되었습니다' 카드, 첫 줄이 같은 공지가 없던 띠에 이 글, 또는 띠가 바뀌어 이 글을 보인다(걸기 전 띠 글과 견줘 판가름)
         ok = lambda ns: not wrong(ns) and (self.registered(ns, nodes, text) or (not pre and self.pinned(ns, text, skip))
                                            or (notice_core(bt(ns)) != notice_core(before) and band_shows(bt(ns), text, [before] if before else [])))
-        dlg = self.wait_change(menu, lambda ns: ok(ns) or self.notice_refusal(ns, menu) is not None or bool(self.labeled(ns, self.CONFIRM, menu) and any(
-            re.search(r"공지.*(하시겠|할까요|1건만)|(하시겠|할까요).*공지", ws(n["text"])) for n in ns)), tries=4)
+        dlg = self.wait_change(menu, lambda ns: ok(ns) or self.notice_refusal(ns, menu) is not None or bool(self.labeled(ns, self.CONFIRM, menu) and self.notice_ask(ns, menu)), tries=4)
         self.snap("'공지' 를 누른 뒤(새로 나온 것)", dlg, menu)
         refused = self.notice_refusal(dlg, menu)
         if refused is not None:                                  # 카카오톡이 막았다(방장 핀 고정 등): 창을 닫고 막힘으로 알린다(다시 올려도 같다)
@@ -6235,7 +6291,7 @@ class AdbSender:
         if ok(dlg):                                              # 누르자마자 걸렸다(확인 창 없음). 확인을 또 누르지 않는다
             return
         # 확인 단추는 '공지를 등록하시겠습니까?' 같은 묻는 창이 떴을 때만 누른다(다른 알림 창의 '확인' 을 잘못 누르지 않게)
-        asks = [n for n in dlg if n not in menu and re.search(r"공지.*(하시겠|할까요|1건만)|(하시겠|할까요).*공지", ws(n["text"]))]
+        asks = self.notice_ask(dlg, menu)
         c = self.labeled(dlg, self.CONFIRM, menu) if asks else []
         if c:
             self.tap(c[0])
@@ -6273,6 +6329,7 @@ class AdbSender:
             return
         self.snap("마지막 화면(새로 나온 것)", done, nodes)
         self.save_diag()
+        self.close_notice_ask(done, menu)                        # 묻는 창이 남았으면 닫는다(다음 걸기에서 말풍선을 가리지 않게)
         raise KakaoError("공지를 눌렀는데 공지가 걸린 표시('공지가 등록되었습니다' 나 위쪽 공지 띠)를 찾지 못함%s" % self.diag_note())
 
     # ── 화면 조사: 카카오톡 실제 화면을 단계마다 적는다(시험 방에서만, 글을 올리거나 공지를 거는 단추는 누르지 않는다) ──
