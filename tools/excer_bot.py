@@ -119,7 +119,8 @@ tablet 준비(태블릿 하나로)
   python excer_bot.py study           시험 방에서 카카오톡 화면을 단계마다 적고 클립보드에 담는다(목록, 방, 방 메뉴, 톡게시판,
                                       길게 누른 메뉴, 공지 창. 글을 올리거나 공지를 거는 단추는 누르지 않는다)
   python excer_bot.py ui              지금 화면의 글자와 단추 이름을 excer_bot_ui.txt 에 적는다(안 될 때 원인 찾기용,
-                                      시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다. 맨 위에 창 목록)
+                                      시험 방을 띄워 놓고 쓴다. 화면에 보이는 대화 글이 들어간다. 맨 위에 창 목록.
+                                      봇이 안 될 때 쓴 진단 파일도 같은 이름이고, 다른 일이 새로 쓰면 앞 것은 excer_bot_ui_prev.txt)
   python excer_bot.py voice study     (tablet) 시험 방에 보이스룸을 실제로 하나 만들었다가 끝내며, 단계마다 화면(단추 이름)과
                                       신호(알림, 소리, 서비스)를 excer_bot_voice_study.txt 에 적고 클립보드에 담는다. docs/BOT_VOICE_ROOM.md
   python excer_bot.py voice status    보이스룸이 켜져 있는지(화면을 건드리지 않고 알림, 소리, 서비스로)와 최근 끊김 기록
@@ -190,7 +191,7 @@ import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "2026-11-20.1"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
+VERSION = "2026-11-20.2"                 # 이 파일의 판. status 와 check 가 보여 준다. update 는 파일 내용으로 견준다(같은 날 고쳐도 받게)
 RAW_BASE = "https://raw.githubusercontent.com/kimjiho88/excer-site/main/"
 RAW_URL = RAW_BASE + "tools/excer_bot.py"
 KST = timezone(timedelta(hours=9))
@@ -4809,6 +4810,9 @@ class AdbSender:
             for c in el:
                 walk(c, parent)
         walk(root, None)
+        inl = AdbSender.in_lists(out)                            # 목록(대화 칸, 채팅 목록) 안인지 화면 전체로 한 번 적어 둔다(진단 파일이 일부만 적을 때도 가리게)
+        for n in out:
+            n["inl"] = n["i"] in inl
         return out
 
     @staticmethod
@@ -4907,8 +4911,10 @@ class AdbSender:
     def on_kakao(self, nodes):
         return any(n.get("pkg") == self.t["package"] for n in nodes)
 
-    CHAT_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?채팅(\s*탭)?\s*(,|$)")
-    NOW_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?(지금|오픈채팅)(\s*탭)?\s*(,|$)")
+    # 메뉴 이름: '채팅', '채팅 탭', '채팅, 새 메시지 3개'. '탭' 뒤에는 새 소식 표시가 붙기도 한다(2026-11-20 태블릿: '더보기 탭 업데이트 됨',
+    # 지금 탭이 그렇게 붙자 '지금 탭, 숏폼과...' 만 알던 봇이 오픈채팅 목록으로 가지 못함). '채팅방', '채팅 탭으로 이동' 같은 것은 아니다
+    CHAT_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?채팅(?:\s*탭(?=[\s,]|$)|\s*(?=,|$))")
+    NOW_NAV_RE = re.compile(r"^(?:선택됨\s*,?\s*)?(지금|오픈채팅)(?:\s*탭(?=[\s,]|$)|\s*(?=,|$))")
 
     @staticmethod
     def head_band(nodes):
@@ -5508,8 +5514,9 @@ class AdbSender:
         return names
 
     def new_trace(self):
-        """지나온 화면(trace)과 지나온 곳(facts)을 새로 모은다(진단 파일 excer_bot_ui.txt)"""
+        """지나온 화면(trace)과 지나온 곳(facts)을 새로 모은다(진단 파일 excer_bot_ui.txt. 다른 묶음이 쓴 앞 파일은 excer_bot_ui_prev.txt 로)"""
         self.trace, self.facts = [], []
+        self.trace_no = getattr(self, "trace_no", 0) + 1
 
     def fact(self, s):
         """지나온 곳 한 마디(진단). 정해진 낱말과 수, 자리만 적는다(방 이름과 대화 글은 넣지 않는다)"""
@@ -8404,10 +8411,15 @@ class AdbSender:
             return s
         return "(글 %d자)" % len(t)
 
+    # 목록 밖에 뜨는 대화 미리보기: 방 아래쪽 새 메시지 알림(닉네임과 글), 말풍선 위 닉네임
+    PREVIEW_RID_RE = re.compile(r":id/(nickname|new_message_indicator|text_name_indicator|text_new_message_indicator)$")
+
     def rows(self, nodes):
-        """화면 요소를 한 줄씩. 목록(대화 칸, 채팅 목록, 멤버 칸) 안의 글은 mask_text 로 가린다"""
+        """화면 요소를 한 줄씩. 목록(대화 칸, 채팅 목록, 멤버 칸) 안의 글과 목록 밖의 대화 미리보기는 mask_text 로 가린다.
+        목록 안인지는 화면을 읽을 때 적어 둔 표시(inl)로 본다(2026-11-20: 방 위쪽만 적은 지나온 화면에서 목록을 다시 찾다 틀려 닉네임이 그대로 적힘)"""
+        flagged = any("inl" in n for n in nodes)
         try:
-            lists = self.in_lists(nodes)
+            lists = set() if flagged else self.in_lists(nodes)
         except Exception:
             lists = set()
         out = []
@@ -8415,7 +8427,7 @@ class AdbSender:
             if not (n["text"] or n["desc"] or n["rid"] or n["click"] or n["cls"].endswith("EditText")):
                 continue
             t, d = n["text"][:60].replace("\n", " / "), n["desc"][:80].replace("\n", " / ")
-            if n.get("i") in lists:
+            if (n.get("inl") if flagged else n.get("i") in lists) or self.PREVIEW_RID_RE.search(n["rid"]):
                 t, d = self.mask_text(t), self.mask_text(d)
             out.append("%s | 글자=%s | 이름=%s | id=%s | 누름=%s | %s | %s" % (n["cls"].split(".")[-1], t, d, n["rid"], "예" if n["click"] else "", "[%d,%d][%d,%d]" % n["b"], n.get("pkg", "")))
         return out
@@ -8429,9 +8441,23 @@ class AdbSender:
             if fail is not None:
                 for label, tr in self.trace:
                     out += ["", "== %s (%d줄)" % (label, len(tr))] + tr
+        self.keep_prev(path)
         with open(path, "w", encoding="utf-8") as f:
             f.write("\n".join(out))
         return len(rows)
+
+    def keep_prev(self, path):
+        """진단 파일을 새로 쓰기 전에, 다른 일(지나온 화면 묶음)이 쓴 것이면 그것을 _prev 로 남긴다. 한 일 안에서 두 번 쓰면 덮는다.
+        2026-11-20: 방 열기 실패의 진단이 2분 뒤 공지 걸기 진단에 덮여 원인을 볼 수 없었다"""
+        mark = (path, getattr(self, "trace_no", 0))
+        if getattr(self, "diag_mark", None) != mark:
+            try:
+                if os.path.exists(path):
+                    base, ext = os.path.splitext(path)
+                    os.replace(path, base + "_prev" + ext)
+            except OSError:
+                pass
+        self.diag_mark = mark
 
     def snap(self, label, nodes, before=None):
         """지나온 화면 한 장. before 를 주면 그때 없던 요소만(메뉴, 확인 창)"""
@@ -8487,6 +8513,7 @@ class AdbSender:
         out = self.diag_head(fail) + [""]
         for label, rows in self.trace:
             out += ["== %s (%d줄)" % (label, len(rows))] + rows + [""]
+        self.keep_prev(self.diag_path)
         try:
             with open(self.diag_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(out))
